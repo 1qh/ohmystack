@@ -45,7 +45,14 @@ export default eslint({
       }
     },
     {
-      files: ['apps/**/*.ts', 'apps/**/*.tsx', 'packages/be-convex/**/*.ts', 'packages/be-spacetimedb/**/*.ts', 'packages/be-convex/**/*.tsx', 'packages/be-spacetimedb/**/*.tsx'],
+      files: [
+        'apps/**/*.ts',
+        'apps/**/*.tsx',
+        'packages/be-convex/**/*.ts',
+        'packages/be-spacetimedb/**/*.ts',
+        'packages/be-convex/**/*.tsx',
+        'packages/be-spacetimedb/**/*.tsx'
+      ],
       ignores: ['**/env.ts'],
       rules: {
         'no-restricted-imports': [
@@ -67,7 +74,12 @@ export default eslint({
       }
     }
   ],
-  ignores: ['*.config.ts', 'scripts/**', 'packages/be-convex/convex/**/*.test.ts', 'packages/be-spacetimedb/module_bindings/**', 'packages/ui/**'],
+  ignores: [
+    '*.config.ts',
+    'packages/be-convex/convex/**/*.test.ts',
+    'packages/be-spacetimedb/module_bindings/**',
+    'packages/ui/**'
+  ],
   rules: {
     '@eslint-react/dom/no-dangerously-set-innerhtml': 'off',
     '@eslint-react/hooks-extra/no-direct-set-state-in-use-effect': 'off',

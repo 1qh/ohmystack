@@ -4,7 +4,6 @@
   "workspaces": [
     "apps/convex/*",
     "apps/spacetimedb/*",
-    "apps/docs",
     "packages/*"
   ],
   "scripts": {
@@ -22,11 +21,11 @@
     "fix": "lintmax fix && (O=$(turbo typecheck build --output-logs=errors-only 2>&1) || { echo \"$O\"; false; }) && bun format:swift && bun lint:swift",
     "format": "lintmax fix",
     "format:check": "lintmax check",
-    "format:swift": "(O=$(swiftformat . 2>&1) || { echo \"$O\"; false; }) && (ktlint --format '**/*.kt' > /dev/null 2>&1 || true) && (O=$(ktlint '**/*.kt' 2>&1) || { echo \"$O\"; false; })",
-    "lint:swift": "(swiftlint lint --fix > /dev/null 2>&1 || true) && (O=$(swiftlint lint --strict 2>&1) || { echo \"$O\"; false; }) && (O=$(yamllint . 2>&1) || { echo \"$O\"; false; })",
+    "format:swift": "(ls **/*.swift &>/dev/null && { O=$(swiftformat . 2>&1) || { echo \"$O\"; false; }; } || true) && (ls **/*.kt &>/dev/null && { ktlint --format '**/*.kt' > /dev/null 2>&1 || true; O=$(ktlint '**/*.kt' 2>&1) || { echo \"$O\"; false; }; } || true)",
+    "postinstall": "bun lint:ws",
+    "lint:swift": "(ls **/*.swift &>/dev/null && { swiftlint lint --fix > /dev/null 2>&1 || true; O=$(swiftlint lint --strict 2>&1) || { echo \"$O\"; false; }; } || true) && (O=$(yamllint . 2>&1) || { echo \"$O\"; false; })",
     "lint:ts": "lintmax check",
     "lint:ws": "sherif",
-    "postinstall": "bun lint:ws",
     "spacetime:generate": "PATH=\"$HOME/.local/bin:$PATH\" spacetime generate --lang typescript --out-dir packages/spacetimedb/src/generated --module-path packages/be-spacetimedb",
     "spacetime:health": "curl -fsS http://localhost:3000/v1/ping && echo ' SpacetimeDB is healthy'",
     "spacetime:publish": "PATH=\"$HOME/.local/bin:$PATH\" spacetime publish ohmystack --module-path packages/be-spacetimedb --delete-data=on-conflict -y",
@@ -41,7 +40,8 @@
     "@types/bun": "latest",
     "depcheck": "latest",
     "dotenv-cli": "latest",
-    "lintmax": "0.0.2",
+    "jose": "^6.2.1",
+    "lintmax": "^0.0.4",
     "sherif": "latest",
     "ts-unused-exports": "latest",
     "turbo": "latest",

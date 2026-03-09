@@ -1,6 +1,6 @@
+import { env } from 'bun'
 import { exportJWK, exportPKCS8, generateKeyPair } from 'jose'
 import { log } from 'node:console'
-import { env } from 'bun'
 
 log(`TMDB_KEY=${env.TMDB_KEY}`)
 log(`AUTH_GOOGLE_ID=${env.AUTH_GOOGLE_ID}`)

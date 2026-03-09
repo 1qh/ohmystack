@@ -1,4 +1,4 @@
 {
   "extends": "lintmax/tsconfig",
-  "include": ["eslint.config.ts", "lintmax.config.ts"]
+  "include": ["eslint.config.ts", "lintmax.config.ts", "scripts/**/*.ts"]
 }

@@ -1,8 +1,10 @@
 # ohmystack
 
-Schema-first, zero-boilerplate fullstack. Pick your database, forget about the backend.
+Schema-first, zero-boilerplate fullstack.
+Pick your database, forget about the backend.
 
-If `PLAN.md` exists at the repo root, read it first for migration plan, execution phases, and success criteria.
+If `PLAN.md` exists at the repo root, read it first for migration plan, execution
+phases, and success criteria.
 
 ## Monorepo Structure
 
@@ -31,29 +33,29 @@ swift-core/        — shared Swift protocols
 Library packages are **published to npm**. Everything else is **consumer code** — demo
 apps that happen to live in the same monorepo:
 
-| Path                    | Role                          | Can reference library internals? |
-| ----------------------- | ----------------------------- | -------------------------------- |
-| `packages/convex/`      | Library (npm published)       | N/A — IS the library             |
-| `packages/spacetimedb/` | Library (npm published)       | N/A — IS the library             |
-| `packages/shared/`      | Internal shared code          | N/A — IS library code            |
-| `packages/be-convex/`   | Demo backend (consumer)       | NO — uses public API only        |
-| `packages/be-spacetimedb/` | Demo backend (consumer)    | NO — uses public API only        |
-| `apps/`                 | Demo web apps (consumer)      | NO — uses public API only        |
-| `desktop/`              | Demo desktop apps (consumer)  | NO — uses generated output only  |
-| `mobile/`               | Demo mobile apps (consumer)   | NO — uses generated output only  |
-| `swift-core/`           | Shared Swift protocol         | NO — uses generated output only  |
-| `packages/ui/`          | Shared UI components          | NO — read-only                   |
+| Path                       | Role                         | Can reference library internals? |
+| -------------------------- | ---------------------------- | -------------------------------- |
+| `packages/convex/`         | Library (npm published)      | N/A — IS the library             |
+| `packages/spacetimedb/`    | Library (npm published)      | N/A — IS the library             |
+| `packages/shared/`         | Internal shared code         | N/A — IS library code            |
+| `packages/be-convex/`      | Demo backend (consumer)      | NO — uses public API only        |
+| `packages/be-spacetimedb/` | Demo backend (consumer)      | NO — uses public API only        |
+| `apps/`                    | Demo web apps (consumer)     | NO — uses public API only        |
+| `desktop/`                 | Demo desktop apps (consumer) | NO — uses generated output only  |
+| `mobile/`                  | Demo mobile apps (consumer)  | NO — uses generated output only  |
+| `swift-core/`              | Shared Swift protocol        | NO — uses generated output only  |
+| `packages/ui/`             | Shared UI components         | NO — read-only                   |
 
-Libraries must work for ANY project, not just these demos. A developer who runs
-`bun add @ohmystack/convex` and defines their own Zod schemas must get correct output
-without editing library source.
+Libraries must work for ANY project, not just these demos.
+A developer who runs `bun add @ohmystack/convex` and defines their own Zod schemas must
+get correct output without editing library source.
 
 ## npm Packages
 
-| Package | Purpose |
-|---|---|
-| `ohmystack` | CLI — `bun ohmystack@latest init` |
-| `@ohmystack/convex` | Convex library (replaces `lazyconvex`) |
+| Package                  | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `ohmystack`              | CLI — `bun ohmystack@latest init`            |
+| `@ohmystack/convex`      | Convex library (replaces `lazyconvex`)       |
 | `@ohmystack/spacetimedb` | SpacetimeDB library (replaces `betterspace`) |
 
 ## Commands
@@ -173,8 +175,10 @@ Run `bun fix` to auto-fix and verify all linters pass (zero errors, warnings all
 
 ### Philosophy
 
-Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it
-and nothing breaks (semantics, layout, behavior, required styling) → it shouldn't exist.
+Same UI, fewest DOM nodes.
+Every element must earn its place.
+If you can delete it and nothing breaks (semantics, layout, behavior, required styling)
+→ it shouldn’t exist.
 Wrappers require justification in code review.
 
 ### When a node is allowed ("real reasons")
@@ -197,7 +201,7 @@ A DOM node is allowed only if it provides at least 1 of:
     container.
 
 - Component API necessity
-  - You truly can't pass props/classes to the real root (and you considered `as` /
+  - You truly can’t pass props/classes to the real root (and you considered `as` /
     `asChild` / prop forwarding).
 
 If none apply → **no wrapper**.
@@ -247,7 +251,7 @@ JSX-only grouping
 
 - Children are simple elements you control (and styling is uniform).
 - You want to avoid repeating the same classes on every item.
-- You're styling **direct children**, not deep internals.
+- You’re styling **direct children**, not deep internals.
 
 ```tsx
 // bad
@@ -287,7 +291,7 @@ JSX-only grouping
   → do it.
 - **Selectors second:** can `[&>...]:` / `*:` remove repetition on direct children I
   control? → do it.
-- **No hidden coupling:** avoid styling deep child internals unless it's a deliberate
+- **No hidden coupling:** avoid styling deep child internals unless it’s a deliberate
   API.
 
 ---
@@ -419,14 +423,14 @@ best-practice violations.
 
 ### Known false positives (do NOT fix)
 
-| Warning                                                               | Why it's OK                                                               |
+| Warning                                                               | Why it’s OK                                                               |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | Unused file (Next.js pages/layouts/configs)                           | Framework entry points, not imported by user code                         |
 | Unused export (cross-package library API)                             | Public API consumed by other packages — react-doctor scans per-project    |
 | `<img>` for storage URLs                                              | Dynamic URLs — `next/image` requires known `images.domains`               |
 | `preventDefault()` on `<form>`                                        | SPA forms submitting via mutations/reducers, no server action             |
 | `useEffect` with intersection observer `inView`                       | Standard infinite scroll pattern with `react-intersection-observer`       |
-| `useSearchParams requires Suspense` when already wrapped at call site | react-doctor scans the component file, not where it's rendered            |
+| `useSearchParams requires Suspense` when already wrapped at call site | react-doctor scans the component file, not where it’s rendered            |
 | `dangerouslySetInnerHTML` / `<script>` in org-redirect                | Controlled redirect pattern for setting active org cookie                 |
 | Missing metadata in demo app layouts/pages                            | Metadata is optional for demo apps — user preference to keep source clean |
 
@@ -445,11 +449,11 @@ best-practice violations.
 
 ### `anyApi` Proxy — Type Safety Gap
 
-Convex's generated `api` object is typed as `FilterApi<typeof fullApi, ...>` (strict,
+Convex’s generated `api` object is typed as `FilterApi<typeof fullApi, ...>` (strict,
 case-sensitive), but the runtime value is `anyApi` — a `Proxy` with `[key: string]`
 index signatures that accept ANY property name at runtime.
 
-**Impact**: `api.blogprofile.get` (wrong casing) won't raise a TypeScript error even
+**Impact**: `api.blogprofile.get` (wrong casing) won’t raise a TypeScript error even
 though only `api.blogProfile.get` exists.
 
 **Defense**:
@@ -492,10 +496,11 @@ bun spacetime:generate
 ## codegen-swift (Convex-only)
 
 `codegen-swift.ts` must derive ALL output from inputs it receives (schema file, convex
-directory, CLI flags). It must NEVER contain:
+directory, CLI flags).
+It must NEVER contain:
 
 - Hardcoded function names, parameter lists, or return types for specific tables/modules
-- Data structures that describe THIS project's endpoints
+- Data structures that describe THIS project’s endpoints
 - Anything that would require editing library source when a consumer adds a table
 
 ### What codegen CAN know (from its own library code)
@@ -521,7 +526,7 @@ directory, CLI flags). It must NEVER contain:
 If a developer runs
 `bunx @ohmystack/convex codegen-swift --schema their-schema.ts --convex their-convex/`
 on a project they built, does it produce correct output?
-If not, something is hardcoded that shouldn't be.
+If not, something is hardcoded that shouldn’t be.
 
 ---
 
@@ -534,8 +539,8 @@ or reducer call fails to compile.
 
 ## packages/shared/ Architecture
 
-Internal workspace package, never published. Contains code identical across both
-libraries:
+Internal workspace package, never published.
+Contains code identical across both libraries:
 
 - **React hooks**: `use-bulk-mutate`, `use-search`, `use-bulk-selection`,
   `use-optimistic`, `use-soft-delete`, `use-presence`, `use-cache`, `use-upload`,
@@ -549,6 +554,7 @@ libraries:
 - **Zod utils**, seed utils, retry utils
 
 Each published package re-exports from shared:
+
 ```ts
 export { useBulkMutate } from '@a/shared/react'
 export { useList } from './use-list' // DB-specific
@@ -559,32 +565,33 @@ export { useList } from './use-list' // DB-specific
 ## Key Technical Discoveries
 
 1. **oxlint `eslint/sort-keys` conflicts with eslint perfectionist** — oxlint uses ASCII
-   sort, perfectionist uses natural sort. Disable `eslint/sort-keys` in oxlint config.
+   sort, perfectionist uses natural sort.
+   Disable `eslint/sort-keys` in oxlint config.
 
-2. **Lintmax runs biome TWICE** (biome → oxlint → eslint → biome). The 2nd biome pass
-   can undo eslint auto-fixes. Disable conflicting biome rules like
-   `noPlaywrightUselessAwait`.
+2. **Lintmax runs biome TWICE** (biome → oxlint → eslint → biome).
+   The 2nd biome pass can undo eslint auto-fixes.
+   Disable conflicting biome rules like `noPlaywrightUselessAwait`.
 
 3. **`next-env.d.ts` format mismatch** — Next.js generates with double quotes +
-   semicolons, biome enforces single quotes + none. Add `apps/*/next-env.d.ts` to biome
-   ignore.
+   semicolons, biome enforces single quotes + none.
+   Add `apps/*/next-env.d.ts` to biome ignore.
 
-4. **Docker port conflicts** — Convex MinIO uses 9000/9001, SpacetimeDB also needs MinIO.
-   Assign different ports in `ohmystack.yml` to avoid conflicts.
+4. **Docker port conflicts** — Convex MinIO uses 9000/9001, SpacetimeDB also needs
+   MinIO. Assign different ports in `ohmystack.yml` to avoid conflicts.
 
-5. **Convex `genenv.ts` outputs env vars** — must be set on backend via `convex env set`.
-   JWT private key needs `--` separator due to dashes.
+5. **Convex `genenv.ts` outputs env vars** — must be set on backend via
+   `convex env set`. JWT private key needs `--` separator due to dashes.
 
 ## Testing
 
-| Suite | Runner | Count |
-|---|---|---|
-| Convex library | bun:test | 934 |
-| SpacetimeDB library | bun:test | 1,170 |
-| Convex backend | convex-test | 219 |
-| Web E2E | Playwright | 220 per DB |
-| Swift desktop | Swift Testing | 32 |
-| Mobile | Maestro | 92 |
+| Suite               | Runner        | Count      |
+| ------------------- | ------------- | ---------- |
+| Convex library      | bun:test      | 934        |
+| SpacetimeDB library | bun:test      | 1,170      |
+| Convex backend      | convex-test   | 219        |
+| Web E2E             | Playwright    | 220 per DB |
+| Swift desktop       | Swift Testing | 32         |
+| Mobile              | Maestro       | 92         |
 
 ## Git Conventions
 
