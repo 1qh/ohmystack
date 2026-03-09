@@ -8,6 +8,36 @@ Schema-first, zero-boilerplate fullstack. Pick your database, forget about the b
 
 Convex and SpacetimeDB are our first two supported backends. The architecture is designed to support more databases over time (drizzle + oRPC for SQL databases is on the roadmap).
 
+## Motivation
+
+betterspace (SpacetimeDB) and lazyconvex (Convex) share everything — philosophy, code,
+linting, dependencies, demo apps, monorepo structure. Maintaining two repos with ~70%
+identical code is wasteful. Consolidating into one monorepo unlocks massive reuse.
+
+But this is not just a merge. ohmystack is a new home with a long-term vision:
+**schema-first, no-brainer backend, zero-boilerplate, just pick your favorite database.**
+Every solution ohmystack offers is easy to use, easy to adopt, easy to configure, while
+covering all concerns about scalability and security.
+
+ohmystack is for any dev who wants the most minimum effort to ship a fullstack app in
+minutes, not weeks. Pick a database, forget about the backend. Convex and SpacetimeDB are
+the first two supported backends. More will follow — drizzle + oRPC for SQL databases is
+on the roadmap (to be discussed after ohmystack ships, multi-db support needs careful
+consideration).
+
+The repo IS the template. `bun ohmystack@latest init` → pick a database → done. No
+separate template repos to maintain. Clone the repo, strip library source and docs, keep
+the monorepo structure, GitHub Actions, shadcn components, strict linting, and demo apps.
+A `doctor` command checks if the consumer's project is outdated vs upstream, and a `sync`
+command pulls upstream changes.
+
+Documentation lives in a fumadocs site, not scattered markdown files. Devs can switch
+between databases in a global toggle and see the difference in consumer code — same UX as
+SDKs that show multiple language clients side by side, but for different databases.
+
+Both betterspace and lazyconvex remain valid on their own — they are archived as
+read-only references, not deprecated. ohmystack is where they grow from here.
+
 ## Source Repos (now archived, read-only)
 
 - `1qh/betterspace` — SpacetimeDB framework (~31,700 LOC library, 1,170 tests)
