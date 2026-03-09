@@ -1,0 +1,32 @@
+{
+  "name": "@a/fe",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.tsx",
+    "./env": "./src/env.ts",
+    "./image-route": "./src/image-route.ts",
+    "./next-config": "./src/next-config.ts",
+    "./proxy": "./src/proxy.ts",
+    "./utils": "./src/utils.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "src/*"
+      ]
+    }
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo node_modules"
+  },
+  "dependencies": {
+    "@a/be-convex": "workspace:*",
+    "@convex-dev/auth": "latest",
+    "@ohmystack/convex": "workspace:*",
+    "@t3-oss/env-nextjs": "latest",
+    "convex": "latest",
+    "next-navigation-guard": "latest",
+    "next-themes": "latest",
+    "sonner": "latest"
+  }
+}

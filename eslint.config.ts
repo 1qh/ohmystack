@@ -76,8 +76,12 @@ export default eslint({
   ],
   ignores: [
     '*.config.ts',
-    'packages/be-convex/convex/**/*.test.ts',
-    'packages/be-spacetimedb/module_bindings/**',
+    'packages/be-convex/**',
+    'packages/be-spacetimedb/**',
+    'packages/convex/**',
+    'packages/spacetimedb/**',
+    'packages/fe/**',
+    'packages/e2e/**',
     'packages/ui/**'
   ],
   rules: {

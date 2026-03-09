@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "ESNext"]
+  },
+  "exclude": ["node_modules"],
+  "extends": "lintmax/tsconfig",
+  "include": ["."]
+}
