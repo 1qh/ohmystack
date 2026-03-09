@@ -20,16 +20,16 @@ describe('org api port', () => {
     expect(orgJoinRequestTable).toBeDefined()
   })
 
-   test('org management reducers are not exported by current module', () => {
-     // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
-     expect((reducers as Record<string, unknown>).createOrg).toBeUndefined()
-     // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
-     expect((reducers as Record<string, unknown>).updateOrg).toBeUndefined()
-     // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
-     expect((reducers as Record<string, unknown>).getOrg).toBeUndefined()
-     // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
-     expect((reducers as Record<string, unknown>).inviteOrg).toBeUndefined()
-   })
+  test('org management reducers are not exported by current module', () => {
+    // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
+    expect((reducers as Record<string, unknown>).createOrg).toBeUndefined()
+    // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
+    expect((reducers as Record<string, unknown>).updateOrg).toBeUndefined()
+    // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
+    expect((reducers as Record<string, unknown>).getOrg).toBeUndefined()
+    // eslint-disable-next-line ohmystack-stdb/no-unsafe-api-cast
+    expect((reducers as Record<string, unknown>).inviteOrg).toBeUndefined()
+  })
 
   test('org-scoped CRUD reducers exist for project task and wiki', () => {
     expect(typeof reducers.createProject).toBe('object')

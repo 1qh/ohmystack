@@ -21,7 +21,7 @@ const none = { none: [] as [] },
   hasIdentity = (row: Row, identity: string): boolean => {
     const raw = row.user_id
     if (!Array.isArray(raw) || raw.length === 0) return false
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     const [first] = raw
     return first === toIdentityCell(identity)
   },
@@ -30,11 +30,11 @@ const none = { none: [] as [] },
     for (const row of rows) if (hasIdentity(row, identity)) output.push(row)
     return output
   },
-   withCtx = async <T>(fn: (ctx: TestContext) => Promise<T>) => {
-     const ctx = await createTestContext({
-       moduleName: '@ohmystack/spacetimedb',
-       userCount: 3
-     })
+  withCtx = async <T>(fn: (ctx: TestContext) => Promise<T>) => {
+    const ctx = await createTestContext({
+      moduleName: '@ohmystack/spacetimedb',
+      userCount: 3
+    })
     try {
       return await fn(ctx)
     } finally {

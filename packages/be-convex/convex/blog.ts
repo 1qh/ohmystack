@@ -1,6 +1,6 @@
+import { time } from '@ohmystack/convex/server'
 /* oxlint-disable eslint/max-statements */
 import { zid } from 'convex-helpers/server/zod4'
-import { time } from '@ohmystack/convex/server'
 
 import { crud, m, pq } from '../lazy'
 import { owned } from '../t'

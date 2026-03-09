@@ -1,7 +1,4 @@
 import { authTables } from '@convex-dev/auth/server'
-import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
-import { defineSchema, defineTable } from 'convex/server'
-import { v } from 'convex/values'
 import {
   baseTable,
   orgChildTable,
@@ -12,6 +9,9 @@ import {
   singletonTable,
   uploadTables
 } from '@ohmystack/convex/server'
+import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
+import { defineSchema, defineTable } from 'convex/server'
+import { v } from 'convex/values'
 
 import { base, children, orgScoped, owned, singleton } from '../t'
 
