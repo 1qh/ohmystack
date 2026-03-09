@@ -32,8 +32,6 @@ Both betterspace and lazyconvex remain valid on their own — they are archived 
 | `@ohmystack/convex` | Convex library (replaces `lazyconvex`) |
 | `@ohmystack/spacetimedb` | SpacetimeDB library (replaces `betterspace`) |
 
-Final versions of `betterspace` and `lazyconvex` on npm will log a deprecation notice pointing to the new packages.
-
 ## Target Monorepo Structure
 
 ```
@@ -58,7 +56,8 @@ ohmystack/
 │   ├── be-convex/             ← Convex backend functions + schema (from lazyconvex packages/be)
 │   ├── be-spacetimedb/        ← SpacetimeDB module + schema (from betterspace packages/be)
 │   ├── fe/                    ← shared frontend utilities
-│   └── e2e/                   ← shared Playwright utilities
+│   ├── e2e/                   ← shared Playwright utilities
+│   └── cli/                   ← ohmystack CLI (published as `ohmystack`)
 ├── mobile/
 │   └── convex/                ← iOS/Android apps (from lazyconvex, Convex-only for now)
 ├── desktop/
@@ -68,7 +67,9 @@ ohmystack/
 ├── lintmax.config.ts          ← unified linting config
 ├── eslint.config.ts           ← unified ESLint config
 ├── turbo.json                 ← unified Turbo config
+├── scripts/                   ← genkey.sh, genenv.ts, setup utilities
 ├── package.json               ← workspace root
+├── AGENTS.md                  ← project knowledge base
 └── PLAN.md                    ← this file
 ```
 
@@ -213,7 +214,7 @@ Users see one clean import: `import { useList } from '@ohmystack/convex/react'`
   - `content/docs/` — shared concepts (schema-first, zero-boilerplate philosophy)
   - Sidebar Tabs: "Convex" and "SpacetimeDB" as top-level navigation
   - `<Tabs groupId="db" persist>` on all code examples for DB switching
-- [ ] 6.3 — Migrate existing markdown docs (14 files each repo) to MDX:
+- [ ] 6.3 — Migrate existing markdown docs (15 files each repo) to MDX:
   - `getting-started.mdx`, `api-reference.mdx`, `data-fetching.mdx`
   - `schema.mdx`, `mutations.mdx`, `forms.mdx`, `file-upload.mdx`
   - `org-management.mdx`, `devtools.mdx`, `testing.mdx`
@@ -253,9 +254,8 @@ Users see one clean import: `import { useList } from '@ohmystack/convex/react'`
   - Architecture diagram
 - [ ] 8.2 — Register `@ohmystack` npm org
 - [ ] 8.3 — Publish `@ohmystack/convex`, `@ohmystack/spacetimedb`, `ohmystack` to npm
-- [ ] 8.4 — Publish deprecation notices on `betterspace` and `lazyconvex` npm packages
-- [ ] 8.5 — CI green on all jobs
-- [ ] 8.6 — All tests pass:
+- [ ] 8.4 — CI green on all jobs
+- [ ] 8.5 — All tests pass:
   - 934 Convex unit tests
   - 1,170 SpacetimeDB unit tests
   - 219 Convex backend tests
