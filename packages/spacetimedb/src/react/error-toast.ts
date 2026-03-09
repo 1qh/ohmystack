@@ -18,6 +18,11 @@ interface ErrorToastOptions {
 
 type ToastFn = (message: string) => void
 
+/**
+ * Creates a stable callback that toasts Betterspace errors.
+ * @param options Toast function plus optional code-specific handlers.
+ * @returns Memoized error handler for use in React callbacks.
+ */
 const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
     useCallback(
       (error: unknown) => {
@@ -32,7 +37,12 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
       },
       [handlers, toast]
     ),
-  
+  /**
+   * Builds an imperative error handler with optional code overrides.
+   * @param toast Toast function used for fallback messages.
+   * @param overrides Optional per-code override handlers.
+   * @returns Error handler that routes Betterspace errors by code.
+   */
   makeErrorHandler = (toast: ToastFn, overrides?: Partial<Record<string, (data?: ErrorData) => void>>) => {
     const handler: ErrorHandlers = {
       default: noop
@@ -60,7 +70,18 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
       toast(data?.message ?? getErrorMessage(error))
     }
   },
-  
+  /** Toasts the first field validation error from a Betterspace error.
+   * @param error - Unknown error value
+   * @param toastFn - Toast function to call with the error message
+   * @returns `true` if a field error was toasted, `false` otherwise
+   * @example
+   * ```ts
+   * catch (error) {
+   *   toastFieldError(error, toast.error)
+   *   throw error
+   * }
+   * ```
+   */
   toastFieldError = (error: unknown, toastFn: ToastFn): boolean => {
     const msg = getFirstFieldError(error)
     if (msg) {

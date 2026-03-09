@@ -64,8 +64,9 @@ interface UploadState {
   upload: (file: File) => Promise<null | string>
 }
 
+/** React context for the file upload API configuration. */
 const FileApiContext = createContext<FileApi | null>(null),
-  
+  /** Provides file upload API config (presign endpoint, callbacks) to nested components. */
   FileApiProvider = ({ children, value }: { children: ReactNode; value: FileApi }) => (
     <FileApiContext value={value}>{children}</FileApiContext>
   ),
@@ -315,7 +316,7 @@ const FileApiContext = createContext<FileApi | null>(null),
         else if (code === 'too-many-files' && max) toast.error(`Max ${max}`)
       }
     }),
-  
+  /** File upload field implementation with drag-and-drop and progress. */
   FileFieldImpl = ({
     accept,
     compressImg = true,

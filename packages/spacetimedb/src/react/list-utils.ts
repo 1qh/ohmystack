@@ -16,6 +16,13 @@ interface SortObject<T extends Rec> {
 type WhereFieldValue<V> = ComparisonOp<V> | V
 type WhereGroup<T extends Rec> = { [K in keyof T & string]?: WhereFieldValue<T[K]> } & { own?: boolean }
 
+/**
+ * Tests whether a row contains the query string in any of the given fields.
+ * @param row Data row to test.
+ * @param query Search query (case-insensitive).
+ * @param fields Field keys to search within.
+ * @returns `true` when at least one field matches.
+ */
 const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & string)[]): boolean => {
     const lower = query.toLowerCase()
     for (const field of fields) {
@@ -26,7 +33,11 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
     }
     return false
   },
-  
+  /**
+   * Converts any value to a string suitable for lexicographic comparison.
+   * @param value Value to stringify.
+   * @returns A deterministic string representation.
+   */
   toSortableString = (value: unknown): string => {
     if (typeof value === 'string') return value
     if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value)
@@ -39,7 +50,11 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
 
     return ''
   },
-  
+  /**
+   * Normalizes a sort descriptor into a `{ field, direction }` pair.
+   * @param sort Sort map or object from caller options.
+   * @returns Resolved config or `null` when unsorted.
+   */
   getSortConfig = <T extends Rec>(sort?: ListSort<T>): null | { direction: SortDirection; field: keyof T & string } => {
     if (!sort) return null
     if ('field' in sort)
@@ -53,7 +68,12 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
       direction = (sort as Record<string, SortDirection>)[key] ?? 'desc'
     return { direction, field: key }
   },
-  
+  /**
+   * Compares two values for sorting (numbers, booleans, dates, strings).
+   * @param left First value.
+   * @param right Second value.
+   * @returns Negative if left < right, positive if left > right, zero if equal.
+   */
   compareValues = (left: unknown, right: unknown): number => {
     if (left === right) return 0
     if (left === undefined || left === null) return -1
@@ -63,7 +83,12 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
     if (left instanceof Date && right instanceof Date) return left.getTime() - right.getTime()
     return toSortableString(left).localeCompare(toSortableString(right))
   },
-  
+  /**
+   * Returns a new array sorted by the given sort descriptor.
+   * @param rows Source rows (not mutated).
+   * @param sort Sort configuration or `undefined` for identity order.
+   * @returns Sorted copy of the rows array.
+   */
   sortData = <T extends Rec>(rows: readonly T[], sort?: ListSort<T>): T[] => {
     const config = getSortConfig(sort)
     if (!config) return [...rows]

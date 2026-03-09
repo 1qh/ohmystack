@@ -17,6 +17,11 @@ import { applyPatch, getOwnedRow, makeError, makeOptionalFields, pickPatch, time
 
 type UpdateArgs<F extends CrudFieldBuilders, Id> = Partial<CrudFieldValues<F>> & { expectedUpdatedAt?: Timestamp; id: Id }
 
+/** Creates owned child-table CRUD reducers with parent existence checks.
+ * @param spacetimedb - SpacetimeDB reducer factory
+ * @param config - Child CRUD configuration
+ * @returns Reducer export map
+ */
 const makeChildCrud = <
   DB,
   F extends CrudFieldBuilders,

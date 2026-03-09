@@ -60,6 +60,11 @@ const DEFAULT_ALLOWED_TYPES = new Set([
   RATE_LIMIT_WINDOW = 60 * 1000,
   MAX_UPLOADS_PER_WINDOW = 10,
   cvErr = (code: ErrorCode, message?: string) => new ConvexError(message ? { code, message } : { code }),
+  /**
+   * Creates a complete file upload system with single-file upload, validation, chunked upload, and progress tracking.
+   * @param config - Upload configuration including builders, auth, allowed types, max size, and namespace
+   * @returns Object with upload, validate, info, chunked upload endpoints, and CHUNK_SIZE constant
+   */
   makeFileUpload = <DM extends GenericDataModel>(config: FileUploadConfig<DM>) => {
     const {
         action,

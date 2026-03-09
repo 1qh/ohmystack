@@ -7,6 +7,7 @@ import type { ListSort, ListWhere, Rec } from './list-utils'
 import { matchW } from '../server/helpers'
 import { noop, searchMatches, sortData } from './list-utils'
 
+/** Client-side infinite-list options for filtering, sorting, and searching. */
 interface InfiniteListOptions<T extends Rec = Rec> {
   batchSize?: number
   search?: { debounceMs?: number; fields: (keyof T & string)[]; query: string }
@@ -14,8 +15,18 @@ interface InfiniteListOptions<T extends Rec = Rec> {
   where?: ListWhere<T>
 }
 
+/** Default batch size used by `useInfiniteList`. */
 const DEFAULT_BATCH_SIZE = 50,
-  
+  /** Builds an infinite-scroll list from in-memory rows.
+   * @param data - Source rows
+   * @param isReady - Subscription readiness state
+   * @param options - Sorting and filter options
+   * @returns List slice and load-more controls
+   * @example
+   * ```ts
+   * const list = useInfiniteList(rows, ready, { batchSize: 25 })
+   * ```
+   */
   SKIP_RESULT = {
     data: [] as never[],
     hasMore: false,
@@ -23,7 +34,13 @@ const DEFAULT_BATCH_SIZE = 50,
     loadMore: noop,
     totalCount: 0
   },
-  
+  /**
+   * Builds an infinite-scroll view from local rows with where/search/sort.
+   * @param data Source rows.
+   * @param isReady Subscription readiness state.
+   * @param options Filtering, searching, sorting, and batch-size options.
+   * @returns Visible rows plus load-more and loading metadata.
+   */
   useInfiniteList = <T extends Rec>(data: T[], isReady: boolean, options?: 'skip' | InfiniteListOptions<T>) => {
     const skipped = options === 'skip',
       opts = skipped ? undefined : options,
@@ -87,6 +104,7 @@ const DEFAULT_BATCH_SIZE = 50,
     }
   }
 
+/** Result shape returned by `useInfiniteList` with normal options. */
 interface InfiniteListResult<T extends Rec> {
   data: T[]
   hasMore: boolean
@@ -95,6 +113,7 @@ interface InfiniteListResult<T extends Rec> {
   totalCount: number
 }
 
+/** Result shape returned when `useInfiniteList` options is `'skip'`. */
 interface SkipInfiniteListResult {
   data: never[]
   hasMore: false

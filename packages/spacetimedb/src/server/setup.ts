@@ -415,7 +415,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
       if (reducer) target[name] = reducer
     }
   },
-  
+  /** Low-level factory that creates CRUD builders from shared SpacetimeDB config. */
   setup = (spacetimedb: SpacetimeDbLike, config: SetupConfig = {}) => {
     const middlewareHooks =
         config.middleware && config.middleware.length > 0 ? composeMiddleware(...config.middleware) : undefined,
@@ -657,7 +657,7 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       })
     registerExports(ctx.s.exports, result.exports)
   },
-  
+  /** Convenience wrapper around setup with shared field defaults. */
   setupCrud = (spacetimedb: SpacetimeDbLike, defaults: CrudDefaults = {}, config?: SetupConfig) => {
     const s = setup(spacetimedb, config),
       resolvedDefaults: Required<CrudDefaults> = {
@@ -1242,18 +1242,18 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
     }
   },
   ohmystackStdb = (
-    define: (helpers: {
-      cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
-      childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
-      fileTable: () => BsTable
-      orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
-      orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
-      ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
-      singletonTable: (fields: TblInput) => BsTable
-      t: SchemaHelpers['t']
-      table: TableFn
-    }) => Record<string, BsTable>
-  ) => {
+     define: (helpers: {
+       cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
+       childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
+       fileTable: () => BsTable
+       orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
+       orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
+       ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
+       singletonTable: (fields: TblInput) => BsTable
+       t: SchemaHelpers['t']
+       table: TableFn
+     }) => Record<string, BsTable>
+   ) => {
     const raw = makeSchema(),
       result = define(makeBsHelpers(raw) as never),
       rawTables: Record<string, unknown> = {},

@@ -10,12 +10,32 @@ import { elementOf, isArrayType, unwrapZod } from '../zod'
 import { indexFields } from './bridge'
 import { isRecord } from './helpers'
 
+/**
+ * Creates a Convex table definition from a base schema with an optional updatedAt field.
+ * @param s - Base-branded Zod schema
+ * @returns Convex table definition
+ */
 const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
     defineTable({ ...z2c(s.shape), updatedAt: v.optional(v.number()) }),
+  /**
+   * Creates a Convex table definition for user-owned data with userId index.
+   * @param s - Owned-branded Zod schema
+   * @returns Convex table definition with by_user index
+   */
   ownedTable = <T extends ZodRawShape>(s: OwnedSchema<T>) =>
     defineTable({ ...z2c(s.shape), updatedAt: v.number(), userId: v.id('users') }).index('by_user', indexFields('userId')),
+  /**
+   * Creates a Convex table definition for singleton per-user data with userId index.
+   * @param s - Singleton-branded Zod schema
+   * @returns Convex table definition with by_user index
+   */
   singletonTable = <T extends ZodRawShape>(s: SingletonSchema<T>) =>
     defineTable({ ...z2c(s.shape), updatedAt: v.number(), userId: v.id('users') }).index('by_user', indexFields('userId')),
+  /**
+   * Creates a Convex table definition for org-scoped data with orgId and orgId+userId indexes.
+   * @param s - Org-branded Zod schema
+   * @returns Convex table definition with by_org and by_org_user indexes
+   */
   orgTable = <T extends ZodRawShape>(s: OrgSchema<T>) =>
     defineTable({
       ...z2c(s.shape),
@@ -25,6 +45,12 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
     })
       .index('by_org', indexFields('orgId'))
       .index('by_org_user', indexFields('orgId', 'userId')),
+  /**
+   * Creates a Convex table definition for org-scoped child data with orgId and parent foreign key indexes.
+   * @param s - Org-branded Zod schema
+   * @param parent - Object with foreignKey and table name for the parent relationship
+   * @returns Convex table definition with by_org and by_parent indexes
+   */
   orgChildTable = <T extends ZodRawShape>(
     s: OrgSchema<T>,
     parent: {
@@ -40,11 +66,22 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
     })
       .index('by_org', indexFields('orgId'))
       .index('by_parent', indexFields(parent.foreignKey)),
+  /**
+   * Creates a Convex table definition for child data indexed by a foreign key.
+   * @param s - Zod schema for the child table
+   * @param indexField - Field name to index on
+   * @param indexName - Optional custom index name (defaults to `by_{indexField}`)
+   * @returns Convex table definition with the specified index
+   */
   childTable = <T extends ZodRawShape>(s: ZodObject<T>, indexField: string, indexName?: string) =>
     defineTable({
       ...z2c(s.shape),
       updatedAt: v.number()
     }).index(indexName ?? `by_${indexField}`, indexFields(indexField)),
+  /**
+   * Returns the full set of Convex table definitions for org infrastructure: org, orgInvite, orgJoinRequest, orgMember.
+   * @returns Object with org, orgInvite, orgJoinRequest, and orgMember table definitions
+   */
   orgTables = () => ({
     org: defineTable({
       avatarId: v.optional(v.id('_storage')),
@@ -83,6 +120,10 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
       .index('by_org_user', ['orgId', 'userId'])
       .index('by_user', ['userId'])
   }),
+  /**
+   * Returns a Convex table definition for the rate limiting table with a composite table+key index.
+   * @returns Object with a rateLimit table definition
+   */
   rateLimitTable = () => ({
     rateLimit: defineTable({
       count: v.number(),
@@ -91,6 +132,10 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
       windowStart: v.number()
     }).index('by_table_key', ['table', 'key'])
   }),
+  /**
+   * Returns Convex table definitions for chunked file upload infrastructure: uploadChunk, uploadRateLimit, uploadSession.
+   * @returns Object with uploadChunk, uploadRateLimit, and uploadSession table definitions
+   */
   uploadTables = () => ({
     uploadChunk: defineTable({
       chunkIndex: v.number(),
@@ -135,6 +180,10 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
       for (const [k, vl] of Object.entries((b.schema as unknown as { shape: Record<string, unknown> }).shape))
         scanSchema(vl, path ? `${path}.${k}` : k, out)
   },
+  /**
+   * Scans Zod schemas for unsupported types (pipe, transform) and exits with error if found.
+   * @param schemas - Map of table names to Zod schemas to validate
+   */
   checkSchema = (schemas: Record<string, ZodObject<ZodRawShape>>) => {
     const res: CheckSchemaOutput[] = []
     for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)

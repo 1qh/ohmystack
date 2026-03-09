@@ -7,18 +7,41 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { HEARTBEAT_INTERVAL_MS } from '../server/presence'
 
+/** Convex function references required by usePresence: heartbeat mutation, leave mutation, and list query. */
+interface PresenceRefs {
+  heartbeat: FunctionReference<'mutation'>
+  leave: FunctionReference<'mutation'>
+  list: FunctionReference<'query'>
+}
+/** A user's presence entry with their ID, last seen timestamp, and optional custom data. */
 interface PresenceUser {
   data: unknown
   lastSeen: number
   userId: string
 }
 
+/** Options for usePresence: optional custom data to broadcast and an enabled flag. */
+interface UsePresenceOptions {
+  data?: Record<string, unknown>
+  enabled?: boolean
+}
+
+/** Return value of usePresence: the list of present users, plus leave and updatePresence callbacks. */
 interface UsePresenceResult {
   leave: () => void
   updatePresence: (data: Record<string, unknown>) => void
   users: PresenceUser[]
 }
 
+/**
+ * Tracks user presence in a room with periodic heartbeats and automatic cleanup on unmount.
+ * @param refs Convex function references for heartbeat, leave, and list
+ * @param roomId The room identifier to track presence in
+ * @example
+ * ```tsx
+ * const { users, updatePresence } = usePresence(presenceRefs, chatId, { data: { cursor: { x, y } } })
+ * ```
+ */
 const usePresence = (refs: PresenceRefs, roomId: string, options?: UsePresenceOptions): UsePresenceResult => {
   const enabled = options?.enabled !== false,
     heartbeatMut = useMutation(refs.heartbeat),

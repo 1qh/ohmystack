@@ -41,3 +41,5 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
     )
   }
 
+/** Exports OrgAvatar, RoleBadge, and OfflineIndicator components. */
+export { OfflineIndicator, OrgAvatar, RoleBadge }

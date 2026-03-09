@@ -26,6 +26,10 @@ interface PendingMutation {
 
 let counter = 0
 
+/**
+ * Generates a temporary id used for optimistic mutation entries.
+ * @returns A unique optimistic temp id string.
+ */
 const makeTempId = () => {
     counter += 1
     return `__optimistic_${counter}_${Date.now()}`
@@ -51,7 +55,10 @@ const makeTempId = () => {
 
     return { creates, deleteIds, updates }
   },
-  
+  /**
+   * Creates an in-memory optimistic mutation store.
+   * @returns Store methods for tracking and overlaying pending mutations.
+   */
   createOptimisticStore = (): OptimisticStore => {
     const entries = new Map<string, PendingMutation>(),
       order: string[] = [],
@@ -152,9 +159,15 @@ const makeTempId = () => {
     }
   },
   OptimisticContext = createContext<null | OptimisticStore>(null),
-  
+  /**
+   * Reads the optimistic store from context.
+   * @returns The optimistic store when available, otherwise `null`.
+   */
   useOptimisticStore = (): null | OptimisticStore => use(OptimisticContext),
-  
+  /**
+   * Subscribes to pending optimistic mutations.
+   * @returns Current list of pending mutation entries.
+   */
   usePendingMutations = (): PendingMutation[] => {
     const store = useOptimisticStore(),
       emptyRef = useRef<PendingMutation[]>([])
@@ -164,7 +177,11 @@ const makeTempId = () => {
       store ? store.getSnapshot : () => emptyRef.current
     )
   },
-  
+  /**
+   * Provides an optimistic store instance to descendants.
+   * @param props Provider children.
+   * @returns Optimistic context provider element.
+   */
   OptimisticProvider = ({ children }: { children: React.ReactNode }) => {
     const store = useMemo(() => createOptimisticStore(), [])
     return createElement(OptimisticContext, { value: store }, children)

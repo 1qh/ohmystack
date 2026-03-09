@@ -134,4 +134,5 @@ const IMAGE_TYPES = new Set(['image/gif', 'image/jpeg', 'image/png', 'image/svg+
     return { GET: makeGet(opts), POST: makePost(opts) }
   }
 
+/** Creates a Next.js route handler for image processing with GET and POST methods. */
 export { makeImageRoute }

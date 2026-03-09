@@ -18,7 +18,11 @@ interface SoftDeleteOpts<A extends { id: string }> {
 type ToastFn = (message: string, opts?: { action?: { label: string; onClick: () => void }; duration?: number }) => void
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
-  
+  /**
+   * Wraps a delete mutation with undo toast behavior.
+   * @param options Soft-delete handlers, labels, and toast adapter.
+   * @returns A `remove` callback that deletes an item and offers undo.
+   */
   useSoftDelete = <A extends { id: string }>({
     label = 'Item',
     onError,

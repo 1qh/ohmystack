@@ -28,13 +28,14 @@ import { defaultOnError } from './use-mutate'
 
 type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
 
+/** Metadata describing how a form field should be rendered. */
 interface FieldMeta {
   description?: string
   kind: FieldKind
   max?: number
   title?: string
 }
-
+/** Lookup table of field metadata keyed by field name. */
 type FieldMetaMap = Record<string, FieldMeta>
 interface FormToastOption {
   error?: string
@@ -79,7 +80,10 @@ const resolveFormToast = ({
     for (const check of checks)
       if (check?._zod.def.check === 'max_length' && check._zod.def.maximum !== undefined) return check._zod.def.maximum
   },
-  
+  /** Infers form metadata for a single field schema.
+   * @param schema - Zod field schema
+   * @returns Derived field metadata
+   */
   readRegistryMeta = (schema: unknown): { description?: string; max?: number; title?: string } => {
     if (!schema || typeof schema !== 'object' || !('_zod' in schema)) return {}
     try {
@@ -97,7 +101,11 @@ const resolveFormToast = ({
       return {}
     }
   },
-  
+  /**
+   * Infers rendering metadata from a single schema field.
+   * @param schema Field schema or wrapped schema value.
+   * @returns UI metadata used by Betterspace form fields.
+   */
   getMeta = (schema: unknown): FieldMeta => {
     const { schema: base, type } = unwrapZod(schema),
       fileKind = cvFileKindOf(schema),
@@ -114,7 +122,10 @@ const resolveFormToast = ({
     if (isDateType(type)) return { kind: 'date', ...reg }
     return { kind: 'unknown', ...reg }
   },
-  
+  /** Builds metadata for every field in an object schema.
+   * @param schema - Form schema
+   * @returns Field metadata map keyed by schema field names
+   */
   buildMeta = <S extends ZodObject<ZodRawShape>>(schema: S): { [K in keyof S['shape']]: FieldMeta } => {
     const meta: FieldMetaMap = {},
       keys = Object.keys(schema.shape)
@@ -137,12 +148,14 @@ type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   unknown
 >
 
+/** Conflict payload returned by optimistic concurrency checks. */
 interface ConflictData<T = unknown> {
   code: 'CONFLICT'
   current?: T
   incoming?: T
 }
 
+/** Return shape produced by Betterspace `useForm`. */
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
   conflict: ConflictData<T> | null
   error: Error | null
@@ -169,7 +182,14 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       incoming: data?.incoming as T | undefined
     }
   },
-  
+  /** Creates a typed form instance with schema validation and conflict handling.
+   * @param options - Form configuration and submit handler
+   * @returns Form state, helpers, and TanStack form instance
+   * @example
+   * ```ts
+   * const form = useForm({ schema, onSubmit: data => save(data) })
+   * ```
+   */
   useForm = <S extends ZodObject<ZodRawShape>>({
     autoSave,
     onConflict,
@@ -280,7 +300,14 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       watch: <K extends keyof output<S>>(name: K) => watchedValues[name]
     } satisfies FormReturn<output<S>, S>
   },
-  
+  /** Creates `useForm` wiring for reducer-style mutation functions.
+   * @param options - Mutation and form configuration
+   * @returns Form API backed by `mutate`
+   * @example
+   * ```ts
+   * const form = useFormMutation({ schema, mutate: api.posts.create })
+   * ```
+   */
   useFormMutation = <S extends ZodObject<ZodRawShape>, M = output<S>>({
     autoSave,
     mutate,

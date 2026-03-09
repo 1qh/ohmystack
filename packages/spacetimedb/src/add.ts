@@ -89,28 +89,28 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
 
     return { appDir, fields, help, moduleDir, name, parent, type }
   },
-  printAddHelp = () => {
-    console.log(`${bold('ohmystack-stdb add')} — add a new table/reducer to your project\n`)
-    console.log(bold('Usage:'))
-    console.log('  ohmystack-stdb add <table-name> [options]\n')
-    console.log(bold('Options:'))
-    console.log(`  --type=TYPE           Table type: owned, org, singleton, cache, child ${dim('(default: owned)')}`)
-    console.log(
-      `  --fields=FIELDS       Field definitions ${dim('(e.g. "title:string,done:boolean,priority:enum(low,medium,high)")')}`
-    )
-    console.log(`  --parent=TABLE        Parent table name ${dim('(required for child type)')}`)
-    console.log(`  --module-dir=DIR      SpacetimeDB module directory ${dim('(default: module)')}`)
-    console.log(`  --app-dir=DIR         App directory ${dim('(default: src/app)')}`)
-    console.log('  --help, -h            Show this help\n')
-    console.log(bold('Examples:'))
-    console.log(`  ${dim('$')} ohmystack-stdb add todo --fields="title:string,done:boolean"`)
-    console.log(
-      `  ${dim('$')} ohmystack-stdb add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"`
-    )
-    console.log(`  ${dim('$')} ohmystack-stdb add message --type=child --parent=chat --fields="text:string"`)
-    console.log(`  ${dim('$')} ohmystack-stdb add profile --type=singleton --fields="displayName:string,bio:string?"`)
-    console.log(`  ${dim('$')} ohmystack-stdb add movie --type=cache --fields="title:string,externalId:string"\n`)
-  },
+   printAddHelp = () => {
+     console.log(`${bold('ohmystack-stdb add')} — add a new table/reducer to your project\n`)
+     console.log(bold('Usage:'))
+     console.log('  ohmystack-stdb add <table-name> [options]\n')
+     console.log(bold('Options:'))
+     console.log(`  --type=TYPE           Table type: owned, org, singleton, cache, child ${dim('(default: owned)')}`)
+     console.log(
+       `  --fields=FIELDS       Field definitions ${dim('(e.g. "title:string,done:boolean,priority:enum(low,medium,high)")')}`
+     )
+     console.log(`  --parent=TABLE        Parent table name ${dim('(required for child type)')}`)
+     console.log(`  --module-dir=DIR      SpacetimeDB module directory ${dim('(default: module)')}`)
+     console.log(`  --app-dir=DIR         App directory ${dim('(default: src/app)')}`)
+     console.log('  --help, -h            Show this help\n')
+     console.log(bold('Examples:'))
+     console.log(`  ${dim('$')} ohmystack-stdb add todo --fields="title:string,done:boolean"`)
+     console.log(
+       `  ${dim('$')} ohmystack-stdb add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"`
+     )
+     console.log(`  ${dim('$')} ohmystack-stdb add message --type=child --parent=chat --fields="text:string"`)
+     console.log(`  ${dim('$')} ohmystack-stdb add profile --type=singleton --fields="displayName:string,bio:string?"`)
+     console.log(`  ${dim('$')} ohmystack-stdb add movie --type=cache --fields="title:string,externalId:string"\n`)
+   },
   fieldToTypeExpr = (f: ParsedField): string => {
     if (typeof f.type === 'object') return 't.string()'
     if (f.type === 'boolean') return 't.bool()'
@@ -196,7 +196,7 @@ import { make${
             : type === 'singleton'
               ? 'Crud'
               : 'Crud'
-    } } from '@ohmystack/spacetimedb/server'
+     } } from '@ohmystack/spacetimedb/server'
 
 const model = make${
       type === 'cache'
@@ -308,7 +308,7 @@ export default ${component}Page
   promptInteractive = async (): Promise<AddFlags> => {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
     try {
-      console.log(`\n${bold('ohmystack-stdb add')} ${dim('— interactive mode')}\n`)
+       console.log(`\n${bold('ohmystack-stdb add')} ${dim('— interactive mode')}\n`)
       const name = (await rl.question(`${bold('Table name:')} `)).trim()
       if (!name) {
         console.log(`${red('Error:')} table name is required.`)

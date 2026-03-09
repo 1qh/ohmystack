@@ -55,6 +55,11 @@ const TOKEN_BYTES = 24,
       })
     }
   },
+  /**
+   * Checks if a value is a non-null object (plain record).
+   * @param v - The value to check
+   * @returns Whether the value is a Record<string, unknown>
+   */
   isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object',
   isComparisonOp = (val: unknown): val is ComparisonOp<unknown> =>
     typeof val === 'object' &&
@@ -69,6 +74,12 @@ const TOKEN_BYTES = 24,
     numItems: number()
   } satisfies PaginationOptsShape),
   detectFiles = <S extends ZodRawShape>(s: S) => (Object.keys(s) as (keyof S & string)[]).filter(k => cvFileKindOf(s[k])),
+  /**
+   * Throws a ConvexError with the given error code and optional message or debug context.
+   * @param code - The error code to throw
+   * @param opts - Optional message string or object with message property
+   * @returns Never — always throws
+   */
   err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never => {
     if (!opts) throw new ConvexError({ code })
     if (typeof opts !== 'string') throw new ConvexError({ code, ...opts })
@@ -78,6 +89,10 @@ const TOKEN_BYTES = 24,
       : new ConvexError({ code, debug: opts })
   },
   noFetcher = (): never => err('NO_FETCHER'),
+  /**
+   * Returns an object with the current timestamp as `updatedAt`.
+   * @returns Object containing updatedAt set to Date.now()
+   */
   time = () => ({ updatedAt: Date.now() }),
   getUser = async ({
     ctx,
@@ -235,6 +250,12 @@ const TOKEN_BYTES = 24,
   dbInsert = async (db: DbLike, table: string, data: Record<string, unknown>) => db.insert(table, data),
   dbPatch = async (db: DbLike, id: string, data: Record<string, unknown>) => db.patch(id, data),
   dbDelete = async (db: DbLike, id: string) => db.delete(id),
+  /**
+   * Enforces a sliding-window rate limit by tracking request counts in a `rateLimit` table.
+   * @param db - Database handle
+   * @param opts - Rate limit configuration with key, table, and config (max, window)
+   * @returns Resolves when under limit, throws RATE_LIMITED if exceeded
+   */
   checkRateLimit = async (db: DbLike, opts: { config: RateLimitConfig; key: string; table: string }) => {
     const { config, key, table } = opts,
       now = Date.now(),
@@ -270,15 +291,44 @@ const TOKEN_BYTES = 24,
     await db.patch(existing._id as string, { count: (existing.count as number) + 1 })
   }
 
+/** Structured error data extracted from a ConvexError, containing the error code and optional context. */
+interface ConvexErrorData {
+  code: ErrorCode
+  debug?: string
+  fieldErrors?: Record<string, string>
+  fields?: string[]
+  limit?: { max: number; remaining: number; window: number }
+  message?: string
+  op?: string
+  retryAfter?: number
+  table?: string
+}
+
+/** Map of error codes to handler functions, with an optional `default` catch-all. */
 type ErrorHandler = Partial<Record<ErrorCode, (data: ConvexErrorData) => void>> & {
   default?: (error: unknown) => void
 }
 
+/** Represents a failed mutation result containing error data. */
+interface MutationFail {
+  error: ConvexErrorData
+  ok: false
+}
+
+/** Represents a successful mutation result containing the return value. */
 interface MutationOk<T> {
   ok: true
   value: T
 }
 
+/** Discriminated union of success or failure for mutation return values. */
+type MutationResult<T> = MutationFail | MutationOk<T>
+
+/**
+ * Extracts structured error data from a ConvexError, returning undefined for non-Convex errors.
+ * @param e - The error to extract data from
+ * @returns Parsed ConvexErrorData or undefined
+ */
 const extractErrorData = (e: unknown): ConvexErrorData | undefined => {
     if (!(e instanceof ConvexError)) return
     const { data } = e as { data?: unknown }
@@ -297,13 +347,28 @@ const extractErrorData = (e: unknown): ConvexErrorData | undefined => {
       table: typeof data.table === 'string' ? data.table : undefined
     }
   },
+  /**
+   * Returns the ErrorCode from a ConvexError, or undefined if not a recognized error.
+   * @param e - The error to inspect
+   * @returns The error code or undefined
+   */
   getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?.code,
+  /**
+   * Returns a human-readable error message, falling back to the default message for the error code.
+   * @param e - The error to get a message from
+   * @returns A human-readable error message string
+   */
   getErrorMessage = (e: unknown): string => {
     const d = extractErrorData(e)
     if (d) return d.message ?? ERROR_MESSAGES[d.code]
     if (e instanceof Error) return e.message
     return 'Unknown error'
   },
+  /**
+   * Returns a detailed error string including table and operation context when available.
+   * @param e - The error to describe
+   * @returns Detailed error description with optional table/op context
+   */
   getErrorDetail = (e: unknown): string => {
     const d = extractErrorData(e)
     if (!d) return e instanceof Error ? e.message : 'Unknown error'
@@ -312,6 +377,11 @@ const extractErrorData = (e: unknown): ConvexErrorData | undefined => {
     if (d.retryAfter !== undefined) detail += ` (retry after ${d.retryAfter}ms)`
     return detail
   },
+  /**
+   * Dispatches a ConvexError to the matching handler by error code, or calls the `default` handler.
+   * @param e - The error to handle
+   * @param handlers - Map of error codes to handler callbacks
+   */
   handleConvexError = (e: unknown, handlers: ErrorHandler): void => {
     const d = extractErrorData(e)
     if (d) {
@@ -323,16 +393,56 @@ const extractErrorData = (e: unknown): ConvexErrorData | undefined => {
     }
     handlers.default?.(e)
   },
+  /**
+   * Wraps a value in a successful MutationResult.
+   * @param value - The success value to wrap
+   * @returns A MutationResult with ok=true
+   * @example
+   * const result = ok({ id: '123' })
+   * // result.ok === true, result.value === { id: '123' }
+   */
   ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
+  /**
+   * Creates a failed MutationResult with the given error code and optional detail.
+   * @param code - The error code
+   * @param detail - Optional additional error context
+   * @returns A MutationResult with ok=false
+   * @example
+   * const result = fail('NOT_FOUND')
+   * // result.ok === false, result.error.code === 'NOT_FOUND'
+   */
   fail = (code: ErrorCode, detail?: Omit<ConvexErrorData, 'code'>): MutationResult<never> => ({
     error: { code, message: ERROR_MESSAGES[code], ...detail },
     ok: false
   }),
+  /**
+   * Returns true if the error is a ConvexError with a recognized error code.
+   * @param e - The error to check
+   * @returns Whether the error is a known mutation error
+   */
   isMutationError = (e: unknown): e is ConvexErrorData => extractErrorData(e) !== undefined,
+  /**
+   * Returns true if the error matches the specified error code.
+   * @param e - The error to check
+   * @param code - The error code to match against
+   * @returns Whether the error has the given code
+   */
   isErrorCode = (e: unknown, code: ErrorCode): boolean => {
     const d = extractErrorData(e)
     return d?.code === code
   },
+  /**
+   * Pattern-matches a ConvexError against a map of error code handlers, returning the handler's result.
+   * @param e - The error to match
+   * @param handlers - Map of ErrorCode to handler; use `_` key as fallback
+   * @returns The matched handler's return value, or undefined if no match
+   * @example
+   * const msg = matchError(error, {
+   *   NOT_FOUND: () => 'Item not found',
+   *   FORBIDDEN: (d) => `Access denied: ${d.table}`,
+   *   _: () => 'Unknown error'
+   * })
+   */
   matchError = <R>(
     e: unknown,
     handlers: Partial<Record<ErrorCode, (data: ConvexErrorData) => R>> & { _?: (error: unknown) => R }

@@ -40,6 +40,11 @@ import {
 } from './helpers'
 
 const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
+  /**
+   * Determines a user's role in an org based on ownership and membership.
+   * @param args - Object with org doc, member doc, and userId
+   * @returns The user's OrgRole or null if not a member
+   */
   getOrgRole = ({
     member,
     org,
@@ -53,6 +58,11 @@ const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
     if (!member) return null
     return (member as { isAdmin?: boolean }).isAdmin ? 'admin' : 'member'
   },
+  /**
+   * Fetches the orgMember document for a user in a specific org.
+   * @param args - Object with db, orgId, and userId
+   * @returns The member document or null
+   */
   getOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) =>
     (db as DbReadLike)
       .query('orgMember')
@@ -61,6 +71,11 @@ const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
         idx(q => q.eq('orgId', orgId).eq('userId', userId))
       )
       .unique() as Promise<null | Record<string, unknown>>,
+  /**
+   * Validates that a user is a member of the org, returning their role and member doc.
+   * @param args - Object with db, orgId, and userId
+   * @returns Object with member doc, org doc, and role; throws if not a member
+   */
   requireOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) => {
     const dbl = db as DbReadLike,
       org = await dbl.get(orgId)
@@ -78,11 +93,21 @@ interface RequireOrgRoleArgs {
   userId: string
 }
 
+/**
+ * Validates that a user has at least the specified minimum role in the org.
+ * @param args - Object with db, minRole, orgId, and userId
+ * @returns Object with member doc, org doc, and role; throws if insufficient role
+ */
 const requireOrgRole = async ({ db, minRole, orgId, userId }: RequireOrgRoleArgs) => {
     const result = await requireOrgMember({ db, orgId, userId })
     if (ROLE_LEVEL[result.role] < ROLE_LEVEL[minRole]) return err('INSUFFICIENT_ORG_ROLE')
     return result
   },
+  /**
+   * Checks whether a user can edit a document based on their org role, ownership, and optional ACL editors list.
+   * @param args - Object with acl flag, doc, role, and userId
+   * @returns Whether the user has edit permission
+   */
   canEdit = ({ acl, doc, role, userId }: CanEditOpts): boolean => {
     if (role === 'owner' || role === 'admin') return true
     if (doc.userId === userId) return true
@@ -419,6 +444,12 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
       })
     return { ...base, addEditor, editors, removeEditor, setEditors } as unknown as OrgCrudResult<S>
   },
+  /**
+   * Creates a cascade configuration for org-scoped child tables, used with orgCrud's cascade option.
+   * @param _schema - The child table's Zod schema (used for type inference only)
+   * @param config - Object with foreignKey and table name
+   * @returns CascadeOption config object
+   */
   orgCascade = <S extends ZodRawShape>(
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }

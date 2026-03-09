@@ -98,8 +98,8 @@ const collectSettled = <R>(settled: PromiseSettledResult<R>[]): { errors: unknow
               errorHandler(errors[0])
               if (errors.length > 1) {
                 // eslint-disable-next-line no-console
-                console.error(`[@ohmystack/spacetimedb] Bulk operation: ${errors.length} of ${items.length} items failed`)
-                for (let i = 1; i < errors.length; i += 1) console.error(`[@ohmystack/spacetimedb] Bulk error ${i + 1}:`, errors[i]) // eslint-disable-line no-console
+                 console.error(`[@ohmystack/spacetimedb] Bulk operation: ${errors.length} of ${items.length} items failed`)
+                 for (let i = 1; i < errors.length; i += 1) console.error(`[@ohmystack/spacetimedb] Bulk error ${i + 1}:`, errors[i]) // eslint-disable-line no-console
               }
             }
             if (results.length > 0) {

@@ -39,7 +39,8 @@ const asRecord = (value: unknown): null | Record<string, unknown> => {
     return 'Unknown error'
   }
 
-class OhmystackStdbErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+/** React error boundary that catches render errors and shows a fallback UI. */
+class BetterspaceErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { error: null }
@@ -83,4 +84,4 @@ class OhmystackStdbErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
   }
 }
 
-export default OhmystackStdbErrorBoundary
+export default BetterspaceErrorBoundary

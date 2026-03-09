@@ -50,7 +50,13 @@ const TOKEN_BYTES = 24,
     for (const b of bytes) token += b.toString(TOKEN_RADIX).padStart(2, '0').slice(0, 2)
     return token.slice(0, TOKEN_LENGTH)
   },
-  
+  /**
+   * Writes a structured JSON log entry to the console.
+   * @param level Log level name.
+   * @param msg Log message identifier.
+   * @param data Optional structured metadata.
+   * @returns Nothing.
+   */
   log = (level: 'debug' | 'error' | 'info' | 'warn', msg: string, data?: Record<string, unknown>) => {
     // eslint-disable-next-line no-console
     console[level](JSON.stringify({ level, msg, ts: Date.now(), ...data }))
@@ -77,7 +83,7 @@ const TOKEN_BYTES = 24,
       })
     }
   },
-  
+  /** Type guard that checks if a value is a non-null object. */
   isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object',
   isComparisonOp = (val: unknown): val is ComparisonOp<unknown> =>
     typeof val === 'object' &&
@@ -95,7 +101,7 @@ const TOKEN_BYTES = 24,
     return out
   },
   serializeError = (data: ErrorData) => `${data.code}:${JSON.stringify(data)}`,
-  
+  /** Throws a SenderError with a typed error code and optional debug context. */
   err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never => {
     if (!opts) throw new SenderError(serializeError({ code }))
     if (typeof opts !== 'string') throw new SenderError(serializeError({ code, ...opts }))
@@ -104,15 +110,31 @@ const TOKEN_BYTES = 24,
     throw new SenderError(serializeError(data))
   },
   noFetcher = (): never => err('NO_FETCHER'),
-  
+  /** Returns an object with updatedAt set to Date.now(). */
   time = (timestamp?: number) => ({ updatedAt: timestamp ?? Date.now() }),
-  
+  /**
+   * Converts a Spacetime identity into its hex string form.
+   * @param identity Identity value from SpacetimeDB.
+   * @returns Hex string identity.
+   */
   identityToHex = (identity: Identity): string => identity.toHexString(),
-  
+  /**
+   * Parses a hex identity string into a Spacetime identity object.
+   * @param hex Hex string identity.
+   * @returns Parsed Spacetime identity.
+   */
   identityFromHex = (hex: string): Identity => Identity.fromString(hex),
-  
+  /**
+   * Converts numeric ids to wire-safe string values.
+   * @param id Numeric id.
+   * @returns String id for transport.
+   */
   idToWire = String as unknown as (id: number) => string,
-  
+  /**
+   * Parses a wire id string into a number.
+   * @param str Wire id string.
+   * @returns Parsed numeric id.
+   */
   idFromWire = (str: string): number => {
     if (!str.trim()) err('VALIDATION_FAILED', { message: 'Wire id must not be empty' })
     const id = Number(str)
@@ -310,7 +332,7 @@ const TOKEN_BYTES = 24,
     for (const k of keys) if (k in data) result[k] = data[k]
     return result
   },
-  
+  /** Throws a SenderError with VALIDATION_FAILED code and per-field errors. */
   errValidation = (
     code: ErrorCode,
     zodError: { flatten: () => { fieldErrors: Record<string, string[] | undefined> } }
@@ -391,7 +413,7 @@ const TOKEN_BYTES = 24,
   dbDelete = async (db: DbLike, id: string) => {
     await db.delete(id)
   },
-  
+  /** Enforces a per-caller rate limit, throwing RATE_LIMITED on excess. */
   checkRateLimit = async (
     db: DbLike,
     opts: { config: RateLimitConfig; key: string; table: string; timestamp?: number }
@@ -434,6 +456,7 @@ const TOKEN_BYTES = 24,
     await db.patch(existing._id as string, { count: (existing.count as number) + 1 })
   }
 
+/** Structured Betterspace error payload extracted from reducer failures. */
 interface ErrorData {
   code: ErrorCode
   debug?: string
@@ -446,24 +469,34 @@ interface ErrorData {
   table?: string
 }
 
+/** Error handler map keyed by Betterspace error codes. */
 type ErrorHandler = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
   default?: (error: unknown) => void
 }
 
+/** Failed mutation result wrapper. */
 interface MutationFail {
   error: ErrorData
   ok: false
 }
 
+/** Successful mutation result wrapper. */
 interface MutationOk<T> {
   ok: true
   value: T
 }
 
+/** Discriminated union representing mutation success or failure. */
 type MutationResult<T> = MutationFail | MutationOk<T>
 
+/** Typed field errors narrowed to specific schema keys. */
 type TypedFieldErrors<S extends ZodObject<ZodRawShape>> = Partial<Record<keyof ZodOutput<S> & string, string>>
 
+/**
+ * Parses serialized reducer error text into Betterspace error data.
+ * @param message Error message text from thrown reducer errors.
+ * @returns Parsed Betterspace error payload when recognized.
+ */
 const parseSenderMessage = (message: string): ErrorData | undefined => {
     const sep = message.indexOf(':')
     if (sep <= 0) return
@@ -491,7 +524,11 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
 
     return { ...data, message: rest }
   },
-  
+  /**
+   * Extracts typed Betterspace error metadata from unknown error values.
+   * @param e Unknown error input.
+   * @returns Parsed Betterspace error payload when available.
+   */
   extractErrorData = (e: unknown): ErrorData | undefined => {
     if (isRecord(e)) {
       const { data } = e as { data?: unknown }
@@ -513,16 +550,24 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
     }
     if (e instanceof Error) return parseSenderMessage(e.message)
   },
-  
+  /**
+   * Returns an error code when the input is a Betterspace error payload.
+   * @param e Unknown error input.
+   * @returns Betterspace error code when present.
+   */
   getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?.code,
-  
+  /**
+   * Returns a user-friendly error message for unknown error input.
+   * @param e Unknown error input.
+   * @returns User-facing error message.
+   */
   getErrorMessage = (e: unknown): string => {
     const d = extractErrorData(e)
     if (d) return d.message ?? ERROR_MESSAGES[d.code]
     if (e instanceof Error) return e.message
     return 'Unknown error'
   },
-  
+  /** Extracts the debug detail string from a SenderError. */
   getErrorDetail = (e: unknown): string => {
     const d = extractErrorData(e)
     if (!d) return e instanceof Error ? e.message : 'Unknown error'
@@ -531,7 +576,12 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
     if (d.retryAfter !== undefined) detail += ` (retry after ${d.retryAfter}ms)`
     return detail
   },
-  
+  /**
+   * Dispatches an error to code-specific handlers with default fallback.
+   * @param e Unknown error input.
+   * @param handlers Error handlers keyed by Betterspace code.
+   * @returns Nothing.
+   */
   handleError = (e: unknown, handlers: ErrorHandler): void => {
     const d = extractErrorData(e)
     if (d) {
@@ -543,21 +593,21 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
     }
     handlers.default?.(e)
   },
-  
+  /** Wraps a value in a successful MutationResult. */
   ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
-  
+  /** Wraps an error in a failed MutationResult. */
   fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> => ({
     error: { code, message: ERROR_MESSAGES[code], ...detail },
     ok: false
   }),
-  
+  /** Type guard that checks if an error is a SenderError from a mutation. */
   isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined,
-  
+  /** Type guard that checks if a string is a valid ErrorCode. */
   isErrorCode = (e: unknown, code: ErrorCode): boolean => {
     const d = extractErrorData(e)
     return d?.code === code
   },
-  
+  /** Matches an error against a record of error code handlers. */
   matchError = <R>(
     e: unknown,
     handlers: Partial<Record<ErrorCode, (data: ErrorData) => R>> & { _?: (error: unknown) => R }
@@ -569,12 +619,20 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
     }
     return handlers._?.(e)
   },
-  
+  /** Extracts typed field-level validation errors from an error, narrowed to schema keys. */
   getFieldErrors = <S extends ZodObject<ZodRawShape>>(e: unknown): TypedFieldErrors<S> | undefined => {
     const d = extractErrorData(e)
     return d?.fieldErrors as TypedFieldErrors<S> | undefined
   },
-  
+  /** Returns the first field error message from a Betterspace error, or `undefined` if none.
+   * @param e Unknown error value.
+   * @returns First field error string, or `undefined`.
+   * @example
+   * ```ts
+   * const msg = getFirstFieldError(error)
+   * if (msg) toast.error(msg)
+   * ```
+   */
   getFirstFieldError = (e?: unknown): string | undefined => {
     const d = extractErrorData(e)
     if (!d?.fieldErrors) return
@@ -584,7 +642,11 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
       if (v) return v
     }
   },
-  
+  /**
+   * Creates a query helper that checks uniqueness for a given field value.
+   * @param options Table, field, optional index, and query builder wrapper.
+   * @returns A typed query procedure that reports whether the value is unique.
+   */
   makeUnique = ({ field, index, pq, table }: { field: string; index?: string; pq: Qb; table: string }) =>
     typed(
       pq({

@@ -10,6 +10,11 @@ interface OptimisticOptions<A, R = void> {
   onSuccess?: (result: R, args: A) => void
 }
 
+/**
+ * Executes a mutation with optimistic callbacks and rollback support.
+ * @param options Mutation function and optimistic lifecycle callbacks.
+ * @returns Pending state, latest error, and an `execute` callback.
+ */
 const useOptimisticMutation = <A, R = void>({
   mutate,
   onOptimistic,

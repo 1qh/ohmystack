@@ -46,7 +46,7 @@ interface TestUser {
 }
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
-  DEFAULT_MODULE_NAME = '@ohmystack/spacetimedb',
+   DEFAULT_MODULE_NAME = '@ohmystack/spacetimedb',
   DEFAULT_WS_URL = 'ws://localhost:3000',
   CONNECT_TIMEOUT_MS = 10_000,
   IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/u,

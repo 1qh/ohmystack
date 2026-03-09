@@ -8,9 +8,212 @@ import type { DevCacheEntry, DevError, DevMutation, DevSubscription } from './de
 
 import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
 
+/** Props for customizing the LazyConvex DevTools panel. */
+interface DevtoolsProps {
+  /** Additional CSS class for the floating trigger button. */
   buttonClassName?: string
+  /** Additional CSS class for both the button and panel wrapper. */
+  className?: string
+  /** Open the panel by default. @default false */
   defaultOpen?: boolean
+  /** Tab to show when panel is first opened. @default 'errors' */
+  defaultTab?: TabId
+  /** Additional CSS class for the expanded panel. */
   panelClassName?: string
+  /** Corner position of the floating button and panel. @default 'bottom-right' */
+  position?: Position
+}
+type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+
+type TabId = 'cache' | 'errors' | 'mutations' | 'subs'
+
+const POSITION_CLASSES: Record<Position, string> = {
+    'bottom-left': 'left-4 bottom-4',
+    'bottom-right': 'right-4 bottom-4',
+    'top-left': 'left-4 top-4',
+    'top-right': 'right-4 top-4'
+  },
+  formatTime = (ts: number) => {
+    const d = new Date(ts),
+      h = String(d.getHours()).padStart(2, '0'),
+      mn = String(d.getMinutes()).padStart(2, '0'),
+      s = String(d.getSeconds()).padStart(2, '0')
+    return `${h}:${mn}:${s}`
+  },
+  MAX_BADGE = 99,
+  WATERFALL_MAX_MS = 10_000,
+  isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() - sub.lastUpdate > STALE_THRESHOLD_MS,
+  isSlow = (sub: DevSubscription) => sub.latencyMs > SLOW_THRESHOLD_MS,
+  ErrorRow = ({ error }: { error: DevError }) => {
+    const [expanded, setExpanded] = useState(false),
+      code = error.data?.code,
+      table = error.data?.table,
+      op = error.data?.op
+    return (
+      <li className='border-b border-red-900/30 last:border-b-0'>
+        <button
+          className='flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-red-950/30'
+          onClick={() => setExpanded(v => !v)}
+          type='button'>
+          <span className='shrink-0 pt-px font-mono text-red-400/60'>{formatTime(error.timestamp)}</span>
+          {code ? <span className='shrink-0 rounded-sm bg-red-900/50 px-1 font-mono text-red-300'>{code}</span> : null}
+          <span className='min-w-0 flex-1 truncate text-red-200'>{error.message}</span>
+          <span className='shrink-0 text-red-400/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
+        </button>
+        {expanded ? (
+          <div className='space-y-1 bg-red-950/20 px-3 py-2 text-xs'>
+            {table || op ? (
+              <p className='font-mono text-red-400/80'>
+                {table ? `table: ${table}` : ''}
+                {table && op ? ' \u00B7 ' : ''}
+                {op ? `op: ${op}` : ''}
+              </p>
+            ) : null}
+            <p className='break-all whitespace-pre-wrap text-red-300/90'>{error.detail}</p>
+          </div>
+        ) : null}
+      </li>
+    )
+  },
+  SubRow = ({ sub }: { sub: DevSubscription }) => {
+    const [expanded, setExpanded] = useState(false),
+      stale = isStale(sub),
+      slow = isSlow(sub),
+      statusColor =
+        sub.status === 'loaded'
+          ? stale
+            ? 'text-yellow-400'
+            : 'text-emerald-400'
+          : sub.status === 'error'
+            ? 'text-red-400'
+            : 'text-blue-400',
+      statusLabel = stale ? 'stale' : sub.status,
+      latencyLabel = sub.latencyMs > 0 ? `${sub.latencyMs}ms` : ''
+    return (
+      <li className='border-b border-zinc-800 last:border-b-0'>
+        <button
+          className='flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-zinc-800/50'
+          onClick={() => setExpanded(v => !v)}
+          type='button'>
+          <span
+            className={`size-1.5 shrink-0 rounded-full ${sub.status === 'loaded' ? (stale ? 'bg-yellow-400' : 'bg-emerald-400') : sub.status === 'error' ? 'bg-red-400' : 'bg-blue-400'}`}
+          />
+          <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{sub.query}</span>
+          {latencyLabel ? (
+            <span className={`shrink-0 font-mono tabular-nums ${slow ? 'text-orange-400' : 'text-zinc-500'}`}>
+              {latencyLabel}
+            </span>
+          ) : null}
+          <span className={`shrink-0 font-mono ${statusColor}`}>{statusLabel}</span>
+          <span className='shrink-0 text-zinc-500 tabular-nums'>{sub.updateCount}x</span>
+          {sub.renderCount > 0 ? (
+            <span className='shrink-0 font-mono text-zinc-600' title='Render count'>
+              R{sub.renderCount}
+            </span>
+          ) : null}
+          {sub.resultCount > 0 ? (
+            <span className='shrink-0 font-mono text-zinc-600' title='Result count'>
+              {sub.resultCount} items
+            </span>
+          ) : null}
+          <span className='shrink-0 text-zinc-500/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
+        </button>
+        {expanded ? (
+          <div className='space-y-1 bg-zinc-900/50 px-3 py-2 text-xs'>
+            <p className='font-mono text-zinc-500'>args: {sub.args}</p>
+            {sub.dataPreview ? (
+              <p className='max-h-32 overflow-y-auto font-mono break-all whitespace-pre-wrap text-zinc-400'>
+                {sub.dataPreview}...
+              </p>
+            ) : (
+              <p className='font-mono text-zinc-600'>No data yet</p>
+            )}
+          </div>
+        ) : null}
+      </li>
+    )
+  },
+  MutationRow = ({ mutation }: { mutation: DevMutation }) => {
+    const statusColor =
+        mutation.status === 'success'
+          ? 'text-emerald-400'
+          : mutation.status === 'error'
+            ? 'text-red-400'
+            : 'text-blue-400',
+      durationLabel = mutation.durationMs > 0 ? `${mutation.durationMs}ms` : 'pending'
+    return (
+      <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
+        <span
+          className={`size-1.5 shrink-0 rounded-full ${mutation.status === 'success' ? 'bg-emerald-400' : mutation.status === 'error' ? 'bg-red-400' : 'animate-pulse bg-blue-400'}`}
+        />
+        <span className='shrink-0 pt-px font-mono text-zinc-500'>{formatTime(mutation.startedAt)}</span>
+        <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{mutation.name}</span>
+        <span className={`shrink-0 font-mono tabular-nums ${statusColor}`}>{durationLabel}</span>
+      </li>
+    )
+  },
+  CacheRow = ({ entry }: { entry: DevCacheEntry }) => {
+    const total = entry.hitCount + entry.missCount,
+      hitRate = total > 0 ? Math.round((entry.hitCount / total) * 100) : 0
+    return (
+      <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
+        <span className={`size-1.5 shrink-0 rounded-full ${entry.stale ? 'bg-yellow-400' : 'bg-emerald-400'}`} />
+        <span className='shrink-0 font-mono text-zinc-500'>{entry.table}</span>
+        <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{entry.key}</span>
+        <span
+          className={`shrink-0 font-mono tabular-nums ${hitRate > 80 ? 'text-emerald-400' : hitRate > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+          {hitRate}%
+        </span>
+        <span className='shrink-0 text-zinc-500 tabular-nums'>
+          {entry.hitCount}h/{entry.missCount}m
+        </span>
+        {entry.stale ? <span className='shrink-0 font-mono text-yellow-400'>stale</span> : null}
+      </li>
+    )
+  },
+  WaterfallBar = ({ minStart, sub }: { minStart: number; sub: DevSubscription }) => {
+    const [now, setNow] = useState(() => Date.now())
+    useEffect(() => {
+      if (sub.latencyMs > 0 || now - sub.startedAt >= WATERFALL_MAX_MS) return
+      const id = setInterval(() => setNow(Date.now()), 500)
+      return () => clearInterval(id)
+    }, [sub.latencyMs, sub.startedAt, now])
+    const offset = sub.startedAt - minStart,
+      duration = sub.latencyMs || now - sub.startedAt,
+      leftPct = Math.min((offset / WATERFALL_MAX_MS) * 100, 100),
+      widthPct = Math.max(Math.min((duration / WATERFALL_MAX_MS) * 100, 100 - leftPct), 1),
+      barColor =
+        sub.status === 'loaded'
+          ? isSlow(sub)
+            ? 'bg-orange-500'
+            : 'bg-emerald-500'
+          : sub.status === 'error'
+            ? 'bg-red-500'
+            : 'bg-blue-500'
+    return (
+      <li className='flex items-center gap-2 border-b border-zinc-800 px-2 py-1.5 text-xs last:border-b-0'>
+        <span className='w-28 shrink-0 truncate font-mono text-zinc-400'>{sub.query}</span>
+        <span className='relative h-3 min-w-0 flex-1 rounded-sm bg-zinc-800/50'>
+          <span
+            className={`absolute top-0 h-full rounded-sm ${barColor}`}
+            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+          />
+        </span>
+        <span className='w-12 shrink-0 text-right font-mono text-zinc-500 tabular-nums'>
+          {sub.latencyMs > 0 ? `${sub.latencyMs}ms` : '...'}
+        </span>
+      </li>
+    )
+  },
+  TabBtn = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
+    <button
+      className={`rounded-sm px-2 py-0.5 text-xs ${active ? 'bg-zinc-800 text-zinc-200' : 'text-zinc-400 hover:text-zinc-200'}`}
+      onClick={onClick}
+      type='button'>
+      {label}
+    </button>
+  ),
+  /** Development-only floating panel that displays errors, subscriptions, mutations, and cache stats. */
   LazyConvexDevtools = ({
     buttonClassName,
     className,
@@ -179,7 +382,7 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     if (autoMounted) return
     autoMounted = true
     const el = document.createElement('div')
-    el.id = 'ohmystack-convex-devtools-portal'
+     el.id = 'ohmystack-convex-devtools-portal'
     document.body.append(el)
     containerRef.current = el
     setMounted(true)

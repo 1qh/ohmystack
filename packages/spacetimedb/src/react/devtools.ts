@@ -112,7 +112,7 @@ const listeners: (() => void)[] = [],
     }
     if (changed) notify()
   },
-  
+  /** Records a reducer error in the devtools store. */
   pushError = (e: unknown) => {
     const data = extractErrorData(e),
       entry: DevError = {
@@ -127,7 +127,7 @@ const listeners: (() => void)[] = [],
     if (errorStore.length > MAX_ERRORS) errorStore.length = MAX_ERRORS
     notify()
   },
-  
+  /** Clears all tracked errors from the devtools store. */
   clearErrors = () => {
     errorStore.length = 0
     notify()
@@ -222,12 +222,12 @@ const listeners: (() => void)[] = [],
     if (opts.stale !== undefined) entry.stale = opts.stale
     notify()
   },
-  
+  /** Clears all tracked mutations from the devtools store. */
   clearMutations = () => {
     mutationStore.length = 0
     notify()
   },
-  
+  /** Injects a synthetic error into the devtools error panel for testing. */
   injectError = (code: ErrorCode, opts?: { detail?: string; message?: string; op?: string; table?: string }) => {
     const data: ErrorData = { code, ...opts },
       entry: DevError = {
@@ -242,7 +242,7 @@ const listeners: (() => void)[] = [],
     if (errorStore.length > MAX_ERRORS) errorStore.length = MAX_ERRORS
     notify()
   },
-  
+  /** Subscribes to the devtools error store for rendering error UI. */
   useDevErrors = () => {
     // eslint-disable-next-line react/hook-use-state
     const [, setTick] = useState(0),

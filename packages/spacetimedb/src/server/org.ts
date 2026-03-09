@@ -15,11 +15,13 @@ import { makeJoinReducers } from './org-join'
 import { makeMemberReducers } from './org-members'
 import { identityEquals, makeError } from './reducer-utils'
 
+/** Cascade deletion adapter for removing org-scoped related rows. */
 interface CascadeTableConfig<DB, OrgId> {
   deleteById: (db: DB, id: unknown) => boolean
   rowsByOrg: (db: DB, orgId: OrgId) => Iterable<{ id: unknown }>
 }
 
+/** Lightweight invite row shape used by org helpers. */
 interface InviteDocLike {
   email: string
   expiresAt: number
@@ -29,6 +31,7 @@ interface InviteDocLike {
   token: string
 }
 
+/** Join request item enriched with optional user profile data. */
 interface JoinRequestItem {
   request: OrgJoinRequestRowLike<unknown, unknown>
   user: null | OrgUserLike
@@ -38,8 +41,10 @@ interface OptionalBuilder {
   optional: () => TypeBuilder<unknown, AlgebraicTypeType>
 }
 
+/** Iterable index that groups organizations by user. */
 type OrgByUserIndexLike<Row> = Iterable<Row>
 
+/** Configuration object used by `makeOrg` to generate org reducers. */
 interface OrgConfig<
   DB,
   OrgId,
@@ -87,6 +92,7 @@ interface OrgConfig<
   orgTable: (db: DB) => Iterable<OrgRow> & { insert: (row: OrgRow) => OrgRow }
 }
 
+/** Minimal organization document shape used by server helpers. */
 interface OrgDocLike {
   [key: string]: unknown
   id: unknown
@@ -95,28 +101,34 @@ interface OrgDocLike {
   userId: Identity
 }
 
+/** Reducer export container returned by org reducer builders. */
 interface OrgExports {
   exports: Record<string, ReducerExport<never, never>>
 }
 
+/** Builder map for organization create/update fields. */
 interface OrgFieldBuilders {
   [key: string]: OptionalBuilder | TypeBuilder<unknown, AlgebraicTypeType>
   name: TypeBuilder<string, AlgebraicTypeType>
   slug: TypeBuilder<string, AlgebraicTypeType>
 }
 
+/** Invite index abstraction scoped by organization id. */
 interface OrgInviteByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
 
+/** Join-request index abstraction scoped by organization id. */
 interface OrgJoinRequestByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
 
+/** Member index abstraction scoped by organization id. */
 interface OrgMemberByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
 
+/** Member record enriched with role and user profile data. */
 interface OrgMemberItem {
   memberId?: unknown
   role: OrgRole
@@ -126,8 +138,10 @@ interface OrgMemberItem {
 
 type OrgRole = 'admin' | 'member' | 'owner'
 
+/** Iterable index used to resolve org rows by slug. */
 type OrgSlugIndexLike<Row> = Iterable<Row>
 
+/** Minimal user profile shape used by org flows. */
 interface OrgUserLike {
   [key: string]: unknown
   email?: string
@@ -255,7 +269,11 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
     }
     return { exports: exportsRecord }
   },
-  
+  /** Creates a complete set of organization lifecycle reducers.
+   * @param spacetimedb - SpacetimeDB reducer factory
+   * @param config - Organization reducer configuration
+   * @returns Reducer export map for org, membership, invite, and join flows
+   */
   makeOrg = <
     DB,
     OrgId,
@@ -422,7 +440,7 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
     filterByOrg: (orgId: OrgId) => tbl.orgId.filter(orgId),
     [Symbol.iterator]: () => tbl[Symbol.iterator]()
   }),
-  
+  /** @see {@link makeOrg} for the full org lifecycle API */
   makeOrgTables = <
     DB,
     OrgId,

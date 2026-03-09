@@ -12,3 +12,7 @@ const subscribe = (onStoreChange: () => void) => {
   },
   getSnapshot = () => navigator.onLine,
   getServerSnapshot = () => true,
+  /** Returns whether the browser is currently online, reactively updating on connectivity changes. */
+  useOnlineStatus = () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+export default useOnlineStatus

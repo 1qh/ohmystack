@@ -50,7 +50,11 @@ const DAYS_PER_WEEK = 7,
   },
   isExpired = (cachedAt: Timestamp, now: Timestamp, ttl: number): boolean =>
     timestampToMs(cachedAt) + ttl < timestampToMs(now),
-  
+  /** Creates reducers for cache-table create/update/remove/invalidate/purge workflows.
+   * @param spacetimedb - SpacetimeDB reducer factory
+   * @param config - Cache CRUD configuration
+   * @returns Reducer export map
+   */
   makeCacheCrud = <
     DB,
     F extends CacheFieldBuilders,

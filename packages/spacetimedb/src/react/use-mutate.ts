@@ -15,6 +15,7 @@ import { extractErrorData, getErrorMessage, getFirstFieldError, handleError } fr
 import { completeMutation, pushError, trackMutation } from './devtools'
 import { makeTempId, useOptimisticStore } from './optimistic-store'
 
+/** Options for configuring mutation wrappers and optimistic behavior. */
 interface MutateOptions<A extends Record<string, unknown>, R = void> {
   getName?: (args: A) => string
   onError?: ((error: unknown) => void) | false
@@ -27,6 +28,7 @@ interface MutateOptions<A extends Record<string, unknown>, R = void> {
   type?: MutationType
 }
 
+/** Toast shorthand for mutation success/error messages. */
 interface MutateToast<A extends Record<string, unknown>, R = void> {
   error?: ((error: unknown) => string) | string
   fieldErrors?: boolean
@@ -34,7 +36,7 @@ interface MutateToast<A extends Record<string, unknown>, R = void> {
 }
 
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
-  
+  /** Default mutation error handler. Toasts NOT_AUTHENTICATED and RATE_LIMITED with user-friendly messages, falls back to error message for other codes. */
   defaultOnError = (error: unknown) => {
     handleError(error, {
       default: () => {
@@ -58,7 +60,15 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
     if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
     return 'create'
   },
-  
+  /** Wraps a mutation with optimistic updates, devtools tracking, and toast errors.
+   * @param mutate - Mutation function to execute
+   * @param options - Optimistic and error-handling options
+   * @returns Stable callback that executes the mutation
+   * @example
+   * ```ts
+   * const save = useMutate(api.posts.update, { optimistic: true })
+   * ```
+   */
   resolveToastError = <A extends Record<string, unknown>, R = void>(
     opts?: MutateOptions<A, R>
   ): ((error: unknown) => void) | undefined => {
@@ -94,7 +104,7 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
         if (successMsg) toast.success(typeof successMsg === 'function' ? successMsg(result, args) : successMsg)
       }
   },
-  
+  /** Wraps a mutation function with devtools tracking, error toasting, and optional retry. */
   useMutate = <A extends Record<string, unknown>, R = void>(
     mutate: (args: A) => Promise<R>,
     options?: MutateOptions<A, R>

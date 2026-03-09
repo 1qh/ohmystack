@@ -28,20 +28,20 @@ const TARGETS: Record<Target, { label: string; server: string; uri: string }> = 
     }
     return null
   },
-  printUseHelp = () => {
-    console.log(`${bold('ohmystack-stdb use')} — switch SpacetimeDB target\n`)
-    console.log(bold('Usage:'))
-    console.log('  ohmystack-stdb use <target>\n')
-    console.log(bold('Targets:'))
-    console.log(`  local    ${dim('ws://localhost:3000 (Docker)')}`)
-    console.log(`  cloud    ${dim('https://maincloud.spacetimedb.com')}\n`)
-    console.log(bold('What it does:'))
-    console.log(`  ${dim('1.')} Updates NEXT_PUBLIC_SPACETIMEDB_URI and SPACETIMEDB_URI in .env`)
-    console.log(`  ${dim('2.')} Sets spacetime CLI default server\n`)
-    console.log(bold('Examples:'))
-    console.log(`  ${dim('$')} ohmystack-stdb use local`)
-    console.log(`  ${dim('$')} ohmystack-stdb use cloud\n`)
-  },
+   printUseHelp = () => {
+     console.log(`${bold('ohmystack-stdb use')} — switch SpacetimeDB target\n`)
+     console.log(bold('Usage:'))
+     console.log('  ohmystack-stdb use <target>\n')
+     console.log(bold('Targets:'))
+     console.log(`  local    ${dim('ws://localhost:3000 (Docker)')}`)
+     console.log(`  cloud    ${dim('https://maincloud.spacetimedb.com')}\n`)
+     console.log(bold('What it does:'))
+     console.log(`  ${dim('1.')} Updates NEXT_PUBLIC_SPACETIMEDB_URI and SPACETIMEDB_URI in .env`)
+     console.log(`  ${dim('2.')} Sets spacetime CLI default server\n`)
+     console.log(bold('Examples:'))
+     console.log(`  ${dim('$')} ohmystack-stdb use local`)
+     console.log(`  ${dim('$')} ohmystack-stdb use cloud\n`)
+   },
   switchTarget = (args: string[] = []) => {
     if (args.includes('--help') || args.includes('-h') || args.length === 0) {
       printUseHelp()

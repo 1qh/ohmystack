@@ -13,6 +13,7 @@ import { extractErrorData, getErrorMessage, handleConvexError } from '../server/
 import { completeMutation, pushError, trackMutation } from './devtools'
 import { makeTempId, useOptimisticStore } from './optimistic-store'
 
+/** Options for useMutate: whether to use optimistic updates, the mutation type, and error handling. */
 interface MutateOptions {
   onError?: ((error: unknown) => void) | false
   optimistic?: boolean
@@ -48,6 +49,18 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
     if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
     return 'create'
   },
+  /**
+   * Wraps a Convex mutation with optimistic store tracking, devtools integration, and default error toasting.
+   *
+   * By default, errors are shown as toast notifications with smart routing for auth and rate-limit errors.
+   * Pass `onError: false` to disable, or `onError: (e) => {...}` for custom handling.
+   *
+   * @example
+   * ```tsx
+   * const update = useMutate(api.blog.update)
+   * const remove = useMutate(api.blog.rm, { onError: false })
+   * ```
+   */
   useMutate = <T extends MutationRef>(
     ref: T,
     options?: MutateOptions

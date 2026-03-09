@@ -217,7 +217,7 @@ const POSITION_CLASSES: Record<Position, string> = {
       {label}
     </button>
   ),
-  OhmystackStdbDevtools = ({
+  BetterspaceDevtools = ({
     buttonClassName,
     className,
     defaultOpen = false,
@@ -248,7 +248,7 @@ const POSITION_CLASSES: Record<Position, string> = {
         <button
           className={`fixed ${posClass} z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors ${count > 0 || connWarnCount > 0 ? 'bg-red-600 text-white hover:bg-red-700' : staleCount > 0 || pendingCount > 0 ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'} ${className ?? ''} ${buttonClassName ?? ''}`}
           onClick={() => setOpen(v => !v)}
-          title='OhmystackStdb DevTools'
+          title='Betterspace DevTools'
           type='button'>
           {count > 0 ? (
             <span className='text-sm font-bold'>{count > MAX_BADGE ? `${MAX_BADGE}+` : count}</span>
@@ -402,6 +402,7 @@ const POSITION_CLASSES: Record<Position, string> = {
 
 let autoMounted = false
 
+/** Auto-mounts the devtools panel when the provider is active. */
 const DevtoolsAutoMount = (props: DevtoolsProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null),
     [mounted, setMounted] = useState(false)
@@ -412,7 +413,7 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     if (autoMounted) return
     autoMounted = true
     const el = document.createElement('div')
-    el.id = 'ohmystack-stdb-devtools-portal'
+     el.id = 'ohmystack-stdb-devtools-portal'
     document.body.append(el)
     containerRef.current = el
     setMounted(true)
@@ -423,9 +424,9 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
   }, [])
 
   if (!(mounted && containerRef.current)) return null
-  return createPortal(<OhmystackStdbDevtools {...props} />, containerRef.current)
+  return createPortal(<BetterspaceDevtools {...props} />, containerRef.current)
 }
 
-export default OhmystackStdbDevtools
+export default BetterspaceDevtools
 export { DevtoolsAutoMount }
 export type { DevtoolsProps }

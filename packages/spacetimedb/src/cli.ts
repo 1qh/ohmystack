@@ -14,20 +14,20 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     docs: { description: 'Generate API documentation', script: 'docs-gen.ts' },
     doctor: { description: 'Run project diagnostics', script: 'doctor.ts' },
     generate: { description: 'Generate project files (docker-compose, etc.)', script: '' },
-    init: { description: 'Scaffold a new ohmystack-stdb project', script: '' },
+     init: { description: 'Scaffold a new @ohmystack/spacetimedb project', script: '' },
     migrate: { description: 'Schema diff and publish migration plans', script: 'migrate.ts' },
     use: { description: 'Switch SpacetimeDB target (local / cloud)', script: '' },
     validate: { description: 'Lint schema, reducers, indexes, and access control', script: 'check.ts' },
     viz: { description: 'Visualize schema relationships', script: 'viz.ts' }
   },
-  printHelp = () => {
-    console.log(`\n${bold('@ohmystack/spacetimedb')} — Zod schema → fullstack app\n`)
-    console.log(bold('Usage:'))
-    console.log('  ohmystack-stdb <command> [options]\n')
-    console.log(bold('Commands:'))
-    for (const [name, { description }] of Object.entries(COMMANDS)) console.log(`  ${name.padEnd(16)} ${dim(description)}`)
-    console.log(`\nRun ${dim('ohmystack-stdb <command> --help')} for command-specific options.\n`)
-  },
+   printHelp = () => {
+     console.log(`\n${bold('ohmystack-stdb')} — Zod schema → fullstack app\n`)
+     console.log(bold('Usage:'))
+     console.log('  ohmystack-stdb <command> [options]\n')
+     console.log(bold('Commands:'))
+     for (const [name, { description }] of Object.entries(COMMANDS)) console.log(`  ${name.padEnd(16)} ${dim(description)}`)
+     console.log(`\nRun ${dim('ohmystack-stdb <command> --help')} for command-specific options.\n`)
+   },
   [cmd, ...rest] = process.argv.slice(2)
 
 if (!cmd || cmd === '--help' || cmd === '-h') printHelp()

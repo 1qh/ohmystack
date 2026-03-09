@@ -14,7 +14,7 @@ interface SchemaResponse {
 }
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
-  DEFAULT_MODULE_NAME = '@ohmystack/spacetimedb',
+   DEFAULT_MODULE_NAME = '@ohmystack/spacetimedb',
   parseSchemaResponse = async (response: Response): Promise<SchemaResponse> => {
     const text = await response.text()
     if (!response.ok) {

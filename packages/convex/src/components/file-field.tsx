@@ -239,3 +239,6 @@ const FileApiContext = createContext<FileApi | null>(null),
     )
   }
 
+/** Exports FileFieldImpl component and file API context. */
+export default FileFieldImpl
+export { FileApiContext, FileApiProvider }

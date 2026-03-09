@@ -9,6 +9,7 @@ import { useSpacetimeDB } from 'spacetimedb/react'
 
 import type { OrgRole } from '../server/types'
 
+/** Renders an organization avatar with fallback initials. */
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
     <Avatar {...props}>
       {src ? <AvatarImage src={src} /> : null}
@@ -20,13 +21,13 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
     member: 'outline',
     owner: 'default'
   },
-  
+  /** Displays a styled badge for a user's org role (owner, admin, member). */
   RoleBadge = ({ role, ...props }: ComponentProps<typeof Badge> & { role: OrgRole }) => (
     <Badge variant={variants[role]} {...props}>
       {role}
     </Badge>
   ),
-  
+  /** Displays a banner when the browser is offline. */
   OfflineIndicator = ({ className, ...props }: ComponentProps<'p'>) => {
     const { isActive } = useSpacetimeDB()
     if (isActive) return null

@@ -42,11 +42,12 @@ interface ChildFn {
   }
 }
 
+/** Creates a file-id schema annotated for Betterspace file inputs. */
 const cvFile = () =>
     string()
       .min(1)
       .meta({ cv: 'file' as const }),
-  
+  /** Creates an array schema for multi-file fields. */
   cvFiles = () => array(cvFile()).meta({ cv: 'files' as const }),
   child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject<ZodRawShape>) => {
     if (typeof configOrParent === 'string')
@@ -60,7 +61,7 @@ const cvFile = () =>
     const config = configOrParent as { index?: string; parent: string }
     return { ...configOrParent, index: config.index ?? `by_${config.parent}` } as never
   },
-  
+  /** Default organization schema used by org helpers. */
   orgSchema = object({
     avatarId: string().min(1).nullable().optional(),
     name: string().min(1),

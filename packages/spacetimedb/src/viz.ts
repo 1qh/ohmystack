@@ -158,7 +158,7 @@ const isSchemaFile = (content: string): boolean => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
 
-    console.log(bold('\nohmystack-stdb viz\n'))
+     console.log(bold('\nohmystack-stdb viz\n'))
 
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {

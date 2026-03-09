@@ -21,6 +21,7 @@ import { resolveFormToast, useForm as useBaseForm } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
 
+/** Modal that shows concurrent edit conflicts with diff and resolution options. */
 const ConflictDialog = ({
   className,
   conflict,
@@ -188,12 +189,12 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
     const fileCtx = use(FileApiContext)
     if (isDev && hasFileFields(meta) && !fileCtx)
       // eslint-disable-next-line no-console
-      console.error(
-        '[@ohmystack/spacetimedb] Form schema has file fields but no FileApiProvider found. Wrap your app in <FileApiProvider> for file uploads to work.'
-      )
+       console.error(
+         '[@ohmystack/spacetimedb] Form schema has file fields but no FileApiProvider found. Wrap your app in <FileApiProvider> for file uploads to work.'
+       )
     return null
   },
-  
+  /** Typed form component that renders fields via a render callback with typed accessors. */
   Form = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>({
     form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
     render,
@@ -242,7 +243,7 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       </FormContext>
     )
   },
-  
+  /** Displays form auto-save status (saving, saved, error). */
   AutoSaveIndicator = ({ className, lastSaved, ...props }: ComponentProps<'span'> & { lastSaved: null | number }) => {
     const MS_PER_SECOND = 1000,
       JUST_SAVED_THRESHOLD = 5,

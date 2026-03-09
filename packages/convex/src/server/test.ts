@@ -13,11 +13,24 @@ import { flt, idx } from './bridge'
 import { isTestMode } from './env'
 import { generateToken, SEVEN_DAYS_MS, time } from './helpers'
 
+/** Configuration for test authentication helpers. */
+interface TestAuthConfig<DM extends GenericDataModel = GenericDataModel> {
+  getAuthUserId: (ctx: unknown) => Promise<null | string>
+  mutation: MutationBuilder<DM, 'public'>
+  query: QueryBuilder<DM, 'public'>
+}
+
+/** A test user with email and display name. */
 interface TestUser {
   email: string
   name: string
 }
 
+/** Default email used for single-user test scenarios. */
+const TEST_EMAIL = 'test@playwright.local',
+  BATCH_SIZE = 50,
+  EXPIRED_OFFSET_MS = 1000,
+  /** Looks up an org membership record for a user, returning role info or null if not a member. */
   getOrgMembership = async (db: DbLike, orgId: string, userId: string) => {
     const orgDoc = await db.get(orgId)
     if (!orgDoc) return null
@@ -32,6 +45,7 @@ interface TestUser {
     if (!(isOwner || member)) return null
     return { isAdmin: isOwner || member?.isAdmin === true, isOwner, member, orgDoc }
   },
+  /** Creates test-only auth mutations and queries that bypass real auth when CONVEX_TEST_MODE is enabled. */
   makeTestAuth = <DM extends GenericDataModel>(config: TestAuthConfig<DM>) => {
     const { mutation: rawMut, query: rawQry } = config,
       mutation = rawMut as unknown as (opts: Rec) => Rec,
@@ -619,6 +633,7 @@ interface TestUser {
     }
   }
 
+/** Configuration for org-scoped test CRUD helpers. */
 interface OrgTestCrudConfig<DM extends GenericDataModel = GenericDataModel> {
   acl?: boolean
   aclFrom?: { field: string; table: keyof DM & string }
@@ -666,6 +681,7 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
     await db.patch(itemId, { editors: filtered, ...time() })
     return db.get(itemId)
   },
+  /** Creates test-only org-scoped CRUD mutations that bypass real auth, with optional ACL and cascade support. */
   makeOrgTestCrud = <DM extends GenericDataModel>(config: OrgTestCrudConfig<DM>) => {
     const { acl, aclFrom, cascade, mutation: rawMut, query: rawQry, table } = config,
       mutation = rawMut as unknown as (opts: Rec) => Rec,
@@ -824,3 +840,36 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
     { email: 'other@example.com', name: 'Other User' },
     { email: 'editor@example.com', name: 'Editor User' }
   ],
+  /** Creates test users in the database and returns helpers to impersonate them via `asUser(index)`. */
+  createTestContext = async (
+    ctx: {
+      run: (fn: (c: { db: DbLike }) => Promise<unknown>) => Promise<unknown>
+      withIdentity: (i: { subject: string; tokenIdentifier: string }) => unknown
+    },
+    users?: TestUser[]
+  ) => {
+    const userList = users ?? DEFAULT_USERS,
+      ids: string[] = []
+    for (const u of userList) {
+      const id = (await ctx.run(async (c: { db: DbLike }) => {
+        const existing = await Promise.resolve(
+          c.db
+            .query('users')
+            .filter(flt(q => q.eq(q.field('email'), u.email)))
+            .first()
+        )
+        if (existing) return existing._id as string
+        return c.db.insert('users', { ...u, emailVerificationTime: Date.now() }) as unknown as string
+      })) as string
+      ids.push(id)
+    }
+    const asUser = (index = 0) => {
+      const uid = ids[index]
+      if (!uid) throw new Error(`No user at index ${String(index)}`)
+      return ctx.withIdentity({ subject: uid, tokenIdentifier: `test|${uid}` })
+    }
+    return { asUser, userIds: ids }
+  }
+
+export type { OrgTestCrudConfig, TestAuthConfig, TestUser }
+export { createTestContext, getOrgMembership, isTestMode, makeOrgTestCrud, makeTestAuth, TEST_EMAIL }

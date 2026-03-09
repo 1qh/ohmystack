@@ -563,18 +563,18 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
       console.log('')
     }
     if (allIssues.length === 0) console.log(`  ${green('✓ No issues found')}\n`)
-    console.log(
-      `  ${dim('Run')} ohmystack-stdb check --schema ${dim('for schema preview')}\n` +
-        `  ${dim('Run')} ohmystack-stdb check --endpoints ${dim('for reducer list')}\n` +
-        `  ${dim('Run')} ohmystack-stdb check --indexes ${dim('for index analysis')}\n` +
-        `  ${dim('Run')} ohmystack-stdb check --access ${dim('for access matrix')}\n`
-    )
+     console.log(
+       `  ${dim('Run')} ohmystack-stdb check --schema ${dim('for schema preview')}\n` +
+         `  ${dim('Run')} ohmystack-stdb check --endpoints ${dim('for reducer list')}\n` +
+         `  ${dim('Run')} ohmystack-stdb check --indexes ${dim('for index analysis')}\n` +
+         `  ${dim('Run')} ohmystack-stdb check --access ${dim('for access matrix')}\n`
+     )
   },
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
 
-    console.log(bold('\nohmystack-stdb check\n'))
+     console.log(bold('\nohmystack-stdb check\n'))
 
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {

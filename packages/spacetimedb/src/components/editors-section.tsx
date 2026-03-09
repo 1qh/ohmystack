@@ -20,6 +20,7 @@ interface MemberInfo {
   userId: string
 }
 
+/** Renders an editor management panel for org-scoped resources. */
 const EditorsSection = ({
   editorsList,
   members,

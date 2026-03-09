@@ -411,6 +411,12 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
       })
     } as unknown as CrudResult<S>
   },
+  /**
+   * Creates a cascade configuration for owned child tables, used with crud's cascade option.
+   * @param _schema - The child table's Zod schema (used for type inference only)
+   * @param config - Object with foreignKey and table name
+   * @returns Cascade config object with foreignKey and table
+   */
   ownedCascade = <S extends ZodRawShape>(
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }

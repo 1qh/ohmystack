@@ -155,6 +155,18 @@ const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined
       }
     return merged
   },
+   /**
+    * Initializes @ohmystack/convex by wiring Convex builders, auth, hooks, and middleware into factory functions.
+   * @param config - Convex query/mutation/action builders, getAuthUserId, optional hooks, middleware, and org config
+   * @returns Object containing `crud`, `orgCrud`, `childCrud`, `cacheCrud`, `singletonCrud`, custom builders (`pq`, `q`, `m`), and `org` endpoints
+   * @example
+   * const { crud, orgCrud, pq, q, m } = setup({
+   *   query, mutation, action, internalQuery, internalMutation, getAuthUserId
+   * })
+   *
+   * // Then generate endpoints:
+   * export const { create, update, rm, pub: { list, read } } = crud('blog', owned.blog)
+   */
   setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     type QCtx = GenericQueryCtx<DM>
     type MCtx = GenericMutationCtx<DM>

@@ -93,13 +93,21 @@ const HTTP_OK = 200,
       if (value) xhr.setRequestHeader(key, value)
     }
   },
-  
+  /**
+   * Converts HTTP(S) endpoints to WebSocket endpoints used by SpacetimeDB clients.
+   * @param uri Source URI that may use HTTP or WebSocket protocol.
+   * @returns A URI using `ws://` or `wss://` when conversion is needed.
+   */
   toWsUri = (uri: string): string => {
     if (uri.startsWith('https://')) return uri.replace('https://', 'wss://')
     if (uri.startsWith('http://')) return uri.replace('http://', 'ws://')
     return uri
   },
-  
+  /**
+   * Creates token persistence backed by localStorage and a browser cookie.
+   * @param key Optional localStorage key for storing auth tokens.
+   * @returns Token store helpers for reading and writing connection tokens.
+   */
   createTokenStore = (key = DEFAULT_TOKEN_KEY): TokenStore => {
     const get = (): string | undefined => {
         if (typeof window === 'undefined') return
@@ -114,7 +122,11 @@ const HTTP_OK = 200,
       }
     return { get, store }
   },
-  
+  /**
+   * Creates a generic uploader that requests a presigned URL and streams file bytes via XHR.
+   * @param presignEndpoint API endpoint that returns upload URL, storage key, and optional headers.
+   * @returns An object implementing the FileApi upload contract.
+   */
   createFileUploader = (
     presignEndpoint: string
   ): { upload: (file: File, options?: UploadOptions) => Promise<UploadResponse> } => {
@@ -183,7 +195,11 @@ const HTTP_OK = 200,
     }
     return { upload }
   },
-  
+  /**
+   * Builds or reuses a cached SpacetimeDB connection builder for a URI and module pair.
+   * @param options Factory options containing builder source, module metadata, URI, and optional token store.
+   * @returns A configured connection builder instance ready for `SpacetimeDBProvider`.
+   */
   createSpacetimeClient = <
     TBuilder extends SpacetimeConnectionBuilder<TBuilder, TConnection, TIdentity>,
     TConnection = unknown,

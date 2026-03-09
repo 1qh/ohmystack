@@ -10,6 +10,15 @@ import { applyPatch, getOwnedRow, makeError, makeOptionalFields, pickPatch, time
 
 type UpdateArgs<F extends CrudFieldBuilders, Id> = Partial<CrudFieldValues<F>> & { expectedUpdatedAt?: Timestamp; id: Id }
 
+/** Creates create/update/remove reducers for owned tables.
+ * @param spacetimedb - SpacetimeDB reducer factory
+ * @param config - CRUD reducer configuration
+ * @returns Reducer export map
+ * @example
+ * ```ts
+ * const reducers = makeCrud(spacetimedb, { tableName: 'post', fields, idField, pk, table })
+ * ```
+ */
 const makeCrud = <
     DB,
     F extends CrudFieldBuilders,
@@ -133,7 +142,7 @@ const makeCrud = <
       exports: exportsRecord
     }
   },
-  
+  /** Defines a cascade delete relation for owned-table helpers. */
   ownedCascade = <S extends ZodRawShape>(
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }

@@ -47,6 +47,7 @@ const classifyPending = (pending: PendingMutation[]) => {
   },
   isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   DEFAULT_PAGE_SIZE = 50,
+  /** Applies pending optimistic creates, updates, and deletes to a list of items. */
   applyOptimistic = <T extends Rec>(items: T[], pending: PendingMutation[]): T[] => {
     if (pending.length === 0) return items
     const { creates, deleteIds, updates } = classifyPending(pending)
@@ -60,6 +61,14 @@ const classifyPending = (pending: PendingMutation[]) => {
     if (creates.length > 0) result = [...(creates.toReversed() as T[]), ...result]
     return result
   },
+  /**
+   * Paginated list hook with optimistic update support and devtools integration.
+   * @param query A paginated Convex query reference
+   * @example
+   * ```tsx
+   * const { items, loadMore, isDone } = useList(api.blog.list, { where: { published: true } })
+   * ```
+   */
   useList = <F extends PaginatedQueryReference>(query: F, ...rest: ListRest<F>) => {
     const queryArgs = (rest[0] ?? {}) as unknown as PaginatedQueryArgs<F>,
       pageSize = rest[1]?.pageSize ?? DEFAULT_PAGE_SIZE,

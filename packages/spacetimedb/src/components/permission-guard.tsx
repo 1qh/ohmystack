@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 import type { OrgRole } from '../server/types'
 
+/** Conditionally renders children based on org role or edit permission. */
 const PermissionGuard = ({
   allowedRoles,
   backHref,

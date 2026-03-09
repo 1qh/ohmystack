@@ -422,6 +422,11 @@ type WhereOf<S extends ZodRawShape> = WhereGroupOf<S> & {
 type WithUrls<D> = D & { [K in keyof D as UrlKey<K, D[K]>]: UrlVal<D[K]> }
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __brand: unique symbol
+/** Validates a schema has the expected brand, returning the schema type on success or an error message type on failure. */
+type AssertSchema<T, Expected extends keyof BrandLabelMap> =
+  DetectBrand<T> extends Expected ? T : SchemaTypeError<Expected, DetectBrand<T> & keyof BrandLabelMap>
+type BaseSchema<T extends ZodRawShape> = SchemaBrand<'base'> & ZodObject<T>
+/** Readable brand name for error messages. */
 interface BrandLabelMap {
   base: 'BaseSchema (from makeBase())'
   org: 'OrgSchema (from makeOrgScoped())'
@@ -429,6 +434,10 @@ interface BrandLabelMap {
   singleton: 'SingletonSchema (from makeSingleton())'
   unbranded: 'plain ZodObject (not branded)'
 }
+/** Detects the brand key from a schema type, returning 'unbranded' for plain ZodObject. */
+type DetectBrand<T> = T extends SchemaBrand<infer K> ? K : 'unbranded'
+type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> & ZodObject<T>
+/** Minimal user shape used across org operations, containing id, name, email, and image. */
 interface OrgUserLike {
   [k: string]: unknown
   _id: GenericId<'users'>
@@ -449,37 +458,157 @@ interface SchemaHintMap {
   owned: 'Created by makeOwned() → use crud() + ownedTable()'
   singleton: 'Created by makeSingleton() → use singletonCrud() + singletonTable()'
 }
+/** Produces a descriptive compile-time error message when the wrong schema brand is passed. */
+type SchemaTypeError<
+  Expected extends keyof BrandLabelMap,
+  Got extends keyof BrandLabelMap
+> = `Schema mismatch: expected ${BrandLabelMap[Expected]}, got ${BrandLabelMap[Got]}. ${Expected extends keyof SchemaHintMap ? SchemaHintMap[Expected] : ''}`
+interface SingletonCrudResult<S extends ZodRawShape> {
+  get: RegisteredQuery<'public', Rec, null | SingletonDoc<S>>
+  upsert: RegisteredMutation<'public', Rec, SingletonDoc<S>>
+}
+type SingletonDoc<S extends ZodRawShape> = WithUrls<DocBase<S> & { userId: string }>
+interface SingletonOptions {
+  rateLimit?: RateLimitConfig
+}
+type SingletonSchema<T extends ZodRawShape> = SchemaBrand<'singleton'> & ZodObject<T>
+export type {
+  /** Action builder type for public visibility. */
   Ab,
+  /** Context object for action functions with query and mutation execution. */
+  ActionCtxLike,
+  /** Validates a schema has the expected brand, producing a descriptive error on mismatch. */
   AssertSchema,
+  /** Author information containing user metadata like name, email, and image. */
+  AuthorInfo,
+  /** Base builders for query and mutation functions. */
   BaseBuilders,
+  /** Schema branded as base type for cache CRUD operations. */
+  BaseSchema,
+  /** Readable brand labels for error messages. */
   BrandLabelMap,
+  /** Builders for cache CRUD operations. */
+  CacheBuilders,
+  /** Result type for cache CRUD factory with all generated endpoints. */
   CacheCrudResult,
+  /** Context for cache hooks with database access. */
+  CacheHookCtx,
+  /** Lifecycle hooks for cache CRUD operations. */
   CacheHooks,
+  /** Configuration options for cache CRUD factory. */
+  CacheOptions,
+  /** Options for checking if a user can edit a document with ACL. */
   CanEditOpts,
+  /** Configuration for cascade delete on related tables. */
+  CascadeOption,
+  /** Configuration for child table relationships. */
   ChildConfig,
+  /** Result type for child CRUD factory with all generated endpoints. */
+  ChildCrudResult,
+  /** Comparison operators for where clause filtering. */
   ComparisonOp,
+  /** Builders for CRUD operations with pagination. */
+  CrudBuilders,
+  /** Lifecycle hooks for CRUD operations. */
   CrudHooks,
+  /** Configuration options for CRUD factory. */
+  CrudOptions,
+  /** Read API for CRUD with list, read, and optional search endpoints. */
   CrudReadApi,
+  /** Result type for CRUD factory with all generated endpoints. */
+  CrudResult,
+  /** Context with database access. */
   DbCtx,
+  /** Database interface with read/write operations. */
+  DbLike,
+  /** Read-only database interface. */
   DbReadLike,
+  /** Detects the brand key ('owned' | 'org' | 'base' | 'singleton' | 'unbranded') from a schema type. */
+  DetectBrand,
+  /** Base document type with id, creation time, and update timestamp. */
   DocBase,
+  /** Document enriched with author info, ownership flag, and file URLs. */
+  EnrichedDoc,
+  /** Union type of all possible error codes. */
   ErrorCode,
+  /** File ID type for storage references. */
+  FID,
+  /** Filter builder interface for query construction. */
   FilterLike,
+  /** Context for global hooks with database and storage access. */
+  GlobalHookCtx,
+  /** Global lifecycle hooks applied to all CRUD operations. */
   GlobalHooks,
+  /** Context for CRUD hooks with database, storage, and user info. */
+  HookCtx,
+  /** Index builder interface for query optimization. */
   IndexLike,
+  /** Mutation builder type for public visibility. */
+  Mb,
+  /** Middleware for intercepting CRUD operations. */
   Middleware,
+  /** Context for middleware with operation type. */
+  MiddlewareCtx,
+  /** Context for mutation functions with auth and storage. */
   MutationCtxLike,
+  /** Mutation context with user info and storage. */
+  MutCtx,
+  /** Configuration for org cascade delete tables. */
   OrgCascadeTableConfig,
+  /** Result type for org CRUD factory with all generated endpoints. */
+  OrgCrudResult,
+  /** Org-scoped document enriched with author info and org ID. */
   OrgEnrichedDoc,
+  /** Organization role type: admin, member, or owner. */
+  OrgRole,
+  /** Schema branded as org type for org CRUD operations. */
   OrgSchema,
+  /** Minimal user shape for org operations. */
+  OrgUserLike,
+  /** Schema branded as owned type for user-owned CRUD operations. */
   OwnedSchema,
+  /** Paginated result with page data and cursor for next page. */
+  PaginatedResult,
+  /** Shape of pagination options validator. */
   PaginationOptsShape,
+  /** Query builder type for public visibility. */
+  Qb,
+  /** Context for query functions with auth and storage. */
   QueryCtxLike,
+  /** Query builder interface for database queries. */
+  QueryLike,
+  /** Configuration for sliding window rate limiting. */
   RateLimitConfig,
+  /** Context for read operations with author enrichment. */
+  ReadCtx,
+  /** Generic record type for flexible data structures. */
   Rec,
+  /** Schema brand marker for type safety. */
+  SchemaBrand,
+  /** Search builder interface for full-text search. */
+  /** Produces a descriptive compile-time error message for schema brand mismatches. */
+  SchemaTypeError,
+  SearchLike,
+  /** Configuration for setup function with builders and hooks. */
   SetupConfig,
+  /** Result type for singleton CRUD factory. */
+  SingletonCrudResult,
+  /** Singleton document with user ID and file URLs. */
   SingletonDoc,
+  /** Configuration options for singleton CRUD factory. */
+  SingletonOptions,
+  /** Schema branded as singleton type for per-user data. */
   SingletonSchema,
+  /** Storage interface for file operations. */
+  StorageLike,
+  /** User context with database and user info. */
   UserCtx,
+  /** Where clause group for filtering with optional OR. */
+  WhereGroupOf,
+  /** Where clause for filtering with comparison operators. */
   WhereOf,
+  /** Document with file URL properties added. */
+  WithUrls
+}
+/** Map of error codes to human-readable error messages. */
 export { ERROR_MESSAGES }

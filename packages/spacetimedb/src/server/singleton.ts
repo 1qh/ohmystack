@@ -21,7 +21,7 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
 
     return null
   },
-  
+  /** Generates get and upsert reducers for a per-user singleton table. */
   makeSingletonCrud = <
     DB,
     F extends SingletonFieldBuilders,

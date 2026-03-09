@@ -28,10 +28,23 @@ import {
 } from '../zod'
 import { defaultOnError } from './use-mutate'
 
+/** Discriminated kind of a form field derived from the Zod schema type. */
+type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
+/** Metadata about a single form field including its kind and optional max constraint. */
 interface FieldMeta {
   kind: FieldKind
   max?: number
 }
+/** Map of field names to their metadata, built from a Zod object schema. */
+type FieldMetaMap = Record<string, FieldMeta>
+
+const getMax = (schema: undefined | ZodSchema): number | undefined => {
+    const checks = schema?.def.checks as (undefined | { _zod: { def: { check: string; maximum?: number } } })[] | undefined
+    if (checks)
+      for (const c of checks)
+        if (c?._zod.def.check === 'max_length' && c._zod.def.maximum !== undefined) return c._zod.def.maximum
+  },
+  /** Returns the field metadata (kind, max) for a single Zod schema property. */
   getMeta = (s: unknown): FieldMeta => {
     const { schema: base, type } = unwrapZod(s),
       fk = cvFileKindOf(s)
@@ -47,6 +60,7 @@ interface FieldMeta {
     if (isDateType(type)) return { kind: 'date' }
     return { kind: 'unknown' }
   },
+  /** Builds a field metadata map from a Zod object schema, inspecting each property's type. */
   buildMeta = (s: ZodObject<ZodRawShape>): FieldMetaMap => {
     const m: FieldMetaMap = {}
     // biome-ignore lint/nursery/noForIn: x
@@ -54,6 +68,7 @@ interface FieldMeta {
     return m
   }
 
+/** TanStack Form API instance parameterized by the form's value type. */
 type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   T,
   undefined,
@@ -69,6 +84,14 @@ type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   unknown
 >
 
+/** Data returned when a mutation conflict (CONFLICT error code) is detected during form submission. */
+interface ConflictData {
+  code: string
+  current?: unknown
+  incoming?: unknown
+}
+
+/** Return type of useForm, providing the form instance, state, conflict handling, and field watching. */
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
   conflict: ConflictData | null
   error: Error | null
@@ -94,6 +117,19 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
       incoming: data?.incoming
     }
   },
+  /**
+   * Hook that creates a Zod-validated form with conflict detection, auto-save, and field watching.
+   * @param schema Zod object schema for validation
+   * @param values Optional initial/current values (defaults to schema defaults)
+   * @example
+   * ```tsx
+   * const { instance, isPending, conflict } = useForm({
+   *   schema: owned.blog,
+   *   values: existingBlog,
+   *   onSubmit: (data) => mutate(data),
+   * })
+   * ```
+   */
   useForm = <S extends ZodObject<ZodRawShape>>({
     autoSave,
     onConflict,
@@ -201,3 +237,44 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
         useStore(instance.store, s => s.values[name as string]) as output<S>[K]
     } satisfies FormReturn<output<S>, S>
   },
+  /** Convenience wrapper around useForm that wires a Convex mutation as the submit handler. */
+  useFormMutation = <S extends ZodObject<ZodRawShape>>({
+    autoSave,
+    mutation: mutationRef,
+    onConflict,
+    onError,
+    onSuccess,
+    resetOnSuccess = true,
+    schema,
+    transform,
+    values
+  }: {
+    autoSave?: { debounceMs: number; enabled: boolean }
+    mutation: FunctionReference<'mutation'>
+    onConflict?: (data: ConflictData) => void
+    onError?: ((e: unknown) => void) | false
+    onSuccess?: () => void
+    resetOnSuccess?: boolean
+    schema: S
+    transform?: (d: output<S>) => Record<string, unknown>
+    values?: output<S>
+  }) => {
+    const mutate = useMutation(mutationRef)
+    return useForm({
+      autoSave,
+      onConflict,
+      onError,
+      onSubmit: async (d: output<S>) => {
+        const args = transform ? transform(d) : d
+        await mutate(args)
+        return d
+      },
+      onSuccess,
+      resetOnSuccess,
+      schema,
+      values
+    })
+  }
+
+export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn }
+export { buildMeta, getMeta, useForm, useFormMutation }

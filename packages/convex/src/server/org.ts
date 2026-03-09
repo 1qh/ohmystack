@@ -21,6 +21,7 @@ interface CascadeTableEntry {
   table: string
 }
 
+/** Shape of an organization document as returned by org queries. */
 interface OrgDocLike {
   [k: string]: unknown
   _creationTime: number
@@ -32,6 +33,11 @@ interface OrgDocLike {
   userId: GenericId<'users'>
 }
 
+/**
+ * Creates the full set of org management endpoints: CRUD, members, invites, and join requests.
+ * @param config - Query/mutation builders, auth function, org schema, and optional cascade table config
+ * @returns Object with create, update, get, getBySlug, myOrgs, remove, member/invite/join endpoints
+ */
 const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
   cascadeTables,
   getAuthUserId,

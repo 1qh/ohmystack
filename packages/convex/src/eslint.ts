@@ -319,6 +319,40 @@ const checkFieldKindMismatch = (node: JsxNode, tables: Map<string, Map<string, s
 
 type MemberNode = BaseNode & { object: BaseNode; property: BaseNode }
 
+/** ESLint rule to detect and suggest corrections for api module name casing errors. */
+const apiCasing = {
+  create: (context: EslintContext) => {
+    const modules = getModules(context.cwd)
+    if (modules.length === 0) return {}
+    const lowerMap = new Map<string, string>()
+    for (const m of modules) lowerMap.set(m.toLowerCase(), m)
+    return {
+      MemberExpression: (node: MemberNode) => {
+        if (node.object.type !== 'MemberExpression') return
+        const parent = node.object as MemberNode
+        if (parent.object.type !== 'Identifier' || (parent.object as { name: string }).name !== 'api') return
+        if (parent.property.type !== 'Identifier') return
+        const prop = parent.property as BaseNode & { name: string }
+        if (modules.includes(prop.name)) return
+        const suggestion = lowerMap.get(prop.name.toLowerCase())
+        context.report({
+          data: suggestion ? { suggestion, used: prop.name } : { used: prop.name },
+          messageId: suggestion ? 'casingMismatch' : 'unknownModule',
+          node: prop
+        })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      casingMismatch: 'api.{{used}} \u2014 wrong casing. Use api.{{suggestion}} to match the convex/ filename.',
+      unknownModule: 'api.{{used}} \u2014 no matching file in convex/.'
+    },
+    type: 'problem' as const
+  }
+}
+
+/** ESLint rule to ensure CRUD factory table names match their schema property names. */
 const consistentCrudNaming = {
   create: (context: EslintContext) => ({
     CallExpression: (node: CallNode) => {
@@ -338,6 +372,32 @@ const consistentCrudNaming = {
 
 const isRouteHandler = (filename: string): boolean => routeFilePattern.test(filename)
 
+/** ESLint rule to require await connection() in Next.js server components before Convex fetches. */
+const requireConnection = {
+  create: (context: EslintContext) => {
+    if (isRouteHandler(context.filename)) return {}
+    return {
+      CallExpression: (node: CallNode) => {
+        const callee = getIdentName(node.callee)
+        if (!(callee && convexFetchFns.has(callee))) return
+        const src = context as unknown as { sourceCode: { getAncestors: (n: BaseNode) => BaseNode[] } }
+        const body = findEnclosingAsyncBody(src.sourceCode.getAncestors(node))
+        if (!body) return
+        if (blockHasConnection(body)) return
+        context.report({ data: { fn: callee }, messageId: 'missingConnection', node })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      missingConnection:
+        "{{fn}}() requires 'await connection()' before it in Next.js server components to signal dynamic rendering."
+    },
+    type: 'problem' as const
+  }
+}
+
+/** ESLint rule to prevent unsafe type casts on api objects. */
 const noUnsafeApiCast = {
   create: (context: EslintContext) => ({
     TSAsExpression: (node: BaseNode & { expression: BaseNode }) => {
@@ -354,6 +414,26 @@ const noUnsafeApiCast = {
   }
 }
 
+/** ESLint rule to suggest useList() instead of useQuery() for list endpoints. */
+const preferUseList = {
+  create: (context: EslintContext) => ({
+    CallExpression: (node: CallNode) => {
+      if (!isIdent(node.callee, 'useQuery')) return
+      const prop = getCalleeProperty(node)
+      if (prop !== 'list' && prop !== 'pubList') return
+      context.report({ messageId: 'preferUseList', node })
+    }
+  }),
+  meta: {
+    messages: {
+      preferUseList:
+        'useQuery() on a list endpoint \u2014 use useList() instead for built-in pagination, loadMore, and loading states.'
+    },
+    type: 'suggestion' as const
+  }
+}
+
+/** ESLint rule to suggest useOrgQuery() instead of useQuery() with orgId. */
 const preferUseOrgQuery = {
   create: (context: EslintContext) => ({
     CallExpression: (node: CallNode) => {
@@ -371,6 +451,37 @@ const preferUseOrgQuery = {
   }
 }
 
+/** ESLint rule to validate form field names exist in the schema. */
+const formFieldExists = {
+  create: (context: EslintContext) => {
+    const tables = parseSchemaFile(context.cwd)
+    if (tables.size === 0) return {}
+    const allFields = getAllFieldNames(tables)
+    return {
+      JSXOpeningElement: (node: JsxNode) => {
+        if (node.name?.type !== 'JSXIdentifier') return
+        const tag = node.name.name
+        if (!(tag && componentToKind[tag])) return
+        const fieldName = getJsxNameProp(node)
+        if (!fieldName) return
+        if (allFields.has(fieldName)) return
+        context.report({
+          data: { field: fieldName },
+          messageId: 'fieldNotFound',
+          node: node as unknown as BaseNode
+        })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      fieldNotFound: "'{{field}}' does not match any field in the schema. Check for typos."
+    },
+    type: 'problem' as const
+  }
+}
+
+/** ESLint rule to validate form field components match their schema field types. */
 const formFieldKind = {
   create: (context: EslintContext) => {
     const tables = parseSchemaFile(context.cwd)
@@ -386,6 +497,65 @@ const formFieldKind = {
     type: 'suggestion' as const
   }
 }
+
+/** ESLint rule to warn if convex/ directory or schema file cannot be discovered. */
+const discoveryCheck = {
+  create: (context: EslintContext) => {
+    if (discoveryWarned) return {}
+    const hasConvex = getModules(context.cwd).length > 0
+    const hasSchema = parseSchemaFile(context.cwd).size > 0
+    if (hasConvex && hasSchema) return {}
+    discoveryWarned = true
+    const parts: string[] = []
+    if (!hasConvex) parts.push('convex/ directory')
+    if (!hasSchema) parts.push('schema file')
+    return {
+      Program: (node: BaseNode) => {
+        context.report({
+          data: { missing: parts.join(' and ') },
+          messageId: 'discoveryFailed',
+          node
+        })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      discoveryFailed:
+        '@ohmystack/convex: could not find {{missing}} (searched ./convex/ and ./packages/*/convex/). Some rules are inactive.'
+    },
+    type: 'suggestion' as const
+  }
+}
+
+/** ESLint rule to detect duplicate CRUD factory registrations for the same table. */
+const noDuplicateCrud = {
+  create: (context: EslintContext) => ({
+    CallExpression: (node: CallNode) => {
+      const callee = getIdentName(node.callee)
+      if (!(callee && (crudFactories.has(callee) || callee === 'cacheCrud'))) return
+      if (node.arguments.length === 0) return
+      const [first] = node.arguments
+      if (!first) return
+      const tableName = callee === 'cacheCrud' ? getCacheCrudTable(node) : getLiteralString(first)
+      if (!tableName) return
+      const prev = seenCrudTables.get(tableName)
+      if (prev) return context.report({ data: { file: prev, table: tableName }, messageId: 'duplicateCrud', node: first })
+      seenCrudTables.set(
+        tableName,
+        context.filename.startsWith(context.cwd) ? context.filename.slice(context.cwd.length + 1) : context.filename
+      )
+    }
+  }),
+  meta: {
+    messages: {
+      duplicateCrud: "Duplicate CRUD factory for table '{{table}}'. Already registered in {{file}}."
+    },
+    type: 'problem' as const
+  }
+}
+
+/** ESLint rule to require try-catch around Convex fetch functions in server components. */
 const noRawFetchInServerComponent = {
   create: (context: EslintContext) => ({
     CallExpression: (node: CallNode) => {
@@ -405,6 +575,51 @@ const noRawFetchInServerComponent = {
   }
 }
 
+/** ESLint rule to require ErrorBoundary when using ConvexProvider. */
+const requireErrorBoundary = {
+  create: (context: EslintContext) => {
+    const providerNodes: BaseNode[] = []
+    let hasErrorBoundary = false
+    return {
+      JSXOpeningElement: (node: JsxNode) => {
+        const name = node.name?.type === 'JSXIdentifier' ? node.name.name : undefined
+        if (!name) return
+        if (name.includes('ConvexProvider')) providerNodes.push(node as unknown as BaseNode)
+        if (name.includes('ErrorBoundary')) hasErrorBoundary = true
+      },
+      'Program:exit': () => {
+        if (providerNodes.length > 0 && !hasErrorBoundary)
+          for (const n of providerNodes) context.report({ messageId: 'missingErrorBoundary', node: n })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      missingErrorBoundary:
+        '<ConvexProvider> without an error boundary. Wrap with an ErrorBoundary to handle Convex errors gracefully.'
+    },
+    type: 'suggestion' as const
+  }
+}
+
+const writeCrudFactories = new Set(['crud', 'orgCrud'])
+
+const getOptionsObject = (
+  node: CallNode
+): (BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }) | undefined => {
+  const argIdx = node.arguments.length >= 3 ? 2 : -1
+  if (argIdx < 0) return
+  const arg = node.arguments[argIdx]
+  if (arg?.type !== 'ObjectExpression') return
+  return arg as BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }
+}
+
+const hasProperty = (obj: BaseNode & { properties: (BaseNode & { key: BaseNode })[] }, name: string): boolean => {
+  for (const p of obj.properties) if (p.type === 'Property' && getIdentName(p.key) === name) return true
+  return false
+}
+
+/** ESLint rule to require rateLimit option on write CRUD factories. */
 const requireRateLimit = {
   create: (context: EslintContext) => ({
     CallExpression: (node: CallNode) => {
@@ -448,6 +663,30 @@ const bodyContainsIdent = (nodes: BaseNode[], target: string): boolean => {
   return false
 }
 
+/** ESLint rule to require auth checks in mutation handlers. */
+const noUnprotectedMutation = {
+  create: (context: EslintContext) => {
+    if (context.filename.includes('_generated') || context.filename.includes('.test.')) return {}
+    return {
+      CallExpression: (node: CallNode) => {
+        if (!isIdent(node.callee, 'm')) return
+        const handlerBody = getHandlerBody(node)
+        if (!handlerBody) return
+        if (bodyContainsIdent(handlerBody, 'getAuthUserId') || bodyContainsIdent(handlerBody, 'requireAuth')) return
+        context.report({ messageId: 'unprotectedMutation', node })
+      }
+    }
+  },
+  meta: {
+    messages: {
+      unprotectedMutation:
+        'm() handler without auth check. Call getAuthUserId() or add a comment explaining why auth is not needed.'
+    },
+    type: 'suggestion' as const
+  }
+}
+
+/** ESLint rule to require .max() on cvFile/cvFiles in schema. */
 const noUnlimitedFileSize = {
   create: (context: EslintContext) => {
     const content = findSchemaContent(context.cwd)
@@ -482,6 +721,37 @@ const noUnlimitedFileSize = {
   }
 }
 
+/** ESLint rule to require specific field names in search configuration. */
+const noEmptySearchConfig = {
+  create: (context: EslintContext) => ({
+    CallExpression: (node: CallNode) => {
+      const callee = getIdentName(node.callee)
+      if (!(callee && crudFactories.has(callee))) return
+      const opts = getOptionsObject(node)
+      if (!opts) return
+      for (const p of opts.properties)
+        if (p.type === 'Property' && getIdentName(p.key) === 'search') {
+          const val = p.value
+          if (val.type === 'Literal' && val.value === true) return context.report({ messageId: 'searchTrue', node: val })
+          if (val.type === 'ObjectExpression') {
+            const obj = val as BaseNode & { properties: BaseNode[] }
+            if (obj.properties.length === 0) return context.report({ messageId: 'searchEmpty', node: val })
+          }
+        }
+    }
+  }),
+  meta: {
+    messages: {
+      searchEmpty:
+        "search: {} is ambiguous. Specify the field to search: search: 'fieldName' or search: { field: 'fieldName' }.",
+      searchTrue:
+        "search: true is ambiguous. Specify the field to search: search: 'fieldName' or search: { field: 'fieldName' }."
+    },
+    type: 'problem' as const
+  }
+}
+
+/** Map of all ESLint rules provided by the @ohmystack/convex plugin. */
 const rules = {
   'api-casing': apiCasing,
   'consistent-crud-naming': consistentCrudNaming,
@@ -501,6 +771,10 @@ const rules = {
   'require-rate-limit': requireRateLimit
 }
 
+/** ESLint plugin object containing all @ohmystack/convex rules. */
+const plugin = { rules }
+
+/** Recommended ESLint configuration for @ohmystack/convex projects. */
 const recommended = {
   files: ['**/*.ts', '**/*.tsx'],
   plugins: {

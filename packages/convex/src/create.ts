@@ -239,9 +239,9 @@ NEXT_PUBLIC_CONVEX_URL=
     return { appDir, convexDir, help }
   },
   printHelp = () => {
-    console.log(`${bold('ohmystack-convex init')} — scaffold a ohmystack-convex project\n`)
-    console.log(bold('Usage:'))
-    console.log('  ohmystack-convex init [options]\n')
+     console.log(`${bold('ohmystack-convex init')} — scaffold an @ohmystack/convex project\n`)
+     console.log(bold('Usage:'))
+     console.log('  ohmystack-convex init [options]\n')
     console.log(bold('Options:'))
     console.log(`  --convex-dir=DIR  Convex directory ${dim('(default: convex)')}`)
     console.log(`  --app-dir=DIR     Next.js app directory ${dim('(default: src/app)')}`)
@@ -251,9 +251,9 @@ NEXT_PUBLIC_CONVEX_URL=
     console.log('')
     if (created > 0) console.log(`${green('✓')} Created ${created} file${created > 1 ? 's' : ''}.`)
     if (skipped > 0) console.log(`${yellow('⚠')} Skipped ${skipped} existing file${skipped > 1 ? 's' : ''}.`)
-    console.log(`\n${bold('Next steps:')}`)
-    console.log(`  ${dim('$')} bun add ohmystack-convex convex @convex-dev/auth zod`)
-    console.log(`  ${dim('$')} bunx convex dev & bun dev\n`)
+     console.log(`\n${bold('Next steps:')}`)
+     console.log(`  ${dim('$')} bun add @ohmystack/convex convex @convex-dev/auth zod`)
+     console.log(`  ${dim('$')} bunx convex dev & bun dev\n`)
   },
   init = (args: string[] = []) => {
     const { appDir, convexDir, help } = parseFlags(args)
@@ -261,7 +261,7 @@ NEXT_PUBLIC_CONVEX_URL=
       printHelp()
       return
     }
-    console.log(`\n${bold('Scaffolding ohmystack-convex project...')}\n`)
+     console.log(`\n${bold('Scaffolding @ohmystack/convex project...')}\n`)
     const b = writeFilesToDir(join(process.cwd(), convexDir), convexDir, BACKEND_FILES),
       f = writeFilesToDir(join(process.cwd(), appDir), appDir, FRONTEND_FILES),
       envPath = join(process.cwd(), '.env.local')
@@ -273,7 +273,7 @@ NEXT_PUBLIC_CONVEX_URL=
     printSummary(b.created + f.created, b.skipped + f.skipped)
   }
 
-if (process.argv[1]?.endsWith('create.ts') || process.argv[1]?.endsWith('create-ohmystack-app'))
+if (process.argv[1]?.endsWith('create.ts') || process.argv[1]?.endsWith('create-ohmystack-convex-app'))
   init(process.argv.slice(2))
 
 export { init }

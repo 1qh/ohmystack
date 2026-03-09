@@ -6,22 +6,23 @@ import type { SchemaField, SchemaTable } from '../schema-utils'
 
 import { endpointsForFactory, extractSchemaFields } from '../schema-utils'
 
+/** Props for customizing the SchemaPlayground component. */
 interface PlaygroundProps {
-  
+  /** Additional CSS class for the outer container. */
   className?: string
-  
+  /** Default schema text to display. */
   defaultValue?: string
   endpointClassName?: string
-  
+  /** Additional CSS class for the textarea editor. */
   inputClassName?: string
-  
+  /** Called when schema text changes. */
   onChange?: (value: string) => void
-  
+  /** Placeholder text for the editor. */
   placeholder?: string
-  
+  /** If true, the editor is read-only — useful for embedding in docs. */
   readOnly?: boolean
   reducerClassName?: string
-  
+  /** Additional CSS class for the table list section. */
   tableClassName?: string
 }
 
@@ -88,7 +89,7 @@ const orgScoped = makeOrgScoped({
       </div>
     )
   },
-  
+   /** Interactive playground for previewing @ohmystack/spacetimedb schema tables and their generated endpoints. */
   SchemaPlayground = ({
     className,
     defaultValue = DEFAULT_SCHEMA,

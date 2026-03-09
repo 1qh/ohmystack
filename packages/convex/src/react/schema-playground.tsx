@@ -6,10 +6,90 @@ import type { SchemaField, SchemaTable } from '../schema-utils'
 
 import { endpointsForFactory, extractSchemaFields } from '../schema-utils'
 
+/** Props for customizing the SchemaPlayground component. */
+interface PlaygroundProps {
+  /** Additional CSS class for the outer container. */
   className?: string
+  /** Default schema text to display. */
+  defaultValue?: string
+  /** Additional CSS class for the endpoint list section. */
   endpointClassName?: string
+  /** Additional CSS class for the textarea editor. */
+  inputClassName?: string
+  /** Called when schema text changes. */
   onChange?: (value: string) => void
+  /** Placeholder text for the editor. */
+  placeholder?: string
+  /** If true, the editor is read-only — useful for embedding in docs. */
   readOnly?: boolean
+  /** Additional CSS class for the table list section. */
+  tableClassName?: string
+}
+
+const FACTORY_COLORS: Record<string, string> = {
+    cacheCrud: 'text-purple-400',
+    childCrud: 'text-cyan-400',
+    crud: 'text-emerald-400',
+    orgCrud: 'text-blue-400',
+    singletonCrud: 'text-orange-400'
+  },
+  FACTORY_DESCRIPTIONS: Record<string, string> = {
+    cacheCrud: 'Cache with TTL, SWR, purge',
+    childCrud: 'Parent-child with cascading',
+    crud: 'Owned CRUD with soft-delete',
+    orgCrud: 'Org-scoped with ACL & roles',
+    singletonCrud: 'Single-row config store'
+  },
+  DEFAULT_SCHEMA = `const owned = makeOwned({
+  blog: object({
+    title: string().min(1),
+    content: string(),
+    published: boolean(),
+  }),
+})
+
+const orgScoped = makeOrgScoped({
+  project: object({
+    name: string(),
+    description: optional(string()),
+  }),
+})`,
+  FieldBadge = ({ field }: { field: SchemaField }) => (
+    <span className='inline-flex items-center gap-1 rounded-sm bg-zinc-800 px-1.5 py-0.5 text-xs'>
+      <span className='font-mono text-zinc-300'>{field.field}</span>
+      <span className='text-zinc-500'>{field.type}</span>
+    </span>
+  ),
+  TableCard = ({ table }: { table: SchemaTable }) => {
+    const colorClass = FACTORY_COLORS[table.factory] ?? 'text-zinc-400',
+      endpoints = endpointsForFactory({ factory: table.factory, file: '', options: '', table: table.table })
+    return (
+      <div className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
+        <div className='flex items-center gap-2'>
+          <span className='font-mono font-medium text-zinc-200'>{table.table}</span>
+          <span className={`rounded-sm px-1.5 py-0.5 text-xs font-medium ${colorClass} bg-zinc-800`}>{table.factory}</span>
+        </div>
+        {table.fields.length > 0 ? (
+          <div className='mt-2 flex flex-wrap gap-1'>
+            {table.fields.map(f => (
+              <FieldBadge field={f} key={f.field} />
+            ))}
+          </div>
+        ) : null}
+        <div className='mt-2 border-t border-zinc-800 pt-2'>
+          <p className='mb-1 text-xs text-zinc-500'>Endpoints ({endpoints.length})</p>
+          <div className='flex flex-wrap gap-1'>
+            {endpoints.map(ep => (
+              <span className='rounded-sm bg-zinc-800/80 px-1.5 py-0.5 font-mono text-xs text-zinc-400' key={ep}>
+                {ep}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  },
+   /** Interactive playground for previewing @ohmystack/convex schema tables and their generated endpoints. */
   SchemaPlayground = ({
     className,
     defaultValue = DEFAULT_SCHEMA,

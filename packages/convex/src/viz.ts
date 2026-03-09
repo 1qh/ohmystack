@@ -203,7 +203,7 @@ const isSchemaFile = (content: string): boolean => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
 
-    console.log(bold('\nohmystack-convex viz\n'))
+     console.log(bold('\n@ohmystack/convex viz\n'))
 
     const convexDir = findConvexDir(root)
     if (!convexDir) {
@@ -213,7 +213,7 @@ const isSchemaFile = (content: string): boolean => {
 
     const schemaFile = findSchemaFile(convexDir)
     if (!schemaFile) {
-      console.log(red('\u2717 Could not find schema file with ohmystack-convex markers'))
+       console.log(red('\u2717 Could not find schema file with @ohmystack/convex markers'))
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}\n`)

@@ -378,3 +378,5 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
   }
 }
 
+/** Exports step form factory and hook for building multi-step forms. */
+export { defineSteps }

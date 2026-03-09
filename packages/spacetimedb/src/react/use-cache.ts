@@ -40,13 +40,17 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       await load(args)
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[@ohmystack/spacetimedb] Cache load failed (table=%s, args=%o):', table, args, error)
+       console.error('[@ohmystack/spacetimedb] Cache load failed (table=%s, args=%o):', table, args, error)
     } finally {
       loadingRef.current = false
       setIsLoading(false)
     }
   },
-  
+  /**
+   * Reads a cache row and auto-loads it when stale or missing.
+   * @param options Cache table, load function, key args, and current row value.
+   * @returns Cache row state with staleness, loading, and refresh controls.
+   */
   useCacheEntry = <A extends Record<string, unknown>, T extends Record<string, unknown>>({
     args,
     data,

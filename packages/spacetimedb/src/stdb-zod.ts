@@ -14,6 +14,7 @@ interface RuntimeBuilder {
   variants?: unknown
 }
 
+/** Options for selecting and shaping fields when deriving Zod from table metadata. */
 interface ZodFromTableOptions {
   exclude?: string[]
   include?: string[]
@@ -36,7 +37,7 @@ const NUMBER_TAGS = new Set([
     'U128',
     'U256'
   ]),
-  
+  /** Narrows unknown values to plain records. */
   isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null,
   toBuilder = (v: unknown): RuntimeBuilder => (isRecord(v) ? (v as RuntimeBuilder) : {}),
   toTypeBuilder = (v: unknown): RuntimeBuilder => {
@@ -136,7 +137,7 @@ const NUMBER_TAGS = new Set([
     const { elements } = toBuilder(value)
     return Array.isArray(elements) && elements.length === 0
   },
-  
+  /** Builds a tag-only schema for unit-variant sum types. */
   sumEnumSchema = (v: unknown): ZodType => {
     const { variants } = toBuilder(toTypeBuilder(v))
     if (!isRecord(variants)) return unknown()
@@ -146,25 +147,25 @@ const NUMBER_TAGS = new Set([
 
     return object({ tag: zenum(names as [string, ...string[]]) })
   },
-  
+  /** Maps scalar SpacetimeDB tags to primitive Zod schemas. */
   scalarSchemaFromTag = (tag: string): undefined | ZodType => {
     if (tag === 'String') return string()
     if (tag === 'Bool') return boolean()
     if (NUMBER_TAGS.has(tag)) return number()
   },
-  
+  /** Converts option builders into optional schemas. */
   optionSchemaFromBuilder = (v: unknown, visit: (x: unknown) => ZodType): undefined | ZodType => {
     if (!isOptionBuilder(v)) return
     const { value: inner } = toBuilder(toTypeBuilder(v))
     return visit(inner).optional()
   },
-  
+  /** Converts array builders into array schemas. */
   arraySchemaFromBuilder = (v: unknown, visit: (x: unknown) => ZodType): undefined | ZodType => {
     if (!isArrayBuilder(v)) return
     const { element: inner } = toBuilder(toTypeBuilder(v))
     return array(visit(inner))
   },
-  
+  /** Recursively converts product builders into object schemas. */
   productSchema = (v: unknown, visit: (x: unknown) => ZodType): ZodType => {
     const b = toTypeBuilder(v),
       { elements: elementsObj } = toBuilder(b)
@@ -173,7 +174,7 @@ const NUMBER_TAGS = new Set([
     for (const k of Object.keys(elementsObj)) shape[k] = visit(elementsObj[k])
     return object(shape)
   },
-  
+  /** Converts a runtime SpacetimeDB type builder into a Zod schema. */
   schemaFromBuilder = (v: unknown): ZodType => {
     const optionSchema = optionSchemaFromBuilder(v, schemaFromBuilder)
     if (optionSchema) return optionSchema
@@ -187,7 +188,7 @@ const NUMBER_TAGS = new Set([
     if (tag === 'Product') return productSchema(v, schemaFromBuilder)
     return unknown()
   },
-  
+  /** Applies Betterspace defaults for excluding internal or generated fields. */
   shouldExcludeByDefault = (v: unknown): boolean => {
     if (isIdentityLike(v) || isTimestampLike(v) || isConnectionIdLike(v)) return true
     if (!hasTypeBuilder(v)) return false
@@ -195,7 +196,15 @@ const NUMBER_TAGS = new Set([
     if (m.isAutoIncrement === true || m.isPrimaryKey === true) return true
     return false
   },
-  
+  /** Builds a Zod object schema from SpacetimeDB column metadata.
+   * @param columns - Runtime table columns metadata
+   * @param options - Include/exclude/optional field controls
+   * @returns Derived Zod object schema
+   * @example
+   * ```ts
+   * const schema = zodFromTable(module.table.columns, { optional: ['bio'] })
+   * ```
+   */
   zodFromTable = (columns: Record<string, unknown>, options: ZodFromTableOptions = {}): ZodObject<ZodRawShape> => {
     const includeSet = new Set(options.include),
       excludeSet = new Set(options.exclude),

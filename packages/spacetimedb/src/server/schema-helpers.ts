@@ -54,7 +54,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
     }
     return out
   },
-  
+  /** Declares a base table with no ownership fields. */
   baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
     asNever(
       tableDef('base', {
@@ -62,7 +62,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         updatedAt: 'number'
       })
     ),
-  
+  /** Declares a user-owned table with userId and updatedAt. */
   ownedTable = <T extends ZodRawShape>(s: OwnedSchema<T>) =>
     asNever(
       tableDef('owned', {
@@ -71,7 +71,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         userId: 'identity'
       }).index('by_user', ['userId'])
     ),
-  
+  /** Declares a per-user singleton table. */
   singletonTable = <T extends ZodRawShape>(s: SingletonSchema<T>) =>
     asNever(
       tableDef('singleton', {
@@ -80,7 +80,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         userId: 'identity'
       }).index('by_user', ['userId'])
     ),
-  
+  /** Declares an org-scoped table with orgId, userId, and updatedAt. */
   orgTable = <T extends ZodRawShape>(s: OrgSchema<T>) =>
     asNever(
       tableDef('org', {
@@ -92,7 +92,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         .index('by_org', ['orgId'])
         .index('by_org_user', ['orgId', 'userId'])
     ),
-  
+  /** Declares an org-scoped child table with a foreign key to a parent. */
   orgChildTable = <T extends ZodRawShape>(
     s: OrgSchema<T>,
     parent: {
@@ -110,7 +110,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         .index('by_org', ['orgId'])
         .index('by_parent', [parent.foreignKey])
     ),
-  
+  /** Declares a child table with a foreign key to a parent row. */
   childTable = <T extends ZodRawShape>(s: ZodObject<T>, indexField: string, indexName?: string) =>
     asNever(
       tableDef('child', {
@@ -118,7 +118,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         updatedAt: 'number'
       }).index(indexName ?? `by_${indexField}`, [indexField])
     ),
-  
+  /** Declares all org management tables (org, member, invite, join request). */
   orgTables = () => ({
     org: asNever(
       tableDef('system', {
@@ -165,7 +165,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         .index('by_user', ['userId'])
     )
   }),
-  
+  /** Declares the rate limit tracking table. */
   rateLimitTable = () => ({
     rateLimit: asNever(
       tableDef('system', {
@@ -176,7 +176,7 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
       }).index('by_table_key', ['table', 'key'])
     )
   }),
-  
+  /** Declares file and file chunk tables for upload support. */
   uploadTables = () => ({
     uploadChunk: asNever(
       tableDef('system', {
@@ -227,7 +227,7 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
       for (const [k, vl] of Object.entries((b.schema as unknown as { shape: Record<string, unknown> }).shape))
         scanSchema(vl, path ? `${path}.${k}` : k, out)
   },
-  
+  /** Validates that a SpacetimeDB schema has the expected tables. */
   checkSchema = (schemas: Record<string, ZodObject<ZodRawShape>>) => {
     const res: CheckSchemaOutput[] = []
     for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)

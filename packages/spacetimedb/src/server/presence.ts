@@ -83,9 +83,9 @@ const HEARTBEAT_INTERVAL_MS = 15_000,
       userId: ctx.sender
     } as Row)
   },
-  
+  /** Declares the presence tracking table. */
   presenceTable = <T>(presence: T): { presence: T } => ({ presence }),
-  
+  /** Generates heartbeat, leave, and cleanup reducers for presence tracking. */
   makePresence = <
     DB,
     Id,

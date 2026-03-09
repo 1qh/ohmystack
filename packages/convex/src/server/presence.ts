@@ -6,7 +6,14 @@ import type { Mb, MutCtx, Qb, Rec } from './types'
 
 import { idx, indexFields, typed } from './bridge'
 
+/** Interval in milliseconds between heartbeat pings for presence tracking. */
+const HEARTBEAT_INTERVAL_MS = 15_000,
+  /** Time-to-live in milliseconds after which a presence entry is considered stale. */
   PRESENCE_TTL_MS = 30_000,
+  /**
+   * Returns a Convex table definition for the presence table with room and user indexes.
+   * @returns Object with a `presence` table definition
+   */
   presenceTable = () => ({
     presence: defineTable({
       data: v.optional(v.any()),
@@ -17,6 +24,11 @@ import { idx, indexFields, typed } from './bridge'
       .index('by_room', indexFields('roomId'))
       .index('by_room_user', indexFields('roomId', 'userId'))
   }),
+  /**
+   * Creates presence tracking endpoints: heartbeat, list active users, and leave.
+   * @param builders - Object with authenticated mutation (m) and query (q) builders
+   * @returns Object with heartbeat, list, and leave endpoints
+   */
   makePresence = ({ m, q }: { m: Mb; q: Qb }) => {
     const heartbeat = m({
         args: object({ data: any().optional(), roomId: string() }),

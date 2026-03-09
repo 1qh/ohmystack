@@ -88,6 +88,7 @@ interface UseStepperOpts<Defs extends readonly StepDef[]> {
   values?: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
 
+/** Creates a type-safe multi-step form with per-step schemas and a stepper hook. */
 const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...defs: Defs) => {
   const internalSteps = defs.map(d => ({ id: d.id, label: d.label, schema: d.schema })) as unknown as InternalStep[],
     stepperFactory = defineStepper(...internalSteps),
@@ -304,7 +305,7 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
               // oxlint-disable-next-line promise/prefer-await-to-then
               s.submitAll(stepDataRef.current).catch((catchError: unknown) => {
                 // eslint-disable-next-line no-console
-                console.error('[@ohmystack/spacetimedb] Step form final submission failed:', catchError)
+                 console.error('[@ohmystack/spacetimedb] Step form final submission failed:', catchError)
               })
             else s.inner.navigation.next()
           },
@@ -383,4 +384,5 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
   }
 }
 
+/** Exports step form factory and hook for building multi-step forms. */
 export { defineSteps }

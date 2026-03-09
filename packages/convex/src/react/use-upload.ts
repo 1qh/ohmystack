@@ -10,11 +10,19 @@ import { useRef, useState } from 'react'
 
 import { sleep } from '../constants'
 
+/** Options for useUpload: retry count and delay between retries. */
 interface UploadOptions {
   retries?: number
   retryDelay?: number
 }
 
+/** Result of an upload attempt — either success with a storageId or failure with an error code. */
+type UploadResult =
+  | { code: 'ABORTED' | 'INVALID_RESPONSE' | 'NETWORK' | 'URL'; ok: false }
+  | { code: 'HTTP'; ok: false; status: number }
+  | { ok: true; storageId: string }
+
+/** Manages file uploads to Convex storage with progress tracking, retry logic, and abort support. */
 const useUpload = (uploadMutation: FunctionReference<'mutation'>, options?: UploadOptions) => {
   const DEFAULT_RETRIES = 3,
     DEFAULT_RETRY_DELAY = 1000,

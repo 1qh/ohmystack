@@ -130,24 +130,24 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       return { details: ['No running containers matched "spacetime"'], status: 'warn', title: 'Docker Health' }
     return { details: [`Running: ${spacetimeContainers.join(', ')}`], status: 'pass', title: 'Docker Health' }
   },
-  checkEslintContent = (content?: string): CheckResult => {
-    if (content === undefined)
-      return { details: ['No eslint.config.* file found'], status: 'warn', title: 'ESLint Configuration' }
-    if (content.includes('@ohmystack/spacetimedb/eslint'))
-      return { details: ['@ohmystack/spacetimedb/eslint plugin configured'], status: 'pass', title: 'ESLint Configuration' }
-    return {
-      details: ['eslint.config found but @ohmystack/spacetimedb/eslint not imported'],
-      status: 'warn',
-      title: 'ESLint Configuration'
-    }
-  },
-  checkDeps = (pkg?: Record<string, unknown>): CheckResult => {
-    if (!pkg) return { details: ['No package.json found'], status: 'fail', title: 'Dependencies' }
-    const deps = (pkg.dependencies ?? {}) as Record<string, string>,
-      devDeps = (pkg.devDependencies ?? {}) as Record<string, string>,
-      all = { ...deps, ...devDeps },
-      details: string[] = [],
-      required = ['@ohmystack/spacetimedb', 'spacetimedb', 'zod']
+   checkEslintContent = (content?: string): CheckResult => {
+     if (content === undefined)
+       return { details: ['No eslint.config.* file found'], status: 'warn', title: 'ESLint Configuration' }
+     if (content.includes('@ohmystack/spacetimedb/eslint'))
+       return { details: ['@ohmystack/spacetimedb/eslint plugin configured'], status: 'pass', title: 'ESLint Configuration' }
+     return {
+       details: ['eslint.config found but @ohmystack/spacetimedb/eslint not imported'],
+       status: 'warn',
+       title: 'ESLint Configuration'
+     }
+   },
+   checkDeps = (pkg?: Record<string, unknown>): CheckResult => {
+     if (!pkg) return { details: ['No package.json found'], status: 'fail', title: 'Dependencies' }
+     const deps = (pkg.dependencies ?? {}) as Record<string, string>,
+       devDeps = (pkg.devDependencies ?? {}) as Record<string, string>,
+       all = { ...deps, ...devDeps },
+       details: string[] = [],
+       required = ['@ohmystack/spacetimedb', 'spacetimedb', 'zod']
     let missing = 0
     for (const name of required)
       if (all[name]) details.push(`${name}: ${all[name]}`)
@@ -166,7 +166,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   },
   doctor = () => {
     const root = process.cwd()
-    console.log(bold('\nohmystack-stdb doctor\n'))
+     console.log(bold('\nohmystack-stdb doctor\n'))
 
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {

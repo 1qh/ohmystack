@@ -629,18 +629,18 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
       console.log('')
     }
     if (allIssues.length === 0) console.log(`  ${green('\u2713 No issues found')}\n`)
-    console.log(
-      `  ${dim('Run')} ohmystack-convex check --schema ${dim('for schema preview')}\n` +
-        `  ${dim('Run')} ohmystack-convex check --endpoints ${dim('for endpoint list')}\n` +
-        `  ${dim('Run')} ohmystack-convex check --indexes ${dim('for index analysis')}\n` +
-        `  ${dim('Run')} ohmystack-convex check --access ${dim('for access matrix')}\n`
-    )
+     console.log(
+       `  ${dim('Run')} ohmystack-convex check --schema ${dim('for schema preview')}\n` +
+         `  ${dim('Run')} ohmystack-convex check --endpoints ${dim('for endpoint list')}\n` +
+         `  ${dim('Run')} ohmystack-convex check --indexes ${dim('for index analysis')}\n` +
+         `  ${dim('Run')} ohmystack-convex check --access ${dim('for access matrix')}\n`
+     )
   },
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
 
-    console.log(bold('\nohmystack-convex check\n'))
+     console.log(bold('\n@ohmystack/convex check\n'))
 
     const convexDir = findConvexDir(root)
     if (!convexDir) {
@@ -652,7 +652,7 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
 
     const schemaFile = findSchemaFile(convexDir)
     if (!schemaFile) {
-      console.log(red('\u2717 Could not find schema file with ohmystack-convex markers'))
+       console.log(red('\u2717 Could not find schema file with @ohmystack/convex markers'))
       console.log(dim('  Expected a .ts file importing makeOwned/makeOrgScoped/etc.'))
       process.exit(1)
     }

@@ -102,10 +102,10 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       }
     return { docker, help, moduleDir, watch: watchEnabled }
   },
-  printDevHelp = () => {
-    console.log(`${bold('ohmystack-stdb dev')} — integrated SpacetimeDB + Next.js development\n`)
-    console.log(bold('Usage:'))
-    console.log('  ohmystack-stdb dev [options]\n')
+   printDevHelp = () => {
+     console.log(`${bold('ohmystack-stdb dev')} — integrated SpacetimeDB + Next.js development\n`)
+     console.log(bold('Usage:'))
+     console.log('  ohmystack-stdb dev [options]\n')
     console.log(bold('Options:'))
     console.log(
       `  --module-dir=DIR   ${dim('SpacetimeDB module directory (default: auto-detect from package.json scripts)')}`
@@ -226,7 +226,9 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       stdio: 'inherit'
     })
   },
-  
+  /**
+   * Starts the integrated Betterspace development workflow.
+   */
   dev = async (args: string[] = []) => {
     const flags = parseDevFlags(args)
     if (flags.help) {
@@ -270,7 +272,7 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       process.exit(1)
     }
 
-    console.log(`\n${bold('ohmystack-stdb dev')} ${dim('— starting development environment')}`)
+     console.log(`\n${bold('ohmystack-stdb dev')} ${dim('— starting development environment')}`)
     console.log(`${dim('module dir:')} ${moduleDir}`)
     console.log(`${dim('module name:')} ${moduleName}`)
 

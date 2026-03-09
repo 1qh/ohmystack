@@ -103,7 +103,11 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
     requireCanMutate({ member, operation, row, sender, tableName })
     return { member, pk, row }
   },
-  
+  /** Creates org-scoped CRUD reducers with membership and ACL checks.
+   * @param spacetimedb - SpacetimeDB reducer factory
+   * @param config - Org CRUD configuration
+   * @returns Reducer export map
+   */
   makeOrgCrud = <
     DB,
     F extends OrgCrudFieldBuilders,
@@ -265,7 +269,7 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
       exports: exportsRecord
     }
   },
-  
+  /** Defines a cascade delete relation for org-scoped tables. */
   orgCascade = <S extends ZodRawShape>(
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }

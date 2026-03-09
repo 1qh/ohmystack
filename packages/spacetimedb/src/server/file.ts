@@ -22,6 +22,7 @@ interface SenderLike {
   toString?: () => string
 }
 
+/** Default MIME types accepted by Betterspace file upload reducers. */
 const DEFAULT_ALLOWED_TYPES = new Set([
     'application/json',
     'application/msword',
@@ -53,7 +54,15 @@ const DEFAULT_ALLOWED_TYPES = new Set([
     for (const ch of normalized) if (ch !== '0') return true
     return false
   },
-  
+  /** Creates reducers that register and delete uploaded file metadata.
+   * @param spacetimedb - SpacetimeDB reducer factory
+   * @param config - File upload reducer configuration
+   * @returns Reducer export map
+   * @example
+   * ```ts
+   * const uploads = makeFileUpload(spacetimedb, { namespace: 'avatars', fields, idField, pk, table })
+   * ```
+   */
   makeFileUpload = <
     DB,
     Id,

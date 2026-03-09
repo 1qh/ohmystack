@@ -37,9 +37,9 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
         await heartbeat()
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(
-          '[@ohmystack/spacetimedb] Presence heartbeat failed — will retry on next interval. If this persists, check your SpacetimeDB connection:',
-          error
+         console.error(
+           '[@ohmystack/spacetimedb] Presence heartbeat failed — will retry on next interval. If this persists, check your SpacetimeDB connection:',
+           error
         )
       }
     }
@@ -53,7 +53,13 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
       return Number(value.__timestamp_micros_since_unix_epoch__ / MICROS_PER_MILLISECOND)
     return 0
   },
-  
+  /**
+   * Tracks online users for a room by heartbeating and pruning stale rows.
+   * @param data Presence rows from the subscription.
+   * @param heartbeat Mutation that refreshes current user presence.
+   * @param options Presence behavior overrides.
+   * @returns Active users and an `updatePresence` helper.
+   */
   usePresence = (data: PresenceRow[], heartbeat: () => Promise<void>, options?: UsePresenceOptions): UsePresenceResult => {
     const enabled = options?.enabled !== false,
       ttlMs = options?.ttlMs ?? PRESENCE_TTL_FALLBACK_MS,
