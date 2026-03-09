@@ -1,5 +1,22 @@
 {
   "name": "@a/be-spacetimedb",
   "private": true,
-  "type": "module"
+  "exports": {
+    "./spacetimedb": "./module_bindings/index.ts",
+    "./spacetimedb/types": "./module_bindings/types.ts",
+    "./t": "./t.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "test": "bun with-env bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
+    "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "@ohmystack/spacetimedb": "workspace:*",
+    "@t3-oss/env-nextjs": "latest",
+    "ky": "latest",
+    "spacetimedb": "latest"
+  }
 }

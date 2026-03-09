@@ -1,5 +1,32 @@
 {
   "name": "@a/be-convex",
   "private": true,
-  "type": "module"
+  "exports": {
+    ".": "./convex/_generated/api.js",
+    "./ai": "./ai.ts",
+    "./chat": "./convex/chat.ts",
+    "./lazy": "./lazy.ts",
+    "./model": "./convex/_generated/dataModel.d.ts",
+    "./server": "./convex/_generated/server.js",
+    "./t": "./t.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check:schema": "bun ./check-schema.ts",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "bun with-env convex dev",
+    "lint": "eslint",
+    "prod": "bun with-env convex deploy",
+    "test": "CONVEX_TEST_MODE=true bun with-env bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
+    "typecheck": "bun check:schema && tsc --noEmit",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "@ai-sdk/google-vertex": "latest",
+    "@ohmystack/convex": "workspace:*",
+    "@t3-oss/env-nextjs": "latest",
+    "convex": "latest",
+    "convex-test": "latest",
+    "ky": "latest"
+  }
 }

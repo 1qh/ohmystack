@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve"
+  },
+  "exclude": ["node_modules", "convex/f.test.ts", "convex/org-api.test.ts", "convex/edge.test.ts"],
+  "extends": "lintmax/tsconfig",
+  "include": ["."]
+}
