@@ -23,6 +23,7 @@
     "format": "lintmax fix",
     "format:check": "lintmax check",
     "format:swift": "(ls **/*.swift &>/dev/null && { O=$(swiftformat . 2>&1) || { echo \"$O\"; false; }; } || true) && (ls **/*.kt &>/dev/null && { ktlint --format '**/*.kt' > /dev/null 2>&1 || true; O=$(ktlint '**/*.kt' 2>&1) || { echo \"$O\"; false; }; } || true)",
+    "gha:rerun-current": "bun scripts/rerun-current-actions.ts",
     "postinstall": "bun lint:ws",
     "lint:swift": "(ls **/*.swift &>/dev/null && { swiftlint lint --fix > /dev/null 2>&1 || true; O=$(swiftlint lint --strict 2>&1) || { echo \"$O\"; false; }; } || true) && (O=$(yamllint . 2>&1) || { echo \"$O\"; false; })",
     "lint:ts": "lintmax check",
