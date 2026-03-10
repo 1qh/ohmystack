@@ -25,11 +25,34 @@ The CLI scaffolds the full monorepo.
 
 ## Before / After
 
-Without noboil — ~50 lines per database for basic CRUD, no validation, no rate limiting:
+Without noboil — each database has its own schema syntax, validator types, and CRUD
+boilerplate:
 
-<details> <summary>Raw Convex (~50 lines)</summary>
+<details> <summary>Raw Convex (~70 lines)</summary>
 
-```tsx
+```ts
+// schema.ts — Convex validators
+import { defineSchema, defineTable } from 'convex/server'
+import { v } from 'convex/values'
+
+export default defineSchema({
+  blog: defineTable({
+    title: v.string(),
+    content: v.string(),
+    category: v.string(),
+    published: v.boolean(),
+    coverImage: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    userId: v.id('users'),
+    updatedAt: v.number()
+  })
+    .index('by_userId', ['userId'])
+    .index('by_published', ['published'])
+})
+```
+
+```ts
+// blog.ts — manual CRUD
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
@@ -86,11 +109,42 @@ export const rm = mutation({
 
 </details>
 
-<details> <summary>Raw SpacetimeDB (~40 lines)</summary>
+<details> <summary>Raw SpacetimeDB (~60 lines)</summary>
 
-```tsx
-const createPost = spacetimedb.reducer(
-  { name: 'create_post' },
+```ts
+// schema.ts — SpacetimeDB table + type builders
+import { schema, table, t } from 'spacetimedb/server'
+
+const blog = table(
+  {
+    name: 'blog',
+    public: true,
+    indexes: [
+      { name: 'by_user', algorithm: 'btree', columns: ['userId'] },
+      { name: 'by_published', algorithm: 'btree', columns: ['published'] }
+    ]
+  },
+  {
+    id: t.u32().primaryKey().autoInc(),
+    title: t.string(),
+    content: t.string(),
+    category: t.string(),
+    published: t.bool(),
+    coverImage: t.option(t.string()),
+    tags: t.option(t.array(t.string())),
+    userId: t.identity(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp()
+  }
+)
+
+const spacetimedb = schema(blog)
+```
+
+```ts
+// reducers — manual CRUD
+spacetimedb.reducer(
+  'create_blog',
   {
     title: t.string(),
     content: t.string(),
@@ -107,8 +161,8 @@ const createPost = spacetimedb.reducer(
   }
 )
 
-const updatePost = spacetimedb.reducer(
-  { name: 'update_post' },
+spacetimedb.reducer(
+  'update_blog',
   { id: t.u32(), title: t.string().optional(), content: t.string().optional() },
   (ctx, { id, ...fields }) => {
     const row = ctx.db.blog.id.find(id)
@@ -118,23 +172,19 @@ const updatePost = spacetimedb.reducer(
   }
 )
 
-const deletePost = spacetimedb.reducer(
-  { name: 'delete_post' },
-  { id: t.u32() },
-  (ctx, { id }) => {
-    const row = ctx.db.blog.id.find(id)
-    if (!row || !identityEquals(row.userId, ctx.sender))
-      throw new SenderError('NOT_FOUND')
-    ctx.db.blog.id.delete(id)
-  }
-)
+spacetimedb.reducer('delete_blog', { id: t.u32() }, (ctx, { id }) => {
+  const row = ctx.db.blog.id.find(id)
+  if (!row || !identityEquals(row.userId, ctx.sender))
+    throw new SenderError('NOT_FOUND')
+  ctx.db.blog.id.delete(id)
+})
 ```
 
 </details>
 
-With noboil — define your schema, get everything:
+With noboil — one Zod schema, same code for both databases:
 
-```tsx
+```ts
 const owned = makeOwned({
   blog: object({
     title: string().min(1, 'Required'),
@@ -145,27 +195,37 @@ const owned = makeOwned({
     tags: array(string()).max(5).optional()
   })
 })
+```
 
-export const { create, list, read, rm, update } = crud(
-  owned,
-  'blog'
-)
+```ts
+export const { create, list, read, rm, update } = crud(owned, 'blog')
+```
 
 5 endpoints. Auth, ownership, Zod validation, file upload, cursor pagination, rate
-limiting, conflict detection — all included. Same API across databases.
+limiting, conflict detection — all included.
+Same API across databases.
 `create`, `update`, and `rm` each accept single or bulk input (up to 100 items).
 
 ## Monorepo Structure
+
 ```
-
-noboil/ apps/ convex/ 4 Convex demo web apps (blog, chat, movie, org) spacetimedb/ 4
-SpacetimeDB demo web apps docs/ Documentation site (fumadocs) packages/ cli/ CLI — bun
-noboil@latest init convex/ @noboil/convex library spacetimedb/ @noboil/spacetimedb
-library be-convex/ Convex backend (schema + functions) be-spacetimedb/ SpacetimeDB
-backend (Rust module) ui/ Shared shadcn components fe/ Shared frontend utilities e2e/
-Shared Playwright utilities mobile/convex/ iOS/Android apps (Swift + Skip)
-desktop/convex/ macOS apps (SwiftUI) swift-core/ Shared Swift protocols
-
+noboil/
+  apps/
+    convex/           4 Convex demo web apps (blog, chat, movie, org)
+    spacetimedb/      4 SpacetimeDB demo web apps
+    docs/             Documentation site (fumadocs)
+  packages/
+    cli/              CLI — bun noboil@latest init
+    convex/           @noboil/convex library
+    spacetimedb/      @noboil/spacetimedb library
+    be-convex/        Convex backend (schema + functions)
+    be-spacetimedb/   SpacetimeDB backend (module + bindings)
+    ui/               Shared shadcn components
+    fe/               Shared frontend utilities
+    e2e/              Shared Playwright utilities
+  mobile/convex/      iOS/Android apps (Swift + Skip)
+  desktop/convex/     macOS apps (SwiftUI)
+  swift-core/         Shared Swift protocols
 ```
 
 ## Packages
@@ -183,4 +243,3 @@ desktop/convex/ macOS apps (SwiftUI) swift-core/ Shared Swift protocols
 ## License
 
 MIT. Author: [1qh](https://github.com/1qh/noboil).
-```
