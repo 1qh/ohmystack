@@ -31,7 +31,7 @@ const useBulkSelection = ({
   undoLabel,
   undoMs = UNDO_MS
 }: UseBulkSelectionOpts) => {
-    [selected, setSelected] = useState<Set<string>>(() => new Set()),
+  const [selected, setSelected] = useState<Set<string>>(() => new Set()),
     clear = useCallback(() => {
       setSelected(new Set<string>())
     }, []),
