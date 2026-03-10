@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun i --frozen-lockfile
-      - run: turbo typecheck build --filter='!@a/convex-*' --filter='!@a/stdb-*' --filter='!@a/docs' --output-logs=errors-only
+      - run: bun turbo typecheck build --filter='!@a/convex-*' --filter='!@a/stdb-*' --filter='!@a/docs' --output-logs=errors-only
 
   test:
     needs: changes
