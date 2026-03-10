@@ -26,13 +26,13 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       deletedWikis = useOrgQuery(api.wiki.listDeleted, showDeleted ? {} : 'skip'),
       restoreMut = useOrgMutation(wikiRestore),
       { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
-        bulkRm: useMutation(api.wiki.bulkRm),
         items: wikis?.page ?? [],
         onError: (e: unknown) => {
           fail(e)
         },
         orgId: org._id,
         restore: restoreMut,
+        rm: useMutation(api.wiki.rm),
         toast: (msg, opts) => {
           toast(msg, opts)
         },

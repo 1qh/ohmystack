@@ -18,9 +18,8 @@ import { useOrg } from '~/hook/use-org'
 const ProjectsPage = () => {
   const { isAdmin, org } = useOrg(),
     projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 100 } }),
-    bulkRm = useMutation(api.project.bulkRm),
+    rm = useMutation(api.project.rm),
     { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
-      bulkRm,
       items: projects?.page ?? [],
       onError: (e: unknown) => {
         fail(e)
@@ -28,7 +27,8 @@ const ProjectsPage = () => {
       onSuccess: (count: number) => {
         toast.success(`${count} project(s) deleted`)
       },
-      orgId: org._id
+      orgId: org._id,
+      rm
     })
 
   if (!projects) return <Skeleton className='h-40' />

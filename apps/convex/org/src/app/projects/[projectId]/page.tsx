@@ -149,8 +149,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       createTask = useOrgMutation(api.task.create),
       updateTask = useOrgMutation(api.task.update),
       removeTask = useOrgMutation(api.task.rm),
-      bulkRm = useOrgMutation(api.task.bulkRm),
-      bulkUpdate = useOrgMutation(api.task.bulkUpdate),
       toggleTask = useOrgMutation(api.task.toggle),
       assignTask = useOrgMutation(api.task.assign),
       addEditorMut = useOrgMutation(api.project.addEditor),
@@ -198,7 +196,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       handleBulkDelete = () => {
         if (selected.size === 0) return
-        bulkRm({ ids: [...selected] })
+        removeTask({ ids: [...selected] })
           .then(() => {
             toast.success(`${selected.size} task(s) deleted`)
             setSelected(new Set())
@@ -208,7 +206,9 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       handleBulkComplete = (completed: boolean) => {
         if (selected.size === 0) return
-        bulkUpdate({ data: { completed }, ids: [...selected] })
+        const items: { completed: boolean; id: string }[] = []
+        for (const id of selected) items.push({ completed, id })
+        updateTask({ items })
           .then(() => {
             toast.success(`${selected.size} task(s) updated`)
             setSelected(new Set())
