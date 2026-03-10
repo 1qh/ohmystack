@@ -6,8 +6,6 @@ import { orgScoped } from '../t'
 
 export const {
     addEditor,
-    bulkRm,
-    bulkUpdate,
     create,
     editors,
     list,

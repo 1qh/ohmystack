@@ -9,7 +9,7 @@ import { orgScoped } from '../t'
 type OrgDoc<T extends TableNames> = Doc<T> & { orgId: Id<'org'>; userId: Id<'users'> }
 
 // eslint-disable-next-line noboil-convex/require-rate-limit -- demo backend keeps default write throughput
-const { bulkRm, bulkUpdate, create, list, read, rm, update } = orgCrud('task', orgScoped.task, {
+const { create, list, read, rm, update } = orgCrud('task', orgScoped.task, {
     aclFrom: { field: 'projectId', table: 'project' }
   }),
   byProject = pq({
@@ -68,4 +68,4 @@ const { bulkRm, bulkUpdate, create, list, read, rm, update } = orgCrud('task', o
     }
   })
 
-export { assign, bulkRm, bulkUpdate, byProject, create, list, read, rm, toggle, update }
+export { assign, byProject, create, list, read, rm, toggle, update }

@@ -60,7 +60,6 @@ const testAuth = makeTestAuth({
   }),
   {
     addEditorAsUser,
-    bulkRmAsUser: bulkRmProjectAsUser,
     createAsUser: createProjectAsUser,
     listAsUser: listProjectsAsUser,
     removeEditorAsUser,
@@ -68,7 +67,6 @@ const testAuth = makeTestAuth({
     updateAsUser: updateProjectAsUser
   } = projectTestCrud as Record<string, unknown>,
   {
-    bulkRmAsUser: bulkRmTaskAsUser,
     createAsUser: createTaskAsUser,
     rmAsUser: rmTaskAsUser,
     updateAsUser: updateTaskAsUser
@@ -156,29 +154,6 @@ const testAuth = makeTestAuth({
       return ctx.db.get(id)
     }
   }),
-  bulkUpdateTaskAsUser = mutation({
-    args: {
-      data: v.object({ priority: v.optional(v.string()) }),
-      ids: v.array(v.id('task')),
-      orgId: v.id('org'),
-      userId: v.id('users')
-    },
-    handler: async (ctx, { data, ids, orgId, userId }) => {
-      if (!isTestMode()) return null
-      const membership = await getOrgMembership(ctx.db as never, orgId, userId)
-      if (!membership) return { code: 'NOT_ORG_MEMBER' }
-      if (!membership.isAdmin) return { code: 'INSUFFICIENT_ORG_ROLE' }
-      let count = 0
-      for (const id of ids) {
-        const task = await ctx.db.get(id)
-        if (task && (task as { orgId?: unknown }).orgId === orgId) {
-          await ctx.db.patch(id, { ...data, updatedAt: Date.now() } as never)
-          count += 1
-        }
-      }
-      return { count }
-    }
-  }),
   getProjectEditors = query({
     args: { orgId: v.id('org'), projectId: v.id('project') },
     handler: async (ctx, { orgId, projectId }) => {
@@ -198,9 +173,6 @@ export {
   addWikiEditorAsUser,
   approveJoinRequestAsUser,
   assignTaskAsUser,
-  bulkRmProjectAsUser,
-  bulkRmTaskAsUser,
-  bulkUpdateTaskAsUser,
   cancelJoinRequestAsUser,
   cleanupOrgTestData,
   cleanupTestData,

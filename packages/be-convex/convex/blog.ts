@@ -6,8 +6,6 @@ import { crud, m, pq } from '../lazy'
 import { owned } from '../t'
 
 const {
-    bulkRm,
-    bulkUpdate,
     create,
     pub: { list, read, search },
     rm,
@@ -55,4 +53,4 @@ const {
     }
   })
 
-export { authorPosts, bulkRm, bulkUpdate, create, list, postStats, read, rm, search, togglePublish, update }
+export { authorPosts, create, list, postStats, read, rm, search, togglePublish, update }
