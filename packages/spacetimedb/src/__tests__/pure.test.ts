@@ -4100,15 +4100,12 @@ describe('noboil-stdb-check --endpoints', () => {
 
   test('childCrud produces base child endpoints', () => {
     const eps = endpointsForFactory(
-      makeCall('makeChildCrud', 'endpoints=list,create,update,rm,bulkCreate,bulkRm,bulkUpdate')
+      makeCall('makeChildCrud', 'endpoints=list,create,update,rm')
     )
     expect(eps).toContain('list')
     expect(eps).toContain('create')
     expect(eps).toContain('update')
     expect(eps).toContain('rm')
-    expect(eps).toContain('bulkCreate')
-    expect(eps).toContain('bulkRm')
-    expect(eps).toContain('bulkUpdate')
   })
 
   test('childCrud with pub adds pub.list and pub.get', () => {
@@ -4718,113 +4715,8 @@ describe('security ESLint rules', () => {
 })
 
 describe('bulk operations', () => {
-  const blogSchema = object({
-    content: string(),
-    published: boolean(),
-    title: string()
-  })
-
-  test('CrudResult includes bulkCreate', () => {
-    expect(blogSchema.shape).toBeDefined()
-    type R = CrudResult
-    type HasBulkCreate = 'exports' extends keyof R ? true : false
-    const _check: HasBulkCreate = true
-    expect(_check).toBe(true)
-  })
-
-  test('OrgCrudResult includes bulkCreate', () => {
-    type R = OrgCrudResult
-    type HasBC = 'exports' extends keyof R ? true : false
-    const _exists: HasBC = true
-    expect(_exists).toBe(true)
-  })
-
-  test('ChildCrudResult includes bulkCreate, bulkRm, and bulkUpdate', () => {
-    type R = ChildCrudResult
-    type HasBC = 'exports' extends keyof R ? true : false
-    type HasBR = 'exports' extends keyof R ? true : false
-    type HasBU = 'exports' extends keyof R ? true : false
-    const _bcExists: HasBC = true,
-      _brExists: HasBR = true,
-      _buExists: HasBU = true
-    expect(_bcExists).toBe(true)
-    expect(_brExists).toBe(true)
-    expect(_buExists).toBe(true)
-  })
-
-  test('endpointsForFactory includes bulkCreate for crud', () => {
-    const eps = endpointsForFactory({
-      factory: 'makeCrud',
-      file: 'test.ts',
-      options: 'endpoints=bulkCreate,bulkRm,bulkUpdate',
-      table: 'test'
-    })
-    expect(eps).toContain('bulkCreate')
-    expect(eps).toContain('bulkRm')
-    expect(eps).toContain('bulkUpdate')
-  })
-
-  test('endpointsForFactory includes bulkCreate for orgCrud', () => {
-    const eps = endpointsForFactory({
-      factory: 'makeOrg',
-      file: 'test.ts',
-      options: 'endpoints=bulkCreate,bulkRm,bulkUpdate',
-      table: 'test'
-    })
-    expect(eps).toContain('bulkCreate')
-    expect(eps).toContain('bulkRm')
-    expect(eps).toContain('bulkUpdate')
-  })
-
-  test('endpointsForFactory includes bulk ops for childCrud', () => {
-    const eps = endpointsForFactory({
-      factory: 'makeChildCrud',
-      file: 'test.ts',
-      options: 'endpoints=bulkCreate,bulkRm,bulkUpdate',
-      table: 'test'
-    })
-    expect(eps).toContain('bulkCreate')
-    expect(eps).toContain('bulkRm')
-    expect(eps).toContain('bulkUpdate')
-  })
-
   test('BULK_MAX limits array size to 100', () => {
     expect(BULK_MAX).toBe(100)
-  })
-
-  test('bulk operations not added to singletonCrud', () => {
-    const eps = endpointsForFactory({
-      factory: 'singletonCrud',
-      file: 'test.ts',
-      options: '',
-      table: 'test'
-    })
-    expect(eps).not.toContain('bulkCreate')
-    expect(eps).not.toContain('bulkRm')
-    expect(eps).not.toContain('bulkUpdate')
-  })
-
-  test('CrudResult bulkCreate key exists alongside bulkRm', () => {
-    type R = CrudResult
-    type HasBC = 'exports' extends keyof R ? true : false
-    type HasBR = 'exports' extends keyof R ? true : false
-    const _bc: HasBC = true,
-      _br: HasBR = true
-    expect(_bc).toBe(true)
-    expect(_br).toBe(true)
-  })
-
-  test('ChildCrudResult has all 3 bulk ops', () => {
-    type R = ChildCrudResult
-    type HasBC = 'exports' extends keyof R ? true : false
-    type HasBR = 'exports' extends keyof R ? true : false
-    type HasBU = 'exports' extends keyof R ? true : false
-    const _bc: HasBC = true,
-      _br: HasBR = true,
-      _bu: HasBU = true
-    expect(_bc).toBe(true)
-    expect(_br).toBe(true)
-    expect(_bu).toBe(true)
   })
 })
 
@@ -6215,25 +6107,24 @@ describe('accessForFactory', () => {
     expect(auth?.endpoints).not.toContain('pub.search')
   })
 
-  test('crud Authenticated includes create and bulkCreate', () => {
+  test('crud Authenticated includes create', () => {
     const call: FactoryCall = {
         factory: 'makeCrud',
         file: 'blog.ts',
-        options: 'endpoints=create,bulkCreate',
+        options: 'endpoints=create',
         table: 'blog'
       },
       result = accessForFactory(call),
       auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth).toBeDefined()
     expect(auth?.endpoints).toContain('create')
-    expect(auth?.endpoints).toContain('bulkCreate')
   })
 
-  test('crud includes update, rm, bulkRm, bulkUpdate', () => {
+  test('crud includes update and rm', () => {
     const call: FactoryCall = {
         factory: 'makeCrud',
         file: 'blog.ts',
-        options: 'endpoints=update,rm,bulkRm,bulkUpdate',
+        options: 'endpoints=update,rm',
         table: 'blog'
       },
       result = accessForFactory(call),
@@ -6241,8 +6132,6 @@ describe('accessForFactory', () => {
     expect(auth).toBeDefined()
     expect(auth?.endpoints).toContain('update')
     expect(auth?.endpoints).toContain('rm')
-    expect(auth?.endpoints).toContain('bulkRm')
-    expect(auth?.endpoints).toContain('bulkUpdate')
   })
 
   test('crud with softDelete adds restore', () => {
@@ -6312,11 +6201,11 @@ describe('accessForFactory', () => {
     expect(allMemberEps).toContain('search')
   })
 
-  test('orgCrud Org Admin includes rm, bulkCreate, bulkRm, bulkUpdate', () => {
+  test('orgCrud Org Admin includes rm', () => {
     const call: FactoryCall = {
         factory: 'makeOrg',
         file: 'wiki.ts',
-        options: 'endpoints=rm,bulkCreate,bulkRm,bulkUpdate',
+        options: 'endpoints=rm',
         table: 'wiki'
       },
       result = accessForFactory(call),
@@ -6324,9 +6213,6 @@ describe('accessForFactory', () => {
       allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('rm')
-    expect(allMemberEps).toContain('bulkCreate')
-    expect(allMemberEps).toContain('bulkRm')
-    expect(allMemberEps).toContain('bulkUpdate')
   })
 
   test('orgCrud with acl adds ACL endpoints to Org Admin', () => {
@@ -6386,11 +6272,11 @@ describe('accessForFactory', () => {
     expect(levels).toContain('Parent Owner')
   })
 
-  test('childCrud Parent Owner includes list, create, update, rm, bulkCreate, bulkRm, bulkUpdate', () => {
+  test('childCrud Parent Owner includes list, create, update, and rm', () => {
     const call: FactoryCall = {
         factory: 'makeChildCrud',
         file: 'message.ts',
-        options: 'endpoints=list,create,update,rm,bulkCreate,bulkRm,bulkUpdate',
+        options: 'endpoints=list,create,update,rm',
         table: 'message'
       },
       result = accessForFactory(call),
@@ -6400,9 +6286,6 @@ describe('accessForFactory', () => {
     expect(owner?.endpoints).toContain('create')
     expect(owner?.endpoints).toContain('update')
     expect(owner?.endpoints).toContain('rm')
-    expect(owner?.endpoints).toContain('bulkCreate')
-    expect(owner?.endpoints).toContain('bulkRm')
-    expect(owner?.endpoints).toContain('bulkUpdate')
   })
 
   test('childCrud with pub adds pub.list and pub.get reducers', () => {
@@ -9007,9 +8890,6 @@ describe('doctor', () => {
         toast: bulkMutateToastType
       },
       bulkSelectionType: ReactIndexTypes.UseBulkSelectionOpts = {
-        bulkRm: async () => {
-          String(0)
-        },
         items: [{ _id: '1' }],
         orgId: 'org_1'
       },
@@ -11077,7 +10957,7 @@ describe('sanitizeString (extended patterns)', () => {
 })
 
 describe('UseBulkSelectionOpts rm option type', () => {
-  test('accepts rm without bulkRm', () => {
+  test('accepts rm', () => {
     const opts: ReactIndexTypes.UseBulkSelectionOpts = {
       items: [{ _id: '1' }, { _id: '2' }],
       orgId: 'org_1',
@@ -11086,43 +10966,14 @@ describe('UseBulkSelectionOpts rm option type', () => {
       }
     }
     expect(opts.rm).toBeDefined()
-    expect(opts.bulkRm).toBeUndefined()
   })
 
-  test('accepts bulkRm without rm', () => {
-    const opts: ReactIndexTypes.UseBulkSelectionOpts = {
-      bulkRm: async () => {
-        String(0)
-      },
-      items: [{ _id: '1' }],
-      orgId: 'org_1'
-    }
-    expect(opts.bulkRm).toBeDefined()
-    expect(opts.rm).toBeUndefined()
-  })
-
-  test('accepts both rm and bulkRm', () => {
-    const opts: ReactIndexTypes.UseBulkSelectionOpts = {
-      bulkRm: async () => {
-        String(0)
-      },
-      items: [],
-      orgId: 'org_1',
-      rm: async () => {
-        String(0)
-      }
-    }
-    expect(opts.rm).toBeDefined()
-    expect(opts.bulkRm).toBeDefined()
-  })
-
-  test('accepts neither rm nor bulkRm', () => {
+  test('accepts missing rm', () => {
     const opts: ReactIndexTypes.UseBulkSelectionOpts = {
       items: [],
       orgId: 'org_1'
     }
     expect(opts.rm).toBeUndefined()
-    expect(opts.bulkRm).toBeUndefined()
   })
 
   test('rm receives string id parameter', () => {
