@@ -109,13 +109,25 @@ const chk = (ctx: UserCtx): HookCtx => ({
         const p = await ctx.db.get(parentId)
         return p && p.userId === ctx.user._id ? p : null
       },
+      updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
       create = m({
-        args: { ...schema.shape, [foreignKey]: zid(parent) },
+        args: { ...partial.shape, [foreignKey]: zid(parent), items: array(schema).max(BULK_MAX).optional() },
         handler: typed(async (ctx: UserCtx, a: Rec) => {
-          const args = a,
-            parentId = args[foreignKey] as string
-          let data = schema.parse(pickFields(args, schemaKeys)) as Rec
+          const parentId = a[foreignKey] as string,
+            items = a.items as Rec[] | undefined
           if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:create`)
+          if (items) {
+            const ids: string[] = []
+            for (const item of items) {
+              let data = schema.parse(pickFields(item, schemaKeys)) as Rec
+              if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
+              const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
+              if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
+              ids.push(id)
+            }
+            return ids
+          }
+          let data = schema.parse(pickFields(a, schemaKeys)) as Rec
           if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
           const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
           if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
@@ -123,13 +135,31 @@ const chk = (ctx: UserCtx): HookCtx => ({
         })
       }),
       update = m({
-        args: { ...idArgs, ...partial.shape },
+        args: { ...partial.shape, id: zid(table).optional(), items: array(updateItemSchema).max(BULK_MAX).optional() },
         handler: typed(async (ctx: MutCtx, a: Rec) => {
-          const { id, ...rest } = a as Rec & { id: string },
-            doc = await ctx.db.get(id)
+          const rawItems = a.items as Array<Rec & { id: string }> | undefined
+          if (rawItems) {
+            const results: Rec[] = []
+            for (const rawItem of rawItems) {
+              const doc = await ctx.db.get(rawItem.id)
+              if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
+                let patch = partial.parse(pickFields(rawItem, schemaKeys)) as Rec
+                if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
+                const now = time()
+                await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
+                await dbPatch(ctx.db, rawItem.id, { ...patch, ...now })
+                if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
+                results.push({ ...doc, ...patch, ...now })
+              }
+            }
+            return results
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+          const doc = await ctx.db.get(id)
           if (!doc) return err('NOT_FOUND', `${table}:update`)
           if (!(await verifyParentOwnership(ctx, getFK(doc)))) return err('NOT_FOUND', `${table}:update`)
-          let patch = partial.parse(pickFields(rest, schemaKeys)) as Rec
+          let patch = partial.parse(pickFields(a, schemaKeys)) as Rec
           if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id, patch, prev: doc })
           const now = time()
           await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
@@ -139,8 +169,25 @@ const chk = (ctx: UserCtx): HookCtx => ({
         })
       }),
       rm = m({
-        args: idArgs,
-        handler: typed(async (ctx: MutCtx, { id }: { id: string }) => {
+        args: { id: zid(table).optional(), ids: bulkIdsSchema.optional() },
+        handler: typed(async (ctx: MutCtx, a: Rec) => {
+          const ids = a.ids as string[] | undefined
+          if (ids) {
+            let deleted = 0
+            for (const id of ids) {
+              const doc = await ctx.db.get(id)
+              if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
+                if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
+                await dbDelete(ctx.db, id)
+                await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
+                if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
+                deleted += 1
+              }
+            }
+            return deleted
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
           const doc = await ctx.db.get(id)
           if (!doc) return err('NOT_FOUND', `${table}:rm`)
           const parentId = getFK(doc)
@@ -150,64 +197,6 @@ const chk = (ctx: UserCtx): HookCtx => ({
           await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
           if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
           return doc
-        })
-      }),
-      bulkCreate = m({
-        args: { [foreignKey]: zid(parent), items: array(schema).max(BULK_MAX) },
-        handler: typed(async (ctx: UserCtx, a: Rec) => {
-          const parentId = a[foreignKey] as string,
-            items = a.items as Rec[]
-          if (items.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkCreate`)
-          if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:bulkCreate`)
-          const ids: string[] = []
-          for (const item of items) {
-            let data = schema.parse(pickFields(item, schemaKeys)) as Rec
-            if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
-            const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
-            if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
-            ids.push(id)
-          }
-          return ids
-        })
-      }),
-      bulkRm = m({
-        args: { ids: bulkIdsSchema },
-        handler: typed(async (ctx: MutCtx, a: Rec) => {
-          const ids = a.ids as string[]
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkRm`)
-          let deleted = 0
-          for (const id of ids) {
-            const doc = await ctx.db.get(id)
-            if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
-              if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
-              await dbDelete(ctx.db, id)
-              await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
-              if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
-              deleted += 1
-            }
-          }
-          return deleted
-        })
-      }),
-      bulkUpdate = m({
-        args: { data: partial, ids: bulkIdsSchema },
-        handler: typed(async (ctx: MutCtx, a: Rec) => {
-          const { data, ids } = a as { data: Rec; ids: string[] }
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkUpdate`)
-          const results: Rec[] = []
-          for (const id of ids) {
-            const doc = await ctx.db.get(id)
-            if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
-              let patch = partial.parse(pickFields(data, schemaKeys)) as Rec
-              if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id, patch, prev: doc })
-              const now = time()
-              await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
-              await dbPatch(ctx.db, id, { ...patch, ...now })
-              if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id, patch, prev: doc })
-              results.push({ ...doc, ...patch, ...now })
-            }
-          }
-          return results
         })
       }),
       list = q({
@@ -267,9 +256,6 @@ const chk = (ctx: UserCtx): HookCtx => ({
             }
           : undefined
     return {
-      bulkCreate,
-      bulkRm,
-      bulkUpdate,
       create,
       get,
       list,

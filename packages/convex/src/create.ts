@@ -70,7 +70,7 @@ export { crud, file, m, pq, q }
 import { owned } from './t'
 
 export const {
-  bulkRm, bulkUpdate, create,
+  create,
   pub: { list, read },
   rm, update
 } = crud('blog', owned.blog, { search: 'content' })

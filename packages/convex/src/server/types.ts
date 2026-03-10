@@ -217,18 +217,15 @@ interface CanEditOpts {
   userId: string
 }
 interface ChildCrudResult<S extends ZodRawShape> {
-  bulkCreate: RegisteredMutation<'public', Rec, string[]>
-  bulkRm: RegisteredMutation<'public', Rec, number>
-  bulkUpdate: RegisteredMutation<'public', Rec, DocBase<S>[]>
-  create: RegisteredMutation<'public', Rec, string>
+  create: RegisteredMutation<'public', Rec, string | string[]>
   get: RegisteredQuery<'public', Rec, DocBase<S> | null>
   list: RegisteredQuery<'public', Rec, DocBase<S>[]>
   pub?: {
     get: RegisteredQuery<'public', Rec, DocBase<S> | null>
     list: RegisteredQuery<'public', Rec, DocBase<S>[]>
   }
-  rm: RegisteredMutation<'public', Rec, DocBase<S>>
-  update: RegisteredMutation<'public', Rec, DocBase<S> | null>
+  rm: RegisteredMutation<'public', Rec, DocBase<S> | number>
+  update: RegisteredMutation<'public', Rec, DocBase<S> | DocBase<S>[] | null>
 }
 interface CrudReadApi<S extends ZodRawShape, V extends FunctionVisibility = 'public'> {
   list: RegisteredQuery<V, { paginationOpts: PaginationOptions; where?: WhereOf<S> }, PaginatedResult<EnrichedDoc<S>>>
@@ -242,10 +239,11 @@ interface CrudResult<S extends ZodRawShape> {
     { index: string; key: string; value: string; where?: WhereOf<S> },
     EnrichedDoc<S>[]
   >
-  bulkCreate: RegisteredMutation<'public', { items: _.output<ZodObject<S>>[] }, string[]>
-  bulkRm: RegisteredMutation<'public', { ids: string[] }, number>
-  bulkUpdate: RegisteredMutation<'public', { data: Partial<_.output<ZodObject<S>>>; ids: string[] }, unknown[]>
-  create: RegisteredMutation<'public', _.output<ZodObject<S>>, string>
+  create: RegisteredMutation<
+    'public',
+    _.output<ZodObject<S>> & { items?: _.output<ZodObject<S>>[] },
+    string | string[]
+  >
   pub: CrudReadApi<S>
   pubIndexed: RegisteredQuery<
     'public',
@@ -253,11 +251,15 @@ interface CrudResult<S extends ZodRawShape> {
     EnrichedDoc<S>[]
   >
   restore?: RegisteredMutation<'public', { id: string }, DocBase<S>>
-  rm: RegisteredMutation<'public', { id: string }, DocBase<S>>
+  rm: RegisteredMutation<'public', { id?: string; ids?: string[] }, DocBase<S> | number>
   update: RegisteredMutation<
     'public',
-    Partial<_.output<ZodObject<S>>> & { expectedUpdatedAt?: number; id: string },
-    DocBase<S>
+    Partial<_.output<ZodObject<S>>> & {
+      expectedUpdatedAt?: number
+      id?: string
+      items?: (Partial<_.output<ZodObject<S>>> & { expectedUpdatedAt?: number; id: string })[]
+    },
+    DocBase<S> | DocBase<S>[]
   >
 }
 interface DbLike extends DbReadLike {
@@ -316,18 +318,15 @@ type OrgCascadeTableConfig<DM extends GenericDataModel = GenericDataModel> =
   | { fileFields?: string[]; table: keyof DM & string }
 interface OrgCrudResult<S extends ZodRawShape> {
   addEditor: RegisteredMutation<'public', Rec, DocBase<S> | null>
-  bulkCreate: RegisteredMutation<'public', Rec, string[]>
-  bulkRm: RegisteredMutation<'public', Rec, number>
-  bulkUpdate: RegisteredMutation<'public', Rec, DocBase<S>[]>
-  create: RegisteredMutation<'public', Rec, string>
+  create: RegisteredMutation<'public', Rec, string | string[]>
   editors: RegisteredQuery<'public', Rec, { email: string; name: string; userId: string }[]>
   list: RegisteredQuery<'public', Rec, PaginatedResult<OrgEnrichedDoc<S>>>
   read: RegisteredQuery<'public', Rec, OrgEnrichedDoc<S>>
   removeEditor: RegisteredMutation<'public', Rec, DocBase<S> | null>
   restore?: RegisteredMutation<'public', Rec, DocBase<S>>
-  rm: RegisteredMutation<'public', Rec, DocBase<S>>
+  rm: RegisteredMutation<'public', Rec, DocBase<S> | number>
   setEditors: RegisteredMutation<'public', Rec, DocBase<S> | null>
-  update: RegisteredMutation<'public', Rec, DocBase<S> | null>
+  update: RegisteredMutation<'public', Rec, DocBase<S> | DocBase<S>[] | null>
 }
 type OrgEnrichedDoc<S extends ZodRawShape> = WithUrls<
   DocBase<S> & {

@@ -233,7 +233,7 @@ export const {
 import { ${wrapper} } from './t'
 
 export const {
-  addEditor, bulkRm, create, editors, list, read,
+  addEditor, create, editors, list, read,
   removeEditor, rm, setEditors, update
 } = ${factory}('${name}', ${wrapper}.${name})
 `
@@ -242,7 +242,7 @@ export const {
 import { ${wrapper} } from './t'
 
 export const {
-  bulkRm, bulkUpdate, create,
+  create,
   pub: { list, read },
   rm, update
 } = ${factory}('${name}', ${wrapper}.${name})

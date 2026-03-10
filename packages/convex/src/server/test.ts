@@ -750,45 +750,6 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
           return { success: true }
         }
       }),
-      bulkRmAsUser = mutation({
-        args: { ids: v.array(v.string()), orgId: v.id('org'), userId: v.id('users') },
-        handler: async (ctx: { db: DbLike }, { ids, orgId, userId }: { ids: string[]; orgId: string; userId: string }) => {
-          if (!isTestMode()) return null
-          const orgDoc = await ctx.db.get(orgId)
-          if (!orgDoc) return { code: 'NOT_FOUND' }
-          const isOwner = orgDoc.userId === userId,
-            member = await ctx.db
-              .query('orgMember')
-              .withIndex(
-                'by_org_user',
-                idx(q => q.eq('orgId', orgId).eq('userId', userId))
-              )
-              .unique()
-          if (!(isOwner || member)) return { code: 'NOT_ORG_MEMBER' }
-          if (!(isOwner || member?.isAdmin)) return { code: 'INSUFFICIENT_ORG_ROLE' }
-          let count = 0
-          for (const id of ids) {
-            const doc = await ctx.db.get(id)
-            if (doc?.orgId === orgId) {
-              if (cascade)
-                for (const { foreignKey, table: childTable } of cascade) {
-                  const children = await ctx.db
-                    .query(childTable)
-                    .withIndex(
-                      'by_parent',
-                      idx(q => q.eq(foreignKey, id))
-                    )
-                    .collect()
-                  for (const c of children) await ctx.db.delete(c._id as string)
-                }
-
-              await ctx.db.delete(id)
-              count += 1
-            }
-          }
-          return { count }
-        }
-      }),
       listAsUser = query({
         args: { orgId: v.id('org'), userId: v.id('users') },
         handler: async (ctx: { db: DbLike }, { orgId, userId }: { orgId: string; userId: string }) => {
@@ -804,7 +765,7 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
             .collect()
         }
       }),
-      result: Rec = { bulkRmAsUser, createAsUser, listAsUser, rmAsUser, updateAsUser }
+      result: Rec = { createAsUser, listAsUser, rmAsUser, updateAsUser }
     if (hasAcl) {
       result.addEditorAsUser = mutation({
         args: { editorId: v.id('users'), itemId: v.string(), orgId: v.id('org'), userId: v.id('users') },

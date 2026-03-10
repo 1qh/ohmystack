@@ -78,6 +78,7 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
               : null,
       partial = schema.partial(),
       bulkIdsSchema = array(zid(table)).max(BULK_MAX),
+      updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
       fileFs = detectFiles(schema.shape),
       wgSchema = partial.extend({ own: boolean().optional() }),
       wSchema = wgSchema.extend({ or: array(wgSchema).optional() }),
@@ -317,55 +318,26 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
         args: { index: string(), key: string(), value: string(), ...wArgs },
         handler: typed(indexedH(defaults.auth))
       }),
-      bulkCreate: m({
-        args: { items: array(schema).max(BULK_MAX) },
-        handler: typed(async (c: CrudMCtx, a: Rec) => {
-          const items = a.items as Rec[]
-          if (items.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkCreate`)
-          const ids: string[] = []
-          for (const item of items) {
-            let data = item
-            if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
-            const id = await c.create(table, data)
-            if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
-            ids.push(id)
-          }
-          return ids
-        })
-      }),
-      bulkRm: m({
-        args: { ids: bulkIdsSchema },
-        handler: typed(async (c: CrudMCtx, { ids }: { ids: string[] }) => {
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkRm`)
-          let deleted = 0
-          for (const id of ids) {
-            await rmHandler(typed(c), { id })
-            deleted += 1
-          }
-          return deleted
-        })
-      }),
-      bulkUpdate: m({
-        args: { data: partial, ids: bulkIdsSchema },
-        handler: typed(async (c: CrudMCtx, args: Rec) => {
-          const { data, ids } = args as { data: Rec; ids: string[] }
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkUpdate`)
-          const results: unknown[] = []
-          for (const id of ids) {
-            const prev = await c.get(id),
-              ret = await c.patch(id, data)
-            await cleanFiles({ doc: prev, fileFields: fileFs, next: data, storage: c.storage })
-            results.push(ret)
-          }
-          return results
-        })
-      }),
       create: m({
-        args: schema.shape,
+        args: { ...partial.shape, items: array(schema).max(BULK_MAX).optional() },
         handler: typed(async (c: CrudMCtx, a: Rec) => {
+          const items = a.items as Rec[] | undefined
+          if (items) {
+            const ids: string[] = []
+            for (const item of items) {
+              let data = item
+              if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
+              const id = await c.create(table, data)
+              if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
+              ids.push(id)
+            }
+            return ids
+          }
           if (opt?.rateLimit && !isTestMode())
             await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
-          let data = a
+          const parsed = schema.safeParse(a)
+          if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+          let data = parsed.data as Rec
           if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
           const id = await c.create(table, data)
           if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
@@ -389,18 +361,49 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
           })
         : undefined,
       rm: m({
-        args: idArgs,
-        handler: typed(async (c: CrudMCtx, { id }: { id: string }) => rmHandler(typed(c), { id }))
+        args: { id: zid(table).optional(), ids: bulkIdsSchema.optional() },
+        handler: typed(async (c: CrudMCtx, a: Rec) => {
+          const ids = a.ids as string[] | undefined
+          if (ids) {
+            let deleted = 0
+            for (const id of ids) {
+              await rmHandler(typed(c), { id })
+              deleted += 1
+            }
+            return deleted
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
+          return rmHandler(typed(c), { id })
+        })
       }),
       update: m({
-        args: { ...idArgs, ...partial.shape, expectedUpdatedAt: number().optional() },
+        args: {
+          ...partial.shape,
+          expectedUpdatedAt: number().optional(),
+          id: zid(table).optional(),
+          items: array(updateItemSchema).max(BULK_MAX).optional()
+        },
         handler: typed(async (c: CrudMCtx, a: Rec) => {
-          const { expectedUpdatedAt, id, ...rest } = a as Rec & {
-              expectedUpdatedAt?: number
-              id: string
-            },
+          const rawItems = a.items as Array<Rec & { expectedUpdatedAt?: number; id: string }> | undefined
+          if (rawItems) {
+            const results: unknown[] = []
+            for (const rawItem of rawItems) {
+              const prev = await c.get(rawItem.id)
+              let patch = partial.parse(rawItem) as Rec
+              if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(hk(c), { id: rawItem.id, patch, prev })
+              const ret = await c.patch(rawItem.id, patch, rawItem.expectedUpdatedAt)
+              await cleanFiles({ doc: prev, fileFields: fileFs, next: patch, storage: c.storage })
+              if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: rawItem.id, patch, prev })
+              results.push(ret)
+            }
+            return results
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+          const expectedUpdatedAt = (a as { expectedUpdatedAt?: number }).expectedUpdatedAt,
             prev = await c.get(id)
-          let patch = rest as Rec
+          let patch = partial.parse(a) as Rec
           if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(hk(c), { id, patch, prev })
           const ret = await c.patch(id, patch, expectedUpdatedAt)
           await cleanFiles({ doc: prev, fileFields: fileFs, next: patch, storage: c.storage })

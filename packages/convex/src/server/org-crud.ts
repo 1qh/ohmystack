@@ -185,13 +185,24 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
         for (const kid of kids) await dbDelete(db, kid._id as string)
       },
       create = m({
-        args: { ...orgIdArg, ...schema.shape },
+        args: { ...orgIdArg, ...partial.shape, items: array(schema).max(BULK_MAX).optional() },
         handler: typed(async (c: MutCtx, a: Rec) => {
-          const { orgId, ...raw } = a as Rec & { orgId: string }
+          const { items, orgId } = a as { items?: Rec[]; orgId: string }
           await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+          if (items) {
+            const ids: string[] = []
+            for (const item of items) {
+              let data = item
+              if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
+              const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
+              if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
+              ids.push(id)
+            }
+            return ids
+          }
           if (opt?.rateLimit && !isTestMode())
             await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
-          let data = raw as Rec
+          let data = schema.parse(a) as Rec
           if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
           const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
           if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
@@ -223,14 +234,38 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
           return (await enrich(c, [doc]))[0]
         })
       }),
+      updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
       update = m({
-        args: { ...orgIdArg, ...idArgs, ...partial.shape, expectedUpdatedAt: number().optional() },
+        args: {
+          ...orgIdArg,
+          ...partial.shape,
+          expectedUpdatedAt: number().optional(),
+          id: zid(table).optional(),
+          items: array(updateItemSchema).max(BULK_MAX).optional()
+        },
         handler: typed(async (c: MutCtx, a: Rec) => {
-          const { expectedUpdatedAt, id, orgId, ...raw } = a as Rec & {
-              expectedUpdatedAt?: number
-              id: string
-              orgId: string
-            },
+          const orgId = (a as { orgId: string }).orgId,
+            rawItems = a.items as Array<Rec & { expectedUpdatedAt?: number; id: string }> | undefined
+          if (rawItems) {
+            await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+            const results: Rec[] = []
+            for (const rawItem of rawItems) {
+              const doc = await c.db.get(rawItem.id)
+              if (doc?.orgId === orgId) {
+                let patch = partial.parse(rawItem) as Rec
+                if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
+                const now = time()
+                await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
+                await dbPatch(c.db, rawItem.id, { ...patch, ...now })
+                if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
+                results.push({ ...doc, ...patch, ...now })
+              }
+            }
+            return results
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+          const expectedUpdatedAt = (a as { expectedUpdatedAt?: number }).expectedUpdatedAt,
             { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
             doc = requireOrgDoc(await c.db.get(id), orgId),
             aclDoc = await resolveAclDoc(c.db, doc, opt)
@@ -245,7 +280,7 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
             return err('FORBIDDEN', `${table}:update`)
           if (expectedUpdatedAt !== undefined && doc.updatedAt !== expectedUpdatedAt)
             return err('CONFLICT', `${table}:update`)
-          let patch = raw as Rec
+          let patch = partial.parse(a) as Rec
           if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id, patch, prev: doc })
           const now = time()
           await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
@@ -255,8 +290,29 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
         })
       }),
       rm = m({
-        args: { ...orgIdArg, ...idArgs },
-        handler: typed(async (c: MutCtx, { id, orgId }: { id: string; orgId: string }) => {
+        args: { ...orgIdArg, id: zid(table).optional(), ids: bulkIdsSchema.optional() },
+        handler: typed(async (c: MutCtx, a: Rec) => {
+          const orgId = (a as { orgId: string }).orgId,
+            ids = a.ids as string[] | undefined
+          if (ids) {
+            await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+            let deleted = 0
+            for (const id of ids) {
+              const doc = await c.db.get(id)
+              if (doc?.orgId === orgId) {
+                if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
+                else {
+                  await cascadeDelete(c.db, id)
+                  await dbDelete(c.db, id)
+                  await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+                }
+                deleted += 1
+              }
+            }
+            return deleted
+          }
+          const id = a.id as string | undefined
+          if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
           const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
             doc = requireOrgDoc(await c.db.get(id), orgId),
             aclDoc = await resolveAclDoc(c.db, doc, opt)
@@ -283,64 +339,6 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
           return doc
         })
       }),
-      bulkCreate = m({
-        args: { ...orgIdArg, items: array(schema).max(BULK_MAX) },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { items, orgId } = a as { items: Rec[]; orgId: string }
-          if (items.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkCreate`)
-          await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          const ids: string[] = []
-          for (const item of items) {
-            let data = item
-            if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
-            const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
-            if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
-            ids.push(id)
-          }
-          return ids
-        })
-      }),
-      bulkUpdate = m({
-        args: { ...orgIdArg, data: partial, ids: bulkIdsSchema },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { data, ids, orgId } = a as { data: Rec; ids: string[]; orgId: string }
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkUpdate`)
-          await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const results: Rec[] = []
-          for (const id of ids) {
-            const doc = await c.db.get(id)
-            if (doc?.orgId === orgId) {
-              const now = time()
-              await cleanFiles({ doc, fileFields: fileFs, next: data, storage: c.storage })
-              await dbPatch(c.db, id, { ...data, ...now })
-              results.push({ ...doc, ...data, ...now })
-            }
-          }
-          return results
-        })
-      }),
-      bulkRm = m({
-        args: { ...orgIdArg, ids: bulkIdsSchema },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { ids, orgId } = a as { ids: string[]; orgId: string }
-          if (ids.length > 100) return err('LIMIT_EXCEEDED', `${table}:bulkRm`)
-          await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          let deleted = 0
-          for (const id of ids) {
-            const doc = await c.db.get(id)
-            if (doc?.orgId === orgId) {
-              if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
-              else {
-                await cascadeDelete(c.db, id)
-                await dbDelete(c.db, id)
-                await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
-              }
-              deleted += 1
-            }
-          }
-          return deleted
-        })
-      }),
       restore = softDel
         ? m({
             args: { ...orgIdArg, ...idArgs },
@@ -362,7 +360,7 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
             })
           })
         : undefined,
-      base = { bulkCreate, bulkRm, bulkUpdate, create, list, read, restore, rm, update },
+      base = { create, list, read, restore, rm, update },
       itemIdKey = `${table}Id` as const,
       itemIdArg = { [itemIdKey]: zid(table) },
       aclArgs = (a: unknown) => {
