@@ -241,8 +241,8 @@ test.describe
       expect(ids).not.toContain(wiki2Id)
     })
 
-    test('bulkRm soft-deletes multiple wikis', async () => {
-      await tc.mutation(api.wiki.bulkRm, { ids: [wiki1Id, wiki3Id], orgId: testOrgId })
+    test('rm soft-deletes multiple wikis via ids', async () => {
+      await tc.mutation(api.wiki.rm, { ids: [wiki1Id, wiki3Id], orgId: testOrgId })
       const { page: wikis } = await tc.query(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }

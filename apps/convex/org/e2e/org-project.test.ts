@@ -144,7 +144,7 @@ test.describe
       expect(result).toHaveProperty('code', 'NOT_FOUND')
     })
 
-    test('bulkRm project - success', async () => {
+    test('rm multiple projects via ids', async () => {
       const id1 = await tc.mutation(api.project.create, {
           name: 'Bulk Delete 1',
           orgId: testOrgId
@@ -153,7 +153,7 @@ test.describe
           name: 'Bulk Delete 2',
           orgId: testOrgId
         }),
-        deleted = await tc.mutation(api.project.bulkRm, {
+        deleted = await tc.mutation(api.project.rm, {
           ids: [id1, id2],
           orgId: testOrgId
         })
