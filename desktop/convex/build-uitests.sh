@@ -3,17 +3,8 @@ set -euo pipefail
 
 PIDS=()
 
-for entry in \
-  "blog BlogDesktop BlogUITests" \
-  "chat ChatDesktop ChatUITests" \
-  "movie MovieDesktop MovieUITests" \
-  "org OrgDesktop OrgUITests"; do
-  read -r dir proj scheme <<< "$entry"
-  xcodebuild build-for-testing \
-    -project "desktop/convex/$dir/$proj.xcodeproj" \
-    -scheme "$scheme" \
-    -destination 'platform=macOS' \
-    -skipMacroValidation -quiet &
+for dir in blog chat movie org; do
+  swift build --package-path "desktop/convex/$dir" &
   PIDS+=($!)
 done
 

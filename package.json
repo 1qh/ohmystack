@@ -38,6 +38,7 @@
     "test:all": "bash test-all.sh",
     "test:desktop": "bash desktop/convex/test.sh",
     "test:mobile": "bash mobile/convex/maestro/run-all.sh",
+    "test:web": "bun run test",
     "tsc": "turbo run typecheck --filter='!@a/ui'",
     "ui:sync": "bun scripts/sync-ui.ts",
     "ui:sync:check": "bun ui:sync && git diff --exit-code -- packages/ui"
