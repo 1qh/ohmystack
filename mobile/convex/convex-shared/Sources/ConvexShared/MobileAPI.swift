@@ -104,8 +104,8 @@ extension ProjectAPI {
         try await ConvexService.shared.mutate("project:rm", args: ["id": id, "orgId": orgId])
     }
 
-    public static func bulkRm(orgId: String, ids: [String]) async throws {
-        try await ConvexService.shared.mutate("project:bulkRm", args: ["ids": ids, "orgId": orgId])
+    public static func rm(orgId: String, ids: [String]) async throws {
+        try await ConvexService.shared.mutate("project:rm", args: ["ids": ids, "orgId": orgId])
     }
 
     public static func addEditor(orgId: String, editorId: String, projectId: String) async throws {
@@ -258,12 +258,12 @@ extension WikiAPI {
         try await ConvexService.shared.mutate("wiki:rm", args: ["id": id, "orgId": orgId])
     }
 
-    public static func restore(orgId: String, id: String) async throws {
-        try await ConvexService.shared.mutate("wiki:restore", args: ["id": id, "orgId": orgId])
+    public static func rm(orgId: String, ids: [String]) async throws {
+        try await ConvexService.shared.mutate("wiki:rm", args: ["ids": ids, "orgId": orgId])
     }
 
-    public static func bulkRm(orgId: String, ids: [String]) async throws {
-        try await ConvexService.shared.mutate("wiki:bulkRm", args: ["ids": ids, "orgId": orgId])
+    public static func restore(orgId: String, id: String) async throws {
+        try await ConvexService.shared.mutate("wiki:restore", args: ["id": id, "orgId": orgId])
     }
 
     public static func addEditor(orgId: String, editorId: String, wikiId: String) async throws {
@@ -427,8 +427,8 @@ extension BlogAPI {
         try await ConvexService.shared.mutate("blog:rm", args: ["id": id])
     }
 
-    public static func bulkRm(ids: [String]) async throws {
-        try await ConvexService.shared.mutate("blog:bulkRm", args: ["ids": ids])
+    public static func rm(ids: [String]) async throws {
+        try await ConvexService.shared.mutate("blog:rm", args: ["ids": ids])
     }
 
     public static func authorPosts(userId: String) async throws -> [Blog] {
@@ -1254,8 +1254,8 @@ extension TaskAPI {
         try await ConvexService.shared.mutate("task:rm", args: ["id": id, "orgId": orgId])
     }
 
-    public static func bulkRm(orgId: String, ids: [String]) async throws {
-        try await ConvexService.shared.mutate("task:bulkRm", args: ["ids": ids, "orgId": orgId])
+    public static func rm(orgId: String, ids: [String]) async throws {
+        try await ConvexService.shared.mutate("task:rm", args: ["ids": ids, "orgId": orgId])
     }
 
     public static func assign(orgId: String, id: String, assigneeId: String? = nil) async throws {

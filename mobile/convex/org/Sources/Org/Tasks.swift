@@ -56,7 +56,7 @@ internal final class TasksViewModel: Performing {
 
     func bulkDeleteTasks(orgID: String) {
         perform {
-            try await TaskAPI.bulkRm(orgId: orgID, ids: Array(self.selectedIDs))
+            try await TaskAPI.rm(orgId: orgID, ids: Array(self.selectedIDs))
             self.selectedIDs = Set<String>()
         }
     }

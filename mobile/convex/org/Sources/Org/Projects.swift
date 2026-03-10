@@ -64,7 +64,7 @@ internal final class ProjectsViewModel: Performing {
 
     func bulkDeleteProjects(orgID: String) {
         perform {
-            try await ProjectAPI.bulkRm(orgId: orgID, ids: Array(self.selectedIDs))
+            try await ProjectAPI.rm(orgId: orgID, ids: Array(self.selectedIDs))
             self.selectedIDs = Set<String>()
         }
     }

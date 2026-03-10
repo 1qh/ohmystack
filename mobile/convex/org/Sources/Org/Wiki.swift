@@ -56,7 +56,7 @@ internal final class WikiListViewModel: Performing {
 
     func bulkDeleteWikis(orgID: String) {
         perform {
-            try await WikiAPI.bulkRm(orgId: orgID, ids: Array(self.selectedIDs))
+            try await WikiAPI.rm(orgId: orgID, ids: Array(self.selectedIDs))
             self.selectedIDs = Set<String>()
         }
     }

@@ -157,7 +157,7 @@ internal final class TasksViewModel: SwiftCrossUI.ObservableObject, Performing {
     @MainActor
     func bulkDeleteTasks(orgID: String, projectID: String) async {
         await perform {
-            try await TaskAPI.bulkRm(client, orgId: orgID, ids: Array(selectedIDs))
+            try await TaskAPI.rm(client, orgId: orgID, ids: Array(selectedIDs))
             selectedIDs.removeAll()
             await self.load(orgID: orgID, projectID: projectID)
         }

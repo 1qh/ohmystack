@@ -71,7 +71,7 @@ internal final class ProjectsViewModel: SwiftCrossUI.ObservableObject, Performin
     @MainActor
     func bulkDeleteProjects(orgID: String) async {
         await perform {
-            try await ProjectAPI.bulkRm(client, orgId: orgID, ids: Array(selectedIDs))
+            try await ProjectAPI.rm(client, orgId: orgID, ids: Array(selectedIDs))
             selectedIDs.removeAll()
             await self.load(orgID: orgID)
         }

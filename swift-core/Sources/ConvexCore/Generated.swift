@@ -704,7 +704,6 @@ public enum BlogProfileAPI {
 
 public enum ProjectAPI {
     public static let addEditor = "project:addEditor"
-    public static let bulkRm = "project:bulkRm"
     public static let create = "project:create"
     public static let editors = "project:editors"
     public static let list = "project:list"
@@ -798,12 +797,12 @@ public enum ProjectAPI {
         try await client.mutation("project:rm", args: ["id": id, "orgId": orgId])
     }
 
-    public static func read(_ client: ConvexClientProtocol, orgId: String, id: String) async throws -> Project {
-        try await client.query("project:read", args: ["id": id, "orgId": orgId])
+    public static func rm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
+        try await client.mutation("project:rm", args: ["ids": ids, "orgId": orgId])
     }
 
-    public static func bulkRm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
-        try await client.mutation("project:bulkRm", args: ["ids": ids, "orgId": orgId])
+    public static func read(_ client: ConvexClientProtocol, orgId: String, id: String) async throws -> Project {
+        try await client.query("project:read", args: ["id": id, "orgId": orgId])
     }
 
     public static func addEditor(_ client: ConvexClientProtocol, orgId: String, editorId: String, projectId: String) async throws {
@@ -826,8 +825,6 @@ public enum ProjectAPI {
 
 public enum WikiAPI {
     public static let addEditor = "wiki:addEditor"
-    public static let bulkRm = "wiki:bulkRm"
-    public static let bulkUpdate = "wiki:bulkUpdate"
     public static let create = "wiki:create"
     public static let editors = "wiki:editors"
     public static let list = "wiki:list"
@@ -932,16 +929,16 @@ public enum WikiAPI {
         try await client.mutation("wiki:rm", args: ["id": id, "orgId": orgId])
     }
 
+    public static func rm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
+        try await client.mutation("wiki:rm", args: ["ids": ids, "orgId": orgId])
+    }
+
     public static func read(_ client: ConvexClientProtocol, orgId: String, id: String) async throws -> Wiki {
         try await client.query("wiki:read", args: ["id": id, "orgId": orgId])
     }
 
     public static func restore(_ client: ConvexClientProtocol, orgId: String, id: String) async throws {
         try await client.mutation("wiki:restore", args: ["id": id, "orgId": orgId])
-    }
-
-    public static func bulkRm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
-        try await client.mutation("wiki:bulkRm", args: ["ids": ids, "orgId": orgId])
     }
 
     public static func addEditor(_ client: ConvexClientProtocol, orgId: String, editorId: String, wikiId: String) async throws {
@@ -974,8 +971,6 @@ public enum MobileAiAPI {
 
 public enum BlogAPI {
     public static let authorPosts = "blog:authorPosts"
-    public static let bulkRm = "blog:bulkRm"
-    public static let bulkUpdate = "blog:bulkUpdate"
     public static let create = "blog:create"
     public static let list = "blog:list"
     public static let postStats = "blog:postStats"
@@ -1095,12 +1090,12 @@ public enum BlogAPI {
         try await client.mutation("blog:rm", args: ["id": id])
     }
 
-    public static func read(_ client: ConvexClientProtocol, id: String) async throws -> Blog {
-        try await client.query("blog:read", args: ["id": id])
+    public static func rm(_ client: ConvexClientProtocol, ids: [String]) async throws {
+        try await client.mutation("blog:rm", args: ["ids": ids])
     }
 
-    public static func bulkRm(_ client: ConvexClientProtocol, ids: [String]) async throws {
-        try await client.mutation("blog:bulkRm", args: ["ids": ids])
+    public static func read(_ client: ConvexClientProtocol, id: String) async throws -> Blog {
+        try await client.query("blog:read", args: ["id": id])
     }
 
     public static func authorPosts(_ client: ConvexClientProtocol, userId: String) async throws -> [Blog] {
@@ -1490,8 +1485,6 @@ public enum UserAPI {
 
 public enum TaskAPI {
     public static let assign = "task:assign"
-    public static let bulkRm = "task:bulkRm"
-    public static let bulkUpdate = "task:bulkUpdate"
     public static let byProject = "task:byProject"
     public static let create = "task:create"
     public static let list = "task:list"
@@ -1589,12 +1582,12 @@ public enum TaskAPI {
         try await client.mutation("task:rm", args: ["id": id, "orgId": orgId])
     }
 
-    public static func read(_ client: ConvexClientProtocol, orgId: String, id: String) async throws -> TaskItem {
-        try await client.query("task:read", args: ["id": id, "orgId": orgId])
+    public static func rm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
+        try await client.mutation("task:rm", args: ["ids": ids, "orgId": orgId])
     }
 
-    public static func bulkRm(_ client: ConvexClientProtocol, orgId: String, ids: [String]) async throws {
-        try await client.mutation("task:bulkRm", args: ["ids": ids, "orgId": orgId])
+    public static func read(_ client: ConvexClientProtocol, orgId: String, id: String) async throws -> TaskItem {
+        try await client.query("task:read", args: ["id": id, "orgId": orgId])
     }
 
     public static func assign(_ client: ConvexClientProtocol, orgId: String, id: String, assigneeId: String? = nil) async throws {

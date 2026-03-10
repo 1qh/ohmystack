@@ -98,7 +98,7 @@ internal final class WikiListViewModel: SwiftCrossUI.ObservableObject, Performin
     @MainActor
     func bulkDeleteWikis(orgID: String) async {
         await perform {
-            try await WikiAPI.bulkRm(client, orgId: orgID, ids: Array(selectedIDs))
+            try await WikiAPI.rm(client, orgId: orgID, ids: Array(selectedIDs))
             selectedIDs.removeAll()
             await self.load(orgID: orgID)
         }
