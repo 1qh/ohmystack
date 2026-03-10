@@ -33,8 +33,6 @@ const owned = makeOwned({
 
 ```tsx
 export const {
-  bulkRm,
-  bulkUpdate,
   create,
   pub: { list, read, search },
   rm,
@@ -146,7 +144,6 @@ import { orgCascade } from '@noboil/convex/server'
 
 export const {
   addEditor,
-  bulkRm,
   create,
   editors,
   list,
@@ -1082,7 +1079,7 @@ const Dashboard = () => {
 
 **Features:** useBulkMutate · toast feedback · progress tracking · error collection
 
-Uses the `bulkRm` export from any `crud()` call. No extra backend code needed.
+Uses `rm` from any `crud()` call — pass `{ ids: [...] }` for bulk deletion. No extra backend code needed.
 
 ### Frontend
 

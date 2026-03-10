@@ -96,7 +96,7 @@ const { crud, orgCrud, singletonCrud, cacheCrud, pq, q, m } = setup({
 Generates CRUD endpoints for a user-owned table:
 
 ```typescript
-export const { create, list, read, rm, update, bulkRm, bulkUpdate } = crud(
+export const { create, list, read, rm, update } = crud(
   'blog',
   owned.blog,
   {
@@ -125,7 +125,6 @@ Generates org-scoped CRUD with optional ACL and cascade delete:
 ```typescript
 export const {
   addEditor,
-  bulkRm,
   create,
   editors,
   list,

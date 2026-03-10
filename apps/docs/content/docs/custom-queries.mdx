@@ -73,7 +73,7 @@ Custom endpoints live in the same file as generated CRUD:
 import { orgCrud, q, uniqueCheck } from '../lazy'
 import { orgScoped } from '../t'
 
-export const { addEditor, bulkRm, create, list, read, rm, update } = orgCrud(
+export const { addEditor, create, list, read, rm, update } = orgCrud(
     'wiki',
     orgScoped.wiki,
     { acl: true, softDelete: true }

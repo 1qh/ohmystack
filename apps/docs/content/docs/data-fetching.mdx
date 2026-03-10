@@ -516,7 +516,7 @@ Bulk version:
 
 ```tsx
 const { handleBulkDelete, selected, toggleSelect } = useBulkSelection({
-  bulkRm: useMutation(api.wiki.bulkRm),
+  rm: useMutation(api.wiki.rm),
   items: wikis?.page ?? [],
   orgId: org._id,
   restore: useOrgMutation(api.wiki.restore),
@@ -525,7 +525,7 @@ const { handleBulkDelete, selected, toggleSelect } = useBulkSelection({
 })
 ```
 
-When `bulkRm` is not available, pass `rm` as a fallback — it deletes items one at a time:
+`rm` accepts `{ ids: [...] }` for bulk deletion (up to 100 items). Pass it directly — no separate endpoint needed:
 
 ```tsx
 const { handleBulkDelete, selected } = useBulkSelection({
