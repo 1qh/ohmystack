@@ -10971,16 +10971,16 @@ describe('UseBulkSelectionOpts rm option type', () => {
     expect(opts.rm).toBeUndefined()
   })
 
-  test('rm receives string id parameter', () => {
+  test('rm receives args with id and orgId', () => {
     let captured = ''
     const opts: ReactIndexTypes.UseBulkSelectionOpts = {
       items: [],
       orgId: 'org_1',
-      rm: async (id: string) => {
-        captured = id
+      rm: async (args) => {
+        captured = args.id ?? ''
       }
     }
-    opts.rm?.('test-id')
+    opts.rm?.({ id: 'test-id', orgId: 'org_1' })
     expect(captured).toBe('test-id')
   })
 
