@@ -3,7 +3,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
-import AuthLayout from '@a/fe/auth-layout'
+import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { BetterspaceDevtools } from '@ohmystack/spacetimedb/react'

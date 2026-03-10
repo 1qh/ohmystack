@@ -16,6 +16,14 @@ const fail = (error: unknown) => {
       }
     })
   },
+  parseId = (val: unknown): null | number => {
+    if (typeof val === 'number' && val > 0) return val
+    if (typeof val === 'string') {
+      const n = Number(val)
+      if (Number.isFinite(n) && n > 0) return n
+    }
+    return null
+  },
   isId = <T extends TableNames>(val: unknown): val is Id<T> => typeof val === 'string' && val.length > 0,
   formatDate = (ts: number) => new Date(ts).toLocaleDateString(),
   formatExpiry = (expiresAt: number) => {
@@ -23,6 +31,21 @@ const fail = (error: unknown) => {
     if (days <= 0) return 'Expired'
     if (days === 1) return '1 day left'
     return `${days} days left`
-  }
+  },
+  toIdentityKey = (value: unknown) => {
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return `${value}`
+    if (typeof value !== 'object' || !('toHexString' in value)) return ''
+    const candidate = value as { toHexString?: () => string }
+    if (typeof candidate.toHexString === 'function') return candidate.toHexString()
+    return ''
+  },
+  sameIdentity = (a: { toHexString: () => string }, b: { toHexString: () => string }) =>
+    a.toHexString() === b.toHexString(),
+  withStringId = <T extends { id: number }>(item: T): T & { _id: string } => ({
+    ...item,
+    _id: `${item.id}`
+  })
 
-export { fail, formatDate, formatExpiry, isId }
+export { fail, formatDate, formatExpiry, isId, parseId, sameIdentity, toIdentityKey, withStringId }

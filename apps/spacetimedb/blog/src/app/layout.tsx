@@ -2,7 +2,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
-import AuthLayout from '@a/fe/auth-layout'
+import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import Logout from '@a/fe/user-menu'
 import { BetterspaceDevtools } from '@ohmystack/spacetimedb/react'

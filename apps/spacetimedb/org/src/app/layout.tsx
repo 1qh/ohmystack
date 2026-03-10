@@ -8,7 +8,7 @@ import type { OrgRole } from '@ohmystack/spacetimedb'
 import type { ReactNode } from 'react'
 
 import { tables } from '@a/be-spacetimedb/spacetimedb'
-import AuthLayout from '@a/fe/auth-layout'
+import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { sameIdentity } from '@a/fe/utils'
 import { BetterspaceDevtools } from '@ohmystack/spacetimedb/react'

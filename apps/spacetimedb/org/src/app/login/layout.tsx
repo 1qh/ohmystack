@@ -1,3 +1,3 @@
-import { LoginLayout } from '@a/fe/auth-layout'
+import { LoginLayout } from '@a/fe/spacetimedb-auth-layout'
 
 export default LoginLayout

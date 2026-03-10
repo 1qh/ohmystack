@@ -7,6 +7,10 @@
     "./image-route": "./src/image-route.ts",
     "./next-config": "./src/next-config.ts",
     "./proxy": "./src/proxy.ts",
+    "./spacetimedb-auth-layout": "./src/spacetimedb-auth-layout.tsx",
+    "./spacetimedb-provider": "./src/spacetimedb-provider.tsx",
+    "./theme-toggle": "./src/theme-toggle.tsx",
+    "./upload-presign-route": "./src/upload-presign-route.ts",
     "./utils": "./src/utils.ts"
   },
   "typesVersions": {
@@ -27,6 +31,7 @@
     "convex": "latest",
     "next-navigation-guard": "latest",
     "next-themes": "latest",
+    "react-oidc-context": "latest",
     "sonner": "latest"
   }
 }
