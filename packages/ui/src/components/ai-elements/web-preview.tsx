@@ -1,87 +1,132 @@
-'use client'
+"use client";
 
-import type { ComponentProps, ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from "react";
 
-import { cn } from '@a/ui'
-import { Button } from '@a/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@a/ui/collapsible'
-import { Input } from '@a/ui/input'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@a/ui/tooltip'
-import { ChevronDownIcon } from 'lucide-react'
-import { createContext, use, useEffect, useState } from 'react'
+import { Button } from "@a/ui/components/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@a/ui/components/collapsible";
+import { Input } from "@a/ui/components/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@a/ui/components/tooltip";
+import { cn } from "@a/ui";
+import { ChevronDownIcon } from "lucide-react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 
 export interface WebPreviewContextValue {
-  consoleOpen: boolean
-  setConsoleOpen: (open: boolean) => void
-  setUrl: (url: string) => void
-  url: string
+  url: string;
+  setUrl: (url: string) => void;
+  consoleOpen: boolean;
+  setConsoleOpen: (open: boolean) => void;
 }
 
-const WebPreviewContext = createContext<null | WebPreviewContextValue>(null),
-  useWebPreview = () => {
-    const context = use(WebPreviewContext)
-    if (!context) throw new Error('WebPreview components must be used within a WebPreview')
+const WebPreviewContext = createContext<WebPreviewContextValue | null>(null);
 
-    return context
+const useWebPreview = () => {
+  const context = useContext(WebPreviewContext);
+  if (!context) {
+    throw new Error("WebPreview components must be used within a WebPreview");
   }
+  return context;
+};
 
-export type WebPreviewProps = ComponentProps<'div'> & {
-  defaultUrl?: string
-  onUrlChange?: (url: string) => void
-}
+export type WebPreviewProps = ComponentProps<"div"> & {
+  defaultUrl?: string;
+  onUrlChange?: (url: string) => void;
+};
 
-export const WebPreview = ({ children, className, defaultUrl, onUrlChange, ...props }: WebPreviewProps) => {
-  const [url, setUrl] = useState(defaultUrl ?? ''),
-    [consoleOpen, setConsoleOpen] = useState(false),
-    handleUrlChange = (newUrl: string) => {
-      setUrl(newUrl)
-      onUrlChange?.(newUrl)
+export const WebPreview = ({
+  className,
+  children,
+  defaultUrl = "",
+  onUrlChange,
+  ...props
+}: WebPreviewProps) => {
+  const [url, setUrl] = useState(defaultUrl);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+
+  const handleUrlChange = useCallback(
+    (newUrl: string) => {
+      setUrl(newUrl);
+      onUrlChange?.(newUrl);
     },
-    contextValue: WebPreviewContextValue = {
+    [onUrlChange]
+  );
+
+  const contextValue = useMemo<WebPreviewContextValue>(
+    () => ({
       consoleOpen,
       setConsoleOpen,
       setUrl: handleUrlChange,
-      url
-    }
+      url,
+    }),
+    [consoleOpen, handleUrlChange, url]
+  );
 
   return (
-    <WebPreviewContext value={contextValue}>
-      <div className={cn('flex size-full flex-col rounded-lg border bg-card', className)} {...props}>
+    <WebPreviewContext.Provider value={contextValue}>
+      <div
+        className={cn(
+          "flex size-full flex-col rounded-lg border bg-card",
+          className
+        )}
+        {...props}
+      >
         {children}
       </div>
-    </WebPreviewContext>
-  )
-}
+    </WebPreviewContext.Provider>
+  );
+};
 
-export type WebPreviewNavigationProps = ComponentProps<'div'>
+export type WebPreviewNavigationProps = ComponentProps<"div">;
 
-export const WebPreviewNavigation = ({ children, className, ...props }: WebPreviewNavigationProps) => (
-  <div className={cn('flex items-center gap-1 border-b p-2', className)} {...props}>
+export const WebPreviewNavigation = ({
+  className,
+  children,
+  ...props
+}: WebPreviewNavigationProps) => (
+  <div
+    className={cn("flex items-center gap-1 border-b p-2", className)}
+    {...props}
+  >
     {children}
   </div>
-)
+);
 
 export type WebPreviewNavigationButtonProps = ComponentProps<typeof Button> & {
-  tooltip?: string
-}
+  tooltip?: string;
+};
 
 export const WebPreviewNavigationButton = ({
-  children,
-  disabled,
   onClick,
+  disabled,
   tooltip,
+  children,
   ...props
 }: WebPreviewNavigationButtonProps) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          className='size-8 p-0 hover:text-foreground'
+          className="h-8 w-8 p-0 hover:text-foreground"
           disabled={disabled}
           onClick={onClick}
-          size='sm'
-          variant='ghost'
-          {...props}>
+          size="sm"
+          variant="ghost"
+          {...props}
+        >
           {children}
         </Button>
       </TooltipTrigger>
@@ -90,110 +135,142 @@ export const WebPreviewNavigationButton = ({
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>
-)
+);
 
-export type WebPreviewUrlProps = ComponentProps<typeof Input>
+export type WebPreviewUrlProps = ComponentProps<typeof Input>;
 
-export const WebPreviewUrl = ({ onChange, onKeyDown, value, ...props }: WebPreviewUrlProps) => {
-  const { setUrl, url } = useWebPreview(),
-    [inputValue, setInputValue] = useState(url)
+export const WebPreviewUrl = ({
+  value,
+  onChange,
+  onKeyDown,
+  ...props
+}: WebPreviewUrlProps) => {
+  const { url, setUrl } = useWebPreview();
+  const [prevUrl, setPrevUrl] = useState(url);
+  const [inputValue, setInputValue] = useState(url);
 
-  // Sync input value with context URL when it changes externally
-  useEffect(() => {
-    setInputValue(url)
-  }, [url])
+  // Sync input value with context URL when it changes externally (derived state pattern)
+  if (url !== prevUrl) {
+    setPrevUrl(url);
+    setInputValue(url);
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(event.target.value)
-      onChange?.(event)
-    },
-    handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') {
-        const target = event.target as HTMLInputElement
-        setUrl(target.value)
+    setInputValue(event.target.value);
+    onChange?.(event);
+  };
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        const target = event.target as HTMLInputElement;
+        setUrl(target.value);
       }
-      onKeyDown?.(event)
-    }
+      onKeyDown?.(event);
+    },
+    [setUrl, onKeyDown]
+  );
 
   return (
     <Input
-      className='h-8 flex-1 text-sm'
+      className="h-8 flex-1 text-sm"
       onChange={onChange ?? handleChange}
       onKeyDown={handleKeyDown}
-      placeholder='Enter URL...'
+      placeholder="Enter URL..."
       value={value ?? inputValue}
       {...props}
     />
-  )
-}
+  );
+};
 
-export type WebPreviewBodyProps = ComponentProps<'iframe'> & {
-  loading?: ReactNode
-}
+export type WebPreviewBodyProps = ComponentProps<"iframe"> & {
+  loading?: ReactNode;
+};
 
-export const WebPreviewBody = ({ className, loading, src, ...props }: WebPreviewBodyProps) => {
-  const { url } = useWebPreview()
+export const WebPreviewBody = ({
+  className,
+  loading,
+  src,
+  ...props
+}: WebPreviewBodyProps) => {
+  const { url } = useWebPreview();
 
   return (
-    <div className='flex-1'>
+    <div className="flex-1">
       <iframe
-        className={cn('size-full', className)}
-        // eslint-disable-next-line @eslint-react/dom/no-unsafe-iframe-sandbox
-        sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-presentation'
+        className={cn("size-full", className)}
+        // oxlint-disable-next-line eslint-plugin-react(iframe-missing-sandbox)
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
         src={(src ?? url) || undefined}
-        title='Preview'
+        title="Preview"
         {...props}
       />
       {loading}
     </div>
-  )
-}
+  );
+};
 
-export type WebPreviewConsoleProps = ComponentProps<'div'> & {
+export type WebPreviewConsoleProps = ComponentProps<"div"> & {
   logs?: {
-    level: 'error' | 'log' | 'warn'
-    message: string
-    timestamp: Date
-  }[]
-}
+    level: "log" | "warn" | "error";
+    message: string;
+    timestamp: Date;
+  }[];
+};
 
-// eslint-disable-next-line react/no-object-type-as-default-prop
-export const WebPreviewConsole = ({ children, className, logs = [], ...props }: WebPreviewConsoleProps) => {
-  const { consoleOpen, setConsoleOpen } = useWebPreview()
+export const WebPreviewConsole = ({
+  className,
+  logs = [],
+  children,
+  ...props
+}: WebPreviewConsoleProps) => {
+  const { consoleOpen, setConsoleOpen } = useWebPreview();
 
   return (
     <Collapsible
-      className={cn('border-t bg-muted/50 font-mono text-sm', className)}
+      className={cn("border-t bg-muted/50 font-mono text-sm", className)}
       onOpenChange={setConsoleOpen}
       open={consoleOpen}
-      {...props}>
+      {...props}
+    >
       <CollapsibleTrigger asChild>
         <Button
-          className='flex w-full items-center justify-between p-4 text-left font-medium hover:bg-muted/50'
-          variant='ghost'>
+          className="flex w-full items-center justify-between p-4 text-left font-medium hover:bg-muted/50"
+          variant="ghost"
+        >
           Console
-          <ChevronDownIcon className={cn('size-4 transition-transform duration-200', consoleOpen && 'rotate-180')} />
+          <ChevronDownIcon
+            className={cn(
+              "h-4 w-4 transition-transform duration-200",
+              consoleOpen && "rotate-180"
+            )}
+          />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent
         className={cn(
-          'px-4 pb-4',
-          'outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
-        )}>
-        <div className='max-h-48 space-y-1 overflow-y-auto'>
+          "px-4 pb-4",
+          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 outline-none data-[state=closed]:animate-out data-[state=open]:animate-in"
+        )}
+      >
+        <div className="max-h-48 space-y-1 overflow-y-auto">
           {logs.length === 0 ? (
-            <p className='text-muted-foreground'>No console output</p>
+            <p className="text-muted-foreground">No console output</p>
           ) : (
             logs.map((log, index) => (
               <div
                 className={cn(
-                  'text-xs',
-                  log.level === 'error' && 'text-destructive',
-                  log.level === 'warn' && 'text-yellow-600',
-                  log.level === 'log' && 'text-foreground'
+                  "text-xs",
+                  log.level === "error" && "text-destructive",
+                  log.level === "warn" && "text-yellow-600",
+                  log.level === "log" && "text-foreground"
                 )}
-                key={`${log.timestamp.getTime()}-${index}`}>
-                <span className='text-muted-foreground'>{log.timestamp.toLocaleTimeString()}</span> {log.message}
+                key={`${log.timestamp.getTime()}-${index}`}
+              >
+                <span className="text-muted-foreground">
+                  {log.timestamp.toLocaleTimeString()}
+                </span>{" "}
+                {log.message}
               </div>
             ))
           )}
@@ -201,5 +278,5 @@ export const WebPreviewConsole = ({ children, className, logs = [], ...props }: 
         </div>
       </CollapsibleContent>
     </Collapsible>
-  )
-}
+  );
+};

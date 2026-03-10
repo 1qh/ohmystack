@@ -1,7 +1,13 @@
-import { cn } from '@a/ui'
+import { cn } from "@a/ui"
 
-const Skeleton = ({ className, ...props }: React.ComponentProps<'div'>) => (
-  <div className={cn('animate-pulse rounded-md bg-accent', className)} data-slot='skeleton' {...props} />
-)
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("animate-pulse rounded-md bg-accent", className)}
+      {...props}
+    />
+  )
+}
 
 export { Skeleton }
