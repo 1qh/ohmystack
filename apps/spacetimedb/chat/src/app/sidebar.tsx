@@ -3,13 +3,12 @@
 import type { Chat } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
+import ChatSidebar from '@a/fe/chat-sidebar'
 import { toIdentityKey } from '@a/fe/utils'
 import { Spinner } from '@a/ui/spinner'
 import { useMut } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
-import ChatSidebar from './chat-sidebar'
 
 const Sb = () => {
   const { identity } = useSpacetimeDB(),
@@ -28,7 +27,7 @@ const Sb = () => {
 
   return (
     <>
-      <ChatSidebar basePath='' onDelete={handleDelete} threads={chats} />
+      <ChatSidebar basePath='' getThreadId={thread => thread.id} onDelete={handleDelete} threads={chats} />
       <div className='flex justify-center p-2'>
         {isReady ? (
           chats.length > 20 ? (
