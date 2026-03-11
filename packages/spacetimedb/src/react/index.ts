@@ -90,7 +90,13 @@ export { defaultOnError, useMut, useMutate, useMutation } from './use-mutate'
 export { default as useOnlineStatus } from './use-online-status'
 export type { OptimisticOptions } from './use-optimistic'
 export { useOptimisticMutation } from './use-optimistic'
-export type { PresenceRefs, PresenceUser, UsePresenceOptions, UsePresenceResult } from './use-presence'
+export type {
+  PresenceHeartbeatArgs,
+  PresenceRefs,
+  PresenceUser,
+  UsePresenceOptions,
+  UsePresenceResult
+} from './use-presence'
 export { usePresence } from './use-presence'
 export type { UseSearchOptions, UseSearchResult } from './use-search'
 export { useSearch } from './use-search'

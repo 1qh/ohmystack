@@ -1,13 +1,16 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { HEARTBEAT_INTERVAL_MS } from '../server/presence'
 
+interface PresenceHeartbeatArgs {
+  data: Record<string, unknown>
+}
 interface PresenceRefs {
   data: PresenceRow[]
-  heartbeat: () => Promise<void>
+  heartbeat: (args?: PresenceHeartbeatArgs) => Promise<void>
 }
 interface PresenceRow {
   data: unknown
@@ -31,10 +34,16 @@ interface UsePresenceResult {
 
 const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
   MICROS_PER_MILLISECOND = 1000n,
-  runHeartbeat = (heartbeat: () => Promise<void>) => {
+  runHeartbeat = ({
+    data,
+    heartbeat
+  }: {
+    data: Record<string, unknown>
+    heartbeat: (args?: PresenceHeartbeatArgs) => Promise<void>
+  }) => {
     const run = async () => {
       try {
-        await heartbeat()
+        await heartbeat({ data })
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(
@@ -60,27 +69,34 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
    * @param options Presence behavior overrides.
    * @returns Active users and an `updatePresence` helper.
    */
-  usePresence = (data: PresenceRow[], heartbeat: () => Promise<void>, options?: UsePresenceOptions): UsePresenceResult => {
+  usePresence = (
+    data: PresenceRow[],
+    heartbeat: (args?: PresenceHeartbeatArgs) => Promise<void>,
+    options?: UsePresenceOptions
+  ): UsePresenceResult => {
     const enabled = options?.enabled !== false,
       ttlMs = options?.ttlMs ?? PRESENCE_TTL_FALLBACK_MS,
       heartbeatIntervalMs = options?.heartbeatIntervalMs ?? HEARTBEAT_INTERVAL_MS,
-      [localData, setLocalData] = useState<Record<string, unknown>>({}),
-      heartbeatRef = useRef(heartbeat)
+      heartbeatRef = useRef(heartbeat),
+      localDataRef = useRef<Record<string, unknown>>({})
 
     useEffect(() => {
       heartbeatRef.current = heartbeat
     }, [heartbeat])
 
-    /** biome-ignore lint/correctness/useExhaustiveDependencies: localData triggers immediate heartbeat */
     useEffect(() => {
       if (!enabled) return
-      const sendHeartbeat = () => runHeartbeat(heartbeatRef.current)
+      const sendHeartbeat = () =>
+        runHeartbeat({
+          data: localDataRef.current,
+          heartbeat: heartbeatRef.current
+        })
       sendHeartbeat()
       const intervalId = setInterval(() => {
         sendHeartbeat()
       }, heartbeatIntervalMs)
       return () => clearInterval(intervalId)
-    }, [enabled, heartbeatIntervalMs, localData])
+    }, [enabled, heartbeatIntervalMs])
 
     const users = useMemo(() => {
         if (!enabled) return []
@@ -97,8 +113,11 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
         return filtered
       }, [data, enabled, ttlMs]),
       updatePresence = useCallback((nextData: Record<string, unknown>) => {
-        setLocalData(nextData)
-        runHeartbeat(heartbeatRef.current)
+        localDataRef.current = nextData
+        runHeartbeat({
+          data: localDataRef.current,
+          heartbeat: heartbeatRef.current
+        })
       }, [])
 
     return { updatePresence, users }
@@ -106,5 +125,5 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
 
 type PresenceUser = PresenceRow
 
-export type { PresenceRefs, PresenceRow, PresenceUser, UsePresenceOptions, UsePresenceResult }
+export type { PresenceHeartbeatArgs, PresenceRefs, PresenceRow, PresenceUser, UsePresenceOptions, UsePresenceResult }
 export { usePresence }
