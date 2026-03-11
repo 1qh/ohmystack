@@ -8,6 +8,14 @@ import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-wiki-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  expectSingle = <T>(value: T | T[]): T => {
+    if (Array.isArray(value)) {
+      const [first] = value
+      if (first !== undefined) return first
+      throw new Error('Expected at least one value')
+    }
+    return value
+  },
   gotoWikiEdit = async (page: Page, id: string) => {
     await page.goto(`/wiki/${id}/edit`)
     const heading = page.getByText('Edit wiki page')
@@ -34,18 +42,22 @@ test.describe
       const slug = generateSlug('wiki-ui')
       ;({ orgId } = await createTestOrg(slug, 'Wiki UI Test Org'))
 
-      const id1 = await tc.mutation(api.wiki.create, {
-          orgId,
-          slug: `${testPrefix}-page-1`,
-          status: 'published',
-          title: 'Wiki Page 1'
-        }),
-        id2 = await tc.mutation(api.wiki.create, {
-          orgId,
-          slug: `${testPrefix}-page-2`,
-          status: 'published',
-          title: 'Wiki Page 2'
-        })
+      const id1 = expectSingle(
+          await tc.mutation(api.wiki.create, {
+            orgId,
+            slug: `${testPrefix}-page-1`,
+            status: 'published',
+            title: 'Wiki Page 1'
+          })
+        ),
+        id2 = expectSingle(
+          await tc.mutation(api.wiki.create, {
+            orgId,
+            slug: `${testPrefix}-page-2`,
+            status: 'published',
+            title: 'Wiki Page 2'
+          })
+        )
       wikiIds.push(id1, id2)
     })
 
@@ -86,12 +98,14 @@ test.describe
     })
 
     test('create wiki succeeds', async () => {
-      wikiId = await tc.mutation(api.wiki.create, {
-        orgId: testOrgId,
-        slug: 'sd-test-wiki',
-        status: 'published',
-        title: 'SoftDelete Test Wiki'
-      })
+      wikiId = expectSingle(
+        await tc.mutation(api.wiki.create, {
+          orgId: testOrgId,
+          slug: 'sd-test-wiki',
+          status: 'published',
+          title: 'SoftDelete Test Wiki'
+        })
+      )
       expect(wikiId).toBeTruthy()
     })
 
@@ -179,24 +193,30 @@ test.describe
         created = await createTestOrg(slug, 'Wiki SoftDelete Multi Org')
       testOrgId = created.orgId
 
-      wiki1Id = await tc.mutation(api.wiki.create, {
-        orgId: testOrgId,
-        slug: 'sd-multi-1',
-        status: 'published',
-        title: 'Multi Wiki 1'
-      })
-      wiki2Id = await tc.mutation(api.wiki.create, {
-        orgId: testOrgId,
-        slug: 'sd-multi-2',
-        status: 'draft',
-        title: 'Multi Wiki 2'
-      })
-      wiki3Id = await tc.mutation(api.wiki.create, {
-        orgId: testOrgId,
-        slug: 'sd-multi-3',
-        status: 'published',
-        title: 'Multi Wiki 3'
-      })
+      wiki1Id = expectSingle(
+        await tc.mutation(api.wiki.create, {
+          orgId: testOrgId,
+          slug: 'sd-multi-1',
+          status: 'published',
+          title: 'Multi Wiki 1'
+        })
+      )
+      wiki2Id = expectSingle(
+        await tc.mutation(api.wiki.create, {
+          orgId: testOrgId,
+          slug: 'sd-multi-2',
+          status: 'draft',
+          title: 'Multi Wiki 2'
+        })
+      )
+      wiki3Id = expectSingle(
+        await tc.mutation(api.wiki.create, {
+          orgId: testOrgId,
+          slug: 'sd-multi-3',
+          status: 'published',
+          title: 'Multi Wiki 3'
+        })
+      )
     })
 
     test.afterAll(async () => {
@@ -287,13 +307,15 @@ test.describe
       const slug = generateSlug('wiki-autosave')
       ;({ orgId } = await createTestOrg(slug, 'Wiki AutoSave Test Org'))
 
-      wikiId = await tc.mutation(api.wiki.create, {
-        content: 'Original content',
-        orgId,
-        slug: `${testPrefix}-autosave-page`,
-        status: 'published',
-        title: 'AutoSave Test Page'
-      })
+      wikiId = expectSingle(
+        await tc.mutation(api.wiki.create, {
+          content: 'Original content',
+          orgId,
+          slug: `${testPrefix}-autosave-page`,
+          status: 'published',
+          title: 'AutoSave Test Page'
+        })
+      )
     })
 
     test.afterAll(async () => {
@@ -342,24 +364,30 @@ test.describe
       const orgSlug = generateSlug('wiki-undo')
       ;({ orgId } = await createTestOrg(orgSlug, 'Wiki Undo Toast Org'))
 
-      const id1 = await tc.mutation(api.wiki.create, {
-          orgId,
-          slug: `${testPrefix}-undo-1`,
-          status: 'published',
-          title: 'Undo Wiki 1'
-        }),
-        id2 = await tc.mutation(api.wiki.create, {
-          orgId,
-          slug: `${testPrefix}-undo-2`,
-          status: 'published',
-          title: 'Undo Wiki 2'
-        }),
-        id3 = await tc.mutation(api.wiki.create, {
-          orgId,
-          slug: `${testPrefix}-undo-3`,
-          status: 'published',
-          title: 'Undo Wiki 3'
-        })
+      const id1 = expectSingle(
+          await tc.mutation(api.wiki.create, {
+            orgId,
+            slug: `${testPrefix}-undo-1`,
+            status: 'published',
+            title: 'Undo Wiki 1'
+          })
+        ),
+        id2 = expectSingle(
+          await tc.mutation(api.wiki.create, {
+            orgId,
+            slug: `${testPrefix}-undo-2`,
+            status: 'published',
+            title: 'Undo Wiki 2'
+          })
+        ),
+        id3 = expectSingle(
+          await tc.mutation(api.wiki.create, {
+            orgId,
+            slug: `${testPrefix}-undo-3`,
+            status: 'published',
+            title: 'Undo Wiki 3'
+          })
+        )
       wikiIds.push(id1, id2, id3)
     })
 

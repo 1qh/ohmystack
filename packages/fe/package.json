@@ -15,6 +15,7 @@
     "./spacetimedb-provider": "./src/spacetimedb-provider.tsx",
     "./spacetimedb-user-menu": "./src/spacetimedb-user-menu.tsx",
     "./theme-toggle": "./src/theme-toggle.tsx",
+    "./ui-message": "./src/ui-message.ts",
     "./upload-presign-route": "./src/upload-presign-route.ts",
     "./utils": "./src/utils.ts"
   },

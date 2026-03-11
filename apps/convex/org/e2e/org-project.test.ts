@@ -14,7 +14,15 @@ import {
 import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-proj-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  expectSingle = <T>(value: T | T[]): T => {
+    if (Array.isArray(value)) {
+      const [first] = value
+      if (first !== undefined) return first
+      throw new Error('Expected at least one value')
+    }
+    return value
+  }
 
 test.describe
   .serial('Projects Page UI', () => {
@@ -122,8 +130,9 @@ test.describe
           id: projectId,
           name: 'Updated Project Name',
           orgId: testOrgId
-        })
-      expect(updated?.name).toBe('Updated Project Name')
+        }),
+        updatedProject = Array.isArray(updated) ? updated[0] : updated
+      expect(updatedProject?.name).toBe('Updated Project Name')
     })
 
     test('rm project - owner can delete', async () => {
@@ -170,10 +179,12 @@ test.describe
       const slug = generateSlug('task-crud'),
         created = await createTestOrg(slug, 'Task CRUD Test Org')
       testOrgId = created.orgId
-      testProjectId = await tc.mutation(api.project.create, {
-        name: 'Task Test Project',
-        orgId: testOrgId
-      })
+      testProjectId = expectSingle(
+        await tc.mutation(api.project.create, {
+          name: 'Task Test Project',
+          orgId: testOrgId
+        })
+      )
     })
 
     test.afterAll(async () => {
@@ -205,25 +216,30 @@ test.describe
     })
 
     test('toggle task - owner can toggle', async () => {
-      const taskId = await tc.mutation(api.task.create, {
-          completed: false,
-          orgId: testOrgId,
-          projectId: testProjectId,
-          title: 'Toggle Test Task'
-        }),
+      const taskId = expectSingle(
+          await tc.mutation(api.task.create, {
+            completed: false,
+            orgId: testOrgId,
+            projectId: testProjectId,
+            title: 'Toggle Test Task'
+          })
+        ),
         toggled = await tc.mutation(api.task.toggle, {
           id: taskId,
           orgId: testOrgId
-        })
-      expect(toggled?.completed).toBe(true)
+        }),
+        toggledTask = Array.isArray(toggled) ? toggled[0] : toggled
+      expect(toggledTask?.completed).toBe(true)
     })
 
     test('rm task - owner can delete', async () => {
-      const taskId = await tc.mutation(api.task.create, {
-        orgId: testOrgId,
-        projectId: testProjectId,
-        title: 'Delete Test Task'
-      })
+      const taskId = expectSingle(
+        await tc.mutation(api.task.create, {
+          orgId: testOrgId,
+          projectId: testProjectId,
+          title: 'Delete Test Task'
+        })
+      )
       await tc.mutation(api.task.rm, { id: taskId, orgId: testOrgId })
       const result = await expectError(async () =>
         tc.query(api.task.read, {

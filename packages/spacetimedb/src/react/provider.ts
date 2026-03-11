@@ -42,6 +42,7 @@ interface TokenStore {
 const HTTP_OK = 200,
   HTTP_REDIRECT = 300,
   OCTET_STREAM = 'application/octet-stream',
+  DEFAULT_SPACETIME_URI = 'ws://localhost:3000',
   DEFAULT_TOKEN_KEY = 'spacetimedb.token',
   TOKEN_COOKIE_KEY = 'spacetimedb_token',
   clientCache = new WeakMap<object, Map<string, unknown>>(),
@@ -98,7 +99,8 @@ const HTTP_OK = 200,
    * @param uri Source URI that may use HTTP or WebSocket protocol.
    * @returns A URI using `ws://` or `wss://` when conversion is needed.
    */
-  toWsUri = (uri: string): string => {
+  toWsUri = (uri: null | string | undefined): string => {
+    if (!uri) return DEFAULT_SPACETIME_URI
     if (uri.startsWith('https://')) return uri.replace('https://', 'wss://')
     if (uri.startsWith('http://')) return uri.replace('http://', 'ws://')
     return uri
@@ -208,12 +210,13 @@ const HTTP_OK = 200,
     options: CreateSpacetimeClientOptions<TBuilder, TConnection, TIdentity>
   ): TBuilder => {
     const { DbConnection, moduleName, tokenStore, uri } = options,
-      key = `${uri}::${moduleName}`,
+      resolvedUri = toWsUri(uri),
+      key = `${resolvedUri}::${moduleName}`,
       cache = getBuilderCache<TBuilder>(DbConnection),
       existing = cache.get(key)
     if (existing) return existing
     const builder = DbConnection.builder()
-      .withUri(toWsUri(uri))
+      .withUri(resolvedUri)
       .withDatabaseName(moduleName)
       .withToken(tokenStore?.get())
       .onConnect((_connection, _identity, token) => {

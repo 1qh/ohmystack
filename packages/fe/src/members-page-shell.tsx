@@ -4,19 +4,19 @@ import type { ComponentType } from 'react'
 
 import { cn } from '@a/ui'
 
-interface MembersPageShellProps {
+interface MembersPageShellProps<TOrgId extends string> {
   canManageMembers: boolean
   className?: string
   headerClassName?: string
-  InviteDialog: ComponentType<{ orgId: string }>
+  InviteDialog: ComponentType<{ orgId: TOrgId }>
   JoinRequests: ComponentType
   MemberList: ComponentType
-  orgId: string
+  orgId: TOrgId
   PendingInvites: ComponentType
   title?: string
 }
 
-const MembersPageShell = ({
+const MembersPageShell = <TOrgId extends string>({
   canManageMembers,
   className,
   headerClassName,
@@ -26,7 +26,7 @@ const MembersPageShell = ({
   orgId,
   PendingInvites,
   title = 'Members'
-}: MembersPageShellProps) => (
+}: MembersPageShellProps<TOrgId>) => (
   <div className={cn('space-y-6', className)}>
     <div className={cn('flex items-center justify-between', headerClassName)}>
       <h1 className='text-2xl font-bold'>{title}</h1>
