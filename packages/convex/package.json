@@ -61,10 +61,10 @@
     "sharp": "latest"
   },
   "devDependencies": {
-    "tsdown": "^0.20.3"
+    "tsdown": "latest"
   },
   "peerDependencies": {
-    "@auth/core": "^0.41",
+    "@auth/core": "latest",
     "@convex-dev/auth": "latest",
     "@stepperize/react": "latest",
     "@tanstack/react-form": "latest",

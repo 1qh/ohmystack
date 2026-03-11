@@ -60,7 +60,7 @@
     "sharp": "latest"
   },
   "devDependencies": {
-    "tsdown": "^0.20.3"
+    "tsdown": "latest"
   },
   "peerDependencies": {
     "@stepperize/react": "latest",
