@@ -565,7 +565,7 @@ export default defineSchema({
 ```tsx
 import { makePresence } from '@noboil/convex/server'
 
-export const { heartbeat, list: listPresence } = makePresence({
+export const { heartbeat, list } = makePresence({
   mutation,
   query
 })
@@ -597,7 +597,7 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
     <div onMouseMove={handleMouseMove}>
       {users.map(p => (
         <div
-          key={p.id}
+          key={p.userId}
           className="absolute size-4 rounded-full bg-blue-500"
           style={{ left: p.data.cursor.x, top: p.data.cursor.y }}
         />
@@ -644,13 +644,17 @@ import { tables, reducers } from '@/generated/module_bindings'
 const CollaborativeRoom = ({ roomId }: { roomId: string }) => {
   const [presenceRows] = useTable(tables.presence)
   const heartbeat = useReducer(reducers.presence_heartbeat_presence)
-  const { users } = usePresence(
+  const { users, updatePresence } = usePresence(
     presenceRows,
-    async () => heartbeat({ roomId }),
+    async ({ data } = {}) => heartbeat({ roomId, data: JSON.stringify(data ?? {}) }),
   )
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
+  }
+
   return (
-    <div>
+    <div onMouseMove={handleMouseMove}>
       <span>{users.length} online</span>
     </div>
   )
@@ -727,9 +731,9 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
 
   const [presenceRows] = useTable(tables.presence)
   const heartbeat = useReducer(reducers.presence_heartbeat_presence)
-  const { users } = usePresence(
+  const { users, updatePresence } = usePresence(
     presenceRows,
-    async () => heartbeat({ roomId: String(chatId) }),
+    async ({ data } = {}) => heartbeat({ roomId: String(chatId), data: JSON.stringify(data ?? {}) }),
   )
 
   const createMessage = useReducer(reducers.create_message)
@@ -738,8 +742,12 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
     await createMessage({ chatId, content })
   }
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
+  }
+
   return (
-    <div>
+    <div onMouseMove={handleMouseMove}>
       <div>{users.length} online</div>
       <ul>
         {messages.map(msg => (

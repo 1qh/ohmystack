@@ -416,12 +416,14 @@ const heartbeat = useReducer(reducers.presence_heartbeat_presence)
 
 const { users, updatePresence } = usePresence(
   presenceRows,
-  async () => heartbeat({ roomId: 'main', data: JSON.stringify({ cursor: { x: 0, y: 0 } }) }),
+  async ({ data } = {}) => heartbeat({ roomId: 'main', data: JSON.stringify(data ?? {}) }),
   { enabled: true, heartbeatIntervalMs: 15_000, ttlMs: 30_000 }
 )
 
 updatePresence({ cursor: { x: 100, y: 200 } })
 ```
+
+`updatePresence(data)` stores the latest payload and sends it on the next heartbeat. Use the heartbeat callback's optional `{ data }` parameter to serialize and forward that payload to your reducer.
 
 </Tab>
 </Tabs>
@@ -606,6 +608,17 @@ const save = useMutate(updatePost, {
     maxDelayMs: 5_000,
     base: 2
   }
+})
+```
+
+Migrating from older code: replace `relax(...)` with explicit input mapping before calling `save`.
+
+```typescript
+const save = useMutate(updatePost)
+
+await save({
+  id: Number(form.id),
+  title: String(form.title)
 })
 ```
 
