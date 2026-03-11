@@ -26,8 +26,7 @@ const ChatInput = ({ disabled = false, isBusy, onAbort, onSubmit, placeholder = 
 
   return (
     <PromptInput className='mx-auto max-w-3xl' onSubmit={handleSubmit}>
-      {/** biome-ignore lint/nursery/useNullishCoalescing: boolean OR */}
-      <PromptInputTextarea data-testid='chat-input' disabled={disabled || effectiveBusy} placeholder={placeholder} />
+      <PromptInputTextarea data-testid='chat-input' disabled={disabled ? true : effectiveBusy} placeholder={placeholder} />
       <PromptInputFooter>
         <div />
         <PromptInputSubmit

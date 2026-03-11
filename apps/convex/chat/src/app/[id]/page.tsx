@@ -2,14 +2,13 @@ import type { Id } from '@a/be-convex/model'
 import type { UIMessage } from 'ai'
 
 import { api } from '@a/be-convex'
+import Client from '@a/fe/chat-client'
 import { toUIMessage } from '@a/fe/ui-message'
 import { getToken, isAuthenticated } from '@noboil/convex/next'
 import { fetchQuery } from 'convex/nextjs'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
-
-import Client from './client'
 
 const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
     try {

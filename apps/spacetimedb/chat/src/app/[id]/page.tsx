@@ -5,13 +5,12 @@ import type { Chat, Message } from '@a/be-spacetimedb/spacetimedb/types'
 import type { UIMessage } from 'ai'
 
 import { tables } from '@a/be-spacetimedb/spacetimedb'
+import Client from '@a/fe/chat-client'
 import { toUIMessage } from '@a/fe/ui-message'
 import { toIdentityKey } from '@a/fe/utils'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
-import Client from './client'
 
 const toUIMessages = (messages: Message[]): UIMessage[] =>
     messages.map(m => toUIMessage({ id: String(m.id), parts: m.parts, role: m.role })),

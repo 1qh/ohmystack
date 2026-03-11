@@ -18,7 +18,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef } from 'react'
 import { Streamdown } from 'streamdown'
 
-import ChatInput from './input'
+import ChatInput from './chat-input'
 
 interface ClientProps {
   chatId: string
@@ -157,7 +157,7 @@ const getToolDisplayName = (toolName: string): string => {
     if (isUser)
       return (
         <div className='is-user flex w-full items-start justify-end gap-3' data-role='user' data-testid='message'>
-          <div className='max-w-[80%] rounded-2xl px-4 py-2 text-white' style={{ backgroundColor: '#006cff' }}>
+          <div className='max-w-[80%] rounded-2xl bg-[#006cff] px-4 py-2 text-white'>
             <span className='whitespace-pre-wrap'>{text}</span>
           </div>
         </div>
@@ -188,7 +188,7 @@ const getToolDisplayName = (toolName: string): string => {
       </div>
     )
   },
-  Client = ({ chatId, initialMessages, readOnly = false }: ClientProps) => {
+  ChatClient = ({ chatId, initialMessages, readOnly = false }: ClientProps) => {
     const searchParams = useSearchParams(),
       query = searchParams.get('query'),
       hasAppendedQueryRef = useRef(false),
@@ -280,4 +280,5 @@ const getToolDisplayName = (toolName: string): string => {
     )
   }
 
-export default Client
+export type { ClientProps }
+export default ChatClient
