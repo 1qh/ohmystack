@@ -5,12 +5,13 @@ import type { ConvexErrorData, ErrorHandler } from '../server/helpers'
 
 import { extractErrorData, getErrorMessage, handleConvexError } from '../server/helpers'
 
+type ErrorCode = ConvexErrorData['code']
+
 /** Configuration for the error toast hook. */
 interface ErrorToastOptions {
   handlers?: ErrorHandler
   toast: ToastFn
 }
-
 /** A function that displays a toast notification with the given message. */
 type ToastFn = (message: string) => void
 
@@ -31,7 +32,7 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
       [handlers, toast]
     ),
   /** Creates a standalone error handler that routes known error codes to overrides, falling back to toast. */
-  makeErrorHandler = (toast: ToastFn, overrides?: Partial<Record<string, (data?: ConvexErrorData) => void>>) => {
+  makeErrorHandler = (toast: ToastFn, overrides?: Partial<Record<ErrorCode, (data: ConvexErrorData) => void>>) => {
     const handler: ErrorHandler = {
       ...overrides,
       default: () => {
@@ -48,7 +49,21 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
       }
       toast(data?.message ?? getErrorMessage(error))
     }
+  },
+  toastFieldError = (error: unknown, toastFn: ToastFn): boolean => {
+    const data = extractErrorData(error),
+      fieldErrors = data?.fieldErrors
+    if (!fieldErrors) return false
+    const keys = Object.keys(fieldErrors)
+    for (const key of keys) {
+      const message = fieldErrors[key]
+      if (message) {
+        toastFn(message)
+        return true
+      }
+    }
+    return false
   }
 
 export type { ErrorToastOptions, ToastFn }
-export { makeErrorHandler, useErrorToast }
+export { makeErrorHandler, toastFieldError, useErrorToast }

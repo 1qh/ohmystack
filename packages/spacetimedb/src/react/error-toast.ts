@@ -43,20 +43,10 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
    * @param overrides Optional per-code override handlers.
    * @returns Error handler that routes Betterspace errors by code.
    */
-  makeErrorHandler = (toast: ToastFn, overrides?: Partial<Record<string, (data?: ErrorData) => void>>) => {
+  makeErrorHandler = (toast: ToastFn, overrides?: Partial<Record<ErrorCode, (data: ErrorData) => void>>) => {
     const handler: ErrorHandlers = {
+      ...overrides,
       default: noop
-    }
-
-    if (overrides) {
-      const keys = Object.keys(overrides)
-      for (const key of keys) {
-        const fn = overrides[key]
-        if (fn) {
-          const wrapped = (data: ErrorData) => fn(data)
-          handler[key as ErrorCode] = wrapped
-        }
-      }
     }
 
     return (error: unknown) => {

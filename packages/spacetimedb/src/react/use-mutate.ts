@@ -195,11 +195,7 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
     reducer: unknown,
     options?: MutateOptions<A, R>
   ): ((args: UndefinedToOptional<A>) => Promise<R>) =>
-    useMutation(useStdbReducer as unknown as (desc: unknown) => (args: A) => Promise<R>, reducer, options),
-  relax =
-    <A extends Record<string, unknown>, R>(fn: (args: A) => Promise<R>): ((args: UndefinedToOptional<A>) => Promise<R>) =>
-    async (args: UndefinedToOptional<A>) =>
-      fn(args as Record<string, unknown> as A)
+    useMutation(useStdbReducer as unknown as (desc: unknown) => (args: A) => Promise<R>, reducer, options)
 
 export type { MutateOptions, MutateToast }
-export { defaultOnError, relax, useMut, useMutate, useMutation }
+export { defaultOnError, useMut, useMutate, useMutation }

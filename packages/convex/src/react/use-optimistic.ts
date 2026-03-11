@@ -12,6 +12,7 @@ interface OptimisticOptions<T extends MutationFn, R = FunctionReturnType<T>> {
   mutation: T
   onOptimistic?: (args: Args<T>) => void
   onRollback?: (args: Args<T>, catchError: Error) => void
+  onSettled?: (args: Args<T>, error: unknown, result?: R) => void
   onSuccess?: (result: R, args: Args<T>) => void
 }
 
@@ -20,6 +21,7 @@ const useOptimisticMutation = <T extends MutationFn>({
   mutation,
   onOptimistic,
   onRollback,
+  onSettled,
   onSuccess
 }: OptimisticOptions<T>) => {
   const mutate = useMutation(mutation),
@@ -35,20 +37,23 @@ const useOptimisticMutation = <T extends MutationFn>({
         try {
           const result = await (mutate as (a: Args<T>) => Promise<FunctionReturnType<T>>)(args)
           onSuccess?.(result, args)
+          onSettled?.(args, undefined, result)
           return result
         } catch (error) {
           const err = error instanceof Error ? error : new Error('Mutation failed')
           setMutationError(err)
           onRollback?.(args, err)
+          onSettled?.(args, err)
           return null
         } finally {
           pendingCountRef.current -= 1
           if (pendingCountRef.current === 0) setIsPending(false)
         }
       },
-      [mutate, onOptimistic, onRollback, onSuccess]
+      [mutate, onOptimistic, onRollback, onSettled, onSuccess]
     )
   return { error: mutationError, execute, isPending }
 }
 
+export type { OptimisticOptions }
 export { useOptimisticMutation }
