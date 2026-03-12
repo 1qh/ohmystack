@@ -1,368 +1,307 @@
 import { file, spawnSync, write } from 'bun'
+import { readdir } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 
-const uiDir = `${process.cwd()}/packages/ui`,
-  files: Record<string, string> = {
-    'components.json': `{
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "",
-    "css": "src/styles/globals.css",
-    "baseColor": "neutral",
-    "cssVariables": true
+type JsonRecord = Record<string, unknown>
+
+const isRecord = (value: unknown): value is JsonRecord =>
+    typeof value === 'object' && value !== null && !Array.isArray(value),
+  decode = (value: null | Uint8Array | undefined) => (value ? new TextDecoder().decode(value) : ''),
+  readJson = async (filePath: string): Promise<JsonRecord | null> => {
+    const handle = file(filePath)
+    if (!(await handle.exists())) return null
+    const value = await handle.json()
+    return isRecord(value) ? value : null
   },
-  "iconLibrary": "lucide",
-  "aliases": {
-    "components": "@a/ui/components",
-    "utils": "@a/ui",
-    "ui": "@a/ui/components",
-    "lib": "@a/ui/lib",
-    "hooks": "@a/ui/hooks"
-  },
-  "registries": {
-    "@ai-elements": "https://elements.ai-sdk.dev/api/registry/{name}.json"
-  }
-}
-`,
-    'package.json': `{
-  "name": "@a/ui",
-  "type": "module",
-  "exports": {
-    "./globals.css": "./src/styles/globals.css",
-    "./postcss.config": "./postcss.config.mjs",
-    ".": "./src/lib/utils.ts",
-    "./lib/*": "./src/lib/*.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts"
-  },
-  "scripts": {
-    "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
-  },
-  "dependencies": {
-    "clsx": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "tailwind-merge": "latest",
-    "tw-animate-css": "latest"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "latest",
-    "@tailwindcss/typography": "latest",
-    "@turbo/gen": "latest",
-    "@types/react-dom": "latest",
-    "postcss-load-config": "latest"
-  }
-}
-`,
-    'postcss.config.mjs': `const config = {
-  plugins: { '@tailwindcss/postcss': {} }
-}
-
-export default config
-`,
-    'src/hooks/use-mobile.ts': `import * as React from 'react'
-
-const MOBILE_BREAKPOINT = 768
-
-export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>()
-
-  React.useEffect(() => {
-    const mql = globalThis.matchMedia(\`(max-width: \${MOBILE_BREAKPOINT - 1}px)\`),
-      onChange = () => {
-        setIsMobile(globalThis.innerWidth < MOBILE_BREAKPOINT)
-      }
-    mql.addEventListener('change', onChange)
-    setIsMobile(globalThis.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener('change', onChange)
-  }, [])
-
-  return Boolean(isMobile)
-}
-`,
-    'src/lib/utils.ts': `import type { ClassValue } from 'clsx'
-
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs))
-`,
-    'src/styles/globals.css': `@import 'tailwindcss';
-@import 'tw-animate-css';
-@source '../../../../node_modules/katex/dist/*.js';
-@source '../../../apps/**/*.{ts,tsx}';
-@source '../../../components/**/*.{ts,tsx}';
-@source '../**/*.{ts,tsx}';
-@source '../../../../node_modules/streamdown/dist/*.js';
-@plugin '@tailwindcss/typography';
-
-@custom-variant dark (&:is(.dark *));
-
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  button:not(:disabled),
-  [role='button']:not(:disabled) {
-    cursor: pointer;
-  }
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
+  readJsonFromGit = ({ filePath }: { filePath: string }): JsonRecord | null => {
+    const result = spawnSync({
+      cmd: ['git', 'show', `HEAD:${filePath}`],
+      cwd: process.cwd(),
+      stderr: 'pipe',
+      stdout: 'pipe'
+    })
+    if (result.exitCode !== 0) return null
+    try {
+      const value = JSON.parse(decode(result.stdout)) as unknown
+      return isRecord(value) ? value : null
+    } catch {
+      return null
     }
-    to {
-      opacity: 1;
-    }
-  }
-  @keyframes fadeOut {
-    to {
-      opacity: 0;
-    }
-  }
-}
-`,
-    'tsconfig.json': `{
-  "compilerOptions": {
-    "paths": {
-      "@a/ui/*": ["./src/*"]
-    },
-    "rootDir": ".",
-    "strict": false
   },
-  "exclude": ["dist", "node_modules"],
-  "extends": "lintmax/tsconfig",
-  "include": ["."]
-}
-`,
-    'tsconfig.lint.json': `{
-  "extends": "@a/tsconfig/compiled-package.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src", "turbo"],
-  "exclude": ["node_modules", "dist"]
-}
-`
-  },
-  reasoningStreamdownRegex = /<Streamdown plugins=\{streamdownPlugins\} \{\.\.\.props\}>/u,
-  schemaDisplayDangerousHtmlRegex = /dangerouslySetInnerHTML=\{\{ __html: children \?\? highlightedPath \}\}/u,
-  terminalShimmerRegex = /<Shimmer className="w-16" \/>/u,
-  run = (cmd: string[]) => {
+  run = ({ cmd, cwd }: { cmd: string[]; cwd?: string }) => {
     const result = spawnSync({
       cmd,
-      cwd: process.cwd(),
+      cwd: cwd ?? process.cwd(),
       stderr: 'inherit',
       stdout: 'inherit'
     })
     if (result.exitCode !== 0) throw new Error(`Command failed (${result.exitCode}): ${cmd.join(' ')}`)
   },
-  ensureDir = (dirPath: string) => {
-    run(['mkdir', '-p', dirPath])
+  runCapture = ({ cmd, cwd }: { cmd: string[]; cwd: string }) =>
+    spawnSync({
+      cmd,
+      cwd,
+      stderr: 'pipe',
+      stdout: 'pipe'
+    }),
+  writeJson = async ({ filePath, value }: { filePath: string; value: JsonRecord }) => {
+    await write(file(filePath), `${JSON.stringify(value, null, 2)}\n`)
   },
-  writeTemplate = async (filePath: string, content: string) => {
-    const abs = `${uiDir}/${filePath}`,
-      slash = abs.lastIndexOf('/'),
-      dirPath = slash > 0 ? abs.slice(0, slash) : uiDir
+  getNestedString = ({ keys, source }: { keys: string[]; source: JsonRecord | null }): null | string => {
+    let cur: unknown = source
+    for (const key of keys) {
+      if (!isRecord(cur)) return null
+      cur = cur[key]
+    }
+    return typeof cur === 'string' ? cur : null
+  },
+  stripSuffix = ({ suffix, value }: { suffix: string; value: null | string }) => {
+    if (value === null) return null
+    return value.endsWith(suffix) ? value.slice(0, -suffix.length) : value
+  },
+  collectSourceFiles = async ({ dirPath }: { dirPath: string }) => {
+    const entries = await readdir(dirPath, { withFileTypes: true }),
+      files: string[] = [],
+      nestedPromises: Promise<string[]>[] = []
 
-    ensureDir(dirPath)
-    await write(file(abs), content)
+    for (const entry of entries) {
+      const absPath = join(dirPath, entry.name)
+      if (entry.isDirectory()) nestedPromises.push(collectSourceFiles({ dirPath: absPath }))
+      if (entry.isFile() && (absPath.endsWith('.ts') || absPath.endsWith('.tsx'))) files.push(absPath)
+    }
+
+    const nestedGroups = await Promise.all(nestedPromises)
+    for (const group of nestedGroups) for (const nestedPath of group) files.push(nestedPath)
+
+    return files
   },
-  replaceRegexOrThrow = ({
-    filePath,
-    pattern,
-    replacement,
-    source
+  pruneGitkeepFiles = async ({ dirPath }: { dirPath: string }) => {
+    const entries = await readdir(dirPath, { withFileTypes: true }),
+      tasks: Promise<void>[] = []
+
+    for (const entry of entries) {
+      const absPath = join(dirPath, entry.name)
+      if (entry.isDirectory()) tasks.push(pruneGitkeepFiles({ dirPath: absPath }))
+      if (entry.isFile() && entry.name === '.gitkeep') tasks.push((async () => run({ cmd: ['rm', '-f', absPath] }))())
+    }
+
+    await Promise.all(tasks)
+  },
+  replaceImportPrefix = async ({
+    fromPrefix,
+    srcDir,
+    toPrefix
   }: {
-    filePath: string
-    pattern: RegExp
-    replacement: string
-    source: string
+    fromPrefix: null | string
+    srcDir: string
+    toPrefix: null | string
   }) => {
-    const next = source.replace(pattern, replacement)
-    if (next === source) throw new Error(`sync-ui patch pattern not found in ${filePath}`)
-    return next
-  },
-  rewriteFile = async ({ filePath, transform }: { filePath: string; transform: (source: string) => string }) => {
-    const abs = `${uiDir}/${filePath}`,
-      source = await file(abs).text(),
-      next = transform(source)
+    if (fromPrefix === null || toPrefix === null || fromPrefix === toPrefix) return
+    const files = await collectSourceFiles({ dirPath: srcDir }),
+      writes: Promise<void>[] = []
 
-    if (next !== source) await write(file(abs), next)
-  },
-  applyUiPatches = async () => {
-    await rewriteFile({
-      filePath: 'src/components/ai-elements/reasoning.tsx',
-      transform: source =>
-        replaceRegexOrThrow({
-          filePath: 'src/components/ai-elements/reasoning.tsx',
-          pattern: reasoningStreamdownRegex,
-          replacement: '<Streamdown plugins={streamdownPlugins}>',
-          source
-        })
-    })
-
-    await rewriteFile({
-      filePath: 'src/components/ai-elements/schema-display.tsx',
-      transform: source =>
-        replaceRegexOrThrow({
-          filePath: 'src/components/ai-elements/schema-display.tsx',
-          pattern: schemaDisplayDangerousHtmlRegex,
-          replacement: 'dangerouslySetInnerHTML={{ __html: typeof children === "string" ? children : highlightedPath }}',
-          source
-        })
-    })
-
-    await rewriteFile({
-      filePath: 'src/components/ai-elements/terminal.tsx',
-      transform: source =>
-        replaceRegexOrThrow({
-          filePath: 'src/components/ai-elements/terminal.tsx',
-          pattern: terminalShimmerRegex,
-          replacement: '<Shimmer className="w-16">Running...</Shimmer>',
-          source
-        })
-    })
-  },
-  main = async () => {
-    run(['rm', '-rf', uiDir])
-    ensureDir(uiDir)
-
-    const writes: Promise<number>[] = []
-
-    for (const [filePath, content] of Object.entries(files)) writes.push(writeTemplate(filePath, content))
+    for (const abs of files)
+      writes.push(
+        (async () => {
+          const source = await file(abs).text(),
+            next = source.split(fromPrefix).join(toPrefix)
+          if (next !== source) await write(file(abs), next)
+        })()
+      )
 
     await Promise.all(writes)
+  },
+  uniquePaths = ({ values }: { values: string[] }) => {
+    const out: string[] = []
+    for (const value of values) if (!out.includes(value)) out.push(value)
+    return out
+  },
+  parseTypecheckErrorPaths = ({ output }: { output: string }) => {
+    const matches: string[] = [],
+      regex = /^(?<path>[^\n()]+)\(\d+,\d+\): error TS\d+:/gmu
+    let match = regex.exec(output)
+    while (match) {
+      const candidate = match.groups?.path?.trim()
+      if (candidate) matches.push(candidate)
+      match = regex.exec(output)
+    }
+    return uniquePaths({ values: matches })
+  },
+  extractComponentImportPaths = ({ source }: { source: string }) => {
+    const importRegex = /@a\/ui\/components\/(?<component>[a-z0-9-]+)/gu,
+      paths: string[] = []
+    let match = importRegex.exec(source)
+    while (match) {
+      const componentName = match.groups?.component
+      if (componentName) paths.push(`src/components/${componentName}.tsx`)
+      match = importRegex.exec(source)
+    }
+    return paths
+  },
+  collectRelatedPaths = ({ errorPaths, rootDir }: { errorPaths: string[]; rootDir: string }) => {
+    const related: string[] = []
 
-    run(['bunx', 'shadcn@latest', 'add', '--all', '--yes', '--overwrite', '--cwd', uiDir])
-    run([
-      'bunx',
-      'shadcn@latest',
-      'add',
-      'https://elements.ai-sdk.dev/api/registry/all.json',
-      '--yes',
-      '--overwrite',
-      '--cwd',
-      uiDir
-    ])
+    for (const relPath of errorPaths)
+      if (relPath.startsWith('src/components/ai-elements/')) {
+        const gitPath = `packages/ui/${relPath}`,
+          gitFile = runCapture({
+            cmd: ['git', 'show', `HEAD:${gitPath}`],
+            cwd: rootDir
+          })
 
-    await applyUiPatches()
+        if (gitFile.exitCode === 0) {
+          const imports = extractComponentImportPaths({ source: decode(gitFile.stdout) })
+          for (const importPath of imports) related.push(importPath)
+        }
+      }
+
+    return uniquePaths({ values: [...errorPaths, ...related] })
+  },
+  restoreOrDeleteFromGit = async ({
+    relPath,
+    rootDir,
+    uiTmpDir
+  }: {
+    relPath: string
+    rootDir: string
+    uiTmpDir: string
+  }) => {
+    if (relPath.startsWith('..')) return false
+
+    const gitPath = `packages/ui/${relPath}`,
+      absolutePath = join(uiTmpDir, relPath),
+      gitFile = runCapture({ cmd: ['git', 'show', `HEAD:${gitPath}`], cwd: rootDir })
+
+    if (gitFile.exitCode === 0) {
+      run({ cmd: ['mkdir', '-p', dirname(absolutePath)] })
+      await write(file(absolutePath), decode(gitFile.stdout))
+      return true
+    }
+
+    run({ cmd: ['rm', '-f', absolutePath] })
+    return true
+  },
+  reconcileTypecheckFailures = async ({
+    errorPaths,
+    rootDir,
+    uiTmpDir
+  }: {
+    errorPaths: string[]
+    rootDir: string
+    uiTmpDir: string
+  }) => {
+    const restorePaths = collectRelatedPaths({ errorPaths, rootDir }),
+      actions: Promise<boolean>[] = []
+
+    for (const relPath of restorePaths)
+      actions.push(
+        restoreOrDeleteFromGit({
+          relPath,
+          rootDir,
+          uiTmpDir
+        })
+      )
+    const results = await Promise.all(actions)
+    return results.includes(true)
+  },
+  repairTypecheck = async ({
+    attempt,
+    rootDir,
+    uiTmpDir
+  }: {
+    attempt: number
+    rootDir: string
+    uiTmpDir: string
+  }): Promise<void> => {
+    const typecheck = runCapture({ cmd: ['bun', 'run', 'typecheck'], cwd: uiTmpDir })
+
+    if (typecheck.exitCode === 0) return
+    if (attempt >= 3)
+      throw new Error(
+        `ui sync typecheck failed after ${attempt} attempts:\n${decode(typecheck.stdout)}\n${decode(typecheck.stderr)}`
+      )
+
+    const output = `${decode(typecheck.stdout)}\n${decode(typecheck.stderr)}`,
+      errorPaths = parseTypecheckErrorPaths({ output }),
+      changed = await reconcileTypecheckFailures({
+        errorPaths,
+        rootDir,
+        uiTmpDir
+      })
+
+    if (!changed) throw new Error(`ui sync typecheck failed with no recoverable files:\n${output}`)
+    await repairTypecheck({ attempt: attempt + 1, rootDir, uiTmpDir })
+  },
+  root = process.cwd(),
+  uiDir = join(root, 'packages/ui'),
+  tmpDir = '/tmp/shadcn-sync',
+  tmpUi = join(tmpDir, 'a/packages/ui'),
+  main = async () => {
+    const [fallbackComponents, fallbackPackage, fallbackTsconfig, fallbackTsconfigLint] = await Promise.all([
+        readJson(join(uiDir, 'components.json')),
+        readJson(join(uiDir, 'package.json')),
+        readJson(join(uiDir, 'tsconfig.json')),
+        readJson(join(uiDir, 'tsconfig.lint.json'))
+      ]),
+      snapshotComponents = readJsonFromGit({ filePath: 'packages/ui/components.json' }) ?? fallbackComponents,
+      snapshotPackage = readJsonFromGit({ filePath: 'packages/ui/package.json' }) ?? fallbackPackage,
+      snapshotTsconfig = readJsonFromGit({ filePath: 'packages/ui/tsconfig.json' }) ?? fallbackTsconfig,
+      snapshotTsconfigLint = readJsonFromGit({ filePath: 'packages/ui/tsconfig.lint.json' }) ?? fallbackTsconfigLint
+
+    run({ cmd: ['rm', '-rf', tmpDir] })
+    run({ cmd: ['mkdir', '-p', tmpDir] })
+    run({
+      cmd: ['bunx', '--bun', 'shadcn@latest', 'init', '-t', 'next', '-b', 'base', '--monorepo', '-p', 'vega', '-n', 'a'],
+      cwd: tmpDir
+    })
+    run({ cmd: ['bunx', '--bun', 'shadcn@latest', 'add', '-ayo'], cwd: tmpUi })
+    run({ cmd: ['bunx', '--bun', 'shadcn@latest', 'add', '@ai-elements/all', '-ayo'], cwd: tmpUi })
+
+    const nextPackage = await readJson(join(tmpUi, 'package.json')),
+      nextComponents = await readJson(join(tmpUi, 'components.json')),
+      generatedPrefix = stripSuffix({
+        suffix: '/components',
+        value: getNestedString({ keys: ['aliases', 'components'], source: nextComponents })
+      }),
+      snapshotPrefix = stripSuffix({
+        suffix: '/components',
+        value: getNestedString({ keys: ['aliases', 'components'], source: snapshotComponents })
+      })
+
+    if (snapshotPackage && nextPackage) {
+      const { name } = snapshotPackage,
+        { dependencies } = snapshotPackage,
+        { devDependencies } = snapshotPackage,
+        { exports } = snapshotPackage,
+        { scripts } = snapshotPackage,
+        { type } = snapshotPackage
+      if (typeof name === 'string') nextPackage.name = name
+      if (isRecord(dependencies)) nextPackage.dependencies = dependencies
+      if (isRecord(devDependencies)) nextPackage.devDependencies = devDependencies
+      if (isRecord(exports)) nextPackage.exports = exports
+      if (isRecord(scripts)) nextPackage.scripts = scripts
+      if (typeof type === 'string') nextPackage.type = type
+      await writeJson({ filePath: join(tmpUi, 'package.json'), value: nextPackage })
+    }
+
+    if (snapshotComponents && nextComponents) {
+      const { aliases } = snapshotComponents
+      if (isRecord(aliases)) nextComponents.aliases = aliases
+      await writeJson({ filePath: join(tmpUi, 'components.json'), value: nextComponents })
+    }
+
+    if (snapshotTsconfig) await writeJson({ filePath: join(tmpUi, 'tsconfig.json'), value: snapshotTsconfig })
+    if (snapshotTsconfigLint) await writeJson({ filePath: join(tmpUi, 'tsconfig.lint.json'), value: snapshotTsconfigLint })
+
+    await replaceImportPrefix({ fromPrefix: generatedPrefix, srcDir: join(tmpUi, 'src'), toPrefix: snapshotPrefix })
+
+    run({ cmd: ['rm', '-rf', join(tmpUi, 'node_modules')] })
+
+    run({ cmd: ['rm', '-rf', uiDir] })
+    run({ cmd: ['mv', tmpUi, uiDir] })
+    await pruneGitkeepFiles({ dirPath: uiDir })
+    await repairTypecheck({ attempt: 1, rootDir: root, uiTmpDir: uiDir })
+    run({ cmd: ['rm', '-rf', tmpDir] })
   }
 
 await main()
