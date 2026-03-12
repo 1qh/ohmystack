@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 
 import { Button } from "@a/ui/components/button";
 import { Spinner } from "@a/ui/components/spinner";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { MicIcon, SquareIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 

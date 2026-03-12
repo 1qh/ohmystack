@@ -7,7 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@a/ui/components/collapsible";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { ChevronDownIcon, SearchIcon } from "lucide-react";
 
 export type TaskItemFileProps = ComponentProps<"div">;
@@ -56,7 +56,7 @@ export const TaskTrigger = ({
   title,
   ...props
 }: TaskTriggerProps) => (
-  <CollapsibleTrigger asChild className={cn("group", className)} {...props}>
+  <CollapsibleTrigger className={cn("group", className)} {...props}>
     {children ?? (
       <div className="flex w-full cursor-pointer items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground">
         <SearchIcon className="size-4" />

@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from "@a/ui/components/accordion";
 import { Badge } from "@a/ui/components/badge";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { BotIcon } from "lucide-react";
 import { memo } from "react";
 

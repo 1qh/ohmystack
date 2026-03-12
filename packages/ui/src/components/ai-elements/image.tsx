@@ -1,6 +1,6 @@
 import type { Experimental_GeneratedImage } from "ai";
 
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 
 export type ImageProps = Experimental_GeneratedImage & {
   className?: string;

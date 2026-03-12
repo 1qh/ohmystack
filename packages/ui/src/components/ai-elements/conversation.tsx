@@ -3,7 +3,7 @@
 import type { ComponentProps } from "react";
 
 import { Button } from "@a/ui/components/button";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { ArrowDownIcon, DownloadIcon } from "lucide-react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";

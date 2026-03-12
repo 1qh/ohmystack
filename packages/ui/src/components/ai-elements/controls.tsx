@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { Controls as ControlsPrimitive } from "@xyflow/react";
 
 export type ControlsProps = ComponentProps<typeof ControlsPrimitive>;

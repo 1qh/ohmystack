@@ -3,7 +3,7 @@
 import type { RiveParameters } from "@rive-app/react-webgl2";
 import type { FC, ReactNode } from "react";
 
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import {
   useRive,
   useStateMachineInput,

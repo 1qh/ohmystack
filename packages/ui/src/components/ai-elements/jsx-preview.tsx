@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { TProps as JsxParserProps } from "react-jsx-parser";
 
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { AlertCircle } from "lucide-react";
 import {
   createContext,

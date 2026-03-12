@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { Alert, AlertDescription } from "@a/ui/components/alert";
 import { Button } from "@a/ui/components/button";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { createContext, useContext } from "react";
 
 type ToolUIPartApproval =

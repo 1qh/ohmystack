@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@a/ui/components/tooltip";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { XIcon } from "lucide-react";
 
 export type ArtifactProps = HTMLAttributes<HTMLDivElement>;
@@ -127,7 +127,7 @@ export const ArtifactAction = ({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipTrigger>{button}</TooltipTrigger>
           <TooltipContent>
             <p>{tooltip}</p>
           </TooltipContent>

@@ -1,12 +1,19 @@
 {
   "compilerOptions": {
     "paths": {
-      "@a/ui/*": ["./src/*"]
+      "@a/ui/*": [
+        "./src/*"
+      ]
     },
     "rootDir": ".",
     "strict": false
   },
-  "exclude": ["dist", "node_modules"],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
   "extends": "lintmax/tsconfig",
-  "include": ["."]
+  "include": [
+    "."
+  ]
 }

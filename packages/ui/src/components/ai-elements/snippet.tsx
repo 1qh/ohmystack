@@ -9,7 +9,7 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@a/ui/components/input-group";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import {
   createContext,
