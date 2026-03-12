@@ -1,11 +1,12 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 
-import { Button } from '@a/ui/button'
 import { Input } from '@a/ui/input'
 import { useId, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { toast } from 'sonner'
+
+import EmailAuthShell from './email-auth-shell'
 
 const EmailLoginPage = () => {
   const emailId = useId(),
@@ -29,8 +30,8 @@ const EmailLoginPage = () => {
       })()
     }
   return (
-    <form
-      className='m-auto max-w-60 space-y-2 *:w-full'
+    <EmailAuthShell
+      login={login}
       onSubmit={ev => {
         ev.preventDefault()
         setPending(true)
@@ -38,18 +39,12 @@ const EmailLoginPage = () => {
           emailVal = fd.get('email'),
           email = typeof emailVal === 'string' ? emailVal.trim() : ''
         submitMagicLink(email)
-      }}>
+      }}
+      onToggle={() => setLogin(!login)}
+      pending={pending}
+      submitLabel={login ? 'Continue with email' : 'Create account with email'}>
       <Input autoComplete='email' id={emailId} name='email' placeholder='Email' />
-      <Button disabled={pending} type='submit'>
-        {login ? 'Continue with email' : 'Create account with email'}
-      </Button>
-      <button
-        className='text-sm text-muted-foreground hover:text-foreground'
-        onClick={() => setLogin(!login)}
-        type='button'>
-        {login ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
-      </button>
-    </form>
+    </EmailAuthShell>
   )
 }
 

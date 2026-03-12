@@ -1,25 +1,11 @@
 import type { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from '@a/ui/alert-dialog'
-import { Button } from '@a/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@a/ui/popover'
 import { cookies } from 'next/headers'
-import Image from 'next/image'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import env from './env'
-import ThemeToggle from './theme-toggle'
+import UserMenuShell from './user-menu-shell'
 
 interface UserInfo {
   email?: string
@@ -62,55 +48,23 @@ const toHttpUri = (uri: string) => {
   UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Trigger>) => {
     const token = (await cookies()).get('spacetimedb_token')?.value,
       { email, image, name } = token ? await readUserFromSql(token) : {}
+
+    const onLogout = async () => {
+      'use server'
+      const store = await cookies()
+      store.delete('spacetimedb_token')
+      redirect('/login')
+    }
+
     return (
-      <Popover>
-        <PopoverTrigger
-          render={
-            <button {...props} aria-label='User menu' className='size-8 shrink-0 rounded-full' type='button'>
-              {token && image ? (
-                <Image alt='' className='rounded-full' height={32} src={image} width={32} />
-              ) : (
-                <span className='block size-8 rounded-full bg-muted-foreground' />
-              )}
-            </button>
-          }
-        />
-        <PopoverContent className='mx-1 w-fit space-y-1 rounded-xl p-1.5'>
-          <ThemeToggle />
-          {token ? (
-            <AlertDialog>
-              <AlertDialogTrigger className='w-full' render={<Button variant='ghost' />}>
-                Log out
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className='flex items-center gap-2'>
-                    {image ? <Image alt='' className='rounded-full' height={24} src={image} width={24} /> : null}
-                    {name}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>Log out of {email}?</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form
-                    action={async () => {
-                      'use server'
-                      const store = await cookies()
-                      store.delete('spacetimedb_token')
-                      redirect('/login')
-                    }}>
-                    <Button>Continue</Button>
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : (
-            <Button asChild className='w-full' variant='ghost'>
-              <Link href='/login'>Log in</Link>
-            </Button>
-          )}
-        </PopoverContent>
-      </Popover>
+      <UserMenuShell
+        email={email}
+        image={image}
+        isSignedIn={Boolean(token)}
+        name={name}
+        onLogout={onLogout}
+        triggerProps={props}
+      />
     )
   }
 

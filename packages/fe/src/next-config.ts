@@ -1,46 +1,21 @@
-/** biome-ignore-all lint/style/noProcessEnv: env detection in config */
-import type { NextConfig } from 'next'
+import { env as nodeEnv } from 'node:process'
 
-interface CreateNextConfigOptions {
-  experimental?: NextConfig['experimental']
-  imageDomains?: string[]
-  imgSrc?: string[]
-}
+import type { CreateNextConfigOptions } from './next-config-core'
 
-const isDev = process.env.NODE_ENV === 'development',
-  BASE_IMG_SRC = "'self' data: blob: https://*.convex.cloud",
-  isPlaywright = process.env.PLAYWRIGHT === '1',
-  createNextConfig = ({ experimental, imageDomains, imgSrc }: CreateNextConfigOptions = {}): NextConfig => ({
-    ...(isPlaywright && { devIndicators: false }),
-    experimental: { ...experimental },
-    headers: () => [
-      {
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
-              `img-src ${[BASE_IMG_SRC, ...(imgSrc ?? [])].join(' ')}`,
-              isDev
-                ? "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud http://127.0.0.1:* ws://127.0.0.1:*"
-                : "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud",
-              "font-src 'self'",
-              "frame-ancestors 'none'"
-            ].join('; ')
-          },
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }
-        ],
-        source: '/:path*'
-      }
-    ],
-    images: imageDomains ? { remotePatterns: imageDomains.map(hostname => ({ hostname })) } : undefined,
-    reactCompiler: true,
-    transpilePackages: ['@a/ui', '@a/be', '@a/fe']
-  })
+import { createNextConfigWithCsp } from './next-config-core'
+
+const isDev = nodeEnv.NODE_ENV === 'development',
+  createNextConfig = ({ experimental, imageDomains, imgSrc }: CreateNextConfigOptions = {}) =>
+    createNextConfigWithCsp({
+      csp: {
+        connectSrc: isDev
+          ? ["'self'", 'https://*.convex.cloud', 'wss://*.convex.cloud', 'http://127.0.0.1:*', 'ws://127.0.0.1:*']
+          : ["'self'", 'https://*.convex.cloud', 'wss://*.convex.cloud'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://*.convex.cloud']
+      },
+      experimental,
+      imageDomains,
+      imgSrc
+    })
 
 export { createNextConfig }
