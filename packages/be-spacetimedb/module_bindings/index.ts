@@ -103,13 +103,13 @@ const tablesSchema = __schema({
   blog: __table({
     name: 'blog',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'published', algorithm: 'btree', columns: [
+      { accessor: 'published', name: 'published', algorithm: 'btree', columns: [
         'published',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -120,7 +120,7 @@ const tablesSchema = __schema({
   blogProfile: __table({
     name: 'blog_profile',
     indexes: [
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -130,13 +130,13 @@ const tablesSchema = __schema({
   chat: __table({
     name: 'chat',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'isPublic', algorithm: 'btree', columns: [
+      { accessor: 'isPublic', name: 'isPublic', algorithm: 'btree', columns: [
         'isPublic',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -147,10 +147,10 @@ const tablesSchema = __schema({
   file: __table({
     name: 'file',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -161,13 +161,13 @@ const tablesSchema = __schema({
   message: __table({
     name: 'message',
     indexes: [
-      { name: 'chatId', algorithm: 'btree', columns: [
+      { accessor: 'chatId', name: 'chatId', algorithm: 'btree', columns: [
         'chatId',
       ] },
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -178,10 +178,10 @@ const tablesSchema = __schema({
   movie: __table({
     name: 'movie',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'tmdbId', algorithm: 'btree', columns: [
+      { accessor: 'tmdbId', name: 'tmdbId', algorithm: 'btree', columns: [
         'tmdbId',
       ] },
     ],
@@ -193,13 +193,13 @@ const tablesSchema = __schema({
   org: __table({
     name: 'org',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'slug', algorithm: 'btree', columns: [
+      { accessor: 'slug', name: 'slug', algorithm: 'btree', columns: [
         'slug',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -211,13 +211,13 @@ const tablesSchema = __schema({
   orgInvite: __table({
     name: 'org_invite',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'token', algorithm: 'btree', columns: [
+      { accessor: 'token', name: 'token', algorithm: 'btree', columns: [
         'token',
       ] },
     ],
@@ -229,16 +229,16 @@ const tablesSchema = __schema({
   orgJoinRequest: __table({
     name: 'org_join_request',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'status', algorithm: 'btree', columns: [
+      { accessor: 'status', name: 'status', algorithm: 'btree', columns: [
         'status',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -249,13 +249,13 @@ const tablesSchema = __schema({
   orgMember: __table({
     name: 'org_member',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -266,7 +266,7 @@ const tablesSchema = __schema({
   orgProfile: __table({
     name: 'org_profile',
     indexes: [
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -276,13 +276,13 @@ const tablesSchema = __schema({
   project: __table({
     name: 'project',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -293,16 +293,16 @@ const tablesSchema = __schema({
   task: __table({
     name: 'task',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'projectId', algorithm: 'btree', columns: [
+      { accessor: 'projectId', name: 'projectId', algorithm: 'btree', columns: [
         'projectId',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
@@ -313,17 +313,17 @@ const tablesSchema = __schema({
   wiki: __table({
     name: 'wiki',
     indexes: [
-      { name: 'id', algorithm: 'btree', columns: [
+      { accessor: 'id', name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
-      { name: 'orgId', algorithm: 'btree', columns: [
+      { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: [
         'orgId',
       ] },
-      { name: 'orgIdSlug', algorithm: 'btree', columns: [
+      { accessor: 'orgIdSlug', name: 'orgIdSlug', algorithm: 'btree', columns: [
         'orgId',
         'slug',
       ] },
-      { name: 'userId', algorithm: 'btree', columns: [
+      { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],

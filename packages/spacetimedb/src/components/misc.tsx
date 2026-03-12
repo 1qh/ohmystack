@@ -34,7 +34,7 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
     return (
       <p
         className={cn(
-          'fixed bottom-4 left-4 z-50 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-lg',
+          'fixed bottom-4 left-4 z-50 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-foreground shadow-lg',
           className
         )}
         {...props}>

@@ -55,17 +55,19 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
       <Spinner className='size-8' data-testid='delete-spinner' />
     ) : (
       <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            aria-label='Delete blog'
-            className='group-hover:block hover:bg-destructive/10 hover:text-destructive'
-            data-testid='delete-blog-trigger'
-            size='icon'
-            type='button'
-            variant='ghost'>
-            <Trash className='size-full stroke-1' />
-          </Button>
-        </AlertDialogTrigger>
+        <AlertDialogTrigger
+          render={
+            <Button
+              aria-label='Delete blog'
+              className='group-hover:block hover:bg-destructive/10 hover:text-destructive'
+              data-testid='delete-blog-trigger'
+              size='icon'
+              type='button'
+              variant='ghost'>
+              <Trash className='size-full stroke-1' />
+            </Button>
+          }
+        />
         <AlertDialogContent data-testid='delete-dialog'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>Delete blog?</AlertDialogTitle>

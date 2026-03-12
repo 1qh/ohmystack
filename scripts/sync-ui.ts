@@ -3,9 +3,8 @@ import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 type JsonRecord = Record<string, unknown>
-
-const isRecord = (value: unknown): value is JsonRecord =>
-    typeof value === 'object' && value !== null && !Array.isArray(value),
+const lineBreakRegex = /\r?\n/u,
+  isRecord = (value: unknown): value is JsonRecord => typeof value === 'object' && value !== null && !Array.isArray(value),
   decode = (value: null | Uint8Array | undefined) => (value ? new TextDecoder().decode(value) : ''),
   readJson = async (filePath: string): Promise<JsonRecord | null> => {
     const handle = file(filePath)
@@ -46,6 +45,40 @@ const isRecord = (value: unknown): value is JsonRecord =>
     }),
   writeJson = async ({ filePath, value }: { filePath: string; value: JsonRecord }) => {
     await write(file(filePath), `${JSON.stringify(value, null, 2)}\n`)
+  },
+  ensureTypographyPluginBeforeImports = async ({ cssPath }: { cssPath: string }) => {
+    const source = await file(cssPath).text(),
+      lineBreak = source.includes('\r\n') ? '\r\n' : '\n',
+      pluginLine = '@plugin "@tailwindcss/typography";',
+      shadcnImportLine = '@import "shadcn/tailwind.css";',
+      rows = source.split(lineBreakRegex),
+      withoutPlugin: string[] = []
+
+    for (const row of rows) {
+      const trimmed = row.trim()
+      if (trimmed !== pluginLine && trimmed !== shadcnImportLine) withoutPlugin.push(row)
+    }
+
+    let importIndex = 0
+    for (let i = 0; i < withoutPlugin.length; i += 1)
+      if (withoutPlugin[i].trim().startsWith('@import ')) {
+        importIndex = i
+        break
+      }
+
+    withoutPlugin.splice(importIndex, 0, pluginLine)
+    let next = withoutPlugin.join(lineBreak)
+    if (!next.endsWith(lineBreak)) next = `${next}${lineBreak}`
+    if (next !== source) await write(file(cssPath), next)
+  },
+  mergeWithOrder = ({ base, overlay }: { base: JsonRecord; overlay: JsonRecord }) => {
+    const merged: JsonRecord = {}
+
+    for (const key of Object.keys(base)) merged[key] = Object.hasOwn(overlay, key) ? overlay[key] : base[key]
+
+    for (const key of Object.keys(overlay)) if (!Object.hasOwn(merged, key)) merged[key] = overlay[key]
+
+    return merged
   },
   getNestedString = ({ keys, source }: { keys: string[]; source: JsonRecord | null }): null | string => {
     let cur: unknown = source
@@ -275,13 +308,15 @@ const isRecord = (value: unknown): value is JsonRecord =>
         { exports } = snapshotPackage,
         { scripts } = snapshotPackage,
         { type } = snapshotPackage
+
       if (typeof name === 'string') nextPackage.name = name
       if (isRecord(dependencies)) nextPackage.dependencies = dependencies
       if (isRecord(devDependencies)) nextPackage.devDependencies = devDependencies
       if (isRecord(exports)) nextPackage.exports = exports
       if (isRecord(scripts)) nextPackage.scripts = scripts
       if (typeof type === 'string') nextPackage.type = type
-      await writeJson({ filePath: join(tmpUi, 'package.json'), value: nextPackage })
+      const orderedPackage = mergeWithOrder({ base: snapshotPackage, overlay: nextPackage })
+      await writeJson({ filePath: join(tmpUi, 'package.json'), value: orderedPackage })
     }
 
     if (snapshotComponents && nextComponents) {
@@ -294,6 +329,7 @@ const isRecord = (value: unknown): value is JsonRecord =>
     if (snapshotTsconfigLint) await writeJson({ filePath: join(tmpUi, 'tsconfig.lint.json'), value: snapshotTsconfigLint })
 
     await replaceImportPrefix({ fromPrefix: generatedPrefix, srcDir: join(tmpUi, 'src'), toPrefix: snapshotPrefix })
+    await ensureTypographyPluginBeforeImports({ cssPath: join(tmpUi, 'src/styles/globals.css') })
 
     run({ cmd: ['rm', '-rf', join(tmpUi, 'node_modules')] })
 

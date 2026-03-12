@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
 // biome-ignore-all lint/suspicious/useAwait: async without await
-/* eslint-disable @typescript-eslint/explicit-member-accessibility, react/require-optimization, react/no-set-state, react/sort-comp */
+/* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
 'use client'
 
 import type { ErrorInfo, ReactNode } from 'react'

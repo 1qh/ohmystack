@@ -97,9 +97,9 @@ const tablesSchema = __schema({
     {
       name: 'blog',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'published', algorithm: 'btree', columns: ['published'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'published', name: 'published', algorithm: 'btree', columns: ['published'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'blog_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -108,7 +108,7 @@ const tablesSchema = __schema({
   blogProfile: __table(
     {
       name: 'blog_profile',
-      indexes: [{ name: 'userId', algorithm: 'btree', columns: ['userId'] }],
+      indexes: [{ accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }],
       constraints: []
     },
     BlogProfileRow
@@ -117,9 +117,9 @@ const tablesSchema = __schema({
     {
       name: 'chat',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'isPublic', algorithm: 'btree', columns: ['isPublic'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'isPublic', name: 'isPublic', algorithm: 'btree', columns: ['isPublic'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'chat_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -129,8 +129,8 @@ const tablesSchema = __schema({
     {
       name: 'file',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'file_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -140,9 +140,9 @@ const tablesSchema = __schema({
     {
       name: 'message',
       indexes: [
-        { name: 'chatId', algorithm: 'btree', columns: ['chatId'] },
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'chatId', name: 'chatId', algorithm: 'btree', columns: ['chatId'] },
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'message_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -152,8 +152,8 @@ const tablesSchema = __schema({
     {
       name: 'movie',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'tmdbId', algorithm: 'btree', columns: ['tmdbId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'tmdbId', name: 'tmdbId', algorithm: 'btree', columns: ['tmdbId'] }
       ],
       constraints: [
         { name: 'movie_id_key', constraint: 'unique', columns: ['id'] },
@@ -170,9 +170,9 @@ const tablesSchema = __schema({
     {
       name: 'org',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'slug', algorithm: 'btree', columns: ['slug'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'slug', name: 'slug', algorithm: 'btree', columns: ['slug'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [
         { name: 'org_id_key', constraint: 'unique', columns: ['id'] },
@@ -185,9 +185,9 @@ const tablesSchema = __schema({
     {
       name: 'org_invite',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'token', algorithm: 'btree', columns: ['token'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'token', name: 'token', algorithm: 'btree', columns: ['token'] }
       ],
       constraints: [
         { name: 'org_invite_id_key', constraint: 'unique', columns: ['id'] },
@@ -204,10 +204,10 @@ const tablesSchema = __schema({
     {
       name: 'org_join_request',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'status', algorithm: 'btree', columns: ['status'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'status', name: 'status', algorithm: 'btree', columns: ['status'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [
         {
@@ -223,9 +223,9 @@ const tablesSchema = __schema({
     {
       name: 'org_member',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'org_member_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -234,7 +234,7 @@ const tablesSchema = __schema({
   orgProfile: __table(
     {
       name: 'org_profile',
-      indexes: [{ name: 'userId', algorithm: 'btree', columns: ['userId'] }],
+      indexes: [{ accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }],
       constraints: []
     },
     OrgProfileRow
@@ -243,9 +243,9 @@ const tablesSchema = __schema({
     {
       name: 'project',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'project_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -255,10 +255,10 @@ const tablesSchema = __schema({
     {
       name: 'task',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'projectId', algorithm: 'btree', columns: ['projectId'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'projectId', name: 'projectId', algorithm: 'btree', columns: ['projectId'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'task_id_key', constraint: 'unique', columns: ['id'] }]
     },
@@ -268,10 +268,10 @@ const tablesSchema = __schema({
     {
       name: 'wiki',
       indexes: [
-        { name: 'id', algorithm: 'btree', columns: ['id'] },
-        { name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
-        { name: 'orgIdSlug', algorithm: 'btree', columns: ['orgId', 'slug'] },
-        { name: 'userId', algorithm: 'btree', columns: ['userId'] }
+        { accessor: 'id', name: 'id', algorithm: 'btree', columns: ['id'] },
+        { accessor: 'orgId', name: 'orgId', algorithm: 'btree', columns: ['orgId'] },
+        { accessor: 'orgIdSlug', name: 'orgIdSlug', algorithm: 'btree', columns: ['orgId', 'slug'] },
+        { accessor: 'userId', name: 'userId', algorithm: 'btree', columns: ['userId'] }
       ],
       constraints: [{ name: 'wiki_id_key', constraint: 'unique', columns: ['id'] }]
     },

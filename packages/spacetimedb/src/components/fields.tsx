@@ -391,22 +391,24 @@ const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
                   </FieldLabel>
                 )}
                 <Popover onOpenChange={setOpen} open={open}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      aria-controls={listId}
-                      aria-describedby={inv ? errorId : undefined}
-                      aria-expanded={open}
-                      aria-invalid={inv}
-                      className='w-full justify-between font-normal'
-                      disabled={disabled}
-                      id={f.name}
-                      onBlur={f.handleBlur}
-                      role='combobox'
-                      variant='outline'>
-                      {selected ? selected.label : <span className='text-muted-foreground'>{placeholder}</span>}
-                      <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                    </Button>
-                  </PopoverTrigger>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        aria-controls={listId}
+                        aria-describedby={inv ? errorId : undefined}
+                        aria-expanded={open}
+                        aria-invalid={inv}
+                        className='w-full justify-between font-normal'
+                        disabled={disabled}
+                        id={f.name}
+                        onBlur={f.handleBlur}
+                        role='combobox'
+                        variant='outline'>
+                        {selected ? selected.label : <span className='text-muted-foreground'>{placeholder}</span>}
+                        <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                      </Button>
+                    }
+                  />
                   <PopoverContent className='w-(--radix-popover-trigger-width) p-0'>
                     <Command>
                       <CommandInput placeholder={searchPlaceholder} />
@@ -480,19 +482,21 @@ const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
                 )}
                 <div className='flex gap-1'>
                   <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        aria-describedby={inv ? errorId : undefined}
-                        aria-invalid={inv}
-                        className={cn('flex-1 justify-start text-left font-normal', !dateVal && 'text-muted-foreground')}
-                        data-testid={`${tid}-trigger`}
-                        disabled={disabled}
-                        id={f.name}
-                        variant='outline'>
-                        <CalendarIcon className='mr-2 size-4' />
-                        {dateVal ? format(dateVal, 'PPP') : placeholder}
-                      </Button>
-                    </PopoverTrigger>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          aria-describedby={inv ? errorId : undefined}
+                          aria-invalid={inv}
+                          className={cn('flex-1 justify-start text-left font-normal', !dateVal && 'text-muted-foreground')}
+                          data-testid={`${tid}-trigger`}
+                          disabled={disabled}
+                          id={f.name}
+                          variant='outline'>
+                          <CalendarIcon className='mr-2 size-4' />
+                          {dateVal ? format(dateVal, 'PPP') : placeholder}
+                        </Button>
+                      }
+                    />
                     <PopoverContent align='start' className='w-auto p-0' data-testid={`${tid}-calendar`}>
                       <Calendar
                         mode='single'
@@ -893,7 +897,7 @@ const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
                   min={min}
                   name={f.name}
                   onBlur={f.handleBlur}
-                  onValueChange={([v]) => f.handleChange(v)}
+                  onValueChange={v => f.handleChange(Array.isArray(v) ? v[0] : v)}
                   step={step}
                   // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
                   value={[val]}

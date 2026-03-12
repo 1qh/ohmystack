@@ -64,21 +64,23 @@ const toHttpUri = (uri: string) => {
       { email, image, name } = token ? await readUserFromSql(token) : {}
     return (
       <Popover>
-        <PopoverTrigger asChild {...props}>
-          <button aria-label='User menu' className='size-8 shrink-0 rounded-full' type='button'>
-            {token && image ? (
-              <Image alt='' className='rounded-full' height={32} src={image} width={32} />
-            ) : (
-              <span className='block size-8 rounded-full bg-muted-foreground' />
-            )}
-          </button>
-        </PopoverTrigger>
+        <PopoverTrigger
+          render={
+            <button {...props} aria-label='User menu' className='size-8 shrink-0 rounded-full' type='button'>
+              {token && image ? (
+                <Image alt='' className='rounded-full' height={32} src={image} width={32} />
+              ) : (
+                <span className='block size-8 rounded-full bg-muted-foreground' />
+              )}
+            </button>
+          }
+        />
         <PopoverContent className='mx-1 w-fit space-y-1 rounded-xl p-1.5'>
           <ThemeToggle />
           {token ? (
             <AlertDialog>
-              <AlertDialogTrigger asChild className='w-full'>
-                <Button variant='ghost'>Log out</Button>
+              <AlertDialogTrigger className='w-full' render={<Button variant='ghost' />}>
+                Log out
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

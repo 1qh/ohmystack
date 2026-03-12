@@ -161,12 +161,17 @@ const Publish = ({
             &larr; Back
           </Link>
           <Popover>
-            <PopoverTrigger asChild>
-              <Settings
-                className='size-8 rounded-lg stroke-1 p-1.5 group-hover:block hover:bg-muted'
-                data-testid='settings-trigger'
-              />
-            </PopoverTrigger>
+            <PopoverTrigger
+              render={
+                <button
+                  aria-label='Open settings'
+                  className='rounded-lg hover:bg-muted'
+                  data-testid='settings-trigger'
+                  type='button'>
+                  <Settings className='size-8 stroke-1 p-1.5 group-hover:block' />
+                </button>
+              }
+            />
             <PopoverContent data-testid='settings-popover'>
               <Setting blog={blog} key={blog.id} />
             </PopoverContent>

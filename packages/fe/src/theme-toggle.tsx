@@ -5,16 +5,17 @@ import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 const ThemeToggle = () => {
-  const { setTheme, theme } = useTheme()
+  const { setTheme, theme } = useTheme(),
+    selectedTheme = theme ?? 'system'
   return (
-    <ToggleGroup className='*:p-2' onValueChange={setTheme} type='single' value={theme}>
-      <ToggleGroupItem asChild value='light'>
+    <ToggleGroup className='*:p-2' onValueChange={value => setTheme(value[0] ?? 'system')} value={[selectedTheme]}>
+      <ToggleGroupItem value='light'>
         <Sun />
       </ToggleGroupItem>
-      <ToggleGroupItem asChild value='dark'>
+      <ToggleGroupItem value='dark'>
         <Moon />
       </ToggleGroupItem>
-      <ToggleGroupItem asChild value='system'>
+      <ToggleGroupItem value='system'>
         <Monitor />
       </ToggleGroupItem>
     </ToggleGroup>
