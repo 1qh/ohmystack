@@ -151,13 +151,14 @@ User message submitted
   -> mutation sessions.saveUserMessage
   -> mutation orchestrator.enqueueRun(reason='user_message')
        - CAS threadRunState by_threadId
-       - if idle: generate runToken, set active + activeRunToken, clear queue, autoContinueStreak=0, schedule run
-       - if active: set queued + queuedPromptMessageId
+        - if idle: generate runToken, set active + runClaimed=false, clear queue, autoContinueStreak=0, schedule run
+        - if active: set queuedPromptMessageId (only if incoming priority > queued priority)
 
 agents.runOrchestrator action
   -> mutation orchestrator.claimRun(threadId, runToken)
-       - CAS activeRunToken === runToken
-       - abort early if runToken mismatch
+       - CAS: activeRunToken === runToken AND runClaimed !== true
+       - set runClaimed=true atomically (consuming claim — duplicate deliveries fail)
+       - abort early if claim fails
   -> pre-generation compaction check on closed prefix
   -> streamText with function tools only, maxSteps=25
   -> await consumeStream
@@ -327,7 +328,8 @@ export default defineSchema({
     lastError: v.optional(v.string()),
     queuedPromptMessageId: v.optional(v.string()),
     queuedReason: v.optional(v.string()),
-    status: v.union(v.literal('idle'), v.literal('active'), v.literal('queued')),
+    runClaimed: v.optional(v.boolean()),
+    status: v.union(v.literal('idle'), v.literal('active')),
     threadId: v.string()
   }).index('by_threadId', ['threadId'])
 })
@@ -920,8 +922,12 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
 ### v1 Policy: Queue Per Thread
 
 - Persisted state machine is stored in `threadRunState` keyed by `threadId`.
+- Two states only: `idle` (no run) and `active` (run in progress). No `queued` state.
+- "Queued" is represented by `queuedPromptMessageId` being set while status is `active`.
 - One active orchestrator run per thread, with at most one queued continuation payload.
+- `claimRun` is a consuming CAS write: sets `runClaimed: true` atomically; duplicate deliveries fail.
 - New user messages persist immediately, then `enqueueRun` atomically updates queue state.
+- Queue priority: `user_message` > `task_completion` > `todo_continuation`. Lower-priority enqueues do not overwrite higher-priority queued payloads.
 - Auto-continue streak is tracked in `threadRunState.autoContinueStreak` (max 5).
 
 ### Atomic Transition Contract
@@ -951,15 +957,20 @@ const enqueueRun = internalMutation({
         activeRunToken: runToken,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
+        runClaimed: false,
         status: 'active'
       })
       return { scheduled: true }
     }
 
+    const priority = { task_completion: 1, todo_continuation: 0, user_message: 2 }
+    const queuedPriority = priority[state.queuedReason as keyof typeof priority] ?? -1
+    const incomingPriority = priority[args.reason as keyof typeof priority] ?? -1
+    if (incomingPriority <= queuedPriority) return { scheduled: false }
+
     await ctx.db.patch(state._id, {
       queuedPromptMessageId: args.promptMessageId,
-      queuedReason: args.reason,
-      status: 'queued'
+      queuedReason: args.reason
     })
     return { scheduled: false }
   }
@@ -971,6 +982,8 @@ const claimRun = internalMutation({
     const state = await ensureRunState({ ctx, threadId })
     if (state.status !== 'active') return { ok: false }
     if (state.activeRunToken !== runToken) return { ok: false }
+    if (state.runClaimed) return { ok: false }
+    await ctx.db.patch(state._id, { runClaimed: true })
     return { ok: true }
   }
 })
@@ -992,12 +1005,13 @@ const finishRun = internalMutation({
         activeRunToken: nextRunToken,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
-        status: 'active'
+        runClaimed: false
       })
       return { scheduled: true }
     }
     await ctx.db.patch(state._id, {
       activeRunToken: undefined,
+      runClaimed: undefined,
       status: 'idle'
     })
     return { scheduled: false }
@@ -1057,9 +1071,9 @@ const groundWithGemini = internalAction({
     await ctx.runMutation(internal.tokenUsage.recordModelUsage, {
       agentName: 'search-bridge',
       inputTokens: out.usage?.inputTokens ?? 0,
-      model: 'gemini-2.5-flash',
+      model: model.modelId,
       outputTokens: out.usage?.outputTokens ?? 0,
-      provider: 'google',
+      provider: model.provider ?? 'google',
       threadId,
       totalTokens: out.usage?.totalTokens ?? 0
     })
@@ -1996,7 +2010,7 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
 6. Search works through function tool bridge and returns summary plus sources.
 7. Token usage is recorded through canonical `recordModelUsage` for orchestrator, worker, and search bridge.
 8. Todo continuation audit runs post-turn with max 5 auto-continues and explicit streak reset rules.
-9. v1 concurrency uses `threadRunState` queued runs per thread and remains non-blocking for input.
+9. v1 concurrency uses two-state `threadRunState` (idle/active) with consuming `claimRun` CAS, queue priority (user > task > todo), and remains non-blocking for input.
 10. Compaction runs before generation on context size, stores summary in metadata, and preserves tool pair integrity.
 11. MCP is HTTP-only, generic-bridge/discovery based, ownership-safe, cache-refreshable, and retry-aware.
 12. Error recovery handles LLM, MCP, and timeout failures with bounded retries.
