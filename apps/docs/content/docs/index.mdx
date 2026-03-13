@@ -15,22 +15,70 @@ Currently supports:
 
 The consumer code is nearly identical across databases — switch by changing one import.
 
-## Quick Start
+## From zero to CRUD in 60 seconds
 
 ```bash
-bun noboil@latest init
+bunx noboil@latest init my-app
+cd my-app
 ```
 
-Choose your database, pick your demo apps, and you're shipping in minutes.
+That's it. Pick your database, choose whether to include demo apps, and you have a working app with auth, typed CRUD, real-time subscriptions, and file uploads.
 
-## Features
+## Add a table in one command
 
-- **Schema-first** — Define tables with Zod, get everything else generated
-- **Zero-boilerplate** — No hand-writing CRUD, pagination, or auth boilerplate
-- **Type-safe** — End-to-end types from database to UI, including Swift codegen
-- **Real-time** — Live subscriptions out of the box
-- **Multi-tenancy** — Organizations, roles, invites, ACL in one function call
-- **Forms** — Auto-generated form components with validation
-- **File uploads** — Drag-and-drop with compression and progress
-- **Soft delete** — Built-in with restore and permanent delete
-- **DevTools** — Schema playground, query inspector, subscription monitor
+```bash
+noboil-convex add todo --fields="title:string,done:boolean"
+```
+
+This generates a Zod schema, CRUD endpoints (list, create, update, delete), and a React page component. Every field name is type-checked — misspell `title` and TypeScript catches it.
+
+Table types: `owned` (user-scoped), `org` (multi-tenant), `singleton` (one per user), `cache` (external API), `child` (nested under parent).
+
+## Ship with prebuilt components or go headless
+
+**Prebuilt UI** — 16 typed form fields, multi-step wizards, editor management, error boundaries, and access control guards. Pass a Zod schema and get a working form:
+
+```tsx
+const form = useForm({ schema: owned.blog, onSubmit: create })
+
+<Form form={form} render={({ Text, Choose, Toggle, Submit }) => (
+  <>
+    <Text name="title" />
+    <Choose name="category" />
+    <Toggle name="published" />
+    <Submit>Create</Submit>
+  </>
+)} />
+```
+
+**Headless hooks** — Every component's logic is available as a standalone hook. Use `useStepper` without `StepForm`, `useList` without any UI, `useBulkSelection` for multi-select state, `useSearch` for debounced search. Bring your own design system.
+
+## What you get from one schema
+
+| Feature | What happens |
+| --- | --- |
+| CRUD endpoints | `list`, `create`, `update`, `rm` with auth, pagination, and rate limiting |
+| Real-time | Live subscriptions out of the box — ~39ms latency on SpacetimeDB |
+| Type safety | End-to-end from database to UI. Misspell a field name → compile error |
+| Forms | Auto-generated with validation, file uploads, conflict detection, auto-save |
+| Multi-tenancy | Organizations, roles, invites, join requests, per-item ACL |
+| File uploads | Drag-and-drop with compression, progress tracking, and storage cleanup |
+| Soft delete | Built-in with undo toast and restore |
+| Native apps | Swift codegen for iOS, Android, and macOS from the same schema |
+| DevTools | Schema playground, query inspector, subscription monitor |
+
+## CLI tooling
+
+Three CLIs ship with noboil:
+
+| CLI | Purpose |
+| --- | --- |
+| `noboil` | Project scaffolding (`init`), health checks (`doctor`) |
+| `noboil-convex` | Add tables, validate schema, migrate, visualize, generate Swift APIs, generate docs |
+| `noboil-stdb` | Add tables, validate schema, local dev workflow, switch targets, generate docs |
+
+See [CLI Reference](./cli) for the full command reference.
+
+## Eject anytime
+
+noboil is designed for incremental ejection. Replace one factory at a time while the rest of your app keeps running. See [Ejecting](./ejecting).

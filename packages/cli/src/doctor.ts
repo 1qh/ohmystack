@@ -10,6 +10,35 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
+  checkManifest = (cwd: string) => {
+    const manifestPath = join(cwd, '.noboilrc.json')
+    if (!existsSync(manifestPath)) {
+      console.log(`  ${yellow('!')} No .noboilrc.json found — sync won't work`)
+      return 1
+    }
+
+    const manifestRaw = readFileSync(manifestPath, 'utf8'),
+      manifest = JSON.parse(manifestRaw) as { scaffoldedFrom?: string }
+
+    if (typeof manifest.scaffoldedFrom !== 'string' || manifest.scaffoldedFrom.length === 0) {
+      console.log(`  ${yellow('!')} .noboilrc.json is invalid — run ${dim('noboil sync --force')}`)
+      return 1
+    }
+
+    console.log(`  ${green('+')} noboil manifest found ${dim(`(scaffolded from ${manifest.scaffoldedFrom})`)}`)
+    const remoteResult = spawnSync('git', ['ls-remote', 'https://github.com/1qh/noboil.git', 'HEAD'], {
+      encoding: 'utf8'
+    })
+    if (remoteResult.status === 0) {
+      const line = remoteResult.stdout.split('\n')[0] ?? '',
+        latestHash = line.split('\t')[0] ?? ''
+      if (latestHash && latestHash !== manifest.scaffoldedFrom) {
+        console.log(`  ${yellow('!')} noboil manifest is outdated — run ${dim('noboil sync')}`)
+        return 1
+      }
+    }
+    return 0
+  },
   doctor = (_args: string[]) => {
     console.log(`\n${bold('noboil doctor')} — project health check\n`)
 
@@ -58,6 +87,8 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       console.log(`  ${yellow('!')} tsconfig.json missing`)
       warnings += 1
     }
+
+    warnings += checkManifest(cwd)
 
     if (hasConvex) {
       const convexDir = join(cwd, 'convex')

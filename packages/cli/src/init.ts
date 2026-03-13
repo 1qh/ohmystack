@@ -17,6 +17,15 @@ interface InitOpts {
   includeNative: boolean
 }
 
+interface NoboilManifest {
+  db: Db
+  includeDemos: boolean
+  includeNative: boolean
+  scaffoldedAt: string
+  scaffoldedFrom: string
+  version: 1
+}
+
 const REPO = '1qh/noboil',
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
@@ -148,6 +157,12 @@ const REPO = '1qh/noboil',
     console.log(`\n${bold('Creating project...')}\n`)
     console.log(`  ${dim('cloning')} ${REPO}...`)
     run('git', ['clone', '--depth', '1', `https://github.com/${REPO}.git`, fullPath], process.cwd())
+    const revResult = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: fullPath, encoding: 'utf8' })
+    if (revResult.status !== 0 || !revResult.stdout.trim()) {
+      console.error(`${red('Error:')} failed to read scaffold commit hash`)
+      process.exit(1)
+    }
+    const scaffoldedFrom = revResult.stdout.trim()
     rmSync(join(fullPath, '.git'), { force: true, recursive: true })
 
     console.log(`  ${dim('cleaning up')} unused files...`)
@@ -168,6 +183,16 @@ const REPO = '1qh/noboil',
     }
 
     console.log(`\n${green('Done!')} Project created at ${bold(dir)}\n`)
+    const manifest: NoboilManifest = {
+      db,
+      includeDemos,
+      includeNative,
+      scaffoldedAt: new Date().toISOString(),
+      scaffoldedFrom,
+      version: 1
+    }
+    writeFileSync(join(fullPath, '.noboilrc.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+
     console.log(`  ${dim('$')} cd ${dir}`)
     if (db === 'convex') console.log(`  ${dim('$')} bunx convex dev     ${dim('# start Convex backend')}`)
     else console.log(`  ${dim('$')} docker compose up -d ${dim('# start SpacetimeDB')}`)

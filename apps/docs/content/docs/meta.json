@@ -3,6 +3,8 @@
   "pages": [
     "index",
     "quickstart",
+    "cli",
+    "components",
     "data-fetching",
     "forms",
     "organizations",
@@ -15,6 +17,7 @@
     "migration",
     "ejecting",
     "native-apps",
-    "deployment"
+    "deployment",
+    "troubleshooting"
   ]
 }
