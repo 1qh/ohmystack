@@ -18,6 +18,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -28,8 +31,8 @@ jobs:
       swift: ${{ steps.filter.outputs.swift }}
       desktop: ${{ steps.filter.outputs.desktop }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -58,9 +61,11 @@ jobs:
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: rm -f bun.lock && bun i
+        with:
+          bun-version: 'latest'
+      - run: bun i
       - run: bun run check
 
   typecheck-build:
@@ -68,9 +73,11 @@ jobs:
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: rm -f bun.lock && bun i
+        with:
+          bun-version: 'latest'
+      - run: bun i
       - run: bun turbo typecheck build --output-logs=errors-only
 
   test:
@@ -78,9 +85,11 @@ jobs:
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: rm -f bun.lock && bun i
+        with:
+          bun-version: 'latest'
+      - run: bun i
       - run: bun --cwd packages/convex test
       - run: bun --cwd packages/spacetimedb test
 
@@ -89,9 +98,11 @@ jobs:
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: rm -f bun.lock && bun i
+        with:
+          bun-version: 'latest'
+      - run: bun i
       - run: bun ui:sync:check
 
   lint-swift:
@@ -99,7 +110,7 @@ jobs:
     if: needs.changes.outputs.swift == 'true' || needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: brew install swiftformat swiftlint yamllint
       - run: swiftformat --lint . && swiftlint lint --strict && yamllint .
 
@@ -112,7 +123,7 @@ jobs:
       matrix:
         app: [blog, chat, movie, org]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: rm -rf ~/Library/Caches/org.swift.swiftpm/repositories
       - run: swift build --package-path desktop/convex/${{ matrix.app }}
 
@@ -121,7 +132,7 @@ jobs:
     if: needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: swift test --package-path swift-core
       - run: swift test --package-path desktop/convex/shared
 
@@ -134,6 +145,6 @@ jobs:
       matrix:
         app: [blog, chat, movie, org]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: brew install skiptools/skip/skip
       - run: swift build --package-path mobile/convex/${{ matrix.app }}

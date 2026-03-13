@@ -25,7 +25,7 @@ const isTestMode = () =>
     const cookieStore = await cookies(),
       token = cookieStore.get('spacetimedb_token')?.value
     if (token) return token
-    if (isTestMode()) return 'test-token'
+    if (isTestMode()) return process.env.SPACETIMEDB_TEST_TOKEN ?? process.env.NOBOIL_TEST_TOKEN
   },
   /** Returns whether a valid token is currently available. */
   isAuthenticated = async () => Boolean(await getToken()),

@@ -27,7 +27,6 @@ import {
 import { defaultOnError } from './use-mutate'
 
 type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
-
 /** Metadata describing how a form field should be rendered. */
 interface FieldMeta {
   description?: string
@@ -35,12 +34,14 @@ interface FieldMeta {
   max?: number
   title?: string
 }
+
 /** Lookup table of field metadata keyed by field name. */
 type FieldMetaMap = Record<string, FieldMeta>
 interface FormToastOption {
   error?: string
   success?: string
 }
+type ShapeKey<S extends ZodObject<ZodRawShape>> = keyof S['shape'] & string
 
 type Widen<T> = T extends string
   ? string
@@ -128,9 +129,14 @@ const resolveFormToast = ({
    */
   buildMeta = <S extends ZodObject<ZodRawShape>>(schema: S): { [K in keyof S['shape']]: FieldMeta } => {
     const meta: FieldMetaMap = {},
-      keys = Object.keys(schema.shape)
+      keys = Object.keys(schema.shape) as ShapeKey<S>[]
     for (const key of keys) meta[key] = getMeta(schema.shape[key])
     return meta as { [K in keyof S['shape']]: FieldMeta }
+  },
+  hasShapeKey = (shape: ZodRawShape, key: string): boolean => key in shape,
+  ensureKnownValueKeys = <S extends ZodObject<ZodRawShape>>(resolved: output<S> | Widen<output<S>>, schema: S) => {
+    for (const key of Object.keys(resolved))
+      if (!hasShapeKey(schema.shape, key)) throw new Error(`Form values include unknown key: ${key}`)
   }
 
 type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
@@ -219,7 +225,7 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       autoSaveTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
 
     vRef.current = resolved
-    if (Object.keys(resolved).some(k => !(k in schema.shape))) throw new Error('Form values include keys not in schema')
+    ensureKnownValueKeys(resolved, schema)
     const meta = useMemo(() => buildMeta(schema), [schema]),
       instance = useTanStackForm({
         defaultValues: resolved,
@@ -297,7 +303,11 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
         } else setConflict(null)
       },
       schema,
-      watch: <K extends keyof output<S>>(name: K) => watchedValues[name]
+      watch: <K extends keyof output<S>>(name: K) => {
+        const key = String(name)
+        if (!hasShapeKey(schema.shape, key)) throw new Error(`Unknown form field: ${key}`)
+        return watchedValues[name]
+      }
     } satisfies FormReturn<output<S>, S>
   },
   /** Creates `useForm` wiring for reducer-style mutation functions.

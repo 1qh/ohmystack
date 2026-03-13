@@ -1,7 +1,7 @@
 import { file, spawnSync, write } from 'bun'
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { env as nodeEnv } from 'node:process'
+import { argv as nodeArgv, env as nodeEnv } from 'node:process'
 
 type JsonRecord = Record<string, unknown>
 const lineBreakRegex = /\r?\n/u,
@@ -321,7 +321,13 @@ const lineBreakRegex = /\r?\n/u,
       nextPath = currentPath ? `${shimDir}:${currentPath}` : shimDir
     return { ...base, PATH: nextPath }
   },
-  main = async () => {
+  syncCheck = ({ rootDir, uiRoot }: { rootDir: string; uiRoot: string }) => {
+    run({ cmd: ['bun', 'run', 'typecheck'], cwd: uiRoot })
+    const diff = runCapture({ cmd: ['git', 'diff', '--exit-code', '--', 'packages/ui'], cwd: rootDir }),
+      output = `${decode(diff.stdout)}${decode(diff.stderr)}`
+    if (diff.exitCode !== 0) throw new Error(`packages/ui is out of sync with sync script output:\n${output}`)
+  },
+  syncUpdate = async () => {
     const [fallbackComponents, fallbackPackage, fallbackTsconfig, fallbackTsconfigLint] = await Promise.all([
         readJson(join(uiDir, 'components.json')),
         readJson(join(uiDir, 'package.json')),
@@ -396,6 +402,19 @@ const lineBreakRegex = /\r?\n/u,
     await pruneGitkeepFiles({ dirPath: uiDir })
     await repairTypecheck({ attempt: 1, rootDir: root, uiTmpDir: uiDir })
     run({ cmd: ['rm', '-rf', tmpDir] })
+  },
+  main = async () => {
+    const args = new Set(nodeArgv.slice(2)),
+      checkOnly = args.has('--check'),
+      updateOnly = args.has('--update')
+
+    if (checkOnly && updateOnly) throw new Error('Use either --check or --update, not both')
+    if (checkOnly) {
+      syncCheck({ rootDir: root, uiRoot: uiDir })
+      return
+    }
+    await syncUpdate()
+    if (!updateOnly) syncCheck({ rootDir: root, uiRoot: uiDir })
   }
 
 await main()

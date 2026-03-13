@@ -7,6 +7,7 @@ type CvMeta = 'file' | 'files'
 type DefType = core.$ZodTypeDef['type']
 
 type NullsToUndefined<T> = { [K in keyof T]-?: Exclude<T[K], null> | undefined }
+type ShapeKey<S extends ZodObject<ZodRawShape>> = keyof S['shape'] & string
 type UndefinedToOptional<T> = { [K in keyof T as undefined extends T[K] ? K : never]?: null | T[K] } & {
   [K in keyof T as undefined extends T[K] ? never : K]: T[K]
 } extends infer U
@@ -92,6 +93,7 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
     for (const v of schema.options) out.push({ label: transform?.(v) ?? v.charAt(0).toUpperCase() + v.slice(1), value: v })
     return out
   },
+  shapeKeys = <S extends ZodObject<ZodRawShape>>(schema: S): ShapeKey<S>[] => Object.keys(schema.shape) as ShapeKey<S>[],
   /** Makes a partial schema while forcing selected keys back to required.
    * @param schema - Source object schema
    * @param requiredKeys - Keys that should stay required
@@ -145,7 +147,7 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
    */
   defaultValues = <S extends ZodObject<ZodRawShape>>(schema: S): output<S> => {
     const result: Record<string, unknown> = {},
-      keys = Object.keys(schema.shape)
+      keys = shapeKeys(schema)
     for (const k of keys) result[k] = defaultValue(schema.shape[k])
     return result as output<S>
   },
@@ -153,7 +155,7 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
   pickValues = <S extends ZodObject<ZodRawShape>>(schema: S, doc: object): output<S> => {
     const d = doc as Record<string, unknown>,
       result: Record<string, unknown> = {},
-      keys = Object.keys(schema.shape)
+      keys = shapeKeys(schema)
     for (const k of keys) result[k] = d[k] ?? defaultValue(schema.shape[k])
     return result as output<S>
   },
@@ -162,7 +164,7 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
     values: V
   ): NullsToUndefined<output<S>> & Omit<V, keyof output<S>> => {
     const result: Record<string, unknown> = {},
-      keys = Object.keys(schema.shape)
+      keys = shapeKeys(schema)
     for (const k of keys) {
       const v = (values as Record<string, unknown>)[k]
       result[k] = v === null ? undefined : v
@@ -173,8 +175,8 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
   /** Converts blank optional strings into undefined before submission. */
   coerceOptionals = <S extends ZodObject<ZodRawShape>>(schema: S, data: output<S>): output<S> => {
     const result: Record<string, unknown> = { ...data }
-    for (const k of Object.keys(result))
-      if (isOptionalField(schema.shape[k]) && isStringType(unwrapZod(schema.shape[k]).type)) {
+    for (const k of shapeKeys(schema))
+      if (k in result && isOptionalField(schema.shape[k]) && isStringType(unwrapZod(schema.shape[k]).type)) {
         const v = result[k]
         if (typeof v === 'string') {
           const trimmed = v.trim()

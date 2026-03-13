@@ -63,6 +63,19 @@ Publish your module before running integration tests. Use a separate module name
 spacetime publish my-app-test --module-path packages/be/
 ```
 
+Set test env vars before running helper-based tests:
+
+```bash
+export SPACETIMEDB_MODULE_NAME=my-app-test
+export SPACETIMEDB_TEST_MODE=true
+```
+
+Optional deterministic token fallback when cookie auth is unavailable in Next.js server helpers:
+
+```bash
+export SPACETIMEDB_TEST_TOKEN=test-token-local
+```
+
 </Tab>
 </Tabs>
 
@@ -201,7 +214,7 @@ export const connectAsTestUser = async (
   return new Promise((resolve, reject) => {
     const builder = DbConnection.builder()
       .withUri('ws://localhost:3000')
-      .withModuleName('my-app-test')
+      .withModuleName(process.env.SPACETIMEDB_MODULE_NAME ?? 'my-app-test')
 
     if (savedToken) {
       builder.withToken(savedToken)

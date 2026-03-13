@@ -9,6 +9,9 @@ concurrency:
   group: ui-sync
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -16,9 +19,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: rm -f bun.lock && bun i
+        with:
+          bun-version: 'latest'
+      - run: bun i
       - run: bun ui:sync
       - run: bun fix
       - run: bun test

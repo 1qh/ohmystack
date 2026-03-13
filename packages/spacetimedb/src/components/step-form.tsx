@@ -54,6 +54,14 @@ interface StepFormCtx {
 
 type StepIds<Defs extends readonly StepDef[]> = Defs[number]['id']
 
+interface StepIndicatorClassNames {
+  button?: string
+  label?: string
+  nav?: string
+  separator?: string
+  step?: string
+}
+
 const StepFormContext = createContext<null | StepFormCtx>(null)
 
 interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentProps<'div'>, 'children'> {
@@ -61,6 +69,7 @@ interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentP
   indicator?: boolean
   nextLabel?: string
   prevLabel?: string
+  stepIndicatorClassNames?: StepIndicatorClassNames
   stepper: StepperReturn<Defs>
   submitLabel?: string
 }
@@ -182,28 +191,35 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
       )
     },
     StepIndicator = ({
+      classNames,
       currentIndex,
       inner,
       steps
     }: {
+      classNames?: StepIndicatorClassNames
       currentIndex: number
       inner: CoreStepper<InternalStep[]>
       steps: InternalStep[]
     }) => (
-      <nav aria-label='Step progress' className='flex items-center gap-2'>
+      <nav aria-label='Step progress' className={cn('flex items-center gap-2', classNames?.nav)}>
         {steps.map((step, i) => {
           const isActive = i === currentIndex,
             isCompleted = i < currentIndex,
             status = isActive ? 'active' : isCompleted ? 'completed' : 'inactive'
           return (
-            <div className='flex flex-1 items-center gap-2' data-status={status} data-step={step.id} key={step.id}>
+            <div
+              className={cn('flex flex-1 items-center gap-2', classNames?.step)}
+              data-status={status}
+              data-step={step.id}
+              key={step.id}>
               <button
                 aria-current={isActive ? 'step' : undefined}
                 className={cn(
                   'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors',
                   isActive && 'bg-primary text-primary-foreground',
                   isCompleted && 'cursor-pointer bg-primary/20 text-primary',
-                  !(isActive || isCompleted) && 'bg-muted text-muted-foreground'
+                  !(isActive || isCompleted) && 'bg-muted text-muted-foreground',
+                  classNames?.button
                 )}
                 data-testid={`step-indicator-${step.id}`}
                 disabled={!isCompleted}
@@ -218,11 +234,12 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
                   'hidden text-sm sm:inline',
                   isActive && 'font-medium text-foreground',
                   isCompleted && 'text-foreground',
-                  !(isActive || isCompleted) && 'text-muted-foreground'
+                  !(isActive || isCompleted) && 'text-muted-foreground',
+                  classNames?.label
                 )}>
                 {step.label}
               </span>
-              {i < steps.length - 1 ? <div className='mx-2 h-px flex-1 bg-border' /> : null}
+              {i < steps.length - 1 ? <div className={cn('mx-2 h-px flex-1 bg-border', classNames?.separator)} /> : null}
             </div>
           )
         })}
@@ -234,6 +251,7 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
       indicator = true,
       nextLabel = 'Next',
       prevLabel = 'Back',
+      stepIndicatorClassNames,
       stepper: s,
       submitLabel = 'Submit',
       ...props
@@ -324,7 +342,14 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
       return (
         <StepFormContext value={ctx}>
           <div className={cn('space-y-6', className)} {...props}>
-            {indicator ? <StepIndicator currentIndex={currentIdx} inner={s.inner} steps={s.steps} /> : null}
+            {indicator ? (
+              <StepIndicator
+                classNames={stepIndicatorClassNames}
+                currentIndex={currentIdx}
+                inner={s.inner}
+                steps={s.steps}
+              />
+            ) : null}
             {s.error ? (
               <p className='rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
                 {s.error.message}

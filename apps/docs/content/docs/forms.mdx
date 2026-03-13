@@ -606,6 +606,21 @@ const stepper = useStepper({
 </StepForm>
 ```
 
+Customize step indicator styling without forking components:
+
+```tsx
+<StepForm
+  stepIndicatorClassNames={{
+    button: 'size-9',
+    label: 'text-xs tracking-wide',
+    nav: 'gap-3',
+    separator: 'bg-primary/20',
+    step: 'gap-3'
+  }}
+  stepper={stepper}
+/>
+```
+
 Each step has its own Zod schema and independent validation. `name='displayName'` compiles on the profile step but errors on the org step.
 
 </Tab>
@@ -641,6 +656,24 @@ const orgForm = useForm({
 
 </Tab>
 </Tabs>
+
+## EditorsSection customization
+
+Both backends expose `EditorsSection` style hooks:
+
+```tsx
+<EditorsSection
+  contentClassName="rounded-md border"
+  emptyClassName="italic"
+  headerClassName="pb-2"
+  itemClassName="px-2"
+  triggerClassName="w-48"
+  editorsList={editors}
+  members={members}
+  onAdd={onAdd}
+  onRemove={onRemove}
+/>
+```
 
 ## Optimistic deletes
 

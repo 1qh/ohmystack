@@ -1,3 +1,5 @@
+import { env as nodeEnv } from 'node:process'
+
 interface DiscoverModulesOptions {
   httpUrl?: string
   moduleName?: string
@@ -14,7 +16,12 @@ interface SchemaResponse {
 }
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
-  DEFAULT_MODULE_NAME = '@noboil/spacetimedb',
+  resolveModuleName = (moduleName?: string) =>
+    moduleName ?? nodeEnv.SPACETIMEDB_MODULE_NAME ?? nodeEnv.NEXT_PUBLIC_SPACETIMEDB_MODULE_NAME,
+  ensureModuleName = (moduleName?: string): string => {
+    if (!moduleName) throw new Error('SPACETIMEDB_MODULE_NAME is required in discoverModules options or env')
+    return moduleName
+  },
   parseSchemaResponse = async (response: Response): Promise<SchemaResponse> => {
     const text = await response.text()
     if (!response.ok) {
@@ -33,8 +40,9 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
   },
   discoverModules = async (options?: DiscoverModulesOptions): Promise<DiscoverModulesResult> => {
     const httpUrl = options?.httpUrl ?? DEFAULT_HTTP_URL,
-      moduleName = options?.moduleName ?? DEFAULT_MODULE_NAME,
-      response = await fetch(`${httpUrl}/v1/database/${moduleName}/schema?version=9`),
+      moduleName = resolveModuleName(options?.moduleName),
+      resolvedModuleName = ensureModuleName(moduleName),
+      response = await fetch(`${httpUrl}/v1/database/${resolvedModuleName}/schema?version=9`),
       parsed = await parseSchemaResponse(response)
     return {
       reducers: pickNames(parsed.reducers),

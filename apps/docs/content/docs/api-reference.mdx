@@ -801,6 +801,7 @@ handleConvexError(error, {
 import { ConvexErrorBoundary } from '@noboil/convex/components'
 
 <ConvexErrorBoundary
+  className="p-8"
   fallback={({ error, reset }) => (
     <div>
       <p>Something went wrong</p>
@@ -1005,11 +1006,17 @@ const form = useForm({ schema, values, onSubmit })
 
 14 built-in field components: `Text`, `Num`, `Toggle`, `Datepick`, `Timepick`, `Colorpick`, `Slider`, `Rating`, `Choose`, `Combobox`, `MultiSelect`, `File`, `Files`, `Arr`. Each accepts the field name as a typed prop — misspelling a field name is a type error.
 
-All field components accept shared accessibility props:
+Shared field props:
 
 | Prop | Type | Description |
 | ---- | ---- | ----------- |
 | `disabled` | `boolean` | Disables the input |
+| `className` | `string` | Style override for the component root |
+
+SpacetimeDB field components additionally support:
+
+| Prop | Type | Description |
+| ---- | ---- | ----------- |
 | `helpText` | `string` | Renders a hint below the field |
 | `required` | `boolean` | Appends a red `*` to the field label |
 
@@ -1027,6 +1034,17 @@ const { StepForm, useStepper } = defineSteps(
   { id: 'profile', label: 'Profile', schema: profileStep },
   { id: 'org', label: 'Organization', schema: orgStep }
 )
+
+<StepForm
+  stepIndicatorClassNames={{
+    button: 'size-9',
+    label: 'text-xs',
+    nav: 'gap-3',
+    separator: 'bg-primary/20',
+    step: 'gap-3'
+  }}
+  stepper={stepper}
+/>
 ```
 
 </Tab>
@@ -1050,10 +1068,15 @@ Renders a card with the current editors list and a dropdown to add/remove editor
 
 ```typescript
 <EditorsSection
+  contentClassName="rounded-md border"
+  emptyClassName="italic"
   editorsList={editors}
+  headerClassName="pb-2"
+  itemClassName="px-2"
   members={orgMembers}
   onAdd={userId => addEditor({ id: resourceId, editorId: userId })}
   onRemove={userId => removeEditor({ id: resourceId, editorId: userId })}
+  triggerClassName="w-48"
 />
 ```
 

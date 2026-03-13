@@ -42,7 +42,8 @@
     "test:web": "bun run test",
     "tsc": "turbo run typecheck",
     "ui:sync": "bun scripts/sync-ui.ts",
-    "ui:sync:check": "bun ui:sync && git diff --exit-code -- packages/ui"
+    "ui:sync:check": "bun scripts/sync-ui.ts --check",
+    "ui:sync:update": "bun scripts/sync-ui.ts --update"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -56,5 +57,5 @@
     "turbo": "latest",
     "typescript": "latest"
   },
-  "packageManager": "bun@1.3.9"
+  "packageManager": "bun@1.3.10"
 }

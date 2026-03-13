@@ -46,7 +46,12 @@ interface TestUser {
 }
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
-  DEFAULT_MODULE_NAME = '@noboil/spacetimedb',
+  resolveModuleName = (moduleName?: string) =>
+    moduleName ?? process.env.SPACETIMEDB_MODULE_NAME ?? process.env.NEXT_PUBLIC_SPACETIMEDB_MODULE_NAME,
+  ensureModuleName = (moduleName?: string): string => {
+    if (!moduleName) throw new Error('SPACETIMEDB_MODULE_NAME is required in createTestContext options or env')
+    return moduleName
+  },
   DEFAULT_WS_URL = 'ws://localhost:3000',
   CONNECT_TIMEOUT_MS = 10_000,
   IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/u,
@@ -214,14 +219,15 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
   createTestContext = async (options?: CreateTestContextOptions): Promise<TestContext> => {
     const baseWsUrl = options?.wsUrl ?? DEFAULT_WS_URL,
       baseHttpUrl = options?.httpUrl ?? (toHttpUrl(baseWsUrl) || DEFAULT_HTTP_URL),
-      moduleName = options?.moduleName ?? DEFAULT_MODULE_NAME,
+      moduleName = resolveModuleName(options?.moduleName),
       userCount = options?.userCount ?? 1,
-      defaultUser = await createConnectedUser({ baseWsUrl, moduleName }),
+      resolvedModuleName = ensureModuleName(moduleName),
+      defaultUser = await createConnectedUser({ baseWsUrl, moduleName: resolvedModuleName }),
       ctx: TestContext = {
         baseHttpUrl,
         baseWsUrl,
         defaultUser,
-        moduleName,
+        moduleName: resolvedModuleName,
         reducerParams: new Map<string, string[]>(),
         users: [defaultUser]
       },

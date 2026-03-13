@@ -6,6 +6,7 @@
 import type { GenericDataModel, MutationBuilder, QueryBuilder } from 'convex/server'
 
 import { v } from 'convex/values'
+import { env as nodeEnv } from 'node:process'
 
 import type { DbLike, Rec } from './types'
 
@@ -27,7 +28,9 @@ interface TestUser {
 }
 
 /** Default email used for single-user test scenarios. */
-const TEST_EMAIL = 'test@playwright.local',
+const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
+  SECOND_TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL_SECONDARY ?? 'other@example.test',
+  EDITOR_TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL_EDITOR ?? 'editor@example.test',
   BATCH_SIZE = 50,
   EXPIRED_OFFSET_MS = 1000,
   /** Looks up an org membership record for a user, returning role info or null if not a member. */
@@ -797,9 +800,9 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
     return result
   },
   DEFAULT_USERS: TestUser[] = [
-    { email: 'test@example.com', name: 'Test User' },
-    { email: 'other@example.com', name: 'Other User' },
-    { email: 'editor@example.com', name: 'Editor User' }
+    { email: TEST_EMAIL, name: 'Primary Tester' },
+    { email: SECOND_TEST_EMAIL, name: 'Secondary Tester' },
+    { email: EDITOR_TEST_EMAIL, name: 'Editor Tester' }
   ],
   /** Creates test users in the database and returns helpers to impersonate them via `asUser(index)`. */
   createTestContext = async (
