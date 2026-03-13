@@ -817,14 +817,16 @@ Reminder insertion and notification marking are unified in `completeTask` so com
 const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
   const task = await ctx.db.get(taskId)
   if (!task || !task.completionReminderMessageId) return
+  const state = await ctx.runQuery(internal.orchestrator.getRunState, { threadId: task.parentThreadId })
+  if (state && state.autoContinueStreak >= 5) return
   const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: task.parentThreadId })
   if (latest !== task.completionReminderMessageId) return
+  await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
+    threadId: task.parentThreadId
+  })
   await ctx.runMutation(internal.orchestrator.enqueueRun, {
     promptMessageId: task.completionReminderMessageId,
     reason: 'task_completion',
-    threadId: task.parentThreadId
-  })
-  await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
     threadId: task.parentThreadId
   })
 }
@@ -927,7 +929,7 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
 - One active orchestrator run per thread, with at most one queued continuation payload.
 - `claimRun` is a consuming CAS write: sets `runClaimed: true` atomically; duplicate deliveries fail.
 - New user messages persist immediately, then `enqueueRun` atomically updates queue state.
-- Queue priority: `user_message` > `task_completion` > `todo_continuation`. Lower-priority enqueues do not overwrite higher-priority queued payloads.
+- Queue priority: `user_message` (2) > `task_completion` (1) > `todo_continuation` (0). Lower-priority enqueues do not overwrite higher-priority queued payloads. Equal-priority enqueues replace the older payload (newer `user_message` replaces older queued `user_message`).
 - Auto-continue streak is tracked in `threadRunState.autoContinueStreak` (max 5).
 
 ### Atomic Transition Contract
@@ -966,7 +968,7 @@ const enqueueRun = internalMutation({
     const priority = { task_completion: 1, todo_continuation: 0, user_message: 2 }
     const queuedPriority = priority[state.queuedReason as keyof typeof priority] ?? -1
     const incomingPriority = priority[args.reason as keyof typeof priority] ?? -1
-    if (incomingPriority <= queuedPriority) return { scheduled: false }
+    if (incomingPriority < queuedPriority) return { scheduled: false }
 
     await ctx.db.patch(state._id, {
       queuedPromptMessageId: args.promptMessageId,
@@ -1375,6 +1377,11 @@ const runOrchestrator = internalAction({
         threadId: args.threadId,
         turnRequestedInput:
           result.finishReason === 'tool-call-user-confirmation' || result.finishReason === 'tool-call-task-wait'
+      })
+    } catch (error) {
+      await ctx.runMutation(internal.orchestrator.recordRunError, {
+        error: String(error),
+        threadId: args.threadId
       })
     } finally {
       await ctx.runMutation(internal.orchestrator.finishRun, {
