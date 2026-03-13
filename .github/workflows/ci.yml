@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   changes:
@@ -60,9 +60,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
@@ -72,9 +76,13 @@ jobs:
     needs: [changes, lint]
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
@@ -84,9 +92,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
@@ -97,9 +109,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
