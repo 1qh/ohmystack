@@ -69,172 +69,304 @@
 
 ---
 
+## Convex Topology
+
+### Final Decision
+
+Use a **separate Convex project** for the agent harness:
+
+- Frontend app remains at `apps/agent/`
+- Backend Convex project is isolated at `packages/be-agent/`
+- Agent frontend uses a different `NEXT_PUBLIC_CONVEX_URL` than existing demo apps
+- Agent backend has its own schema, auth boundaries, environment variables, cron jobs, and deployment lifecycle
+
+### Rationale
+
+1. `@convex-dev/agent` requires component registration in `convex.config.ts`; isolating this avoids polluting demo app Convex projects.
+2. Agent domain tables are unrelated to demo entities (`blog`, `chat`, `movie`, `org`) and should not cohabitate one deployment.
+3. Agent workload profile differs: MCP connections, long-running actions, continuation loops, compaction pipelines.
+4. Convex supports multiple projects cleanly inside a single monorepo.
+
+### Boundary Rule
+
+- `packages/be-convex/` remains the demo backend package.
+- `packages/be-agent/` is an independent backend package with independent `convex dev` and `convex deploy` targets.
+
+---
+
 ## Architecture
 
 ### Three Layers
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  Frontend (Next.js 16 + React 19)                            │
-│  ┌────────────┐ ┌───────────┐ ┌──────────┐ ┌─────────────┐ │
-│  │ AgentChat   │ │ TaskPanel │ │ TodoPanel│ │ TokenUsage  │ │
-│  │ (streaming  │ │ (progress │ │ (status  │ │ (per-session│ │
-│  │  messages,  │ │  polling, │ │  updates)│ │  tracking)  │ │
-│  │  tool calls,│ │  logs)    │ │          │ │             │ │
-│  │  reasoning) │ │           │ │          │ │             │ │
-│  └─────┬───────┘ └─────┬────┘ └────┬─────┘ └──────┬──────┘ │
-│        └───────────┬────┴───────────┴──────────────┘        │
-│                    │ Convex reactive subscriptions            │
-├────────────────────┼─────────────────────────────────────────┤
-│  Convex Backend    │                                         │
-│  ┌─────────────────┴──────────────────────────────────────┐ │
-│  │ Orchestrator Agent (Sisyphus-Web)                       │ │
-│  │  - Receives user messages                               │ │
-│  │  - Decides: respond / use tools / delegate / search     │ │
-│  │  - Manages todo list                                    │ │
-│  │  - Gets system reminders for completed tasks            │ │
-│  └──┬──────────────┬──────────────┬──────────────┬────────┘ │
-│     │              │              │              │           │
-│  ┌──┴───┐  ┌───────┴──────┐  ┌───┴────┐  ┌─────┴────────┐ │
-│  │Sub-  │  │ Background   │  │ MCP    │  │ Gemini       │ │
-│  │agents│  │ Task System  │  │ Client │  │ Grounding    │ │
-│  │      │  │ (scheduled   │  │ (HTTP  │  │ Search       │ │
-│  │      │  │  actions)    │  │  only) │  │              │ │
-│  └──────┘  └──────────────┘  └────────┘  └──────────────┘ │
-├──────────────────────────────────────────────────────────────┤
-│  Convex Tables                                               │
-│  sessions │ tasks │ todos │ mcpServers │ tokenUsage          │
-│  + @convex-dev/agent internal tables                         │
-│  (threads, messages, embeddings, streams)                    │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Frontend (apps/agent, Next.js 16 + React 19)                           │
+│ ┌───────────────────────────┬───────────────────────┬────────────────┐ │
+│ │ Chat Panel                │ Side Rail             │ Source Rail    │ │
+│ │ - streaming text          │ - tasks               │ - grounding    │ │
+│ │ - reasoning blocks        │ - todos               │   sources      │ │
+│ │ - tool call cards         │ - token usage         │ - mcp outputs  │ │
+│ └───────────────┬───────────┴──────────────┬────────┴────────┬──────┘ │
+│                 │ reactive Convex queries   │                 │         │
+├─────────────────┼───────────────────────────┼─────────────────┼─────────┤
+│ Agent Backend (packages/be-agent Convex project)                        │
+│ ┌───────────────┴──────────────────────────────────────────────────────┐ │
+│ │ Orchestrator Action                                                   │ │
+│ │ - queue-aware run coordinator                                         │ │
+│ │ - streamText with step cap                                            │ │
+│ │ - function tool execution only                                        │ │
+│ │ - post-turn todo continuation audit                                   │ │
+│ └──────────────┬─────────────────────────┬─────────────────────────────┘ │
+│                │                         │                               │
+│      ┌─────────┴────────┐      ┌─────────┴────────────┐                  │
+│      │ Worker Actions    │      │ MCP + Search Actions │                  │
+│      │ - delegated tasks │      │ - webSearch bridge   │                  │
+│      │ - completion mut. │      │ - dynamic MCP tools  │                  │
+│      └─────────┬────────┘      └─────────┬────────────┘                  │
+│                │                         │                               │
+├────────────────┼─────────────────────────┼───────────────────────────────┤
+│ Tables                                                                    │
+│ session | tasks | todos | mcpServers | tokenUsage | @convex-dev/agent    │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow
+### Cross-Cutting Concerns
+
+1. **Ownership and authorization**
+   - Every public query and mutation first resolves the current authenticated user.
+   - Every access to `sessionId`, `threadId`, `taskId`, or `mcpServer` must verify ownership by current user.
+   - Any `threadId` or `taskId` lookup must map through an owned session before returning data.
+2. **Thread-safe orchestration**
+   - v1 policy: queue one orchestrator run per thread.
+   - New user message is saved immediately; run starts when current run ends.
+3. **Idempotent state transitions**
+   - task lifecycle writes are mutation-first, with retry-safe fields.
+4. **No provider-tool mixing in orchestration calls**
+   - orchestrator and worker calls use only function tools.
+
+### Primary Data Flow
 
 ```
-User sends message
-  ↓
-mutation: saveMessage → insert user msg into thread
-  ↓
-scheduler.runAfter(0, orchestratorAction)
-  ↓ (non-blocking — user can keep chatting)
-action: orchestratorAction
-  ├─ streamText with saveStreamDeltas: true
-  │   ↓ (frontend sees streaming via useUIMessages)
-  ├─ tool call: webSearch → Gemini grounding search
-  ├─ tool call: delegate → spawn sub-agent
-  │   ↓
-  │   mutation: insert task (status: pending)
-  │   scheduler.runAfter(0, subAgentAction)
-  │   ↓ (sub-agent streams to its own thread)
-  │   action: subAgentAction
-  │     ├─ streamText on sub-thread
-  │     ├─ tool calls (MCP, search, etc.)
-  │     └─ on complete: mutation: update task (status: completed)
-  │                     mutation: inject system reminder into orchestrator thread
-  │
-  ├─ tool call: todoWrite → mutation: upsert todos
-  ├─ tool call: todoRead → query: get todos
-  ├─ tool call: mcpCall → action: connect + callTool + disconnect
-  └─ on complete: mutation: update session tokenUsage
+User message submitted
+  -> mutation sessions.saveUserMessage
+  -> mutation orchestrator.enqueueRun
+  -> if no active run for thread: scheduler.runAfter(0, agents.runOrchestrator)
+
+agents.runOrchestrator action
+  -> ensure thread lock entry is active
+  -> pre-generation compaction check on closed prefix
+  -> streamText with function tools only, stepCountIs(25)
+  -> await consumeStream
+  -> post-turn audit:
+       - read todos + running tasks
+       - if incomplete todos and no active background work and no user-input request
+         and consecutive auto-continue < 5
+         then save reminder + enqueue one continuation
+  -> release queue lock and trigger next queued run if present
+```
+
+### Background Delegation Flow
+
+```
+delegate tool execute
+  -> mutation tasks.spawnTask
+       - create worker thread
+       - insert task row
+       - schedule worker action
+       - return taskId/threadId atomically
+
+runWorker action
+  -> mutation tasks.markRunning
+  -> streamText with function tools only, stepCountIs(10)
+  -> heartbeat mutation updates while running
+  -> on success mutation tasks.completeTask
+       - status completed
+       - completedAt set
+       - reminder inserted into parent thread as system message
+       - completionNotifiedAt set
+       - only continue orchestrator if completion reminder is latest message
+  -> on failure mutation tasks.failTask
 ```
 
 ---
 
 ## Convex Schema
 
-All schemas defined in Zod following noboil conventions.
+All schema and table design follows patterns from `packages/be-convex/t.ts`, `packages/be-convex/convex/schema.ts`, and `packages/be-convex/lazy.ts`.
 
 ### Backend Types (`packages/be-agent/t.ts`)
 
 ```typescript
 import { makeOwned } from '@noboil/convex/schema'
-import { zid } from 'convex-helpers/server/zod4'
-import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
+import { object, string, enum as zenum } from 'zod/v4'
 
 const owned = makeOwned({
   session: object({
-    threadId: string(),
-    title: string(),
     status: zenum(['active', 'idle', 'archived']),
-    tokenUsage: object({
-      input: number(),
-      output: number()
-    })
+    threadId: string(),
+    title: string()
   })
+})
+
+export { owned }
+```
+
+### Convex Tables (`packages/be-agent/convex/schema.ts`)
+
+```typescript
+import { authTables } from '@convex-dev/auth/server'
+import { ownedTable, rateLimitTable } from '@noboil/convex/server'
+import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
+import { defineSchema, defineTable } from 'convex/server'
+import { v } from 'convex/values'
+
+import { owned } from '../t'
+
+export default defineSchema({
+  ...authTables,
+  ...rateLimitTable(),
+  session: ownedTable(owned.session)
+    .index('by_user_status', ['userId', 'status'])
+    .index('by_user_threadId', ['userId', 'threadId']),
+  tasks: defineTable({
+    agent: v.string(),
+    completedAt: v.optional(v.number()),
+    completionNotifiedAt: v.optional(v.number()),
+    description: v.string(),
+    heartbeatAt: v.optional(v.number()),
+    isBackground: v.boolean(),
+    lastError: v.optional(v.string()),
+    lastHeartbeatAt: v.optional(v.number()),
+    parentThreadId: v.string(),
+    result: v.optional(v.string()),
+    retryCount: v.number(),
+    sessionId: v.id('session'),
+    startedAt: v.optional(v.number()),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('running'),
+      v.literal('completed'),
+      v.literal('error'),
+      v.literal('timed_out'),
+      v.literal('cancelled')
+    ),
+    threadId: v.string(),
+    userId: v.string()
+  })
+    .index('by_session', ['sessionId'])
+    .index('by_status', ['status'])
+    .index('by_threadId', ['threadId'])
+    .index('by_user_status', ['userId', 'status']),
+  todos: defineTable({
+    content: v.string(),
+    position: v.number(),
+    priority: v.union(v.literal('high'), v.literal('medium'), v.literal('low')),
+    sessionId: v.id('session'),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('in_progress'),
+      v.literal('completed'),
+      v.literal('cancelled')
+    ),
+    userId: v.string()
+  })
+    .index('by_session', ['sessionId'])
+    .index('by_session_position', ['sessionId', 'position']),
+  mcpServers: defineTable({
+    authHeaders: v.optional(v.string()),
+    cachedAt: v.optional(v.number()),
+    cachedTools: v.optional(
+      v.array(
+        v.object({
+          description: v.string(),
+          inputSchema: v.string(),
+          name: v.string()
+        })
+      )
+    ),
+    isEnabled: v.boolean(),
+    name: v.string(),
+    transport: v.literal('http'),
+    url: v.string(),
+    userId: v.string()
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_name', ['userId', 'name']),
+  tokenUsage: defineTable({
+    agentName: v.optional(v.string()),
+    inputTokens: v.number(),
+    model: v.string(),
+    outputTokens: v.number(),
+    provider: v.string(),
+    sessionId: v.id('session'),
+    threadId: v.string(),
+    totalTokens: v.number(),
+    userId: v.string()
+  })
+    .index('by_session', ['sessionId'])
+    .index('by_threadId', ['threadId'])
 })
 ```
 
-### Additional Tables (raw Convex, not factory-managed)
+### Notes
+
+- `session.tokenUsage` is removed by design; session totals are derived from `tokenUsage` rows.
+- `mcpServers.cachedTools[].inputSchema` and `toolArgs` are `v.string()` JSON payloads.
+- All user-facing reads enforce user ownership before data return.
+
+---
+
+## Lazy Factory Setup
+
+Pattern matches `packages/be-convex/lazy.ts`.
 
 ```typescript
-tasks: defineTable({
-  sessionId: v.id('session'),
-  threadId: v.string(),
-  parentThreadId: v.string(),
-  description: v.string(),
-  agent: v.string(),
-  status: v.union(
-    v.literal('pending'),
-    v.literal('running'),
-    v.literal('completed'),
-    v.literal('error'),
-    v.literal('cancelled')
-  ),
-  progress: v.optional(v.object({
-    toolCalls: v.number(),
-    lastTool: v.optional(v.string()),
-    lastUpdate: v.number()
-  })),
-  result: v.optional(v.string()),
-  error: v.optional(v.string()),
-  isBackground: v.boolean(),
-  startedAt: v.optional(v.number()),
-  completedAt: v.optional(v.number())
-})
-  .index('by_session', ['sessionId'])
-  .index('by_status', ['status']),
+import { setup } from '@noboil/convex/server'
 
-todos: defineTable({
-  sessionId: v.id('session'),
-  content: v.string(),
-  status: v.union(
-    v.literal('pending'),
-    v.literal('in_progress'),
-    v.literal('completed'),
-    v.literal('cancelled')
-  ),
-  priority: v.union(v.literal('high'), v.literal('medium'), v.literal('low'))
-})
-  .index('by_session', ['sessionId']),
+import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
+import { getAuthUserIdOrTest } from './convex/testauth'
 
-mcpServers: defineTable({
-  userId: v.string(),
-  name: v.string(),
-  url: v.string(),
-  transport: v.union(v.literal('sse'), v.literal('http')),
-  authHeaders: v.optional(v.string()),
-  cachedTools: v.optional(v.array(v.object({
-    name: v.string(),
-    description: v.string(),
-    inputSchema: v.optional(v.any())
-  }))),
-  cachedAt: v.optional(v.number()),
-  isEnabled: v.boolean()
-})
-  .index('by_user', ['userId']),
+const s = setup({
+    action,
+    getAuthUserId: getAuthUserIdOrTest,
+    internalMutation,
+    internalQuery,
+    mutation,
+    query
+  }),
+  { crud, m, q } = s
 
-tokenUsage: defineTable({
-  sessionId: v.id('session'),
-  model: v.string(),
-  provider: v.string(),
-  inputTokens: v.number(),
-  outputTokens: v.number(),
-  totalTokens: v.number(),
-  agentName: v.optional(v.string()),
-  threadId: v.optional(v.string())
-})
-  .index('by_session', ['sessionId'])
+export { crud, m, q }
+```
+
+---
+
+## Model Selection Pattern
+
+Gemini 2.5 Flash stays fixed for v1 while still supporting deterministic test mode.
+
+```typescript
+import type { LanguageModel } from 'ai'
+
+import { mockModel } from './models.mock'
+
+const isTestEnvironment =
+  typeof process !== 'undefined' &&
+  Boolean(process.env.PLAYWRIGHT || process.env.TEST_MODE || process.env.CONVEX_TEST_MODE)
+
+let cached: LanguageModel | undefined
+const getModel = async (): Promise<LanguageModel> => {
+  if (cached) return cached
+  if (isTestEnvironment) {
+    cached = mockModel
+    return cached
+  }
+  const { google } = await import('@ai-sdk/google')
+  cached = google('gemini-2.5-flash') as LanguageModel
+  return cached
+}
+
+export { getModel }
 ```
 
 ---
@@ -243,430 +375,621 @@ tokenUsage: defineTable({
 
 ### Orchestrator (Sisyphus-Web)
 
-Single orchestrator agent. Users don't configure it.
-
 ```typescript
-import { Agent, createTool } from '@convex-dev/agent'
-import { google } from '@ai-sdk/google'
+import { Agent } from '@convex-dev/agent'
+import { stepCountIs } from 'ai'
 
 const orchestrator = new Agent(components.agent, {
-  name: 'Orchestrator',
-  instructions: ORCHESTRATOR_SYSTEM_PROMPT,
-  languageModel: google('gemini-2.5-flash'),
-  tools: {
-    webSearch: google.tools.googleSearch({}),
-    delegate: delegateTool,
-    todoWrite: todoWriteTool,
-    todoRead: todoReadTool,
-    taskStatus: taskStatusTool,
-    taskOutput: taskOutputTool,
-    mcpCall: mcpCallTool,
+  callSettings: {
+    stopWhen: stepCountIs(25),
+    temperature: 0.7
   },
   contextOptions: {
-    recentMessages: 100,
     excludeToolMessages: false,
+    recentMessages: 100
   },
-  usageHandler: trackTokenUsage,
-  callSettings: { temperature: 0.7 },
+  instructions: ORCHESTRATOR_SYSTEM_PROMPT,
+  languageModel: getModel,
+  name: 'Orchestrator',
+  tools: {
+    delegate: delegateTool,
+    mcpCall: mcpCallTool,
+    taskOutput: taskOutputTool,
+    taskStatus: taskStatusTool,
+    todoRead: todoReadTool,
+    todoWrite: todoWriteTool,
+    webSearch: webSearchTool
+  },
+  usageHandler: usageHandlerByThread
 })
 ```
 
-### Sub-Agent (Worker)
-
-Generic worker agent for delegated tasks. Gets its own thread.
+### Worker
 
 ```typescript
 const worker = new Agent(components.agent, {
-  name: 'Worker',
-  instructions: WORKER_SYSTEM_PROMPT,
-  languageModel: google('gemini-2.5-flash'),
-  tools: {
-    webSearch: google.tools.googleSearch({}),
-    mcpCall: mcpCallTool,
+  callSettings: {
+    stopWhen: stepCountIs(10),
+    temperature: 0.5
   },
   contextOptions: { recentMessages: 50 },
-  usageHandler: trackTokenUsage,
-  callSettings: { temperature: 0.5 },
+  instructions: WORKER_SYSTEM_PROMPT,
+  languageModel: getModel,
+  name: 'Worker',
+  tools: {
+    mcpCall: mcpCallTool,
+    webSearch: webSearchTool
+  },
+  usageHandler: usageHandlerByThread
 })
 ```
 
-### System Prompts
+### Usage Handler (thread-bound)
 
-**Orchestrator** (adapted from oh-my-openagent `src/agents/sisyphus.ts`):
-- Role: General-purpose web assistant with delegation capabilities
-- Behavior: Classify intent → decide tool usage → respond or delegate
-- Tools: web search, delegation, todo management, MCP, task polling
-- No: file editing, code execution, terminal access
-
-**Worker** (adapted from oh-my-openagent `src/agents/builtin-agents/general-agents.ts`):
-- Role: Focused task executor
-- Behavior: Complete assigned task, report results
-- Tools: web search, MCP
-- No: delegation, todo management
+```typescript
+const usageHandlerByThread = async (ctx, { model, provider, threadId, usage }) => {
+  const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, { threadId })
+  if (!session) return
+  await ctx.runMutation(internal.tokenUsage.recordByThread, {
+    agentName: usage.agentName,
+    inputTokens: usage.inputTokens,
+    model,
+    outputTokens: usage.outputTokens,
+    provider,
+    sessionId: session._id,
+    threadId,
+    totalTokens: usage.totalTokens,
+    userId: session.userId
+  })
+}
+```
 
 ---
 
 ## Tool Definitions
 
-### 1. `delegate` — Spawn Background Sub-Agent
+### 1. `delegate`
+
+Mutation-first spawn with atomic insert plus schedule.
 
 ```typescript
+import { createTool } from '@convex-dev/agent'
+import { z } from 'zod/v4'
+
 const delegateTool = createTool({
-  description: 'Delegate a task to a background worker agent. Returns a task ID. The worker runs asynchronously — you will receive a system reminder when it completes.',
+  description:
+    'Delegate a task to a worker agent. Returns taskId and worker threadId. The worker runs asynchronously.',
+  execute: async (ctx, input) => {
+    const spawn = await ctx.runMutation(internal.tasks.spawnTask, {
+      description: input.description,
+      isBackground: input.isBackground,
+      parentThreadId: ctx.threadId,
+      prompt: input.prompt
+    })
+    return {
+      status: 'pending',
+      taskId: spawn.taskId,
+      threadId: spawn.threadId
+    }
+  },
   inputSchema: z.object({
     description: z.string(),
-    prompt: z.string(),
     isBackground: z.boolean().default(true),
-  }),
-  execute: async (ctx, input) => {
-    const { threadId } = await worker.createThread(ctx, {
-      userId: ctx.userId,
-      title: input.description,
-    })
-    const taskId = await ctx.runMutation(internal.tasks.create, {
-      sessionId: /* resolved from ctx */,
-      threadId,
-      parentThreadId: ctx.threadId,
-      description: input.description,
-      agent: 'Worker',
-      isBackground: input.isBackground,
-    })
-    await ctx.scheduler.runAfter(0, internal.agents.runWorker, {
-      taskId, threadId, prompt: input.prompt,
-    })
-    return { taskId, threadId, status: 'pending' }
-  },
+    prompt: z.string()
+  })
 })
 ```
 
-**Borrowed from**: `oh-my-openagent/src/tools/delegate-task/tools.ts` (task creation pattern), `oh-my-openagent/src/features/background-agent/spawner.ts` (fire-and-forget spawn pattern)
+### 2. `todoWrite`
 
-### 2. `todoWrite` — Manage Todo List
+Stable ordering uses `position`.
 
 ```typescript
 const todoWriteTool = createTool({
-  description: 'Create or update the todo list for the current session.',
-  inputSchema: z.object({
-    todos: z.array(z.object({
-      content: z.string(),
-      status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-      priority: z.enum(['high', 'medium', 'low']),
-    })),
-  }),
+  description: 'Create or update todo list for the current session.',
   execute: async (ctx, { todos }) => {
-    await ctx.runMutation(internal.todos.sync, {
-      sessionId: /* resolved */,
-      todos,
-    })
+    await ctx.runMutation(internal.todos.syncOwned, { sessionThreadId: ctx.threadId, todos })
     return { updated: todos.length }
   },
+  inputSchema: z.object({
+    todos: z.array(
+      z.object({
+        content: z.string(),
+        position: z.number(),
+        priority: z.enum(['high', 'medium', 'low']),
+        status: z.enum(['pending', 'in_progress', 'completed', 'cancelled'])
+      })
+    )
+  })
 })
 ```
 
-**Borrowed from**: `oh-my-openagent/src/tools/task/types.ts` (todo schema), `oh-my-openagent/src/features/claude-tasks/storage.ts` (sync pattern)
-
-### 3. `todoRead` — Read Todo List
+### 3. `todoRead`
 
 ```typescript
 const todoReadTool = createTool({
-  description: 'Read the current todo list for this session.',
-  inputSchema: z.object({}),
+  description: 'Read todo list for current session.',
   execute: async (ctx) => {
-    return await ctx.runQuery(internal.todos.list, {
-      sessionId: /* resolved */,
-    })
+    const todos = await ctx.runQuery(internal.todos.listOwnedByThread, { threadId: ctx.threadId })
+    return { todos }
   },
+  inputSchema: z.object({})
 })
 ```
 
-### 4. `taskStatus` — Check Background Task Progress
+### 4. `taskStatus`
 
 ```typescript
 const taskStatusTool = createTool({
-  description: 'Check the status and progress of a background task.',
-  inputSchema: z.object({ taskId: z.string() }),
+  description: 'Check progress for a background task.',
   execute: async (ctx, { taskId }) => {
-    return await ctx.runQuery(internal.tasks.get, { taskId })
+    return await ctx.runQuery(internal.tasks.getOwnedTaskStatus, {
+      requesterThreadId: ctx.threadId,
+      taskId
+    })
   },
+  inputSchema: z.object({ taskId: z.string() })
 })
 ```
 
-### 5. `taskOutput` — Get Background Task Result
+### 5. `taskOutput`
 
 ```typescript
 const taskOutputTool = createTool({
-  description: 'Get the full output of a completed background task.',
-  inputSchema: z.object({
-    taskId: z.string(),
-  }),
+  description: 'Get output for a completed background task.',
   execute: async (ctx, { taskId }) => {
-    // Read the sub-agent's thread messages
-    const task = await ctx.runQuery(internal.tasks.get, { taskId })
-    const messages = await ctx.runQuery(internal.threads.getMessages, {
-      threadId: task.threadId, limit: 50,
+    return await ctx.runQuery(internal.tasks.getOwnedTaskOutput, {
+      requesterThreadId: ctx.threadId,
+      taskId
     })
-    return { task, messages }
   },
+  inputSchema: z.object({ taskId: z.string() })
 })
 ```
 
-**Borrowed from**: `oh-my-openagent/src/tools/background-task/create-background-output.ts` (output retrieval pattern)
+### 6. `webSearch`
 
-### 6. `mcpCall` — Call MCP Server Tool
+Function tool wrapper that delegates provider tool usage to a dedicated action call.
+
+```typescript
+const webSearchTool = createTool({
+  description: 'Run grounded web search and return summary with sources.',
+  execute: async (ctx, { query }) => {
+    const result = await ctx.runAction(internal.search.groundWithGemini, { query })
+    return { sources: result.sources, summary: result.summary }
+  },
+  inputSchema: z.object({ query: z.string() })
+})
+```
+
+### 7. `mcpCall`
 
 ```typescript
 const mcpCallTool = createTool({
-  description: 'Call a tool on a configured MCP server.',
-  inputSchema: z.object({
-    serverName: z.string(),
-    toolName: z.string(),
-    toolArgs: z.record(z.unknown()),
-  }),
-  execute: async (ctx, { serverName, toolName, toolArgs }) => {
-    return await ctx.runAction(internal.mcp.callTool, {
-      userId: ctx.userId,
-      serverName, toolName, toolArgs,
+  description: 'Call a configured MCP tool.',
+  execute: async (ctx, { serverName, toolArgs, toolName }) => {
+    return await ctx.runAction(internal.mcp.callToolOwned, {
+      requesterThreadId: ctx.threadId,
+      serverName,
+      toolArgs,
+      toolName
     })
   },
+  inputSchema: z.object({
+    serverName: z.string(),
+    toolArgs: z.string(),
+    toolName: z.string()
+  })
 })
 ```
 
-**Borrowed from**: `oh-my-openagent/src/features/skill-mcp-manager/manager.ts` (connection lifecycle), `oh-my-openagent/src/mcp/index.ts` (MCP registry pattern)
-
 ---
 
-## Background Task Lifecycle
+## Task Lifecycle
 
-### Task States
+### States
 
 ```
-pending → running → completed
-                  → error
-                  → cancelled
+pending -> running -> completed
+                  -> error
+                  -> timed_out
+                  -> cancelled
 ```
 
-**Borrowed from**: `oh-my-openagent/src/features/background-agent/types.ts`
+`error`, `timed_out`, and `cancelled` are terminal.
 
-### System Reminder on Completion
+### Spawn Is Mutation-First
 
-When a background task completes, inject a system message into the orchestrator's thread:
+`internal.tasks.spawnTask` does all of the following in one mutation boundary:
+
+1. Resolve owner session from parent `threadId` and current user.
+2. Create worker thread.
+3. Insert task row with idempotency defaults.
+4. Schedule worker action immediately.
 
 ```typescript
-const notifyOrchestrator = async (ctx, task) => {
-  const remainingTasks = await ctx.runQuery(internal.tasks.countRunning, {
-    sessionId: task.sessionId,
-  })
-  const allComplete = remainingTasks === 0
-  const reminderText = allComplete
-    ? `<system-reminder>
-[ALL BACKGROUND TASKS COMPLETE]
+const spawnTask = internalMutation({
+  args: {
+    description: v.string(),
+    isBackground: v.boolean(),
+    parentThreadId: v.string(),
+    prompt: v.string()
+  },
+  handler: async (ctx, args) => {
+    const session = await resolveOwnedSessionByThread({ ctx, threadId: args.parentThreadId })
+    const thread = await worker.createThread(ctx, {
+      title: args.description,
+      userId: session.userId
+    })
+    const taskId = await ctx.db.insert('tasks', {
+      agent: 'Worker',
+      description: args.description,
+      isBackground: args.isBackground,
+      parentThreadId: args.parentThreadId,
+      retryCount: 0,
+      sessionId: session._id,
+      status: 'pending',
+      threadId: thread.threadId,
+      userId: session.userId
+    })
+    await ctx.scheduler.runAfter(0, internal.agents.runWorker, {
+      prompt: args.prompt,
+      taskId,
+      threadId: thread.threadId
+    })
+    return { taskId, threadId: thread.threadId }
+  }
+})
+```
 
-**Completed:**
-- \`${task._id}\`: ${task.description}
+### Required Idempotent Fields
 
-Use \`taskOutput(taskId="${task._id}")\` to retrieve the result.
-</system-reminder>`
-    : `<system-reminder>
-[BACKGROUND TASK COMPLETED]
-**ID:** \`${task._id}\`
-**Description:** ${task.description}
-**Duration:** ${formatDuration(task.startedAt, task.completedAt)}
+- `heartbeatAt`
+- `lastHeartbeatAt`
+- `completedAt`
+- `completionNotifiedAt`
+- `retryCount`
+- `lastError`
 
-**${remainingTasks} task(s) still in progress.**
-Use \`taskOutput(taskId="${task._id}")\` to retrieve this result when ready.
-</system-reminder>`
+### Completion Reminder Gating
 
-  await orchestrator.saveMessage(ctx, {
-    threadId: task.parentThreadId,
-    prompt: reminderText,
-    skipEmbeddings: true,
-  })
-  await ctx.scheduler.runAfter(0, internal.agents.continueOrchestrator, {
-    threadId: task.parentThreadId,
+Orchestrator auto-continue after task completion is allowed only when the completion reminder message is still the latest message in parent thread.
+
+```typescript
+const maybeContinueOrchestrator = async ({ ctx, parentThreadId, reminderMessageId }) => {
+  const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: parentThreadId })
+  if (latest !== reminderMessageId) return
+  await ctx.runMutation(internal.orchestrator.enqueueRun, {
+    reason: 'task_completion',
+    threadId: parentThreadId
   })
 }
 ```
 
-**Borrowed from**: `oh-my-openagent/src/features/background-agent/background-task-notification-template.ts` (exact template format)
+---
 
-### Todo Continuation Reminder
+## Agent Runtime Flow
 
-When the orchestrator responds without completing all todos, inject:
+### Save Message and Prompt Chaining
+
+System reminders are saved as `message` objects and their `messageId` is reused as next prompt anchor.
 
 ```typescript
-const todoReminderText = `<system-reminder>
-[SYSTEM DIRECTIVE - TODO CONTINUATION]
+const saved = await orchestrator.saveMessage(ctx, {
+  message: { content: reminderText, role: 'system' },
+  skipEmbeddings: true,
+  threadId
+})
 
-Incomplete tasks remain in your todo list. Continue working on the next pending task.
-
-- Proceed without asking for permission
-- Mark each task complete when finished
-- Do not stop until all tasks are done
-
-[Status: ${completed}/${total} completed, ${remaining} remaining]
-
-Remaining tasks:
-${pendingTodos.map(t => `- [${t.status}] ${t.content}`).join('\n')}
-</system-reminder>`
+const result = await orchestrator.streamText(
+  ctx,
+  { threadId },
+  { promptMessageId: saved.messageId },
+  {
+    saveStreamDeltas: { chunking: 'word', throttleMs: 100 }
+  }
+)
+await result.consumeStream()
 ```
 
-**Borrowed from**: `oh-my-openagent/src/hooks/todo-continuation-enforcer/hook.ts` (continuation enforcement pattern)
+### Post-Turn Todo Continuation Audit
+
+There is no hook system in Convex Agent; continuation enforcement runs in orchestrator action after streaming completes.
+
+```typescript
+const postTurnAudit = async ({ ctx, autoContinueCount, threadId, turnRequestedInput }) => {
+  const todos = await ctx.runQuery(internal.todos.listOwnedByThread, { threadId })
+  const running = await ctx.runQuery(internal.tasks.countRunningByThread, { threadId })
+
+  let incomplete = 0
+  for (const t of todos.todos) {
+    if (t.status !== 'completed' && t.status !== 'cancelled') incomplete += 1
+  }
+
+  if (incomplete === 0) return { shouldContinue: false }
+  if (running > 0) return { shouldContinue: false }
+  if (turnRequestedInput) return { shouldContinue: false }
+  if (autoContinueCount >= 5) return { shouldContinue: false }
+
+  const reminderText = buildTodoReminder({ todos: todos.todos })
+  const saved = await orchestrator.saveMessage(ctx, {
+    message: { content: reminderText, role: 'system' },
+    skipEmbeddings: true,
+    threadId
+  })
+  await ctx.runMutation(internal.orchestrator.enqueueRun, {
+    promptMessageId: saved.messageId,
+    reason: 'todo_continuation',
+    threadId
+  })
+  return { shouldContinue: true }
+}
+```
+
+---
+
+## Concurrency Policy
+
+### v1 Policy: Queue Per Thread
+
+- One active orchestrator run per thread.
+- New user messages always persist immediately.
+- If a run is active, message enqueues one follow-up run.
+- Completion of active run pulls next queued run.
+
+### v2 Improvement: Abort-and-Restart
+
+Future upgrade:
+
+- detect active stream by `threadId`
+- abort active run
+- restart from latest user message
+
+v1 intentionally favors deterministic behavior and simpler recovery.
+
+---
+
+## Search Integration
+
+### Why split search tool
+
+`google.tools.googleSearch({})` is provider-defined. Mixing provider tools and function tools in one call can cause function tools to be ignored by provider prep logic.
+
+### Design
+
+1. `webSearch` in orchestrator/worker remains a function tool.
+2. Function tool calls `internal.search.groundWithGemini` action.
+3. That action makes a dedicated model call with only `google.tools.googleSearch({})` enabled.
+4. Action returns normalized `{ summary, sources }` payload.
+
+```typescript
+const groundWithGemini = internalAction({
+  args: { query: v.string() },
+  handler: async (_ctx, { query }) => {
+    const { google } = await import('@ai-sdk/google')
+    const { generateText } = await import('ai')
+    const out = await generateText({
+      model: google('gemini-2.5-flash'),
+      prompt: query,
+      tools: {
+        googleSearch: google.tools.googleSearch({})
+      }
+    })
+    return normalizeGrounding(out)
+  }
+})
+```
 
 ---
 
 ## MCP Integration
 
-### Server-Side (Convex Action)
+### v1 Transport
+
+HTTP-only (`StreamableHTTPClientTransport`). `sse` is not part of v1 schema or UI.
+
+### Dynamic Tool Materialization
+
+At each orchestrator or worker run start:
+
+1. Load enabled MCP servers for current user.
+2. Refresh stale tool caches based on TTL.
+3. Build dynamic `createTool` entries from cached schemas for that single call.
+
+### Unknown Tool and TTL Retry
+
+- If tool not found or schema mismatch occurs, refresh server cache and retry once.
+- If retry fails, return structured error payload to model.
+
+### Core Action Pattern
 
 ```typescript
 import { Client } from '@modelcontextprotocol/client'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client/streamableHttp.js'
 
-const callMcpTool = internalAction({
+const callToolOwned = internalAction({
   args: {
-    userId: v.string(),
+    requesterThreadId: v.string(),
     serverName: v.string(),
-    toolName: v.string(),
-    toolArgs: v.any(),
+    toolArgs: v.string(),
+    toolName: v.string()
   },
-  handler: async (ctx, { userId, serverName, toolName, toolArgs }) => {
-    const server = await ctx.runQuery(internal.mcpServers.getByName, {
-      userId, name: serverName,
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, {
+      threadId: args.requesterThreadId
     })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(server.url),
-      { requestInit: { headers: JSON.parse(server.authHeaders ?? '{}') } }
-    )
-    const client = new Client(
-      { name: 'noboil-agent', version: '1.0.0' },
-      { capabilities: {} }
-    )
+    if (!session) return { error: 'session_not_found', ok: false }
+    const server = await ctx.runQuery(internal.mcp.getOwnedServerByName, {
+      name: args.serverName,
+      userId: session.userId
+    })
+    if (!server) return { error: 'server_not_found', ok: false }
+
+    const transport = new StreamableHTTPClientTransport(new URL(server.url), {
+      requestInit: { headers: JSON.parse(server.authHeaders ?? '{}') }
+    })
+    const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
+
     try {
       await client.connect(transport)
-      const result = await client.callTool({ name: toolName, arguments: toolArgs })
-      return result.content
+      const parsed = JSON.parse(args.toolArgs)
+      const result = await client.callTool({ arguments: parsed, name: args.toolName })
+      return { content: result.content, ok: true }
+    } catch (error) {
+      return { error: String(error), ok: false }
     } finally {
       await client.close()
     }
-  },
+  }
 })
-```
-
-**Borrowed from**: `oh-my-openagent/src/features/skill-mcp-manager/manager.ts` (connect-use-close lifecycle), `oh-my-openagent/src/features/skill-mcp-manager/http-client.ts` (StreamableHTTPClientTransport usage)
-
-### Tool Discovery Cache
-
-```typescript
-const refreshTools = internalAction({
-  handler: async (ctx, { serverId }) => {
-    // Connect, listTools(), cache in mcpServers.cachedTools
-    // 5-minute TTL on cache
-  },
-})
-```
-
-### User-Facing API
-
-```typescript
-// List available MCP servers
-const listServers = query({ ... })
-
-// Add/remove/toggle MCP server
-const addServer = mutation({ ... })
-const removeServer = mutation({ ... })
-const toggleServer = mutation({ ... })
 ```
 
 ---
 
 ## Compaction
 
-When token usage exceeds threshold (tracked by `usageHandler`), schedule compaction:
+### Trigger Policy
+
+Compaction runs **before generation starts**, based on current context footprint of thread:
+
+- message count threshold
+- or serialized character threshold
+
+No trigger from cumulative token usage totals.
+
+### Safety Model
+
+1. Compact only a closed prefix, never in-flight streamed range.
+2. Preserve complete tool call/result groups together.
+3. Use `compactionInProgress` guard to avoid concurrent compaction on same thread.
+
+### Flow
+
+1. Acquire compaction lock.
+2. Build summary of compactable prefix.
+3. Save summary as system message first.
+4. Delete old message range via agent message-range APIs.
+5. Release compaction lock.
 
 ```typescript
-const compactThread = internalAction({
-  handler: async (ctx, { threadId, sessionId }) => {
-    // 1. Read all messages from thread
-    // 2. Build summary of old messages (keep recent N)
-    // 3. Delete old messages
-    // 4. Insert summary as system message
-    // 5. Preserve todo state and active task references
-  },
-})
-```
+const compactIfNeeded = async ({ ctx, threadId }) => {
+  const size = await ctx.runQuery(internal.messages.getContextSize, { threadId })
+  if (size.charCount < COMPACTION_CHAR_LIMIT && size.messageCount < COMPACTION_MSG_LIMIT) return
 
-**Borrowed from**: `oh-my-openagent/src/hooks/compaction-context-injector/hook.ts` (capture/inject pattern), `oh-my-openagent/src/hooks/anthropic-context-window-limit-recovery/` (truncation strategies)
+  const lock = await ctx.runMutation(internal.compaction.tryBegin, { threadId })
+  if (!lock.ok) return
 
-### Trigger
-
-```typescript
-const usageHandler: UsageHandler = async (ctx, { userId, usage, threadId }) => {
-  await ctx.runMutation(internal.tokenUsage.record, {
-    sessionId, model, provider, ...usage,
-  })
-  // Check cumulative token count for thread
-  const total = await ctx.runQuery(internal.tokenUsage.getThreadTotal, { threadId })
-  if (total > COMPACTION_THRESHOLD) {
-    await ctx.scheduler.runAfter(0, internal.compaction.compact, { threadId, sessionId })
+  try {
+    const groups = await ctx.runQuery(internal.compaction.listClosedPrefixGroups, { threadId })
+    if (groups.length === 0) return
+    const summary = await summarizeGroups({ groups })
+    const saved = await orchestrator.saveMessage(ctx, {
+      message: { content: summary, role: 'system' },
+      skipEmbeddings: true,
+      threadId
+    })
+    if (!saved.messageId) return
+    await ctx.runAction(internal.compaction.deleteMessageRange, {
+      endMessageId: groups[groups.length - 1].endMessageId,
+      startMessageId: groups[0].startMessageId,
+      threadId
+    })
+  } finally {
+    await ctx.runMutation(internal.compaction.finish, { threadId })
   }
 }
 ```
 
 ---
 
+## Error Recovery
+
+### Runtime Guardrails
+
+- Wrap orchestrator and worker actions in `try/catch/finally`.
+- Persist error state on task and thread-level metadata.
+- Always release queue locks and compaction locks in `finally`.
+
+### LLM Failure Mid-Stream
+
+- mark task `error`
+- set `lastError`
+- increment `retryCount`
+- retry if transient and `retryCount < 3`
+
+### Action Timeout Recovery
+
+- worker timeout target: 10 minutes
+- cron scans running tasks
+- if no heartbeat within timeout threshold, mark `timed_out`
+
+### MCP Failure Recovery
+
+Tool returns structured model-readable error payload, not thrown raw exception:
+
+```json
+{
+  "ok": false,
+  "error": "mcp_call_failed",
+  "message": "...",
+  "retryable": true
+}
+```
+
+### Terminal States
+
+- `error`
+- `timed_out`
+- `cancelled`
+
+---
+
 ## Streaming Architecture
 
-### Server: Delta Streaming
-
-Every agent call uses `saveStreamDeltas: true`:
+### Server Streaming
 
 ```typescript
-const result = await orchestrator.streamText(
-  ctx,
-  { threadId },
-  { promptMessageId },
-  {
-    saveStreamDeltas: {
-      chunking: 'word',
-      throttleMs: 100,
-    },
-  },
-)
-await result.consumeStream()
+const runOrchestrator = internalAction({
+  args: { promptMessageId: v.optional(v.string()), threadId: v.string() },
+  handler: async (ctx, args) => {
+    await compactIfNeeded({ ctx, threadId: args.threadId })
+
+    const result = await orchestrator.streamText(
+      ctx,
+      { threadId: args.threadId },
+      { promptMessageId: args.promptMessageId },
+      {
+        saveStreamDeltas: { chunking: 'word', throttleMs: 100 }
+      }
+    )
+
+    await result.consumeStream()
+    await postTurnAudit({
+      autoContinueCount: await getAutoContinueCount({ ctx, threadId: args.threadId }),
+      ctx,
+      threadId: args.threadId,
+      turnRequestedInput: result.finishReason === 'tool-call-user-confirmation'
+    })
+  }
+})
 ```
 
-### Client: Real-Time Subscriptions
+### Client Streaming
 
 ```typescript
-// Query (server-side)
 const listMessages = query({
   args: {
-    threadId: v.string(),
     paginationOpts: paginationOptsValidator,
     streamArgs: vStreamArgs,
+    threadId: v.string()
   },
   handler: async (ctx, args) => {
-    const paginated = await listUIMessages(ctx, components.agent, args)
+    const page = await listUIMessages(ctx, components.agent, args)
     const streams = await syncStreams(ctx, components.agent, args)
-    return { ...paginated, streams }
-  },
+    return { ...page, streams }
+  }
 })
-
-// React (client-side)
-const { results, status, loadMore } = useUIMessages(
-  api.messages.listMessages,
-  { threadId },
-  { initialNumItems: 50, stream: true },
-)
 ```
-
-### Frontend Rendering
-
-Each message rendered based on its parts:
-- `type: "text"` → Markdown with `useSmoothText` animation
-- `type: "reasoning"` → Collapsible thinking block
-- `type: "tool"` → Tool call card (name, input, status, output)
-- `type: "source"` → Cited URL card (from Gemini grounding)
 
 ---
 
@@ -674,62 +997,83 @@ Each message rendered based on its parts:
 
 ### Directory Layout
 
+Co-location rule is enforced: page-specific components stay with their page.
+
 ```
 apps/agent/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx              (AuthLayout + ConvexProvider)
-│   │   ├── page.tsx                (Session list / new session)
-│   │   ├── [sessionId]/
-│   │   │   └── page.tsx            (Chat view with panels)
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── login/
+│   │   │   └── page.tsx
 │   │   ├── settings/
-│   │   │   └── page.tsx            (MCP server config)
-│   │   └── login/
-│   │       └── page.tsx            (Auth page)
-│   ├── components/
-│   │   ├── chat.tsx                (Main chat with streaming messages)
-│   │   ├── message.tsx             (Single message: text, reasoning, tools)
-│   │   ├── tool-call.tsx           (Tool call card with status/output)
-│   │   ├── task-panel.tsx          (Background task progress panel)
-│   │   ├── todo-panel.tsx          (Todo list panel)
-│   │   ├── token-usage.tsx         (Token usage dashboard)
-│   │   ├── mcp-config.tsx          (MCP server management UI)
-│   │   └── source-card.tsx         (Cited URL from grounding search)
-│   ├── schema.ts                   (App-level Zod schema imports)
-│   └── proxy.ts                    (Middleware proxy)
-├── e2e/                            (Playwright tests)
+│   │   │   ├── page.tsx
+│   │   │   ├── server-form.tsx
+│   │   │   └── server-list.tsx
+│   │   └── [sessionId]/
+│   │       ├── page.tsx
+│   │       ├── chat-log.tsx
+│   │       ├── message-row.tsx
+│   │       ├── reasoning-block.tsx
+│   │       ├── tool-call-card.tsx
+│   │       ├── task-panel.tsx
+│   │       ├── todo-panel.tsx
+│   │       ├── token-usage-panel.tsx
+│   │       └── source-card.tsx
+│   └── lib/
+│       ├── a11y.ts
+│       ├── format.ts
+│       └── session-layout.ts
+├── e2e/
 ├── package.json
-├── next.config.ts
-├── tsconfig.json
-├── playwright.config.ts
-└── PLAN.md                         (This file)
+└── PLAN.md
 ```
 
-### Key UI Components
+### Responsive Layout Spec
 
-**Chat View** (`[sessionId]/page.tsx`):
-- Three-panel layout: Chat (center) + TaskPanel (right) + TodoPanel (right)
-- Chat shows orchestrator messages with streaming
-- Background task threads viewable inline or in side panel
-- Token usage in footer
+- **Desktop**: three panels (chat center, task/todo rail right, sources rail far-right).
+- **Tablet**: one primary chat panel plus collapsible side rail.
+- **Mobile**: chat plus tabbed drawer/sheet for tasks, todos, sources, token usage.
 
-**Message Component** (`components/message.tsx`):
-- Renders `UIMessage` from `@convex-dev/agent`
-- Text parts: markdown rendering with `useSmoothText`
-- Reasoning parts: collapsible "Thinking..." block with dim styling
-- Tool parts: `<ToolCallCard>` with name, input JSON, status badge, output
-- Source parts: clickable URL cards from Gemini grounding
+### Accessibility Requirements
 
-**Task Panel** (`components/task-panel.tsx`):
-- Lists all tasks for current session via `useQuery(api.tasks.listBySession)`
-- Each task shows: description, agent, status badge, duration, progress
-- Click to expand: shows sub-agent's thread messages (streaming)
-- Real-time updates via Convex subscription
+- Chat transcript container uses `role="log"`.
+- Streaming assistant area uses `aria-live="polite"`.
+- Reasoning and tool-card expanders are keyboard-operable.
+- Focus returns to input after send and after drawer close.
+- Status indicators include text labels, not color-only communication.
 
-**Todo Panel** (`components/todo-panel.tsx`):
-- Lists todos via `useQuery(api.todos.listBySession)`
-- Status badges: pending (gray), in_progress (blue), completed (green), cancelled (red)
-- Read-only — managed by the orchestrator
+### ToolCallCard Spec
+
+States and rendering contract:
+
+1. `queued`
+2. `running`
+3. `completed`
+4. `error`
+
+Card fields:
+
+- tool name
+- start/end time and duration
+- collapsed input preview (JSON string)
+- expandable output block
+- explicit error block when present
+
+### Reasoning Block Spec
+
+- Stream reasoning parts in real time.
+- Default collapsed with `Thinking...` label.
+- Dim styling for reduced visual weight.
+- Expand/collapse preserves user preference per message.
+
+### Source Card Spec
+
+- clickable URL
+- provider title
+- snippet from Gemini grounding
+- open in new tab
 
 ---
 
@@ -740,21 +1084,28 @@ apps/agent/
 ```
 packages/be-agent/
 ├── convex/
-│   ├── _generated/                 (Convex generated files)
-│   ├── schema.ts                   (Table definitions)
-│   ├── agents.ts                   (Agent definitions + actions)
-│   ├── sessions.ts                 (Session CRUD)
-│   ├── tasks.ts                    (Background task CRUD)
-│   ├── todos.ts                    (Todo CRUD)
-│   ├── messages.ts                 (Message queries for frontend)
-│   ├── mcp.ts                      (MCP server management + tool calling)
-│   ├── tokenUsage.ts               (Token tracking mutations/queries)
-│   ├── compaction.ts               (Thread compaction logic)
-│   ├── staleTaskCleanup.ts         (Cron: detect stale tasks)
-│   └── convex.config.ts            (Agent component registration)
-├── t.ts                            (Zod schema definitions)
-├── lazy.ts                         (Factory setup)
-├── prompts.ts                      (System prompts for agents)
+│   ├── _generated/
+│   ├── convex.config.ts
+│   ├── schema.ts
+│   ├── auth.ts
+│   ├── sessions.ts
+│   ├── messages.ts
+│   ├── orchestratorQueue.ts
+│   ├── agents.ts
+│   ├── tasks.ts
+│   ├── todos.ts
+│   ├── mcp.ts
+│   ├── search.ts
+│   ├── tokenUsage.ts
+│   ├── compaction.ts
+│   ├── rateLimit.ts
+│   ├── staleTaskCleanup.ts
+│   └── retention.ts
+├── ai.ts
+├── lazy.ts
+├── prompts.ts
+├── t.ts
+├── SOURCES.md
 ├── package.json
 └── tsconfig.json
 ```
@@ -762,8 +1113,8 @@ packages/be-agent/
 ### `convex.config.ts`
 
 ```typescript
-import { defineApp } from 'convex/server'
 import agent from '@convex-dev/agent/convex.config'
+import { defineApp } from 'convex/server'
 
 const app = defineApp()
 app.use(agent)
@@ -773,111 +1124,263 @@ export default app
 
 ---
 
-## Execution Phases
+## Auth and Ownership Boundary
 
-### Phase 1: Foundation (Backend)
+### Public API Rule
 
-1. Create `packages/be-agent/` with Convex project setup
-2. Define Zod schemas in `t.ts` (session owned table)
-3. Define raw tables in `convex/schema.ts` (tasks, todos, mcpServers, tokenUsage)
-4. Set up `lazy.ts` with `crud('session', ...)` factory
-5. Register `@convex-dev/agent` component in `convex.config.ts`
-6. Create basic session CRUD (`sessions.ts`)
-7. Create todo CRUD (`todos.ts`)
-8. Create task CRUD (`tasks.ts`)
-9. Create token usage tracking (`tokenUsage.ts`)
-10. Verify: `bun fix` passes, tables deploy correctly
+Every public query and mutation follows this pattern:
 
-### Phase 2: Agent Core
+1. resolve current user id
+2. resolve requested entity
+3. verify ownership relation
+4. return or mutate
 
-1. Define orchestrator agent with system prompt (`agents.ts`)
-2. Define worker agent (`agents.ts`)
-3. Implement `delegate` tool (spawn background sub-agent)
-4. Implement `todoWrite` / `todoRead` tools
-5. Implement `taskStatus` / `taskOutput` tools
-6. Implement system reminder injection on task completion
-7. Implement todo continuation reminder
-8. Create message query for frontend (`messages.ts`)
-9. Wire orchestrator action: receive message → streamText → save deltas
-10. Wire worker action: receive prompt → streamText → notify on complete
-11. Verify: orchestrator can respond, delegate, manage todos
+```typescript
+const getOwnedTaskStatus = query({
+  args: { requesterThreadId: v.string(), taskId: v.string() },
+  handler: async (ctx, args) => {
+    const session = await resolveOwnedSessionByThread({ ctx, threadId: args.requesterThreadId })
+    const task = await ctx.db.get(args.taskId as Id<'tasks'>)
+    if (!task || task.sessionId !== session._id) return null
+    return {
+      completedAt: task.completedAt,
+      lastError: task.lastError,
+      retryCount: task.retryCount,
+      status: task.status,
+      threadId: task.threadId
+    }
+  }
+})
+```
 
-### Phase 3: Search & MCP
+### Ownership Coverage
 
-1. Add Gemini grounding search as provider-defined tool
-2. Create MCP server CRUD (`mcp.ts`)
-3. Implement MCP `callTool` action with connect-use-close lifecycle
-4. Implement MCP `refreshTools` action with caching
-5. Create `mcpCall` tool for orchestrator/worker
-6. Verify: search returns grounded results with sources, MCP tools callable
-
-### Phase 4: Compaction & Token Tracking
-
-1. Implement `usageHandler` for both agents
-2. Create token usage recording mutation
-3. Create token usage summary query
-4. Implement thread compaction action
-5. Add compaction trigger (threshold-based)
-6. Implement stale task cleanup cron
-7. Verify: token tracking accurate, compaction preserves context
-
-### Phase 5: Frontend
-
-1. Create `apps/agent/` Next.js app (scaffold from chat app pattern)
-2. Create root layout with AuthLayout + ConvexProvider
-3. Create session list page (home)
-4. Create chat view page (`[sessionId]`)
-5. Implement `<Chat>` component with `useUIMessages` + `useSmoothText`
-6. Implement `<Message>` component (text, reasoning, tool calls, sources)
-7. Implement `<ToolCallCard>` component
-8. Implement `<TaskPanel>` component with sub-agent thread viewing
-9. Implement `<TodoPanel>` component
-10. Implement `<TokenUsage>` component
-11. Implement MCP settings page
-12. Verify: streaming works, tool calls visible, tasks trackable
-
-### Phase 6: Polish & Integration
-
-1. Add session search/filter on home page
-2. Add conversation export (markdown)
-3. Add tool approval flow (for dangerous MCP tools)
-4. Add source panel for grounding search citations
-5. E2E tests for core flows
-6. Verify: `bun fix` passes, `bun test:all` passes
-7. Commit, push, verify CI green
-
-### Phase 7: Extract @noboil/agent
-
-1. Identify generic building blocks from apps/agent
-2. Move to `packages/agent/` as publishable library
-3. Export: `defineAgent`, `useAgentChat`, `useTaskPanel`, `useTodoList`, `AgentChat`, `TaskPanel`, `TodoPanel`
-4. Ensure apps/agent consumes from `@noboil/agent` (dogfooding)
-5. Write documentation page in fumadocs
+- session endpoints: `session.userId === currentUser`
+- task endpoints: `task.sessionId -> session.userId === currentUser`
+- thread endpoints: `threadId -> session.userId === currentUser`
+- MCP endpoints: `mcpServer.userId === currentUser`
 
 ---
 
-## oh-my-openagent Borrowed File Tracking
+## Session Retention and Cleanup
 
-Every file that borrows logic or patterns from oh-my-openagent will have a tracking comment at the top:
+### Retention Policy (v1)
 
-```typescript
-// @source oh-my-openagent@6625670 src/features/background-agent/types.ts
+- active sessions remain indefinitely while active
+- idle sessions archived after 30 days
+- archived sessions hard-deleted after 180 days
+
+### Cleanup Scope
+
+When hard delete triggers for a session:
+
+- delete task rows
+- delete todo rows
+- delete token usage rows
+- delete thread/message rows via agent APIs
+
+### Trigger
+
+- nightly cron plus manual archive action in UI
+
+---
+
+## File Attachments
+
+### v1 Decision
+
+File upload attachments are out of scope for v1.
+
+- users can paste text
+- users cannot upload files in this version
+- file upload and retrieval is tracked as post-v1 enhancement
+
+---
+
+## Testing Strategy
+
+### Unit and Integration Tests
+
+Core backend test coverage in `packages/be-agent/convex`:
+
+1. orchestrator queue behavior
+2. delegate mutation-first spawn lifecycle
+3. worker completion reminder and latest-message gate
+4. post-turn todo continuation loop guard
+5. compaction closed-prefix safety
+6. MCP cache refresh and retry behavior
+7. ownership enforcement on all public APIs
+8. timeout cron transitions to `timed_out`
+
+### Deterministic Model Abstraction
+
+Use model indirection pattern from `packages/be-convex/ai.ts`:
+
+- production: Gemini 2.5 Flash
+- tests: mock model deterministic outputs
+
+### E2E Smoke Tests
+
+Run at end of Phase 5:
+
+1. create session, chat, stream response
+2. delegate background task and observe status lifecycle
+3. receive completion reminder and fetch `taskOutput`
+4. todo continuation auto-turn when no user input needed
+5. configure MCP server and execute one tool
+6. grounded search returns source cards
+
+---
+
+## Rate Limiting
+
+Apply per-user limits with dedicated rules:
+
+1. message submit rate
+2. delegation count per window
+3. grounded search calls per window
+4. MCP calls per window
+
+Optional:
+
+- per-session token budget ceiling with soft-block + UI warning
+
+Implementation:
+
+- reuse `rateLimitTable()` pattern
+- expose limit policy config per environment
+
+---
+
+## Environment Variables
+
+| Variable | Dev | Test | Prod | Notes |
+|---|---|---|---|---|
+| `NEXT_PUBLIC_CONVEX_URL` | required | required | required | Agent app URL, separate from demo apps |
+| `CONVEX_DEPLOYMENT` | local deployment | test deployment | production deployment | Used by `convex dev` and deploy scripts |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | optional if Vertex used | mock or test key | required unless Vertex used | Gemini direct API path |
+| `GOOGLE_VERTEX_PROJECT` | optional | optional | optional | Vertex path |
+| `GOOGLE_VERTEX_LOCATION` | optional | optional | optional | Vertex path |
+| `GOOGLE_APPLICATION_CREDENTIALS` | optional | optional | optional | Vertex auth file |
+| `AUTH_*` provider envs | required | required | required | Auth provider configuration |
+
+---
+
+## Deployment
+
+### Separate Convex Project Commands
+
+Local dev mirrors demo scripts but targets `packages/be-agent`:
+
+```json
+{
+  "scripts": {
+    "agent:convex:dev": "bun --cwd packages/be-agent with-env convex dev",
+    "agent:convex:deploy": "bun --cwd packages/be-agent with-env convex deploy",
+    "agent:dev": "bun --cwd apps/agent dev"
+  }
+}
 ```
 
-### Mapping
+### Deployment Notes
+
+- no shared deployment with `packages/be-convex`
+- independent env management
+- independent migration rollout
+- independent cron schedule
+
+---
+
+## Execution Phases
+
+### Phase 1: Foundation
+
+1. Create `packages/be-agent` as standalone Convex project with its own `convex.config.ts` and deployment.
+2. Add auth setup and ownership helper primitives.
+3. Add environment variable validation and wiring for app/backend.
+4. Define `t.ts`, `schema.ts`, and `lazy.ts` using noboil patterns.
+5. Implement session CRUD and ownership-safe thread mapping.
+6. Verify: `bun fix` and `convex dev --once` pass for `packages/be-agent`.
+
+### Phase 2: Agent Core
+
+1. Implement orchestrator/worker agents with step limits.
+2. Implement queue-per-thread orchestrator run policy.
+3. Implement mutation-first delegate spawn + worker lifecycle mutations.
+4. Implement reminder save and `messageId -> promptMessageId` chaining.
+5. Implement todo continuation post-turn audit with max 5 auto-continues.
+6. Implement error recovery and bounded retry logic.
+7. Verify: streaming, delegation, reminders, retries, and queue behavior pass tests.
+
+### Phase 3: Search and MCP
+
+1. Implement `webSearch` function tool bridge to dedicated Gemini action.
+2. Implement MCP server CRUD with ownership checks.
+3. Implement HTTP-only MCP calls with dynamic tool materialization.
+4. Implement TTL cache refresh and unknown-tool retry.
+5. Verify: grounded search and MCP tool calls succeed with structured failures.
+
+### Phase 4: Compaction and Tokens
+
+1. Record token usage by thread via `usageHandler`.
+2. Build session totals from `tokenUsage` query aggregation.
+3. Implement pre-generation compaction by actual context size.
+4. Protect compaction with closed-prefix grouping and lock flag.
+5. Add stale task cron for timeout transitions.
+6. Verify: compaction safety and timeout behavior.
+
+### Phase 5: Frontend
+
+1. Build session list, chat page, and settings page in `apps/agent`.
+2. Implement streaming message rendering for text/reasoning/tool/source parts.
+3. Implement ToolCallCard spec and task/todo/token panels.
+4. Implement desktop/tablet/mobile responsive behavior.
+5. Implement accessibility requirements for logs, live regions, and keyboard navigation.
+6. Verify with focused Playwright specs.
+
+### Phase 5.5: E2E Smoke
+
+1. Add smoke suite for all core flows.
+2. Run repeat verification for flaky-prone async flows.
+3. Verify deterministic green runs in CI mode.
+
+### Phase 6: Polish
+
+1. Add session search and filter UX.
+2. Keep source panel and source details UX.
+3. Add rate limiting with user-facing exceeded state.
+4. Exclude conversation export and tool approval flow from v1 scope.
+5. Verify: `bun fix` and targeted tests pass.
+
+### Phase 7: Extract `@noboil/agent`
+
+1. Extract reusable agent harness primitives.
+2. Move reusable hooks/components to `packages/agent`.
+3. Dogfood by consuming extracted package inside `apps/agent`.
+4. Add docs in `apps/docs` once extraction stabilizes.
+
+---
+
+## Source Tracking
+
+Per-file source comments are removed. Canonical tracking is maintained in `SOURCES.md`.
+
+### Canonical Location
+
+- `apps/agent/SOURCES.md` for frontend borrowed mappings
+- `packages/be-agent/SOURCES.md` for backend borrowed mappings
+
+### Mapping Template
 
 | Our File | OMO Source | What We Borrow |
 |---|---|---|
-| `be-agent/convex/tasks.ts` | `src/features/background-agent/types.ts` | Task status enum, progress shape |
-| `be-agent/convex/agents.ts` (delegate) | `src/features/background-agent/spawner.ts` | Fire-and-forget spawn pattern |
-| `be-agent/convex/agents.ts` (notify) | `src/features/background-agent/background-task-notification-template.ts` | System reminder template format |
-| `be-agent/convex/todos.ts` | `src/tools/task/types.ts` | Todo schema (status, priority) |
-| `be-agent/convex/compaction.ts` | `src/hooks/compaction-context-injector/hook.ts` | Capture/inject compaction pattern |
-| `be-agent/convex/mcp.ts` | `src/features/skill-mcp-manager/manager.ts` | Connect-use-close MCP lifecycle |
-| `be-agent/convex/staleTaskCleanup.ts` | `src/features/background-agent/task-poller.ts` | Stale task detection logic |
-| `be-agent/prompts.ts` (orchestrator) | `src/agents/sisyphus.ts` | Orchestrator prompt structure |
-| `be-agent/prompts.ts` (worker) | `src/agents/builtin-agents/general-agents.ts` | Worker prompt structure |
-| `be-agent/convex/agents.ts` (continuation) | `src/hooks/todo-continuation-enforcer/hook.ts` | Todo continuation enforcement |
+| `packages/be-agent/convex/tasks.ts` | `src/features/background-agent/types.ts` | Task status model and lifecycle framing |
+| `packages/be-agent/convex/agents.ts` | `src/features/background-agent/spawner.ts` | Delegation flow structure |
+| `packages/be-agent/convex/agents.ts` | `src/hooks/todo-continuation-enforcer/hook.ts` | Continuation policy semantics |
+| `packages/be-agent/convex/compaction.ts` | `src/hooks/compaction-context-injector/hook.ts` | Compaction summary strategy |
+| `packages/be-agent/convex/mcp.ts` | `src/features/skill-mcp-manager/manager.ts` | MCP connect-call-close lifecycle |
+| `packages/be-agent/prompts.ts` | `src/agents/sisyphus.ts` | Orchestrator prompt direction |
+| `packages/be-agent/prompts.ts` | `src/agents/builtin-agents/general-agents.ts` | Worker prompt direction |
 
 ---
 
@@ -919,7 +1422,7 @@ Every file that borrows logic or patterns from oh-my-openagent will have a track
 
 ## Monorepo Integration
 
-### Root `package.json` — Add workspace
+### Root `package.json` Workspaces
 
 ```json
 "workspaces": [
@@ -931,31 +1434,45 @@ Every file that borrows logic or patterns from oh-my-openagent will have a track
 ]
 ```
 
-### `turbo.json` — Add env vars
+### `turbo.json` Pass-Through Env
 
 ```json
 "globalPassThroughEnv": [
-  "GOOGLE_GENERATIVE_AI_API_KEY"
+  "CONVEX_DEPLOYMENT",
+  "GOOGLE_APPLICATION_CREDENTIALS",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+  "GOOGLE_VERTEX_LOCATION",
+  "GOOGLE_VERTEX_PROJECT"
 ]
 ```
 
 ---
 
+## AGENTS.md Compliance Checklist
+
+1. no unconstrained validators or loose typing in snippets
+2. arrow functions only in snippets
+3. no array callback aggregation shortcuts in snippets
+4. no inline per-file source comments; use `SOURCES.md`
+5. component co-location prioritized over global shared folders
+
+---
+
 ## Success Criteria
 
-1. User can start a session and chat with the orchestrator
-2. Orchestrator can search the web via Gemini grounding (sources shown)
-3. Orchestrator can delegate tasks to background workers
-4. Background task progress visible in real-time in TaskPanel
-5. System reminders injected when background tasks complete
-6. Orchestrator can manage a todo list (visible in TodoPanel)
-7. Todo continuation reminders work when todos are incomplete
-8. User can configure MCP servers in settings
-9. Orchestrator and workers can call MCP tools
-10. Token usage tracked and displayed per session
-11. Compaction triggers when context is too long
-12. All agent responses stream in real-time with text animation
-13. Reasoning/thinking blocks visible and collapsible
-14. Tool calls rendered with input, status, and output
-15. Multiple users can use the system independently
-16. `bun fix` passes, CI green
+1. Agent app uses a dedicated Convex deployment and URL separate from demo apps.
+2. Public APIs enforce ownership checks from user -> session -> thread/task/server.
+3. Orchestrator and worker enforce stop limits (`25` and `10`) and cannot infinite loop tools.
+4. Delegate lifecycle is mutation-first with idempotent task fields and `timed_out` state.
+5. Completion reminder chaining uses saved `messageId` and latest-message guard.
+6. Search works through function tool bridge and returns summary plus sources.
+7. Todo continuation audit runs post-turn with max 5 auto-continues.
+8. v1 concurrency uses queued runs per thread and remains non-blocking for input.
+9. Compaction runs before generation on context size and preserves tool pair integrity.
+10. MCP is HTTP-only, dynamic, ownership-safe, cache-refreshable, and retry-aware.
+11. Error recovery handles LLM, MCP, and timeout failures with bounded retries.
+12. Frontend renders tool/reasoning/source specs with responsive layouts and a11y compliance.
+13. Session retention and cleanup policy is implemented and documented.
+14. File attachments are explicitly out of scope for v1.
+15. `SOURCES.md` is canonical for borrowed code tracking.
+16. `bun fix` passes and targeted test suite plus e2e smoke tests pass.
