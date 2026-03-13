@@ -151,13 +151,13 @@ User message submitted
   -> mutation sessions.saveUserMessage
   -> mutation orchestrator.enqueueRun(reason='user_message')
        - CAS threadRunState by_threadId
-       - if idle: set active, clear queue, autoContinueStreak=0, schedule run
+       - if idle: generate runToken, set active + activeRunToken, clear queue, autoContinueStreak=0, schedule run
        - if active: set queued + queuedPromptMessageId
 
 agents.runOrchestrator action
-  -> mutation orchestrator.startRun
-       - CAS idle -> active
-       - no-op if already active (idempotent)
+  -> mutation orchestrator.claimRun(threadId, runToken)
+       - CAS activeRunToken === runToken
+       - abort early if runToken mismatch
   -> pre-generation compaction check on closed prefix
   -> streamText with function tools only, maxSteps=25
   -> await consumeStream
@@ -167,8 +167,8 @@ agents.runOrchestrator action
           and autoContinueStreak < 5
           then save reminder + enqueue one continuation
   -> mutation orchestrator.finishRun
-       - if queuedPromptMessageId exists: keep active + schedule next queued run
-       - else: set idle
+        - if queuedPromptMessageId exists: keep active + schedule next queued run
+        - else: clear activeRunToken and set idle
 ```
 
 ### Background Delegation Flow
@@ -186,12 +186,13 @@ runWorker action
   -> streamText with function tools only, maxSteps=10
   -> heartbeat mutation updates while running
   -> on success mutation tasks.completeTask
-        - status completed
+        - CAS status running -> completed
         - completedAt set
-        - reminder inserted into parent thread as system message
-        - completionNotifiedAt set
-        - enqueue continuation with promptMessageId=reminderMessageId
+        - reminder inserted into parent thread as system message and stored as completionReminderMessageId
+        - completionNotifiedAt set in same mutation boundary
+        - enqueue continuation with promptMessageId=completionReminderMessageId
         - only continue orchestrator if completion reminder is latest message
+        - increment auto-continue streak for task-completion continuation path
   -> on failure mutation tasks.failTask
 ```
 
@@ -240,6 +241,7 @@ export default defineSchema({
   tasks: defineTable({
     agent: v.string(),
     completedAt: v.optional(v.number()),
+    completionReminderMessageId: v.optional(v.string()),
     completionNotifiedAt: v.optional(v.number()),
     description: v.string(),
     heartbeatAt: v.optional(v.number()),
@@ -265,6 +267,7 @@ export default defineSchema({
     .index('by_session', ['sessionId'])
     .index('by_parentThreadId', ['parentThreadId'])
     .index('by_parentThreadId_status', ['parentThreadId', 'status'])
+    .index('by_completionReminderMessageId', ['completionReminderMessageId'])
     .index('by_status', ['status'])
     .index('by_threadId', ['threadId'])
     .index('by_user_status', ['userId', 'status']),
@@ -317,8 +320,9 @@ export default defineSchema({
     .index('by_session', ['sessionId'])
     .index('by_threadId', ['threadId']),
   threadRunState: defineTable({
-    activeActionId: v.optional(v.string()),
+    activeRunToken: v.optional(v.string()),
     autoContinueStreak: v.number(),
+    compactionLock: v.optional(v.string()),
     compactionSummary: v.optional(v.string()),
     lastError: v.optional(v.string()),
     queuedPromptMessageId: v.optional(v.string()),
@@ -741,8 +745,23 @@ const completeTask = internalMutation({
   handler: async (ctx, { result, taskId }) => {
     const task = await ctx.db.get(taskId)
     if (!task || task.status !== 'running') return { ok: false }
-    await ctx.db.patch(taskId, { completedAt: Date.now(), result, status: 'completed' })
-    return { ok: true }
+    if (task.completionNotifiedAt) return { ok: false }
+
+    const reminderText = buildTaskCompletionReminder({ taskId: String(taskId) })
+    const saved = await orchestrator.saveMessage(ctx, {
+      message: { content: reminderText, role: 'system' },
+      skipEmbeddings: true,
+      threadId: task.parentThreadId
+    })
+
+    await ctx.db.patch(taskId, {
+      completedAt: Date.now(),
+      completionNotifiedAt: Date.now(),
+      completionReminderMessageId: saved.messageId,
+      result,
+      status: 'completed'
+    })
+    return { ok: true, reminderMessageId: saved.messageId }
   }
 })
 
@@ -790,23 +809,21 @@ const timeoutRunningTasks = internalMutation({
 ### Completion Reminder Gating
 
 Orchestrator auto-continue after task completion is allowed only when the completion reminder message is still the latest message in parent thread.
-Reminder insertion is also idempotent: if `completionNotifiedAt` already exists, reminder creation is skipped.
+Reminder insertion and notification marking are unified in `completeTask` so completion side effects happen in one CAS path.
 
 ```typescript
-const maybeContinueOrchestrator = async ({ ctx, parentThreadId, reminderMessageId }) => {
-  const task = await ctx.runQuery(internal.tasks.getByReminderMessageIdInternal, { reminderMessageId })
-  if (!task || task.completionNotifiedAt) return
-  await ctx.runMutation(internal.tasks.markCompletionNotified, {
-    notifiedAt: Date.now(),
-    taskId: task._id
-  })
-
-  const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: parentThreadId })
-  if (latest !== reminderMessageId) return
+const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
+  const task = await ctx.db.get(taskId)
+  if (!task || !task.completionReminderMessageId) return
+  const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: task.parentThreadId })
+  if (latest !== task.completionReminderMessageId) return
   await ctx.runMutation(internal.orchestrator.enqueueRun, {
-    promptMessageId: reminderMessageId,
+    promptMessageId: task.completionReminderMessageId,
     reason: 'task_completion',
-    threadId: parentThreadId
+    threadId: task.parentThreadId
+  })
+  await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
+    threadId: task.parentThreadId
   })
 }
 ```
@@ -814,6 +831,24 @@ const maybeContinueOrchestrator = async ({ ctx, parentThreadId, reminderMessageI
 ---
 
 ## Agent Runtime Flow
+
+### Stream Wrapper (Max 3 Positional Args)
+
+All stream entry points use a local wrapper that accepts a single object arg.
+
+```typescript
+const runAgentStream = async ({ agent, ctx, threadId, promptMessageId, systemPrefix }) => {
+  const streamMessages = []
+  if (systemPrefix) streamMessages.push({ content: systemPrefix, role: 'system' })
+
+  return await agent.streamText(ctx, {
+    promptMessageId,
+    saveStreamDeltas: { chunking: 'word', throttleMs: 100 },
+    thread: { threadId },
+    messages: streamMessages
+  })
+}
+```
 
 ### Save Message and Prompt Chaining
 
@@ -826,14 +861,12 @@ const saved = await orchestrator.saveMessage(ctx, {
   threadId
 })
 
-const result = await orchestrator.streamText(
+const result = await runAgentStream({
+  agent: orchestrator,
   ctx,
-  { threadId },
-  { promptMessageId: saved.messageId },
-  {
-    saveStreamDeltas: { chunking: 'word', throttleMs: 100 }
-  }
-)
+  promptMessageId: saved.messageId,
+  threadId
+})
 await result.consumeStream()
 ```
 
@@ -908,12 +941,14 @@ const enqueueRun = internalMutation({
     }
 
     if (state.status === 'idle') {
-      const actionId = await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
+      const runToken = crypto.randomUUID()
+      await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
         promptMessageId: args.promptMessageId,
+        runToken,
         threadId: args.threadId
       })
       await ctx.db.patch(state._id, {
-        activeActionId: String(actionId),
+        activeRunToken: runToken,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
         status: 'active'
@@ -930,27 +965,31 @@ const enqueueRun = internalMutation({
   }
 })
 
-const startRun = internalMutation({
-  args: { threadId: v.string() },
-  handler: async (ctx, { threadId }) => {
+const claimRun = internalMutation({
+  args: { runToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { runToken, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
-    if (state.status !== 'idle') return { ok: false }
-    await ctx.db.patch(state._id, { status: 'active' })
+    if (state.status !== 'active') return { ok: false }
+    if (state.activeRunToken !== runToken) return { ok: false }
     return { ok: true }
   }
 })
 
 const finishRun = internalMutation({
-  args: { threadId: v.string() },
-  handler: async (ctx, { threadId }) => {
+  args: { runToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { runToken, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
+    if (state.activeRunToken !== runToken) return { scheduled: false }
+
     if (state.queuedPromptMessageId) {
-      const actionId = await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
+      const nextRunToken = crypto.randomUUID()
+      await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
         promptMessageId: state.queuedPromptMessageId,
+        runToken: nextRunToken,
         threadId
       })
       await ctx.db.patch(state._id, {
-        activeActionId: String(actionId),
+        activeRunToken: nextRunToken,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
         status: 'active'
@@ -958,7 +997,7 @@ const finishRun = internalMutation({
       return { scheduled: true }
     }
     await ctx.db.patch(state._id, {
-      activeActionId: undefined,
+      activeRunToken: undefined,
       status: 'idle'
     })
     return { scheduled: false }
@@ -999,15 +1038,17 @@ v1 intentionally favors deterministic behavior and simpler recovery.
 3. That action makes a dedicated model call with only `google.tools.googleSearch({})` enabled.
 4. Action records model usage through `internal.tokenUsage.recordModelUsage`.
 5. Action returns normalized `{ summary, sources }` payload.
+6. In test mode, `getModel()` returns the mock model; search tests should stub this action directly.
 
 ```typescript
 const groundWithGemini = internalAction({
   args: { query: v.string(), threadId: v.string() },
   handler: async (ctx, { query, threadId }) => {
-    const { google } = await import('@ai-sdk/google')
     const { generateText } = await import('ai')
+    const { google } = await import('@ai-sdk/google')
+    const model = await getModel()
     const out = await generateText({
-      model: google('gemini-2.5-flash'),
+      model,
       prompt: query,
       tools: {
         googleSearch: google.tools.googleSearch({})
@@ -1084,10 +1125,35 @@ const callToolOwned = internalAction({
     try {
       await client.connect(transport)
       const parsed = JSON.parse(args.toolArgs)
-      const result = await client.callTool({ arguments: parsed, name: args.toolName })
-      return { content: result.content, ok: true }
+      try {
+        const result = await client.callTool({ arguments: parsed, name: args.toolName })
+        return { content: result.content, ok: true }
+      } catch (error) {
+        const message = String(error)
+        const needsRetry = message.includes('tool_not_found') || message.includes('schema_mismatch')
+        if (!needsRetry) {
+          return { error: message, ok: false, retryable: false }
+        }
+
+        await ctx.runMutation(internal.mcp.refreshToolCache, {
+          serverId: server._id,
+          userId: session.userId
+        })
+
+        try {
+          const retryResult = await client.callTool({ arguments: parsed, name: args.toolName })
+          return { content: retryResult.content, ok: true }
+        } catch (retryError) {
+          return {
+            error: 'mcp_call_failed',
+            message: String(retryError),
+            ok: false,
+            retryable: false
+          }
+        }
+      }
     } catch (error) {
-      return { error: String(error), ok: false }
+      return { error: String(error), ok: false, retryable: true }
     } finally {
       await client.close()
     }
@@ -1143,15 +1209,15 @@ No trigger from cumulative token usage totals.
 
 1. Compact only a closed prefix, never in-flight streamed range.
 2. Preserve complete tool call/result groups together.
-3. Use `compactionInProgress` guard to avoid concurrent compaction on same thread.
+3. Use `threadRunState.compactionLock` guard to avoid concurrent compaction on same thread.
 
 ### Flow
 
 1. Acquire compaction lock.
-2. Build summary of compactable prefix.
+2. Build summary of compactable prefix plus existing summary context.
 3. Save summary into `threadRunState.compactionSummary`.
 4. Delete old message range via agent message-range APIs.
-5. Inject summary as a generation-time context prefix.
+5. Inject summary as a system prefix message in the next generation call.
 6. Release compaction lock.
 
 ```typescript
@@ -1159,13 +1225,21 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
   const size = await ctx.runQuery(internal.messages.getContextSize, { threadId })
   if (size.charCount < COMPACTION_CHAR_LIMIT && size.messageCount < COMPACTION_MSG_LIMIT) return
 
-  const lock = await ctx.runMutation(internal.compaction.tryBegin, { threadId })
+  const lockToken = crypto.randomUUID()
+  const lock = await ctx.runMutation(internal.compaction.tryBeginCompaction, {
+    lockToken,
+    threadId
+  })
   if (!lock.ok) return
 
   try {
+    const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, { threadId })
     const groups = await ctx.runQuery(internal.compaction.listClosedPrefixGroups, { threadId })
     if (groups.length === 0) return
-    const summary = await summarizeGroups({ groups })
+    const summary = await summarizeGroups({
+      existingSummary: state?.compactionSummary,
+      groups
+    })
     await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
       compactionSummary: summary,
       threadId
@@ -1176,15 +1250,34 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
       threadId
     })
   } finally {
-    await ctx.runMutation(internal.compaction.finish, { threadId })
+    await ctx.runMutation(internal.compaction.finishCompaction, {
+      lockToken,
+      threadId
+    })
   }
 }
+```
 
-const buildContextPrefix = async ({ ctx, threadId }) => {
-  const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, { threadId })
-  if (!state?.compactionSummary) return undefined
-  return `Compaction summary:\n${state.compactionSummary}`
-}
+```typescript
+const tryBeginCompaction = internalMutation({
+  args: { lockToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { lockToken, threadId }) => {
+    const state = await ensureRunState({ ctx, threadId })
+    if (state.compactionLock) return { ok: false }
+    await ctx.db.patch(state._id, { compactionLock: lockToken })
+    return { ok: true }
+  }
+})
+
+const finishCompaction = internalMutation({
+  args: { lockToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { lockToken, threadId }) => {
+    const state = await ensureRunState({ ctx, threadId })
+    if (state.compactionLock !== lockToken) return { ok: false }
+    await ctx.db.patch(state._id, { compactionLock: undefined })
+    return { ok: true }
+  }
+})
 ```
 
 ---
@@ -1237,29 +1330,30 @@ Tool returns structured model-readable error payload, not thrown raw exception:
 
 ```typescript
 const runOrchestrator = internalAction({
-  args: { promptMessageId: v.optional(v.string()), threadId: v.string() },
+  args: { promptMessageId: v.optional(v.string()), runToken: v.string(), threadId: v.string() },
   handler: async (ctx, args) => {
-    const started = await ctx.runMutation(internal.orchestrator.startRun, { threadId: args.threadId })
-    if (!started.ok) {
-      const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
-        threadId: args.threadId
-      })
-      if (!state || state.status !== 'active') return
-    }
+    const claimed = await ctx.runMutation(internal.orchestrator.claimRun, {
+      runToken: args.runToken,
+      threadId: args.threadId
+    })
+    if (!claimed.ok) return
 
     try {
       await compactIfNeeded({ ctx, threadId: args.threadId })
-      const contextPrefix = await buildContextPrefix({ ctx, threadId: args.threadId })
+      const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
+        threadId: args.threadId
+      })
+      const systemPrefix = state?.compactionSummary
+        ? `Compaction summary:\n${state.compactionSummary}`
+        : undefined
 
-      const result = await orchestrator.streamText(
+      const result = await runAgentStream({
+        agent: orchestrator,
         ctx,
-        { threadId: args.threadId },
-        { promptMessageId: args.promptMessageId },
-        {
-          contextPrefix,
-          saveStreamDeltas: { chunking: 'word', throttleMs: 100 }
-        }
-      )
+        promptMessageId: args.promptMessageId,
+        systemPrefix,
+        threadId: args.threadId
+      })
 
       await result.consumeStream()
       await postTurnAudit({
@@ -1269,7 +1363,10 @@ const runOrchestrator = internalAction({
           result.finishReason === 'tool-call-user-confirmation' || result.finishReason === 'tool-call-task-wait'
       })
     } finally {
-      await ctx.runMutation(internal.orchestrator.finishRun, { threadId: args.threadId })
+      await ctx.runMutation(internal.orchestrator.finishRun, {
+        runToken: args.runToken,
+        threadId: args.threadId
+      })
     }
   }
 })
@@ -1614,24 +1711,36 @@ Implementation:
 
 ## Environment Variables
 
-### Frontend Env (`apps/agent`)
+### Frontend env (`apps/agent/.env.local`)
 
 | Variable | Dev | Test | Prod | Notes |
 |---|---|---|---|---|
 | `NEXT_PUBLIC_CONVEX_URL` | required | required | required | Agent app Convex URL, separate from demo apps |
 
-### Backend Env (`packages/be-agent`, set with `convex env set`)
+### Backend env (`packages/be-agent`, set with `convex env set`)
 
 | Variable | Dev | Test | Prod | Notes |
 |---|---|---|---|---|
 | `CONVEX_DEPLOYMENT` | local deployment | test deployment | production deployment | Convex target for dev/deploy scripts |
+| `AUTH_SECRET` | required | required | required | Auth.js encryption/signing secret handled server-side in Convex auth |
+| `AUTH_GOOGLE_ID` | required when Google auth enabled | required | required | OAuth client id used by `@convex-dev/auth` backend |
+| `AUTH_GOOGLE_SECRET` | required when Google auth enabled | required | required | OAuth client secret used by `@convex-dev/auth` backend |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | optional if Vertex used | mock or test key | required unless Vertex used | Gemini direct API path |
 | `GOOGLE_VERTEX_PROJECT` | optional | optional | optional | Vertex path |
 | `GOOGLE_VERTEX_LOCATION` | optional | optional | optional | Vertex path |
 | `GOOGLE_APPLICATION_CREDENTIALS` | optional | optional | optional | Vertex auth file |
-| `AUTH_GOOGLE_ID` | required when Google auth enabled | required | required | Auth.js Google client id |
-| `AUTH_GOOGLE_SECRET` | required when Google auth enabled | required | required | Auth.js Google client secret |
-| `AUTH_SECRET` | required | required | required | Auth.js encryption/signing secret |
+
+### Shared (both frontend and backend pipelines)
+
+| Variable | Scope | Notes |
+|---|---|---|
+| `CONVEX_DEPLOYMENT` | turbo pass-through + backend runtime | Required for backend commands and deploy target wiring |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | turbo pass-through + backend runtime | Required when not using Vertex |
+| `GOOGLE_VERTEX_PROJECT` | turbo pass-through + backend runtime | Optional Vertex path |
+| `GOOGLE_VERTEX_LOCATION` | turbo pass-through + backend runtime | Optional Vertex path |
+| `GOOGLE_APPLICATION_CREDENTIALS` | turbo pass-through + backend runtime | Optional Vertex credential path |
+
+Auth secrets stay backend-only (`convex env set`) and are not frontend env vars.
 
 ---
 
@@ -1810,6 +1919,18 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
 
 ```json
 {
+  "type": "module",
+  "scripts": {
+    "build": "bun with-env next build --turbo",
+    "clean": "git clean -xdf .cache .next .turbo node_modules",
+    "dev": "PORT=3004 bun with-env next dev --turbo",
+    "lint": "eslint",
+    "start": "bun with-env next start",
+    "test": "CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",
+    "test:e2e": "CONVEX_TEST_MODE=true bun --cwd ../../packages/be-agent with-env convex dev --once && bun with-env playwright test --reporter=list",
+    "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e ../../.env --"
+  },
   "dependencies": {
     "@ai-sdk/react": "latest",
     "@convex-dev/agent": "latest",
@@ -1842,6 +1963,9 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
 
 ```json
 "globalPassThroughEnv": [
+  "AUTH_GOOGLE_ID",
+  "AUTH_GOOGLE_SECRET",
+  "AUTH_SECRET",
   "CONVEX_DEPLOYMENT",
   "GOOGLE_APPLICATION_CREDENTIALS",
   "GOOGLE_GENERATIVE_AI_API_KEY",
