@@ -55,7 +55,7 @@ flowchart LR
 
 - Resolve session with `useQuery(api.sessions.getSession, { sessionId: id })`.
 - Submit messages with `useMutation(api.sessions.submitMessage)`.
-- Render chat timeline from `useQuery(api.messages.list, { threadId })`.
+- Render chat timeline from `useQuery(api.messages.listMessages, { threadId })`.
 
 ### `/settings` MCP Management
 
@@ -69,7 +69,7 @@ flowchart LR
 
 ## DIY Streaming UI (Standard Convex Hooks)
 
-The frontend streaming model is based on reactive query updates from `api.messages.list`:
+The frontend streaming model is based on reactive query updates from `api.messages.listMessages`:
 
 - Query returns ordered messages for the thread.
 - While generation is in progress, the latest assistant message is partial:
@@ -84,7 +84,7 @@ The frontend streaming model is based on reactive query updates from `api.messag
 
 ```mermaid
 flowchart TD
-  Q["useQuery(api.messages.list, { threadId })"] --> M{"message.isComplete?"}
+  Q["useQuery(api.messages.listMessages, { threadId })"] --> M{"message.isComplete?"}
   M -- "false" --> S["Render message.streamingContent"]
   M -- "true" --> C["Render message.content"]
 ```
@@ -95,7 +95,7 @@ flowchart TD
 
 - `chat-log.tsx`
   - Scrollable transcript container.
-  - Reads thread messages from `useQuery(api.messages.list, { threadId })`.
+  - Reads thread messages from `useQuery(api.messages.listMessages, { threadId })`.
   - Renders `MessageRow` entries in stable order.
 - `message-row.tsx`
   - Renders role, timestamp, and body.
@@ -105,7 +105,8 @@ flowchart TD
   - Supports streaming updates and keyboard toggling.
 - `tool-call-card.tsx`
   - Displays tool name, status, inputs/outputs, and error payloads.
-  - Status mapping: queued/running/completed/error.
+  - Status enum from backend: pending/success/error.
+  - Frontend maps these to display labels: `pending` -> 'Running', `success` -> 'Completed', `error` -> 'Error'.
 - `source-card.tsx`
   - Displays source title, URL, snippet.
   - External links open in new tab.
@@ -137,7 +138,7 @@ flowchart LR
   SL --> A2["api.sessions.createSession"]
   CP["Chat page"] --> A3["api.sessions.getSession"]
   CP --> A4["api.sessions.submitMessage"]
-  CL["chat-log"] --> A5["api.messages.list"]
+  CL["chat-log"] --> A5["api.messages.listMessages"]
   TP["task-panel"] --> A6["api.tasks.listTasks"]
   ToP["todo-panel"] --> A7["api.todos.listTodos"]
   TUP["token-usage-panel"] --> A8["api.tokenUsage.getTokenUsage"]

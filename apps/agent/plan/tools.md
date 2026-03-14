@@ -227,7 +227,9 @@ flowchart LR
 - `todoWrite` and `todoRead` provide explicit todo persistence and retrieval over `todos` table CRUD.
 - `webSearch` is a dedicated grounding bridge action with normalized response contract.
 
-### Undefined Internal References (to be implemented)
+### Internal Function Specifications (Phase 2-3 Implementation)
+
+These internal functions are fully specified by their name, arguments, and description. Concrete implementations are produced during Phase 2 (Core Runtime) and Phase 3 (Tools & Delegation). They are listed here as the contract that tool implementations depend on.
 
 - `internal.tasks.getOwnedTaskStatusInternal({ taskId })` - Returns task status/description for the owning session. Used by `taskStatus` tool.
 - `internal.tasks.getOwnedTaskOutput({ taskId })` - Returns full task result. Used by `taskOutput` tool.

@@ -52,7 +52,7 @@ graph TB
     API -->|enqueue run| ORCH
     ORCH -->|spawn tasks| WORK
     ORCH -->|streamText| GEMINI
-    WORK -->|streamText| GEMINI
+    WORK -->|generateText| GEMINI
     ORCH -->|callTool| MCP_S
     WORK -->|callTool| MCP_S
     ORCH -->|read/write| DB
@@ -89,6 +89,8 @@ sequenceDiagram
     O->>Q: finishRun()
     FE-->>U: Real-time updates via useQuery
 ```
+
+Workers use `generateText` (single-shot, non-streaming) since worker output is retrieved via `taskOutput` tool, not streamed to the UI in real-time.
 
 ## Capabilities
 

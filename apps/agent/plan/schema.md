@@ -36,7 +36,6 @@ The backend keeps noboil schema conventions:
   - `createdAt`
   - `sessionId` (optional)
   - `metadata` (optional JSON)
-  - `tokenUsage` (optional usage payload)
 - Canonical ordering key: `createdAt` (Convex `_creationTime` or explicit `Date.now()`).
 - Worker-thread messages omit `sessionId` - ownership resolves through `tasks.threadId -> tasks.sessionId`. Orchestrator-thread messages always include `sessionId`.
 - Indexes:
@@ -138,7 +137,6 @@ erDiagram
       number createdAt
       id sessionId
       json metadata
-      json tokenUsage
     }
 
     TASKS {

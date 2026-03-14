@@ -143,9 +143,7 @@ If continue is allowed:
 1. Save system reminder message in `messages` table.
 2. Call `enqueueRun({ reason: 'todo_continuation', incrementStreak: true, promptMessageId: reminderMessageId })`.
 
-`postTurnAudit` requires `runToken` and executes all side effects (reminder writes, enqueue calls, streak mutations) inside a single token-fenced mutation that verifies `activeRunToken === runToken` before proceeding. If the token has been rotated by `timeoutStaleRuns`, the entire audit is a no-op.
-
-Streak resets are performed inside that same token-fenced `postTurnAudit` mutation, not as a standalone mutation. This prevents a concurrent `enqueueRun` from incrementing the streak between reset and the next enqueue.
+Implementation: `postTurnAuditFenced` is a single `internalMutation` that receives `{ runToken, threadId, turnRequestedInput }` and executes ALL side effects atomically: (1) verify `activeRunToken === runToken`, (2) compute stop/continue decision, (3) reset streak if stopping, (4) write reminder if needed, (5) enqueue continuation if needed, (6) update `completionNotifiedAt` if applicable. The standalone `resetAutoContinueStreak` function is NOT called separately - it is inlined into this fenced mutation.
 
 ```mermaid
 flowchart TD
@@ -511,9 +509,12 @@ const runOrchestratorStream = async ({
 
 System reminders are saved as `messages` rows and their inserted id is reused as next prompt anchor.
 
+All message inserts include `createdAt: Date.now()`. This is the canonical ordering field used by `by_thread_createdAt` index.
+
 ```typescript
 const reminderMessageId = await ctx.db.insert('messages', {
   content: reminderText,
+  createdAt: Date.now(),
   isComplete: true,
   role: 'system',
   sessionId,
@@ -534,50 +535,21 @@ There is no hook system; continuation enforcement runs in orchestrator action af
 
 ```typescript
 const postTurnAudit = async ({ ctx, runToken, threadId, turnRequestedInput }) => {
-  const todos = await ctx.runQuery(internal.todos.listOwnedByThread, {
-    threadId
-  })
-  const active = await ctx.runQuery(internal.tasks.countActiveByThread, {
-    threadId
-  })
-  const runState = await ctx.runQuery(
-    internal.orchestrator.getRunStateByThreadId,
-    { threadId }
-  )
-  const streak = runState?.autoContinueStreak ?? 0
   const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, {
     threadId
   })
   if (session?.status === 'archived') return
 
-  let incomplete = 0
-  for (const t of todos.todos) {
-    if (t.status !== 'completed' && t.status !== 'cancelled') incomplete += 1
-  }
-
   const audited = await ctx.runMutation(
     internal.orchestrator.postTurnAuditFenced,
     {
       runToken,
-      sessionId: session?._id,
-      streak,
       threadId,
-      todos: todos.todos,
-      turnRequestedInput,
-      activeTaskCount: active
+      turnRequestedInput
     }
   )
   if (!audited.ok) return { shouldContinue: false }
-  if (!audited.shouldContinue) return { shouldContinue: false }
-
-  const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
-    incrementStreak: true,
-    promptMessageId: audited.reminderMessageId,
-    reason: 'todo_continuation',
-    threadId
-  })
-  if (!enqueued.ok) return { shouldContinue: false }
-  return { shouldContinue: true }
+  return { shouldContinue: audited.shouldContinue }
 }
 ```
 
@@ -1172,6 +1144,7 @@ const submitMessage = mutation({
 
     const messageId = await ctx.db.insert('messages', {
       content: args.content,
+      createdAt: Date.now(),
       isComplete: true,
       role: 'user',
       sessionId: session._id,

@@ -233,6 +233,11 @@ crons.interval(
   internal.staleTaskCleanup.timeoutStaleRuns
 )
 crons.interval(
+  'cleanup stale messages',
+  { minutes: 5 },
+  internal.crons.cleanupStaleMessages
+)
+crons.interval(
   'archive idle sessions',
   { hours: 1 },
   internal.retention.archiveIdleSessions
@@ -245,6 +250,10 @@ crons.cron(
 
 export default crons
 ```
+
+Schedule entry contract:
+
+`{ handler: internal.crons.cleanupStaleMessages, schedule: { type: 'interval', ms: 300_000 } },`
 
 ### `packages/be-agent/env.ts`
 
