@@ -163,7 +163,7 @@ agents.runOrchestrator action
   -> streamText with function tools only, maxSteps=25
   -> await consumeStream
   -> post-turn audit:
-        - read todos + running tasks
+        - read todos + active tasks (`running` and `pending`)
         - if incomplete todos and no active background work and no user-input request
           and autoContinueStreak < 5
           then save reminder + enqueue one continuation
@@ -250,7 +250,8 @@ export default defineSchema({
   session: ownedTable(owned.session)
     .index('by_user_status', ['userId', 'status'])
     .index('by_user_threadId', ['userId', 'threadId'])
-    .index('by_threadId', ['threadId']),
+    .index('by_threadId', ['threadId'])
+    .index('by_status', ['status']),
   tasks: defineTable({
     agent: v.string(),
     completedAt: v.optional(v.number()),
@@ -318,7 +319,8 @@ export default defineSchema({
     userId: v.string()
   })
     .index('by_user', ['userId'])
-    .index('by_user_name', ['userId', 'name']),
+    .index('by_user_name', ['userId', 'name'])
+    .index('by_user_enabled', ['userId', 'isEnabled']),
   tokenUsage: defineTable({
     agentName: v.optional(v.string()),
     promptTokens: v.number(),
@@ -338,8 +340,9 @@ export default defineSchema({
     compactionLock: v.optional(v.string()),
     compactionSummary: v.optional(v.string()),
     lastError: v.optional(v.string()),
+    queuedPriority: v.optional(v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation'))),
     queuedPromptMessageId: v.optional(v.string()),
-    queuedReason: v.optional(v.string()),
+    queuedReason: v.optional(v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation'))),
     runClaimed: v.optional(v.boolean()),
     status: v.union(v.literal('idle'), v.literal('active')),
     threadId: v.string()
@@ -472,6 +475,8 @@ const worker = new Agent(components.agent, {
 
 ### Usage Handler and Canonical Token Recording
 
+Note: `@convex-dev/agent`'s `UsageHandler` passes `usage: LanguageModelUsage` which uses `promptTokens`/`completionTokens`/`totalTokens` field names from the AI SDK `LanguageModelUsage` type.
+
 ```typescript
 const usageHandlerByThread = async (ctx, { model, provider, threadId, usage }) => {
   await ctx.runMutation(internal.tokenUsage.recordModelUsage, {
@@ -579,7 +584,8 @@ const delegateTool = createTool({
       description: input.description,
       isBackground: input.isBackground,
       parentThreadId: ctx.threadId,
-      prompt: input.prompt
+      prompt: input.prompt,
+      userId: ctx.userId
     })
     return {
       status: 'pending',
@@ -638,7 +644,7 @@ const todoReadTool = createTool({
 const taskStatusTool = createTool({
   description: 'Check progress for a background task.',
   execute: async (ctx, { taskId }) => {
-    return await ctx.runQuery(internal.tasks.getOwnedTaskStatus, {
+    return await ctx.runQuery(internal.tasks.getOwnedTaskStatusInternal, {
       requesterThreadId: ctx.threadId,
       taskId
     })
@@ -745,10 +751,15 @@ const spawnTask = internalMutation({
     description: v.string(),
     isBackground: v.boolean(),
     parentThreadId: v.string(),
-    prompt: v.string()
+    prompt: v.string(),
+    userId: v.string()
   },
   handler: async (ctx, args) => {
-    const session = await resolveOwnedSessionByThread({ ctx, threadId: args.parentThreadId })
+    const session = await resolveOwnedSessionByThread({
+      ctx,
+      threadId: args.parentThreadId,
+      userId: args.userId
+    })
     const { threadId } = await worker.createThread(ctx, {
       title: args.description,
       userId: session.userId
@@ -806,7 +817,11 @@ const completeTask = internalMutation({
     if (!task || task.status !== 'running') return { ok: false }
     if (task.completionNotifiedAt) return { ok: false }
 
-    const reminderText = buildTaskCompletionReminder({ taskId: String(taskId) })
+    const reminderText = buildTaskCompletionReminder({
+      description: task.description,
+      result,
+      taskId: String(taskId)
+    })
     const saved = await orchestrator.saveMessage(ctx, {
       message: { content: reminderText, role: 'system' },
       skipEmbeddings: true,
@@ -820,6 +835,11 @@ const completeTask = internalMutation({
       result,
       status: 'completed'
     })
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_threadId', q => q.eq('threadId', task.parentThreadId))
+      .first()
+    if (session) await ctx.db.patch(session._id, { lastActivityAt: Date.now() })
     return { ok: true, reminderMessageId: saved.messageId }
   }
 })
@@ -834,6 +854,11 @@ const failTask = internalMutation({
       retryCount: task.retryCount + 1,
       status: 'error'
     })
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_threadId', q => q.eq('threadId', task.parentThreadId))
+      .first()
+    if (session) await ctx.db.patch(session._id, { lastActivityAt: Date.now() })
     return { ok: true }
   }
 })
@@ -872,7 +897,7 @@ Reminder insertion and notification marking are unified in `completeTask` so com
 
 ```typescript
 const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
-  const task = await ctx.db.get(taskId)
+  const task = await ctx.runQuery(internal.tasks.getById, { taskId })
   if (!task || !task.completionReminderMessageId) return
   const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
     threadId: task.parentThreadId
@@ -880,14 +905,16 @@ const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
   if (state && state.autoContinueStreak >= 5) return
   const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: task.parentThreadId })
   if (latest !== task.completionReminderMessageId) return
-  await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
-    threadId: task.parentThreadId
-  })
-  await ctx.runMutation(internal.orchestrator.enqueueRun, {
+  const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
     promptMessageId: task.completionReminderMessageId,
     reason: 'task_completion',
     threadId: task.parentThreadId
   })
+  if (!enqueued.ok) return
+  const incremented = await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
+    threadId: task.parentThreadId
+  })
+  if (!incremented.ok) return
 }
 ```
 
@@ -943,7 +970,7 @@ There is no hook system in Convex Agent; continuation enforcement runs in orches
 ```typescript
 const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
   const todos = await ctx.runQuery(internal.todos.listOwnedByThread, { threadId })
-  const running = await ctx.runQuery(internal.tasks.countRunningByThread, { threadId })
+  const active = await ctx.runQuery(internal.tasks.countActiveByThread, { threadId })
   const runState = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, { threadId })
   const streak = runState?.autoContinueStreak ?? 0
 
@@ -956,7 +983,7 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
     await ctx.runMutation(internal.orchestrator.resetAutoContinueStreak, { threadId })
     return { shouldContinue: false }
   }
-  if (running > 0) return { shouldContinue: false }
+  if (active > 0) return { shouldContinue: false }
   if (turnRequestedInput) {
     await ctx.runMutation(internal.orchestrator.resetAutoContinueStreak, { threadId })
     return { shouldContinue: false }
@@ -969,12 +996,14 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
     skipEmbeddings: true,
     threadId
   })
-  await ctx.runMutation(internal.orchestrator.enqueueRun, {
+  const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
     promptMessageId: saved.messageId,
     reason: 'todo_continuation',
     threadId
   })
-  await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, { threadId })
+  if (!enqueued.ok) return { shouldContinue: false }
+  const incremented = await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, { threadId })
+  if (!incremented.ok) return { shouldContinue: false }
   return { shouldContinue: true }
 }
 ```
@@ -1000,7 +1029,7 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
 const enqueueRun = internalMutation({
   args: {
     promptMessageId: v.optional(v.string()),
-    reason: v.string(),
+    reason: v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation')),
     threadId: v.string()
   },
   handler: async (ctx, args) => {
@@ -1019,24 +1048,26 @@ const enqueueRun = internalMutation({
       })
       await ctx.db.patch(state._id, {
         activeRunToken: runToken,
+        queuedPriority: undefined,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
         runClaimed: false,
         status: 'active'
       })
-      return { scheduled: true }
+      return { ok: true, scheduled: true }
     }
 
     const priority = { task_completion: 1, todo_continuation: 0, user_message: 2 }
-    const queuedPriority = priority[state.queuedReason as keyof typeof priority] ?? -1
-    const incomingPriority = priority[args.reason as keyof typeof priority] ?? -1
-    if (incomingPriority < queuedPriority) return { scheduled: false }
+    const queuedPriority = priority[state.queuedPriority ?? state.queuedReason ?? 'todo_continuation']
+    const incomingPriority = priority[args.reason]
+    if (incomingPriority < queuedPriority) return { ok: false, reason: 'lower_priority' }
 
     await ctx.db.patch(state._id, {
+      queuedPriority: args.reason,
       queuedPromptMessageId: args.promptMessageId,
       queuedReason: args.reason
     })
-    return { scheduled: false }
+    return { ok: true, scheduled: false }
   }
 })
 
@@ -1067,6 +1098,7 @@ const finishRun = internalMutation({
       })
       await ctx.db.patch(state._id, {
         activeRunToken: nextRunToken,
+        queuedPriority: undefined,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
         runClaimed: false
@@ -1103,6 +1135,8 @@ v1 intentionally favors deterministic behavior and simpler recovery.
 
 ## Helper Functions
 
+`threadRunState` is treated as a singleton per thread. `by_threadId` is a unique application-level invariant, enforced by querying with `.unique()` and failing fast if duplicates ever appear. Under Convex serializable transactions, concurrent first-callers for the same `threadId` are serialized: one insert wins and retried callers read the existing row.
+
 ```typescript
 const ensureRunState = async ({ ctx, threadId }) => {
   const existing = await ctx.db
@@ -1110,19 +1144,25 @@ const ensureRunState = async ({ ctx, threadId }) => {
     .withIndex('by_threadId', q => q.eq('threadId', threadId))
     .unique()
   if (existing) return existing
-  const id = await ctx.db.insert('threadRunState', {
-    autoContinueStreak: 0,
-    status: 'idle',
-    threadId
-  })
-  const created = await ctx.db.get(id)
-  return created
+  try {
+    const id = await ctx.db.insert('threadRunState', {
+      autoContinueStreak: 0,
+      status: 'idle',
+      threadId
+    })
+    return await ctx.db.get(id)
+  } catch (error) {
+    return await ctx.db
+      .query('threadRunState')
+      .withIndex('by_threadId', q => q.eq('threadId', threadId))
+      .unique()
+  }
 }
 
-const resolveOwnedSessionByThread = async ({ ctx, threadId }) => {
+const resolveOwnedSessionByThread = async ({ ctx, threadId, userId }) => {
   const session = await ctx.db
     .query('session')
-    .withIndex('by_user_threadId', q => q.eq('userId', ctx.userId).eq('threadId', threadId))
+    .withIndex('by_user_threadId', q => q.eq('userId', userId).eq('threadId', threadId))
     .unique()
   if (!session) {
     const task = await ctx.db
@@ -1131,7 +1171,7 @@ const resolveOwnedSessionByThread = async ({ ctx, threadId }) => {
       .unique()
     if (!task) throw new Error('session_not_found')
     const ownerSession = await ctx.db.get(task.sessionId)
-    if (!ownerSession || ownerSession.userId !== ctx.userId) throw new Error('session_not_found')
+    if (!ownerSession || ownerSession.userId !== userId) throw new Error('session_not_found')
     return ownerSession
   }
   return session
@@ -1164,11 +1204,14 @@ const normalizeGrounding = result => {
   const text = result.text ?? ''
   const sources = []
   const metadata = result.providerMetadata?.google
-  const chunks = metadata?.groundingChunks ?? metadata?.searchEntryPoint?.renderedContent ? [] : []
   if (metadata?.groundingChunks) {
     for (const chunk of metadata.groundingChunks) {
       if (chunk.web) {
-        sources.push({ title: chunk.web.title ?? '', url: chunk.web.uri ?? '' })
+        sources.push({
+          snippet: chunk.web.snippet ?? '',
+          title: chunk.web.title ?? '',
+          url: chunk.web.uri ?? ''
+        })
       }
     }
   }
@@ -1181,7 +1224,7 @@ const summarizeGroups = async ({ existingSummary, groups }) => {
   const content = []
   if (existingSummary) content.push(`Previous summary:\n${existingSummary}`)
   for (const g of groups) {
-    content.push(`Messages ${g.startMessageId}..${g.endMessageId}:\n${g.text}`)
+    content.push(`Messages ${g.startId}..${g.endId}:\n${g.text}`)
   }
   const result = await generateText({
     model,
@@ -1232,7 +1275,7 @@ const mockModel = {
   }),
   modelId: 'mock-model',
   provider: 'mock',
-  specificationVersion: 'v1'
+  specificationVersion: 'v2'
 } as unknown as LanguageModel
 ```
 
@@ -1293,6 +1336,36 @@ const getByThreadIdInternal = internalQuery({
       .first()
   }
 })
+
+const getById = internalQuery({
+  args: { taskId: v.id('tasks') },
+  handler: async (ctx, { taskId }) => ctx.db.get(taskId)
+})
+
+const scheduleRetry = internalMutation({
+  args: { taskId: v.id('tasks') },
+  handler: async (ctx, { taskId }) => {
+    const task = await ctx.db.get(taskId)
+    if (!task || task.status !== 'running') return
+    const retryCount = task.retryCount + 1
+    await ctx.db.patch(taskId, { retryCount, status: 'pending' })
+    const delay = Math.min(1000 * Math.pow(2, retryCount), 30_000)
+    await ctx.scheduler.runAfter(delay, internal.agents.runWorker, {
+      prompt: task.description,
+      taskId,
+      threadId: task.threadId
+    })
+  }
+})
+
+const isTransientError = msg => {
+  const transient = ['ECONNRESET', 'ETIMEDOUT', 'rate_limit', '503', '429', 'overloaded']
+  const lower = msg.toLowerCase()
+  for (const t of transient) {
+    if (lower.includes(t.toLowerCase())) return true
+  }
+  return false
+}
 ```
 
 ### `tasks.getByThreadIdInternal`
@@ -1309,19 +1382,22 @@ const getByThreadIdInternal = internalQuery({
 })
 ```
 
-### `tasks.countRunningByThread`
+### `tasks.countActiveByThread`
 
 ```typescript
-const countRunningByThread = internalQuery({
+const countActiveByThread = internalQuery({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
-    const running = await ctx.db
+    const tasks = await ctx.db
       .query('tasks')
-      .withIndex('by_parentThreadId_status', q =>
-        q.eq('parentThreadId', threadId).eq('status', 'running')
-      )
+      .withIndex('by_parentThreadId_status')
       .collect()
-    return running.length
+    let count = 0
+    for (const t of tasks) {
+      if (t.parentThreadId !== threadId) continue
+      if (t.status === 'running' || t.status === 'pending') count += 1
+    }
+    return count
   }
 })
 ```
@@ -1432,7 +1508,9 @@ const incrementAutoContinueStreak = internalMutation({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
+    if (state.autoContinueStreak >= 5) return { ok: false, reason: 'streak_cap' }
     await ctx.db.patch(state._id, { autoContinueStreak: state.autoContinueStreak + 1 })
+    return { ok: true }
   }
 })
 ```
@@ -1457,7 +1535,11 @@ const getRunStateByThreadId = internalQuery({
 const getContextSize = internalQuery({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
-    const messages = await listMessages(ctx, components.agent, { threadId })
+    const result = await listUIMessages(ctx, components.agent, {
+      paginationOpts: { cursor: null, numItems: 500 },
+      threadId
+    })
+    const messages = result.page
     let charCount = 0
     for (const m of messages) {
       charCount += JSON.stringify(m).length
@@ -1473,8 +1555,11 @@ const getContextSize = internalQuery({
 const getLatestMessageId = internalQuery({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
-    const messages = await listMessages(ctx, components.agent, { threadId, limit: 1, order: 'desc' })
-    return messages.length > 0 ? messages[0].id : null
+    const result = await listUIMessages(ctx, components.agent, {
+      paginationOpts: { cursor: null, numItems: 1 },
+      threadId
+    })
+    return result.page.length > 0 ? result.page[0]._id : null
   }
 })
 ```
@@ -1582,16 +1667,23 @@ const runWorker = internalAction({
         await maybeContinueOrchestrator({ ctx, taskId: args.taskId })
       }
     } catch (error) {
-      await ctx.runMutation(internal.tasks.failTask, {
-        errorMessage: String(error),
-        taskId: args.taskId
-      })
+      const task = await ctx.runQuery(internal.tasks.getById, { taskId: args.taskId })
+      if (task && task.retryCount < 3 && isTransientError(String(error))) {
+        await ctx.runMutation(internal.tasks.scheduleRetry, { taskId: args.taskId })
+      } else {
+        await ctx.runMutation(internal.tasks.failTask, {
+          errorMessage: String(error),
+          taskId: args.taskId
+        })
+      }
     } finally {
       clearInterval(heartbeatInterval)
     }
   }
 })
 ```
+
+`consumeStream()` must complete before reading `result.text`.
 
 ### `compaction.listClosedPrefixGroups`
 
@@ -1601,29 +1693,52 @@ Returns compactable message groups from the thread prefix. A "closed prefix grou
 const listClosedPrefixGroups = internalQuery({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
-    const messages = await listMessages(ctx, components.agent, { threadId })
+    const result = await listUIMessages(ctx, components.agent, {
+      paginationOpts: { cursor: null, numItems: 500 },
+      threadId
+    })
+    const messages = result.page
     if (messages.length < 10) return []
 
     const cutoff = Math.floor(messages.length * 0.6)
-    const prefix = messages.slice(0, cutoff)
+    let safeEnd = cutoff - 1
 
-    let endIdx = prefix.length - 1
-    while (endIdx >= 0) {
-      const msg = prefix[endIdx]
+    while (safeEnd >= 0) {
+      const msg = messages[safeEnd]
+      const hasToolCalls = msg.parts?.some(p => p.type === 'tool-invocation')
+      if (hasToolCalls) {
+        const nextMsg = messages[safeEnd + 1]
+        const nextHasToolResult = nextMsg?.parts?.some(
+          p => p.type === 'tool-invocation' && p.state === 'result'
+        )
+        if (!nextHasToolResult) {
+          safeEnd -= 1
+          continue
+        }
+      }
       if (msg.role === 'tool') {
-        endIdx -= 1
+        safeEnd -= 1
         continue
       }
       break
     }
-    if (endIdx < 0) return []
+    if (safeEnd < 1) return []
 
-    const group = {
-      endMessageId: prefix[endIdx].id,
-      startMessageId: prefix[0].id,
-      text: prefix.slice(0, endIdx + 1).map(m => `[${m.role}]: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`).join('\n')
-    }
-    return [group]
+    const text = messages
+      .slice(0, safeEnd + 1)
+      .map(m => {
+        const textParts = m.parts?.filter(p => p.type === 'text').map(p => p.text) ?? []
+        return `[${m.role}]: ${textParts.join(' ')}`
+      })
+      .join('\n')
+
+    return [
+      {
+        endId: messages[safeEnd]._id,
+        startId: messages[0]._id,
+        text
+      }
+    ]
   }
 })
 ```
@@ -1646,19 +1761,32 @@ Uses agent component APIs to delete messages from a thread. Runs as an action si
 
 ```typescript
 const deleteMessageRange = internalAction({
-  args: { endMessageId: v.string(), startMessageId: v.string(), threadId: v.string() },
-  handler: async (ctx, { endMessageId, startMessageId, threadId }) => {
-    const messages = await listMessages(ctx, components.agent, { threadId })
+  args: { endId: v.string(), startId: v.string(), threadId: v.string() },
+  handler: async (ctx, { endId, startId, threadId }) => {
+    const result = await listUIMessages(ctx, components.agent, {
+      paginationOpts: { cursor: null, numItems: 500 },
+      threadId
+    })
     let collecting = false
     const toDelete = []
-    for (const m of messages) {
-      if (m.id === startMessageId) collecting = true
-      if (collecting) toDelete.push(m.id)
-      if (m.id === endMessageId) break
+    for (const m of result.page) {
+      if (String(m._id) === startId) collecting = true
+      if (collecting) toDelete.push(String(m._id))
+      if (String(m._id) === endId) break
     }
-    for (const id of toDelete) {
-      await deleteMessage(ctx, components.agent, { messageId: id, threadId })
+    for (const messageId of toDelete) {
+      try {
+        await ctx.runMutation(internal.compaction.deleteSingleMessage, { messageId, threadId })
+      } catch (error) {
+      }
     }
+  }
+})
+
+const deleteSingleMessage = internalMutation({
+  args: { messageId: v.string(), threadId: v.string() },
+  handler: async (ctx, { messageId }) => {
+    await ctx.db.delete(messageId as Id<'messages'>)
   }
 })
 ```
@@ -1750,10 +1878,21 @@ const callToolOwned = internalAction({
     const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, {
       threadId: args.requesterThreadId
     })
-    if (!session) return { error: 'session_not_found', ok: false }
+    let resolvedUserId
+    if (session) {
+      resolvedUserId = session.userId
+    } else {
+      const task = await ctx.runQuery(internal.tasks.getByThreadIdInternal, {
+        threadId: args.requesterThreadId
+      })
+      if (!task) return { error: 'session_not_found', ok: false }
+      const ownerSession = await ctx.db.get(task.sessionId)
+      if (!ownerSession) return { error: 'session_not_found', ok: false }
+      resolvedUserId = ownerSession.userId
+    }
     const server = await ctx.runQuery(internal.mcp.getOwnedServerByName, {
       name: args.serverName,
-      userId: session.userId
+      userId: resolvedUserId
     })
     if (!server) return { error: 'server_not_found', ok: false }
 
@@ -1777,7 +1916,7 @@ const callToolOwned = internalAction({
 
         await ctx.runMutation(internal.mcp.refreshToolCache, {
           serverId: server._id,
-          userId: session.userId
+          userId: resolvedUserId
         })
 
         try {
@@ -1808,10 +1947,21 @@ const discoverToolsOwned = internalAction({
     const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, {
       threadId: requesterThreadId
     })
-    if (!session) return { tools: [] }
+    let resolvedUserId
+    if (session) {
+      resolvedUserId = session.userId
+    } else {
+      const task = await ctx.runQuery(internal.tasks.getByThreadIdInternal, {
+        threadId: requesterThreadId
+      })
+      if (!task) return { tools: [] }
+      const ownerSession = await ctx.db.get(task.sessionId)
+      if (!ownerSession) return { tools: [] }
+      resolvedUserId = ownerSession.userId
+    }
 
     const servers = await ctx.runQuery(internal.mcp.listEnabledServersByUser, {
-      userId: session.userId
+      userId: resolvedUserId
     })
 
     const tools = []
@@ -1855,8 +2005,8 @@ No trigger from cumulative token usage totals.
 
 1. Acquire compaction lock.
 2. Build summary of compactable prefix plus existing summary context.
-3. Save summary into `threadRunState.compactionSummary`.
-4. Delete old message range via agent message-range APIs.
+3. Delete old message range via agent message-range APIs.
+4. Save summary into `threadRunState.compactionSummary`.
 5. Inject summary as a system prefix message in the next generation call.
 6. Release compaction lock.
 
@@ -1885,13 +2035,13 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
       existingSummary: state?.compactionSummary,
       groups
     })
-    await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
-      compactionSummary: summary,
+    await ctx.runAction(internal.compaction.deleteMessageRange, {
+      endId: groups[groups.length - 1].endId,
+      startId: groups[0].startId,
       threadId
     })
-    await ctx.runAction(internal.compaction.deleteMessageRange, {
-      endMessageId: groups[groups.length - 1].endMessageId,
-      startMessageId: groups[0].startMessageId,
+    await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
+      compactionSummary: summary,
       threadId
     })
   } finally {
@@ -2036,9 +2186,24 @@ const listMessages = query({
     threadId: v.string()
   },
   handler: async (ctx, args) => {
-    const page = await listUIMessages(ctx, components.agent, args)
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('unauthenticated')
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_user_threadId', q => q.eq('userId', userId).eq('threadId', args.threadId))
+      .unique()
+    if (!session) {
+      const task = await ctx.db
+        .query('tasks')
+        .withIndex('by_threadId', q => q.eq('threadId', args.threadId))
+        .unique()
+      if (!task) throw new Error('thread_not_found')
+      const ownerSession = await ctx.db.get(task.sessionId)
+      if (!ownerSession || ownerSession.userId !== userId) throw new Error('thread_not_found')
+    }
+    const paginated = await listUIMessages(ctx, components.agent, args)
     const streams = await syncStreams(ctx, components.agent, args)
-    return { ...page, streams }
+    return { ...paginated, streams }
   }
 })
 ```
@@ -2125,7 +2290,7 @@ apps/agent/
 - `PromptInputTextarea` placeholder is `Send a message...`.
 - `PromptInputSubmit` supports ready and submitted states.
 - On submit, call `saveUserMessage` mutation, then call `enqueueRun` mutation.
-- Composer is disabled while orchestrator is active by checking `threadRunState.status`.
+- Composer stays enabled at all times. When user submits while orchestrator is active, the message is saved and queued with `user_message` priority (highest). Queue delivery handles execution without blocking typing.
 
 ### Login Page (`src/app/login/page.tsx`)
 
@@ -2269,7 +2434,7 @@ export default app
 
 ## Configuration Files
 
-### `packages/be-agent/auth.config.ts`
+### `packages/be-agent/convex/auth.ts`
 
 ```typescript
 import Google from '@auth/core/providers/google'
@@ -2280,6 +2445,17 @@ const { auth, isAuthenticated, signIn, signOut, store } = convexAuth({
 })
 
 export { auth, isAuthenticated, signIn, signOut, store }
+```
+
+### `packages/be-agent/convex/auth.config.ts`
+
+```typescript
+export default {
+  providers: [{
+    domain: process.env.CONVEX_SITE_URL,
+    applicationID: 'convex'
+  }]
+}
 ```
 
 ### `packages/be-agent/convex/http.ts`
@@ -2318,8 +2494,12 @@ import { z } from 'zod/v4'
 const env = createEnv({
   runtimeEnv: process.env,
   server: {
+    AUTH_GOOGLE_ID: z.string().min(1).optional(),
+    AUTH_GOOGLE_SECRET: z.string().min(1).optional(),
     AUTH_SECRET: z.string().min(1),
-    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional()
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional(),
+    GOOGLE_VERTEX_LOCATION: z.string().optional(),
+    GOOGLE_VERTEX_PROJECT: z.string().optional()
   },
   skipValidation: Boolean(
     process.env.CI || process.env.LINT || process.env.CONVEX_TEST_MODE
@@ -2356,7 +2536,7 @@ const mockModel = {
   }),
   modelId: 'mock-model',
   provider: 'mock',
-  specificationVersion: 'v1'
+  specificationVersion: 'v2'
 } as unknown as LanguageModel
 
 export { mockModel }
@@ -2377,6 +2557,165 @@ export { mockModel }
 
 ---
 
+## Public API Endpoints (Frontend)
+
+```typescript
+const list = q({
+  args: {},
+  handler: async c => {
+    const sessions = await c.ctx.db
+      .query('session')
+      .withIndex('by_user_status', q => q.eq('userId', c.userId))
+      .collect()
+    return sessions
+      .filter(s => s.status !== 'archived')
+      .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+  }
+})
+
+const submitMessage = m({
+  args: { content: v.string(), sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) throw new Error('session_not_found')
+    const saved = await orchestrator.saveMessage(c.ctx, {
+      message: { content: c.args.content, role: 'user' },
+      threadId: session.threadId,
+      userId: c.userId
+    })
+    await c.ctx.db.patch(c.args.sessionId, { lastActivityAt: Date.now() })
+    await enqueueRun({
+      ctx: c.ctx,
+      priority: 'user_message',
+      promptMessageId: saved.messageId,
+      threadId: session.threadId
+    })
+    return { messageId: saved.messageId }
+  }
+})
+
+const getRunState = q({
+  args: { threadId: v.string() },
+  handler: async c => {
+    const session = await c.ctx.db
+      .query('session')
+      .withIndex('by_user_threadId', q => q.eq('userId', c.userId).eq('threadId', c.args.threadId))
+      .unique()
+    if (!session) return null
+    return await c.ctx.db
+      .query('threadRunState')
+      .withIndex('by_threadId', q => q.eq('threadId', c.args.threadId))
+      .unique()
+  }
+})
+
+const listTasks = q({
+  args: { sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) return []
+    return await c.ctx.db
+      .query('tasks')
+      .withIndex('by_session', q => q.eq('sessionId', c.args.sessionId))
+      .collect()
+  }
+})
+
+const listTodos = q({
+  args: { sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) return []
+    return await c.ctx.db
+      .query('todos')
+      .withIndex('by_session', q => q.eq('sessionId', c.args.sessionId))
+      .collect()
+  }
+})
+
+const getTokenUsage = q({
+  args: { sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) {
+      return { completionTokens: 0, promptTokens: 0, totalTokens: 0 }
+    }
+    const usage = await c.ctx.db
+      .query('tokenUsage')
+      .withIndex('by_session', q => q.eq('sessionId', c.args.sessionId))
+      .collect()
+    let pt = 0
+    let ct = 0
+    let tt = 0
+    for (const u of usage) {
+      pt += u.promptTokens
+      ct += u.completionTokens
+      tt += u.totalTokens
+    }
+    return { completionTokens: ct, promptTokens: pt, totalTokens: tt }
+  }
+})
+
+const listMcpServers = q({
+  args: {},
+  handler: async c => {
+    return await c.ctx.db
+      .query('mcpServers')
+      .withIndex('by_user', q => q.eq('userId', c.userId))
+      .collect()
+  }
+})
+
+const addMcpServer = m({
+  args: { authHeaders: v.optional(v.string()), name: v.string(), url: v.string() },
+  handler: async c => {
+    return await c.ctx.db.insert('mcpServers', {
+      authHeaders: c.args.authHeaders,
+      cachedAt: undefined,
+      cachedTools: undefined,
+      isEnabled: true,
+      name: c.args.name,
+      transport: 'http',
+      url: c.args.url,
+      userId: c.userId
+    })
+  }
+})
+
+const updateMcpServer = m({
+  args: {
+    id: v.id('mcpServers'),
+    isEnabled: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    url: v.optional(v.string())
+  },
+  handler: async c => {
+    const server = await c.ctx.db.get(c.args.id)
+    if (!server || server.userId !== c.userId) throw new Error('not_found')
+    const patch = {}
+    if (c.args.name !== undefined) patch.name = c.args.name
+    if (c.args.url !== undefined) {
+      patch.url = c.args.url
+      patch.cachedAt = undefined
+      patch.cachedTools = undefined
+    }
+    if (c.args.isEnabled !== undefined) patch.isEnabled = c.args.isEnabled
+    await c.ctx.db.patch(c.args.id, patch)
+  }
+})
+
+const deleteMcpServer = m({
+  args: { id: v.id('mcpServers') },
+  handler: async c => {
+    const server = await c.ctx.db.get(c.args.id)
+    if (!server || server.userId !== c.userId) throw new Error('not_found')
+    await c.ctx.db.delete(c.args.id)
+  }
+})
+```
+
+---
+
 ## Auth and Ownership Boundary
 
 ### Public API Rule
@@ -2392,7 +2731,33 @@ Every public query and mutation follows this pattern:
 const getOwnedTaskStatus = query({
   args: { requesterThreadId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
-    const session = await resolveOwnedSessionByThread({ ctx, threadId: args.requesterThreadId })
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('unauthenticated')
+    const session = await resolveOwnedSessionByThread({
+      ctx,
+      threadId: args.requesterThreadId,
+      userId
+    })
+    const task = await ctx.db.get(args.taskId as Id<'tasks'>)
+    if (!task || task.sessionId !== session._id) return null
+    return {
+      completedAt: task.completedAt,
+      lastError: task.lastError,
+      retryCount: task.retryCount,
+      status: task.status,
+      threadId: task.threadId
+    }
+  }
+})
+
+const getOwnedTaskStatusInternal = internalQuery({
+  args: { requesterThreadId: v.string(), taskId: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_threadId', q => q.eq('threadId', args.requesterThreadId))
+      .first()
+    if (!session) return null
     const task = await ctx.db.get(args.taskId as Id<'tasks'>)
     if (!task || task.sessionId !== session._id) return null
     return {
@@ -2431,8 +2796,8 @@ When hard delete triggers for a session:
 - delete todo rows
 - delete token usage rows
 - delete `threadRunState` row
-- delete worker threads created by tasks
-- delete thread/message rows via agent APIs
+
+Agent thread and message data is managed by the `@convex-dev/agent` component. v1 deletes only application-layer rows (`tasks`, `todos`, `tokenUsage`, `threadRunState`, `session`). Agent component thread/message cleanup is deferred to v2 when the component exposes a bulk-delete API.
 
 ### Trigger
 
@@ -2447,12 +2812,21 @@ const timeoutStaleTasks = internalMutation({
   handler: async ctx => {
     const now = Date.now()
     const STALE_MS = 10 * 60 * 1000
+    const PENDING_STALE_MS = 5 * 60 * 1000
     const running = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'running')).collect()
     for (const task of running) {
-      const lastBeat = task.heartbeatAt ?? task.startedAt
-      if (!lastBeat) continue
+      const lastBeat = task.heartbeatAt ?? task.startedAt ?? task.createdAt
       if (now - lastBeat <= STALE_MS) continue
+      const fresh = await ctx.db.get(task._id)
+      if (!fresh || fresh.status !== 'running') continue
       await ctx.db.patch(task._id, { lastError: 'worker_timeout', status: 'timed_out' })
+    }
+    const pending = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'pending')).collect()
+    for (const task of pending) {
+      if (now - task.createdAt <= PENDING_STALE_MS) continue
+      const fresh = await ctx.db.get(task._id)
+      if (!fresh || fresh.status !== 'pending') continue
+      await ctx.db.patch(task._id, { lastError: 'worker_never_started', status: 'timed_out' })
     }
   }
 })
@@ -2465,11 +2839,16 @@ const archiveIdleSessions = internalMutation({
   handler: async ctx => {
     const now = Date.now()
     const IDLE_MS = 24 * 60 * 60 * 1000
-    const active = await ctx.db.query('session').withIndex('by_user_status').collect()
+    const active = await ctx.db.query('session').withIndex('by_status', q => q.eq('status', 'active')).collect()
     for (const s of active) {
-      if (s.status !== 'active') continue
       if (now - s.lastActivityAt > IDLE_MS) {
         await ctx.db.patch(s._id, { status: 'idle' })
+      }
+    }
+    const idle = await ctx.db.query('session').withIndex('by_status', q => q.eq('status', 'idle')).collect()
+    for (const s of idle) {
+      if (now - s.lastActivityAt > IDLE_MS * 7) {
+        await ctx.db.patch(s._id, { archivedAt: now, status: 'archived' })
       }
     }
   }
@@ -2479,9 +2858,8 @@ const cleanupArchivedSessions = internalMutation({
   handler: async ctx => {
     const now = Date.now()
     const ARCHIVE_TTL = 180 * 24 * 60 * 60 * 1000
-    const archived = await ctx.db.query('session').collect()
+    const archived = await ctx.db.query('session').withIndex('by_status', q => q.eq('status', 'archived')).collect()
     for (const s of archived) {
-      if (s.status !== 'archived') continue
       if (!s.archivedAt || now - s.archivedAt <= ARCHIVE_TTL) continue
       const tasks = await ctx.db.query('tasks').withIndex('by_session', q => q.eq('sessionId', s._id)).collect()
       for (const t of tasks) await ctx.db.delete(t._id)
@@ -2767,6 +3145,7 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@auth/core": "latest",
     "@ai-sdk/google": "latest",
     "@convex-dev/agent": "latest",
     "@convex-dev/auth": "latest",
@@ -2807,6 +3186,7 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
     "@a/ui": "workspace:*",
     "@ai-sdk/react": "latest",
     "@convex-dev/agent": "latest",
+    "@convex-dev/auth": "latest",
     "@noboil/convex": "workspace:*",
     "ai": "latest",
     "convex": "latest",
