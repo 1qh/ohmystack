@@ -1929,8 +1929,15 @@ const listClosedPrefixGroups = internalQuery({
     const text = messages
       .slice(0, safeEnd + 1)
       .map(m => {
-        const textParts = m.parts?.filter(p => p.type === 'text').map(p => p.text) ?? []
-        return `[${m.role}]: ${textParts.join(' ')}`
+        const parts = []
+        for (const p of m.parts ?? []) {
+          if (p.type === 'text') parts.push(p.text)
+          if (p.type === 'tool-invocation' && p.state === 'result') {
+            const resultText = typeof p.result === 'string' ? p.result : JSON.stringify(p.result)
+            parts.push(`[tool:${p.toolName}] ${resultText}`)
+          }
+        }
+        return `[${m.role}]: ${parts.join(' ')}`
       })
       .join('\n')
 
@@ -2348,6 +2355,13 @@ const runOrchestrator = internalAction({
     })
     if (!claimed.ok) return
 
+    const isStale = async () => {
+      const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
+        threadId: args.threadId
+      })
+      return !state || state.activeRunToken !== args.runToken
+    }
+
     const heartbeatInterval = setInterval(async () => {
       try {
         await ctx.runMutation(internal.orchestrator.heartbeatRun, {
@@ -2358,7 +2372,13 @@ const runOrchestrator = internalAction({
     }, 2 * 60 * 1000)
 
     try {
-      await compactIfNeeded({ ctx, threadId: args.threadId })
+      if (await isStale()) return
+
+      try {
+        await compactIfNeeded({ ctx, threadId: args.threadId })
+      } catch {}
+
+      if (await isStale()) return
       const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
         threadId: args.threadId
       })
@@ -2431,12 +2451,14 @@ const listMessages = query({
 
 ```tsx
 const TaskWorkerStream = ({ threadId }) => {
-  const worker = useUIMessages(api.messages.listMessages, {
-    streamArgs: { includeStatuses: ['streaming', 'pending'] },
-    threadId
-  })
-  return <WorkerStreamView worker={worker} />
+  const { messages, isLoading } = useUIMessages(api.messages.listMessages, { threadId })
+  return <WorkerStreamView isLoading={isLoading} messages={messages} />
 }
+```
+
+`useUIMessages` from `@convex-dev/agent/react` takes two arguments: the query reference and the query args object (e.g. `{ threadId }`). Stream options like pagination are handled internally by the hook, not passed as query args. The hook returns `{ messages, isLoading, loadMore }`.
+
+```tsx
 
 const TaskPanel = ({ expandedTaskIds, tasks }) => {
   return (
@@ -2564,7 +2586,7 @@ v1 intentionally returns a sorted array without cursor pagination; v2 can add cu
 
 ### Chat Page (`src/app/[sessionId]/page.tsx`)
 
-- Server component preloads session data via `preloadQuery(api.sessions.getSession, { sessionId })`.
+- Client component (no SSR preload). Uses `useQuery(api.sessions.getSession, { sessionId })` for session data. The agent app uses a separate Convex project, so server-side `preloadQuery` with auth tokens is not available (no shared auth cookie). All data fetching is client-side via `useQuery` and `useUIMessages`.
 - Client chat surface uses `useUIMessages` for streaming messages.
 - Responsive three-column layout: chat center, tasks+todos right, sources far-right.
 - Message rendering supports text parts, reasoning blocks, tool call cards, and source cards.
@@ -2601,23 +2623,15 @@ export default AgentConvexProvider
 
 This provider lives at `apps/agent/src/app/convex-provider.tsx` (co-located with the layout). The layout imports it:
 
+Auth gating is handled entirely client-side by `@convex-dev/auth`'s `useConvexAuth()` hook. Protected pages check `isAuthenticated` from the hook and redirect to `/login` if unauthenticated. The layout does NOT do server-side redirect — the agent app uses a separate Convex project and cannot use `@noboil/convex/next` `isAuthenticated()` (which is wired to the demo backend).
+
 ```tsx
 import type { ReactNode } from 'react'
-
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 
 import AgentConvexProvider from './convex-provider'
 import TestLoginProvider from './test-login-provider'
 
-const PUBLIC_PATHS = ['/login'],
-  isPublicPath = (pathname: string) => {
-    for (const p of PUBLIC_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
-    return false
-  },
-  Layout = async ({ children }: { children: ReactNode }) => {
-    const pathname = (await headers()).get('x-pathname') ?? '/'
-    if (!isPublicPath(pathname)) redirect('/login')
+const Layout = ({ children }: { children: ReactNode }) => {
 
     return (
       <AgentConvexProvider>
@@ -3015,6 +3029,17 @@ const archiveSession = m({
     const session = await c.ctx.db.get(c.args.sessionId)
     if (!session || session.userId !== c.userId) throw new Error('session_not_found')
     await c.ctx.db.patch(c.args.sessionId, { archivedAt: Date.now(), status: 'archived' })
+    const runState = await c.ctx.db
+      .query('threadRunState')
+      .withIndex('by_threadId', q => q.eq('threadId', session.threadId))
+      .unique()
+    if (runState) {
+      await c.ctx.db.patch(runState._id, {
+        queuedPriority: undefined,
+        queuedPromptMessageId: undefined,
+        queuedReason: undefined
+      })
+    }
   }
 })
 
@@ -3098,6 +3123,11 @@ const addMcpServer = m({
     url: v.string()
   },
   handler: async c => {
+    const existing = await c.ctx.db
+      .query('mcpServers')
+      .withIndex('by_user_name', q => q.eq('userId', c.userId).eq('name', c.args.name))
+      .unique()
+    if (existing) throw new Error('server_name_taken')
     return await c.ctx.db.insert('mcpServers', {
       authHeaders: c.args.authHeaders,
       cachedAt: undefined,
@@ -3323,6 +3353,8 @@ const timeoutStaleRuns = internalMutation({
 })
 ```
 
+Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, and `finishRun` will reject it because `activeRunToken` no longer matches. This means the old action's writes are limited to the compaction window (best-effort, non-critical). Any messages it manages to write before detecting staleness are harmless since the new run will stream from the latest thread state.
+
 ### `convex/retention.ts`
 
 ```typescript
@@ -3420,7 +3452,7 @@ Run at end of Phase 5:
 - Frontend wraps auth gating with a `TestLoginProvider` that auto-authenticates in test mode.
 - This follows the existing `packages/be-convex/convex/testauth.ts` pattern.
 
-`TestLoginProvider` is a client wrapper that checks `process.env.NEXT_PUBLIC_CONVEX_TEST_MODE`. In test mode, it calls the backend `ensureTestUser` mutation on mount and stores the returned session token, bypassing the Google OAuth flow. In production mode, it renders its children directly without modification. This follows the same pattern as `packages/be-convex/convex/testauth.ts` + the existing E2E test harness.
+`TestLoginProvider` is a client wrapper that checks `process.env.NEXT_PUBLIC_CONVEX_TEST_MODE`. In test mode, it calls the backend `signInAsTestUser` action on mount. `signInAsTestUser` internally creates a test user via `ensureTestUser` (which returns a user ID) and then creates a real auth session for that user using `@convex-dev/auth`'s `createSession` helper, returning a valid session token. The provider stores this token via `ConvexReactClient.setAuth()`, bypassing the Google OAuth flow. In production mode (`NEXT_PUBLIC_CONVEX_TEST_MODE` is unset), it renders its children directly without modification. This follows the same pattern as `packages/be-convex/convex/testauth.ts` + the existing E2E test harness.
 
 ---
 
