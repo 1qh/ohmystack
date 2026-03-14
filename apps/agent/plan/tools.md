@@ -322,3 +322,17 @@ Provider-defined tool isolation note:
 
 - Keep provider-defined grounding tool calls isolated in `groundWithGemini`.
 - Do not mix provider-defined tools with function tools in the same `generateText` call.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Orchestrator Runtime: #10-12
+- Implementation Details: #10-11
+
+### E2E (Playwright)
+- Tool Execution: #1-6
+
+### Edge Cases
+- Edge Cases: #4

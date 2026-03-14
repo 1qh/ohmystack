@@ -546,3 +546,16 @@ const runWorker = internalAction({
 ### Timeout Fencing
 
 Worker finalization is a single `internalMutation` (`finalizeWorkerOutput`) that atomically: (1) re-reads task status, (2) if still `running`, writes the assistant message AND transitions to `completed` in the same mutation. If the task is already `timed_out`/`cancelled`, the mutation is a no-op. This prevents the TOCTOU race between status check and message write.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Task Lifecycle: #1-20
+
+### E2E (Playwright)
+- Tool Execution: #1-4
+
+### Edge Cases
+- Edge Cases: #3-4, #11

@@ -1336,3 +1336,18 @@ const submitMessage = m({
 `enqueueRunInline` mirrors `internal.orchestrator.enqueueRun` CAS logic for mutation-boundary safety in `submitMessage`; keep both implementations aligned because actions call the standalone internal mutation while `submitMessage` must stay inside a single mutation boundary.
 
 During implementation, extract the shared CAS transition logic into one helper used by both `enqueueRunInline` and `enqueueRun` to avoid behavioral drift.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Queue & Concurrency: #1-14
+- Orchestrator Runtime: #1-20
+
+### E2E (Playwright)
+- Chat & Streaming: #1-5
+- Tool Execution: #2
+
+### Edge Cases
+- Edge Cases: #1-2, #8-9

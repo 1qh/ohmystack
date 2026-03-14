@@ -266,3 +266,16 @@ flowchart TB
 - No `threads` table; thread identity is a UUID string referenced across tables.
 - All message persistence and streaming state are represented directly in `messages`.
 - Frontend real-time updates rely on normal Convex query reactivity over first-party tables.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Auth & Ownership: #11-12
+
+### E2E (Playwright)
+- Chat & Streaming: #4
+
+### Edge Cases
+- Edge Cases: #1

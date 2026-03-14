@@ -184,3 +184,16 @@ flowchart LR
 - Keep one active orchestrator run per thread with queued continuation payloads.
 - Keep actions side-effecting only through explicit mutation calls.
 - Keep ownership checks on every public entry point before thread/session/task access.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Orchestrator Runtime: #17-20
+
+### E2E (Playwright)
+- Chat & Streaming: #2-5
+
+### Edge Cases
+- Edge Cases: #1-2

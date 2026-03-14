@@ -166,3 +166,21 @@ flowchart TD
 - Focus returns to composer after submit and after modal/drawer close.
 - Status is never color-only; include text labels (`Running`, `Completed`, `Error`, etc.).
 - Interactive cards and controls must meet minimum hit-target and contrast requirements across mobile and desktop breakpoints.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Frontend contract validation is covered indirectly by backend ownership/tool/runtime tests in supporting modules.
+
+### E2E (Playwright)
+- Session Management: #1-5
+- Chat & Streaming: #1-5
+- Tool Execution: #1-6
+- Settings (MCP): #1-5
+- Error States: #1-5
+- Accessibility (E2E): #1-6
+
+### Edge Cases
+- Edge Cases surfaced in UI paths: #10-12

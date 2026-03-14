@@ -607,3 +607,16 @@ Local dev mirrors demo scripts but targets `packages/be-agent`:
 3. no array callback aggregation shortcuts in snippets
 4. no inline per-file source comments; use `SOURCES.md`
 5. component co-location prioritized over global shared folders
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Implementation Details: #1-5
+
+### E2E (Playwright)
+- Test Auth bootstrap path: Session Management #1
+
+### Edge Cases
+- Edge Cases: #7

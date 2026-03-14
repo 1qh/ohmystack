@@ -174,3 +174,17 @@ All MCP tool calls return model-readable structured payloads:
 - Failure: `{ ok: false, error, message?, retryable }`
 
 This keeps failures actionable for the model while preserving UI/debug visibility.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- MCP: #1-14
+
+### E2E (Playwright)
+- Settings (MCP): #1-5
+- Error States: #3
+
+### Edge Cases
+- Edge Cases: #6

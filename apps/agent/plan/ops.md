@@ -122,3 +122,18 @@ flowchart TD
   S --> R["Delete threadRunState"]
   S --> M["Delete messages"]
 ```
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Crons & Cleanup: #1-15
+- Rate Limiting: #1-9
+
+### E2E (Playwright)
+- Error States: #1, #5
+- Session Management: #4-5
+
+### Edge Cases
+- Edge Cases: #10-12

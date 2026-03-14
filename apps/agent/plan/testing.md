@@ -1,5 +1,21 @@
 # Testing
 
+## Philosophy
+
+**Test-first, break-nothing, move-with-confidence.**
+
+Every feature ships with its tests or it doesn't ship. We sacrifice development speed for absolute confidence - whenever we move forward, nothing behind us breaks.
+
+Principles:
+1. **Every mutation/query/action has a corresponding test** - no untested public surface
+2. **Every state transition has a test** - state machines are the hardest things to debug when broken
+3. **Every edge case flagged by Oracle reviews is a regression test** - never regress on solved issues
+4. **Every error path is tested** - not just happy paths
+5. **Tests are written alongside code, not after** - the test file is created in the same commit as the feature
+6. **Backend tests (convex-test) cover logic; E2E tests (Playwright) cover user flows** - don't duplicate
+7. **100% coverage on critical paths** - CAS transitions, ownership checks, compaction boundaries
+8. **Failing test = blocked merge** - no exceptions
+
 ## Testing Layers
 - `convex-test`: backend unit/integration tests for mutations, queries, actions, cron handlers, and ownership guards with mocked dependencies.
 - Playwright E2E: browser-driven smoke tests against the real `apps/agent` app and live `packages/be-agent` Convex deployment in test mode.
@@ -61,6 +77,8 @@ flowchart LR
 | 10 | `finishRun` token mismatch no-op | Returns unscheduled, preserves existing active run |
 | 11 | `enqueueRunIfLatest` rejects stale latest-message gate | Returns `{ ok:false, reason:'not_latest' }`, no queue/streak change |
 | 12 | Prompt bound by `promptMessageId` creation time | Context query excludes newer messages (`_creationTime > prompt anchor`) |
+| 13 | `enqueueRunInline` in `submitMessage` matches `enqueueRun` CAS behavior | Both paths produce identical state transitions |
+| 14 | Prompt bound with `promptMessageId` excludes messages with later `_creationTime` | Query uses `_creationTime <= prompt._creationTime`, newer messages not in context |
 
 ### Task Lifecycle
 
@@ -78,6 +96,14 @@ flowchart LR
 | 10 | `maybeContinueOrchestrator` enqueues only when reminder is latest | Uses `enqueueRunIfLatest`; non-latest reminder yields no enqueue |
 | 11 | `completionNotifiedAt` deferred ordering | `completionNotifiedAt` set only after continuation attempt returns |
 | 12 | `finalizeWorkerOutput` atomic fence | If task already `timed_out`/`cancelled`, no assistant message write and no completion transition |
+| 13 | Worker heartbeat interval is 30 seconds | `updateHeartbeat` called every 30s during `runWorker` |
+| 14 | Exponential backoff formula: `min(1000 * 2^retryCount, 30000)` | Retry delays: 1s, 2s, 4s (capped at 30s) |
+| 15 | Max retries enforced at 3 | 4th failure transitions to `failed`, not `pending` |
+| 16 | Reminder prefix `[BACKGROUND TASK COMPLETED]` for success | Exact prefix string in completion reminder |
+| 17 | Reminder prefix `[BACKGROUND TASK FAILED]` for failure | Exact prefix string in failure reminder |
+| 18 | Reminder prefix `[BACKGROUND TASK TIMED OUT]` for timeout | Exact prefix string in timeout reminder |
+| 19 | Cancelled task emits NO reminder | `cancelled` status transition writes no parent-thread message |
+| 20 | `isTransientError` correctly classifies transient vs permanent | ECONN/ETIMEDOUT/503/mcp_timeout -> transient; validation/auth -> permanent |
 
 ### Orchestrator Runtime
 
@@ -95,6 +121,14 @@ flowchart LR
 | 10 | Tool contracts: `delegate`/`taskStatus`/`taskOutput`/`todoRead`/`todoWrite`/`webSearch` | Each tool returns normalized shape; ownership-safe internal calls used |
 | 11 | `todoWrite` merge-by-id semantics | Todos with `id` update in place, todos without `id` insert, omitted todos remain unchanged |
 | 12 | `taskOutput` non-completed response contract | Returns `task_not_completed` with current status instead of throwing |
+| 13 | `turnRequestedInput` is always false in v1 | postTurnAudit receives `false`, auto-continue can fire even when model asks a question |
+| 14 | Crash gap: action dies between reminder write and continuation enqueue | Reminder persisted but no continuation - thread idle, user must resend |
+| 15 | Lost-turn: active run dies without queued payload | `timeoutStaleRuns` resets to idle, user's message effectively lost |
+| 16 | Mid-stream stale-run writes are not rolled back | Old run's messages visible but new run reads latest state |
+| 17 | `buildModelMessages` includes parts (tool calls, results, reasoning) | Serializer produces correct CoreMessage array with separate role:tool messages |
+| 18 | `buildModelMessages` includes error tool results (not just success) | Failed tool outcomes serialized so model can decide to retry |
+| 19 | Context rebuild uses descending `_creationTime` + reverse for chronological | Latest 100 messages in correct temporal order |
+| 20 | `recordModelUsage` maps `inputTokens`/`outputTokens` correctly | Token recording persists to `tokenUsage` table with correct field names |
 
 ### Compaction
 
@@ -110,6 +144,9 @@ flowchart LR
 | 8 | Lock lease prevents concurrent writes | Active lock denies second acquirer until lease expires |
 | 9 | Expired lease recovery | New token can acquire and proceed after lease timeout |
 | 10 | Token ownership required for release/write | Wrong token cannot release lock or set summary |
+| 11 | `compactionSummary` included in `getContextSize` char count | Prevents under-counting leading to deferred compaction |
+| 12 | Compaction threshold: `charCount > 100_000` OR `messageCount > 200` | Both conditions trigger independently |
+| 13 | Tool-pair integrity: assistant message with `tool-call` + matching `tool-result` never split | Closed-prefix grouping keeps tool pairs together |
 
 ### MCP
 
@@ -127,6 +164,8 @@ flowchart LR
 | 10 | `authHeaders` redaction on reads | Public read omits `authHeaders`, returns `hasAuthHeaders=true/false` |
 | 11 | URL/auth change invalidates cache | `beforeUpdate` clears `cachedTools` and `cachedAt` |
 | 12 | Ownership resolution from worker thread | Requester thread ownership resolves via `tasks.threadId -> session` chain |
+| 13 | `http:` URL with `authHeaders` blocked outside test mode | Prevents credential leak over unencrypted transport |
+| 14 | MCP response validation: malformed JSON handled gracefully | Returns structured error, doesn't crash action |
 
 ### Auth & Ownership
 
@@ -142,6 +181,8 @@ flowchart LR
 | 8 | `tokenUsage.getTokenUsage` unauthorized returns zeroed counters | Returns `{ inputTokens:0, outputTokens:0, totalTokens:0 }` |
 | 9 | `getAuthUserIdOrTest` test mode fallback active only in test mode | Works in test mode, returns unauthenticated in non-test mode |
 | 10 | Production fuse for test auth | Env load throws when production cloud URL and `CONVEX_TEST_MODE` both set |
+| 11 | Worker-thread ownership resolves via `tasks.threadId -> tasks.sessionId` | Worker messages queryable only by session owner |
+| 12 | Worker-thread messages omit `sessionId` field | `sessionId` is undefined on worker messages |
 
 ### Crons & Cleanup
 
@@ -159,6 +200,9 @@ flowchart LR
 | 10 | `cleanupArchivedSessions` hard-delete cascade | Deletes `tokenUsage`, `todos`, session-thread messages, worker-thread messages, `tasks`, `threadRunState`, `session` |
 | 11 | Archive blocks run continuation | Archived session prevents `finishRun` re-schedule and `maybeContinueOrchestrator` enqueue |
 | 12 | Manual archive from active/idle shortcut | Direct transition to `archived` with `archivedAt` set |
+| 13 | Hard-delete cascade includes worker-thread messages | Messages on `tasks.threadId` also deleted |
+| 14 | Hard-delete order: tokenUsage -> todos -> messages -> tasks -> threadRunState -> session | No foreign key violations from order |
+| 15 | `cleanupStaleMessages` only targets messages where thread is idle | Active threads' streaming messages are not touched |
 
 ### Rate Limiting
 
@@ -172,6 +216,24 @@ flowchart LR
 | 6 | Internal flows exempt from limits | Auto-continue enqueue, worker heartbeat, cron transitions not rate-limited |
 | 7 | Window refill behavior | Requests succeed again after bucket refill interval |
 | 8 | Rate-limit storage index path valid | Reads/writes succeed using `rateLimitTables` schema wiring |
+| 9 | Rate limit error includes `retryAt` timestamp | Client can show countdown to next allowed request |
+
+### Implementation Details
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | `getModel()` returns mock in test mode | `CONVEX_TEST_MODE=true` -> mockModel instance |
+| 2 | `getModel()` caches after first call | Second call returns same instance |
+| 3 | `env.ts` skipValidation in test/lint mode | No throw when `CONVEX_TEST_MODE=true` or `LINT=true` |
+| 4 | `env.ts` throws in production with missing keys | Missing `GOOGLE_VERTEX_API_KEY` throws at module load |
+| 5 | `env.ts` production fuse: test mode + production URL | Both set -> immediate throw |
+| 6 | `buildTaskCompletionReminder` output format | Contains task ID, description, and `[BACKGROUND TASK COMPLETED]` |
+| 7 | `buildTaskTerminalReminder` output format | Contains error message and `[BACKGROUND TASK FAILED]` or `[TIMED OUT]` |
+| 8 | `resolveOwnedSession` ownership chain | Returns session for owner, throws for non-owner |
+| 9 | `resolveOwnedSessionByThread` via thread lookup | Returns session matching threadId + userId |
+| 10 | `webSearch` isolated action: no tool mixing | `groundWithGemini` called in separate action context, never mixed with function tools |
+| 11 | `normalizeGrounding` extracts sources correctly | Returns `{ summary, sources: [{ title, url, snippet }] }` |
+| 12 | Token usage recording: session-level aggregation | Multiple turns accumulate in `tokenUsage` table |
 
 ## E2E Test Matrix (Playwright)
 
@@ -225,6 +287,17 @@ flowchart LR
 | 3 | MCP timeout error is user-visible and non-crashing | Assistant response includes structured MCP timeout payload |
 | 4 | Archived-session navigation handles missing/denied resources | UI shows controlled error/redirect instead of crash |
 | 5 | Rate-limit exceeded path surfaces actionable feedback | User sees throttling message and can retry later |
+
+### Accessibility (E2E)
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Chat transcript has `role="log"` | Chat container has correct ARIA role |
+| 2 | Streaming output has `aria-live="polite"` | Assistive tech announces new content |
+| 3 | Reasoning/tool expand controls are native `<button>` | Keyboard accessible, no div-as-button |
+| 4 | Focus returns to composer after message submit | `document.activeElement` is the composer input |
+| 5 | Status indicators never rely on color alone | Icons/text accompany all colored states |
+| 6 | Interactive cards meet 44x44px hit target | Touch targets are accessible size |
 
 ## Edge Case Tests (from Oracle reviews)
 

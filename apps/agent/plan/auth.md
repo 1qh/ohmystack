@@ -485,3 +485,17 @@ MCP CRUD uses noboil `crud()` with hooks. Ownership enforcement (`userId` checks
 
 - Endpoints intentionally exposed without direct v1 UI usage: `archiveSession`, `getOwnedTaskStatus`, `getRunState`.
 - Retention orphan note for DIY message storage: hard-delete must remove `messages` rows by `sessionId` or `threadId` together with `session`, `tasks`, `todos`, `tokenUsage`, and `threadRunState` to avoid orphaned conversation history after TTL cleanup.
+
+## Tests
+
+Tests for this module are defined in [testing.md](./testing.md). Key test areas:
+
+### convex-test
+- Auth & Ownership: #1-12
+
+### E2E (Playwright)
+- Session Management: #1, #5
+- Error States: #4
+
+### Edge Cases
+- Edge Cases: #7, #10
