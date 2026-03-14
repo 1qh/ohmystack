@@ -400,6 +400,7 @@ Gemini 2.5 Flash stays fixed for v1 while still supporting deterministic test mo
 ```typescript
 import type { LanguageModel } from 'ai'
 
+import './env'
 import { mockModel } from './models.mock'
 
 const isTestEnvironment =
@@ -420,6 +421,8 @@ const getModel = async (): Promise<LanguageModel> => {
 
 export { getModel }
 ```
+
+`import './env'` ensures the `@t3-oss/env-core` validation runs when the module is first loaded. Since `ai.ts` is imported by agent definitions (`agents.ts`), validation is guaranteed to execute before any model access. The `skipValidation` flag in `env.ts` short-circuits validation in CI, lint, and test environments.
 
 ---
 
@@ -990,9 +993,9 @@ const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
 }
 ```
 
-v1 limitation: if the worker action crashes between `completeTask` and `maybeContinueOrchestrator`, the completion reminder is persisted but no continuation is enqueued. The thread remains idle with no queued payload, so `timeoutStaleRuns` cannot recover this case. The user must send a new message to re-engage the orchestrator. v2 can move continuation enqueue into `completeTask` itself (mutations can use `ctx.scheduler.runAfter`) to make this fully atomic.
+v1 limitation: if the worker action crashes between `completeTask` and `maybeContinueOrchestrator`, the completion reminder is persisted but no continuation is enqueued. The thread remains idle with no queued payload, so `timeoutStaleRuns` cannot recover this case. The user must send a new message to re-engage the orchestrator. On the retry side, if `enqueueRun` succeeds but the action crashes before `markContinuationEnqueued`, a retry of the action would call `maybeContinueOrchestrator` again — the `continuationEnqueuedAt` guard prevents duplicate enqueue on retry, so at most one continuation is scheduled. v2 can move continuation enqueue into `completeTask` itself (mutations can use `ctx.scheduler.runAfter`) to eliminate both the crash-gap and the retry-duplicate risk.
 
-The same crash-gap limitation applies to todo auto-continuation in `postTurnAudit`: if the action crashes between saving the system reminder and enqueuing `todo_continuation`, the reminder is persisted but no continuation is enqueued. The user must send a new message to re-engage the orchestrator.
+The same crash-gap limitation applies to todo auto-continuation in `postTurnAudit`: if the action crashes between saving the system reminder and enqueuing `todo_continuation`, the reminder is persisted but no continuation is enqueued. On retry, the duplicate enqueue is prevented by `postTurnAudit` re-checking whether a `todo_continuation` is already queued (the `enqueueRun` call with `todo_continuation` reason succeeds only if no equal-or-higher-priority payload is already queued). The user must send a new message to re-engage the orchestrator if the crash-gap scenario occurs.
 
 Delegation Idempotency: `@convex-dev/agent` handles retries at the agent-step execution layer. If the model emits duplicate delegate tool calls, separate tasks are intentionally created (the model delegated twice). Convex action retry behavior is absorbed by the agent framework's step-level deduplication.
 
@@ -1249,6 +1252,21 @@ const finishRun = internalMutation({
     if (state.activeRunToken !== runToken) return { scheduled: false }
 
     if (state.queuedPromptMessageId) {
+      const session = await ctx.db.query('session').withIndex('by_threadId', q => q.eq('threadId', threadId)).first()
+      if (session?.status === 'archived') {
+        await ctx.db.patch(state._id, {
+          activatedAt: undefined,
+          activeRunToken: undefined,
+          claimedAt: undefined,
+          queuedPriority: undefined,
+          queuedPromptMessageId: undefined,
+          queuedReason: undefined,
+          runClaimed: undefined,
+          runHeartbeatAt: undefined,
+          status: 'idle'
+        })
+        return { scheduled: false }
+      }
       const nextRunToken = crypto.randomUUID()
       await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
         promptMessageId: state.queuedPromptMessageId,
@@ -1289,6 +1307,7 @@ const finishRun = internalMutation({
 - Reset to `0` when all todos are terminal (`completed`/`cancelled`).
 - Increment by `1` only through `enqueueRun({ incrementStreak: true, ... })` so queue and streak updates are atomic.
 - Hard cap: `5`; `enqueueRun` rejects auto-continue scheduling once cap is reached.
+- Streak is incremented at enqueue time (inside the atomic `enqueueRun` / `enqueueRunIfLatest` mutation), not when the continuation run actually starts. If multiple task completions race and each calls `enqueueRun({ incrementStreak: true })`, only the one that wins the queue slot (equal-or-higher priority) increments the counter — lower-priority enqueues that are rejected do not consume a streak slot. However, a burst of equal-priority `task_completion` events can burn the cap (each replaces the prior queued payload and increments streak). This is an accepted v1 trade-off: the cap is a safety bound, not a precision counter. v2 can move streak increment to `claimRun` (when the run actually starts) for exact counting.
 
 ### v2 Improvement: Abort-and-Restart
 
@@ -1413,7 +1432,7 @@ const ensureServerToolsCache = async ({ ctx, serverId }) => {
   let authHeaders = {}
   try {
     authHeaders = JSON.parse(server.authHeaders ?? '{}')
-  } catch {
+  } catch (_error) {
     return []
   }
   let transport
@@ -1421,7 +1440,7 @@ const ensureServerToolsCache = async ({ ctx, serverId }) => {
     transport = new StreamableHTTPClientTransport(new URL(server.url), {
       requestInit: { headers: authHeaders }
     })
-  } catch {
+  } catch (_error) {
     return []
   }
   const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
@@ -1816,7 +1835,7 @@ const runWorker = internalAction({
     const heartbeatInterval = setInterval(async () => {
       try {
         await ctx.runMutation(internal.tasks.updateHeartbeat, { taskId: args.taskId })
-      } catch {}
+    } catch (_error) {}
     }, 30_000)
 
     try {
@@ -2088,7 +2107,7 @@ const callToolOwned = internalAction({
     let authHeaders = {}
     try {
       authHeaders = JSON.parse(server.authHeaders ?? '{}')
-    } catch {
+    } catch (_error) {
       return { error: 'invalid_auth_headers', ok: false, retryable: false }
     }
 
@@ -2097,7 +2116,7 @@ const callToolOwned = internalAction({
       transport = new StreamableHTTPClientTransport(new URL(server.url), {
         requestInit: { headers: authHeaders }
       })
-    } catch {
+    } catch (_error) {
       return { error: 'invalid_server_url', ok: false, retryable: false }
     }
     const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
@@ -2368,7 +2387,7 @@ const runOrchestrator = internalAction({
           runToken: args.runToken,
           threadId: args.threadId
         })
-      } catch {}
+      } catch (_error) {}
     }, 2 * 60 * 1000)
 
     try {
@@ -2376,7 +2395,7 @@ const runOrchestrator = internalAction({
 
       try {
         await compactIfNeeded({ ctx, threadId: args.threadId })
-      } catch {}
+      } catch (_error) {}
 
       if (await isStale()) return
       const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
@@ -2395,6 +2414,8 @@ const runOrchestrator = internalAction({
       })
 
       await result.consumeStream()
+
+      if (await isStale()) return
 
       await postTurnAudit({
         ctx,
@@ -2650,6 +2671,63 @@ This is the root layout (`src/app/layout.tsx`) with the required `<html>/<body>`
 
 `TestLoginProvider` lives at `apps/agent/src/app/test-login-provider.tsx`:
 
+```tsx
+'use client'
+
+import type { ReactNode } from 'react'
+
+import { useMutation } from 'convex/react'
+import { useEffect, useState } from 'react'
+
+import { api } from '@a/be-agent'
+
+const TestLoginProvider = ({ children }: { children: ReactNode }) => {
+  const isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true'
+  const signIn = useMutation(api.testauth.signInAsTestUser)
+  const [ready, setReady] = useState(!isTestMode)
+
+  useEffect(() => {
+    if (!isTestMode) return
+    signIn().then(() => setReady(true))
+  }, [isTestMode, signIn])
+
+  if (!ready) return null
+  return <>{children}</>
+}
+
+export default TestLoginProvider
+```
+
+`signInAsTestUser` is a public mutation in `packages/be-agent/convex/testauth.ts` that calls `ensureTestUser` to get or create a deterministic test user, then returns a session token. The `TestLoginProvider` calls it on mount in test mode and waits for completion before rendering children.
+
+`AuthGuard` is a client component used by protected pages (session list, chat, settings):
+
+```tsx
+'use client'
+
+import type { ReactNode } from 'react'
+
+import { useConvexAuth } from 'convex/react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+const AuthGuard = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated, isLoading } = useConvexAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.replace('/login')
+  }, [isAuthenticated, isLoading, router])
+
+  if (isLoading || !isAuthenticated) return null
+  return <>{children}</>
+}
+
+export default AuthGuard
+```
+
+`AuthGuard` lives co-located at `apps/agent/src/app/(protected)/auth-guard.tsx` and is imported by pages that require authentication. It checks `useConvexAuth()` from `convex/react` and redirects unauthenticated users to `/login`.
+
 ### Accessibility Requirements
 
 - Chat transcript container uses `role="log"`.
@@ -2725,6 +2803,7 @@ packages/be-agent/
 ├── prompts.ts
 ├── t.ts
 ├── models.mock.ts
+├── check-schema.ts
 ├── SOURCES.md
 ├── package.json
 └── tsconfig.json
@@ -3159,6 +3238,13 @@ const updateMcpServer = m({
   handler: async c => {
     const server = await c.ctx.db.get(c.args.id)
     if (!server || server.userId !== c.userId) throw new Error('not_found')
+    if (c.args.name !== undefined && c.args.name !== server.name) {
+      const conflict = await c.ctx.db
+        .query('mcpServers')
+        .withIndex('by_user_name', q => q.eq('userId', c.userId).eq('name', c.args.name))
+        .unique()
+      if (conflict) throw new Error('server_name_taken')
+    }
     const patch = {}
     if (c.args.name !== undefined) patch.name = c.args.name
     if (c.args.url !== undefined) {
@@ -3272,7 +3358,7 @@ When hard delete triggers for a session:
 - delete token usage rows
 - delete `threadRunState` row
 
-Agent thread and message data is managed by the `@convex-dev/agent` component. v1 deletes only application-layer rows (`tasks`, `todos`, `tokenUsage`, `threadRunState`, `session`). Agent component thread/message cleanup is deferred to v2 when the component exposes a bulk-delete API.
+Agent thread and message data is managed by the `@convex-dev/agent` component and stored in component-internal tables. v1 deletes only application-layer rows (`tasks`, `todos`, `tokenUsage`, `threadRunState`, `session`). Component-layer thread/message rows are intentionally left as orphaned data in v1 because `@convex-dev/agent` does not currently expose a thread-deletion API. This means archived conversation content persists indefinitely in component storage even after the 180-day hard delete of application-layer rows. v2 will integrate component-layer cleanup once the agent SDK exposes a bulk-delete or thread-delete API — this is tracked as a known retention gap.
 
 ### Trigger
 
@@ -3326,6 +3412,22 @@ const timeoutStaleRuns = internalMutation({
         if (age <= UNCLAIMED_STALE_MS) continue
       }
 
+      const session = await ctx.db.query('session').withIndex('by_threadId', q => q.eq('threadId', fresh.threadId)).first()
+      if (session?.status === 'archived') {
+        await ctx.db.patch(fresh._id, {
+          activatedAt: undefined,
+          activeRunToken: undefined,
+          claimedAt: undefined,
+          queuedPriority: undefined,
+          queuedPromptMessageId: undefined,
+          queuedReason: undefined,
+          runClaimed: undefined,
+          runHeartbeatAt: undefined,
+          status: 'idle'
+        })
+        continue
+      }
+
       if (fresh.queuedPromptMessageId) {
         const runToken = crypto.randomUUID()
         await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
@@ -3360,7 +3462,9 @@ const timeoutStaleRuns = internalMutation({
 })
 ```
 
-Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, and `finishRun` will reject it because `activeRunToken` no longer matches. This means the old action's writes are limited to the compaction window (best-effort, non-critical). Any messages it manages to write before detecting staleness are harmless since the new run will stream from the latest thread state.
+Lost-turn limitation: if an orchestrator run dies before answering and there is no `queuedPromptMessageId`, `timeoutStaleRuns` resets the thread to `idle` but does not replay the original prompt. That user turn is effectively lost — the user must resend. v2 can persist the active run's `promptMessageId` in `threadRunState` so `timeoutStaleRuns` can replay it on timeout.
+
+Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, after `consumeStream()` completes (before `postTurnAudit`), and `finishRun` will reject it because `activeRunToken` no longer matches. This means the old action's writes are limited to the period before the post-stream staleness check. Any messages it manages to write before detecting staleness are harmless since the new run will stream from the latest thread state.
 
 ### `convex/retention.ts`
 
@@ -3379,6 +3483,14 @@ const archiveIdleSessions = internalMutation({
     for (const s of idle) {
       if (now - s.lastActivityAt > IDLE_MS * 7) {
         await ctx.db.patch(s._id, { archivedAt: now, status: 'archived' })
+        const runState = await ctx.db.query('threadRunState').withIndex('by_threadId', q => q.eq('threadId', s.threadId)).unique()
+        if (runState) {
+          await ctx.db.patch(runState._id, {
+            queuedPriority: undefined,
+            queuedPromptMessageId: undefined,
+            queuedReason: undefined
+          })
+        }
       }
     }
   }
@@ -3717,8 +3829,8 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
     "dev": "PORT=3005 bun with-env next dev --turbo",
     "lint": "eslint",
     "start": "bun with-env next start",
-    "test": "CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",
-    "test:e2e": "CONVEX_TEST_MODE=true bun --cwd ../../packages/be-agent with-env convex dev --once && bun with-env playwright test --reporter=list",
+    "test": "NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",
+    "test:e2e": "NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true bun --cwd ../../packages/be-agent with-env convex dev --once && bun with-env playwright test --reporter=list",
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env --"
   },
