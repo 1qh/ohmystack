@@ -2626,24 +2626,27 @@ This provider lives at `apps/agent/src/app/convex-provider.tsx` (co-located with
 Auth gating is handled entirely client-side by `@convex-dev/auth`'s `useConvexAuth()` hook. Protected pages check `isAuthenticated` from the hook and redirect to `/login` if unauthenticated. The layout does NOT do server-side redirect — the agent app uses a separate Convex project and cannot use `@noboil/convex/next` `isAuthenticated()` (which is wired to the demo backend).
 
 ```tsx
-import type { ReactNode } from 'react'
+import type { Metadata, ReactNode } from 'react'
 
 import AgentConvexProvider from './convex-provider'
 import TestLoginProvider from './test-login-provider'
 
-const Layout = ({ children }: { children: ReactNode }) => {
+export const metadata: Metadata = { title: 'Agent' }
 
-    return (
+const Layout = ({ children }: { children: ReactNode }) => (
+  <html lang="en">
+    <body>
       <AgentConvexProvider>
         <TestLoginProvider>{children}</TestLoginProvider>
       </AgentConvexProvider>
-    )
-  }
+    </body>
+  </html>
+)
 
 export default Layout
 ```
 
-Auth gating is handled client-side by `@convex-dev/auth`'s `useConvexAuth()` hook in each page, not by server-side `isAuthenticated()` (which requires `@noboil/convex/next` and the demo backend). The login page checks auth state and redirects after successful sign-in.
+This is the root layout (`src/app/layout.tsx`) with the required `<html>/<body>` shell. Auth gating is handled client-side by `@convex-dev/auth`'s `useConvexAuth()` hook in each page, not by server-side `isAuthenticated()`. Protected pages (session list, chat, settings) wrap their content in an `AuthGuard` component that checks `useConvexAuth().isAuthenticated` and redirects to `/login` if false. The login page checks auth state and redirects to `/` after successful sign-in.
 
 `TestLoginProvider` lives at `apps/agent/src/app/test-login-provider.tsx`:
 
@@ -2699,7 +2702,10 @@ packages/be-agent/
 │   ├── convex.config.ts
 │   ├── schema.ts
 │   ├── auth.ts
+│   ├── auth.config.ts
 │   ├── testauth.ts
+│   ├── http.ts
+│   ├── crons.ts
 │   ├── sessions.ts
 │   ├── messages.ts
 │   ├── orchestrator.ts
@@ -2714,6 +2720,7 @@ packages/be-agent/
 │   ├── staleTaskCleanup.ts
 │   └── retention.ts
 ├── ai.ts
+├── env.ts
 ├── lazy.ts
 ├── prompts.ts
 ├── t.ts
