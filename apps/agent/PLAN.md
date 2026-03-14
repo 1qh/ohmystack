@@ -338,10 +338,12 @@ export default defineSchema({
     .index('by_threadId', ['threadId']),
   threadRunState: defineTable({
     activeRunToken: v.optional(v.string()),
+    activatedAt: v.optional(v.number()),
     autoContinueStreak: v.number(),
     compactionLock: v.optional(v.string()),
     compactionLockAt: v.optional(v.number()),
     compactionSummary: v.optional(v.string()),
+    lastCompactedMessageId: v.optional(v.string()),
     lastError: v.optional(v.string()),
     queuedPriority: v.optional(v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation'))),
     queuedPromptMessageId: v.optional(v.string()),
@@ -676,10 +678,14 @@ const todoReadTool = createTool({
 const taskStatusTool = createTool({
   description: 'Check progress for a background task.',
   execute: async (ctx, { taskId }) => {
-    return await ctx.runQuery(internal.tasks.getOwnedTaskStatusInternal, {
-      requesterThreadId: ctx.threadId,
-      taskId
-    })
+    try {
+      return await ctx.runQuery(internal.tasks.getOwnedTaskStatusInternal, {
+        requesterThreadId: ctx.threadId,
+        taskId
+      })
+    } catch (error) {
+      return { code: 'status_failed', error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({ taskId: z.string() })
 })
@@ -691,10 +697,14 @@ const taskStatusTool = createTool({
 const taskOutputTool = createTool({
   description: 'Get output for a completed background task.',
   execute: async (ctx, { taskId }) => {
-    return await ctx.runQuery(internal.tasks.getOwnedTaskOutput, {
-      requesterThreadId: ctx.threadId,
-      taskId
-    })
+    try {
+      return await ctx.runQuery(internal.tasks.getOwnedTaskOutput, {
+        requesterThreadId: ctx.threadId,
+        taskId
+      })
+    } catch (error) {
+      return { code: 'output_failed', error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({ taskId: z.string() })
 })
@@ -728,12 +738,16 @@ const webSearchTool = createTool({
 const mcpCallTool = createTool({
   description: 'Call a configured MCP tool.',
   execute: async (ctx, { serverName, toolArgs, toolName }) => {
-    return await ctx.runAction(internal.mcp.callToolOwned, {
-      requesterThreadId: ctx.threadId,
-      serverName,
-      toolArgs,
-      toolName
-    })
+    try {
+      return await ctx.runAction(internal.mcp.callToolOwned, {
+        requesterThreadId: ctx.threadId,
+        serverName,
+        toolArgs,
+        toolName
+      })
+    } catch (error) {
+      return { code: 'mcp_call_failed', error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({
     serverName: z.string(),
@@ -749,7 +763,11 @@ const mcpCallTool = createTool({
 const mcpDiscoverTool = createTool({
   description: 'List available MCP tools from enabled servers for the current user.',
   execute: async (ctx) => {
-    return await ctx.runAction(internal.mcp.discoverToolsOwned, { requesterThreadId: ctx.threadId })
+    try {
+      return await ctx.runAction(internal.mcp.discoverToolsOwned, { requesterThreadId: ctx.threadId })
+    } catch (error) {
+      return { code: 'mcp_discover_failed', error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({})
 })
@@ -940,6 +958,8 @@ const timeoutRunningTasks = internalMutation({
 - `heartbeatAt`
 - `continuationEnqueuedAt`
 - `runHeartbeatAt`
+- `activatedAt`
+- `lastCompactedMessageId`
 - `completedAt`
 - `completionNotifiedAt`
 - `retryCount`
@@ -949,15 +969,15 @@ const timeoutRunningTasks = internalMutation({
 
 Orchestrator auto-continue after task completion is allowed only when the completion reminder message is still the latest message in parent thread.
 Reminder insertion and notification marking are unified in `completeTask` so completion side effects happen in one CAS path.
+The latest-message check and enqueue are combined atomically in `enqueueRunIfLatest` to prevent user messages from racing the continuation.
 
 ```typescript
 const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
   const task = await ctx.runQuery(internal.tasks.getById, { taskId })
   if (!task || !task.completionReminderMessageId) return
   if (task.continuationEnqueuedAt) return
-  const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: task.parentThreadId })
-  if (latest !== task.completionReminderMessageId) return
-  const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
+  const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRunIfLatest, {
+    expectedLatestMessageId: task.completionReminderMessageId,
     incrementStreak: true,
     promptMessageId: task.completionReminderMessageId,
     reason: 'task_completion',
@@ -968,7 +988,7 @@ const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
 }
 ```
 
-v1 limitation: if the worker action crashes between `completeTask` and `maybeContinueOrchestrator`, the completion reminder is persisted but no continuation is enqueued. The stale-run recovery cron (`timeoutStaleRuns`) will eventually detect the idle thread with a queued payload and schedule the missing run. v2 can move continuation enqueue into `completeTask` itself (mutations can use `ctx.scheduler.runAfter`) to make this fully atomic.
+v1 limitation: if the worker action crashes between `completeTask` and `maybeContinueOrchestrator`, the completion reminder is persisted but no continuation is enqueued. The thread remains idle with no queued payload, so `timeoutStaleRuns` cannot recover this case. The user must send a new message to re-engage the orchestrator. v2 can move continuation enqueue into `completeTask` itself (mutations can use `ctx.scheduler.runAfter`) to make this fully atomic.
 
 Delegation Idempotency: `@convex-dev/agent` handles retries at the agent-step execution layer. If the model emits duplicate delegate tool calls, separate tasks are intentionally created (the model delegated twice). Convex action retry behavior is absorbed by the agent framework's step-level deduplication.
 
@@ -1114,6 +1134,65 @@ const enqueueRun = internalMutation({
         threadId: args.threadId
       })
       await ctx.db.patch(state._id, {
+        activatedAt: Date.now(),
+        activeRunToken: runToken,
+        autoContinueStreak: nextStreak,
+        claimedAt: undefined,
+        queuedPriority: undefined,
+        queuedPromptMessageId: undefined,
+        queuedReason: undefined,
+        runClaimed: false,
+        status: 'active'
+      })
+      return { ok: true, scheduled: true }
+    }
+
+    const priority = { task_completion: 1, todo_continuation: 0, user_message: 2 }
+    const queuedPriority = priority[state.queuedPriority ?? state.queuedReason ?? 'todo_continuation']
+    const incomingPriority = priority[args.reason]
+    if (incomingPriority < queuedPriority) return { ok: false, reason: 'lower_priority' }
+
+    await ctx.db.patch(state._id, {
+      autoContinueStreak: nextStreak,
+      queuedPriority: args.reason,
+      queuedPromptMessageId: args.promptMessageId,
+      queuedReason: args.reason
+    })
+    return { ok: true, scheduled: false }
+  }
+})
+
+const enqueueRunIfLatest = internalMutation({
+  args: {
+    expectedLatestMessageId: v.string(),
+    incrementStreak: v.optional(v.boolean()),
+    promptMessageId: v.optional(v.string()),
+    reason: v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation')),
+    threadId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const latest = await getLatestMessageId(ctx, components.agent, { threadId: args.threadId })
+    if (latest !== args.expectedLatestMessageId) return { ok: false, reason: 'not_latest' }
+    const state = await ensureRunState({ ctx, threadId: args.threadId })
+    const shouldIncrement = args.incrementStreak === true
+
+    if (shouldIncrement && state.autoContinueStreak >= 5) {
+      return { ok: false, reason: 'streak_cap' }
+    }
+
+    let nextStreak = state.autoContinueStreak
+    if (args.reason === 'user_message') nextStreak = 0
+    if (shouldIncrement) nextStreak += 1
+
+    if (state.status === 'idle') {
+      const runToken = crypto.randomUUID()
+      await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
+        promptMessageId: args.promptMessageId,
+        runToken,
+        threadId: args.threadId
+      })
+      await ctx.db.patch(state._id, {
+        activatedAt: Date.now(),
         activeRunToken: runToken,
         autoContinueStreak: nextStreak,
         claimedAt: undefined,
@@ -1148,7 +1227,7 @@ const claimRun = internalMutation({
     if (state.status !== 'active') return { ok: false }
     if (state.activeRunToken !== runToken) return { ok: false }
     if (state.runClaimed) return { ok: false }
-    await ctx.db.patch(state._id, { claimedAt: Date.now(), runClaimed: true })
+    await ctx.db.patch(state._id, { claimedAt: Date.now(), runClaimed: true, runHeartbeatAt: Date.now() })
     return { ok: true }
   }
 })
@@ -1167,19 +1246,23 @@ const finishRun = internalMutation({
         threadId
       })
       await ctx.db.patch(state._id, {
+        activatedAt: Date.now(),
         activeRunToken: nextRunToken,
         claimedAt: undefined,
         queuedPriority: undefined,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
-        runClaimed: false
+        runClaimed: false,
+        runHeartbeatAt: undefined
       })
       return { scheduled: true }
     }
     await ctx.db.patch(state._id, {
+      activatedAt: undefined,
       activeRunToken: undefined,
       claimedAt: undefined,
       runClaimed: undefined,
+      runHeartbeatAt: undefined,
       status: 'idle'
     })
     return { scheduled: false }
@@ -1560,6 +1643,15 @@ const recordRunError = internalMutation({
     await ctx.db.patch(state._id, { lastError: error })
   }
 })
+
+const heartbeatRun = internalMutation({
+  args: { runToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { runToken, threadId }) => {
+    const state = await ctx.db.query('threadRunState').withIndex('by_threadId', q => q.eq('threadId', threadId)).unique()
+    if (!state || state.activeRunToken !== runToken) return
+    await ctx.db.patch(state._id, { runHeartbeatAt: Date.now() })
+  }
+})
 ```
 
 ### `orchestrator.resetAutoContinueStreak`
@@ -1760,6 +1852,12 @@ const listClosedPrefixGroups = internalQuery({
     })
     const messages = result.page
     messages.reverse()
+    const runState = await ctx.db.query('threadRunState').withIndex('by_threadId', q => q.eq('threadId', threadId)).unique()
+    const startAfter = runState?.lastCompactedMessageId
+    if (startAfter) {
+      const idx = messages.findIndex(m => m._id === startAfter)
+      if (idx >= 0) messages.splice(0, idx + 1)
+    }
     if (messages.length < 10) return []
 
     const cutoff = Math.floor(messages.length * 0.6)
@@ -1826,10 +1924,10 @@ const listClosedPrefixGroups = internalQuery({
 
 ```typescript
 const setCompactionSummary = internalMutation({
-  args: { compactionSummary: v.string(), threadId: v.string() },
-  handler: async (ctx, { compactionSummary, threadId }) => {
+  args: { compactionSummary: v.string(), lastCompactedMessageId: v.string(), threadId: v.string() },
+  handler: async (ctx, { compactionSummary, lastCompactedMessageId, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
-    await ctx.db.patch(state._id, { compactionSummary })
+    await ctx.db.patch(state._id, { compactionSummary, lastCompactedMessageId })
   }
 })
 ```
@@ -1961,9 +2059,14 @@ const callToolOwned = internalAction({
       return { error: 'invalid_auth_headers', ok: false, retryable: false }
     }
 
-    const transport = new StreamableHTTPClientTransport(new URL(server.url), {
-      requestInit: { headers: authHeaders }
-    })
+    let transport
+    try {
+      transport = new StreamableHTTPClientTransport(new URL(server.url), {
+        requestInit: { headers: authHeaders }
+      })
+    } catch {
+      return { error: 'invalid_server_url', ok: false, retryable: false }
+    }
     const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
 
     try {
@@ -2119,6 +2222,7 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
     })
     await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
       compactionSummary: summary,
+      lastCompactedMessageId: groups[groups.length - 1].endId,
       threadId
     })
   } finally {
@@ -2218,6 +2322,13 @@ const runOrchestrator = internalAction({
     })
     if (!claimed.ok) return
 
+    const heartbeatInterval = setInterval(async () => {
+      await ctx.runMutation(internal.orchestrator.heartbeatRun, {
+        runToken: args.runToken,
+        threadId: args.threadId
+      })
+    }, 2 * 60 * 1000)
+
     try {
       await compactIfNeeded({ ctx, threadId: args.threadId })
       const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
@@ -2248,6 +2359,7 @@ const runOrchestrator = internalAction({
         threadId: args.threadId
       })
     } finally {
+      clearInterval(heartbeatInterval)
       await ctx.runMutation(internal.orchestrator.finishRun, {
         runToken: args.runToken,
         threadId: args.threadId
@@ -2786,6 +2898,7 @@ const enqueueRunInline = async ({ ctx, promptMessageId, reason, threadId, increm
       threadId
     })
     await ctx.db.patch(state._id, {
+      activatedAt: Date.now(),
       activeRunToken: runToken,
       autoContinueStreak: nextStreak,
       claimedAt: undefined,
@@ -2817,12 +2930,13 @@ const submitMessage = m({
   handler: async c => {
     const session = await c.ctx.db.get(c.args.sessionId)
     if (!session || session.userId !== c.userId) throw new Error('session_not_found')
+    if (session.status === 'archived') throw new Error('session_archived')
     const saved = await orchestrator.saveMessage(c.ctx, {
       message: { content: c.args.content, role: 'user' },
       threadId: session.threadId,
       userId: c.userId
     })
-    await c.ctx.db.patch(c.args.sessionId, { lastActivityAt: Date.now() })
+    await c.ctx.db.patch(c.args.sessionId, { lastActivityAt: Date.now(), status: session.status === 'idle' ? 'active' : session.status })
     await enqueueRunInline({
       ctx: c.ctx,
       incrementStreak: false,
@@ -3047,6 +3161,8 @@ const getOwnedTaskStatusInternal = internalQuery({
 - active sessions become idle after 1 day of inactivity
 - idle sessions are archived after 7 days of inactivity (setting `status='archived'` and `archivedAt`)
 - archived sessions are hard-deleted after 180 days
+- submitting a message to an archived session returns `session_archived` error
+- submitting a message to an idle session restores it to active status
 
 ### Cleanup Scope
 
@@ -3105,7 +3221,9 @@ const timeoutStaleRuns = internalMutation({
         const lastBeat = fresh.runHeartbeatAt ?? fresh.claimedAt
         if (!lastBeat || now - lastBeat <= RUN_STALE_MS) continue
       } else {
-        const age = fresh.claimedAt ? now - fresh.claimedAt : RUN_STALE_MS + 1
+        const activatedTime = fresh.activatedAt ?? fresh.claimedAt
+        if (!activatedTime) continue
+        const age = now - activatedTime
         if (age <= UNCLAIMED_STALE_MS) continue
       }
 
@@ -3117,6 +3235,7 @@ const timeoutStaleRuns = internalMutation({
           threadId: fresh.threadId
         })
         await ctx.db.patch(fresh._id, {
+          activatedAt: Date.now(),
           activeRunToken: runToken,
           claimedAt: undefined,
           queuedPriority: undefined,
@@ -3130,6 +3249,7 @@ const timeoutStaleRuns = internalMutation({
       }
 
       await ctx.db.patch(fresh._id, {
+        activatedAt: undefined,
         activeRunToken: undefined,
         claimedAt: undefined,
         runClaimed: undefined,
