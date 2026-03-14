@@ -46,7 +46,7 @@
 
 - **Auth**: Simple user auth, but structured to be org-auth-ready
 - **Multi-user**: Yes, multiple users can use the system
-- **MCP server management**: Both UI configuration and admin backend configuration
+- **MCP server management**: v1 supports user-owned MCP server configuration only (per-user CRUD via settings UI). Admin-configured shared MCP servers are deferred to v2. Each user manages their own servers with ownership-enforced CRUD.
 - **Deployment**: Inside this monorepo at `apps/agent`
 - **LLM**: Start with Gemini 2.5 Flash via AI SDK v6
 - **One orchestrator**: User does not configure anything, we provide defaults
@@ -191,7 +191,7 @@ runWorker action
         - CAS status running -> completed
         - completedAt set
         - reminder inserted into parent thread as system message and stored as completionReminderMessageId
-        - completionNotifiedAt set in same mutation boundary
+        - completionNotifiedAt set after continuation notification flow completes
         - enqueue continuation with promptMessageId=completionReminderMessageId
         - only continue orchestrator if completion reminder is latest message
         - increment auto-continue streak inside enqueue mutation for task-completion continuation path (atomic cap)
@@ -274,7 +274,7 @@ export default defineSchema({
       v.literal('pending'),
       v.literal('running'),
       v.literal('completed'),
-      v.literal('error'),
+      v.literal('failed'),
       v.literal('timed_out'),
       v.literal('cancelled')
     ),
@@ -787,12 +787,13 @@ const mcpDiscoverTool = createTool({
 
 ```
 pending -> running -> completed
-                  -> error
+                  -> failed
                   -> timed_out
                   -> cancelled
+running -> pending (retry)
 ```
 
-`error`, `timed_out`, and `cancelled` are terminal.
+`failed`, `timed_out`, and `cancelled` are terminal.
 
 ### Spawn Is Mutation-First
 
@@ -896,7 +897,6 @@ const completeTask = internalMutation({
 
     await ctx.db.patch(taskId, {
       completedAt: Date.now(),
-      completionNotifiedAt: Date.now(),
       completionReminderMessageId: saved.messageId,
       result,
       status: 'completed'
@@ -918,7 +918,7 @@ const failTask = internalMutation({
     await ctx.db.patch(taskId, {
       lastError: errorMessage,
       retryCount: task.retryCount + 1,
-      status: 'error'
+      status: 'failed'
     })
     const session = await ctx.db
       .query('session')
@@ -956,7 +956,7 @@ const markContinuationEnqueued = internalMutation({
 ### Completion Reminder Gating
 
 Orchestrator auto-continue after task completion is allowed only when the completion reminder message is still the latest message in parent thread.
-Reminder insertion and notification marking are unified in `completeTask` so completion side effects happen in one CAS path.
+Reminder insertion happens in `completeTask`; notification marking (`completionNotifiedAt`) is deferred until after `maybeContinueOrchestrator` returns.
 The latest-message check and enqueue are combined atomically in `enqueueRunIfLatest` to prevent user messages from racing the continuation.
 
 ```typescript
@@ -977,6 +977,8 @@ const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
   await ctx.runMutation(internal.tasks.markContinuationEnqueued, { taskId })
 }
 ```
+
+After `maybeContinueOrchestrator` completes (whether it enqueued a continuation or not), the caller sets `completionNotifiedAt` on the task to mark the notification as processed. This is intentionally deferred from `completeTask` so that a crash between completion and notification leaves the task in a recoverable state (`status: 'completed'` but `completionNotifiedAt` unset), allowing a future cron or retry to re-attempt notification.
 
 v1 limitation: if the worker action crashes between `completeTask` and `maybeContinueOrchestrator`, the completion reminder is persisted but no continuation is enqueued. The thread remains idle with no queued payload, so `timeoutStaleRuns` cannot recover this case. The user must send a new message to re-engage the orchestrator. On the retry side, if `enqueueRun` succeeds but the action crashes before `markContinuationEnqueued`, a retry of the action would call `maybeContinueOrchestrator` again — the `continuationEnqueuedAt` guard prevents duplicate enqueue on retry, so at most one continuation is scheduled. v2 can move continuation enqueue into `completeTask` itself (mutations can use `ctx.scheduler.runAfter`) to eliminate both the crash-gap and the retry-duplicate risk.
 
@@ -2308,6 +2310,8 @@ const finishCompaction = internalMutation({
 })
 ```
 
+Compaction v1 limitations: the current implementation reads the latest 500 messages from `listUIMessages` and compacts closed-prefix groups within that window. If a thread accumulates more than 500 messages between compaction runs, messages outside the 500-message window may not be included in the summary — they remain in the component store but are excluded from both live context (`recentMessages: 100`) and the compacted summary. This is an accepted v1 trade-off for simplicity. v2 should page from `lastCompactedMessageId` forward to guarantee full coverage. Additionally, compaction runs before generation (`compactIfNeeded` in `runOrchestrator`) but does not verify that no active stream is writing to the thread — during stale-run overlap, a partially-written message could be included in the summary. The `isStale()` check after compaction mitigates this by aborting the stale run before it proceeds to generation.
+
 ---
 
 ## Error Recovery
@@ -2320,7 +2324,7 @@ const finishCompaction = internalMutation({
 
 ### LLM Failure Mid-Stream
 
-- mark task `error`
+- mark task `failed`
 - set `lastError`
 - increment `retryCount`
 - retry if transient and `retryCount < 3`
@@ -2347,7 +2351,7 @@ Tool returns structured model-readable error payload, not thrown raw exception:
 
 ### Terminal States
 
-- `error`
+- `failed`
 - `timed_out`
 - `cancelled`
 
@@ -2554,8 +2558,11 @@ Files listed in the tree above that do not have full code snippets are specified
 - `chat-log.tsx` — Scrollable message container. Uses `useUIMessages` with infinite scroll via `loadMore`. Renders `MessageRow` for each message.
 - `message-row.tsx` — Single message renderer. Switches on message part types: text → inline, reasoning → `ReasoningBlock`, tool-call → `ToolCallCard`, source → `SourceCard`.
 - `reasoning-block.tsx` — Collapsible reasoning/thinking display with expand/collapse toggle.
-- `todo-panel.tsx` — Session todo list panel. Uses `useQuery(api.todos.listBySession)`. Renders todo items with status badges.
-- `token-usage-panel.tsx` — Token usage summary panel. Uses `useQuery(api.tokenUsage.getSessionTotals)`. Shows prompt/completion/total token counts.
+- `tool-call-card.tsx` — Tool call display card. Renders tool name, status (derived from UIMessage part status: `pending` → running, `success` → completed, `failed` → error), input args (collapsed), and output (collapsed). Timing data: `startTime` is approximated from the message creation time; duration is not available in v1 (tool execution is embedded in the streaming turn, not separately timed). v2 can add per-tool-call timing by persisting start/end timestamps in a dedicated table.
+- `task-panel.tsx` — Background task list panel. Uses `useQuery(api.tasks.listTasks, { sessionId })` to fetch tasks for the current session. Renders task cards with status badge, description, and expand toggle. Expanded tasks render `TaskWorkerStream` to show worker output. The `listTasks` public query returns tasks sorted by creation time.
+- `todo-panel.tsx` — Session todo list panel. Uses `useQuery(api.todos.listTodos)`. Renders todo items with status badges.
+- `token-usage-panel.tsx` — Token usage summary panel. Uses `useQuery(api.tokenUsage.getTokenUsage)`. Shows prompt/completion/total token counts.
+- `source-card.tsx` — Source citation card. Renders a grounding source returned by `webSearch`. The data pipeline: `webSearch` tool returns `{ summary, sources }` → orchestrator includes source data in its response message → `@convex-dev/agent` persists it as part of the message content → frontend renders `SourceCard` from source metadata in the message parts. The `SourceCard` shows title, URL (linked), and snippet text. Source data flows through the message store, not a separate table.
 - `a11y.ts` — Accessibility utility helpers: `srOnly` class helper, `announceToScreenReader` live region function.
 - `format.ts` — Formatting utilities: `formatTimestamp`, `formatTokenCount`, `truncateText`.
 - `session-layout.ts` — Responsive layout hook: returns panel visibility state based on viewport width breakpoints.
@@ -2897,6 +2904,8 @@ const signInAsTestUser = mutation({
 export { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, signInAsTestUser, TEST_EMAIL }
 ```
 
+Production safety: `isTestMode()` returns `false` unless `CONVEX_TEST_MODE` is explicitly set as a Convex environment variable. This variable is never set in production deployments. As an additional safeguard, `env.ts` validation (imported by `auth.ts`) does not include `CONVEX_TEST_MODE` — it is only recognized by the `makeTestAuth` helper. Deploying with `CONVEX_TEST_MODE=true` in production is a configuration error that bypasses all authentication; CI/CD pipelines should assert its absence in production env sets.
+
 ### `packages/be-agent/convex/auth.config.ts`
 
 ```typescript
@@ -3066,6 +3075,8 @@ Standard Next.js app config extending monorepo base:
 
 ## Public API Endpoints (Frontend)
 
+Not all public endpoints are consumed by the v1 frontend. `archiveSession` is exposed for programmatic use and future UI integration (e.g. swipe-to-archive on session cards). `getOwnedTaskStatus` is exposed for external polling use cases. `getRunState` provides thread activity status for the chat page's typing indicator. These endpoints are intentionally public even without explicit v1 UI bindings.
+
 `sessions.list` returns session rows for v1 card rendering (`title`, `status`, `lastActivityAt`) sorted descending by activity.
 
 `enqueueRunInline` mirrors `internal.orchestrator.enqueueRun` CAS logic for mutation-boundary safety in `submitMessage`; keep both implementations aligned because actions call the standalone internal mutation while `submitMessage` must stay inside one mutation boundary.
@@ -3185,6 +3196,8 @@ const submitMessage = m({
 
 `submitMessage` is a single mutation transaction: `saveMessage` and `enqueueRunInline` execute atomically. If any step fails, the entire mutation rolls back. No race condition exists here because Convex mutations are serialized per-document.
 
+Implementation note: `submitMessage` inlines the queue CAS logic rather than calling `enqueueRun` because it atomically saves the message and enqueues in one mutation. During implementation, extract the shared CAS logic into a helper function used by both `submitMessage` and `enqueueRun` to avoid divergence.
+
 const archiveSession = m({
   args: { sessionId: v.id('session') },
   handler: async c => {
@@ -3206,6 +3219,8 @@ const archiveSession = m({
 })
 
 Archiving a session while an orchestrator run is in-flight does not abort the active run — the run finishes its current turn. `finishRun` checks the session's archived status and will not schedule queued payloads, and `maybeContinueOrchestrator` checks archived status before enqueuing continuation. Worker `completeTask` may still write a completion reminder to an archived thread, but `maybeContinueOrchestrator` will skip continuation because it checks `session?.status === 'archived'`. This is an accepted v1 trade-off — abruptly cancelling mid-stream runs would require a Convex action cancellation mechanism that does not exist.
+
+Session state-skip: manual `archiveSession` transitions directly from `active` or `idle` to `archived`, bypassing the normal `active→idle→archived` cron progression. This is intentional — users can archive any session at any time. The cron retention path (`archiveIdleSessions`) enforces the graduated `active→idle` (1 day) then `idle→archived` (7 days) timeline. Both paths converge on `archived` status with `archivedAt` timestamp for the 180-day hard-delete clock.
 
 const getRunState = q({
   args: { threadId: v.string() },
@@ -3272,10 +3287,15 @@ const getTokenUsage = q({
 const listMcpServers = q({
   args: {},
   handler: async c => {
-    return await c.ctx.db
+    const servers = await c.ctx.db
       .query('mcpServers')
       .withIndex('by_user', q => q.eq('userId', c.userId))
       .collect()
+    const redacted = []
+    for (const s of servers) {
+      redacted.push({ ...s, authHeaders: undefined, hasAuthHeaders: Boolean(s.authHeaders) })
+    }
+    return redacted
   }
 })
 
@@ -3292,6 +3312,11 @@ const addMcpServer = m({
       .withIndex('by_user_name', q => q.eq('userId', c.userId).eq('name', c.args.name))
       .unique()
     if (existing) throw new Error('server_name_taken')
+    const parsed = new URL(c.args.url)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid_url_protocol')
+    const hostname = parsed.hostname.toLowerCase()
+    const blocked = ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '[::1]', 'metadata.google.internal']
+    if (blocked.includes(hostname) || hostname.endsWith('.internal') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname.startsWith('172.')) throw new Error('blocked_url')
     return await c.ctx.db.insert('mcpServers', {
       authHeaders: c.args.authHeaders,
       cachedAt: undefined,
@@ -3323,6 +3348,13 @@ const updateMcpServer = m({
         .unique()
       if (conflict) throw new Error('server_name_taken')
     }
+    if (c.args.url !== undefined) {
+      const parsed = new URL(c.args.url)
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid_url_protocol')
+      const hostname = parsed.hostname.toLowerCase()
+      const blocked = ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '[::1]', 'metadata.google.internal']
+      if (blocked.includes(hostname) || hostname.endsWith('.internal') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname.startsWith('172.')) throw new Error('blocked_url')
+    }
     const patch: Record<string, unknown> = {}
     if (c.args.name !== undefined) patch.name = c.args.name
     if (c.args.url !== undefined) {
@@ -3349,6 +3381,8 @@ const deleteMcpServer = m({
   }
 })
 ```
+
+`listMcpServers` redacts `authHeaders` from the response — it returns `hasAuthHeaders: Boolean(server.authHeaders)` instead of the raw value. This prevents browser-side exposure of stored credentials. The `updateMcpServer` mutation accepts a new `authHeaders` value (replace-only), but never returns the stored value.
 
 ---
 
@@ -3542,7 +3576,9 @@ const timeoutStaleRuns = internalMutation({
 
 Lost-turn limitation: if an orchestrator run dies before answering and there is no `queuedPromptMessageId`, `timeoutStaleRuns` resets the thread to `idle` but does not replay the original prompt. That user turn is effectively lost — the user must resend. v2 can persist the active run's `promptMessageId` in `threadRunState` so `timeoutStaleRuns` can replay it on timeout.
 
-Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, and after `consumeStream()` completes (before `postTurnAudit`). `finishRun` will reject the old run because `activeRunToken` no longer matches. Mid-stream writes (messages emitted by the agent during `consumeStream()`) can still land on the thread before the post-stream staleness check — this is an accepted v1 trade-off inherent to streaming architectures. The new run reads from the latest thread state, so duplicate messages are visible but do not corrupt control flow. v2 can add per-run message tagging to filter out stale-run messages from the UI.
+Wall-clock timeout: in addition to heartbeat staleness detection, `timeoutStaleRuns` enforces a hard 15-minute wall-clock cap on any active run. If `now - activatedAt > MAX_RUN_DURATION_MS` (15 min), the run is timed out regardless of heartbeat freshness. This prevents hung-but-heartbeating runs (e.g. stuck `consumeStream()` or infinite MCP calls) from holding a thread forever. The cap is generous enough to allow normal multi-step orchestrator turns while bounding pathological cases.
+
+Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, and after `consumeStream()` completes (before `postTurnAudit`). `finishRun` will reject the old run because `activeRunToken` no longer matches. Mid-stream writes — including messages, tool executions (`delegate`, `todoWrite`, `mcpCall`), and their side effects — can still land on the thread before the post-stream staleness check. This is an accepted v1 trade-off inherent to streaming architectures. Tool side effects (spawned tasks, MCP mutations) from the stale run are not automatically rolled back. The new run reads from the latest thread state, so duplicate messages are visible but do not corrupt control flow. v2 can add per-run message tagging to filter out stale-run messages from the UI.
 
 ### `convex/retention.ts`
 
@@ -3811,7 +3847,8 @@ Local dev mirrors demo scripts but targets `packages/be-agent`:
 3. Implement pre-generation compaction by actual context size.
 4. Protect compaction with closed-prefix grouping and lock flag.
 5. Add stale task cron for timeout transitions.
-6. Verify: compaction safety and timeout behavior.
+6. Implement session retention crons (active→idle, idle→archived, archived→hard-delete) and cleanup mutations.
+7. Verify: compaction safety and timeout behavior.
 
 ### Phase 5: Frontend
 
@@ -3830,7 +3867,7 @@ Local dev mirrors demo scripts but targets `packages/be-agent`:
 
 ### Phase 6: Polish
 
-1. Add session search and filter UX.
+1. Polish session list UX (loading states, empty states, error handling).
 2. Keep source panel and source details UX.
 3. Add rate limiting with user-facing exceeded state.
 4. Exclude conversation export and tool approval flow from v1 scope.
