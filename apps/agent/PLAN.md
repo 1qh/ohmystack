@@ -939,23 +939,6 @@ const markContinuationEnqueued = internalMutation({
 })
 ```
 
-```typescript
-const timeoutRunningTasks = internalMutation({
-  args: { now: v.number(), staleMs: v.number() },
-  handler: async (ctx, { now, staleMs }) => {
-    const running = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'running')).collect()
-    for (const task of running) {
-      const lastBeat = task.heartbeatAt ?? task.startedAt
-      if (!lastBeat) continue
-      if (now - lastBeat <= staleMs) continue
-      const latest = await ctx.db.get(task._id)
-      if (!latest || latest.status !== 'running') continue
-      await ctx.db.patch(task._id, { lastError: 'worker_timeout', status: 'timed_out' })
-    }
-  }
-})
-```
-
 ### Required Idempotent Fields
 
 - `heartbeatAt`
@@ -1443,10 +1426,11 @@ const ensureServerToolsCache = async ({ ctx, serverId }) => {
   } catch (_error) {
     return []
   }
+  const MCP_TIMEOUT_MS = 30_000
   const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
   try {
-    await client.connect(transport)
-    const toolList = await client.listTools()
+    await Promise.race([client.connect(transport), new Promise((_, reject) => setTimeout(() => reject(new Error('mcp_connect_timeout')), MCP_TIMEOUT_MS))])
+    const toolList = await Promise.race([client.listTools(), new Promise((_, reject) => setTimeout(() => reject(new Error('mcp_list_timeout')), MCP_TIMEOUT_MS))])
     const tools = []
     for (const t of toolList.tools) {
       tools.push({
@@ -1500,25 +1484,6 @@ const createSession = m({
       userId: c.userId
     })
     return { sessionId, threadId }
-  }
-})
-```
-
-### `sessions.saveUserMessage`
-
-```typescript
-const saveUserMessage = m({
-  args: { content: v.string(), sessionId: v.id('session') },
-  handler: async c => {
-    const session = await c.ctx.db.get(c.args.sessionId)
-    if (!session || session.userId !== c.userId) throw new Error('session_not_found')
-    const saved = await orchestrator.saveMessage(c.ctx, {
-      message: { content: c.args.content, role: 'user' },
-      threadId: session.threadId,
-      userId: c.userId
-    })
-    await c.ctx.db.patch(c.args.sessionId, { lastActivityAt: Date.now() })
-    return { messageId: saved.messageId, threadId: session.threadId }
   }
 })
 ```
@@ -1742,21 +1707,6 @@ const getContextSize = internalQuery({
 })
 ```
 
-### `messages.getLatestMessageId`
-
-```typescript
-const getLatestMessageId = internalQuery({
-  args: { threadId: v.string() },
-  handler: async (ctx, { threadId }) => {
-    const result = await listUIMessages(ctx, components.agent, {
-      paginationOpts: { cursor: null, numItems: 1 },
-      threadId
-    })
-    return result.page.length > 0 ? result.page[0]._id : null
-  }
-})
-```
-
 ### `todos.syncOwned`
 
 Replaces all todos for a session with the provided list. Resolves session from thread.
@@ -1975,10 +1925,12 @@ const listClosedPrefixGroups = internalQuery({
 
 ```typescript
 const setCompactionSummary = internalMutation({
-  args: { compactionSummary: v.string(), lastCompactedMessageId: v.string(), threadId: v.string() },
-  handler: async (ctx, { compactionSummary, lastCompactedMessageId, threadId }) => {
+  args: { compactionSummary: v.string(), lastCompactedMessageId: v.string(), lockToken: v.string(), threadId: v.string() },
+  handler: async (ctx, { compactionSummary, lastCompactedMessageId, lockToken, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
+    if (state.compactionLock !== lockToken) return { ok: false }
     await ctx.db.patch(state._id, { compactionSummary, lastCompactedMessageId })
+    return { ok: true }
   }
 })
 ```
@@ -2119,10 +2071,11 @@ const callToolOwned = internalAction({
     } catch (_error) {
       return { error: 'invalid_server_url', ok: false, retryable: false }
     }
+    const MCP_TIMEOUT_MS = 30_000
     const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
 
     try {
-      await client.connect(transport)
+      await Promise.race([client.connect(transport), new Promise((_, reject) => setTimeout(() => reject(new Error('mcp_connect_timeout')), MCP_TIMEOUT_MS))])
       let parsed
       try {
         parsed = JSON.parse(args.toolArgs)
@@ -2130,7 +2083,7 @@ const callToolOwned = internalAction({
         return { error: `invalid_tool_args: ${String(error)}`, ok: false, retryable: false }
       }
       try {
-        const result = await client.callTool({ arguments: parsed, name: args.toolName })
+        const result = await Promise.race([client.callTool({ arguments: parsed, name: args.toolName }), new Promise((_, reject) => setTimeout(() => reject(new Error('mcp_call_timeout')), MCP_TIMEOUT_MS))])
         return { content: result.content, ok: true }
       } catch (error) {
         const message = String(error)
@@ -2145,7 +2098,7 @@ const callToolOwned = internalAction({
         })
 
         try {
-          const retryResult = await client.callTool({ arguments: parsed, name: args.toolName })
+          const retryResult = await Promise.race([client.callTool({ arguments: parsed, name: args.toolName }), new Promise((_, reject) => setTimeout(() => reject(new Error('mcp_call_timeout')), MCP_TIMEOUT_MS))])
           return { content: retryResult.content, ok: true }
         } catch (retryError) {
           return {
@@ -2275,6 +2228,7 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
     await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
       compactionSummary: summary,
       lastCompactedMessageId: groups[groups.length - 1].endId,
+      lockToken,
       threadId
     })
   } finally {
@@ -2471,13 +2425,20 @@ const listMessages = query({
 ```
 
 ```tsx
-const TaskWorkerStream = ({ threadId }) => {
-  const { messages, isLoading } = useUIMessages(api.messages.listMessages, { threadId })
-  return <WorkerStreamView isLoading={isLoading} messages={messages} />
+const TaskWorkerStream = ({ threadId }: { threadId: string }) => {
+  const { results, status } = useUIMessages(api.messages.listMessages, { threadId }, { initialNumItems: 50, stream: true })
+  if (status === 'LoadingFirstPage') return <div className="animate-pulse text-sm text-muted-foreground">Worker running...</div>
+  return (
+    <div className="space-y-2 text-sm">
+      {results.map(m => (
+        <div key={m._id}>{m.text}</div>
+      ))}
+    </div>
+  )
 }
 ```
 
-`useUIMessages` from `@convex-dev/agent/react` takes two arguments: the query reference and the query args object (e.g. `{ threadId }`). Stream options like pagination are handled internally by the hook, not passed as query args. The hook returns `{ messages, isLoading, loadMore }`.
+`useUIMessages` from `@convex-dev/agent/react` takes three arguments: the query reference, the query args object (e.g. `{ threadId }`), and an options object (e.g. `{ initialNumItems: 50, stream: true }`). The hook returns `{ results, status, loadMore }` where `status` is a paginated query status string (e.g. `'LoadingFirstPage'`, `'CanLoadMore'`, `'Exhausted'`). `WorkerStreamView` is inlined above as simple message rendering — v2 can extract a shared component if worker stream display needs richer formatting.
 
 ```tsx
 
@@ -2516,6 +2477,8 @@ apps/agent/
 │   │   ├── page.tsx
 │   │   ├── login/
 │   │   │   └── page.tsx
+│   │   ├── (protected)/
+│   │   │   └── auth-guard.tsx
 │   │   ├── settings/
 │   │   │   ├── page.tsx
 │   │   │   ├── server-form.tsx
@@ -2549,6 +2512,8 @@ export default createProxy()
 
 export const config = { matcher: ['/((?!_next|favicon.ico).*)'] }
 ```
+
+`createProxy()` only sets `x-pathname` for routing — this is the standard pattern used by all apps in this monorepo. `@convex-dev/auth` handles authentication entirely client-side through the `ConvexAuthNextjsProvider` wrapper: the provider manages auth tokens via Convex HTTP actions, not via Next.js middleware routes. No `convexAuthNextjsMiddleware` is needed.
 
 ### `apps/agent/next.config.ts`
 
@@ -2647,7 +2612,9 @@ This provider lives at `apps/agent/src/app/convex-provider.tsx` (co-located with
 Auth gating is handled entirely client-side by `@convex-dev/auth`'s `useConvexAuth()` hook. Protected pages check `isAuthenticated` from the hook and redirect to `/login` if unauthenticated. The layout does NOT do server-side redirect — the agent app uses a separate Convex project and cannot use `@noboil/convex/next` `isAuthenticated()` (which is wired to the demo backend).
 
 ```tsx
-import type { Metadata, ReactNode } from 'react'
+import type { ReactNode } from 'react'
+
+import type { Metadata } from 'next'
 
 import AgentConvexProvider from './convex-provider'
 import TestLoginProvider from './test-login-provider'
@@ -2698,7 +2665,7 @@ const TestLoginProvider = ({ children }: { children: ReactNode }) => {
 export default TestLoginProvider
 ```
 
-`signInAsTestUser` is a public mutation in `packages/be-agent/convex/testauth.ts` that calls `ensureTestUser` to get or create a deterministic test user, then returns a session token. The `TestLoginProvider` calls it on mount in test mode and waits for completion before rendering children.
+`signInAsTestUser` is a public mutation in `packages/be-agent/convex/testauth.ts` that calls `ensureTestUser` to insert or retrieve a deterministic test user row. No session token is returned — test mode relies on `getAuthUserIdOrTest` bypassing real auth on the backend, and `AuthGuard` bypassing auth checks on the frontend. The `TestLoginProvider` calls it on mount in test mode and waits for completion before rendering children.
 
 `AuthGuard` is a client component used by protected pages (session list, chat, settings):
 
@@ -2712,13 +2679,16 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 const AuthGuard = ({ children }: { children: ReactNode }) => {
+  const isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true'
   const { isAuthenticated, isLoading } = useConvexAuth()
   const router = useRouter()
 
   useEffect(() => {
+    if (isTestMode) return
     if (!isLoading && !isAuthenticated) router.replace('/login')
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, isTestMode, router])
 
+  if (isTestMode) return <>{children}</>
   if (isLoading || !isAuthenticated) return null
   return <>{children}</>
 }
@@ -2853,7 +2823,15 @@ const testAuth = makeTestAuth({
 
 const { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, TEST_EMAIL } = testAuth
 
-export { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, TEST_EMAIL }
+const signInAsTestUser = mutation({
+  handler: async ctx => {
+    if (!isTestMode) throw new Error('test_mode_only')
+    const userId = await ensureTestUser(ctx)
+    return { userId }
+  }
+})
+
+export { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, signInAsTestUser, TEST_EMAIL }
 ```
 
 ### `packages/be-agent/convex/auth.config.ts`
@@ -2933,12 +2911,28 @@ checkSchema(schema, { owned })
 ```typescript
 import type { LanguageModel } from 'ai'
 
+const createMockToolCall = ({ args, name }: { args: Record<string, unknown>, name: string }) => ({
+  args: JSON.stringify(args),
+  toolCallId: `mock-tc-${Date.now()}`,
+  toolCallType: 'function' as const,
+  toolName: name
+})
+
 const mockModel = {
-  doGenerate: async () => ({
-    finishReason: 'stop',
-    text: 'Mock response for testing.',
-    usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
-  }),
+  doGenerate: async ({ tools }) => {
+    if (tools && tools.length > 0) {
+      return {
+        finishReason: 'tool-calls' as const,
+        toolCalls: [createMockToolCall({ args: { query: 'test' }, name: tools[0].name })],
+        usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
+      }
+    }
+    return {
+      finishReason: 'stop' as const,
+      text: 'Mock response for testing.',
+      usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
+    }
+  },
   doStream: async () => ({
     stream: new ReadableStream({ start: c => { c.enqueue({ type: 'text-delta', textDelta: 'Mock.' }); c.close() } }),
     rawCall: { rawPrompt: null, rawSettings: {} }
@@ -2950,6 +2944,8 @@ const mockModel = {
 
 export { mockModel }
 ```
+
+The mock model conditionally returns tool calls when tools are provided in the generation request. This enables E2E smoke tests to exercise delegation, search, and MCP flows without hitting real LLM APIs. The first available tool is always called with `{ query: 'test' }` — specific test scenarios can intercept tool execution at the tool handler level. `doStream` still returns simple text; tool-call streaming in tests is handled by `doGenerate` via `@convex-dev/agent`'s step loop.
 
 ### `packages/be-agent/tsconfig.json`
 
@@ -3128,6 +3124,8 @@ const archiveSession = m({
     }
   }
 })
+
+Archiving a session while an orchestrator run is in-flight does not abort the active run — the run finishes its current turn. `finishRun` checks the session's archived status and will not schedule queued payloads, and `maybeContinueOrchestrator` checks archived status before enqueuing continuation. Worker `completeTask` may still write a completion reminder to an archived thread, but `maybeContinueOrchestrator` will skip continuation because it checks `session?.status === 'archived'`. This is an accepted v1 trade-off — abruptly cancelling mid-stream runs would require a Convex action cancellation mechanism that does not exist.
 
 const getRunState = q({
   args: { threadId: v.string() },
@@ -3464,7 +3462,7 @@ const timeoutStaleRuns = internalMutation({
 
 Lost-turn limitation: if an orchestrator run dies before answering and there is no `queuedPromptMessageId`, `timeoutStaleRuns` resets the thread to `idle` but does not replay the original prompt. That user turn is effectively lost — the user must resend. v2 can persist the active run's `promptMessageId` in `threadRunState` so `timeoutStaleRuns` can replay it on timeout.
 
-Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, after `consumeStream()` completes (before `postTurnAudit`), and `finishRun` will reject it because `activeRunToken` no longer matches. This means the old action's writes are limited to the period before the post-stream staleness check. Any messages it manages to write before detecting staleness are harmless since the new run will stream from the latest thread state.
+Stale-run safety: when `timeoutStaleRuns` replaces an old run token with a new one, the old `runOrchestrator` action may still be executing. The old action checks `isStale()` (via `activeRunToken` mismatch) before streaming, after compaction, and after `consumeStream()` completes (before `postTurnAudit`). `finishRun` will reject the old run because `activeRunToken` no longer matches. Mid-stream writes (messages emitted by the agent during `consumeStream()`) can still land on the thread before the post-stream staleness check — this is an accepted v1 trade-off inherent to streaming architectures. The new run reads from the latest thread state, so duplicate messages are visible but do not corrupt control flow. v2 can add per-run message tagging to filter out stale-run messages from the UI.
 
 ### `convex/retention.ts`
 
@@ -3571,7 +3569,7 @@ Run at end of Phase 5:
 - Frontend wraps auth gating with a `TestLoginProvider` that auto-authenticates in test mode.
 - This follows the existing `packages/be-convex/convex/testauth.ts` pattern.
 
-`TestLoginProvider` is a client wrapper that checks `process.env.NEXT_PUBLIC_CONVEX_TEST_MODE`. In test mode, it calls the backend `signInAsTestUser` action on mount. `signInAsTestUser` internally creates a test user via `ensureTestUser` (which returns a user ID) and then creates a real auth session for that user using `@convex-dev/auth`'s `createSession` helper, returning a valid session token. The provider stores this token via `ConvexReactClient.setAuth()`, bypassing the Google OAuth flow. In production mode (`NEXT_PUBLIC_CONVEX_TEST_MODE` is unset), it renders its children directly without modification. This follows the same pattern as `packages/be-convex/convex/testauth.ts` + the existing E2E test harness.
+`TestLoginProvider` is a client wrapper that checks `process.env.NEXT_PUBLIC_CONVEX_TEST_MODE`. In test mode, it calls the backend `signInAsTestUser` mutation on mount. `signInAsTestUser` calls `ensureTestUser` to insert or retrieve a deterministic test user row in the `users` table. No real auth session is created — instead, all backend API handlers use `getAuthUserIdOrTest` (from `makeTestAuth`), which returns the test user ID directly when `CONVEX_TEST_MODE` is set, bypassing `@convex-dev/auth`'s `getAuthUserId`. On the frontend, `AuthGuard` also checks `NEXT_PUBLIC_CONVEX_TEST_MODE` and passes through without requiring `useConvexAuth().isAuthenticated` in test mode. In production mode (`NEXT_PUBLIC_CONVEX_TEST_MODE` is unset), `TestLoginProvider` renders children directly, and `AuthGuard` enforces real Google OAuth authentication.
 
 ---
 
@@ -3599,6 +3597,26 @@ Implementation:
 - expose limit policy config per environment
 
 Phase note: rate limit enforcement is implemented in Phase 6 (Polish). The schema already includes `rateLimitTable()` and the backend tree already includes `rateLimit.ts`. Phase 6 wires `checkRateLimit` guards into `submitMessage`, `delegateTool.execute`, `webSearchTool.execute`, and `mcpCallTool.execute` using the limits above. Phase 2-5 code intentionally omits rate-limit checks for simpler bring-up.
+
+### `convex/rateLimit.ts`
+
+```typescript
+import { defineRateLimits } from 'convex-helpers/server/rateLimit'
+import { components } from './_generated/api'
+
+const RATE_LIMITS = {
+  delegation: { kind: 'token bucket' as const, period: 60_000, rate: 10 },
+  mcpCall: { kind: 'token bucket' as const, period: 60_000, rate: 20 },
+  searchCall: { kind: 'token bucket' as const, period: 60_000, rate: 30 },
+  submitMessage: { kind: 'token bucket' as const, period: 60_000, rate: 20 }
+}
+
+const { checkRateLimit, rateLimit, resetRateLimit } = defineRateLimits(components.rateLimiter, RATE_LIMITS)
+
+export { checkRateLimit, rateLimit, resetRateLimit }
+```
+
+Phase 6 wires `checkRateLimit` guards into `submitMessage`, `delegateTool.execute`, `webSearchTool.execute`, and `mcpCallTool.execute`. The definitions above are the Phase 1 scaffolding.
 
 ---
 
