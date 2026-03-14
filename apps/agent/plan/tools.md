@@ -278,7 +278,8 @@ const groundWithGemini = internalAction({
   args: { query: v.string(), threadId: v.string() },
   handler: async (ctx, { query, threadId }) => {
     const { generateText } = await import('ai')
-    const { google } = await import('@ai-sdk/google')
+    const { createVertex } = await import('@ai-sdk/google-vertex')
+  const vertex = createVertex({ googleVertexApiKey: process.env.GOOGLE_VERTEX_API_KEY })
     const model = await getModel()
     const out = await generateText({
       model,

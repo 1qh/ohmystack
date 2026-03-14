@@ -112,7 +112,7 @@ Undo messages, fork conversation, switch models/orchestrator, plan mode, slash c
 | Decision        | Choice                                              | Rationale                                                               |
 | --------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
 | Agent framework | DIY (AI SDK + own tables)                           | No vendor lock-in, full data control, publishable as `@noboil/agent`    |
-| LLM             | Gemini 2.5 Flash                                    | Cost-effective, supports grounding search                               |
+| LLM             | Gemini 2.5 Flash via Vertex AI Express              | Cost-effective, supports grounding search, API-key auth                 |
 | Streaming       | Own messages table + `streamingContent` field       | Reactive `useQuery` gives real-time updates, no opaque component tables |
 | Schema          | Zod via `@noboil/convex` (`ownedTable`, `makeBase`) | Matches monorepo conventions                                            |
 | CRUD            | noboil `crud()` with hooks where applicable         | Eliminates boilerplate, enforces ownership                              |

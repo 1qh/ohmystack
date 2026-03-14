@@ -25,8 +25,9 @@ const getModel = async (): Promise<LanguageModel> => {
     cached = mockModel
     return cached
   }
-  const { google } = await import('@ai-sdk/google')
-  cached = google('gemini-2.5-flash') as LanguageModel
+  const { createVertex } = await import('@ai-sdk/google-vertex')
+  const vertex = createVertex({ googleVertexApiKey: process.env.GOOGLE_VERTEX_API_KEY })
+  cached = vertex('gemini-2.5-flash') as LanguageModel
   return cached
 }
 
@@ -275,14 +276,14 @@ const env = createEnv({
     CONVEX_SITE_URL: z.string().url(),
     CONVEX_CLOUD_URL: z.string(),
     CONVEX_TEST_MODE: z.string().optional(),
-    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1)
+    GOOGLE_VERTEX_API_KEY: z.string().min(1)
   },
   skipValidation: Boolean(process.env.LINT || process.env.CONVEX_TEST_MODE)
 })
 
 export { env }
 
-`skipValidation` is `true` only for lint runs and test mode (`LINT` or `CONVEX_TEST_MODE`). `CI` is intentionally NOT included — CI deploys to staging/production must pass full validation. When `skipValidation` is false (production/staging/CI deploys), ALL fields except `CONVEX_TEST_MODE` are required: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `CONVEX_SITE_URL`, `CONVEX_CLOUD_URL`, and `GOOGLE_GENERATIVE_AI_API_KEY`. Missing any of these throws at module load, preventing a deploy that boots successfully but fails at runtime on first sign-in or model call.
+`skipValidation` is `true` only for lint runs and test mode (`LINT` or `CONVEX_TEST_MODE`). `CI` is intentionally NOT included — CI deploys to staging/production must pass full validation. When `skipValidation` is false (production/staging/CI deploys), ALL fields except `CONVEX_TEST_MODE` are required: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `CONVEX_SITE_URL`, `CONVEX_CLOUD_URL`, and `GOOGLE_VERTEX_API_KEY`. Missing any of these throws at module load, preventing a deploy that boots successfully but fails at runtime on first sign-in or model call.
 ```
 
 ### `packages/be-agent/check-schema.ts`
@@ -458,16 +459,16 @@ File upload attachments are out of scope for v1.
 | `AUTH_GOOGLE_ID`               | required when Google auth enabled | optional         | required              | OAuth client id used by `@convex-dev/auth` backend                   |
 | `AUTH_GOOGLE_SECRET`           | required when Google auth enabled | optional         | required              | OAuth client secret used by `@convex-dev/auth` backend               |
 | `CONVEX_SITE_URL`              | optional                          | optional         | optional              | Domain for auth provider configuration                               |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | required in production            | mock or test key | required              | Gemini direct API path                                               |
+| `GOOGLE_VERTEX_API_KEY`        | required in production            | mock or test key | required              | Vertex AI Express mode API key                                       |
 
 ### Shared (both frontend and backend pipelines)
 
 | Variable                       | Scope                                | Notes                                                  |
 | ------------------------------ | ------------------------------------ | ------------------------------------------------------ |
 | `CONVEX_DEPLOYMENT`            | turbo pass-through + backend runtime | Required for backend commands and deploy target wiring |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | turbo pass-through + backend runtime | Required for v1 model access                           |
+| `GOOGLE_VERTEX_API_KEY`        | turbo pass-through + backend runtime | Required for v1 model access (Vertex AI Express)       |
 
-Vertex AI support is deferred to v2. v1 uses the direct Google Generative AI API via `@ai-sdk/google`.
+v1 uses Vertex AI Express mode via `@ai-sdk/google-vertex` with an API key. No project/location configuration needed — Express mode routes through Vertex endpoints with just `GOOGLE_VERTEX_API_KEY`.
 
 Auth secrets stay backend-only (`convex env set`) and are not frontend env vars.
 
@@ -542,7 +543,7 @@ Local dev mirrors demo scripts but targets `packages/be-agent`:
   },
   "dependencies": {
     "@auth/core": "latest",
-    "@ai-sdk/google": "latest",
+    "@ai-sdk/google-vertex": "latest",
     "@convex-dev/auth": "latest",
     "@modelcontextprotocol/client": "latest",
     "@noboil/convex": "workspace:*",
