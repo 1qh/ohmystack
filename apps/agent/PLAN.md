@@ -148,11 +148,11 @@ Use a **separate Convex project** for the agent harness:
 
 ```
 User message submitted
-  -> mutation sessions.saveUserMessage
-  -> mutation orchestrator.enqueueRun(reason='user_message')
-       - CAS threadRunState by_threadId
-        - if idle: generate runToken, set active + runClaimed=false, clear queue, autoContinueStreak=0, schedule run
-        - if active: set queuedPromptMessageId (only if incoming priority > queued priority)
+  -> mutation sessions.submitMessage
+       - atomically saves user message and enqueues orchestrator run (`reason='user_message'`)
+        - CAS threadRunState by_threadId
+         - if idle: generate runToken, set active + runClaimed=false, clear queue, autoContinueStreak=0, schedule run
+         - if active: set queuedPromptMessageId (only if incoming priority > queued priority)
 
 agents.runOrchestrator action
   -> mutation orchestrator.claimRun(threadId, runToken)
@@ -165,6 +165,7 @@ agents.runOrchestrator action
   -> post-turn audit:
         - read todos + active tasks (`running` and `pending`)
         - if incomplete todos and no active background work and no user-input request
+          (v1 heuristic: always false; v2 infers from model output)
           and autoContinueStreak < 5
           then save reminder + enqueue one continuation
   -> mutation orchestrator.finishRun
@@ -193,7 +194,7 @@ runWorker action
         - completionNotifiedAt set in same mutation boundary
         - enqueue continuation with promptMessageId=completionReminderMessageId
         - only continue orchestrator if completion reminder is latest message
-        - increment auto-continue streak for task-completion continuation path
+        - increment auto-continue streak inside enqueue mutation for task-completion continuation path (atomic cap)
   -> on failure mutation tasks.failTask
 ```
 
@@ -257,12 +258,14 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
     completionReminderMessageId: v.optional(v.string()),
     completionNotifiedAt: v.optional(v.number()),
+    continuationEnqueuedAt: v.optional(v.number()),
     description: v.string(),
     heartbeatAt: v.optional(v.number()),
     isBackground: v.boolean(),
     lastError: v.optional(v.string()),
-    lastHeartbeatAt: v.optional(v.number()),
     parentThreadId: v.string(),
+    pendingAt: v.optional(v.number()),
+    prompt: v.string(),
     result: v.optional(v.string()),
     retryCount: v.number(),
     sessionId: v.id('session'),
@@ -338,15 +341,19 @@ export default defineSchema({
     activeRunToken: v.optional(v.string()),
     autoContinueStreak: v.number(),
     compactionLock: v.optional(v.string()),
+    compactionLockAt: v.optional(v.number()),
     compactionSummary: v.optional(v.string()),
     lastError: v.optional(v.string()),
     queuedPriority: v.optional(v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation'))),
     queuedPromptMessageId: v.optional(v.string()),
     queuedReason: v.optional(v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation'))),
     runClaimed: v.optional(v.boolean()),
+    claimedAt: v.optional(v.number()),
     status: v.union(v.literal('idle'), v.literal('active')),
     threadId: v.string()
-  }).index('by_threadId', ['threadId'])
+  })
+    .index('by_threadId', ['threadId'])
+    .index('by_status', ['status'])
 })
 ```
 
@@ -354,6 +361,7 @@ export default defineSchema({
 
 - `session.tokenUsage` is removed by design; session totals are derived from `tokenUsage` rows.
 - `mcpServers.cachedTools[].inputSchema` and `toolArgs` are `v.string()` JSON payloads.
+- `tasks.heartbeatAt` is the single heartbeat source; `lastHeartbeatAt` is intentionally not modeled.
 - All user-facing reads enforce user ownership before data return.
 
 ---
@@ -478,9 +486,9 @@ const worker = new Agent(components.agent, {
 Note: `@convex-dev/agent`'s `UsageHandler` passes `usage: LanguageModelUsage` which uses `promptTokens`/`completionTokens`/`totalTokens` field names from the AI SDK `LanguageModelUsage` type.
 
 ```typescript
-const usageHandlerByThread = async (ctx, { model, provider, threadId, usage }) => {
+const usageHandlerByThread = async (ctx, { userId, threadId, agentName, usage, providerMetadata, model, provider }) => {
   await ctx.runMutation(internal.tokenUsage.recordModelUsage, {
-    agentName: usage.agentName,
+    agentName: agentName ?? 'unknown',
     completionTokens: usage.completionTokens,
     model,
     promptTokens: usage.promptTokens,
@@ -501,7 +509,10 @@ const recordModelUsage = internalMutation({
     totalTokens: v.number()
   },
   handler: async (ctx, args) => {
-    const session = await ctx.runQuery(internal.sessions.getByThreadIdInternal, { threadId: args.threadId })
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_threadId', q => q.eq('threadId', args.threadId))
+      .first()
     if (session) {
       await ctx.db.insert('tokenUsage', {
         agentName: args.agentName,
@@ -517,7 +528,10 @@ const recordModelUsage = internalMutation({
       return
     }
 
-    const task = await ctx.runQuery(internal.tasks.getByThreadIdInternal, { threadId: args.threadId })
+    const task = await ctx.db
+      .query('tasks')
+      .withIndex('by_threadId', q => q.eq('threadId', args.threadId))
+      .first()
     if (!task) return
     const ownerSession = await ctx.db.get(task.sessionId)
     if (!ownerSession) return
@@ -541,26 +555,32 @@ const recordModelUsage = internalMutation({
 
 ### System Prompts (`packages/be-agent/prompts.ts`)
 
-#### ORCHESTRATOR_SYSTEM_PROMPT
+```typescript
+const ORCHESTRATOR_SYSTEM_PROMPT = [
+  'You are a web-based AI assistant with background task and tool capabilities.',
+  '',
+  'Available tools:',
+  '- delegate: Spawn background tasks for independent work. Use for research, analysis, or any work that can run in parallel.',
+  '- webSearch: Search the web for current information. Returns summary and source URLs.',
+  '- todoWrite: Track multi-step work. Mark in_progress before starting, completed after finishing. Only one task in_progress at a time.',
+  '- taskStatus: Check the status of a background task by ID.',
+  '- taskOutput: Retrieve the full result of a completed background task.',
+  '- mcpCall: Call a tool on a configured MCP server.',
+  '- mcpDiscover: List available tools from configured MCP servers.',
+  '',
+  'When system reminders arrive about completed tasks, use taskOutput to retrieve results.',
+  'Be direct and concise. No preamble or filler.',
+  'You cannot access files, execute code, or run CLI commands.'
+].join('\n')
 
-Core directives for the orchestrator agent:
-
-1. **Identity**: You are a web-based AI assistant with background task capabilities.
-2. **Tool usage**: Use delegate tool for tasks that can run independently. Use webSearch for current information. Use mcpCall/mcpDiscover for configured MCP servers.
-3. **Todo management**: Use todoWrite to track multi-step work. Mark in_progress before starting, completed after finishing. Only one task in_progress at a time.
-4. **Background tasks**: After delegating, continue responding. Use taskStatus to check progress. When system reminders arrive about completed tasks, use taskOutput to retrieve results.
-5. **Conciseness**: Be direct. No preamble or filler.
-6. **Limitations**: You cannot access files, execute code, or run CLI commands. You can search the web and call MCP tools.
-
-#### WORKER_SYSTEM_PROMPT
-
-Core directives for worker agents:
-
-1. **Identity**: You are a focused worker agent handling a delegated task.
-2. **Scope**: Complete the specific task described in your prompt. Do not deviate.
-3. **Tools**: Use webSearch for research. Use mcpCall/mcpDiscover for MCP tools.
-4. **Output**: Provide a clear, concise result. Include relevant data, findings, or answers.
-5. **Limits**: You cannot delegate further. You cannot manage todos. Complete your task and return.
+const WORKER_SYSTEM_PROMPT = [
+  'You are a focused worker agent handling a delegated task.',
+  'Complete the specific task described in your prompt. Do not deviate.',
+  'Use webSearch for research if needed. Use mcpCall/mcpDiscover for MCP tools if relevant.',
+  'Provide a clear, concise result with relevant data and findings.',
+  'You cannot delegate further or manage todos.'
+].join('\n')
+```
 
 ---
 
@@ -580,17 +600,21 @@ const delegateTool = createTool({
   description:
     'Delegate a task to a worker agent. Returns taskId and worker threadId. The worker runs asynchronously.',
   execute: async (ctx, input) => {
-    const spawn = await ctx.runMutation(internal.tasks.spawnTask, {
-      description: input.description,
-      isBackground: input.isBackground,
-      parentThreadId: ctx.threadId,
-      prompt: input.prompt,
-      userId: ctx.userId
-    })
-    return {
-      status: 'pending',
-      taskId: spawn.taskId,
-      threadId: spawn.threadId
+    try {
+      const spawn = await ctx.runMutation(internal.tasks.spawnTask, {
+        description: input.description,
+        isBackground: input.isBackground,
+        parentThreadId: ctx.threadId,
+        prompt: input.prompt,
+        userId: ctx.userId
+      })
+      return {
+        status: 'pending',
+        taskId: spawn.taskId,
+        threadId: spawn.threadId
+      }
+    } catch (error) {
+      return { error: String(error), ok: false }
     }
   },
   inputSchema: z.object({
@@ -609,8 +633,12 @@ Stable ordering uses `position`.
 const todoWriteTool = createTool({
   description: 'Create or update todo list for the current session.',
   execute: async (ctx, { todos }) => {
-    await ctx.runMutation(internal.todos.syncOwned, { sessionThreadId: ctx.threadId, todos })
-    return { updated: todos.length }
+    try {
+      await ctx.runMutation(internal.todos.syncOwned, { sessionThreadId: ctx.threadId, todos })
+      return { updated: todos.length }
+    } catch (error) {
+      return { error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({
     todos: z.array(
@@ -631,8 +659,12 @@ const todoWriteTool = createTool({
 const todoReadTool = createTool({
   description: 'Read todo list for current session.',
   execute: async (ctx) => {
-    const todos = await ctx.runQuery(internal.todos.listOwnedByThread, { threadId: ctx.threadId })
-    return { todos }
+    try {
+      const todos = await ctx.runQuery(internal.todos.listOwnedByThread, { threadId: ctx.threadId })
+      return { todos }
+    } catch (error) {
+      return { error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({})
 })
@@ -676,11 +708,15 @@ Function tool wrapper that delegates provider tool usage to a dedicated action c
 const webSearchTool = createTool({
   description: 'Run grounded web search and return summary with sources.',
   execute: async (ctx, { query }) => {
-    const result = await ctx.runAction(internal.search.groundWithGemini, {
-      query,
-      threadId: ctx.threadId
-    })
-    return { sources: result.sources, summary: result.summary }
+    try {
+      const result = await ctx.runAction(internal.search.groundWithGemini, {
+        query,
+        threadId: ctx.threadId
+      })
+      return { sources: result.sources, summary: result.summary }
+    } catch (error) {
+      return { error: String(error), ok: false }
+    }
   },
   inputSchema: z.object({ query: z.string() })
 })
@@ -770,6 +806,8 @@ const spawnTask = internalMutation({
       description: args.description,
       isBackground: args.isBackground,
       parentThreadId: args.parentThreadId,
+      pendingAt: Date.now(),
+      prompt: args.prompt,
       retryCount: 0,
       sessionId: session._id,
       status: 'pending',
@@ -797,6 +835,11 @@ const markRunning = internalMutation({
     const task = await ctx.db.get(taskId)
     if (!task || task.status !== 'pending') return { ok: false }
     await ctx.db.patch(taskId, { heartbeatAt: Date.now(), startedAt: Date.now(), status: 'running' })
+    const session = await ctx.db
+      .query('session')
+      .withIndex('by_threadId', q => q.eq('threadId', task.parentThreadId))
+      .first()
+    if (session) await ctx.db.patch(session._id, { lastActivityAt: Date.now() })
     return { ok: true }
   }
 })
@@ -832,6 +875,7 @@ const completeTask = internalMutation({
       completedAt: Date.now(),
       completionNotifiedAt: Date.now(),
       completionReminderMessageId: saved.messageId,
+      continuationEnqueuedAt: Date.now(),
       result,
       status: 'completed'
     })
@@ -870,7 +914,7 @@ const timeoutRunningTasks = internalMutation({
   handler: async (ctx, { now, staleMs }) => {
     const running = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'running')).collect()
     for (const task of running) {
-      const lastBeat = task.heartbeatAt ?? task.lastHeartbeatAt ?? task.startedAt
+      const lastBeat = task.heartbeatAt ?? task.startedAt
       if (!lastBeat) continue
       if (now - lastBeat <= staleMs) continue
       const latest = await ctx.db.get(task._id)
@@ -884,7 +928,7 @@ const timeoutRunningTasks = internalMutation({
 ### Required Idempotent Fields
 
 - `heartbeatAt`
-- `lastHeartbeatAt`
+- `continuationEnqueuedAt`
 - `completedAt`
 - `completionNotifiedAt`
 - `retryCount`
@@ -899,24 +943,20 @@ Reminder insertion and notification marking are unified in `completeTask` so com
 const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
   const task = await ctx.runQuery(internal.tasks.getById, { taskId })
   if (!task || !task.completionReminderMessageId) return
-  const state = await ctx.runQuery(internal.orchestrator.getRunStateByThreadId, {
-    threadId: task.parentThreadId
-  })
-  if (state && state.autoContinueStreak >= 5) return
+  if (task.continuationEnqueuedAt) return
   const latest = await ctx.runQuery(internal.messages.getLatestMessageId, { threadId: task.parentThreadId })
   if (latest !== task.completionReminderMessageId) return
   const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
+    incrementStreak: true,
     promptMessageId: task.completionReminderMessageId,
     reason: 'task_completion',
     threadId: task.parentThreadId
   })
   if (!enqueued.ok) return
-  const incremented = await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, {
-    threadId: task.parentThreadId
-  })
-  if (!incremented.ok) return
 }
 ```
+
+Delegation Idempotency: `@convex-dev/agent` handles retries at the agent-step execution layer. If the model emits duplicate delegate tool calls, separate tasks are intentionally created (the model delegated twice). Convex action retry behavior is absorbed by the agent framework's step-level deduplication.
 
 ---
 
@@ -925,6 +965,7 @@ const maybeContinueOrchestrator = async ({ ctx, taskId }) => {
 ### Stream Wrapper (Max 3 Positional Args)
 
 All stream entry points use a local wrapper that accepts a single object arg.
+`agent.streamText` from `@convex-dev/agent` takes 4 positional arguments as an external SDK API. `runAgentStream` encapsulates that call to keep application-layer code on a single-object-arg interface.
 
 ```typescript
 const runAgentStream = async ({ agent, ctx, threadId, promptMessageId, systemPrefix }) => {
@@ -983,7 +1024,10 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
     await ctx.runMutation(internal.orchestrator.resetAutoContinueStreak, { threadId })
     return { shouldContinue: false }
   }
-  if (active > 0) return { shouldContinue: false }
+  if (active > 0) {
+    await ctx.runMutation(internal.orchestrator.resetAutoContinueStreak, { threadId })
+    return { shouldContinue: false }
+  }
   if (turnRequestedInput) {
     await ctx.runMutation(internal.orchestrator.resetAutoContinueStreak, { threadId })
     return { shouldContinue: false }
@@ -997,16 +1041,17 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
     threadId
   })
   const enqueued = await ctx.runMutation(internal.orchestrator.enqueueRun, {
+    incrementStreak: true,
     promptMessageId: saved.messageId,
     reason: 'todo_continuation',
     threadId
   })
   if (!enqueued.ok) return { shouldContinue: false }
-  const incremented = await ctx.runMutation(internal.orchestrator.incrementAutoContinueStreak, { threadId })
-  if (!incremented.ok) return { shouldContinue: false }
   return { shouldContinue: true }
 }
 ```
+
+`turnRequestedInput` remains in the signature for v2 extensibility even though v1 orchestrator currently passes `false`.
 
 ---
 
@@ -1028,16 +1073,22 @@ const postTurnAudit = async ({ ctx, threadId, turnRequestedInput }) => {
 ```typescript
 const enqueueRun = internalMutation({
   args: {
+    incrementStreak: v.optional(v.boolean()),
     promptMessageId: v.optional(v.string()),
     reason: v.union(v.literal('user_message'), v.literal('task_completion'), v.literal('todo_continuation')),
     threadId: v.string()
   },
   handler: async (ctx, args) => {
     const state = await ensureRunState({ ctx, threadId: args.threadId })
+    const shouldIncrement = args.incrementStreak === true
 
-    if (args.reason === 'user_message') {
-      await ctx.db.patch(state._id, { autoContinueStreak: 0 })
+    if (shouldIncrement && state.autoContinueStreak >= 5) {
+      return { ok: false, reason: 'streak_cap' }
     }
+
+    let nextStreak = state.autoContinueStreak
+    if (args.reason === 'user_message') nextStreak = 0
+    if (shouldIncrement) nextStreak += 1
 
     if (state.status === 'idle') {
       const runToken = crypto.randomUUID()
@@ -1048,6 +1099,8 @@ const enqueueRun = internalMutation({
       })
       await ctx.db.patch(state._id, {
         activeRunToken: runToken,
+        autoContinueStreak: nextStreak,
+        claimedAt: undefined,
         queuedPriority: undefined,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
@@ -1063,6 +1116,7 @@ const enqueueRun = internalMutation({
     if (incomingPriority < queuedPriority) return { ok: false, reason: 'lower_priority' }
 
     await ctx.db.patch(state._id, {
+      autoContinueStreak: nextStreak,
       queuedPriority: args.reason,
       queuedPromptMessageId: args.promptMessageId,
       queuedReason: args.reason
@@ -1078,7 +1132,7 @@ const claimRun = internalMutation({
     if (state.status !== 'active') return { ok: false }
     if (state.activeRunToken !== runToken) return { ok: false }
     if (state.runClaimed) return { ok: false }
-    await ctx.db.patch(state._id, { runClaimed: true })
+    await ctx.db.patch(state._id, { claimedAt: Date.now(), runClaimed: true })
     return { ok: true }
   }
 })
@@ -1098,6 +1152,7 @@ const finishRun = internalMutation({
       })
       await ctx.db.patch(state._id, {
         activeRunToken: nextRunToken,
+        claimedAt: undefined,
         queuedPriority: undefined,
         queuedPromptMessageId: undefined,
         queuedReason: undefined,
@@ -1107,6 +1162,7 @@ const finishRun = internalMutation({
     }
     await ctx.db.patch(state._id, {
       activeRunToken: undefined,
+      claimedAt: undefined,
       runClaimed: undefined,
       status: 'idle'
     })
@@ -1120,8 +1176,8 @@ const finishRun = internalMutation({
 - Reset to `0` on new user message (`enqueueRun` with `reason='user_message'`).
 - Reset to `0` when turn ends for task-wait or user-input stop conditions.
 - Reset to `0` when all todos are terminal (`completed`/`cancelled`).
-- Increment by `1` on auto-continue from todo continuation or task-completion continuation.
-- Hard cap: `5`; once reached, no additional auto-continue is enqueued.
+- Increment by `1` only through `enqueueRun({ incrementStreak: true, ... })` so queue and streak updates are atomic.
+- Hard cap: `5`; `enqueueRun` rejects auto-continue scheduling once cap is reached.
 
 ### v2 Improvement: Abort-and-Restart
 
@@ -1152,10 +1208,12 @@ const ensureRunState = async ({ ctx, threadId }) => {
     })
     return await ctx.db.get(id)
   } catch (error) {
-    return await ctx.db
+    const retried = await ctx.db
       .query('threadRunState')
       .withIndex('by_threadId', q => q.eq('threadId', threadId))
       .unique()
+    if (retried) return retried
+    throw error
   }
 }
 
@@ -1338,8 +1396,8 @@ const getByThreadIdInternal = internalQuery({
 })
 
 const getById = internalQuery({
-  args: { taskId: v.id('tasks') },
-  handler: async (ctx, { taskId }) => ctx.db.get(taskId)
+  args: { sessionId: v.id('session') },
+  handler: async (ctx, { sessionId }) => ctx.db.get(sessionId)
 })
 
 const scheduleRetry = internalMutation({
@@ -1348,10 +1406,10 @@ const scheduleRetry = internalMutation({
     const task = await ctx.db.get(taskId)
     if (!task || task.status !== 'running') return
     const retryCount = task.retryCount + 1
-    await ctx.db.patch(taskId, { retryCount, status: 'pending' })
+    await ctx.db.patch(taskId, { pendingAt: Date.now(), retryCount, status: 'pending' })
     const delay = Math.min(1000 * Math.pow(2, retryCount), 30_000)
     await ctx.scheduler.runAfter(delay, internal.agents.runWorker, {
-      prompt: task.description,
+      prompt: task.prompt ?? task.description,
       taskId,
       threadId: task.threadId
     })
@@ -1380,6 +1438,11 @@ const getByThreadIdInternal = internalQuery({
       .first()
   }
 })
+
+const getById = internalQuery({
+  args: { taskId: v.id('tasks') },
+  handler: async (ctx, { taskId }) => ctx.db.get(taskId)
+})
 ```
 
 ### `tasks.countActiveByThread`
@@ -1388,16 +1451,15 @@ const getByThreadIdInternal = internalQuery({
 const countActiveByThread = internalQuery({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
-    const tasks = await ctx.db
+    const running = await ctx.db
       .query('tasks')
-      .withIndex('by_parentThreadId_status')
+      .withIndex('by_parentThreadId_status', q => q.eq('parentThreadId', threadId).eq('status', 'running'))
       .collect()
-    let count = 0
-    for (const t of tasks) {
-      if (t.parentThreadId !== threadId) continue
-      if (t.status === 'running' || t.status === 'pending') count += 1
-    }
-    return count
+    const pending = await ctx.db
+      .query('tasks')
+      .withIndex('by_parentThreadId_status', q => q.eq('parentThreadId', threadId).eq('status', 'pending'))
+      .collect()
+    return running.length + pending.length
   }
 })
 ```
@@ -1441,15 +1503,10 @@ const getOwnedServerByName = internalQuery({
 const listEnabledServersByUser = internalQuery({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
-    const all = await ctx.db
+    return await ctx.db
       .query('mcpServers')
-      .withIndex('by_user', q => q.eq('userId', userId))
+      .withIndex('by_user_enabled', q => q.eq('userId', userId).eq('isEnabled', true))
       .collect()
-    const enabled = []
-    for (const s of all) {
-      if (s.isEnabled) enabled.push(s)
-    }
-    return enabled
   }
 })
 ```
@@ -1497,20 +1554,6 @@ const resetAutoContinueStreak = internalMutation({
   handler: async (ctx, { threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
     await ctx.db.patch(state._id, { autoContinueStreak: 0 })
-  }
-})
-```
-
-### `orchestrator.incrementAutoContinueStreak`
-
-```typescript
-const incrementAutoContinueStreak = internalMutation({
-  args: { threadId: v.string() },
-  handler: async (ctx, { threadId }) => {
-    const state = await ensureRunState({ ctx, threadId })
-    if (state.autoContinueStreak >= 5) return { ok: false, reason: 'streak_cap' }
-    await ctx.db.patch(state._id, { autoContinueStreak: state.autoContinueStreak + 1 })
-    return { ok: true }
   }
 })
 ```
@@ -1689,6 +1732,8 @@ const runWorker = internalAction({
 
 Returns compactable message groups from the thread prefix. A "closed prefix group" is a contiguous range of messages that is fully resolved (no pending tool calls, no streaming). Only messages before the current active generation are eligible.
 
+Boundary safety note: if `safeEnd` lands on an assistant message that contains tool calls and the paired tool-result message is immediately next, move `safeEnd` back one more slot so compaction never splits a call/result pair.
+
 ```typescript
 const listClosedPrefixGroups = internalQuery({
   args: { threadId: v.string() },
@@ -1698,25 +1743,43 @@ const listClosedPrefixGroups = internalQuery({
       threadId
     })
     const messages = result.page
+    messages.reverse()
     if (messages.length < 10) return []
 
     const cutoff = Math.floor(messages.length * 0.6)
     let safeEnd = cutoff - 1
 
-    while (safeEnd >= 0) {
-      const msg = messages[safeEnd]
-      const hasToolCalls = msg.parts?.some(p => p.type === 'tool-invocation')
-      if (hasToolCalls) {
-        const nextMsg = messages[safeEnd + 1]
-        const nextHasToolResult = nextMsg?.parts?.some(
-          p => p.type === 'tool-invocation' && p.state === 'result'
-        )
-        if (!nextHasToolResult) {
-          safeEnd -= 1
-          continue
-        }
+    const hasUnpairedToolCall = idx => {
+      const msg = messages[idx]
+      if (!msg.parts) return false
+      for (const part of msg.parts) {
+        if (part.type === 'tool-invocation' && part.state !== 'result') return true
       }
+      return false
+    }
+
+    const hasUnpairedToolCallInRange = end => {
+      for (let i = 0; i <= end; i += 1) {
+        if (hasUnpairedToolCall(i)) return true
+      }
+      return false
+    }
+
+    while (safeEnd >= 0) {
+      if (hasUnpairedToolCallInRange(safeEnd)) {
+        safeEnd -= 1
+        continue
+      }
+      const msg = messages[safeEnd]
       if (msg.role === 'tool') {
+        safeEnd -= 1
+        continue
+      }
+
+      const next = messages[safeEnd + 1]
+      const endsWithAssistantToolCall = msg.role === 'assistant' && Boolean(msg.parts?.some(p => p.type === 'tool-invocation'))
+      const nextIsToolResultMessage = next?.role === 'tool'
+      if (endsWithAssistantToolCall && nextIsToolResultMessage) {
         safeEnd -= 1
         continue
       }
@@ -1755,41 +1818,16 @@ const setCompactionSummary = internalMutation({
 })
 ```
 
-### `compaction.deleteMessageRange`
+### `compaction.v1` deletion behavior
 
-Uses agent component APIs to delete messages from a thread. Runs as an action since message deletion may require component calls.
+v1 compaction does not delete individual messages from the `@convex-dev/agent` component store.
 
-```typescript
-const deleteMessageRange = internalAction({
-  args: { endId: v.string(), startId: v.string(), threadId: v.string() },
-  handler: async (ctx, { endId, startId, threadId }) => {
-    const result = await listUIMessages(ctx, components.agent, {
-      paginationOpts: { cursor: null, numItems: 500 },
-      threadId
-    })
-    let collecting = false
-    const toDelete = []
-    for (const m of result.page) {
-      if (String(m._id) === startId) collecting = true
-      if (collecting) toDelete.push(String(m._id))
-      if (String(m._id) === endId) break
-    }
-    for (const messageId of toDelete) {
-      try {
-        await ctx.runMutation(internal.compaction.deleteSingleMessage, { messageId, threadId })
-      } catch (error) {
-      }
-    }
-  }
-})
-
-const deleteSingleMessage = internalMutation({
-  args: { messageId: v.string(), threadId: v.string() },
-  handler: async (ctx, { messageId }) => {
-    await ctx.db.delete(messageId as Id<'messages'>)
-  }
-})
-```
+1. Compaction generates a closed-prefix summary.
+2. Summary is stored in `threadRunState.compactionSummary`.
+3. Summary is injected as a system prefix on subsequent runs.
+4. Old messages remain in the agent store.
+5. Context is bounded by `contextOptions.recentMessages`, so old messages are excluded from active context.
+6. Full message purging is deferred to v2 when the agent component exposes a bulk-delete API.
 
 ---
 
@@ -1863,6 +1901,8 @@ Dynamic per-tool materialization from discovered schemas is deferred to v2.
 
 ### Core Action Pattern
 
+MCP schema mismatch retry note: cache metadata is refreshed for UI display and subsequent planning, but the immediate retry still uses the same live MCP client connection. If the retry fails, the model receives a structured error and can retry on a later step with corrected arguments.
+
 ```typescript
 import { Client } from '@modelcontextprotocol/client'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client/streamableHttp.js'
@@ -1886,7 +1926,9 @@ const callToolOwned = internalAction({
         threadId: args.requesterThreadId
       })
       if (!task) return { error: 'session_not_found', ok: false }
-      const ownerSession = await ctx.db.get(task.sessionId)
+      const ownerSession = await ctx.runQuery(internal.sessions.getById, {
+        sessionId: task.sessionId
+      })
       if (!ownerSession) return { error: 'session_not_found', ok: false }
       resolvedUserId = ownerSession.userId
     }
@@ -1896,14 +1938,26 @@ const callToolOwned = internalAction({
     })
     if (!server) return { error: 'server_not_found', ok: false }
 
+    let authHeaders = {}
+    try {
+      authHeaders = JSON.parse(server.authHeaders ?? '{}')
+    } catch {
+      return { error: 'invalid_auth_headers', ok: false, retryable: false }
+    }
+
     const transport = new StreamableHTTPClientTransport(new URL(server.url), {
-      requestInit: { headers: JSON.parse(server.authHeaders ?? '{}') }
+      requestInit: { headers: authHeaders }
     })
     const client = new Client({ name: 'noboil-agent', version: '1.0.0' }, { capabilities: {} })
 
     try {
       await client.connect(transport)
-      const parsed = JSON.parse(args.toolArgs)
+      let parsed
+      try {
+        parsed = JSON.parse(args.toolArgs)
+      } catch (error) {
+        return { error: `invalid_tool_args: ${String(error)}`, ok: false, retryable: false }
+      }
       try {
         const result = await client.callTool({ arguments: parsed, name: args.toolName })
         return { content: result.content, ok: true }
@@ -1932,12 +1986,17 @@ const callToolOwned = internalAction({
         }
       }
     } catch (error) {
-      return { error: String(error), ok: false, retryable: true }
+      const message = String(error)
+      const retryableConnectionError =
+        message.includes('ECONN') || message.includes('ETIMEDOUT') || message.includes('ENOTFOUND') ||
+        message.includes('connection') || message.includes('network') || message.includes('503')
+      return { error: message, ok: false, retryable: retryableConnectionError }
     } finally {
       await client.close()
     }
   }
 })
+
 ```
 
 ```typescript
@@ -1955,7 +2014,9 @@ const discoverToolsOwned = internalAction({
         threadId: requesterThreadId
       })
       if (!task) return { tools: [] }
-      const ownerSession = await ctx.db.get(task.sessionId)
+      const ownerSession = await ctx.runQuery(internal.sessions.getById, {
+        sessionId: task.sessionId
+      })
       if (!ownerSession) return { tools: [] }
       resolvedUserId = ownerSession.userId
     }
@@ -1965,19 +2026,24 @@ const discoverToolsOwned = internalAction({
     })
 
     const tools = []
+    const errors = []
     for (const server of servers) {
-      const cached = await ensureServerToolsCache({ ctx, serverId: server._id })
-      for (const tool of cached) {
-        tools.push({
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-          serverName: server.name,
-          toolName: tool.name
-        })
+      try {
+        const cached = await ensureServerToolsCache({ ctx, serverId: server._id })
+        for (const tool of cached) {
+          tools.push({
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            serverName: server.name,
+            toolName: tool.name
+          })
+        }
+      } catch (error) {
+        errors.push({ error: String(error), serverName: server.name })
       }
     }
 
-    return { tools }
+    return { errors, tools }
   }
 })
 ```
@@ -1999,16 +2065,16 @@ No trigger from cumulative token usage totals.
 
 1. Compact only a closed prefix, never in-flight streamed range.
 2. Preserve complete tool call/result groups together.
-3. Use `threadRunState.compactionLock` guard to avoid concurrent compaction on same thread.
+3. Use `threadRunState.compactionLock` guard plus `compactionLockAt` lease expiry (10 minutes) for stale-lock recovery.
+4. v1 stores compacted context as summary metadata and does not delete component-stored messages.
 
 ### Flow
 
 1. Acquire compaction lock.
 2. Build summary of compactable prefix plus existing summary context.
-3. Delete old message range via agent message-range APIs.
-4. Save summary into `threadRunState.compactionSummary`.
-5. Inject summary as a system prefix message in the next generation call.
-6. Release compaction lock.
+3. Save summary into `threadRunState.compactionSummary`.
+4. Inject summary as a system prefix message in the next generation call.
+5. Release compaction lock.
 
 ```typescript
 const COMPACTION_CHAR_LIMIT = 100_000
@@ -2035,11 +2101,6 @@ const compactIfNeeded = async ({ ctx, threadId }) => {
       existingSummary: state?.compactionSummary,
       groups
     })
-    await ctx.runAction(internal.compaction.deleteMessageRange, {
-      endId: groups[groups.length - 1].endId,
-      startId: groups[0].startId,
-      threadId
-    })
     await ctx.runMutation(internal.orchestrator.setCompactionSummary, {
       compactionSummary: summary,
       threadId
@@ -2058,8 +2119,11 @@ const tryBeginCompaction = internalMutation({
   args: { lockToken: v.string(), threadId: v.string() },
   handler: async (ctx, { lockToken, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
-    if (state.compactionLock) return { ok: false }
-    await ctx.db.patch(state._id, { compactionLock: lockToken })
+    const now = Date.now()
+    const LEASE_MS = 10 * 60 * 1000
+    const leaseExpired = Boolean(state.compactionLock && state.compactionLockAt && now - state.compactionLockAt > LEASE_MS)
+    if (state.compactionLock && !leaseExpired) return { ok: false }
+    await ctx.db.patch(state._id, { compactionLock: lockToken, compactionLockAt: now })
     return { ok: true }
   }
 })
@@ -2069,7 +2133,7 @@ const finishCompaction = internalMutation({
   handler: async (ctx, { lockToken, threadId }) => {
     const state = await ensureRunState({ ctx, threadId })
     if (state.compactionLock !== lockToken) return { ok: false }
-    await ctx.db.patch(state._id, { compactionLock: undefined })
+    await ctx.db.patch(state._id, { compactionLock: undefined, compactionLockAt: undefined })
     return { ok: true }
   }
 })
@@ -2097,6 +2161,7 @@ const finishCompaction = internalMutation({
 - worker timeout target: 10 minutes
 - cron scans running tasks
 - if no heartbeat within timeout threshold, mark `timed_out`
+- stale orchestrator-run recovery: if `threadRunState` is `active` + `runClaimed=true` and `claimedAt` is older than 15 minutes, recover to idle or immediately drain queued payload into a fresh run token
 
 ### MCP Failure Recovery
 
@@ -2124,8 +2189,8 @@ Tool returns structured model-readable error payload, not thrown raw exception:
 ### Server Streaming
 
 AI SDK v6 finish reasons are limited to `stop`, `length`, `content-filter`, `tool-calls`, `error`, and `other`.
-Requested-user-input inference is heuristic in v1 and currently defaults to `false`.
-v2 can add structured input-request detection by inspecting last tool call outputs or assistant content patterns.
+Requested-user-input inference is a documented v1 limitation: `runOrchestrator` passes `turnRequestedInput: false` on every turn.
+v2 can add structured input-request detection by inspecting tool outputs or assistant content patterns, while keeping the existing `postTurnAudit` parameter shape.
 
 ```typescript
 const runOrchestrator = internalAction({
@@ -2240,6 +2305,7 @@ Co-location rule is enforced: page-specific components stay with their page.
 
 ```
 apps/agent/
+├── tsconfig.json
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx
@@ -2278,18 +2344,20 @@ apps/agent/
 ### Session List Page (`src/app/page.tsx`)
 
 - Client component using `'use client'`.
-- Uses `useList(api.sessions.list)` for paginated session list.
+- Uses `useQuery(api.sessions.list)` for v1 session list rendering.
 - Includes a `New Session` button that calls `createSession` mutation, then navigates to `/${sessionId}`.
-- Session card renders title, status badge, last activity timestamp, and latest message preview.
+- Session card renders title, status badge, and last activity timestamp.
 - Empty state shows an icon and `Start your first conversation`.
 - Loading state uses skeleton session cards.
+
+v1 intentionally returns a sorted array without cursor pagination; v2 can add cursor pagination if session counts grow large.
 
 ### Message Composer
 
 - Reuses `PromptInput` pattern from `@a/ui/ai-elements/prompt-input`.
 - `PromptInputTextarea` placeholder is `Send a message...`.
 - `PromptInputSubmit` supports ready and submitted states.
-- On submit, call `saveUserMessage` mutation, then call `enqueueRun` mutation.
+- On submit, call `submitMessage` mutation, which atomically saves the message and enqueues the orchestrator run.
 - Composer stays enabled at all times. When user submits while orchestrator is active, the message is saved and queued with `user_message` priority (highest). Queue delivery handles execution without blocking typing.
 
 ### Login Page (`src/app/login/page.tsx`)
@@ -2306,7 +2374,7 @@ apps/agent/
 
 ### Chat Page (`src/app/[sessionId]/page.tsx`)
 
-- Server component preloads session data via `preloadQuery`.
+- Server component preloads session data via `preloadQuery(api.sessions.getSession, { sessionId })`.
 - Client chat surface uses `useUIMessages` for streaming messages.
 - Responsive three-column layout: chat center, tasks+todos right, sources far-right.
 - Message rendering supports text parts, reasoning blocks, tool call cards, and source cards.
@@ -2398,9 +2466,10 @@ packages/be-agent/
 │   ├── convex.config.ts
 │   ├── schema.ts
 │   ├── auth.ts
+│   ├── testauth.ts
 │   ├── sessions.ts
 │   ├── messages.ts
-│   ├── orchestratorQueue.ts
+│   ├── orchestrator.ts
 │   ├── agents.ts
 │   ├── tasks.ts
 │   ├── todos.ts
@@ -2447,6 +2516,26 @@ const { auth, isAuthenticated, signIn, signOut, store } = convexAuth({
 export { auth, isAuthenticated, signIn, signOut, store }
 ```
 
+### `packages/be-agent/convex/testauth.ts`
+
+Test auth helpers following `packages/be-convex/convex/testauth.ts` pattern:
+
+```typescript
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { makeTestAuth } from '@noboil/convex/test'
+import { mutation, query } from './_generated/server'
+
+const testAuth = makeTestAuth({
+  getAuthUserId: getAuthUserId as (ctx: unknown) => Promise<null | string>,
+  mutation,
+  query
+})
+
+const { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, TEST_EMAIL } = testAuth
+
+export { createTestUser, ensureTestUser, getAuthUserIdOrTest, isTestMode, TEST_EMAIL }
+```
+
 ### `packages/be-agent/convex/auth.config.ts`
 
 ```typescript
@@ -2479,6 +2568,7 @@ import { internal } from './_generated/api'
 const crons = cronJobs()
 
 crons.interval('timeout stale tasks', { minutes: 5 }, internal.staleTaskCleanup.timeoutStaleTasks)
+crons.interval('timeout stale orchestrator runs', { minutes: 5 }, internal.staleTaskCleanup.timeoutStaleRuns)
 crons.interval('archive idle sessions', { hours: 1 }, internal.retention.archiveIdleSessions)
 crons.cron('cleanup archived sessions', '0 3 * * *', internal.retention.cleanupArchivedSessions)
 
@@ -2497,9 +2587,8 @@ const env = createEnv({
     AUTH_GOOGLE_ID: z.string().min(1).optional(),
     AUTH_GOOGLE_SECRET: z.string().min(1).optional(),
     AUTH_SECRET: z.string().min(1),
-    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional(),
-    GOOGLE_VERTEX_LOCATION: z.string().optional(),
-    GOOGLE_VERTEX_PROJECT: z.string().optional()
+    CONVEX_SITE_URL: z.string().url().optional(),
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional()
   },
   skipValidation: Boolean(
     process.env.CI || process.env.LINT || process.env.CONVEX_TEST_MODE
@@ -2555,9 +2644,35 @@ export { mockModel }
 }
 ```
 
+### `apps/agent/tsconfig.json`
+
+Standard Next.js app config extending monorepo base:
+
+```json
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "incremental": true,
+    "jsx": "preserve",
+    "isolatedModules": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "plugins": [{ "name": "next" }]
+  },
+  "exclude": ["node_modules"],
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"]
+}
+```
+
 ---
 
 ## Public API Endpoints (Frontend)
+
+`sessions.list` returns session rows for v1 card rendering (`title`, `status`, `lastActivityAt`) sorted descending by activity.
+
+`enqueueRunInline` mirrors `internal.orchestrator.enqueueRun` CAS logic for mutation-boundary safety in `submitMessage`; keep both implementations aligned because actions call the standalone internal mutation while `submitMessage` must stay inside one mutation boundary.
 
 ```typescript
 const list = q({
@@ -2573,6 +2688,81 @@ const list = q({
   }
 })
 
+const getSession = q({
+  args: { sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) throw new Error('session_not_found')
+    return session
+  }
+})
+
+const enqueueRunInline = async ({ ctx, promptMessageId, reason, threadId, incrementStreak }) => {
+  let state = await ctx.db
+    .query('threadRunState')
+    .withIndex('by_threadId', q => q.eq('threadId', threadId))
+    .unique()
+  if (!state) {
+    try {
+      const id = await ctx.db.insert('threadRunState', {
+        autoContinueStreak: 0,
+        status: 'idle',
+        threadId
+      })
+      state = await ctx.db.get(id)
+    } catch (error) {
+      state = await ctx.db
+        .query('threadRunState')
+        .withIndex('by_threadId', q => q.eq('threadId', threadId))
+        .unique()
+      if (!state) throw error
+    }
+  }
+  if (!state) throw new Error('run_state_not_found')
+
+  const shouldIncrement = incrementStreak === true
+  if (shouldIncrement && state.autoContinueStreak >= 5) {
+    return { ok: false, reason: 'streak_cap' }
+  }
+
+  let nextStreak = state.autoContinueStreak
+  if (reason === 'user_message') nextStreak = 0
+  if (shouldIncrement) nextStreak += 1
+
+  if (state.status === 'idle') {
+    const runToken = crypto.randomUUID()
+    await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
+      promptMessageId,
+      runToken,
+      threadId
+    })
+    await ctx.db.patch(state._id, {
+      activeRunToken: runToken,
+      autoContinueStreak: nextStreak,
+      claimedAt: undefined,
+      queuedPriority: undefined,
+      queuedPromptMessageId: undefined,
+      queuedReason: undefined,
+      runClaimed: false,
+      status: 'active'
+    })
+    return { ok: true, scheduled: true }
+  }
+
+  const priority = { task_completion: 1, todo_continuation: 0, user_message: 2 }
+  const queuedPriority = priority[state.queuedPriority ?? state.queuedReason ?? 'todo_continuation']
+  const incomingPriority = priority[reason]
+  if (incomingPriority < queuedPriority) return { ok: false, reason: 'lower_priority' }
+
+  await ctx.db.patch(state._id, {
+    autoContinueStreak: nextStreak,
+    queuedPriority: reason,
+    queuedPromptMessageId: promptMessageId,
+    queuedReason: reason
+  })
+  return { ok: true, scheduled: false }
+}
+
 const submitMessage = m({
   args: { content: v.string(), sessionId: v.id('session') },
   handler: async c => {
@@ -2584,13 +2774,23 @@ const submitMessage = m({
       userId: c.userId
     })
     await c.ctx.db.patch(c.args.sessionId, { lastActivityAt: Date.now() })
-    await enqueueRun({
+    await enqueueRunInline({
       ctx: c.ctx,
-      priority: 'user_message',
+      incrementStreak: false,
       promptMessageId: saved.messageId,
+      reason: 'user_message',
       threadId: session.threadId
     })
     return { messageId: saved.messageId }
+  }
+})
+
+const archiveSession = m({
+  args: { sessionId: v.id('session') },
+  handler: async c => {
+    const session = await c.ctx.db.get(c.args.sessionId)
+    if (!session || session.userId !== c.userId) throw new Error('session_not_found')
+    await c.ctx.db.patch(c.args.sessionId, { archivedAt: Date.now(), status: 'archived' })
   }
 })
 
@@ -2628,7 +2828,7 @@ const listTodos = q({
     if (!session || session.userId !== c.userId) return []
     return await c.ctx.db
       .query('todos')
-      .withIndex('by_session', q => q.eq('sessionId', c.args.sessionId))
+      .withIndex('by_session_position', q => q.eq('sessionId', c.args.sessionId))
       .collect()
   }
 })
@@ -2667,13 +2867,18 @@ const listMcpServers = q({
 })
 
 const addMcpServer = m({
-  args: { authHeaders: v.optional(v.string()), name: v.string(), url: v.string() },
+  args: {
+    authHeaders: v.optional(v.string()),
+    isEnabled: v.optional(v.boolean()),
+    name: v.string(),
+    url: v.string()
+  },
   handler: async c => {
     return await c.ctx.db.insert('mcpServers', {
       authHeaders: c.args.authHeaders,
       cachedAt: undefined,
       cachedTools: undefined,
-      isEnabled: true,
+      isEnabled: c.args.isEnabled ?? true,
       name: c.args.name,
       transport: 'http',
       url: c.args.url,
@@ -2684,6 +2889,7 @@ const addMcpServer = m({
 
 const updateMcpServer = m({
   args: {
+    authHeaders: v.optional(v.string()),
     id: v.id('mcpServers'),
     isEnabled: v.optional(v.boolean()),
     name: v.optional(v.string()),
@@ -2696,6 +2902,11 @@ const updateMcpServer = m({
     if (c.args.name !== undefined) patch.name = c.args.name
     if (c.args.url !== undefined) {
       patch.url = c.args.url
+      patch.cachedAt = undefined
+      patch.cachedTools = undefined
+    }
+    if (c.args.authHeaders !== undefined) {
+      patch.authHeaders = c.args.authHeaders
       patch.cachedAt = undefined
       patch.cachedTools = undefined
     }
@@ -2815,7 +3026,7 @@ const timeoutStaleTasks = internalMutation({
     const PENDING_STALE_MS = 5 * 60 * 1000
     const running = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'running')).collect()
     for (const task of running) {
-      const lastBeat = task.heartbeatAt ?? task.startedAt ?? task.createdAt
+      const lastBeat = task.heartbeatAt ?? task.startedAt ?? task._creationTime
       if (now - lastBeat <= STALE_MS) continue
       const fresh = await ctx.db.get(task._id)
       if (!fresh || fresh.status !== 'running') continue
@@ -2823,10 +3034,52 @@ const timeoutStaleTasks = internalMutation({
     }
     const pending = await ctx.db.query('tasks').withIndex('by_status', q => q.eq('status', 'pending')).collect()
     for (const task of pending) {
-      if (now - task.createdAt <= PENDING_STALE_MS) continue
+      const pendingSince = task.pendingAt ?? task._creationTime
+      if (now - pendingSince <= PENDING_STALE_MS) continue
       const fresh = await ctx.db.get(task._id)
       if (!fresh || fresh.status !== 'pending') continue
       await ctx.db.patch(task._id, { lastError: 'worker_never_started', status: 'timed_out' })
+    }
+  }
+})
+
+const timeoutStaleRuns = internalMutation({
+  handler: async ctx => {
+    const now = Date.now()
+    const RUN_STALE_MS = 15 * 60 * 1000
+    const active = await ctx.db.query('threadRunState').withIndex('by_status', q => q.eq('status', 'active')).collect()
+    for (const state of active) {
+      if (!state.runClaimed) continue
+      if (!state.claimedAt || now - state.claimedAt <= RUN_STALE_MS) continue
+
+      const fresh = await ctx.db.get(state._id)
+      if (!fresh || fresh.status !== 'active' || !fresh.runClaimed) continue
+
+      if (fresh.queuedPromptMessageId) {
+        const runToken = crypto.randomUUID()
+        await ctx.scheduler.runAfter(0, internal.agents.runOrchestrator, {
+          promptMessageId: fresh.queuedPromptMessageId,
+          runToken,
+          threadId: fresh.threadId
+        })
+        await ctx.db.patch(fresh._id, {
+          activeRunToken: runToken,
+          claimedAt: undefined,
+          queuedPriority: undefined,
+          queuedPromptMessageId: undefined,
+          queuedReason: undefined,
+          runClaimed: false,
+          status: 'active'
+        })
+        continue
+      }
+
+      await ctx.db.patch(fresh._id, {
+        activeRunToken: undefined,
+        claimedAt: undefined,
+        runClaimed: undefined,
+        status: 'idle'
+      })
     }
   }
 })
@@ -2922,6 +3175,13 @@ Run at end of Phase 5:
 5. configure MCP server and execute one tool
 6. grounded search returns source cards
 
+### E2E Authentication Path
+
+- In test mode (`CONVEX_TEST_MODE`), frontend auth detects test mode and bypasses Google OAuth.
+- Backend uses `packages/be-agent/convex/testauth.ts` helpers (notably `createTestUser`) to create a deterministic test identity/session.
+- Frontend wraps auth gating with a `TestLoginProvider` that auto-authenticates in test mode.
+- This follows the existing `packages/be-convex/convex/testauth.ts` pattern.
+
 ---
 
 ## Rate Limiting
@@ -2947,6 +3207,8 @@ Implementation:
 - reuse `rateLimitTable()` pattern
 - expose limit policy config per environment
 
+Phase note: rate limit enforcement is implemented in Phase 6 (Polish). The schema already includes `rateLimitTable()` and the backend tree already includes `rateLimit.ts`. Phase 6 wires `checkRateLimit` guards into `submitMessage`, `delegateTool.execute`, `webSearchTool.execute`, and `mcpCallTool.execute` using the limits above. Phase 2-5 code intentionally omits rate-limit checks for simpler bring-up.
+
 ---
 
 ## Environment Variables
@@ -2957,6 +3219,8 @@ Implementation:
 |---|---|---|---|---|
 | `NEXT_PUBLIC_CONVEX_URL` | required | required | required | Agent app Convex URL, separate from demo apps |
 
+`NEXT_PUBLIC_CONVEX_URL` follows Next.js `NEXT_PUBLIC_*` handling and is validated at build time by Next.js environment loading; no separate frontend `env.ts` is required for v1.
+
 ### Backend env (`packages/be-agent`, set with `convex env set`)
 
 | Variable | Dev | Test | Prod | Notes |
@@ -2965,20 +3229,17 @@ Implementation:
 | `AUTH_SECRET` | required | required | required | Auth.js encryption/signing secret handled server-side in Convex auth |
 | `AUTH_GOOGLE_ID` | required when Google auth enabled | required | required | OAuth client id used by `@convex-dev/auth` backend |
 | `AUTH_GOOGLE_SECRET` | required when Google auth enabled | required | required | OAuth client secret used by `@convex-dev/auth` backend |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | optional if Vertex used | mock or test key | required unless Vertex used | Gemini direct API path |
-| `GOOGLE_VERTEX_PROJECT` | optional | optional | optional | Vertex path |
-| `GOOGLE_VERTEX_LOCATION` | optional | optional | optional | Vertex path |
-| `GOOGLE_APPLICATION_CREDENTIALS` | optional | optional | optional | Vertex auth file |
+| `CONVEX_SITE_URL` | optional | optional | optional | Domain for auth provider configuration |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | required in production | mock or test key | required | Gemini direct API path |
 
 ### Shared (both frontend and backend pipelines)
 
 | Variable | Scope | Notes |
 |---|---|---|
 | `CONVEX_DEPLOYMENT` | turbo pass-through + backend runtime | Required for backend commands and deploy target wiring |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | turbo pass-through + backend runtime | Required when not using Vertex |
-| `GOOGLE_VERTEX_PROJECT` | turbo pass-through + backend runtime | Optional Vertex path |
-| `GOOGLE_VERTEX_LOCATION` | turbo pass-through + backend runtime | Optional Vertex path |
-| `GOOGLE_APPLICATION_CREDENTIALS` | turbo pass-through + backend runtime | Optional Vertex credential path |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | turbo pass-through + backend runtime | Required for v1 model access |
+
+Vertex AI support is deferred to v2. v1 uses the direct Google Generative AI API via `@ai-sdk/google`.
 
 Auth secrets stay backend-only (`convex env set`) and are not frontend env vars.
 
@@ -3227,10 +3488,7 @@ Per-file source comments are removed. Canonical tracking is maintained in `SOURC
   "AUTH_GOOGLE_SECRET",
   "AUTH_SECRET",
   "CONVEX_DEPLOYMENT",
-  "GOOGLE_APPLICATION_CREDENTIALS",
-  "GOOGLE_GENERATIVE_AI_API_KEY",
-  "GOOGLE_VERTEX_LOCATION",
-  "GOOGLE_VERTEX_PROJECT"
+  "GOOGLE_GENERATIVE_AI_API_KEY"
 ]
 ```
 
@@ -3260,13 +3518,14 @@ No special Turbo configuration is required because workspace patterns already in
 5. Completion reminder chaining uses saved `messageId` and latest-message guard.
 6. Search works through function tool bridge and returns summary plus sources.
 7. Token usage is recorded through canonical `recordModelUsage` for orchestrator, worker, and search bridge.
-8. Todo continuation audit runs post-turn with max 5 auto-continues and explicit streak reset rules.
-9. v1 concurrency uses two-state `threadRunState` (idle/active) with consuming `claimRun` CAS, queue priority (user > task > todo), and remains non-blocking for input.
+8. Todo continuation audit runs post-turn with max 5 auto-continues, and streak increments happen atomically inside `enqueueRun`.
+9. v1 concurrency uses two-state `threadRunState` (idle/active) with consuming `claimRun` CAS, queue priority (user > task > todo), stale-run recovery (`claimedAt` timeout), and remains non-blocking for input.
 10. Compaction runs before generation on context size, stores summary in metadata, and preserves tool pair integrity.
-11. MCP is HTTP-only, generic-bridge/discovery based, ownership-safe, cache-refreshable, and retry-aware.
-12. Error recovery handles LLM, MCP, and timeout failures with bounded retries.
+11. MCP is HTTP-only, generic-bridge/discovery based, ownership-safe, cache-refreshable, parse-safe (`authHeaders`/`toolArgs`), and retry-aware.
+12. Error recovery handles LLM, MCP, task timeout, and stale orchestrator-run failures with bounded retries and structured payloads.
 13. Frontend renders tool/reasoning/source specs with responsive layouts and a11y compliance.
 14. Session retention and cleanup policy is implemented and documented.
 15. File attachments are explicitly out of scope for v1.
 16. `SOURCES.md` is canonical for borrowed code tracking.
-17. `bun fix` passes and targeted test suite plus e2e smoke tests pass.
+17. Public session APIs include owned `getSession` and manual `archiveSession`, and frontend list/chat pages consume them.
+18. `bun fix` passes and targeted test suite plus e2e smoke tests pass.
