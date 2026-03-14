@@ -164,7 +164,8 @@ Purpose:
 
 Input schema:
 
-- `todos: Array<{ content, position, priority, status }>`
+- `todos: Array<{ id?, content, position, priority, status }>`
+- `id` is the optional Convex document `_id` of an existing todo (returned by `todoRead`)
 - `priority` in `high | medium | low`
 - `status` in `pending | in_progress | completed | cancelled`
 

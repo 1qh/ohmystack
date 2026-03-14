@@ -104,10 +104,10 @@ Worker completion does not immediately force a continuation. It first persists a
 1. `completeTask` CAS validates `status === 'running'`.
 2. Save system completion reminder message to **parent thread** in `messages` table.
 3. Patch task:
-   - `status: 'completed'`
-   - `result`
+   - `status: 'completed'` (or `'failed'`/`'timed_out'` for terminal reminders)
+   - `result` (or `lastError` for failures)
    - `completedAt`
-   - `completionReminderMessageId`
+   - `completionReminderMessageId` (stored for ALL terminal states, not just success)
 4. Call `maybeContinueOrchestrator(taskId)`.
 5. `maybeContinueOrchestrator` runs `enqueueRunIfLatest` with `expectedLatestMessageId`.
 6. If enqueue succeeds, mark `continuationEnqueuedAt`.

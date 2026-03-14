@@ -272,19 +272,17 @@ const env = createEnv({
     AUTH_GOOGLE_ID: z.string().min(1),
     AUTH_GOOGLE_SECRET: z.string().min(1),
     AUTH_SECRET: z.string().min(1),
-    CONVEX_SITE_URL: z.string().url().optional(),
-    CONVEX_CLOUD_URL: z.string().optional(),
+    CONVEX_SITE_URL: z.string().url(),
+    CONVEX_CLOUD_URL: z.string(),
     CONVEX_TEST_MODE: z.string().optional(),
-    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional()
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1)
   },
-  skipValidation: Boolean(process.env.CI || process.env.LINT || process.env.CONVEX_TEST_MODE)
+  skipValidation: Boolean(process.env.LINT || process.env.CONVEX_TEST_MODE)
 })
 
 export { env }
 
-When `skipValidation` is false (production/staging), `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` are **required** — validation throws immediately if they are missing. This prevents a deploy that starts successfully but fails at runtime when a user tries to sign in with Google. Only `CONVEX_TEST_MODE` remains optional (and its presence in production triggers the runtime fuse).
-
-`GOOGLE_GENERATIVE_AI_API_KEY` is required in production/staging (non-test) deployments. The `getModel()` function dynamically imports `@ai-sdk/google` which reads this key from the environment. In test mode, `getModel()` returns the mock model and never accesses the key. The env.ts validation makes this key required when `skipValidation` is false.
+`skipValidation` is `true` only for lint runs and test mode (`LINT` or `CONVEX_TEST_MODE`). `CI` is intentionally NOT included — CI deploys to staging/production must pass full validation. When `skipValidation` is false (production/staging/CI deploys), ALL fields except `CONVEX_TEST_MODE` are required: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `CONVEX_SITE_URL`, `CONVEX_CLOUD_URL`, and `GOOGLE_GENERATIVE_AI_API_KEY`. Missing any of these throws at module load, preventing a deploy that boots successfully but fails at runtime on first sign-in or model call.
 ```
 
 ### `packages/be-agent/check-schema.ts`
