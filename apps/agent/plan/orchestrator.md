@@ -223,6 +223,12 @@ sequenceDiagram
 - `turnRequestedInput` is always `false` in v1; input-request detection is deferred.
 - Mid-stream stale overlap can still persist partial writes/tool side effects before stale check after `consumeStream()`.
 
+---
+
+## Implementation Reference Snippets
+
+The sections below contain pseudocode snippets recovered from an earlier planning phase. They are **illustrative, not authoritative** — the architectural specs above (buildModelMessages, token-fenced postTurnAudit, parts-only tool model, explicit desc+reverse ordering) are the source of truth. During implementation, these snippets will be replaced by actual verified TypeScript code. Where a snippet contradicts an architectural spec above, the spec takes precedence.
+
 ## Recovered: Agent Definitions
 
 `components.agent` has been removed. v1 configuration survives as plain runtime config consumed by direct AI SDK calls (`streamText` for orchestrator turns, `generateText` for worker single-shot turns).
@@ -478,10 +484,12 @@ const runOrchestratorStream = async ({
   if (systemPrefix)
     messages.push({ content: systemPrefix, role: 'system' as const })
   for (const m of dbMessages.page) {
-    messages.push({ content: m.content, role: m.role })
+    messages.push({ content: m.content, role: m.role }) // (Note: this snippet uses the simplified `m.content` mapping. The actual implementation MUST use `buildModelMessages` which includes `parts` — see architecture.md canonical serializer spec.)
   }
 
   // Context is built via `buildModelMessages(messages, compactionSummary)` which serializes stored message rows into AI SDK `CoreMessage` format including `parts` — see `architecture.md` for the canonical serializer spec.
+
+  // The orchestrator uses `promptMessageId` (from the queued payload) as a hard upper bound when loading context. The query fetches messages where `createdAt <= promptMessage.createdAt` from `by_thread_createdAt` descending, takes the latest 100, and reverses to chronological order. This prevents the active run from seeing messages that arrived after its prompt — those belong to the next queued run. Without this boundary, an active run could process a newer user message, and then the queued follow-up run would process it again, causing duplicate responses.
 
   const result = await streamText({
     maxSteps: ORCHESTRATOR_RUNTIME_CONFIG.maxSteps,

@@ -202,6 +202,12 @@ const buildTaskTerminalReminder = ({ taskId, description, status, error }) => {
 - Duplicate side effects on retries: external MCP/tool effects from a failed attempt are not rolled back.
 - Prompt duplication on retry can happen in worker thread history (cosmetic).
 
+---
+
+## Implementation Reference Snippets
+
+The sections below contain pseudocode snippets recovered from an earlier planning phase. They are **illustrative, not authoritative** — the architectural specs above (buildModelMessages, token-fenced postTurnAudit, parts-only tool model, explicit desc+reverse ordering) are the source of truth. During implementation, these snippets will be replaced by actual verified TypeScript code. Where a snippet contradicts an architectural spec above, the spec takes precedence.
+
 ## Recovered: Internal Functions (Worker/Task)
 
 ```typescript
@@ -470,7 +476,7 @@ const runWorker = internalAction({
 
       const messages = []
       for (const m of context.reverse()) {
-        messages.push({ content: m.content, role: m.role })
+        messages.push({ content: m.content, role: m.role }) // (Note: this snippet uses the simplified `m.content` mapping. The actual implementation MUST use `buildModelMessages` which includes `parts` — see architecture.md canonical serializer spec.)
       }
 
       // Worker context is built via the same `buildModelMessages` serializer as the orchestrator.

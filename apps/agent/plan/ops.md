@@ -39,7 +39,12 @@ Retention and stale-recovery jobs are wired through Convex cron jobs (`cronJobs(
 
 ### Stale Message Janitor
 
-`cleanupStaleMessages` runs every 5 minutes. It finds `messages` rows where `isComplete === false` and the owning thread has no active run (`threadRunState.status === 'idle'`) and `createdAt` is older than 5 minutes. These orphaned streaming messages are finalized by setting `isComplete = true` and copying `streamingContent` into `content` (or `[Message interrupted]` when `streamingContent` is empty). This prevents permanent ghost streaming messages from crashed runs.
+`cleanupStaleMessages` runs every 5 minutes. It finds `messages` rows where `isComplete === false` AND the owning thread has no active run (`threadRunState.status === 'idle'`) AND the message's `createdAt` is older than 5 minutes. For each orphaned message:
+1. Copy `streamingContent` to `content` (or set `content` to `[Message interrupted]` if empty)
+2. Terminalize any `parts` entries with `status: 'pending'` → set `status: 'error'` and `result: 'Interrupted: agent run terminated before tool completion'`
+3. Set `isComplete: true` and clear `streamingContent`
+
+This prevents permanent ghost streaming messages AND ensures compaction can proceed (compaction requires all tool-call parts to be terminal). Without step 2, a crashed run's pending tool-call parts would block compaction forever and cause the UI to show permanent 'running' tool cards.
 
 Operational ownership map:
 
