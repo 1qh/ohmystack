@@ -2467,6 +2467,8 @@ apps/agent/
 ├── playwright.config.ts
 ├── src/
 │   ├── app/
+│   │   ├── convex-provider.tsx
+│   │   ├── test-login-provider.tsx
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   ├── login/
@@ -2578,14 +2580,35 @@ v1 intentionally returns a sorted array without cursor pagination; v2 can add cu
 
 Use the same server layout pattern as `apps/convex/chat/src/app/layout.tsx`.
 
+The agent app cannot reuse `@a/fe/convex-provider` because that provider imports `@a/be-convex` (the demo backend). Instead, the layout defines an inline provider using `@convex-dev/auth/nextjs` and `convex/react` directly, targeting the agent app's own Convex project via `NEXT_PUBLIC_CONVEX_URL`.
+
+```tsx
+'use client'
+
+import type { ReactNode } from 'react'
+
+import { ConvexAuthNextjsProvider as AuthProvider } from '@convex-dev/auth/nextjs'
+import { ConvexReactClient as Client } from 'convex/react'
+
+const url = process.env.NEXT_PUBLIC_CONVEX_URL ?? 'http://127.0.0.1:3210',
+  client = new Client(url, { verbose: true }),
+  AgentConvexProvider = ({ children }: { children: ReactNode }) => (
+    <AuthProvider client={client}>{children}</AuthProvider>
+  )
+
+export default AgentConvexProvider
+```
+
+This provider lives at `apps/agent/src/app/convex-provider.tsx` (co-located with the layout). The layout imports it:
+
 ```tsx
 import type { ReactNode } from 'react'
 
-import AuthLayout from '@a/fe/auth-layout'
-import ConvexProvider from '@a/fe/convex-provider'
-import { isAuthenticated } from '@noboil/convex/next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+
+import AgentConvexProvider from './convex-provider'
+import TestLoginProvider from './test-login-provider'
 
 const PUBLIC_PATHS = ['/login'],
   isPublicPath = (pathname: string) => {
@@ -2594,13 +2617,21 @@ const PUBLIC_PATHS = ['/login'],
   },
   Layout = async ({ children }: { children: ReactNode }) => {
     const pathname = (await headers()).get('x-pathname') ?? '/'
-    if (!(isPublicPath(pathname) || (await isAuthenticated()))) redirect('/login')
+    if (!isPublicPath(pathname)) redirect('/login')
 
-    return <AuthLayout convexProvider={inner => <ConvexProvider>{inner}</ConvexProvider>}>{children}</AuthLayout>
+    return (
+      <AgentConvexProvider>
+        <TestLoginProvider>{children}</TestLoginProvider>
+      </AgentConvexProvider>
+    )
   }
 
 export default Layout
 ```
+
+Auth gating is handled client-side by `@convex-dev/auth`'s `useConvexAuth()` hook in each page, not by server-side `isAuthenticated()` (which requires `@noboil/convex/next` and the demo backend). The login page checks auth state and redirects after successful sign-in.
+
+`TestLoginProvider` lives at `apps/agent/src/app/test-login-provider.tsx`:
 
 ### Accessibility Requirements
 
@@ -3427,8 +3458,10 @@ Phase note: rate limit enforcement is implemented in Phase 6 (Polish). The schem
 | Variable | Dev | Test | Prod | Notes |
 |---|---|---|---|---|
 | `NEXT_PUBLIC_CONVEX_URL` | required | required | required | Agent app Convex URL, separate from demo apps |
+| `NEXT_PUBLIC_CONVEX_TEST_MODE` | omit | `true` | omit | Enables `TestLoginProvider` bypass of Google OAuth |
 
 `NEXT_PUBLIC_CONVEX_URL` follows Next.js `NEXT_PUBLIC_*` handling and is validated at build time by Next.js environment loading; no separate frontend `env.ts` is required for v1.
+`NEXT_PUBLIC_CONVEX_TEST_MODE` is only set in test/E2E environments to enable the `TestLoginProvider` auto-login flow.
 
 ### Backend env (`packages/be-agent`, set with `convex env set`)
 
