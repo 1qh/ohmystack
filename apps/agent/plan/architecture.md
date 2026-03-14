@@ -132,7 +132,7 @@ All model context assembly (orchestrator turns, worker turns, compaction input) 
 - **Assistant messages**: Reconstructed from BOTH `content` AND `parts`:
   - Text content from `m.content`
   - Tool calls from `parts` entries with `type: 'tool-call'` → mapped to AI SDK tool-call content parts
-  - Tool results from `parts` entries with `type: 'tool-call'` where status is terminal (`success` OR `error`) → mapped to AI SDK tool-result content parts. Error results include the error message so follow-up turns see what failed and can decide to retry or inform the user.
+  - For each assistant message with tool-call parts: emit the assistant `CoreMessage` with text + tool-call content parts (type `tool-call`), then emit a SEPARATE `{ role: 'tool', content: [...] }` CoreMessage containing the tool results for all terminal tool-call parts in that message. AI SDK requires tool results in their own message, not embedded in the assistant message. Storage remains parts-only (single DB row per assistant turn) — the split happens only during serialization.
   - Reasoning from `parts` entries with `type: 'reasoning'` → included as reasoning content
   - Sources are metadata-only (not sent to the model, only rendered in UI)
 

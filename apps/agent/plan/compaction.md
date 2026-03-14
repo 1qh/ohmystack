@@ -73,7 +73,7 @@ Safety rule:
 - Tool-call/result pairs must remain intact within grouping boundaries.
 - No partial in-flight segment is compacted.
 
-Since tools live inside assistant `parts` (not separate rows), closed-prefix grouping only needs to verify that all `tool-call` parts within an assistant message have terminal status (`success` or `error`) before that message can cross the compaction boundary.
+Since tools live inside assistant `parts` (not separate rows), a message is eligible for compaction only if: (1) `isComplete === true` AND (2) all `tool-call` parts (if any) have reached terminal status (`success` or `error`). Both conditions are required — a crashed partial assistant message with no tool calls but `isComplete === false` must NOT be compacted, even if it has no pending tool parts. The stale-message janitor (`cleanupStaleMessages`) repairs orphaned messages by setting `isComplete: true` and terminalizing tool parts, making them compaction-eligible.
 
 Grouping behavior:
 

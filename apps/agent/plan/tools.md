@@ -171,7 +171,7 @@ Input schema:
 Execution details:
 
 - Calls `internal.todos.syncOwned`.
-- Mutation resolves session by thread, replaces prior rows, inserts incoming todos preserving `position` ordering.
+- The `todoWrite` tool uses merge semantics, not full-replace. The model sends an array of todos with `{ content, status, priority, position }`. The backend matches existing todos by `position` within the session's todo list: matching positions are updated in place, new positions are inserted, and positions not included in the array are left unchanged. This prevents silent todo deletion when the model omits previously created items. The system prompt instructs the model to include all todos (existing + new) in each todoWrite call, but the merge-by-position backend prevents data loss if the model only sends a partial update.
 - Returns `{ updated: todos.length }`.
 
 ## `todoRead`

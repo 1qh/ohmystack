@@ -269,8 +269,8 @@ if (cloudUrl.toLowerCase().includes('production') && process.env.CONVEX_TEST_MOD
 const env = createEnv({
   runtimeEnv: process.env,
   server: {
-    AUTH_GOOGLE_ID: z.string().min(1).optional(),
-    AUTH_GOOGLE_SECRET: z.string().min(1).optional(),
+    AUTH_GOOGLE_ID: z.string().min(1),
+    AUTH_GOOGLE_SECRET: z.string().min(1),
     AUTH_SECRET: z.string().min(1),
     CONVEX_SITE_URL: z.string().url().optional(),
     CONVEX_CLOUD_URL: z.string().optional(),
@@ -281,6 +281,8 @@ const env = createEnv({
 })
 
 export { env }
+
+When `skipValidation` is false (production/staging), `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` are **required** — validation throws immediately if they are missing. This prevents a deploy that starts successfully but fails at runtime when a user tries to sign in with Google. Only `CONVEX_TEST_MODE` remains optional (and its presence in production triggers the runtime fuse).
 ```
 
 ### `packages/be-agent/check-schema.ts`
@@ -345,14 +347,14 @@ const mockModel = {
           }
         ],
         finishReason: 'tool-calls' as const,
-        usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+        usage: { inputTokens: 5, outputTokens: 10 },
         warnings: []
       }
     }
     return {
       content: [{ type: 'text' as const, text: 'Mock response for testing.' }],
       finishReason: 'stop' as const,
-      usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+      usage: { inputTokens: 5, outputTokens: 10 },
       warnings: []
     }
   },
@@ -363,11 +365,11 @@ const mockModel = {
         c.enqueue({ id: 'mock-text-0', type: 'text-start' })
         c.enqueue({ delta: 'Mock.', id: 'mock-text-0', type: 'text-delta' })
         c.enqueue({ id: 'mock-text-0', type: 'text-end' })
-        c.enqueue({
-          finishReason: 'stop',
-          type: 'finish',
-          usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } }
-        })
+         c.enqueue({
+           finishReason: 'stop',
+           type: 'finish',
+           usage: { inputTokens: 5, outputTokens: 10 }
+         })
         c.close()
       }
     })
