@@ -109,6 +109,7 @@ flowchart LR
 | 22 | `runWorker` clears heartbeat loop in `finally` block | `updateHeartbeat` stops after both success and failure exits |
 | 23 | `completeTask` CAS rejects non-`running` tasks | Returns `{ ok: false }`, writes no reminder for already-completed/cancelled |
 | 24 | `finalizeWorkerOutput` success-path atomicity | Running task gets exactly one assistant message + `completed` in single mutation |
+| 25 | `postTurnAuditFenced` task-wait stop branch | Incomplete todos + pending/running task → stop auto-continue, reset streak, no reminder |
 
 ### Orchestrator Runtime
 
@@ -182,6 +183,8 @@ flowchart LR
 | 17 | Non-HTTP(S) protocol rejected (`ftp:`, `file:`) | Create/update with non-HTTP protocol fails with `invalid_url_protocol` |
 | 18 | Workers cannot re-delegate or manage todos | Worker tool map excludes `delegate`, `todoRead`, `todoWrite` |
 | 19 | `webSearch` records token usage through search bridge | `tokenUsage` row written with correct thread/session attribution |
+| 20 | `mcpCallTool` rejects invalid `toolArgs` JSON | Returns structured parse error, no crash |
+| 21 | `mcpCallTool` handles invalid persisted `authHeaders` JSON | Returns structured error, doesn't send malformed headers |
 
 ### Auth & Ownership
 
@@ -265,6 +268,8 @@ flowchart LR
 | 15 | Mock model tool-enabled `doGenerate` returns `tool-call` part | Schema-valid JSON input matching tool's inputSchema |
 | 16 | `env.ts` rejects each missing required var individually | Missing `AUTH_SECRET`, `AUTH_GOOGLE_ID`, etc. each throw |
 | 17 | `CI=true` alone does NOT bypass env validation | All required vars still validated under CI |
+| 18 | `buildModelMessages` excludes `source` parts from model input | Source parts preserved for UI but not in CoreMessage array sent to model |
+| 19 | Worker messages persist `parts` (tool calls, reasoning) same as orchestrator | Worker-thread messages viewable in task panel with full structured parts |
 
 ### Integration & Lifecycle (convex-test)
 
@@ -278,6 +283,10 @@ flowchart LR
 | 6 | Equal-priority task-completion burst burns streak cap (v1 limitation) | Burst of completions increments streak correctly, cap enforced, no infinite loop |
 | 7 | Retry-caused duplicate side effects (v1 limitation) | Duplicate tool execution noted but no terminal-state corruption |
 | 8 | Complex text->tool->text->tool serialization (v1 limitation) | `buildModelMessages` preserves all content even if mid-turn boundaries degrade |
+| 9 | Non-blocking conversation: user sends message while background task running | User gets normal response; task continues independently; no queue deadlock |
+| 10 | Production auth smoke: login → OAuth → protected routes → sign-out → redirect | Full auth lifecycle works (test-mode skipped) |
+| 11 | Full MCP E2E: add server in settings → trigger discover in chat → call tool → result renders | Complete product path from config to tool usage |
+| 12 | Worker output only available after completion, not live-streamed (v1 limitation) | No streaming content visible during worker execution; result appears via taskOutput only |
 
 ## E2E Test Matrix (Playwright)
 
@@ -361,6 +370,10 @@ flowchart LR
 | 12 | Visible focus indicator on expandable controls | Focus ring visible when tabbed |
 | 13 | Focus returns to composer after modal/drawer close | `document.activeElement` is composer after close |
 | 14 | Contrast meets WCAG AA on desktop and mobile | Interactive elements pass contrast check |
+| 15 | `/login` Google OAuth handoff in non-test mode | Clicking sign-in initiates Google OAuth flow |
+| 16 | `getRunState`-driven typing indicator on chat page | Activity indicator visible while orchestrator active, hidden when idle |
+| 17 | No file upload/attachment UI exposed in v1 | Composer has no upload button; paste-file has no effect |
+| 18 | Responsive viewport: chat usable on mobile (375px) and tablet (768px) | Core chat, settings, session list functional across breakpoints |
 
 ## Edge Case Tests (from Oracle reviews)
 
