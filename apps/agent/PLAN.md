@@ -326,9 +326,9 @@ export default defineSchema({
     .index('by_user_enabled', ['userId', 'isEnabled']),
   tokenUsage: defineTable({
     agentName: v.optional(v.string()),
-    promptTokens: v.number(),
+    inputTokens: v.number(),
     model: v.string(),
-    completionTokens: v.number(),
+    outputTokens: v.number(),
     provider: v.string(),
     sessionId: v.id('session'),
     threadId: v.string(),
@@ -489,15 +489,15 @@ const worker = new Agent(components.agent, {
 
 ### Usage Handler and Canonical Token Recording
 
-Note: `@convex-dev/agent`'s `UsageHandler` passes `usage: LanguageModelUsage` which uses `promptTokens`/`completionTokens`/`totalTokens` field names from the AI SDK `LanguageModelUsage` type.
+Note: `@convex-dev/agent`'s `UsageHandler` passes `usage: LanguageModelUsage` using `inputTokens`/`outputTokens`/`totalTokens` from AI SDK v6.
 
 ```typescript
 const usageHandlerByThread = async (ctx, { userId, threadId, agentName, usage, providerMetadata, model, provider }) => {
   await ctx.runMutation(internal.tokenUsage.recordModelUsage, {
     agentName: agentName ?? 'unknown',
-    completionTokens: usage.completionTokens,
+    outputTokens: usage.outputTokens,
     model,
-    promptTokens: usage.promptTokens,
+    inputTokens: usage.inputTokens,
     provider,
     threadId,
     totalTokens: usage.totalTokens
@@ -507,9 +507,9 @@ const usageHandlerByThread = async (ctx, { userId, threadId, agentName, usage, p
 const recordModelUsage = internalMutation({
   args: {
     agentName: v.optional(v.string()),
-    completionTokens: v.number(),
+    outputTokens: v.number(),
     model: v.string(),
-    promptTokens: v.number(),
+    inputTokens: v.number(),
     provider: v.string(),
     threadId: v.string(),
     totalTokens: v.number()
@@ -522,9 +522,9 @@ const recordModelUsage = internalMutation({
     if (session) {
       await ctx.db.insert('tokenUsage', {
         agentName: args.agentName,
-        completionTokens: args.completionTokens,
+        outputTokens: args.outputTokens,
         model: args.model,
-        promptTokens: args.promptTokens,
+        inputTokens: args.inputTokens,
         provider: args.provider,
         sessionId: session._id,
         threadId: args.threadId,
@@ -544,9 +544,9 @@ const recordModelUsage = internalMutation({
 
     await ctx.db.insert('tokenUsage', {
       agentName: args.agentName,
-      completionTokens: args.completionTokens,
+      outputTokens: args.outputTokens,
       model: args.model,
-      promptTokens: args.promptTokens,
+      inputTokens: args.inputTokens,
       provider: args.provider,
       sessionId: ownerSession._id,
       threadId: args.threadId,
@@ -1170,7 +1170,7 @@ const enqueueRunIfLatest = internalMutation({
       paginationOpts: { cursor: null, numItems: 1 },
       threadId: args.threadId
     })
-    const latest = latestMessages.page[0]?._id ?? null
+    const latest = latestMessages.page[0]?.id ?? null
     if (latest !== args.expectedLatestMessageId) return { ok: false, reason: 'not_latest' }
     const state = await ensureRunState({ ctx, threadId: args.threadId })
     const shouldIncrement = args.incrementStreak === true
@@ -1286,7 +1286,7 @@ const finishRun = internalMutation({
 
 `enqueueRunIfLatest` uses `listUIMessages` from `@convex-dev/agent` to read the latest message inline. Component helper functions accept mutation `ctx` and access the component's tables through the component reference, avoiding the `ctx.runQuery` prohibition in mutations.
 
-Note: server-side `listUIMessages` returns raw `MessageDoc` objects from the component's internal tables (Convex documents with `_id`). Client-side `useUIMessages` returns `UIMessage` objects (AI SDK format with `key` as the stable identifier, no `_id`). All server-side code (e.g. `enqueueRunIfLatest`, compaction) correctly uses `_id` from `MessageDoc`. All client-side rendering uses `key` from `UIMessage`.
+Note: both server-side `listUIMessages` and client-side `useUIMessages` return `UIMessage` objects. UIMessages have an `id` field (from AI SDK), not `_id`. All server-side code that reads from `listUIMessages` uses `.id` for message identification. All client-side rendering uses `.key` (the composite `${threadId}-${order}-${stepOrder}` identifier from `@convex-dev/agent`). Convex document `_id` is only used when accessing application-layer tables directly via `ctx.db`.
 
 ### Auto-Continue Streak Rules
 
@@ -1452,18 +1452,51 @@ const ensureServerToolsCache = async ({ ctx, serverId }) => {
 }
 
 const mockModel = {
-  doGenerate: async () => ({
-    finishReason: 'stop',
-    text: 'Mock response for testing.',
-    usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
-  }),
+  doGenerate: async ({ tools }) => {
+    if (tools && tools.length > 0) {
+      const firstTool = tools[0]
+      const mockArgs: Record<string, unknown> = firstTool.name === 'delegate'
+        ? { description: 'Test task', isBackground: true, prompt: 'Test prompt' }
+        : firstTool.name === 'webSearch'
+          ? { query: 'test' }
+          : firstTool.name === 'todoWrite'
+            ? { todos: [{ content: 'Test task', position: 0, priority: 'medium', status: 'pending' }] }
+            : firstTool.name === 'taskStatus' || firstTool.name === 'taskOutput'
+              ? { taskId: 'mock-task-id' }
+              : firstTool.name === 'mcpCall'
+                ? { serverName: 'test-server', toolArgs: '{}', toolName: 'test-tool' }
+                : firstTool.name === 'mcpDiscover' || firstTool.name === 'todoRead'
+                  ? {}
+                  : {}
+      return {
+        content: [{ input: JSON.stringify(mockArgs), toolCallId: `mock-tc-${Date.now()}`, toolName: firstTool.name, type: 'tool-call' as const }],
+        finishReason: 'tool-calls' as const,
+        usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+        warnings: []
+      }
+    }
+    return {
+      content: [{ type: 'text' as const, text: 'Mock response for testing.' }],
+      finishReason: 'stop' as const,
+      usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+      warnings: []
+    }
+  },
   doStream: async () => ({
-    stream: new ReadableStream({ start: c => { c.enqueue({ type: 'text-delta', textDelta: 'Mock.' }); c.close() } }),
-    rawCall: { rawPrompt: null, rawSettings: {} }
+    stream: new ReadableStream({
+      start: c => {
+        c.enqueue({ type: 'stream-start', warnings: [] })
+        c.enqueue({ id: 'mock-text-0', type: 'text-start' })
+        c.enqueue({ delta: 'Mock.', id: 'mock-text-0', type: 'text-delta' })
+        c.enqueue({ id: 'mock-text-0', type: 'text-end' })
+        c.enqueue({ finishReason: 'stop', type: 'finish', usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } } })
+        c.close()
+      }
+    })
   }),
   modelId: 'mock-model',
   provider: 'mock',
-  specificationVersion: 'v2'
+  specificationVersion: 'v3'
 } as unknown as LanguageModel
 ```
 
@@ -1851,7 +1884,7 @@ const runWorker = internalAction({
 
 Returns compactable message groups from the thread prefix. A "closed prefix group" is a contiguous range of messages that is fully resolved (no pending tool calls, no streaming). Only messages before the current active generation are eligible.
 
-Boundary safety note: if `safeEnd` lands on an assistant message that contains tool calls and the paired tool-result message is immediately next, move `safeEnd` back one more slot so compaction never splits a call/result pair.
+Boundary safety note: AI SDK v6 tool results are embedded in assistant `parts` (not separate `role: 'tool'` messages). If `safeEnd` lands on an assistant message with unresolved `tool-call` parts, move `safeEnd` back so compaction only includes closed tool-call sequences.
 
 ```typescript
 const listClosedPrefixGroups = internalQuery({
@@ -1866,7 +1899,7 @@ const listClosedPrefixGroups = internalQuery({
     const runState = await ctx.db.query('threadRunState').withIndex('by_threadId', q => q.eq('threadId', threadId)).unique()
     const startAfter = runState?.lastCompactedMessageId
     if (startAfter) {
-      const idx = messages.findIndex(m => m._id === startAfter)
+      const idx = messages.findIndex(m => m.id === startAfter)
       if (idx >= 0) messages.splice(0, idx + 1)
     }
     if (messages.length < 10) return []
@@ -1878,7 +1911,7 @@ const listClosedPrefixGroups = internalQuery({
       const msg = messages[idx]
       if (!msg.parts) return false
       for (const part of msg.parts) {
-        if (part.type === 'tool-invocation' && part.state !== 'result') return true
+        if (part.type === 'tool-call' && part.state !== 'result') return true
       }
       return false
     }
@@ -1896,15 +1929,8 @@ const listClosedPrefixGroups = internalQuery({
         continue
       }
       const msg = messages[safeEnd]
-      if (msg.role === 'tool') {
-        safeEnd -= 1
-        continue
-      }
-
-      const next = messages[safeEnd + 1]
-      const endsWithAssistantToolCall = msg.role === 'assistant' && Boolean(msg.parts?.some(p => p.type === 'tool-invocation'))
-      const nextIsToolResultMessage = next?.role === 'tool'
-      if (endsWithAssistantToolCall && nextIsToolResultMessage) {
+      const endsWithUnresolvedToolCall = msg.role === 'assistant' && Boolean(msg.parts?.some(p => p.type === 'tool-call' && p.state !== 'result'))
+      if (endsWithUnresolvedToolCall) {
         safeEnd -= 1
         continue
       }
@@ -1918,7 +1944,7 @@ const listClosedPrefixGroups = internalQuery({
         const parts = []
         for (const p of m.parts ?? []) {
           if (p.type === 'text') parts.push(p.text)
-          if (p.type === 'tool-invocation' && p.state === 'result') {
+          if (p.type === 'tool-call' && p.state === 'result') {
             const resultText = typeof p.result === 'string' ? p.result : JSON.stringify(p.result)
             parts.push(`[tool:${p.toolName}] ${resultText}`)
           }
@@ -1929,8 +1955,8 @@ const listClosedPrefixGroups = internalQuery({
 
     return [
       {
-        endId: messages[safeEnd]._id,
-        startId: messages[0]._id,
+        endId: messages[safeEnd].id,
+        startId: messages[0].id,
         text
       }
     ]
@@ -1996,9 +2022,9 @@ const groundWithGemini = internalAction({
     })
     await ctx.runMutation(internal.tokenUsage.recordModelUsage, {
       agentName: 'search-bridge',
-      completionTokens: out.usage?.completionTokens ?? 0,
+      outputTokens: out.usage?.outputTokens ?? 0,
       model: model.modelId,
-      promptTokens: out.usage?.promptTokens ?? 0,
+      inputTokens: out.usage?.inputTokens ?? 0,
       provider: model.provider ?? 'google',
       threadId,
       totalTokens: out.usage?.totalTokens ?? 0
@@ -2949,13 +2975,6 @@ checkSchema(schema, { owned })
 ```typescript
 import type { LanguageModel } from 'ai'
 
-const createMockToolCall = ({ args, name }: { args: Record<string, unknown>, name: string }) => ({
-  args: JSON.stringify(args),
-  toolCallId: `mock-tc-${Date.now()}`,
-  toolCallType: 'function' as const,
-  toolName: name
-})
-
 const mockModel = {
   doGenerate: async ({ tools }) => {
     if (tools && tools.length > 0) {
@@ -2971,33 +2990,43 @@ const mockModel = {
               : firstTool.name === 'mcpCall'
                 ? { serverName: 'test-server', toolArgs: '{}', toolName: 'test-tool' }
                 : firstTool.name === 'mcpDiscover' || firstTool.name === 'todoRead'
-                  ? {}
-                  : {}
+                    ? {}
+                    : {}
       return {
+        content: [{ input: JSON.stringify(mockArgs), toolCallId: `mock-tc-${Date.now()}`, toolName: firstTool.name, type: 'tool-call' as const }],
         finishReason: 'tool-calls' as const,
-        toolCalls: [createMockToolCall({ args: mockArgs, name: firstTool.name })],
-        usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
+        usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+        warnings: []
       }
     }
     return {
+      content: [{ type: 'text' as const, text: 'Mock response for testing.' }],
       finishReason: 'stop' as const,
-      text: 'Mock response for testing.',
-      usage: { completionTokens: 10, promptTokens: 5, totalTokens: 15 }
+      usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } },
+      warnings: []
     }
   },
   doStream: async () => ({
-    stream: new ReadableStream({ start: c => { c.enqueue({ type: 'text-delta', textDelta: 'Mock.' }); c.close() } }),
-    rawCall: { rawPrompt: null, rawSettings: {} }
+    stream: new ReadableStream({
+      start: c => {
+        c.enqueue({ type: 'stream-start', warnings: [] })
+        c.enqueue({ id: 'mock-text-0', type: 'text-start' })
+        c.enqueue({ delta: 'Mock.', id: 'mock-text-0', type: 'text-delta' })
+        c.enqueue({ id: 'mock-text-0', type: 'text-end' })
+        c.enqueue({ finishReason: 'stop', type: 'finish', usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } } })
+        c.close()
+      }
+    })
   }),
   modelId: 'mock-model',
   provider: 'mock',
-  specificationVersion: 'v2'
+  specificationVersion: 'v3'
 } as unknown as LanguageModel
 
 export { mockModel }
 ```
 
-The mock model conditionally returns tool calls when tools are provided in the generation request. This enables E2E smoke tests to exercise delegation, search, and MCP flows without hitting real LLM APIs. The mock inspects the first available tool's name and generates schema-compatible arguments: `delegate` gets `{ description, isBackground, prompt }`, `webSearch` gets `{ query }`, `todoWrite` gets a single pending todo, and other tools get a generic `{ input }`. Specific test scenarios can intercept tool execution at the tool handler level. `doStream` still returns simple text; tool-call streaming in tests is handled by `doGenerate` via `@convex-dev/agent`'s step loop.
+The mock model uses AI SDK v6 provider specification `v3`. `doGenerate` returns `{ content, finishReason, usage, warnings }` where `content` is an array of typed parts (`text`, `tool-call`, etc.). Tool calls use `{ type: 'tool-call', toolCallId, toolName, input }` where `input` is stringified JSON matching the tool's `inputSchema`. `doStream` emits `text-start`/`text-delta`/`text-end` triplets following the v3 streaming protocol. The mock inspects the first available tool's name and generates schema-compatible arguments. Specific test scenarios can intercept tool execution at the tool handler level.
 
 ### `packages/be-agent/tsconfig.json`
 
@@ -3223,7 +3252,7 @@ const getTokenUsage = q({
   handler: async c => {
     const session = await c.ctx.db.get(c.args.sessionId)
     if (!session || session.userId !== c.userId) {
-      return { completionTokens: 0, promptTokens: 0, totalTokens: 0 }
+      return { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
     }
     const usage = await c.ctx.db
       .query('tokenUsage')
@@ -3233,11 +3262,11 @@ const getTokenUsage = q({
     let ct = 0
     let tt = 0
     for (const u of usage) {
-      pt += u.promptTokens
-      ct += u.completionTokens
+      pt += u.inputTokens
+      ct += u.outputTokens
       tt += u.totalTokens
     }
-    return { completionTokens: ct, promptTokens: pt, totalTokens: tt }
+    return { inputTokens: pt, outputTokens: ct, totalTokens: tt }
   }
 })
 
