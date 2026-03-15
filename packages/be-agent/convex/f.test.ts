@@ -3321,3 +3321,148 @@ describe('more edge cases', () => {
     expect(remainingArchived.length).toBe(5)
   })
 })
+
+describe('remaining edge cases', () => {
+  test('enqueueRunInline in submitMessage matches enqueueRun CAS', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      first = await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'first-rapid-message',
+        sessionId
+      }),
+      second = await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'second-rapid-message',
+        sessionId
+      }),
+      runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(String(first.messageId).length > 0).toBe(true)
+    expect(runState?.status).toBe('active')
+    expect(runState?.queuedPriority).toBe('user_message')
+    expect(runState?.queuedReason).toBe('user_message')
+    expect(runState?.queuedPromptMessageId).toBe(second.messageId)
+  })
+
+  test('heartbeatRun with matching token', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'heartbeat-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+      runToken = before?.activeRunToken ?? ''
+    await ctx.mutation(internal.orchestrator.heartbeatRun, { runToken, threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.runHeartbeatAt).toBeDefined()
+  })
+
+  test('heartbeatRun rejects mismatched token', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'heartbeat-mismatch-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.heartbeatRun, {
+      runToken: 'wrong-token',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.runHeartbeatAt).toBe(before?.runHeartbeatAt)
+  })
+
+  test('ensureRunState idempotent', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      first = await ctx.mutation(internal.orchestrator.ensureRunState, { threadId }),
+      second = await ctx.mutation(internal.orchestrator.ensureRunState, { threadId })
+    expect(String(first._id)).toBe(String(second._id))
+    expect(first.threadId).toBe(threadId)
+    expect(second.threadId).toBe(threadId)
+  })
+
+  test('timeoutStaleRuns with unclaimed run', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'unclaimed-stale-start',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.run(async c => {
+      const current = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (current)
+        await c.db.patch(current._id, {
+          activatedAt: Date.now() - 6 * 60 * 1000,
+          runClaimed: false,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('idle')
+    expect(after?.activeRunToken).toBeUndefined()
+  })
+
+  test('archiveSession idempotent', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const session = await ctx.run(async c => c.db.get(sessionId))
+    expect(session?.status).toBe('archived')
+    expect(session?.archivedAt).toBeDefined()
+  })
+
+  test('createSession generates unique threadIds', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      first = await asUser(0).mutation(api.sessions.createSession, {}),
+      second = await asUser(0).mutation(api.sessions.createSession, {})
+    expect(first.threadId).not.toBe(second.threadId)
+  })
+
+  test('messages.listMessages worker thread via task chain', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      workerThreadId = 'worker-thread-task-chain-access'
+    await ctx.run(async c => {
+      await c.db.insert('tasks', {
+        description: 'worker-chain',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: workerThreadId
+      })
+      await c.db.insert('messages', {
+        content: 'worker-chain-message',
+        isComplete: true,
+        parts: [{ text: 'worker-chain-message', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId: workerThreadId
+      })
+    })
+    const rows = await asUser(0).query(api.messages.listMessages, { threadId: workerThreadId })
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.content).toBe('worker-chain-message')
+  })
+})

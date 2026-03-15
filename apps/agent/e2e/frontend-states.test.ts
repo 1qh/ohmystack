@@ -19,3 +19,19 @@ test.describe('Frontend States', () => {
     await expect(page.getByText(/no messages/i)).toBeVisible()
   })
 })
+
+test.describe('Frontend States - remaining coverage', () => {
+  test('settings page shows MCP section', async ({ page }) => {
+    await page.goto('/settings')
+    await expect(page.getByRole('heading', { name: /mcp/i })).toBeVisible()
+  })
+
+  test('session list shows session after creation', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await page.getByRole('link', { name: /sessions/i }).click()
+    await page.waitForURL('/')
+    await expect(page.locator('button').filter({ has: page.locator('.font-medium') }).first()).toBeVisible()
+  })
+})

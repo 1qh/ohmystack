@@ -51,3 +51,28 @@ test.describe
       await expect(page.getByRole('heading', { name: /sessions/i })).toBeVisible()
     })
   })
+
+test.describe
+  .serial('Chat & Streaming - remaining coverage', () => {
+    test('message order is chronological', async ({ chatPage, page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await chatPage.sendMessage('First message')
+      await page.waitForTimeout(1500)
+      await chatPage.sendMessage('Second message')
+      await page.waitForTimeout(1500)
+      const messages = chatPage.getMessages()
+      const count = await messages.count()
+      expect(count).toBeGreaterThanOrEqual(2)
+      const first = await messages.first().textContent()
+      expect(first).toContain('First message')
+    })
+
+    test('session title shows Untitled Session', async ({ page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await expect(page.getByRole('heading', { name: /untitled/i })).toBeVisible()
+    })
+  })
