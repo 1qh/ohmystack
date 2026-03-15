@@ -87,14 +87,19 @@ const messagePart = union([
     compactionLock: string().optional(),
     compactionLockAt: number().optional(),
     compactionSummary: string().optional(),
+    consecutiveFailures: number().optional(),
     lastCompactedMessageId: string().optional(),
+    lastContinuationAt: number().optional(),
     lastError: string().optional(),
+    lastTodoSnapshot: string().optional(),
     queuedPriority: zenum(['user_message', 'task_completion', 'todo_continuation']).optional(),
     queuedPromptMessageId: string().optional(),
     queuedReason: string().optional(),
     runClaimed: boolean().optional(),
     runHeartbeatAt: number().optional(),
+    stagnationCount: number().optional(),
     status: zenum(['idle', 'active']),
+    turnsSinceTaskTool: number().optional(),
     threadId: string()
   })
 

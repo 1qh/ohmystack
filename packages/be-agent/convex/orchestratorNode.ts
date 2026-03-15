@@ -75,6 +75,17 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
     { runToken: string; threadId: string; turnRequestedInput: boolean },
     { ok: boolean; shouldContinue: boolean }
   >('orchestrator:postTurnAuditFenced'),
+  incrementTaskToolCounterRef = makeFunctionReference<
+    'mutation',
+    { threadId: string; toolName: string },
+    { shouldRemind: boolean; turnsSinceTaskTool: number }
+  >('orchestrator:incrementTaskToolCounter'),
+  consumeTaskReminderRef = makeFunctionReference<'mutation', { threadId: string }, { shouldInject: boolean }>(
+    'orchestrator:consumeTaskReminder'
+  ),
+  listActiveTasksByThreadRef = makeFunctionReference<'query', { threadId: string }, Doc<'tasks'>[]>(
+    'orchestrator:listActiveTasksByThread'
+  ),
   collectMessageText = (message: Doc<'messages'>) => {
     const parts = message.parts as {
       result?: string
@@ -106,6 +117,17 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
 
     return modelMessages
   },
+  buildTaskReminder = ({ tasks }: { tasks: Doc<'tasks'>[] }) => {
+    const lines = [
+      '<system-reminder>',
+      '[TASK CHECK REMINDER]',
+      'Check delegated task progress with taskStatus/taskOutput before continuing.',
+      ''
+    ]
+    for (const t of tasks) lines.push(`- [${t.status}] ${String(t._id)} ${t.description}`)
+    lines.push('', 'Prioritize reviewing pending/running delegated tasks now.', '</system-reminder>')
+    return lines.join('\n')
+  },
   runOrchestrator = internalAction({
     args: { promptMessageId: v.optional(v.string()), runToken: v.string(), threadId: v.string() },
     handler: async (ctx, { promptMessageId, runToken, threadId }) => {
@@ -127,6 +149,12 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
         if (await isStale()) return
         const session = await ctx.runQuery(readSessionByThreadRef, { threadId })
         if (!session || session.status === 'archived') return
+        const reminderState = await ctx.runMutation(consumeTaskReminderRef, { threadId })
+        let systemPrompt = ORCHESTRATOR_SYSTEM_PROMPT
+        if (reminderState.shouldInject) {
+          const activeTasks = await ctx.runQuery(listActiveTasksByThreadRef, { threadId })
+          if (activeTasks.length > 0) systemPrompt = `${ORCHESTRATOR_SYSTEM_PROMPT}\n\n${buildTaskReminder({ tasks: activeTasks })}`
+        }
         const dbMessages = await ctx.runQuery(listMessagesForPromptRef, {
             promptMessageId,
             threadId
@@ -137,20 +165,28 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
             threadId
           }),
           model = await getModel(),
-          result = streamText({
-            messages: modelMessages,
-            model,
-            onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
-              const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
-              await ctx.runMutation(appendStepMetadataRef, {
-                messageId,
-                stepPayload
-              })
-            },
-            system: ORCHESTRATOR_SYSTEM_PROMPT,
-            temperature: 0.7,
-            tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
-          })
+            result = streamText({
+              messages: modelMessages,
+              model,
+              onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
+                const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
+                await ctx.runMutation(appendStepMetadataRef, {
+                  messageId,
+                  stepPayload
+                })
+                for (const r of toolResults ?? []) {
+                  const toolName = Reflect.get(r, 'toolName')
+                  if (typeof toolName === 'string')
+                    await ctx.runMutation(incrementTaskToolCounterRef, {
+                      threadId,
+                      toolName
+                    })
+                }
+              },
+              system: systemPrompt,
+              temperature: 0.7,
+              tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
+            })
         const collectedParts: Array<
             | { text: string; type: 'text' }
             | { text: string; type: 'reasoning' }

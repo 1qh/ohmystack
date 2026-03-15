@@ -775,6 +775,54 @@ flowchart LR
 | E2E Playwright | 75 | 75 | 0 | 0 |
 | **Total** | **352** | **352** | **0** | **0** |
 
+### Stagnation Detection
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Stagnation increments when todos unchanged | stagnationCount increases after continuation with same snapshot |
+| 2 | Stagnation resets on todo progress | Completed todo -> stagnationCount back to 0 |
+| 3 | Stagnation stops auto-continue at cap (3) | At count 3, postTurnAudit returns shouldContinue=false |
+| 4 | Progress via completed count increase | More completed todos -> progress detected, reset |
+| 5 | Progress via snapshot change | Todo content/status change -> progress, reset |
+| 6 | First cycle has no stagnation | No previous snapshot -> stagnationCount stays 0 |
+
+### Continuation Cooldown
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Cooldown blocks rapid continuation | Within cooldown window -> skip |
+| 2 | Cooldown uses exponential backoff | Delay doubles with each failure |
+| 3 | Max consecutive failures stops continuation | At 5 failures -> stop entirely |
+| 4 | Failure reset after 5-minute window | After 5min -> consecutiveFailures reset to 0 |
+| 5 | Success resets consecutive failures | Successful continuation -> reset to 0 |
+
+### Compaction Todo Preservation
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Snapshot captures todos before compaction | todos stored in snapshot |
+| 2 | Restore when todos missing after compaction | snapshot restored to DB |
+| 3 | Skip restore when todos still present | snapshot discarded |
+| 4 | Empty snapshot not saved | No todos -> no snapshot |
+
+### Task Reminder
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Counter increments on non-task tool | turnsSinceTaskTool increases |
+| 2 | Counter resets on task tool usage | taskStatus/taskOutput -> counter 0 |
+| 3 | Reminder injected at threshold (10) | At 10 -> system message added |
+| 4 | Counter resets after injection | After reminder -> counter 0 |
+
+### Delegate Retry Guidance
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | Detect missing_load_skills pattern | Error output contains fix hint |
+| 2 | Detect unknown_category pattern | Error output lists available categories |
+| 3 | Unknown error returns generic guidance | No pattern match -> generic retry message |
+| 4 | Extract available list from error | Available options extracted and included |
+
 ### Real-World Scenario Tests
 
 | # | Test Case | Type | Asserts |

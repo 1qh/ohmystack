@@ -155,6 +155,17 @@ Planned direction:
 - Page forward from `lastCompactedMessageId` for full coverage.
 - Tighten active-stream exclusion to remove stale overlap risk.
 
+## Todo Preservation
+
+Ensures todos survive message compaction.
+
+- Before compaction: `snapshotTodos` captures current session todos
+- After compaction: `restoreTodosIfMissing` checks if todos still exist
+- If todos disappeared: restore from snapshot
+- If todos present: discard snapshot
+
+Reference: `oh-my-openagent/src/hooks/compaction-todo-preserver/hook.ts`
+
 ## Tests
 
 Tests for this module are defined in [testing.md](./testing.md). Key test areas:

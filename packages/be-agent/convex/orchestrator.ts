@@ -34,12 +34,18 @@ const reasonPriority = {
     undefined
   >('orchestratorNode:runOrchestrator'),
   CLAIMED_STALE_MS = 15 * 60 * 1000,
+  CONTINUATION_BASE_COOLDOWN_MS = 5_000,
+  FAILURE_RESET_WINDOW_MS = 5 * 60 * 1000,
+  MAX_CONSECUTIVE_FAILURES = 5,
+  MAX_STAGNATION_COUNT = 3,
+  TASK_REMINDER_THRESHOLD = 10,
   UNCLAIMED_STALE_MS = 5 * 60 * 1000,
   WALL_CLOCK_TIMEOUT_MS = 15 * 60 * 1000
 
 type EnqueueContext = Pick<MutationCtx, 'db' | 'scheduler'>
 type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
 type RunStateDoc = Doc<'threadRunState'>
+type NormalizedTodo = { content: string; id: string; status: Doc<'todos'>['status'] }
 
 const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx, 'db'>; threadId: string }) =>
     ctx.db
@@ -56,7 +62,10 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
   createRunState = async ({ ctx, threadId }: { ctx: Pick<MutationCtx, 'db'>; threadId: string }) => {
     const id = await ctx.db.insert('threadRunState', {
       autoContinueStreak: 0,
+      consecutiveFailures: 0,
+      stagnationCount: 0,
       status: 'idle',
+      turnsSinceTaskTool: 0,
       threadId
     })
     return ctx.db.get(id)
@@ -157,6 +166,51 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
     lines.push('', 'Continue working on the next pending task.', '</system-reminder>')
     return lines.join('\n')
   },
+  normalizeTodos = ({ todos }: { todos: Doc<'todos'>[] }) => {
+    const normalized: NormalizedTodo[] = []
+    for (const t of todos)
+      normalized.push({
+        content: t.content,
+        id: String(t._id),
+        status: t.status
+      })
+
+    normalized.sort((a, b) =>
+      a.id === b.id ? (a.content === b.content ? a.status.localeCompare(b.status) : a.content.localeCompare(b.content)) : a.id.localeCompare(b.id)
+    )
+    return normalized
+  },
+  summarizeTodoState = ({ todos }: { todos: NormalizedTodo[] }) => {
+    let completedCount = 0,
+      incompleteCount = 0
+    for (const t of todos) if (t.status === 'completed' || t.status === 'cancelled') completedCount += 1
+    else incompleteCount += 1
+    return { completedCount, incompleteCount }
+  },
+  parseTodoSnapshot = ({ snapshot }: { snapshot?: string }) => {
+    if (!snapshot) return null
+    try {
+      const parsed = JSON.parse(snapshot)
+      if (!Array.isArray(parsed)) return null
+      const todos: NormalizedTodo[] = []
+      for (const t of parsed) {
+        if (!t || typeof t !== 'object') return null
+        const id = Reflect.get(t, 'id'),
+          content = Reflect.get(t, 'content'),
+          status = Reflect.get(t, 'status')
+        if (typeof id !== 'string' || typeof content !== 'string') return null
+        if (!(status === 'pending' || status === 'in_progress' || status === 'completed' || status === 'cancelled')) return null
+        todos.push({ content, id, status })
+      }
+      return todos
+    } catch (_error) {
+      return null
+    }
+  },
+  computeContinuationCooldownMs = ({ consecutiveFailures }: { consecutiveFailures: number }) =>
+    CONTINUATION_BASE_COOLDOWN_MS * 2 ** Math.min(consecutiveFailures, 5),
+  isTaskToolName = ({ toolName }: { toolName: string }) =>
+    toolName === 'delegate' || toolName === 'taskOutput' || toolName === 'taskStatus',
   ensureRunState = internalMutation({
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => ensureRunStateInline({ ctx, threadId })
@@ -270,7 +324,8 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         await ctx.db.patch(state._id, { autoContinueStreak: 0 })
         return { ok: true, shouldContinue: false }
       }
-      const todos = await ctx.db
+      const now = Date.now(),
+        todos = await ctx.db
           .query('todos')
           .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
           .collect(),
@@ -281,19 +336,51 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         runningTasks = await ctx.db
           .query('tasks')
           .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'running'))
-          .collect()
-      let incompleteTodoCount = 0
-      for (const t of todos) if (!(t.status === 'completed' || t.status === 'cancelled')) incompleteTodoCount += 1
-
+          .collect(),
+        normalizedTodos = normalizeTodos({ todos }),
+        todoSnapshot = JSON.stringify(normalizedTodos),
+        previousTodos = parseTodoSnapshot({ snapshot: state.lastTodoSnapshot }),
+        currentSummary = summarizeTodoState({ todos: normalizedTodos }),
+        previousSummary = summarizeTodoState({ todos: previousTodos ?? [] })
+      let consecutiveFailures = state.consecutiveFailures,
+        stagnationCount = state.stagnationCount
+      if (state.lastContinuationAt && now - state.lastContinuationAt >= FAILURE_RESET_WINDOW_MS) consecutiveFailures = 0
+      if (!state.lastTodoSnapshot || state.lastTodoSnapshot !== todoSnapshot) stagnationCount = 0
+      else stagnationCount += 1
       const hasActiveTasks = pendingTasks.length > 0 || runningTasks.length > 0,
         atCap = state.autoContinueStreak >= 5,
         incomingPriority = reasonPriority.todo_continuation,
         queuedPriority = getQueuedPriority({ state }),
         queueAllowsContinuation = incomingPriority >= queuedPriority,
+        progressDetected =
+          !state.lastTodoSnapshot ||
+          state.lastTodoSnapshot !== todoSnapshot ||
+          currentSummary.incompleteCount < previousSummary.incompleteCount ||
+          currentSummary.completedCount > previousSummary.completedCount,
+        nextStagnationCount = progressDetected ? 0 : stagnationCount,
+        hasStagnated = nextStagnationCount >= MAX_STAGNATION_COUNT,
+        hitFailureCap = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES,
+        cooldownMs = computeContinuationCooldownMs({ consecutiveFailures }),
+        insideCooldown =
+          consecutiveFailures > 0 &&
+          !!state.lastContinuationAt &&
+          now - state.lastContinuationAt < cooldownMs,
         shouldContinue =
-          incompleteTodoCount > 0 && !hasActiveTasks && !turnRequestedInput && !atCap && queueAllowsContinuation
+          currentSummary.incompleteCount > 0 &&
+          !hasActiveTasks &&
+          !turnRequestedInput &&
+          !atCap &&
+          queueAllowsContinuation &&
+          !hasStagnated &&
+          !hitFailureCap &&
+          !insideCooldown
       if (!shouldContinue) {
-        await ctx.db.patch(state._id, { autoContinueStreak: 0 })
+        await ctx.db.patch(state._id, {
+          autoContinueStreak: 0,
+          consecutiveFailures,
+          lastTodoSnapshot: todoSnapshot,
+          stagnationCount: nextStagnationCount
+        })
         return { ok: true, shouldContinue: false }
       }
       const reminderText = buildTodoReminder({ todos }),
@@ -314,10 +401,46 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
           threadId
         })
       if (!enqueued.ok) {
-        await ctx.db.patch(state._id, { autoContinueStreak: 0 })
+        await ctx.db.patch(state._id, {
+          autoContinueStreak: 0,
+          consecutiveFailures: consecutiveFailures + 1,
+          lastContinuationAt: now,
+          lastTodoSnapshot: todoSnapshot,
+          stagnationCount: nextStagnationCount
+        })
         return { ok: true, shouldContinue: false }
       }
+      await ctx.db.patch(state._id, {
+        consecutiveFailures: 0,
+        lastContinuationAt: now,
+        lastTodoSnapshot: todoSnapshot,
+        stagnationCount: nextStagnationCount
+      })
       return { ok: true, shouldContinue: true }
+    }
+  }),
+  incrementTaskToolCounter = internalMutation({
+    args: { threadId: v.string(), toolName: v.string() },
+    handler: async (ctx, { threadId, toolName }) => {
+      const state = await ensureRunStateInline({ ctx, threadId }),
+        isTaskTool = isTaskToolName({ toolName })
+      if (isTaskTool) {
+        if (state.turnsSinceTaskTool !== 0) await ctx.db.patch(state._id, { turnsSinceTaskTool: 0 })
+        return { shouldRemind: false, turnsSinceTaskTool: 0 }
+      }
+      const turnsSinceTaskTool = state.turnsSinceTaskTool + 1,
+        shouldRemind = turnsSinceTaskTool >= TASK_REMINDER_THRESHOLD
+      await ctx.db.patch(state._id, { turnsSinceTaskTool })
+      return { shouldRemind, turnsSinceTaskTool }
+    }
+  }),
+  consumeTaskReminder = internalMutation({
+    args: { threadId: v.string() },
+    handler: async (ctx, { threadId }) => {
+      const state = await ensureRunStateInline({ ctx, threadId }),
+        shouldInject = state.turnsSinceTaskTool >= TASK_REMINDER_THRESHOLD
+      if (shouldInject) await ctx.db.patch(state._id, { turnsSinceTaskTool: 0 })
+      return { shouldInject }
     }
   }),
   timeoutStaleRuns = internalMutation({
@@ -402,6 +525,23 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         .query('session')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
+  }),
+  listActiveTasksByThread = internalQuery({
+    args: { threadId: v.string() },
+    handler: async (ctx, { threadId }) => {
+      const pending = await ctx.db
+          .query('tasks')
+          .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'pending'))
+          .collect(),
+        running = await ctx.db
+          .query('tasks')
+          .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'running'))
+          .collect(),
+        rows: Doc<'tasks'>[] = []
+      for (const row of pending) rows.push(row)
+      for (const row of running) rows.push(row)
+      return rows
+    }
   }),
   listMessagesForPrompt = internalQuery({
     args: { promptMessageId: v.optional(v.string()), threadId: v.string() },
@@ -519,12 +659,15 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
 export {
   appendStepMetadata,
   claimRun,
+  consumeTaskReminder,
   createAssistantMessage,
   enqueueRun,
   ensureRunState,
   finalizeMessage,
   finishRun,
   heartbeatRun,
+  incrementTaskToolCounter,
+  listActiveTasksByThread,
   listMessagesForPrompt,
   patchStreamingMessage,
   postTurnAuditFenced,

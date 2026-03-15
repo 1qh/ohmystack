@@ -67,6 +67,55 @@ const spawnTaskRef = makeFunctionReference<
     z.literal('completed'),
     z.literal('cancelled')
   ]),
+  extractAvailableOptions = ({ message }: { message: string }) => {
+    const options: string[] = [],
+      regexes = [/Available\s*[:=]\s*([^\n]+)/gi, /valid\s+options\s*[:=]\s*([^\n]+)/gi]
+    for (const regex of regexes) {
+      let match = regex.exec(message)
+      while (match) {
+        const segment = match[1]
+        if (segment) {
+          const parts = segment.split(',')
+          for (const part of parts) {
+            const value = part.trim()
+            if (value.length > 0 && !options.includes(value)) options.push(value)
+          }
+        }
+        match = regex.exec(message)
+      }
+    }
+    return options
+  },
+  detectDelegateError = ({ errorMessage }: { errorMessage: string }) => {
+    const msg = errorMessage.toLowerCase()
+    if (msg.includes('run_in_background')) return 'missing_run_in_background' as const
+    if (msg.includes('load_skills')) return 'missing_load_skills' as const
+    if (msg.includes('unknown category') || msg.includes('invalid category')) return 'unknown_category' as const
+    if (msg.includes('unknown agent') || msg.includes('invalid agent')) return 'unknown_agent' as const
+    return 'unknown_error' as const
+  },
+  buildRetryGuidance = ({
+    errorMessage,
+    pattern
+  }: {
+    errorMessage: string
+    pattern: 'missing_load_skills' | 'missing_run_in_background' | 'unknown_agent' | 'unknown_category' | 'unknown_error'
+  }) => {
+    const availableOptions = extractAvailableOptions({ message: errorMessage })
+    let fixHint = 'Retry delegate with corrected arguments and valid values.'
+    if (pattern === 'missing_run_in_background') fixHint = 'Add run_in_background parameter.'
+    else if (pattern === 'missing_load_skills') fixHint = 'Add load_skills=[] parameter.'
+    else if (pattern === 'unknown_category') fixHint = 'Use a valid category from the Available list.'
+    else if (pattern === 'unknown_agent') fixHint = 'Use a valid agent from the Available list.'
+    return {
+      availableOptions,
+      error: errorMessage,
+      fixHint,
+      ok: false as const,
+      pattern,
+      retryGuidance: `Delegate call failed (${pattern}). ${fixHint}`
+    }
+  },
   createTools = ({
     ctx,
     parentThreadId,
@@ -87,14 +136,20 @@ const spawnTaskRef = makeFunctionReference<
           isBackground: boolean
           prompt: string
         }) => {
-          const out = await ctx.runMutation(spawnTaskRef, {
-            description,
-            isBackground,
-            parentThreadId,
-            prompt,
-            sessionId
-          })
-          return { status: 'pending' as const, taskId: String(out.taskId), threadId: out.threadId }
+          try {
+            const out = await ctx.runMutation(spawnTaskRef, {
+              description,
+              isBackground,
+              parentThreadId,
+              prompt,
+              sessionId
+            })
+            return { status: 'pending' as const, taskId: String(out.taskId), threadId: out.threadId }
+          } catch (error) {
+            const errorMessage = String(error),
+              pattern = detectDelegateError({ errorMessage })
+            return buildRetryGuidance({ errorMessage, pattern })
+          }
         },
         inputSchema: z.object({
           description: z.string(),
@@ -234,4 +289,4 @@ const spawnTaskRef = makeFunctionReference<
     }
   }
 
-export { createOrchestratorTools, createWorkerTools }
+export { buildRetryGuidance, createOrchestratorTools, createWorkerTools, detectDelegateError }

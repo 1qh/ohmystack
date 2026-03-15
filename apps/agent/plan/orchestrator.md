@@ -1346,6 +1346,41 @@ const submitMessage = m({
 
 During implementation, extract the shared CAS transition logic into one helper used by both `enqueueRunInline` and `enqueueRun` to avoid behavioral drift.
 
+## Reliability Features (from oh-my-openagent)
+
+### Stagnation Detection
+
+Prevents infinite auto-continue loops when the model is stuck on the same todos.
+
+- `threadRunState.lastTodoSnapshot`: JSON string of normalized todos (sorted by id/content/status)
+- `threadRunState.stagnationCount`: increments when snapshot unchanged between continuation cycles
+- At `stagnationCount >= 3`: stop auto-continuing, reset streak
+- On progress (snapshot changed, completed count increased, incomplete count decreased): reset to 0
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/stagnation-detection.ts`
+
+### Continuation Cooldown
+
+Prevents hammering a broken continuation pipeline with exponential backoff.
+
+- `threadRunState.consecutiveFailures`: count of failed continuation injections
+- `threadRunState.lastContinuationAt`: timestamp of last continuation attempt
+- Cooldown = `5000ms * 2^min(consecutiveFailures, 5)`
+- At `consecutiveFailures >= 5`: stop entirely until 5-minute reset window
+- On success: reset `consecutiveFailures` to 0
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/idle-event.ts` (lines 116-146)
+
+### Task Reminder Injection
+
+Reminds the model to check on delegated tasks after 10 turns without task tool usage.
+
+- `threadRunState.turnsSinceTaskTool`: counter incremented on each non-task tool call
+- At 10 turns: inject system reminder listing pending tasks
+- Reset on task tool usage (taskStatus, taskOutput, delegate)
+
+Reference: `oh-my-openagent/src/hooks/task-reminder/hook.ts`
+
 ## Tests
 
 Tests for this module are defined in [testing.md](./testing.md). Key test areas:

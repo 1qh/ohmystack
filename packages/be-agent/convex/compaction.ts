@@ -9,6 +9,11 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
   MESSAGE_THRESHOLD = 200,
   CHAR_THRESHOLD = 100_000,
   SCAN_LIMIT = 500,
+  resolveSessionByThreadId = async ({ ctx, threadId }: { ctx: Pick<QueryCtx, 'db'>; threadId: string }) =>
+    ctx.db
+      .query('session')
+      .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+      .unique(),
   hasTerminalToolParts = ({ parts }: { parts: { status?: 'error' | 'pending' | 'success'; type: string }[] }) => {
     for (const p of parts) if (p.type === 'tool-call' && !(p.status === 'success' || p.status === 'error')) return false
     return true
@@ -87,6 +92,54 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
         compactionLockAt: undefined
       })
   },
+  snapshotTodosInline = async ({ ctx, threadId }: { ctx: Pick<MutationCtx, 'db'>; threadId: string }) => {
+    const session = await resolveSessionByThreadId({ ctx, threadId })
+    if (!session) return { snapshot: [] as { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[] }
+    const todos = await ctx.db
+      .query('todos')
+      .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
+      .collect()
+    const snapshot: { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[] = []
+    for (const t of todos)
+      snapshot.push({
+        content: t.content,
+        position: t.position,
+        priority: t.priority,
+        status: t.status
+      })
+
+    return { snapshot }
+  },
+  restoreTodosIfMissingInline = async ({
+    ctx,
+    snapshot,
+    threadId
+  }: {
+    ctx: Pick<MutationCtx, 'db'>
+    snapshot: { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[]
+    threadId: string
+  }) => {
+    if (snapshot.length === 0) return { restored: 0 }
+    const session = await resolveSessionByThreadId({ ctx, threadId })
+    if (!session) return { restored: 0 }
+    const existing = await ctx.db
+      .query('todos')
+      .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
+      .collect()
+    if (existing.length > 0) return { restored: 0 }
+    let restored = 0
+    for (const t of snapshot) {
+      await ctx.db.insert('todos', {
+        content: t.content,
+        position: t.position,
+        priority: t.priority,
+        sessionId: session._id,
+        status: t.status
+      })
+      restored += 1
+    }
+    return { restored }
+  },
   getContextSize = internalQuery({
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => getContextSizeInline({ ctx, threadId })
@@ -126,13 +179,32 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
       return { ok: true }
     }
   }),
+  snapshotTodos = internalMutation({
+    args: { threadId: v.string() },
+    handler: async (ctx, { threadId }) => snapshotTodosInline({ ctx, threadId })
+  }),
+  restoreTodosIfMissing = internalMutation({
+    args: {
+      snapshot: v.array(
+        v.object({
+          content: v.string(),
+          position: v.number(),
+          priority: v.union(v.literal('high'), v.literal('medium'), v.literal('low')),
+          status: v.union(v.literal('pending'), v.literal('in_progress'), v.literal('completed'), v.literal('cancelled'))
+        })
+      ),
+      threadId: v.string()
+    },
+    handler: async (ctx, { snapshot, threadId }) => restoreTodosIfMissingInline({ ctx, snapshot, threadId })
+  }),
   compactIfNeeded = internalMutation({
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => {
       const contextSize = await getContextSizeInline({ ctx, threadId }),
         overThreshold = contextSize.charCount > CHAR_THRESHOLD || contextSize.messageCount > MESSAGE_THRESHOLD
       if (!overThreshold) return { compacted: false, reason: 'under_threshold' as const }
-      const lock = await acquireCompactionLockInline({ ctx, threadId })
+      const { snapshot } = await snapshotTodosInline({ ctx, threadId }),
+        lock = await acquireCompactionLockInline({ ctx, threadId })
       if (!lock.ok) return { compacted: false, reason: 'lock_denied' as const }
       const groups = await listClosedPrefixGroupsInline({ ctx, threadId })
       if (groups.length === 0) {
@@ -141,6 +213,7 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
           lockToken: lock.lockToken,
           threadId
         })
+        await restoreTodosIfMissingInline({ ctx, snapshot, threadId })
         return { compacted: false, reason: 'no_closed_groups' as const }
       }
       console.log(
@@ -157,8 +230,17 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
         lockToken: lock.lockToken,
         threadId
       })
+      await restoreTodosIfMissingInline({ ctx, snapshot, threadId })
       return { compacted: false, reason: 'placeholder' as const }
     }
   })
 
-export { acquireCompactionLock, compactIfNeeded, getContextSize, listClosedPrefixGroups, setCompactionSummary }
+export {
+  acquireCompactionLock,
+  compactIfNeeded,
+  getContextSize,
+  listClosedPrefixGroups,
+  restoreTodosIfMissing,
+  setCompactionSummary,
+  snapshotTodos
+}

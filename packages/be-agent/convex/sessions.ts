@@ -17,7 +17,10 @@ const createSession = m({
         })
       await ctx.db.insert('threadRunState', {
         autoContinueStreak: 0,
+        consecutiveFailures: 0,
+        stagnationCount: 0,
         status: 'idle',
+        turnsSinceTaskTool: 0,
         threadId
       })
       return { sessionId, threadId }

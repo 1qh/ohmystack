@@ -325,6 +325,19 @@ Provider-defined tool isolation note:
 - Keep provider-defined grounding tool calls isolated in `groundWithGemini`.
 - Do not mix provider-defined tools with function tools in the same `generateText` call.
 
+## Delegate Retry Guidance
+
+When delegation fails with a known error pattern, the delegate tool returns actionable fix guidance instead of a raw error.
+
+Known error patterns:
+
+- `missing_run_in_background` -> "Add run_in_background parameter"
+- `missing_load_skills` -> "Add load_skills=[] parameter"
+- `unknown_category` -> "Use a valid category from the Available list"
+- `unknown_agent` -> "Use a valid agent from the Available list"
+
+Reference: `oh-my-openagent/src/hooks/delegate-task-retry/patterns.ts`
+
 ## Tests
 
 Tests for this module are defined in [testing.md](./testing.md). Key test areas:
