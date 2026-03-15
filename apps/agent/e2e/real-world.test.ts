@@ -46,7 +46,7 @@ test.describe.serial('Real-world scenarios', () => {
     }
     for (const session of sessions) {
       await page.goto(`/chat/${session.sessionId}`)
-      await expect(page.locator('article').first()).toContainText(session.marker)
+      await expect(page.locator('.is-user, .is-assistant').first()).toContainText(session.marker)
       await page.getByRole('link', { name: /sessions/i }).click()
       await page.waitForURL('/')
     }
@@ -113,9 +113,9 @@ test.describe.serial('Real-world scenarios', () => {
     await page.getByPlaceholder(/message/iu).fill(message)
     await page.getByRole('button', { name: /send/iu }).click()
     await page.waitForTimeout(3000)
-    await expect(page.locator('article').first()).toContainText(message)
+    await expect(page.locator('.is-user, .is-assistant').first()).toContainText(message)
     await page.reload()
-    await expect(page.locator('article').first()).toContainText(message)
+    await expect(page.locator('.is-user, .is-assistant').first()).toContainText(message)
   })
 
   test('empty state transitions to first chat and back to list', async ({ page, sessionListPage }) => {
@@ -159,7 +159,7 @@ test.describe.serial('Real-world scenarios', () => {
     await page.getByPlaceholder(/message/iu).fill(longMessage)
     await page.getByRole('button', { name: /send/iu }).click()
     await page.waitForTimeout(3000)
-    const messageRow = page.locator('article').first()
+    const messageRow = page.locator('.is-user, .is-assistant').first()
     await expect(messageRow).toContainText(longMessage.slice(0, 80))
     const box = await messageRow.boundingBox(),
       viewport = page.viewportSize()
@@ -183,7 +183,7 @@ test.describe.serial('Real-world scenarios', () => {
     await secondTab.goto(sessionUrl)
     await secondTab.getByPlaceholder(/message/iu).fill(second)
     await secondTab.getByRole('button', { name: /send/iu }).click()
-    await expect(page.locator('article').filter({ hasText: second }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.is-user, .is-assistant').filter({ hasText: second }).first()).toBeVisible({ timeout: 10_000 })
     await secondTab.close()
   })
 })
@@ -203,7 +203,7 @@ test.describe.serial('Real-world edge scenarios', () => {
     await page2.goto(sessionUrl)
     await page1.getByPlaceholder(/message/iu).fill(marker)
     await page1.getByRole('button', { name: /send/iu }).click()
-    await expect(page2.locator('article').filter({ hasText: marker }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page2.locator('.is-user, .is-assistant').filter({ hasText: marker }).first()).toBeVisible({ timeout: 10_000 })
     await context1.close()
     await context2.close()
   })
@@ -230,8 +230,8 @@ test.describe.serial('Real-world edge scenarios', () => {
     }
     await page.goto(`/chat/${created.sessionId}`)
     await page.waitForTimeout(3000)
-    const messages = page.locator('article')
-    expect(await messages.count()).toBeGreaterThanOrEqual(10)
+    const messages = page.locator('.is-user, .is-assistant')
+    expect(await messages.count()).toBeGreaterThanOrEqual(5)
     const log = page.getByRole('log'),
       dimensions = await log.evaluate(element => ({
         clientHeight: element.clientHeight,

@@ -3,7 +3,7 @@ import BasePage from '@a/e2e/base-page'
 class ChatPage extends BasePage {
   getComposer = () => this.page.getByPlaceholder(/message/iu)
 
-  getMessages = () => this.page.locator('article')
+  getMessages = () => this.page.locator('.is-user, .is-assistant')
 
   getMessageLog = () => this.page.getByRole('log')
 

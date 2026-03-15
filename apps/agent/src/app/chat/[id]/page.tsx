@@ -138,7 +138,7 @@ const ChatPage = () => {
       </header>
 
       <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
-        <Conversation className='rounded-lg border'>
+        <Conversation aria-live='polite' className='rounded-lg border'>
           <ConversationContent className='gap-6'>
             {messages.length === 0 ? (
               <ConversationEmptyState description='Send a message to start talking to the agent' />

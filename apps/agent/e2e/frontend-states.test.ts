@@ -142,7 +142,7 @@ test.describe('Frontend States - final remaining coverage', () => {
     await page.getByPlaceholder(/message/iu).fill('Mobile usable')
     await page.getByRole('button', { name: /send/iu }).click()
     await page.waitForTimeout(3000)
-    await expect(page.locator('article').first()).toContainText('Mobile usable')
+    await expect(page.locator('.is-user, .is-assistant').first()).toContainText('Mobile usable')
   })
 
   test('chat remains usable at 768px tablet viewport', async ({ page, sessionListPage }) => {
@@ -155,6 +155,6 @@ test.describe('Frontend States - final remaining coverage', () => {
     await page.getByPlaceholder(/message/iu).fill('Tablet usable')
     await page.getByRole('button', { name: /send/iu }).click()
     await page.waitForTimeout(3000)
-    await expect(page.locator('article').first()).toContainText('Tablet usable')
+    await expect(page.locator('.is-user, .is-assistant').first()).toContainText('Tablet usable')
   })
 })
