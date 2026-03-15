@@ -49,7 +49,8 @@ const mockModel = {
       start: (c: ReadableStreamDefaultController) => {
         c.enqueue({ type: 'stream-start', warnings: [] })
         c.enqueue({ id: 'mock-text-0', type: 'text-start' })
-        c.enqueue({ delta: 'Mock.', id: 'mock-text-0', type: 'text-delta' })
+        const words = 'This is a mock response with enough content to make the chat scrollable and test streaming behavior properly across multiple lines of output'.split(' ')
+        for (const w of words) c.enqueue({ delta: `${w} `, id: 'mock-text-0', type: 'text-delta' })
         c.enqueue({ id: 'mock-text-0', type: 'text-end' })
         c.enqueue({ finishReason: 'stop', type: 'finish', usage: { inputTokens: 5, outputTokens: 10 } })
         c.close()

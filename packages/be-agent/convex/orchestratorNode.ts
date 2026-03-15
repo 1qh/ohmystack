@@ -151,24 +151,53 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
             temperature: 0.7,
             tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
           })
+        const collectedParts: Array<
+            | { text: string; type: 'text' }
+            | { text: string; type: 'reasoning' }
+            | { args: string; result?: string; status: 'pending' | 'success' | 'error'; toolCallId: string; toolName: string; type: 'tool-call' }
+            | { snippet?: string; title: string; type: 'source'; url: string }
+          > = []
         let fullText = '',
           flushAt = Date.now()
-        for await (const delta of result.textStream) {
-          fullText += delta
-          const now = Date.now()
-          if (!(now - flushAt < 400 && fullText.length % 200 !== 0)) {
-            await ctx.runMutation(patchStreamingMessageRef, {
-              messageId,
-              streamingContent: fullText
+        for await (const part of result.fullStream) {
+          if (part.type === 'text-delta') {
+            fullText += part.text
+            const now = Date.now()
+            if (!(now - flushAt < 400 && fullText.length % 200 !== 0)) {
+              await ctx.runMutation(patchStreamingMessageRef, {
+                messageId,
+                streamingContent: fullText
+              })
+              flushAt = now
+            }
+          } else if (part.type === 'tool-call') {
+            collectedParts.push({
+              args: JSON.stringify(part.input),
+              status: 'pending',
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              type: 'tool-call'
             })
-            flushAt = now
+          } else if (part.type === 'tool-result') {
+            for (const p of collectedParts) {
+              if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
+                p.status = 'success'
+                p.result = JSON.stringify(part.output)
+                if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
+                  const r = part.output as { sources?: Array<{ snippet?: string; title: string; url: string }> }
+                  if (r.sources) {
+                    for (const src of r.sources) collectedParts.push({ snippet: src.snippet, title: src.title, type: 'source', url: src.url })
+                  }
+                }
+              }
+            }
           }
         }
         await ctx.runMutation(patchStreamingMessageRef, {
           messageId,
           streamingContent: fullText
         })
-        const finalParts: { text: string; type: 'text' }[] = [{ text: fullText, type: 'text' as const }]
+        const finalParts = [{ text: fullText, type: 'text' as const } as const, ...collectedParts]
         await ctx.runMutation(finalizeMessageRef, {
           content: fullText,
           messageId,
