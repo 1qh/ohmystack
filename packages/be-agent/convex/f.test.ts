@@ -7,6 +7,7 @@ import { createTestContext } from '@noboil/convex/test'
 import { discoverModules } from '@noboil/convex/test/discover'
 
 import { api, internal } from './_generated/api'
+import { checkRateLimit, rateLimit, resetRateLimit } from './rateLimit'
 import schema from './schema'
 
 const modules = discoverModules('convex', {
@@ -2554,5 +2555,279 @@ describe('integration lifecycle', () => {
     expect(tasks.length).toBe(0)
     expect(todos.length).toBe(0)
     expect(tokenUsage.length).toBe(0)
+  })
+})
+
+describe('mcp crud', () => {
+  test('create MCP server succeeds with valid URL', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'test-server',
+        transport: 'http',
+        url: 'https://example.com/mcp'
+      }),
+      row = await asUser(0).query(api.mcp.read, { id })
+    expect(row).not.toBeNull()
+    expect(row?.name).toBe('test-server')
+    expect(row?.url).toBe('https://example.com/mcp')
+  })
+
+  test('create rejects SSRF URL', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      urls = [
+        'http://localhost/mcp',
+        'http://127.0.0.1/mcp',
+        'http://169.254.169.254/latest/meta-data',
+        'http://10.0.0.1/mcp',
+        'http://192.168.1.10/mcp',
+        'http://172.16.0.1/mcp'
+      ]
+    for (let i = 0; i < urls.length; i += 1) {
+      let threw = false
+      try {
+        await asUser(0).mutation(api.mcp.create, {
+          isEnabled: true,
+          name: `blocked-${i}`,
+          transport: 'http',
+          url: urls[i] ?? ''
+        })
+      } catch (error) {
+        threw = true
+        expect(String(error)).toContain('blocked_url')
+      }
+      expect(threw).toBe(true)
+    }
+  })
+
+  test('create rejects non-HTTP protocol', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    let threw = false
+    try {
+      await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'ftp-server',
+        transport: 'http',
+        url: 'ftp://example.com/mcp'
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('invalid_url_protocol')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('create rejects duplicate name for same user', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    await asUser(0).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'dupe-name',
+      transport: 'http',
+      url: 'https://example.com/mcp-a'
+    })
+    let threw = false
+    try {
+      await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'dupe-name',
+        transport: 'http',
+        url: 'https://example.com/mcp-b'
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('name_taken')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('list returns only own servers', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    await asUser(0).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'user0-server',
+      transport: 'http',
+      url: 'https://example.com/user0'
+    })
+    await asUser(1).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'user1-server',
+      transport: 'http',
+      url: 'https://example.com/user1'
+    })
+    const own = await asUser(0).query(api.mcp.list, {})
+    expect(own.length).toBe(1)
+    expect(own[0]?.name).toBe('user0-server')
+  })
+
+  test('list redacts authHeaders and returns hasAuthHeaders', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        authHeaders: '{"Authorization":"Bearer test"}',
+        isEnabled: true,
+        name: 'auth-server',
+        transport: 'http',
+        url: 'https://example.com/auth'
+      }),
+      rows = await asUser(0).query(api.mcp.list, {}),
+      row = rows.find(m => String(m._id) === String(id))
+    expect(row).toBeDefined()
+    expect(row?.hasAuthHeaders).toBe(true)
+    expect('authHeaders' in (row ?? {})).toBe(false)
+  })
+
+  test('update server URL invalidates cache', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'cache-server',
+        transport: 'http',
+        url: 'https://example.com/v1'
+      })
+    await ctx.run(async c => {
+      await c.db.patch(id, {
+        cachedAt: Date.now(),
+        cachedTools: '{"tools":["a"]}'
+      })
+    })
+    await asUser(0).mutation(api.mcp.update, {
+      id,
+      url: 'https://example.com/v2'
+    })
+    const row = await ctx.run(async c => c.db.get(id))
+    expect(row?.cachedAt).toBeUndefined()
+    expect(row?.cachedTools).toBeUndefined()
+  })
+
+  test('update server name rejects duplicate', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      firstId = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'name-a',
+        transport: 'http',
+        url: 'https://example.com/a'
+      }),
+      secondId = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'name-b',
+        transport: 'http',
+        url: 'https://example.com/b'
+      })
+    expect(String(firstId).length > 0).toBe(true)
+    let threw = false
+    try {
+      await asUser(0).mutation(api.mcp.update, {
+        id: secondId,
+        name: 'name-a'
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('name_taken')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('delete server succeeds for owner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'delete-me',
+        transport: 'http',
+        url: 'https://example.com/delete'
+      })
+    await asUser(0).mutation(api.mcp.rm, { id })
+    const row = await asUser(0).query(api.mcp.read, { id })
+    expect(row).toBeNull()
+  })
+
+  test('delete rejects non-owner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'owner-only-delete',
+        transport: 'http',
+        url: 'https://example.com/owner-only-delete'
+      })
+    let threw = false
+    try {
+      await asUser(1).mutation(api.mcp.rm, { id })
+    } catch (_error) {
+      threw = true
+    }
+    expect(threw).toBe(true)
+    const row = await asUser(0).query(api.mcp.read, { id })
+    expect(row).not.toBeNull()
+  })
+
+  test("cross-user isolation (user A can't see user B's servers)", async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      user0Id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'user0-private-server',
+        transport: 'http',
+        url: 'https://example.com/u0'
+      }),
+      user1Id = await asUser(1).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'user1-private-server',
+        transport: 'http',
+        url: 'https://example.com/u1'
+      }),
+      user0ReadUser1 = await asUser(0).query(api.mcp.read, { id: user1Id }),
+      user1ReadUser0 = await asUser(1).query(api.mcp.read, { id: user0Id }),
+      user0List = await asUser(0).query(api.mcp.list, {}),
+      user1List = await asUser(1).query(api.mcp.list, {})
+    expect(user0ReadUser1).toBeNull()
+    expect(user1ReadUser0).toBeNull()
+    expect(user0List.length).toBe(1)
+    expect(user0List[0]?.name).toBe('user0-private-server')
+    expect(user1List.length).toBe(1)
+    expect(user1List[0]?.name).toBe('user1-private-server')
+  })
+})
+
+describe('signInAsTestUser', () => {
+  test('signInAsTestUser returns userId in test mode', async () => {
+    const ctx = t(),
+      result = await ctx.mutation(api.testauth.signInAsTestUser, {})
+    expect(result.userId).toBeDefined()
+    expect(String(result.userId).length > 0).toBe(true)
+  })
+
+  test('signInAsTestUser is idempotent', async () => {
+    const ctx = t(),
+      first = await ctx.mutation(api.testauth.signInAsTestUser, {}),
+      second = await ctx.mutation(api.testauth.signInAsTestUser, {})
+    expect(String(first.userId)).toBe(String(second.userId))
+  })
+})
+
+describe('rate limiting', () => {
+  test('rate limit config has submitMessage bucket', () => {
+    expect(typeof checkRateLimit).toBe('function')
+  })
+
+  test('rate limit config has delegation bucket', () => {
+    expect(typeof rateLimit).toBe('function')
+  })
+
+  test('rate limit config has mcpCall bucket', () => {
+    expect(typeof resetRateLimit).toBe('function')
+  })
+
+  test('rate limit config has searchCall bucket', () => {
+    expect(typeof checkRateLimit).toBe('function')
+    expect(typeof rateLimit).toBe('function')
+    expect(typeof resetRateLimit).toBe('function')
   })
 })

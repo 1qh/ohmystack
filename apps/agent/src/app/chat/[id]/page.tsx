@@ -75,8 +75,12 @@ const ChatPage = () => {
 
       <div className='grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
         <section aria-live='polite' className='space-y-3 overflow-y-auto rounded-lg border p-3 md:p-4' role='log'>
-          {submitError ? <p className='text-sm text-red-500' data-testid='submit-error'>{submitError}</p> : null}
-        {messages.length === 0 ? <p className='text-sm text-gray-500'>No messages yet.</p> : null}
+          {submitError ? (
+            <p className='text-sm text-red-500' data-testid='submit-error'>
+              {submitError}
+            </p>
+          ) : null}
+          {messages.length === 0 ? <p className='text-sm text-gray-500'>No messages yet.</p> : null}
           {messages.map(m => {
             const isUser = m.role === 'user',
               isSystem = m.role === 'system',
@@ -86,14 +90,17 @@ const ChatPage = () => {
               <article className={`rounded-lg border p-3 ${bg}`} key={m._id}>
                 <div className='mb-1 flex items-center gap-2 text-xs uppercase text-gray-500'>
                   <span>{m.role}</span>
-                  {!m.isComplete ? <span className='animate-pulse text-blue-500'>●</span> : null}
+                  {m.isComplete ? null : <span className='animate-pulse text-blue-500'>●</span>}
                 </div>
-                <p className='whitespace-pre-wrap text-sm'>{m.isComplete ? m.content : (m.streamingContent ?? m.content)}</p>
+                <p className='whitespace-pre-wrap text-sm'>
+                  {m.isComplete ? m.content : (m.streamingContent ?? m.content)}
+                </p>
                 {parts.length > 0 ? (
                   <div className='mt-2 space-y-1'>
                     {parts.map((p, i) => {
                       if (p.type === 'tool-call') {
-                        const statusLabel = p.status === 'success' ? 'Completed' : p.status === 'error' ? 'Error' : 'Running'
+                        const statusLabel =
+                          p.status === 'success' ? 'Completed' : p.status === 'error' ? 'Error' : 'Running'
                         return (
                           <details className='rounded border bg-white p-2 text-xs' key={p.toolCallId ?? i}>
                             <summary className='cursor-pointer font-medium'>
@@ -114,8 +121,14 @@ const ChatPage = () => {
                       }
                       if (p.type === 'source') {
                         return (
-                          <a className='block rounded border bg-emerald-50 p-2 text-xs hover:underline' href={p.url} key={`s-${i}`} rel='noopener noreferrer' target='_blank'>
-                            {p.title}{p.snippet ? ` - ${p.snippet}` : ''}
+                          <a
+                            className='block rounded border bg-emerald-50 p-2 text-xs hover:underline'
+                            href={p.url}
+                            key={`s-${i}`}
+                            rel='noopener noreferrer'
+                            target='_blank'>
+                            {p.title}
+                            {p.snippet ? ` - ${p.snippet}` : ''}
                           </a>
                         )
                       }
@@ -196,7 +209,10 @@ const ChatPage = () => {
           placeholder='Message the agent'
           value={draft}
         />
-        <button className='rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-60' disabled={sending} type='submit'>
+        <button
+          className='rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-60'
+          disabled={sending}
+          type='submit'>
           Send
         </button>
       </form>
