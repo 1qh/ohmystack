@@ -9,7 +9,7 @@ import { q } from '../lazy'
 import { internalMutation } from './_generated/server'
 
 const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: Id<'tasks'>; threadId: string }, undefined>(
-    'agents.node:runWorker'
+    'agentsNode:runWorker'
   ),
   enqueueRunRef = makeFunctionReference<
     'mutation',

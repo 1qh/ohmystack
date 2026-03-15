@@ -31,7 +31,7 @@ const reasonPriority = {
     'action',
     { promptMessageId?: string; runToken: string; threadId: string },
     undefined
-  >('orchestrator.node:runOrchestrator'),
+  >('orchestratorNode:runOrchestrator'),
   CLAIMED_STALE_MS = 15 * 60 * 1000,
   UNCLAIMED_STALE_MS = 5 * 60 * 1000,
   WALL_CLOCK_TIMEOUT_MS = 15 * 60 * 1000

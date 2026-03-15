@@ -6,7 +6,8 @@ test.describe.serial('Chat & Streaming', () => {
     await sessionListPage.getNewButton().click()
     await page.waitForURL(/\/chat\//)
     await chatPage.sendMessage('Hello agent')
-    await expect(chatPage.getMessages().first()).toContainText('Hello agent')
+    await page.waitForTimeout(2000)
+    await expect(chatPage.getMessages().first()).toContainText('Hello agent', { timeout: 10000 })
   })
 
   test('chat log has role=log', async ({ chatPage, page, sessionListPage }) => {

@@ -4,9 +4,9 @@ import { api } from '@a/be-agent'
 import type { Id } from '@a/be-agent/model'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { useConvexAuth, useMutation, useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 
 type MessagePart = {
   args?: string
@@ -25,9 +25,7 @@ const ChatPage = () => {
   const bottomRef = useRef<HTMLDivElement>(null),
     [draft, setDraft] = useState(''),
     [sending, setSending] = useState(false),
-    { isAuthenticated, isLoading } = useConvexAuth(),
-    router = useRouter(),
-    isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true',
+    [submitError, setSubmitError] = useState(''),
     params = useParams<{ id: string }>(),
     id = params.id as Id<'session'>,
     session = useQuery(api.sessions.getSession, { sessionId: id }),
@@ -46,21 +44,18 @@ const ChatPage = () => {
       try {
         await submitMessage({ content, sessionId: session._id })
         setDraft('')
+        setSubmitError('')
+      } catch (submitErr) {
+        setSubmitError(String(submitErr))
       } finally {
         setSending(false)
       }
     }
 
   useEffect(() => {
-    if (isTestMode || isLoading || isAuthenticated) return
-    router.replace('/login')
-  }, [isAuthenticated, isLoading, isTestMode, router])
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  if (!isTestMode && (isLoading || !isAuthenticated)) return <main className='p-8'>Loading...</main>
   if (!session) return <main className='p-8'>Loading...</main>
   if (messages === undefined) return <main className='p-8'>Loading...</main>
 
@@ -80,7 +75,8 @@ const ChatPage = () => {
 
       <div className='grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
         <section aria-live='polite' className='space-y-3 overflow-y-auto rounded-lg border p-3 md:p-4' role='log'>
-          {messages.length === 0 ? <p className='text-sm text-gray-500'>No messages yet.</p> : null}
+          {submitError ? <p className='text-sm text-red-500' data-testid='submit-error'>{submitError}</p> : null}
+        {messages.length === 0 ? <p className='text-sm text-gray-500'>No messages yet.</p> : null}
           {messages.map(m => {
             const isUser = m.role === 'user',
               isSystem = m.role === 'system',

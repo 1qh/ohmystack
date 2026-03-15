@@ -9,12 +9,14 @@
  */
 
 import type * as agents from "../agents.js";
+import type * as agentsNode from "../agentsNode.js";
 import type * as auth from "../auth.js";
 import type * as compaction from "../compaction.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as orchestrator from "../orchestrator.js";
+import type * as orchestratorNode from "../orchestratorNode.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as retention from "../retention.js";
 import type * as sessions from "../sessions.js";
@@ -32,12 +34,14 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agents: typeof agents;
+  agentsNode: typeof agentsNode;
   auth: typeof auth;
   compaction: typeof compaction;
   crons: typeof crons;
   http: typeof http;
   messages: typeof messages;
   orchestrator: typeof orchestrator;
+  orchestratorNode: typeof orchestratorNode;
   rateLimit: typeof rateLimit;
   retention: typeof retention;
   sessions: typeof sessions;

@@ -1,28 +1,22 @@
 'use client'
 
+/** biome-ignore-all lint/style/noProcessEnv: env detection */
 import { api } from '@a/be-agent'
-import { useConvexAuth, useMutation, useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+
+const isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true'
 
 const SessionListPage = () => {
   const sessions = useQuery(api.sessions.listSessions, {}),
     createSession = useMutation(api.sessions.createSession),
     router = useRouter(),
-    { isAuthenticated, isLoading } = useConvexAuth(),
-    isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true',
     handleNew = async () => {
       const { sessionId } = await createSession({})
       router.push(`/chat/${sessionId}`)
     }
 
-  useEffect(() => {
-    if (isTestMode || isLoading || isAuthenticated) return
-    router.replace('/login')
-  }, [isAuthenticated, isLoading, isTestMode, router])
-
-  if (!isTestMode && (isLoading || !isAuthenticated)) return <main className='p-8'>Loading...</main>
   if (!sessions) return <main className='p-8'>Loading...</main>
   if (sessions.length === 0)
     return (
