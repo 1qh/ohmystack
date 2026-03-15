@@ -33,6 +33,47 @@ flowchart LR
   CVX --> DB[(Convex tables)]
 ```
 
+## Action Testing Strategy
+
+`convex-test` fully supports action testing via `t.action()`:
+
+- `ctx.runMutation`, `ctx.runQuery`, `ctx.runAction` all work inside action handlers
+- `ctx.scheduler.runAfter`/`runAt` work with `vi.useFakeTimers()` + `t.finishAllScheduledFunctions(vi.runAllTimers)`
+- External HTTP calls (AI SDK) are mocked via `vi.stubGlobal("fetch", ...)`
+- AI SDK provides `MockLanguageModelV3` and `simulateReadableStream` from `ai/test` for testing streaming
+
+### Action test pattern
+
+```typescript
+test('runOrchestrator streams and finalizes', async () => {
+  vi.useFakeTimers()
+  const t = convexTest(schema, modules)
+  // seed session + thread + user message
+  // trigger action
+  await t.action(internal.orchestrator_node.runOrchestrator, { runToken, threadId })
+  vi.runAllTimers()
+  await t.finishAllScheduledFunctions(vi.runAllTimers)
+  // assert message finalized, parts populated, threadRunState back to idle
+  vi.useRealTimers()
+})
+```
+
+### Extract-handler pattern for unit testing action logic
+
+For complex action logic (streaming, error classification), export the handler separately:
+
+```typescript
+const runOrchestratorHandler = async (ctx, args) => { ... }
+const runOrchestrator = internalAction({ handler: runOrchestratorHandler })
+export { runOrchestratorHandler }
+```
+
+Then test the handler directly:
+
+```typescript
+await t.action(async (ctx) => runOrchestratorHandler(ctx, { ... }))
+```
+
 ## Mock Model
 
 ### Configuration per test scenario
@@ -40,6 +81,29 @@ flowchart LR
 - Default test mode: `CONVEX_TEST_MODE=true` uses `mockModel` via `getModel()`.
 - Scenario override pattern: keep base mock deterministic, stub specific internal tool/action handlers (`groundWithGemini`, MCP bridge, task functions) per test.
 - Validate provider shape: `specificationVersion: 'v3'`, deterministic `usage`, stable `toolCallId` format.
+
+### AI SDK Test Mocks
+
+The `ai/test` package provides `MockLanguageModelV3` and `simulateReadableStream` for deterministic testing. Use these instead of our custom `mockModel` for convex-test action tests:
+
+```typescript
+import { MockLanguageModelV3, simulateReadableStream } from 'ai/test'
+
+const testModel = new MockLanguageModelV3({
+  doStream: async () => ({
+    stream: simulateReadableStream({
+      chunks: [
+        { type: 'text-start', id: 'text-0' },
+        { type: 'text-delta', id: 'text-0', delta: 'Hello' },
+        { type: 'text-end', id: 'text-0' },
+        { type: 'finish', finishReason: { unified: 'stop', raw: undefined }, usage: { inputTokens: { total: 5 }, outputTokens: { total: 10 } } }
+      ]
+    })
+  })
+})
+```
+
+The custom `mockModel` in `models.mock.ts` is still used for production test mode (`CONVEX_TEST_MODE=true`). `MockLanguageModelV3` is used in convex-test unit tests for fine-grained scenario control.
 
 ### Text-only responses
 
@@ -88,6 +152,14 @@ flowchart LR
 | 13  | `enqueueRunInline` in `submitMessage` matches `enqueueRun` CAS behavior          | Both paths produce identical state transitions                                            |
 | 14  | Prompt bound with `promptMessageId` excludes messages with later `_creationTime` | Query uses `_creationTime <= prompt._creationTime`, newer messages not in context         |
 | 15  | `submitMessage` atomic rollback on enqueue failure                               | If inline enqueue fails, no user message or session patch commits                         |
+| 16 | `createAssistantMessage` creates empty streaming message | Role=assistant, isComplete=false, empty content/parts, streamingContent='' |
+| 17 | `patchStreamingMessage` updates streaming content | streamingContent patched, no-op if isComplete=true |
+| 18 | `finalizeMessage` transitions to complete | isComplete=true, content set, streamingContent cleared, parts persisted |
+| 19 | `appendStepMetadata` concatenates metadata | Multiple calls accumulate, no-op on missing message |
+| 20 | `recordRunError` persists error to threadRunState | lastError field set, overwrites previous error |
+| 21 | `readRunState` returns state or null | Correct state for existing thread, null for non-existent |
+| 22 | `readSessionByThread` resolves session via threadId | Correct session, null for orphaned thread |
+| 23 | `listMessagesForPrompt` bounds by promptMessageId | Only messages with _creationTime <= prompt included, latest 100, chronological |
 
 ### Task Lifecycle
 
@@ -167,6 +239,13 @@ flowchart LR
 | 13  | Tool-pair integrity: assistant message with `tool-call` + matching `tool-result` never split | Closed-prefix grouping keeps tool pairs together                                        |
 | 14  | Compaction resumes from boundary, skips already-compacted                                    | Only new messages after `lastCompactedMessageId` are summarized                         |
 | 15  | Compaction 500-msg scan-window miss (v1 limitation regression)                               | Thread with >500 messages may miss older uncovered messages - assert no crash, note gap |
+| 16 | `acquireCompactionLock` first acquirer succeeds | Returns { ok: true, lockToken }, second attempt returns { ok: false } |
+| 17 | `acquireCompactionLock` expired lock is recoverable | Lock older than 10min can be re-acquired |
+| 18 | `setCompactionSummary` validates lock token | Wrong token returns { ok: false }, correct token persists summary |
+| 19 | `setCompactionSummary` enforces monotonic boundary | New boundary must have later _creationTime than stored boundary |
+| 20 | `listClosedPrefixGroups` only includes complete messages | isComplete=false excluded, pending tool parts excluded |
+| 21 | `compactIfNeeded` no-op under threshold | charCount < 100k AND messageCount < 200 → no lock acquired |
+| 22 | `getContextSize` includes compactionSummary length | Summary chars added to total charCount |
 
 ### MCP
 
@@ -278,6 +357,40 @@ flowchart LR
 | 17  | `CI=true` alone does NOT bypass env validation                               | All required vars still validated under CI                                            |
 | 18  | `buildModelMessages` excludes `source` parts from model input                | Source parts preserved for UI but not in CoreMessage array sent to model              |
 | 19  | Worker messages persist `parts` (tool calls, reasoning) same as orchestrator | Worker-thread messages viewable in task panel with full structured parts              |
+
+### Tool Factories
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | `createOrchestratorTools` returns all 6 tools | delegate, taskStatus, taskOutput, todoRead, todoWrite, webSearch keys present |
+| 2 | `createWorkerTools` returns only webSearch | No delegate, todoRead, todoWrite, taskStatus, taskOutput |
+| 3 | delegate tool calls spawnTask | Task created with correct sessionId/parentThreadId |
+| 4 | todoWrite tool calls syncOwned | Todos upserted correctly |
+| 5 | todoRead tool returns session todos | Returns array from listTodos |
+| 6 | taskStatus tool returns task status | Correct status/description for owned task |
+| 7 | taskOutput tool returns result | Completed task's result returned |
+
+### Worker Action (convex-test)
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | `runWorker` claims task via markRunning | Task transitions pending→running |
+| 2 | `runWorker` exits on claim failure | No model call, no message write for already-running task |
+| 3 | `runWorker` generates text and completes task | Assistant message created, task status=completed with result |
+| 4 | `runWorker` schedules retry on transient error | retryCount incremented, status back to pending |
+| 5 | `runWorker` fails on permanent error | status=failed, lastError set |
+| 6 | `runWorker` clears heartbeat in finally | No lingering interval after success or error |
+| 7 | `isTransientError` classifies correctly | ECONN/ETIMEDOUT/503/mcp_timeout → transient; validation/auth → permanent |
+
+### Orchestrator Action (convex-test)
+
+| # | Test Case | Asserts |
+|---|-----------|---------|
+| 1 | `runOrchestrator` claims, streams, finalizes, finishes | Full flow: claimRun → createAssistantMessage → stream → finalizeMessage → postTurnAudit → finishRun |
+| 2 | `runOrchestrator` exits on claim failure | No model call, finishRun still called in finally |
+| 3 | `runOrchestrator` exits on stale token mid-stream | isStale() detected → no postTurnAudit, finishRun called |
+| 4 | `runOrchestrator` records error on model failure | recordRunError called, finishRun called in finally |
+| 5 | `runOrchestrator` heartbeat runs during execution | heartbeatRun called at interval, cleared in finally |
 
 ### Integration & Lifecycle (convex-test)
 
@@ -469,6 +582,25 @@ sequenceDiagram
     PW->>FE: Assert message visible
 ```
 
+## E2E Prerequisites (UI components required before E2E tests)
+
+The following UI components must be implemented before their dependent E2E tests can pass:
+
+| Component | Location | Dependent E2E Tests |
+|---|---|---|
+| Task panel (side panel) | `chat/[id]/page.tsx` | Tool Execution #1-4, Frontend States #9 |
+| Token usage panel | `chat/[id]/page.tsx` | Frontend States #9 |
+| Typing indicator | `chat/[id]/page.tsx` | Frontend States #16 |
+| Todo read/write UI | `chat/[id]/page.tsx` | Tool Execution #5 |
+| MCP server form (add/edit) | `settings/page.tsx` | Settings #1-5 |
+| MCP server list | `settings/page.tsx` | Settings #1-5 |
+| MCP server delete | `settings/page.tsx` | Frontend States #10 |
+| MCP URL validation errors | `settings/page.tsx` | Settings #3 |
+| MCP auth headers indicator | `settings/page.tsx` | Settings #4 |
+| Timestamp display on messages | `chat/[id]/page.tsx` | Frontend States #5 |
+
+These components are Phase 6 (Polish) deliverables. E2E tests for these features cannot pass until the UI is implemented.
+
 ## E2E Test Matrix (Playwright)
 
 ### Session Management
@@ -584,6 +716,20 @@ flowchart LR
   DB --> A1[Assertions: state transitions]
   UI --> A2[Assertions: user-visible behavior]
 ```
+
+## Test Count Summary
+
+| Layer | Specified | Implemented | Gap |
+|---|---|---|---|
+| Backend convex-test | 239 | 47 | 192 |
+| E2E Playwright | 60+ | 0 | 60+ |
+| **Total** | **~300** | **47** | **~253** |
+
+Priority order for closing gaps:
+1. **P0**: Compaction tests (7), message streaming mutations (8), orchestrator action (5), worker action (7)
+2. **P1**: Tool factory tests (7), remaining implementation detail tests
+3. **P2**: E2E infrastructure + test files
+4. **P3**: Edge case regressions, integration lifecycle tests
 
 ## Test Scripts & Execution
 
