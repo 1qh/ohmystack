@@ -118,6 +118,13 @@ flowchart TD
   B --> B21["retention.ts"]
 ```
 
+### Implementation Notes (discovered during Phase 1)
+
+- **`ctx.user._id as never`**: noboil's `m()`/`q()` handlers receive `(ctx, args)` where `ctx.user._id` is typed as `string`, but Convex index queries and inserts expect `Id<"users">`. Use `as never` cast (same pattern used in `be-convex`). This is a known type gap in the noboil/Convex bridge.
+- **Handler signature**: `m()` and `q()` use Zod validators (not `v.*`), handlers receive `(ctx, args)` — NOT `(c)` with `c.ctx`/`c.args`/`c.userId`. Access user via `ctx.user._id`, database via `ctx.db`.
+- **`@ai-sdk/google-vertex` uses `apiKey`** (not `googleVertexApiKey`) in `createVertex()` options.
+- **`node:process` import breaks Convex bundler** — `@noboil/convex/test` was fixed to use `process.env` directly.
+
 ---
 
 ## Configuration Files
