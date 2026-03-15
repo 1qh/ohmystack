@@ -3,13 +3,14 @@
 import { api } from '@a/be-agent'
 import type { Id } from '@a/be-agent/model'
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useConvexAuth, useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 
 const ChatPage = () => {
-  const [draft, setDraft] = useState(''),
+  const bottomRef = useRef<HTMLDivElement>(null),
+    [draft, setDraft] = useState(''),
     [sending, setSending] = useState(false),
     { isAuthenticated, isLoading } = useConvexAuth(),
     router = useRouter(),
@@ -37,6 +38,10 @@ const ChatPage = () => {
     router.replace('/login')
   }, [isAuthenticated, isLoading, isTestMode, router])
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
   if (!isTestMode && (isLoading || !isAuthenticated)) return <main className='p-8'>Loading...</main>
   if (!session) return <main className='p-8'>Loading...</main>
   if (messages === undefined) return <main className='p-8'>Loading...</main>
@@ -55,14 +60,58 @@ const ChatPage = () => {
         </div>
       </div>
 
-      <section className='flex-1 space-y-3 overflow-y-auto rounded-lg border p-3 md:p-4'>
+      <section aria-live='polite' className='flex-1 space-y-3 overflow-y-auto rounded-lg border p-3 md:p-4' role='log'>
         {messages.length === 0 ? <p className='text-sm text-gray-500'>No messages yet.</p> : null}
-        {messages.map(m => (
-          <article className='rounded-lg border p-3' key={m._id}>
-            <div className='mb-1 text-xs uppercase text-gray-500'>{m.role}</div>
-            <p className='whitespace-pre-wrap text-sm'>{m.isComplete ? m.content : (m.streamingContent ?? m.content)}</p>
-          </article>
-        ))}
+        {messages.map(m => {
+          const isUser = m.role === 'user',
+            isSystem = m.role === 'system',
+            bg = isUser ? 'bg-blue-50' : isSystem ? 'bg-yellow-50' : 'bg-gray-50',
+            parts = (m.parts ?? []) as Array<{ args?: string; result?: string; snippet?: string; status?: string; text?: string; title?: string; toolCallId?: string; toolName?: string; type: string; url?: string }>
+          return (
+            <article className={`rounded-lg border p-3 ${bg}`} key={m._id}>
+              <div className='mb-1 flex items-center gap-2 text-xs uppercase text-gray-500'>
+                <span>{m.role}</span>
+                {!m.isComplete ? <span className='animate-pulse text-blue-500'>●</span> : null}
+              </div>
+              <p className='whitespace-pre-wrap text-sm'>{m.isComplete ? m.content : (m.streamingContent ?? m.content)}</p>
+              {parts.length > 0 ? (
+                <div className='mt-2 space-y-1'>
+                  {parts.map((p, i) => {
+                    if (p.type === 'tool-call') {
+                      const statusLabel = p.status === 'success' ? '✓ Completed' : p.status === 'error' ? '✗ Error' : '⟳ Running'
+                      return (
+                        <details className='rounded border bg-white p-2 text-xs' key={p.toolCallId ?? i}>
+                          <summary className='cursor-pointer font-medium'>
+                            {p.toolName} — {statusLabel}
+                          </summary>
+                          {p.args ? <pre className='mt-1 overflow-x-auto text-gray-600'>{p.args}</pre> : null}
+                          {p.result ? <pre className='mt-1 overflow-x-auto text-gray-600'>{p.result}</pre> : null}
+                        </details>
+                      )
+                    }
+                    if (p.type === 'reasoning') {
+                      return (
+                        <details className='rounded border bg-purple-50 p-2 text-xs' key={`r-${i}`}>
+                          <summary className='cursor-pointer font-medium text-purple-700'>Thinking</summary>
+                          <p className='mt-1 whitespace-pre-wrap text-gray-600'>{p.text}</p>
+                        </details>
+                      )
+                    }
+                    if (p.type === 'source') {
+                      return (
+                        <a className='block rounded border bg-green-50 p-2 text-xs hover:underline' href={p.url} key={`s-${i}`} rel='noopener noreferrer' target='_blank'>
+                          {p.title}{p.snippet ? ` — ${p.snippet}` : ''}
+                        </a>
+                      )
+                    }
+                    return null
+                  })}
+                </div>
+              ) : null}
+            </article>
+          )
+        })}
+        <div ref={bottomRef} />
       </section>
 
       <form className='flex gap-2' onSubmit={onSubmit}>
