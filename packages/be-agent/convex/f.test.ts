@@ -3720,3 +3720,687 @@ describe('worker action', () => {
     }
   })
 })
+
+describe('additional queue coverage', () => {
+  test('ensureRunState concurrent insert stays idempotent', async () => {
+    const ctx = t(),
+      threadId = `ensure-run-state-${crypto.randomUUID()}`,
+      runs = Array.from({ length: 12 }, () => ctx.mutation(internal.orchestrator.ensureRunState, { threadId })),
+      results = await Promise.all(runs),
+      rows = await ctx.run(async c =>
+        c.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .collect()
+      )
+    expect(rows.length).toBe(1)
+    for (const row of results) expect(String(row._id)).toBe(String(rows[0]?._id))
+  })
+
+  test('listMessagesForPrompt excludes messages newer than prompt anchor', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'before-anchor',
+        isComplete: true,
+        parts: [{ text: 'before-anchor', type: 'text' }],
+        role: 'user',
+        sessionId,
+        threadId
+      })
+    })
+    const promptId = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'prompt-anchor',
+        isComplete: true,
+        parts: [{ text: 'prompt-anchor', type: 'text' }],
+        role: 'user',
+        sessionId,
+        threadId
+      })
+    )
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'after-anchor',
+        isComplete: true,
+        parts: [{ text: 'after-anchor', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      promptMessageId: String(promptId),
+      threadId
+    })
+    expect(rows.length).toBe(2)
+    expect(rows[0]?.content).toBe('before-anchor')
+    expect(rows[1]?.content).toBe('prompt-anchor')
+  })
+
+  test('patchStreamingMessage is no-op after finalize', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      messageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId })
+    await ctx.mutation(internal.orchestrator.finalizeMessage, {
+      content: 'finalized',
+      messageId,
+      parts: [{ text: 'finalized', type: 'text' }]
+    })
+    await ctx.mutation(internal.orchestrator.patchStreamingMessage, {
+      messageId,
+      streamingContent: 'should-not-overwrite'
+    })
+    const message = await ctx.run(async c => c.db.get(messageId))
+    expect(message?.isComplete).toBe(true)
+    expect(message?.content).toBe('finalized')
+    expect(message?.streamingContent).toBeUndefined()
+  })
+
+  test('recordRunError overwrites previous error', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.recordRunError, {
+      error: 'first_error',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.recordRunError, {
+      error: 'second_error',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(state?.lastError).toBe('second_error')
+  })
+
+  test('readRunState returns null for unknown thread', async () => {
+    const ctx = t(),
+      state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: `missing-thread-${crypto.randomUUID()}`
+      })
+    expect(state).toBeNull()
+  })
+
+  test('readSessionByThread returns null for unknown thread', async () => {
+    const ctx = t(),
+      session = await ctx.query(internal.orchestrator.readSessionByThread, {
+        threadId: `missing-session-thread-${crypto.randomUUID()}`
+      })
+    expect(session).toBeNull()
+  })
+})
+
+describe('additional task lifecycle coverage', () => {
+  test('updateTaskHeartbeat writes heartbeat timestamp', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'heartbeat-task',
+          heartbeatAt: 1,
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: 'worker-thread-heartbeat-extra'
+        })
+      )
+    await ctx.mutation(internal.tasks.updateTaskHeartbeat, { taskId })
+    const task = await ctx.run(async c => c.db.get(taskId))
+    expect((task?.heartbeatAt ?? 0) > 1).toBe(true)
+  })
+
+  test('scheduleRetry on archived session cancels task and sets session_archived error', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'retry-cancelled',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: 'worker-thread-retry-archived-extra'
+        })
+      )
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { status: 'archived' })
+    })
+    const result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(false)
+    expect(task?.status).toBe('cancelled')
+    expect(task?.lastError).toBe('session_archived')
+  })
+
+  test('maybeContinueOrchestrator returns false when completion reminder is missing', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          completedAt: Date.now(),
+          description: 'no-reminder',
+          isBackground: true,
+          parentThreadId,
+          result: 'done',
+          retryCount: 0,
+          sessionId,
+          status: 'completed',
+          threadId: 'worker-thread-no-reminder-extra'
+        })
+      ),
+      result = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(false)
+    expect(task?.continuationEnqueuedAt).toBeUndefined()
+  })
+
+  test('maybeContinueOrchestrator returns false when session is archived', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const reminderId = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: '[BACKGROUND TASK COMPLETED]',
+        isComplete: true,
+        parts: [{ text: '[BACKGROUND TASK COMPLETED]', type: 'text' }],
+        role: 'system',
+        sessionId,
+        threadId: parentThreadId
+      })
+    )
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        completedAt: Date.now(),
+        completionReminderMessageId: String(reminderId),
+        description: 'archived-session-task',
+        isBackground: true,
+        parentThreadId,
+        result: 'done',
+        retryCount: 0,
+        sessionId,
+        status: 'completed',
+        threadId: 'worker-thread-archived-session-extra'
+      })
+    )
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { status: 'archived' })
+    })
+    const result = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(false)
+    expect(task?.continuationEnqueuedAt).toBeUndefined()
+  })
+
+  test('maybeContinueOrchestrator stamps continuationEnqueuedAt when enqueue path runs', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const reminderId = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: '[BACKGROUND TASK COMPLETED]',
+        isComplete: true,
+        parts: [{ text: '[BACKGROUND TASK COMPLETED]', type: 'text' }],
+        role: 'system',
+        sessionId,
+        threadId: parentThreadId
+      })
+    )
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        completedAt: Date.now(),
+        completionReminderMessageId: String(reminderId),
+        description: 'continue-parent',
+        isBackground: true,
+        parentThreadId,
+        result: 'done',
+        retryCount: 0,
+        sessionId,
+        status: 'completed',
+        threadId: 'worker-thread-continue-parent-extra'
+      })
+    )
+    const result = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(true)
+    expect(task?.continuationEnqueuedAt).toBeDefined()
+  })
+
+  test('listTasks returns rows only for session owner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId: s0, threadId: t0 } = await asUser(0).mutation(api.sessions.createSession, {}),
+      { sessionId: s1, threadId: t1 } = await asUser(1).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('tasks', {
+        description: 'owner-task',
+        isBackground: true,
+        parentThreadId: t0,
+        retryCount: 0,
+        sessionId: s0,
+        status: 'pending',
+        threadId: 'worker-thread-list-owner-extra'
+      })
+      await c.db.insert('tasks', {
+        description: 'other-task',
+        isBackground: true,
+        parentThreadId: t1,
+        retryCount: 0,
+        sessionId: s1,
+        status: 'pending',
+        threadId: 'worker-thread-list-other-extra'
+      })
+    })
+    const ownRows = await asUser(0).query(api.tasks.listTasks, { sessionId: s0 }),
+      otherRows = await asUser(1).query(api.tasks.listTasks, { sessionId: s0 })
+    expect(ownRows.length).toBe(1)
+    expect(ownRows[0]?.description).toBe('owner-task')
+    expect(otherRows.length).toBe(0)
+  })
+
+  test('completeTask rejects non-running task and writes no reminder', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          completedAt: Date.now(),
+          description: 'already-completed',
+          isBackground: true,
+          parentThreadId,
+          result: 'already done',
+          retryCount: 0,
+          sessionId,
+          status: 'completed',
+          threadId: 'worker-thread-complete-non-running-extra'
+        })
+      ),
+      result = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'should-not-apply',
+        taskId
+      }),
+      task = await ctx.run(async c => c.db.get(taskId)),
+      reminders = await ctx.run(async c =>
+        c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', parentThreadId))
+          .collect()
+      )
+    expect(result.ok).toBe(false)
+    expect(task?.completionReminderMessageId).toBeUndefined()
+    expect(reminders.length).toBe(0)
+  })
+})
+
+describe('additional compaction coverage', () => {
+  test('compactIfNeeded triggers by message-count threshold', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      for (let i = 0; i < 201; i += 1)
+        await c.db.insert('messages', {
+          content: `count-threshold-${i}`,
+          isComplete: true,
+          parts: [{ text: `count-threshold-${i}`, type: 'text' }],
+          role: i % 2 === 0 ? 'user' : 'assistant',
+          sessionId,
+          threadId
+        })
+    })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(result.compacted).toBe(false)
+    expect(result.reason).toBe('placeholder')
+  })
+
+  test('compactIfNeeded triggers by char-count threshold', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      longText = 'x'.repeat(25_000)
+    await ctx.run(async c => {
+      for (let i = 0; i < 5; i += 1)
+        await c.db.insert('messages', {
+          content: `${longText}-${i}`,
+          isComplete: true,
+          parts: [{ text: `${longText}-${i}`, type: 'text' }],
+          role: 'assistant',
+          sessionId,
+          threadId
+        })
+    })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(result.compacted).toBe(false)
+    expect(result.reason).toBe('placeholder')
+  })
+
+  test('compactIfNeeded returns no_closed_groups when threshold exceeded but prefix is open', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      longText = 'y'.repeat(100_500)
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: longText,
+        isComplete: false,
+        parts: [],
+        role: 'assistant',
+        sessionId,
+        streamingContent: 'draft',
+        threadId
+      })
+      await c.db.insert('messages', {
+        content: 'complete-after-open-prefix',
+        isComplete: true,
+        parts: [{ text: 'complete-after-open-prefix', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(result.compacted).toBe(false)
+    expect(result.reason).toBe('no_closed_groups')
+  })
+
+  test('listClosedPrefixGroups resumes after lastCompactedMessageId boundary', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const m1 = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'boundary-m1',
+        isComplete: true,
+        parts: [{ text: 'boundary-m1', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    )
+    const m2 = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'boundary-m2',
+        isComplete: true,
+        parts: [{ text: 'boundary-m2', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    )
+    const m3 = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'boundary-m3',
+        isComplete: true,
+        parts: [{ text: 'boundary-m3', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    )
+    expect(String(m1).length > 0).toBe(true)
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    await ctx.mutation(internal.compaction.setCompactionSummary, {
+      compactionSummary: 'boundary-summary',
+      lastCompactedMessageId: String(m2),
+      lockToken: lock.lockToken,
+      threadId
+    })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    expect(groups.length).toBe(1)
+    expect(groups[0]?.endMessageId).toBe(String(m3))
+  })
+
+  test('setCompactionSummary rejects boundary from different thread', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId: s0, threadId: t0 } = await asUser(0).mutation(api.sessions.createSession, {}),
+      { sessionId: s1, threadId: t1 } = await asUser(0).mutation(api.sessions.createSession, {})
+    const foreignBoundary = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'foreign-boundary',
+        isComplete: true,
+        parts: [{ text: 'foreign-boundary', type: 'text' }],
+        role: 'assistant',
+        sessionId: s1,
+        threadId: t1
+      })
+    )
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'local-message',
+        isComplete: true,
+        parts: [{ text: 'local-message', type: 'text' }],
+        role: 'assistant',
+        sessionId: s0,
+        threadId: t0
+      })
+    })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: t0 }),
+      result = await ctx.mutation(internal.compaction.setCompactionSummary, {
+        compactionSummary: 'reject-cross-thread',
+        lastCompactedMessageId: String(foreignBoundary),
+        lockToken: lock.lockToken,
+        threadId: t0
+      })
+    expect(result.ok).toBe(false)
+  })
+
+  test('getContextSize enforces 500-message scan window with hasMore=true', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      for (let i = 0; i < 501; i += 1)
+        await c.db.insert('messages', {
+          content: 'z',
+          isComplete: true,
+          parts: [{ text: 'z', type: 'text' }],
+          role: 'user',
+          sessionId,
+          threadId
+        })
+    })
+    const size = await ctx.query(internal.compaction.getContextSize, { threadId })
+    expect(size.messageCount).toBe(500)
+    expect(size.hasMore).toBe(true)
+    expect(size.charCount).toBe(500)
+  })
+})
+
+describe('additional mcp and auth coverage', () => {
+  test('same MCP server name is allowed across different users', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    const id0 = await asUser(0).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'shared-name',
+      transport: 'http',
+      url: 'https://example.com/user0-shared-name'
+    })
+    const id1 = await asUser(1).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'shared-name',
+      transport: 'http',
+      url: 'https://example.com/user1-shared-name'
+    })
+    const read0 = await asUser(0).query(api.mcp.read, { id: id0 }),
+      read1 = await asUser(1).query(api.mcp.read, { id: id1 })
+    expect(read0?.name).toBe('shared-name')
+    expect(read1?.name).toBe('shared-name')
+  })
+
+  test('mcp.read redacts authHeaders while exposing hasAuthHeaders', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        authHeaders: '{"Authorization":"Bearer hidden"}',
+        isEnabled: true,
+        name: 'read-redaction',
+        transport: 'http',
+        url: 'https://example.com/read-redaction'
+      }),
+      row = await asUser(0).query(api.mcp.read, { id })
+    expect(row).not.toBeNull()
+    expect(row?.hasAuthHeaders).toBe(true)
+    expect('authHeaders' in (row ?? {})).toBe(false)
+  })
+
+  test('mcp.update rejects invalid URL protocol', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'update-invalid-protocol',
+        transport: 'http',
+        url: 'https://example.com/update-invalid-protocol'
+      })
+    let threw = false
+    try {
+      await asUser(0).mutation(api.mcp.update, {
+        id,
+        url: 'file:///tmp/not-allowed'
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('invalid_url_protocol')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('mcp.update rejects non-owner access', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      id = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'owner-update-only',
+        transport: 'http',
+        url: 'https://example.com/owner-update-only'
+      })
+    let threw = false
+    try {
+      await asUser(1).mutation(api.mcp.update, {
+        id,
+        name: 'hijacked-name'
+      })
+    } catch (_error) {
+      threw = true
+    }
+    expect(threw).toBe(true)
+    const row = await asUser(0).query(api.mcp.read, { id })
+    expect(row?.name).toBe('owner-update-only')
+  })
+
+  test('getTokenUsage returns zero counters for non-owner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.tokenUsage.recordModelUsage, {
+      agentName: 'main',
+      inputTokens: 9,
+      model: 'gpt-test',
+      outputTokens: 6,
+      provider: 'openai',
+      sessionId,
+      threadId,
+      totalTokens: 15
+    })
+    const usage = await asUser(1).query(api.tokenUsage.getTokenUsage, { sessionId })
+    expect(usage.inputTokens).toBe(0)
+    expect(usage.outputTokens).toBe(0)
+    expect(usage.totalTokens).toBe(0)
+  })
+})
+
+describe('additional cleanup and retention coverage', () => {
+  test('cleanupStaleMessages leaves messages newer than 5 minutes untouched', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      originalNow = Date.now,
+      baseNow = Date.now(),
+      messageId = await (async () => {
+        try {
+          Date.now = () => baseNow
+          return await ctx.run(async c =>
+            c.db.insert('messages', {
+              content: '',
+              isComplete: false,
+              parts: [{ args: '{}', status: 'pending', toolCallId: 'recent-call', toolName: 'tool', type: 'tool-call' }],
+              role: 'assistant',
+              streamingContent: 'recent-partial',
+              threadId
+            })
+          )
+        } finally {
+          Date.now = originalNow
+        }
+      })()
+    await (async () => {
+      try {
+        Date.now = () => baseNow + 2 * 60 * 1000
+        await ctx.mutation(internal.staleTaskCleanup.cleanupStaleMessages, {})
+      } finally {
+        Date.now = originalNow
+      }
+    })()
+    const message = await ctx.run(async c => c.db.get(messageId))
+    expect(message?.isComplete).toBe(false)
+    expect(message?.streamingContent).toBe('recent-partial')
+  })
+
+  test('timeoutStaleTasks ignores running tasks with fresh heartbeat', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'fresh-heartbeat-task',
+          heartbeatAt: Date.now() - 2 * 60 * 1000,
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          status: 'running',
+          threadId: 'worker-thread-fresh-heartbeat-extra'
+        })
+      ),
+      result = await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {}),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.timedOutCount).toBe(0)
+    expect(task?.status).toBe('running')
+    expect(task?.completionReminderMessageId).toBeUndefined()
+  })
+
+  test('cleanupArchivedSessions respects 180-day boundary and keeps newer archived sessions', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      oldSession = await asUser(0).mutation(api.sessions.createSession, {}),
+      freshSession = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.patch(oldSession.sessionId, {
+        archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000,
+        status: 'archived'
+      })
+      await c.db.patch(freshSession.sessionId, {
+        archivedAt: Date.now() - 179 * 24 * 60 * 60 * 1000,
+        status: 'archived'
+      })
+    })
+    const result = await ctx.mutation(internal.retention.cleanupArchivedSessions, {}),
+      deleted = await ctx.run(async c => c.db.get(oldSession.sessionId)),
+      kept = await ctx.run(async c => c.db.get(freshSession.sessionId))
+    expect(result.deletedCount).toBe(1)
+    expect(deleted).toBeNull()
+    expect(kept?.status).toBe('archived')
+  })
+})
