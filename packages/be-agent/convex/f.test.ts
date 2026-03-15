@@ -895,3 +895,518 @@ describe('postTurnAudit', () => {
     expect(runState?.queuedPromptMessageId).toBeUndefined()
   })
 })
+
+describe('tasks', () => {
+  test('spawnTask creates task + schedules worker', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskThreadId = crypto.randomUUID(),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'run worker',
+          isBackground: true,
+          parentThreadId,
+          pendingAt: Date.now(),
+          prompt: 'do work',
+          retryCount: 0,
+          sessionId,
+          status: 'pending',
+          threadId: taskThreadId
+        })
+      ),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(task).not.toBeNull()
+    expect(task?.status).toBe('pending')
+    expect(task?.threadId).toBe(taskThreadId)
+    expect(task?.parentThreadId).toBe(parentThreadId)
+  })
+
+  test('markRunning succeeds for pending task', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'run worker',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          status: 'pending',
+          threadId: 'task-thread-running'
+        })
+      ),
+      result = await ctx.mutation(internal.tasks.markRunning, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(true)
+    expect(task?.status).toBe('running')
+    expect(task?.startedAt).toBeDefined()
+  })
+
+  test('markRunning rejects non-pending task', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'run worker',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: 'task-thread-non-pending'
+        })
+      ),
+      result = await ctx.mutation(internal.tasks.markRunning, { taskId })
+    expect(result.ok).toBe(false)
+  })
+
+  test('completeTask writes result + reminder', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { status: 'archived' })
+    })
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'analyze docs',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: 'task-thread-complete'
+      })
+    )
+    const result = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'done',
+        taskId
+      }),
+      task = await ctx.run(async c => c.db.get(taskId)),
+      reminder = await ctx.run(async c => {
+        const rows = await c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', parentThreadId))
+          .collect()
+        return rows.find(m => String(m._id) === task?.completionReminderMessageId)
+      })
+    expect(result.ok).toBe(true)
+    expect(task?.status).toBe('completed')
+    expect(task?.result).toBe('done')
+    expect(task?.completionReminderMessageId).toBeDefined()
+    expect(reminder?.role).toBe('system')
+    expect(reminder?.content.includes('[BACKGROUND TASK COMPLETED]')).toBe(true)
+  })
+
+  test('failTask writes error + terminal reminder', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { status: 'archived' })
+    })
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'analyze docs',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: 'task-thread-fail'
+      })
+    )
+    const result = await ctx.mutation(internal.tasks.failTask, {
+        lastError: 'worker crashed',
+        taskId
+      }),
+      task = await ctx.run(async c => c.db.get(taskId)),
+      reminder = await ctx.run(async c => {
+        const rows = await c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', parentThreadId))
+          .collect()
+        return rows.find(m => String(m._id) === task?.completionReminderMessageId)
+      })
+    expect(result.ok).toBe(true)
+    expect(task?.status).toBe('failed')
+    expect(task?.lastError).toBe('worker crashed')
+    expect(task?.completionReminderMessageId).toBeDefined()
+    expect(reminder?.role).toBe('system')
+    expect(reminder?.content.includes('[BACKGROUND TASK FAILED]')).toBe(true)
+  })
+
+  test('scheduleRetry increments retryCount', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'retry me',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: 'task-thread-retry'
+        })
+      )
+    await ctx.run(async c => {
+      await c.db.patch(taskId, {
+        pendingAt: Date.now(),
+        retryCount: 1,
+        status: 'pending'
+      })
+    })
+    const task = await ctx.run(async c => c.db.get(taskId))
+    expect(task?.retryCount).toBe(1)
+    expect(task?.status).toBe('pending')
+  })
+
+  test('scheduleRetry fails after 3 retries', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'retry me',
+          isBackground: true,
+          lastError: 'too many retries',
+          parentThreadId,
+          retryCount: 3,
+          sessionId,
+          status: 'failed',
+          threadId: 'task-thread-retry-failed'
+        })
+      ),
+      result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+      task = await ctx.run(async c => c.db.get(taskId))
+    expect(result.ok).toBe(false)
+    expect(task?.retryCount).toBe(3)
+    expect(task?.status).toBe('failed')
+  })
+})
+
+describe('todos', () => {
+  test('syncOwned inserts new todos', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      result = await ctx.mutation(internal.todos.syncOwned, {
+        sessionId,
+        todos: [
+          { content: 'todo a', position: 0, priority: 'high', status: 'pending' },
+          { content: 'todo b', position: 1, priority: 'low', status: 'in_progress' }
+        ]
+      }),
+      rows = await ctx.run(async c =>
+        c.db
+          .query('todos')
+          .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+          .collect()
+      )
+    expect(result.updated).toBe(2)
+    expect(rows.length).toBe(2)
+    expect(rows[0]?.content).toBe('todo a')
+    expect(rows[1]?.content).toBe('todo b')
+  })
+
+  test('syncOwned updates existing todos', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      todoId = await ctx.run(async c =>
+        c.db.insert('todos', {
+          content: 'old content',
+          position: 0,
+          priority: 'medium',
+          sessionId,
+          status: 'pending'
+        })
+      )
+    await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos: [{ content: 'new content', id: todoId, position: 2, priority: 'high', status: 'completed' }]
+    })
+    const todo = await ctx.run(async c => c.db.get(todoId))
+    expect(todo?.content).toBe('new content')
+    expect(todo?.position).toBe(2)
+    expect(todo?.priority).toBe('high')
+    expect(todo?.status).toBe('completed')
+  })
+
+  test('listTodos returns session todos', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId: s0 } = await asUser(0).mutation(api.sessions.createSession, {}),
+      { sessionId: s1 } = await asUser(1).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'u0 todo',
+        position: 0,
+        priority: 'high',
+        sessionId: s0,
+        status: 'pending'
+      })
+      await c.db.insert('todos', {
+        content: 'u1 todo',
+        position: 0,
+        priority: 'low',
+        sessionId: s1,
+        status: 'pending'
+      })
+    })
+    const own = await asUser(0).query(api.todos.listTodos, { sessionId: s0 }),
+      other = await asUser(1).query(api.todos.listTodos, { sessionId: s0 })
+    expect(own.length).toBe(1)
+    expect(own[0]?.content).toBe('u0 todo')
+    expect(other.length).toBe(0)
+  })
+})
+
+describe('tokenUsage', () => {
+  test('recordModelUsage creates usage row', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      rowId = await ctx.mutation(internal.tokenUsage.recordModelUsage, {
+        agentName: 'main',
+        inputTokens: 10,
+        model: 'gpt-test',
+        outputTokens: 4,
+        provider: 'openai',
+        sessionId,
+        threadId,
+        totalTokens: 14
+      }),
+      row = await ctx.run(async c => (rowId ? c.db.get(rowId) : null))
+    expect(row).not.toBeNull()
+    expect(row?.sessionId).toBe(sessionId)
+    expect(row?.threadId).toBe(threadId)
+    expect(row?.inputTokens).toBe(10)
+    expect(row?.outputTokens).toBe(4)
+    expect(row?.totalTokens).toBe(14)
+  })
+
+  test('getTokenUsage returns aggregated totals', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.tokenUsage.recordModelUsage, {
+      agentName: 'main',
+      inputTokens: 10,
+      model: 'gpt-test',
+      outputTokens: 4,
+      provider: 'openai',
+      sessionId,
+      threadId,
+      totalTokens: 14
+    })
+    await ctx.mutation(internal.tokenUsage.recordModelUsage, {
+      agentName: 'main',
+      inputTokens: 3,
+      model: 'gpt-test',
+      outputTokens: 7,
+      provider: 'openai',
+      sessionId,
+      threadId,
+      totalTokens: 10
+    })
+    const usage = await asUser(0).query(api.tokenUsage.getTokenUsage, { sessionId })
+    expect(usage.count).toBe(2)
+    expect(usage.inputTokens).toBe(13)
+    expect(usage.outputTokens).toBe(11)
+    expect(usage.totalTokens).toBe(24)
+  })
+})
+
+describe('retention', () => {
+  test('archiveIdleSessions transitions active→idle after 24h', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 25 * 60 * 60 * 1000 })
+    })
+    await ctx.mutation(internal.retention.archiveIdleSessions, {})
+    const session = await ctx.run(async c => c.db.get(sessionId))
+    expect(session?.status).toBe('idle')
+  })
+
+  test('cleanupArchivedSessions deletes old sessions', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'session message',
+        isComplete: true,
+        parts: [],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+      await c.db.insert('todos', {
+        content: 'todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      await c.db.insert('tokenUsage', {
+        agentName: 'main',
+        inputTokens: 1,
+        model: 'gpt-test',
+        outputTokens: 2,
+        provider: 'openai',
+        sessionId,
+        threadId,
+        totalTokens: 3
+      })
+      await c.db.insert('tasks', {
+        description: 'worker',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'completed',
+        threadId: 'worker-thread-delete'
+      })
+      await c.db.insert('messages', {
+        content: 'worker message',
+        isComplete: true,
+        parts: [],
+        role: 'assistant',
+        sessionId,
+        threadId: 'worker-thread-delete'
+      })
+      await c.db.patch(sessionId, {
+        archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000,
+        lastActivityAt: Date.now() - 181 * 24 * 60 * 60 * 1000,
+        status: 'archived'
+      })
+    })
+    const result = await ctx.mutation(internal.retention.cleanupArchivedSessions, {}),
+      session = await ctx.run(async c => c.db.get(sessionId)),
+      runState = await ctx.run(async c =>
+        c.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+      ),
+      sessionMessages = await ctx.run(async c =>
+        c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .collect()
+      ),
+      workerMessages = await ctx.run(async c =>
+        c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', 'worker-thread-delete'))
+          .collect()
+      ),
+      tasks = await ctx.run(async c =>
+        c.db
+          .query('tasks')
+          .withIndex('by_session', idx => idx.eq('sessionId', sessionId))
+          .collect()
+      ),
+      todos = await ctx.run(async c =>
+        c.db
+          .query('todos')
+          .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+          .collect()
+      ),
+      usage = await ctx.run(async c =>
+        c.db
+          .query('tokenUsage')
+          .withIndex('by_session', idx => idx.eq('sessionId', sessionId))
+          .collect()
+      )
+    expect(result.deletedCount).toBe(1)
+    expect(session).toBeNull()
+    expect(runState).toBeNull()
+    expect(sessionMessages.length).toBe(0)
+    expect(workerMessages.length).toBe(0)
+    expect(tasks.length).toBe(0)
+    expect(todos.length).toBe(0)
+    expect(usage.length).toBe(0)
+  })
+})
+
+describe('stale cleanup', () => {
+  test('timeoutStaleTasks marks stale running tasks', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'stale worker',
+          heartbeatAt: Date.now() - 6 * 60 * 1000,
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          status: 'running',
+          threadId: 'worker-thread-stale'
+        })
+      ),
+      result = await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {}),
+      task = await ctx.run(async c => c.db.get(taskId)),
+      reminder = await ctx.run(async c => {
+        const rows = await c.db
+          .query('messages')
+          .withIndex('by_threadId', idx => idx.eq('threadId', parentThreadId))
+          .collect()
+        return rows.find(m => String(m._id) === task?.completionReminderMessageId)
+      })
+    expect(result.timedOutCount).toBe(1)
+    expect(task?.status).toBe('timed_out')
+    expect(task?.completionReminderMessageId).toBeDefined()
+    expect(reminder?.content.includes('[BACKGROUND TASK TIMED OUT]')).toBe(true)
+  })
+
+  test('cleanupStaleMessages finalizes orphaned messages', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      originalNow = Date.now,
+      baseNow = Date.now(),
+      { messageId, result } = await (async () => {
+        try {
+          Date.now = () => baseNow
+          const id = await ctx.run(async c =>
+            c.db.insert('messages', {
+              content: '',
+              isComplete: false,
+              parts: [{ args: '{}', status: 'pending', toolCallId: 'call-1', toolName: 'tool', type: 'tool-call' }],
+              role: 'assistant',
+              streamingContent: 'partial answer',
+              threadId
+            })
+          )
+          Date.now = () => baseNow + 6 * 60 * 1000
+          const cleanupResult = await ctx.mutation(internal.staleTaskCleanup.cleanupStaleMessages, {})
+          return { messageId: id, result: cleanupResult }
+        } finally {
+          Date.now = originalNow
+        }
+      })()
+    const message = await ctx.run(async c => c.db.get(messageId)),
+      toolPart = message?.parts.find(p => p.type === 'tool-call')
+    expect(result.cleanedCount).toBe(1)
+    expect(message?.isComplete).toBe(true)
+    expect(message?.content).toBe('partial answer')
+    expect(message?.streamingContent).toBeUndefined()
+    expect(toolPart?.status).toBe('error')
+    expect(toolPart?.result).toBe('Interrupted: agent run terminated before tool completion')
+  })
+})
