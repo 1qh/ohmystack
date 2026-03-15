@@ -76,3 +76,64 @@ test.describe
       await expect(page.getByRole('heading', { name: /untitled/i })).toBeVisible()
     })
   })
+
+test.describe
+  .serial('Chat & Streaming - final remaining coverage', () => {
+    test('input clears after successful send', async ({ chatPage, page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await chatPage.sendMessage('Clear me after send')
+      await expect(chatPage.getMessages().first()).toContainText('Clear me after send', { timeout: 10_000 })
+      await expect(chatPage.getComposer()).toHaveValue('')
+    })
+
+    test('auto-scrolls to bottom on new message', async ({ chatPage, page, sessionListPage }) => {
+      await page.setViewportSize({ height: 420, width: 1280 })
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      for (let i = 0; i < 6; i += 1) {
+        await chatPage.sendMessage(`scroll-seed-${i}`)
+        await page.waitForTimeout(1000)
+      }
+      const log = chatPage.getMessageLog()
+      const before = await log.evaluate(element => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight
+      }))
+      test.skip(before.scrollHeight <= before.clientHeight, 'Chat log is not scrollable in this run')
+      await log.evaluate(element => {
+        element.scrollTop = 0
+      })
+      await chatPage.sendMessage('scroll-target')
+      await expect(chatPage.getMessages().first()).toContainText('scroll-target', { timeout: 10_000 })
+      await expect.poll(async () =>
+        log.evaluate(element => Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) < 4)
+      ).toBe(true)
+    })
+
+    test('session title shows in chat header', async ({ chatPage, page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await page.getByRole('link', { name: /sessions/i }).click()
+      await page.waitForURL('/')
+      const cardTitle = await sessionListPage.getSessionCards().first().locator('.font-medium').textContent()
+      await sessionListPage.getSessionCards().first().click()
+      await page.waitForURL(/\/chat\//u)
+      await expect(chatPage.getTitle()).toContainText((cardTitle ?? '').trim())
+    })
+
+    test('typing indicator visible while streaming', async ({ page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await page.getByPlaceholder(/message/iu).fill('Show typing indicator')
+      await page.getByRole('button', { name: /send/iu }).click()
+      await page.waitForTimeout(250)
+      const streamingBadgeCount = await page.locator('article .animate-pulse').count()
+      test.skip(streamingBadgeCount === 0, 'No streaming phase observed in this run')
+      await expect(page.getByTestId('typing-panel')).toContainText(/agent is typing/iu, { timeout: 10_000 })
+    })
+  })

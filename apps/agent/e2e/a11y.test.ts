@@ -18,4 +18,23 @@ test.describe('Accessibility', () => {
     test.skip((await sourceCards.count()) === 0, 'No source cards rendered in this run')
     await expect(sourceCards.first()).toHaveAttribute('rel', /noopener/iu)
   })
+
+  test('chat message log has aria-live', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await expect(chatPage.getMessageLog()).toHaveAttribute('aria-live', 'polite')
+  })
+
+  test('expandable details use native summary controls', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    const summaries = page.locator('details > summary')
+    await expect(summaries.first()).toBeVisible()
+    const areSummaryTags = await summaries.evaluateAll(elements =>
+      elements.every(element => element.tagName.toLowerCase() === 'summary')
+    )
+    expect(areSummaryTags).toBe(true)
+  })
 })

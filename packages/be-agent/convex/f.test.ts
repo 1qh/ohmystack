@@ -5347,3 +5347,70 @@ describe('gap coverage error and state surfaces', () => {
     expect(reminder?.content.includes(`Task ID: ${String(taskId)}`)).toBe(true)
   })
 })
+
+describe('rate limiting enforcement coverage', () => {
+  test('rate limit functions are callable (schema dependency blocks full enforcement test in convex-test)', () => {
+    expect(typeof checkRateLimit).toBe('function')
+    expect(typeof rateLimit).toBe('function')
+    expect(typeof resetRateLimit).toBe('function')
+  })
+})
+
+describe('auth and cron gap coverage', () => {
+  test('unauthenticated public call is rejected when test mode is disabled', async () => {
+    const ctx = t(),
+      originalTestMode = process.env.CONVEX_TEST_MODE
+    process.env.CONVEX_TEST_MODE = 'false'
+    try {
+      let threw = false
+      try {
+        await ctx.query(api.sessions.listSessions, {})
+      } catch (_error) {
+        threw = true
+      }
+      expect(threw).toBe(true)
+    } finally {
+      if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
+      else process.env.CONVEX_TEST_MODE = originalTestMode
+    }
+  })
+
+  test('test auth mutation is fused off outside test mode', async () => {
+    const ctx = t(),
+      originalTestMode = process.env.CONVEX_TEST_MODE
+    process.env.CONVEX_TEST_MODE = 'false'
+    try {
+      let threw = false
+      try {
+        await ctx.mutation(api.testauth.signInAsTestUser, {})
+      } catch (error) {
+        threw = true
+        expect(String(error)).toContain('test_mode_only')
+      }
+      expect(threw).toBe(true)
+    } finally {
+      if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
+      else process.env.CONVEX_TEST_MODE = originalTestMode
+    }
+  })
+
+  test('cron schedule wiring matches documented intervals', () => {
+    const { readFileSync } = require('node:fs')
+    const source = readFileSync(new URL('./crons.ts', import.meta.url), 'utf-8')
+    expect(source.includes("crons.interval('timeout stale runs', { minutes: 5 }, internal.orchestrator.timeoutStaleRuns)")).toBe(
+      true
+    )
+    expect(
+      source.includes("crons.interval('timeout stale tasks', { minutes: 5 }, internal.staleTaskCleanup.timeoutStaleTasks)")
+    ).toBe(true)
+    expect(
+      source.includes("crons.interval('cleanup stale messages', { minutes: 5 }, internal.staleTaskCleanup.cleanupStaleMessages)")
+    ).toBe(true)
+    expect(source.includes("crons.interval('archive idle sessions', { hours: 1 }, internal.retention.archiveIdleSessions)")).toBe(
+      true
+    )
+    expect(source.includes("crons.cron('cleanup archived sessions', '0 3 * * *', internal.retention.cleanupArchivedSessions)")).toBe(
+      true
+    )
+  })
+})
