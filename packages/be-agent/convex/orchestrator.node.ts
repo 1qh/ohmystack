@@ -10,6 +10,7 @@ import type { Doc, Id } from './_generated/dataModel'
 
 import { getModel } from '../ai'
 import { ORCHESTRATOR_SYSTEM_PROMPT } from '../prompts'
+import { createOrchestratorTools } from './agents'
 import { internalAction } from './_generated/server'
 
 const claimRunRef = makeFunctionReference<'mutation', { runToken: string; threadId: string }, { ok: boolean }>(
@@ -148,7 +149,7 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
             },
             system: ORCHESTRATOR_SYSTEM_PROMPT,
             temperature: 0.7,
-            tools: {}
+            tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
           })
         let fullText = '',
           flushAt = Date.now()
