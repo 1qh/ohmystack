@@ -1,6 +1,8 @@
 'use node'
 
-import { generateText } from 'ai'
+import type { ModelMessage } from 'ai'
+
+import { streamText } from 'ai'
 import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
 
@@ -13,6 +15,45 @@ import { createWorkerTools } from './agents'
 
 const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }, { ok: boolean }>('tasks:markRunning'),
   getByIdRef = makeFunctionReference<'query', { taskId: Id<'tasks'> }, Doc<'tasks'> | null>('tasks:getById'),
+  listMessagesForPromptRef = makeFunctionReference<
+    'query',
+    { promptMessageId?: string; threadId: string },
+    Doc<'messages'>[]
+  >('orchestrator:listMessagesForPrompt'),
+  createAssistantMessageRef = makeFunctionReference<
+    'mutation',
+    { sessionId: Id<'session'>; threadId: string },
+    Id<'messages'>
+  >('orchestrator:createAssistantMessage'),
+  patchStreamingMessageRef = makeFunctionReference<
+    'mutation',
+    { messageId: Id<'messages'>; streamingContent: string },
+    undefined
+  >('orchestrator:patchStreamingMessage'),
+  appendStepMetadataRef = makeFunctionReference<'mutation', { messageId: Id<'messages'>; stepPayload: string }, undefined>(
+    'orchestrator:appendStepMetadata'
+  ),
+  finalizeMessageRef = makeFunctionReference<
+    'mutation',
+    {
+      content: string
+      messageId: Id<'messages'>
+      parts: (
+        | {
+            args: string
+            result?: string
+            status: 'error' | 'pending' | 'success'
+            toolCallId: string
+            toolName: string
+            type: 'tool-call'
+          }
+        | { snippet?: string; title: string; type: 'source'; url: string }
+        | { text: string; type: 'reasoning' }
+        | { text: string; type: 'text' }
+      )[]
+    },
+    undefined
+  >('orchestrator:finalizeMessage'),
   updateTaskHeartbeatRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }, undefined>(
     'tasks:updateTaskHeartbeat'
   ),
@@ -23,6 +64,37 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
   failTaskRef = makeFunctionReference<'mutation', { lastError: string; taskId: Id<'tasks'> }, { ok: boolean }>(
     'tasks:failTask'
   ),
+  collectMessageText = (message: Doc<'messages'>) => {
+    const parts = message.parts as {
+      result?: string
+      status?: string
+      text?: string
+      title?: string
+      toolName?: string
+      type: string
+      url?: string
+    }[]
+    if (parts.length === 0) return message.content
+    const chunks: string[] = []
+    for (const p of parts)
+      if (p.type === 'text' || p.type === 'reasoning') chunks.push(p.text ?? '')
+      else if (p.type === 'tool-call') {
+        const resultText = p.result ? ` result=${p.result}` : ''
+        chunks.push(`[tool:${p.toolName} status=${p.status}${resultText}]`)
+      } else chunks.push(`[source:${p.title} ${p.url}]`)
+
+    const joined = chunks.join('\n')
+    return joined.length > 0 ? joined : message.content
+  },
+  buildModelMessages = (messages: Doc<'messages'>[]) => {
+    const modelMessages: ModelMessage[] = []
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    for (const m of messages)
+      if (m.role === 'assistant' || m.role === 'system' || m.role === 'user')
+        modelMessages.push({ content: collectMessageText(m), role: m.role })
+
+    return modelMessages
+  },
   isTransientError = ({ errorMessage }: { errorMessage: string }) => {
     const lowered = errorMessage.toLowerCase(),
       transientMarkers = ['econnreset', 'etimedout', 'timeout', 'rate_limit', '429', '503', 'overloaded']
@@ -45,22 +117,95 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
       try {
         const task = await ctx.runQuery(getByIdRef, { taskId })
         if (task?.status !== 'running') return
-        const model = await getModel(),
+        const dbMessages = await ctx.runQuery(listMessagesForPromptRef, { threadId: task.threadId }),
+          modelMessages = buildModelMessages(dbMessages),
+          workerPrompt = task.prompt ?? task.description
+        modelMessages.push({ content: workerPrompt, role: 'user' })
+        const messageId = await ctx.runMutation(createAssistantMessageRef, {
+            sessionId: task.sessionId,
+            threadId: task.threadId
+          }),
+          model = await getModel(),
           tools = createWorkerTools({
             ctx,
             parentThreadId: task.parentThreadId,
             sessionId: task.sessionId
           }),
-          result = await generateText({
+          result = streamText({
+            messages: modelMessages,
             model,
-            prompt: task.prompt ?? task.description,
+            onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
+              const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
+              await ctx.runMutation(appendStepMetadataRef, {
+                messageId,
+                stepPayload
+              })
+            },
             system: WORKER_SYSTEM_PROMPT,
-            temperature: 0.5,
+            temperature: 0.7,
             tools
-          }),
-          output = result.text
+          })
+        const collectedParts: Array<
+            | { text: string; type: 'text' }
+            | { text: string; type: 'reasoning' }
+            | {
+                args: string
+                result?: string
+                status: 'pending' | 'success' | 'error'
+                toolCallId: string
+                toolName: string
+                type: 'tool-call'
+              }
+            | { snippet?: string; title: string; type: 'source'; url: string }
+          > = []
+        let fullText = '',
+          fullReasoning = ''
+        for await (const part of result.fullStream)
+          if (part.type === 'text-delta') {
+            fullText += part.text
+            await ctx.runMutation(patchStreamingMessageRef, {
+              messageId,
+              streamingContent: fullText
+            })
+          } else if (part.type === 'reasoning-delta') fullReasoning += part.text
+          else if (part.type === 'tool-call')
+            collectedParts.push({
+              args: JSON.stringify(part.input),
+              status: 'pending',
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              type: 'tool-call'
+            })
+          else if (part.type === 'tool-result')
+            for (const p of collectedParts)
+              if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
+                p.status = 'success'
+                p.result = JSON.stringify(part.output)
+                if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
+                  const resultWithSources = part.output as { sources?: Array<{ snippet?: string; title: string; url: string }> }
+                  if (resultWithSources.sources)
+                    for (const src of resultWithSources.sources)
+                      collectedParts.push({
+                        snippet: src.snippet,
+                        title: src.title,
+                        type: 'source',
+                        url: src.url
+                      })
+                }
+              }
+        await ctx.runMutation(patchStreamingMessageRef, {
+          messageId,
+          streamingContent: fullText
+        })
+        const finalParts = [{ text: fullText, type: 'text' as const }, ...collectedParts]
+        if (fullReasoning.length > 0) finalParts.splice(1, 0, { text: fullReasoning, type: 'reasoning' as const })
+        await ctx.runMutation(finalizeMessageRef, {
+          content: fullText,
+          messageId,
+          parts: finalParts
+        })
         await ctx.runMutation(completeTaskRef, {
-          result: output,
+          result: fullText,
           taskId
         })
       } catch (error) {

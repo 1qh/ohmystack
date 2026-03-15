@@ -342,8 +342,8 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         previousTodos = parseTodoSnapshot({ snapshot: state.lastTodoSnapshot }),
         currentSummary = summarizeTodoState({ todos: normalizedTodos }),
         previousSummary = summarizeTodoState({ todos: previousTodos ?? [] })
-      let consecutiveFailures = state.consecutiveFailures,
-        stagnationCount = state.stagnationCount
+      let consecutiveFailures = state.consecutiveFailures ?? 0,
+        stagnationCount = state.stagnationCount ?? 0
       if (state.lastContinuationAt && now - state.lastContinuationAt >= FAILURE_RESET_WINDOW_MS) consecutiveFailures = 0
       if (!state.lastTodoSnapshot || state.lastTodoSnapshot !== todoSnapshot) stagnationCount = 0
       else stagnationCount += 1
@@ -360,9 +360,10 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         nextStagnationCount = progressDetected ? 0 : stagnationCount,
         hasStagnated = nextStagnationCount >= MAX_STAGNATION_COUNT,
         hitFailureCap = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES,
-        cooldownMs = computeContinuationCooldownMs({ consecutiveFailures }),
+        safeFailures = consecutiveFailures ?? 0,
+        cooldownMs = computeContinuationCooldownMs({ consecutiveFailures: safeFailures }),
         insideCooldown =
-          consecutiveFailures > 0 &&
+          safeFailures > 0 &&
           !!state.lastContinuationAt &&
           now - state.lastContinuationAt < cooldownMs,
         shouldContinue =
@@ -403,7 +404,7 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
       if (!enqueued.ok) {
         await ctx.db.patch(state._id, {
           autoContinueStreak: 0,
-          consecutiveFailures: consecutiveFailures + 1,
+          consecutiveFailures: safeFailures + 1,
           lastContinuationAt: now,
           lastTodoSnapshot: todoSnapshot,
           stagnationCount: nextStagnationCount
@@ -425,10 +426,10 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
       const state = await ensureRunStateInline({ ctx, threadId }),
         isTaskTool = isTaskToolName({ toolName })
       if (isTaskTool) {
-        if (state.turnsSinceTaskTool !== 0) await ctx.db.patch(state._id, { turnsSinceTaskTool: 0 })
+        if ((state.turnsSinceTaskTool ?? 0) !== 0) await ctx.db.patch(state._id, { turnsSinceTaskTool: 0 })
         return { shouldRemind: false, turnsSinceTaskTool: 0 }
       }
-      const turnsSinceTaskTool = state.turnsSinceTaskTool + 1,
+      const turnsSinceTaskTool = (state.turnsSinceTaskTool ?? 0) + 1,
         shouldRemind = turnsSinceTaskTool >= TASK_REMINDER_THRESHOLD
       await ctx.db.patch(state._id, { turnsSinceTaskTool })
       return { shouldRemind, turnsSinceTaskTool }
@@ -438,7 +439,7 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => {
       const state = await ensureRunStateInline({ ctx, threadId }),
-        shouldInject = state.turnsSinceTaskTool >= TASK_REMINDER_THRESHOLD
+        shouldInject = (state.turnsSinceTaskTool ?? 0) >= TASK_REMINDER_THRESHOLD
       if (shouldInject) await ctx.db.patch(state._id, { turnsSinceTaskTool: 0 })
       return { shouldInject }
     }
