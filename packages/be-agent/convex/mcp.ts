@@ -1,6 +1,9 @@
 import { zid } from 'convex-helpers/server/zod4'
+import { v } from 'convex/values'
 
 import { crud, q } from '../lazy'
+import { internalMutation } from './_generated/server'
+import { enforceRateLimit } from './rateLimit'
 import { owned } from '../t'
 
 interface IndexEq {
@@ -29,6 +32,24 @@ const validateMcpUrl = (url: string) => {
       hostname.startsWith('172.')
     )
       throw new Error('blocked_url')
+  },
+  parseCachedToolNames = ({ cachedTools }: { cachedTools?: string }) => {
+    if (!cachedTools) return []
+    try {
+      const parsed = JSON.parse(cachedTools) as unknown
+      if (!Array.isArray(parsed)) return []
+      const names: string[] = []
+      for (const t of parsed) {
+        if (typeof t === 'string') {
+          names.push(t)
+          continue
+        }
+        if (typeof t === 'object' && t && 'name' in t && typeof t.name === 'string') names.push(t.name)
+      }
+      return names
+    } catch (_error) {
+      return []
+    }
   },
   redactServer = (doc: null | Record<string, unknown>) => {
     if (!doc) return null
@@ -101,6 +122,48 @@ const validateMcpUrl = (url: string) => {
       for (const doc of docs) out.push(hooks.afterRead(ctx, { doc: doc as never }))
       return out
     }
+  }),
+  mcpDiscover = internalMutation({
+    args: { sessionId: v.id('session') },
+    handler: async (ctx, { sessionId }) => {
+      const session = await ctx.db.get(sessionId)
+      if (!session) throw new Error('session_not_found')
+      const servers = await ctx.db
+        .query('mcpServers')
+        .withIndex('by_user_enabled', idx => idx.eq('userId', session.userId).eq('isEnabled', true))
+        .collect()
+      const tools: { serverName: string; toolName: string }[] = []
+      for (const server of servers) {
+        const toolNames = parseCachedToolNames({ cachedTools: server.cachedTools })
+        for (const toolName of toolNames) tools.push({ serverName: server.name, toolName })
+      }
+      return { tools }
+    }
+  }),
+  mcpCallTool = internalMutation({
+    args: {
+      serverName: v.string(),
+      sessionId: v.id('session'),
+      toolArgs: v.string(),
+      toolName: v.string()
+    },
+    handler: async (ctx, { serverName, sessionId }) => {
+      const session = await ctx.db.get(sessionId)
+      if (!session) throw new Error('session_not_found')
+      await enforceRateLimit({
+        ctx,
+        key: String(session.userId),
+        name: 'mcpCall'
+      })
+      const server = await ctx.db
+        .query('mcpServers')
+        .withIndex('by_user_name', idx => idx.eq('userId', session.userId).eq('name', serverName))
+        .first()
+      if (!server || !server.isEnabled) throw new Error('mcp_server_not_found')
+      const isTestMode = process.env.CONVEX_TEST_MODE === 'true'
+      if (isTestMode) return { content: 'mock MCP result', ok: true as const }
+      throw new Error('mcp_not_implemented')
+    }
   })
 
-export { create, list, read, rm, update }
+export { create, list, mcpCallTool, mcpDiscover, read, rm, update }

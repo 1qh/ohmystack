@@ -8,6 +8,7 @@ import type { MutationCtx } from './_generated/server'
 
 import { m } from '../lazy'
 import { internalMutation, internalQuery } from './_generated/server'
+import { enforceRateLimit } from './rateLimit'
 
 const reasonPriority = {
     task_completion: 1,
@@ -464,6 +465,11 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
         session = await ctx.db.get(sessionId)
       if (session?.userId !== userId) throw new Error('session_not_found')
       if (session.status === 'archived') throw new Error('session_archived')
+      await enforceRateLimit({
+        ctx,
+        key: String(ctx.user._id),
+        name: 'submitMessage'
+      })
       const messageId = await ctx.db.insert('messages', {
         content,
         isComplete: true,

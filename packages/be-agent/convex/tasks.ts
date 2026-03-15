@@ -7,6 +7,7 @@ import type { MutationCtx } from './_generated/server'
 
 import { q } from '../lazy'
 import { internalMutation } from './_generated/server'
+import { enforceRateLimit } from './rateLimit'
 
 const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: Id<'tasks'>; threadId: string }, undefined>(
     'agentsNode:runWorker'
@@ -87,6 +88,11 @@ const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: I
     handler: async (ctx, { description, isBackground, parentThreadId, prompt, sessionId }) => {
       const session = await ctx.db.get(sessionId)
       if (!session || session.status === 'archived') throw new Error('session_not_found')
+      await enforceRateLimit({
+        ctx,
+        key: String(session.userId),
+        name: 'delegation'
+      })
       const threadId = crypto.randomUUID(),
         taskId = await ctx.db.insert('tasks', {
           description,

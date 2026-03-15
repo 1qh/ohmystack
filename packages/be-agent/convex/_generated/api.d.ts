@@ -26,6 +26,7 @@ import type * as tasks from "../tasks.js";
 import type * as testauth from "../testauth.js";
 import type * as todos from "../todos.js";
 import type * as tokenUsage from "../tokenUsage.js";
+import type * as webSearch from "../webSearch.js";
 
 import type {
   ApiFromModules,
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   testauth: typeof testauth;
   todos: typeof todos;
   tokenUsage: typeof tokenUsage;
+  webSearch: typeof webSearch;
 }>;
 
 /**

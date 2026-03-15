@@ -45,6 +45,21 @@ const spawnTaskRef = makeFunctionReference<
   listOwnedByThreadRef = makeFunctionReference<'query', { threadId: string }, unknown[] | { todos: unknown[] }>(
     'todos:listOwnedByThread'
   ),
+  mcpDiscoverRef = makeFunctionReference<
+    'mutation',
+    { sessionId: Id<'session'> },
+    { tools: { serverName: string; toolName: string }[] }
+  >('mcp:mcpDiscover'),
+  mcpCallToolRef = makeFunctionReference<
+    'mutation',
+    { serverName: string; sessionId: Id<'session'>; toolArgs: string; toolName: string },
+    { content: string; ok: boolean }
+  >('mcp:mcpCallTool'),
+  groundWithGeminiRef = makeFunctionReference<
+    'action',
+    { query: string; threadId: string },
+    { sources: { snippet: string; title: string; url: string }[]; summary: string }
+  >('webSearch:groundWithGemini'),
   todoPrioritySchema = z.union([z.literal('high'), z.literal('medium'), z.literal('low')]),
   todoStatusSchema = z.union([
     z.literal('pending'),
@@ -145,11 +160,37 @@ const spawnTaskRef = makeFunctionReference<
       }),
       webSearchTool = tool({
         description: 'Search the web and return summary plus sources.',
-        execute: async () => ({ sources: [], summary: 'Search not yet implemented' }),
+        execute: async ({ query }: { query: string }) =>
+          ctx.runAction(groundWithGeminiRef, {
+            query,
+            threadId: parentThreadId
+          }),
         inputSchema: z.object({ query: z.string() })
+      }),
+      mcpDiscoverTool = tool({
+        description: 'Discover cached MCP tools on enabled servers.',
+        execute: async () => ctx.runMutation(mcpDiscoverRef, { sessionId }),
+        inputSchema: z.object({})
+      }),
+      mcpCallTool = tool({
+        description: 'Call a cached MCP tool by server and tool name.',
+        execute: async ({ serverName, toolArgs, toolName }: { serverName: string; toolArgs: string; toolName: string }) =>
+          ctx.runMutation(mcpCallToolRef, {
+            serverName,
+            sessionId,
+            toolArgs,
+            toolName
+          }),
+        inputSchema: z.object({
+          serverName: z.string(),
+          toolArgs: z.string().default('{}'),
+          toolName: z.string()
+        })
       })
     return {
       delegateTool,
+      mcpCallTool,
+      mcpDiscoverTool,
       taskOutputTool,
       taskStatusTool,
       todoReadTool,
@@ -169,6 +210,8 @@ const spawnTaskRef = makeFunctionReference<
     const tools = createTools({ ctx, parentThreadId, sessionId })
     return {
       delegate: tools.delegateTool,
+      mcpCall: tools.mcpCallTool,
+      mcpDiscover: tools.mcpDiscoverTool,
       taskOutput: tools.taskOutputTool,
       taskStatus: tools.taskStatusTool,
       todoRead: tools.todoReadTool,

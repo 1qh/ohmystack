@@ -1777,6 +1777,8 @@ describe('tool factories', () => {
     })
     expect(Object.keys(tools).sort()).toEqual([
       'delegate',
+      'mcpCall',
+      'mcpDiscover',
       'taskOutput',
       'taskStatus',
       'todoRead',
@@ -4732,6 +4734,10 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
+        runAction: async () => ({
+          sources: [{ snippet: 'Test snippet', title: 'Test Source', url: 'https://example.com' }],
+          summary: 'Mock search result for: convex'
+        }),
         runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
         runQuery: async () => null
       } as never,
@@ -4741,14 +4747,18 @@ describe('gap coverage tool factories', () => {
     const webSearch = tools.webSearch as unknown as { execute: (input: { query: string }) => Promise<unknown> },
       result = (await webSearch.execute({ query: 'convex' })) as { sources: unknown[]; summary: string }
     expect(Array.isArray(result.sources)).toBe(true)
-    expect(result.sources.length).toBe(0)
-    expect(result.summary).toBe('Search not yet implemented')
+    expect(result.sources.length).toBe(1)
+    expect(result.summary).toBe('Mock search result for: convex')
   })
 
   test('createWorkerTools exposes only webSearch behavior', async () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
+        runAction: async () => ({
+          sources: [{ snippet: 'Test snippet', title: 'Test Source', url: 'https://example.com' }],
+          summary: 'Mock search result for: worker query'
+        }),
         runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
         runQuery: async () => null
       } as never,
@@ -4758,7 +4768,7 @@ describe('gap coverage tool factories', () => {
     expect(Object.keys(tools)).toEqual(['webSearch'])
     const webSearch = tools.webSearch as unknown as { execute: (input: { query: string }) => Promise<unknown> },
       result = (await webSearch.execute({ query: 'worker query' })) as { summary: string }
-    expect(result.summary).toBe('Search not yet implemented')
+    expect(result.summary).toBe('Mock search result for: worker query')
   })
 
   test('delegate path mutation creates pending task row', async () => {
@@ -5521,5 +5531,174 @@ describe('final sweep auth gaps', () => {
       if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
       else process.env.CONVEX_TEST_MODE = originalTestMode
     }
+  })
+})
+
+describe('mcp discover and call', () => {
+  test('mcpDiscover returns cached tool list from enabled servers', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      serverId = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'enabled-server',
+        transport: 'http',
+        url: 'https://example.com/mcp-enabled'
+      })
+    await ctx.run(async c => {
+      await c.db.patch(serverId, { cachedTools: JSON.stringify(['alpha', 'beta']) })
+    })
+    const out = await ctx.mutation(internal.mcp.mcpDiscover, { sessionId })
+    expect(out.tools).toEqual([
+      { serverName: 'enabled-server', toolName: 'alpha' },
+      { serverName: 'enabled-server', toolName: 'beta' }
+    ])
+  })
+
+  test('mcpDiscover excludes disabled servers', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      enabledId = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: true,
+        name: 'enabled-only',
+        transport: 'http',
+        url: 'https://example.com/enabled-only'
+      }),
+      disabledId = await asUser(0).mutation(api.mcp.create, {
+        isEnabled: false,
+        name: 'disabled-server',
+        transport: 'http',
+        url: 'https://example.com/disabled-server'
+      })
+    await ctx.run(async c => {
+      await c.db.patch(enabledId, { cachedTools: JSON.stringify(['enabledTool']) })
+      await c.db.patch(disabledId, { cachedTools: JSON.stringify(['disabledTool']) })
+    })
+    const out = await ctx.mutation(internal.mcp.mcpDiscover, { sessionId })
+    expect(out.tools).toEqual([{ serverName: 'enabled-only', toolName: 'enabledTool' }])
+  })
+
+  test('mcpCallTool returns mock result in test mode', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(0).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'callable-server',
+      transport: 'http',
+      url: 'https://example.com/callable-server'
+    })
+    const out = await ctx.mutation(internal.mcp.mcpCallTool, {
+      serverName: 'callable-server',
+      sessionId,
+      toolArgs: '{}',
+      toolName: 'toolA'
+    })
+    expect(out.ok).toBe(true)
+    expect(out.content).toBe('mock MCP result')
+  })
+
+  test('mcpCallTool rejects non-owner server', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(1).mutation(api.mcp.create, {
+      isEnabled: true,
+      name: 'foreign-server',
+      transport: 'http',
+      url: 'https://example.com/foreign-server'
+    })
+    let threw = false
+    try {
+      await ctx.mutation(internal.mcp.mcpCallTool, {
+        serverName: 'foreign-server',
+        sessionId,
+        toolArgs: '{}',
+        toolName: 'toolB'
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('mcp_server_not_found')
+    }
+    expect(threw).toBe(true)
+  })
+})
+
+describe('web search bridge', () => {
+  test('groundWithGemini returns mock result in test mode', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      out = await ctx.action(internal.webSearch.groundWithGemini, {
+        query: 'convex docs',
+        threadId
+      })
+    expect(out.summary).toBe('Mock search result for: convex docs')
+    expect(out.sources).toEqual([
+      {
+        snippet: 'Test snippet',
+        title: 'Test Source',
+        url: 'https://example.com'
+      }
+    ])
+  })
+
+  test('normalizeGrounding extracts sources and summary', async () => {
+    const { normalizeGrounding } = await import('./webSearch'),
+      out = normalizeGrounding({
+        result: {
+          sources: [{ snippet: 'Snippet A', title: 'Source A', url: 'https://a.example' }],
+          summary: 'summary text'
+        }
+      })
+    expect(out.summary).toBe('summary text')
+    expect(out.sources).toEqual([{ snippet: 'Snippet A', title: 'Source A', url: 'https://a.example' }])
+  })
+
+  test('webSearch tool records token usage', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      { createOrchestratorTools } = await import('./agents'),
+      tools = createOrchestratorTools({
+        ctx: {
+          runAction: async (ref, args) => ctx.action(ref, args),
+          runMutation: async (ref, args) => ctx.mutation(ref, args),
+          runQuery: async (ref, args) => ctx.query(ref, args)
+        } as never,
+        parentThreadId: threadId,
+        sessionId
+      }),
+      webSearch = tools.webSearch as unknown as {
+        execute: (input: { query: string }) => Promise<{ sources: unknown[]; summary: string }>
+      }
+    const out = await webSearch.execute({ query: 'rate limit docs' })
+    expect(out.summary).toBe('Mock search result for: rate limit docs')
+    const usageRows = await ctx.run(async c =>
+      c.db
+        .query('tokenUsage')
+        .withIndex('by_session', idx => idx.eq('sessionId', sessionId))
+        .collect()
+    )
+    expect(usageRows.length > 0).toBe(true)
+    expect(usageRows[usageRows.length - 1]?.agentName).toBe('search-bridge')
+  })
+})
+
+describe('rate limit enforcement', () => {
+  test('submitMessage bypasses rate limit in test mode', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    let submitted = 0
+    for (let i = 0; i < 25; i += 1) {
+      await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: `msg-${i}`,
+        sessionId
+      })
+      submitted += 1
+    }
+    expect(submitted).toBe(25)
   })
 })
