@@ -124,6 +124,8 @@ flowchart TD
 - **Handler signature**: `m()` and `q()` use Zod validators (not `v.*`), handlers receive `(ctx, args)` — NOT `(c)` with `c.ctx`/`c.args`/`c.userId`. Access user via `ctx.user._id`, database via `ctx.db`.
 - **`@ai-sdk/google-vertex` uses `apiKey`** (not `googleVertexApiKey`) in `createVertex()` options.
 - **`node:process` import breaks Convex bundler** — `@noboil/convex/test` was fixed to use `process.env` directly.
+- **`'use node'` for AI SDK actions** — `@ai-sdk/google-vertex` pulls `google-auth-library` which uses Node.js APIs (`fs`, `crypto`, `child_process`). The orchestrator action (`runOrchestrator`) and worker action (`runWorker`) MUST live in separate `*.node.ts` files with `'use node'` directive. Mutations/queries stay in the main `*.ts` file (Convex runtime). The file split pattern: `orchestrator.ts` (mutations/queries) + `orchestrator.node.ts` (action with `'use node'`).
+- **`makeFunctionReference` for cross-file calls** — Since actions are in `.node.ts` files and mutations in `.ts` files, actions use `makeFunctionReference` to call mutations (e.g., `'orchestrator:claimRun'`). The main `.ts` file uses `makeFunctionReference` to reference the action (e.g., `'orchestrator.node:runOrchestrator'`).
 
 ---
 
