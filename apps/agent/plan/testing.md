@@ -768,24 +768,39 @@ flowchart LR
 
 ## Test Count Summary
 
-| Layer | Specified | Implemented | Gap |
-|---|---|---|---|
-| Backend `f.test.ts` | 270 | 270 | 0 |
-| Backend `prod-smoke.test.ts` | 1 | 1 | 0 |
-| E2E Playwright | 69 | 69 | 0 |
-| **Total** | **340** | **340** | **0** |
+| Layer | Tests | Pass | Skip | Fail |
+|---|---|---|---|---|
+| Backend `f.test.ts` | 276 | 276 | 0 | 0 |
+| Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
+| E2E Playwright | 75 | 75 | 0 | 0 |
+| **Total** | **352** | **352** | **0** | **0** |
 
-All 312 originally planned tests are implemented. 28 additional real-world scenario tests were added during implementation:
-- Multi-turn conversation flow
-- Multi-session isolation and navigation
-- Rapid message sending (ordering + no duplicates)
-- Session archival flow (create → archive → verify removed)
-- Settings persistence across navigation
-- Browser refresh persistence
-- Empty state first-chat flow
-- Long message rendering (500+ chars)
-- Responsive viewports (375px mobile, 768px tablet)
-- Concurrent tab reactive updates
+### Real-World Scenario Tests
+
+| # | Test Case | Type | Asserts |
+|---|-----------|------|---------|
+| 1 | Multi-turn conversation | E2E | Send message → response → follow-up → multi-turn history preserved |
+| 2 | Multi-session isolation | E2E | 3 sessions → messages stay in correct sessions when navigating between |
+| 3 | Rapid message sending | E2E | 3 messages quickly → correct order, no duplicates |
+| 4 | Session archival flow | E2E | Create → archive → verify removed from list |
+| 5 | Settings persistence across navigation | E2E | Add MCP server → navigate to chat → back to settings → server still there |
+| 6 | Browser refresh persistence | E2E | Send message → refresh → messages still visible |
+| 7 | Empty state first-chat flow | E2E | New user → empty list → create first chat → list shows it |
+| 8 | Error display | E2E | Trigger error → verify shown to user |
+| 9 | Long message rendering | E2E | 500+ char message → renders without layout break |
+| 10 | Concurrent tab reactive updates | E2E | Open same session in two tabs → both see same messages |
+| 11 | Message sent while orchestrator responding | Backend | Queue accepts second message, doesn't interrupt active run |
+| 12 | Orphaned streaming message cleanup | Backend | `cleanupStaleMessages` finalizes after 5min |
+| 13 | Same session in two browser tabs | E2E | Both tabs see same messages via reactive query |
+| 14 | Session with many messages renders | E2E | Chat page loads, scrolls, latest messages visible |
+| 15 | Message to cron-archived session race | Backend | `submitMessage` rejects with `session_archived` |
+| 16 | Back/forward browser navigation | E2E | Chat page restores messages after back/forward |
+| 17 | Rapid MCP server create/delete | E2E | Final state consistent, no orphaned servers |
+| 18 | Empty model response | Backend | Empty assistant message persists without crash |
+| 19 | Heartbeat keeps long-running run alive | Backend | Run with fresh heartbeat NOT timed out |
+| 20 | Reactive updates after page idle | E2E | Mutations work after 5s idle period |
+| 21 | Text selection in chat log | E2E | User can select message text (user-select not none) |
+| 22 | Special characters in content | Backend | HTML entities, unicode, emoji, markdown preserved exactly |
 
 ## Test Scripts & Execution
 

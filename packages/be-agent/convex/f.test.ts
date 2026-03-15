@@ -7317,3 +7317,172 @@ describe('append gap list requested tests', () => {
     })
   })
 })
+
+describe('real-world edge scenarios', () => {
+  test('queue accepts second message during active run', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      first = await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'first-active-message',
+        sessionId
+      }),
+      second = await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'second-queued-message',
+        sessionId
+      }),
+      runState = await ctx.run(async c =>
+        c.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+      )
+    expect(String(first.messageId).length > 0).toBe(true)
+    expect(runState?.status).toBe('active')
+    expect(runState?.queuedPriority).toBe('user_message')
+    expect(runState?.queuedReason).toBe('user_message')
+    expect(runState?.queuedPromptMessageId).toBe(String(second.messageId))
+  })
+
+  test('stale incomplete message finalized by janitor', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      originalNow = Date.now,
+      baseNow = Date.now(),
+      staleContent = 'stale-partial-content',
+      { messageId, result } = await (async () => {
+        try {
+          Date.now = () => baseNow
+          const id = await ctx.run(async c =>
+            c.db.insert('messages', {
+              content: '',
+              isComplete: false,
+              parts: [],
+              role: 'assistant',
+              sessionId,
+              streamingContent: staleContent,
+              threadId
+            })
+          )
+          await ctx.run(async c => {
+            const state = await c.db
+              .query('threadRunState')
+              .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+              .unique()
+            if (state) await c.db.patch(state._id, { status: 'idle' })
+          })
+          Date.now = () => baseNow + 6 * 60 * 1000
+          const cleanupResult = await ctx.mutation(internal.staleTaskCleanup.cleanupStaleMessages, {})
+          return { messageId: id, result: cleanupResult }
+        } finally {
+          Date.now = originalNow
+        }
+      })(),
+      message = await ctx.run(async c => c.db.get(messageId))
+    expect(result.cleanedCount).toBe(1)
+    expect(message?.isComplete).toBe(true)
+    expect(message?.content).toBe(staleContent)
+  })
+
+  test('submitMessage rejects after cron archives session', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000 })
+    })
+    await ctx.mutation(internal.retention.archiveIdleSessions, {})
+    await ctx.mutation(internal.retention.archiveIdleSessions, {})
+    const session = await ctx.run(async c => c.db.get(sessionId))
+    expect(session?.status).toBe('archived')
+    let threw = false
+    try {
+      await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'blocked-after-cron-archive',
+        sessionId
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('session_archived')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('empty assistant message persists without crash', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      messageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId })
+    await ctx.mutation(internal.orchestrator.patchStreamingMessage, {
+      messageId,
+      streamingContent: ''
+    })
+    await ctx.mutation(internal.orchestrator.finalizeMessage, {
+      content: '',
+      messageId,
+      parts: []
+    })
+    const message = await ctx.run(async c => c.db.get(messageId))
+    expect(message).not.toBeNull()
+    expect(message?.isComplete).toBe(true)
+    expect(message?.content).toBe('')
+  })
+
+  test('run with fresh heartbeat not timed out by wall-clock', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'fresh-heartbeat-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.run(async c =>
+      c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+    )
+    await ctx.run(async c => {
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await c.db.patch(state._id, {
+          activatedAt: Date.now() - 10 * 60 * 1000,
+          claimedAt: Date.now() - 10 * 60 * 1000,
+          runClaimed: true,
+          runHeartbeatAt: Date.now() - 60 * 1000,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.run(async c =>
+      c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+    )
+    expect(after?.status).toBe('active')
+    expect(after?.activeRunToken).toBe(before?.activeRunToken)
+  })
+
+  test('special characters in message content preserved', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      messageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId }),
+      specialContent = '<script>alert("xss")</script> ñ 🎉 **bold** `code`'
+    await ctx.mutation(internal.orchestrator.finalizeMessage, {
+      content: specialContent,
+      messageId,
+      parts: [{ text: specialContent, type: 'text' }]
+    })
+    const message = await ctx.run(async c => c.db.get(messageId))
+    expect(message?.isComplete).toBe(true)
+    expect(message?.content).toBe(specialContent)
+  })
+})

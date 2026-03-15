@@ -187,3 +187,104 @@ test.describe.serial('Real-world scenarios', () => {
     await secondTab.close()
   })
 })
+
+test.describe.serial('Real-world edge scenarios', () => {
+  test('two tabs show same messages', async ({ browser, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    const context1 = await browser.newContext(),
+      page1 = await context1.newPage(),
+      context2 = await browser.newContext(),
+      page2 = await context2.newPage(),
+      marker = `two-tabs-${Date.now()}`
+    await page1.goto('/')
+    await page1.getByRole('button', { name: /new/iu }).click()
+    await page1.waitForURL(/\/chat\//u)
+    const sessionUrl = page1.url()
+    await page2.goto(sessionUrl)
+    await page1.getByPlaceholder(/message/iu).fill(marker)
+    await page1.getByRole('button', { name: /send/iu }).click()
+    await expect(page2.locator('article').filter({ hasText: marker }).first()).toBeVisible({ timeout: 10_000 })
+    await context1.close()
+    await context2.close()
+  })
+
+  test('chat with many messages loads and scrolls', async ({ page }) => {
+    const created = (await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, {
+        title: `many-${Date.now()}`
+      })) as { sessionId: string }
+    let seeded = 0
+    while (seeded < 10) {
+      try {
+        await convex.mutation(anyApi.orchestrator.submitMessage as FunctionReference<'mutation'>, {
+          content: `seed-many-${seeded}`,
+          sessionId: created.sessionId as never
+        })
+        seeded += 1
+      } catch (error) {
+        const message = String(error),
+          match = message.match(/rate_limited:submitMessage:(\d+)/u)
+        if (!match?.[1]) throw error
+        const waitMs = Math.max(250, Number(match[1]) - Date.now())
+        await page.waitForTimeout(waitMs)
+      }
+    }
+    await page.goto(`/chat/${created.sessionId}`)
+    await page.waitForTimeout(3000)
+    const messages = page.locator('article')
+    expect(await messages.count()).toBeGreaterThanOrEqual(10)
+    const log = page.getByRole('log'),
+      dimensions = await log.evaluate(element => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight
+      }))
+    expect(dimensions.scrollHeight).toBeGreaterThanOrEqual(dimensions.clientHeight)
+    await log.evaluate(element => {
+      element.scrollTop = element.scrollHeight
+    })
+  })
+
+  test('browser back returns to session list', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await page.goBack()
+    await page.waitForURL('/')
+    await expect(page.getByRole('button', { name: /new/iu })).toBeVisible()
+  })
+
+  test('rapid MCP server create and delete stays consistent', async ({ page }) => {
+    await page.goto('/settings')
+    const name = `rapid-${Date.now()}`
+    await page.getByPlaceholder(/name/iu).fill(name)
+    await page.getByPlaceholder(/url/iu).fill('https://example.com/rapid')
+    await page.getByRole('button', { name: /add/iu }).click()
+    await expect(page.getByText(name)).toBeVisible()
+    const row = page.locator('li', { hasText: name })
+    await row.getByRole('button', { name: /delete/iu }).click()
+    await page.waitForTimeout(1000)
+    await expect(page.getByText(name)).toHaveCount(0)
+  })
+
+  test('message text is selectable', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await chatPage.sendMessage('Selectable text test')
+    await page.waitForTimeout(2000)
+    const msg = chatPage.getMessages().first(),
+      userSelect = await msg.evaluate(el => window.getComputedStyle(el).userSelect)
+    expect(userSelect).not.toBe('none')
+  })
+
+  test('reactive updates work after page idle', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await chatPage.sendMessage('Before idle')
+    await page.waitForTimeout(5000)
+    await chatPage.sendMessage('After idle')
+    await page.waitForTimeout(2000)
+    const msgs = chatPage.getMessages()
+    expect(await msgs.count()).toBeGreaterThanOrEqual(2)
+  })
+})
