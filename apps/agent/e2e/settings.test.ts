@@ -69,4 +69,9 @@ test.describe.serial('Settings (MCP) - matrix additions', () => {
     await page.waitForTimeout(2000)
     await expect(page.getByRole('button', { name: /enable/i }).first()).toBeVisible({ timeout: 10000 })
   })
+
+  test('settings page includes MCP heading', async ({ page }) => {
+    await page.goto('/settings')
+    await expect(page.getByRole('heading', { name: /mcp servers/iu })).toBeVisible()
+  })
 })

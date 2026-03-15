@@ -59,4 +59,11 @@ test.describe
       await page.getByRole('button', { name: new RegExp(secondTitle, 'u') }).click()
       await page.waitForURL(new RegExp(`/chat/${secondSession.sessionId}$`, 'u'))
     })
+
+    test('test-mode login bootstrap enters app without OAuth screen', async ({ page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await expect(page).toHaveURL('/')
+      await expect(page.getByRole('button', { name: /continue with google/i })).toHaveCount(0)
+      await expect(sessionListPage.getNewButton()).toBeVisible()
+    })
   })

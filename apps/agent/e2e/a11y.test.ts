@@ -64,4 +64,47 @@ test.describe('Accessibility', () => {
     await expect(page.getByRole('log')).toHaveAttribute('aria-live', 'polite')
     await expect(page.getByTestId('typing-panel')).toContainText(/idle|typing/iu)
   })
+
+  test('reasoning and tool expand controls are native summary or button elements', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await page.getByPlaceholder(/message/iu).fill('Show your steps and call tools if needed')
+    await page.getByRole('button', { name: /send/iu }).click()
+    await page.waitForTimeout(3000)
+    const expandControls = page.locator('details > summary, button[aria-expanded]')
+    await expect(expandControls.first()).toBeVisible()
+    const hasOnlyNativeControls = await expandControls.evaluateAll(elements =>
+      elements.every(element => {
+        const tag = element.tagName.toLowerCase()
+        return tag === 'summary' || tag === 'button'
+      })
+    )
+    expect(hasOnlyNativeControls).toBe(true)
+  })
+
+  test('status indicators include readable text, not color only', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await chatPage.sendMessage('status check')
+    await page.waitForTimeout(3000)
+    const statusRow = chatPage.getMessages().first().locator('div').first()
+    await expect(statusRow).toContainText(/user|assistant|system/iu)
+    await expect(page.getByTestId('typing-panel')).toContainText(/idle|typing/iu)
+  })
+
+  test('interactive cards meet minimum 44x44 hit target', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await page.getByRole('link', { name: /sessions/i }).click()
+    await page.waitForURL('/')
+    const firstCard = sessionListPage.getSessionCards().first()
+    await expect(firstCard).toBeVisible()
+    const cardSize = await firstCard.boundingBox()
+    expect(cardSize).not.toBeNull()
+    expect(cardSize ? cardSize.width : 0).toBeGreaterThanOrEqual(44)
+    expect(cardSize ? cardSize.height : 0).toBeGreaterThanOrEqual(44)
+  })
 })

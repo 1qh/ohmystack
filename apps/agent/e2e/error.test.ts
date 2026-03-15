@@ -34,4 +34,18 @@ test.describe
       await page.waitForTimeout(1500)
       await expect(chatPage.getMessages().first()).toContainText('Rate limit test', { timeout: 5000 })
     })
+
+    test('archived-session navigation does not crash', async ({ page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      const sessionId = (page.url().split('/chat/')[1] ?? '').trim()
+      await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+        sessionId: sessionId as never
+      })
+      await page.goto(`/chat/${sessionId}`)
+      await page.waitForTimeout(2000)
+      const main = page.locator('main')
+      await expect(main).toBeVisible()
+    })
   })

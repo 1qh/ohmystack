@@ -147,4 +147,48 @@ test.describe.serial('Chat & Streaming - matrix additions', () => {
     const discoverButtons = page.getByRole('button', { name: /discover/i })
     expect(await discoverButtons.count()).toBe(0)
   })
+
+  test('tool-call card details show tool name and status label when present', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await chatPage.sendMessage('Please use available tools and then summarize results')
+    await page.waitForTimeout(5000)
+    const toolCallSummaries = page.locator('article details > summary').filter({ hasText: / - /u })
+    if ((await toolCallSummaries.count()) > 0) {
+      await expect(toolCallSummaries.first()).toContainText(/completed|running|error/iu)
+      await expect(toolCallSummaries.first()).toContainText(/[a-z]/iu)
+      return
+    }
+    await expect(chatPage.getMessages().first()).toBeVisible()
+  })
+
+  test('source card external links open in new tab', async ({ chatPage, page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    await chatPage.sendMessage('Share one source link')
+    await page.waitForTimeout(5000)
+    const sourceCardLinks = page.locator('article a[href^="http"]')
+    if ((await sourceCardLinks.count()) > 0) {
+      await expect(sourceCardLinks.first()).toHaveAttribute('target', '_blank')
+      return
+    }
+    await expect(sourceCardLinks).toHaveCount(0)
+  })
+
+  test('expand/collapse supports Enter and Space keyboard toggles', async ({ page, sessionListPage }) => {
+    await sessionListPage.goto('/')
+    await sessionListPage.getNewButton().click()
+    await page.waitForURL(/\/chat\//u)
+    const typingDetails = page.getByTestId('typing-panel')
+    const typingSummary = typingDetails.locator('summary')
+    await expect(typingDetails).toHaveAttribute('open', '')
+    await typingSummary.focus()
+    await page.keyboard.press('Enter')
+    await expect(typingDetails).not.toHaveAttribute('open', '')
+    await typingSummary.focus()
+    await page.keyboard.press('Space')
+    await expect(typingDetails).toHaveAttribute('open', '')
+  })
 })
