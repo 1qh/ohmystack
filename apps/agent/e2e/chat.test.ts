@@ -32,4 +32,22 @@ test.describe
       await chatPage.getSendButton().click()
       await expect(page.getByText('No messages yet')).toBeVisible()
     })
+
+    test('composer disabled during send', async ({ chatPage, page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await chatPage.getComposer().fill('Test message')
+      await chatPage.getSendButton().click()
+      await expect(chatPage.getComposer()).toBeDisabled({ timeout: 1000 })
+    })
+
+    test('header links navigate correctly', async ({ page, sessionListPage }) => {
+      await sessionListPage.goto('/')
+      await sessionListPage.getNewButton().click()
+      await page.waitForURL(/\/chat\//u)
+      await page.getByRole('link', { name: /sessions/i }).click()
+      await page.waitForURL('/')
+      await expect(page.getByRole('heading', { name: /sessions/i })).toBeVisible()
+    })
   })
