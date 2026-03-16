@@ -97,7 +97,22 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
   },
   isTransientError = ({ errorMessage }: { errorMessage: string }) => {
     const lowered = errorMessage.toLowerCase(),
-      transientMarkers = ['econnreset', 'etimedout', 'timeout', 'rate_limit', '429', '503', 'overloaded']
+      transientMarkers = [
+        'econnrefused',
+        'econnreset',
+        'enotfound',
+        'etimedout',
+        'mcp timeout',
+        'network error',
+        'rate limit',
+        'rate_limit',
+        'service unavailable',
+        'timeout',
+        '429',
+        '500',
+        '503',
+        'overloaded'
+      ]
     for (const marker of transientMarkers) if (lowered.includes(marker)) return true
 
     return false

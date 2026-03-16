@@ -47,7 +47,7 @@ type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
 type RunStateDoc = Doc<'threadRunState'>
 type NormalizedTodo = { content: string; id: string; status: Doc<'todos'>['status'] }
 
-const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx, 'db'>; threadId: string }) =>
+const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: MutationCtx['db']['query'] } }; threadId: string }) =>
     ctx.db
       .query('threadRunState')
       .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
@@ -547,7 +547,13 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
   listMessagesForPrompt = internalQuery({
     args: { promptMessageId: v.optional(v.string()), threadId: v.string() },
     handler: async (ctx, { promptMessageId, threadId }) => {
-      let maxCreationTime = Number.POSITIVE_INFINITY
+      let maxCreationTime = Number.POSITIVE_INFINITY,
+        minCreationTime = Number.NEGATIVE_INFINITY
+      const runState = await readRunStateByThreadId({ ctx, threadId })
+      if (runState?.lastCompactedMessageId) {
+        const boundary = await ctx.db.get(runState.lastCompactedMessageId as Id<'messages'>)
+        if (boundary?.threadId === threadId) minCreationTime = boundary._creationTime
+      }
       if (promptMessageId) {
         const prompt = await ctx.db.get(promptMessageId as Id<'messages'>)
         if (prompt?.threadId !== threadId) return []
@@ -560,7 +566,7 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: Pick<MutationCtx
           .take(200),
         selected: Doc<'messages'>[] = []
       for (const row of rows)
-        if (!(row._creationTime > maxCreationTime)) {
+        if (!(row._creationTime > maxCreationTime || row._creationTime <= minCreationTime)) {
           selected.push(row)
           if (selected.length >= 100) break
         }

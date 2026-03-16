@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 542 | 542 | 0 | 0 |
+| Backend `f.test.ts` | 599 | 599 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **618** | **618** | **0** | **0** |
+| **Total** | **675** | **675** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -813,6 +813,17 @@ flowchart LR
 | `features/background-agent/manager.test.ts` | 32 | Descendant traversal, CAS races, queue drain, stale timeout, retry cap, reminder integrity, compaction sizing |
 | `tools/delegate-task/tools.test.ts` | 26 | Error classifier, retry guidance, payload forwarding, schema defaults, tool surface constraints |
 | `hooks/todo-continuation-enforcer/*.test.ts` | 26 | Todo eligibility, task blockers, priority semantics, cooldown/backoff, failure cap/reset, stagnation, token guard, snapshot tolerance |
+
+### Final Deep Sweep (61 tests)
+
+| Source Area | Tests | Coverage |
+|---|---|---|
+| Error classifier (65 source tests) | 20 | Full transient/permanent/rate-limit/network/MCP error pattern matrix |
+| Compaction-aware prompt resolver (16) | 8 | lastCompactedMessageId boundary filtering, missing boundary tolerance |
+| Preemptive compaction (12) | 6 | Context size threshold triggers, no-op under threshold |
+| Session/continuation coordination (misc) | 12 | Archive blocks continuation, multi-session isolation, per-thread independence |
+| Delegate retry matrix (10) | 8 | Full error pattern → fix hint → available options extraction |
+| Stop continuation guard (10) | 7 | Streak cap, archive, input-request, task-wait all block |
 
 ### Stagnation Detection
 

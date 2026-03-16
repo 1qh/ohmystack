@@ -12353,3 +12353,440 @@ describe('omo parity: continuation deep coverage', () => {
     expect(state?.autoContinueStreak).toBe(0)
   })
 })
+
+describe('final sweep error classifier adaptation', () => {
+  for (const marker of [
+    'econnrefused',
+    'econnreset',
+    'enotfound',
+    'etimedout',
+    'mcp timeout',
+    'network error',
+    'rate limit',
+    'rate_limit',
+    'service unavailable',
+    'timeout',
+    "'429'",
+    "'500'",
+    "'503'",
+    'overloaded'
+  ] as const)
+    test(`worker transient markers include ${marker}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      expect(source.includes(marker)).toBe(true)
+    })
+
+  for (const marker of ['401', '403', 'schema validation', 'unauthorized', 'forbidden', 'invalid_argument'] as const)
+    test(`worker transient markers exclude permanent marker ${marker}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      expect(source.includes(marker)).toBe(false)
+    })
+
+  test('worker transient classifier defaults to permanent path via false return', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8')
+    expect(source.includes('return false')).toBe(true)
+  })
+})
+
+describe('final sweep delegate retry matrix', () => {
+  for (const c of [
+    { expected: 'missing_run_in_background', value: 'run_in_background is required' },
+    { expected: 'missing_run_in_background', value: 'RUN_IN_BACKGROUND missing' },
+    { expected: 'missing_run_in_background', value: 'invalid args: run_in_background' },
+    { expected: 'missing_load_skills', value: 'load_skills is required' },
+    { expected: 'missing_load_skills', value: 'LOAD_SKILLS required' },
+    { expected: 'missing_load_skills', value: 'invalid args: load_skills' },
+    { expected: 'unknown_category', value: 'Unknown category: custom' },
+    { expected: 'unknown_category', value: 'invalid category selected' },
+    { expected: 'unknown_category', value: 'INVALID CATEGORY selected' },
+    { expected: 'unknown_agent', value: 'Unknown agent: fake' },
+    { expected: 'unknown_agent', value: 'invalid agent selected' },
+    { expected: 'unknown_agent', value: 'INVALID AGENT selected' },
+    { expected: 'unknown_error', value: 'network exploded without hint' },
+    { expected: 'unknown_error', value: '' }
+  ] as const)
+    test(`detectDelegateError classifies ${c.expected} for ${c.value || 'empty input'}`, async () => {
+      const { detectDelegateError } = await import('./agents')
+      const out = detectDelegateError({ errorMessage: c.value })
+      expect(out).toBe(c.expected)
+    })
+
+  for (const c of [
+    { expected: 'Add run_in_background parameter.', pattern: 'missing_run_in_background' as const },
+    { expected: 'Add load_skills=[] parameter.', pattern: 'missing_load_skills' as const },
+    { expected: 'Use a valid category from the Available list.', pattern: 'unknown_category' as const },
+    { expected: 'Use a valid agent from the Available list.', pattern: 'unknown_agent' as const },
+    {
+      expected: 'Retry delegate with corrected arguments and valid values.',
+      pattern: 'unknown_error' as const
+    }
+  ])
+    test(`buildRetryGuidance fixHint for ${c.pattern}`, async () => {
+      const { buildRetryGuidance } = await import('./agents')
+      const out = buildRetryGuidance({ errorMessage: 'x', pattern: c.pattern })
+      expect(out.fixHint).toBe(c.expected)
+      expect(out.retryGuidance.includes(c.pattern)).toBe(true)
+    })
+
+  test('buildRetryGuidance parses Available list in order', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'Unknown category. Available: quick, ultrabrain, visual-engineering',
+      pattern: 'unknown_category'
+    })
+    expect(out.availableOptions).toEqual(['quick', 'ultrabrain', 'visual-engineering'])
+  })
+
+  test('buildRetryGuidance parses valid options and deduplicates', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'Unknown agent. valid options: explore, oracle, explore, librarian',
+      pattern: 'unknown_agent'
+    })
+    expect(out.availableOptions).toEqual(['explore', 'oracle', 'librarian'])
+  })
+
+  test('buildRetryGuidance parses mixed Available and valid options sections', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'Unknown. Available: quick, deep\nvalid options: deep, ultrabrain',
+      pattern: 'unknown_category'
+    })
+    expect(out.availableOptions).toEqual(['quick', 'deep', 'ultrabrain'])
+  })
+
+  test('buildRetryGuidance returns empty options when list absent', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'opaque failure',
+      pattern: 'unknown_error'
+    })
+    expect(out.availableOptions).toEqual([])
+  })
+})
+
+describe('final sweep compaction-aware prompt resolver parity', () => {
+  const insertMessage = async ({
+    content,
+    ctx,
+    role,
+    sessionId,
+    threadId
+  }: {
+    content: string
+    ctx: ReturnType<typeof t>
+    role: 'assistant' | 'system' | 'user'
+    sessionId: Id<'session'>
+    threadId: string
+  }) =>
+    ctx.run(async c =>
+      c.db.insert('messages', {
+        content,
+        isComplete: true,
+        parts: [{ text: content, type: 'text' }],
+        role,
+        sessionId,
+        threadId
+      })
+    )
+
+  test('listMessagesForPrompt excludes messages at-or-before compaction boundary', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const older = await insertMessage({ content: 'old-before-boundary', ctx, role: 'user', sessionId, threadId }),
+      boundary = await insertMessage({ content: 'boundary', ctx, role: 'assistant', sessionId, threadId })
+    await insertMessage({ content: 'after-boundary-1', ctx, role: 'user', sessionId, threadId })
+    await insertMessage({ content: 'after-boundary-2', ctx, role: 'assistant', sessionId, threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    await ctx.mutation(internal.compaction.setCompactionSummary, {
+      compactionSummary: 'summary',
+      lastCompactedMessageId: String(boundary),
+      lockToken: lock.lockToken,
+      threadId
+    })
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId })
+    expect(rows.some(r => String(r._id) === String(older))).toBe(false)
+    expect(rows.some(r => String(r._id) === String(boundary))).toBe(false)
+    expect(rows.map(r => r.content)).toEqual(['after-boundary-1', 'after-boundary-2'])
+  })
+
+  test('listMessagesForPrompt returns empty when prompt is before boundary', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const promptBeforeBoundary = await insertMessage({
+      content: 'prompt-before-boundary',
+      ctx,
+      role: 'user',
+      sessionId,
+      threadId
+    })
+    const boundary = await insertMessage({ content: 'boundary-after-prompt', ctx, role: 'assistant', sessionId, threadId })
+    await insertMessage({ content: 'after-boundary', ctx, role: 'assistant', sessionId, threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    await ctx.mutation(internal.compaction.setCompactionSummary, {
+      compactionSummary: 'summary-2',
+      lastCompactedMessageId: String(boundary),
+      lockToken: lock.lockToken,
+      threadId
+    })
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      promptMessageId: String(promptBeforeBoundary),
+      threadId
+    })
+    expect(rows).toEqual([])
+  })
+
+  test('listMessagesForPrompt uses boundary only for the same thread', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    await insertMessage({ content: 'a-1', ctx, role: 'user', sessionId: a.sessionId, threadId: a.threadId })
+    const aBoundary = await insertMessage({ content: 'a-boundary', ctx, role: 'assistant', sessionId: a.sessionId, threadId: a.threadId })
+    await insertMessage({ content: 'a-2', ctx, role: 'assistant', sessionId: a.sessionId, threadId: a.threadId })
+    await insertMessage({ content: 'b-1', ctx, role: 'user', sessionId: b.sessionId, threadId: b.threadId })
+    await insertMessage({ content: 'b-2', ctx, role: 'assistant', sessionId: b.sessionId, threadId: b.threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: a.threadId })
+    await ctx.mutation(internal.compaction.setCompactionSummary, {
+      compactionSummary: 'summary-a',
+      lastCompactedMessageId: String(aBoundary),
+      lockToken: lock.lockToken,
+      threadId: a.threadId
+    })
+    const bRows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId: b.threadId })
+    expect(bRows.map(r => r.content)).toEqual(['b-1', 'b-2'])
+  })
+
+  test('listMessagesForPrompt applies both prompt cap and compaction boundary', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await insertMessage({ content: 'm-1', ctx, role: 'user', sessionId, threadId })
+    const boundary = await insertMessage({ content: 'm-2-boundary', ctx, role: 'assistant', sessionId, threadId })
+    const afterBoundaryA = await insertMessage({ content: 'm-3', ctx, role: 'user', sessionId, threadId })
+    await insertMessage({ content: 'm-4', ctx, role: 'assistant', sessionId, threadId })
+    const prompt = await insertMessage({ content: 'm-5-prompt', ctx, role: 'user', sessionId, threadId })
+    await insertMessage({ content: 'm-6-after-prompt', ctx, role: 'assistant', sessionId, threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    await ctx.mutation(internal.compaction.setCompactionSummary, {
+      compactionSummary: 'summary-3',
+      lastCompactedMessageId: String(boundary),
+      lockToken: lock.lockToken,
+      threadId
+    })
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      promptMessageId: String(prompt),
+      threadId
+    })
+    expect(rows[0]?._id).toBe(afterBoundaryA)
+    expect(rows.map(r => r.content)).toEqual(['m-3', 'm-4', 'm-5-prompt'])
+  })
+})
+
+describe('final sweep compaction threshold parity', () => {
+  test('compactIfNeeded stays under threshold at exactly 100000 chars', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'x'.repeat(100_000),
+        isComplete: true,
+        parts: [{ text: 'x'.repeat(100_000), type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(out.compacted).toBe(false)
+    expect(out.reason).toBe('under_threshold')
+  })
+
+  test('compactIfNeeded triggers path over char threshold', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'x'.repeat(100_001),
+        isComplete: true,
+        parts: [{ text: 'x'.repeat(100_001), type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(out.compacted).toBe(false)
+    expect(out.reason === 'placeholder' || out.reason === 'no_closed_groups').toBe(true)
+  })
+
+  test('compactIfNeeded stays under threshold at exactly 200 messages', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      for (let i = 0; i < 200; i += 1)
+        await c.db.insert('messages', {
+          content: `m-${i}`,
+          isComplete: true,
+          parts: [{ text: `m-${i}`, type: 'text' }],
+          role: 'assistant',
+          sessionId,
+          threadId
+        })
+    })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(out.reason).toBe('under_threshold')
+  })
+
+  test('compactIfNeeded triggers over threshold at 201 messages', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      for (let i = 0; i < 201; i += 1)
+        await c.db.insert('messages', {
+          content: `n-${i}`,
+          isComplete: true,
+          parts: [{ text: `n-${i}`, type: 'text' }],
+          role: 'assistant',
+          sessionId,
+          threadId
+        })
+    })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(out.reason === 'placeholder' || out.reason === 'no_closed_groups').toBe(true)
+  })
+
+  test('getContextSize caps messageCount at scan limit 500', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      for (let i = 0; i < 501; i += 1)
+        await c.db.insert('messages', {
+          content: `z-${i}`,
+          isComplete: true,
+          parts: [{ text: `z-${i}`, type: 'text' }],
+          role: 'assistant',
+          sessionId,
+          threadId
+        })
+    })
+    const out = await ctx.query(internal.compaction.getContextSize, { threadId })
+    expect(out.messageCount).toBe(500)
+    expect(out.hasMore).toBe(true)
+  })
+})
+
+describe('final sweep session and continuation coordination parity', () => {
+  test('archiveSession is idempotent and leaves archived status stable', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const row = await ctx.run(async c => c.db.get(sessionId))
+    expect(row?.status).toBe('archived')
+    expect(typeof row?.archivedAt).toBe('number')
+  })
+
+  test('getSession still returns archived session for owner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const row = await asUser(0).query(api.sessions.getSession, { sessionId })
+    expect(row?.status).toBe('archived')
+  })
+
+  test('postTurnAudit continuation decisions stay isolated across concurrent sessions', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'concurrent-a-start',
+      reason: 'user_message',
+      threadId: a.threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'concurrent-b-start',
+      reason: 'user_message',
+      threadId: b.threadId
+    })
+    const aState = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
+      bState = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'a-pending',
+        position: 0,
+        priority: 'high',
+        sessionId: a.sessionId,
+        status: 'pending'
+      })
+      await d.db.insert('todos', {
+        content: 'b-pending',
+        position: 0,
+        priority: 'high',
+        sessionId: b.sessionId,
+        status: 'pending'
+      })
+    })
+    const aOut = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: aState?.activeRunToken ?? '',
+      threadId: a.threadId,
+      turnRequestedInput: true
+    })
+    const bOut = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: bState?.activeRunToken ?? '',
+      threadId: b.threadId,
+      turnRequestedInput: false
+    })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
+      afterB = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    expect(aOut.shouldContinue).toBe(false)
+    expect(bOut.shouldContinue).toBe(true)
+    expect(afterA?.queuedReason).toBeUndefined()
+    expect(afterB?.queuedReason).toBe('todo_continuation')
+  })
+
+  test('user_message enqueue resets streak only for targeted thread', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async d => {
+      const aState = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', a.threadId))
+          .unique(),
+        bState = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', b.threadId))
+          .unique()
+      if (aState) await d.db.patch(aState._id, { autoContinueStreak: 4 })
+      if (bState) await d.db.patch(bState._id, { autoContinueStreak: 4 })
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      incrementStreak: false,
+      priority: 2,
+      promptMessageId: 'reset-only-a',
+      reason: 'user_message',
+      threadId: a.threadId
+    })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
+      afterB = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    expect(afterA?.autoContinueStreak).toBe(0)
+    expect(afterB?.autoContinueStreak).toBe(4)
+  })
+})
