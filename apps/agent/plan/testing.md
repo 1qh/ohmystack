@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 458 | 458 | 0 | 0 |
+| Backend `f.test.ts` | 542 | 542 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **534** | **534** | **0** | **0** |
+| **Total** | **618** | **618** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -805,6 +805,14 @@ flowchart LR
 | `hooks/tasks-todowrite-disabler/index.test.ts` (7) | 4 | Worker tool restrictions |
 | `hooks/compaction-context-injector/index.test.ts` (9) | 4 | Compaction summary/boundary behavior |
 | `tools/background-task/tools.test.ts` (17) | 4 | delegate/taskStatus/taskOutput contracts |
+
+### Deep Coverage (84 tests from top 3 files)
+
+| Source File | Tests | Coverage |
+|---|---|---|
+| `features/background-agent/manager.test.ts` | 32 | Descendant traversal, CAS races, queue drain, stale timeout, retry cap, reminder integrity, compaction sizing |
+| `tools/delegate-task/tools.test.ts` | 26 | Error classifier, retry guidance, payload forwarding, schema defaults, tool surface constraints |
+| `hooks/todo-continuation-enforcer/*.test.ts` | 26 | Todo eligibility, task blockers, priority semantics, cooldown/backoff, failure cap/reset, stagnation, token guard, snapshot tolerance |
 
 ### Stagnation Detection
 

@@ -10948,3 +10948,1408 @@ describe('parity background-task tools equivalents', () => {
     expect(out.result).toBe('worker-final-output')
   })
 })
+
+describe('omo parity: manager deep coverage', () => {
+  const taskStatuses = ['pending', 'running', 'completed', 'failed', 'timed_out', 'cancelled'] as const
+
+  const listChildrenByParent = async ({
+    ctx,
+    parentThreadId
+  }: {
+    ctx: ReturnType<typeof t>
+    parentThreadId: string
+  }) => {
+    const rows = await ctx.run(async c => {
+      const out: Array<{ _id: string; parentThreadId: string; threadId: string }> = []
+      for (const s of taskStatuses) {
+        const batch = await c.db
+          .query('tasks')
+          .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', parentThreadId).eq('status', s))
+          .collect()
+        for (const row of batch)
+          out.push({
+            _id: String(row._id),
+            parentThreadId: row.parentThreadId,
+            threadId: row.threadId
+          })
+      }
+      return out
+    })
+    return rows
+  }
+
+  const listDescendants = async ({
+    ctx,
+    rootThreadId
+  }: {
+    ctx: ReturnType<typeof t>
+    rootThreadId: string
+  }) => {
+    const seen = new Set<string>()
+    const stack = [rootThreadId]
+    const descendants: string[] = []
+    while (stack.length > 0) {
+      const current = stack.pop()
+      if (!current) continue
+      const children = await listChildrenByParent({ ctx, parentThreadId: current })
+      for (const child of children)
+        if (!seen.has(child._id)) {
+          seen.add(child._id)
+          descendants.push(child._id)
+          stack.push(child.threadId)
+        }
+    }
+    return descendants
+  }
+
+  test('descendant traversal returns empty when no child tasks exist', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      descendants = await listDescendants({ ctx, rootThreadId: threadId })
+    expect(descendants).toEqual([])
+  })
+
+  test('descendant traversal returns direct child tasks', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const childA = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'desc-direct-a',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `desc-direct-a-${crypto.randomUUID()}`
+      })
+    )
+    const childB = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'desc-direct-b',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `desc-direct-b-${crypto.randomUUID()}`
+      })
+    )
+    const descendants = await listDescendants({ ctx, rootThreadId: threadId })
+    expect(descendants.includes(String(childA))).toBe(true)
+    expect(descendants.includes(String(childB))).toBe(true)
+    expect(descendants.length).toBe(2)
+  })
+
+  test('descendant traversal returns nested grandchildren', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const childThread = `desc-child-${crypto.randomUUID()}`
+    const child = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'desc-nested-child',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: childThread
+      })
+    )
+    const grandchild = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'desc-nested-grandchild',
+        isBackground: true,
+        parentThreadId: childThread,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `desc-grandchild-${crypto.randomUUID()}`
+      })
+    )
+    const descendants = await listDescendants({ ctx, rootThreadId: threadId })
+    expect(descendants.includes(String(child))).toBe(true)
+    expect(descendants.includes(String(grandchild))).toBe(true)
+    expect(descendants.length).toBe(2)
+  })
+
+  test('descendant traversal includes multiple branches at different depths', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const leftThread = `desc-left-${crypto.randomUUID()}`,
+      rightThread = `desc-right-${crypto.randomUUID()}`
+    await ctx.run(async c => {
+      await c.db.insert('tasks', {
+        description: 'desc-branch-left',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: leftThread
+      })
+      await c.db.insert('tasks', {
+        description: 'desc-branch-right',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'running',
+        threadId: rightThread,
+        startedAt: Date.now()
+      })
+      await c.db.insert('tasks', {
+        description: 'desc-branch-left-leaf',
+        isBackground: true,
+        parentThreadId: leftThread,
+        retryCount: 0,
+        sessionId,
+        status: 'completed',
+        threadId: `desc-left-leaf-${crypto.randomUUID()}`,
+        completedAt: Date.now()
+      })
+      await c.db.insert('tasks', {
+        description: 'desc-branch-right-leaf',
+        isBackground: true,
+        parentThreadId: rightThread,
+        retryCount: 0,
+        sessionId,
+        status: 'failed',
+        threadId: `desc-right-leaf-${crypto.randomUUID()}`,
+        completedAt: Date.now(),
+        lastError: 'fail'
+      })
+    })
+    const descendants = await listDescendants({ ctx, rootThreadId: threadId })
+    expect(descendants.length).toBe(4)
+  })
+
+  test('descendant traversal excludes unrelated roots', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      rootA = await asUser(0).mutation(api.sessions.createSession, {}),
+      rootB = await asUser(0).mutation(api.sessions.createSession, {})
+    const unrelated = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'desc-unrelated',
+        isBackground: true,
+        parentThreadId: rootB.threadId,
+        retryCount: 0,
+        sessionId: rootB.sessionId,
+        status: 'pending',
+        threadId: `desc-unrelated-${crypto.randomUUID()}`
+      })
+    )
+    const descendants = await listDescendants({ ctx, rootThreadId: rootA.threadId })
+    expect(descendants.includes(String(unrelated))).toBe(false)
+  })
+
+  test('completeTask enforces CAS and prevents double completion', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'cas-complete',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `cas-complete-${crypto.randomUUID()}`
+        })
+      )
+    const first = await ctx.mutation(internal.tasks.completeTask, { result: 'first', taskId }),
+      second = await ctx.mutation(internal.tasks.completeTask, { result: 'second', taskId }),
+      row = await ctx.run(async c => c.db.get(taskId))
+    expect(first.ok).toBe(true)
+    expect(second.ok).toBe(false)
+    expect(row?.result).toBe('first')
+    expect(row?.status).toBe('completed')
+  })
+
+  test('failTask enforces CAS and prevents double terminal transitions', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'cas-fail',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `cas-fail-${crypto.randomUUID()}`
+        })
+      )
+    const first = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom-1', taskId }),
+      second = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom-2', taskId }),
+      row = await ctx.run(async c => c.db.get(taskId))
+    expect(first.ok).toBe(true)
+    expect(second.ok).toBe(false)
+    expect(row?.lastError).toBe('boom-1')
+    expect(row?.status).toBe('failed')
+  })
+
+  test('concurrent completeTask calls allow only first winner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'concurrent-complete',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `concurrent-complete-${crypto.randomUUID()}`
+        })
+      )
+    const [a, b] = await Promise.all([
+      ctx.mutation(internal.tasks.completeTask, { result: 'a', taskId }),
+      ctx.mutation(internal.tasks.completeTask, { result: 'b', taskId })
+    ])
+    const wins = Number(a.ok) + Number(b.ok),
+      row = await ctx.run(async c => c.db.get(taskId))
+    expect(wins).toBe(1)
+    expect(row?.status).toBe('completed')
+  })
+
+  test('concurrent completeTask and failTask allow only one terminal winner', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'concurrent-mixed-terminal',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `concurrent-mixed-terminal-${crypto.randomUUID()}`
+        })
+      )
+    const [completeOut, failOut] = await Promise.all([
+      ctx.mutation(internal.tasks.completeTask, { result: 'done', taskId }),
+      ctx.mutation(internal.tasks.failTask, { lastError: 'mixed-fail', taskId })
+    ])
+    expect(Number(completeOut.ok) + Number(failOut.ok)).toBe(1)
+  })
+
+  for (const reason of ['task_completion', 'todo_continuation', 'user_message'] as const)
+    test(`finishRun drains queued payload for reason=${reason}`, async () => {
+      const priority = reason === 'user_message' ? 2 : reason === 'task_completion' ? 1 : 0
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `manager-deep-${reason}-start`,
+        reason: 'user_message',
+        threadId
+      })
+      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority,
+        promptMessageId: `manager-deep-${reason}-queued`,
+        reason,
+        threadId
+      })
+      const finished = await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken: before?.activeRunToken ?? '',
+        threadId
+      })
+      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(finished.scheduled).toBe(true)
+      expect(after?.queuedPromptMessageId).toBeUndefined()
+      expect(after?.queuedReason).toBeUndefined()
+      expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+    })
+
+  test('finishRun mismatch keeps queue and active token unchanged', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'manager-deep-mismatch-start',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'manager-deep-mismatch-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const out = await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: 'manager-deep-mismatch-token',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.scheduled).toBe(false)
+    expect(after?.activeRunToken).toBe(before?.activeRunToken)
+    expect(after?.queuedPromptMessageId).toBe('manager-deep-mismatch-queued')
+  })
+
+  for (const status of ['pending', 'running'] as const)
+    test(`timeoutStaleTasks marks stale ${status} task timed_out and keeps row`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: `manager-timeout-${status}`,
+          heartbeatAt: status === 'running' ? Date.now() - 6 * 60 * 1000 : undefined,
+          isBackground: true,
+          parentThreadId,
+          pendingAt: status === 'pending' ? Date.now() - 6 * 60 * 1000 : undefined,
+          retryCount: 0,
+          sessionId,
+          startedAt: status === 'running' ? Date.now() - 7 * 60 * 1000 : undefined,
+          status,
+          threadId: `manager-timeout-${status}-${crypto.randomUUID()}`
+        })
+      )
+      const out = await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {}),
+        row = await ctx.run(async c => c.db.get(taskId))
+      expect(out.timedOutCount > 0).toBe(true)
+      expect(row).not.toBeNull()
+      expect(row?.status).toBe('timed_out')
+      expect(row?.completionReminderMessageId).toBeDefined()
+    })
+
+  for (const c of [
+    { from: 0, to: 1 },
+    { from: 1, to: 2 },
+    { from: 2, to: 3 }
+  ])
+    test(`scheduleRetry increments retryCount from ${c.from} to ${c.to}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          description: `manager-retry-${c.from}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount: c.from,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `manager-retry-${c.from}-${crypto.randomUUID()}`
+        })
+      )
+      const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(true)
+      expect(row?.retryCount).toBe(c.to)
+      expect(row?.status).toBe('pending')
+      expect(typeof row?.pendingAt).toBe('number')
+    })
+
+  for (const retryCount of [3, 4])
+    test(`scheduleRetry rejects when retryCount=${retryCount}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          description: `manager-retry-cap-${retryCount}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `manager-retry-cap-${retryCount}-${crypto.randomUUID()}`
+        })
+      )
+      const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.retryCount).toBe(retryCount)
+      expect(row?.status).toBe('running')
+    })
+
+  test('scheduleRetry cancels task when parent session archived', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          description: 'manager-retry-archived',
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `manager-retry-archived-${crypto.randomUUID()}`
+        })
+      )
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+      row = await ctx.run(async c => c.db.get(taskId))
+    expect(out.ok).toBe(false)
+    expect(row?.status).toBe('cancelled')
+    expect(row?.lastError).toBe('session_archived')
+  })
+
+  for (const s of ['running', 'completed', 'failed', 'timed_out', 'cancelled'] as const)
+    test(`markRunning rejects status=${s}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async c =>
+        c.db.insert('tasks', {
+          completedAt: s === 'completed' || s === 'failed' || s === 'timed_out' || s === 'cancelled' ? Date.now() : undefined,
+          description: `manager-mark-running-${s}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: s === 'running' ? Date.now() : undefined,
+          status: s,
+          threadId: `manager-mark-running-${s}-${crypto.randomUUID()}`
+        })
+      )
+      const out = await ctx.mutation(internal.tasks.markRunning, { taskId })
+      expect(out.ok).toBe(false)
+    })
+
+  test('completeTask reminder includes task id and completion marker', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'manager-reminder-complete',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `manager-reminder-complete-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.tasks.completeTask, { result: 'ok', taskId })
+    const task = await ctx.run(async c => c.db.get(taskId)),
+      reminder = await ctx.run(async c => c.db.get((task?.completionReminderMessageId ?? '') as Id<'messages'>))
+    expect(reminder?.content.includes('[BACKGROUND TASK COMPLETED]')).toBe(true)
+    expect(reminder?.content.includes(`Task ID: ${String(taskId)}`)).toBe(true)
+  })
+
+  test('failTask reminder includes error and failed marker', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'manager-reminder-fail',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `manager-reminder-fail-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.tasks.failTask, {
+      lastError: 'manager-reminder-fail-boom',
+      taskId
+    })
+    const task = await ctx.run(async c => c.db.get(taskId)),
+      reminder = await ctx.run(async c => c.db.get((task?.completionReminderMessageId ?? '') as Id<'messages'>))
+    expect(reminder?.content.includes('[BACKGROUND TASK FAILED]')).toBe(true)
+    expect(reminder?.content.includes('Error: manager-reminder-fail-boom')).toBe(true)
+  })
+
+  test('timeoutStaleRuns releases claimed stale run and schedules queued payload', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'manager-timeout-runs-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.claimRun, {
+      runToken: before?.activeRunToken ?? '',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'manager-timeout-runs-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    await ctx.run(async c => {
+      const row = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (row)
+        await c.db.patch(row._id, {
+          activatedAt: Date.now() - 20 * 60 * 1000,
+          claimedAt: Date.now() - 20 * 60 * 1000,
+          runClaimed: true,
+          runHeartbeatAt: Date.now() - 20 * 60 * 1000,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('active')
+    expect(after?.runClaimed).toBe(false)
+    expect(after?.queuedPromptMessageId).toBeUndefined()
+    expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+  })
+
+  test('listMessagesForPrompt returns empty when prompt belongs to another thread', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    const foreignPromptId = await ctx.run(async c =>
+      c.db.insert('messages', {
+        content: 'foreign prompt',
+        isComplete: true,
+        parts: [{ text: 'foreign prompt', type: 'text' }],
+        role: 'user',
+        sessionId: b.sessionId,
+        threadId: b.threadId
+      })
+    )
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      promptMessageId: String(foreignPromptId),
+      threadId: a.threadId
+    })
+    expect(rows).toEqual([])
+  })
+
+  test('listMessagesForPrompt prepends compaction summary into context sizing path', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('messages', {
+        content: 'tail-content',
+        isComplete: true,
+        parts: [{ text: 'tail-content', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state) await c.db.patch(state._id, { compactionSummary: 'summary-prefix' })
+    })
+    const size = await ctx.query(internal.compaction.getContextSize, { threadId })
+    expect(size.charCount).toBe('summary-prefix'.length + 'tail-content'.length)
+  })
+
+  test('claimRun rejects mismatched token without setting runClaimed', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'manager-claim-mismatch-start',
+      reason: 'user_message',
+      threadId
+    })
+    const out = await ctx.mutation(internal.orchestrator.claimRun, {
+        runToken: 'manager-claim-mismatch-token',
+        threadId
+      }),
+      state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.ok).toBe(false)
+    expect(state?.runClaimed ?? false).toBe(false)
+  })
+})
+
+describe('omo parity: delegate deep coverage', () => {
+  for (const c of [
+    { errorMessage: 'missing run_in_background', expected: 'missing_run_in_background' },
+    { errorMessage: 'LOAD_SKILLS required', expected: 'missing_load_skills' },
+    { errorMessage: 'invalid category: custom', expected: 'unknown_category' },
+    { errorMessage: 'invalid agent: no-such', expected: 'unknown_agent' },
+    { errorMessage: 'opaque failure', expected: 'unknown_error' }
+  ] as const)
+    test(`detectDelegateError classifies ${c.expected}`, async () => {
+      const { detectDelegateError } = await import('./agents')
+      const pattern = detectDelegateError({ errorMessage: c.errorMessage })
+      expect(pattern).toBe(c.expected)
+    })
+
+  for (const c of [
+    {
+      pattern: 'missing_run_in_background' as const,
+      fixHint: 'Add run_in_background parameter.'
+    },
+    {
+      pattern: 'missing_load_skills' as const,
+      fixHint: 'Add load_skills=[] parameter.'
+    },
+    {
+      pattern: 'unknown_category' as const,
+      fixHint: 'Use a valid category from the Available list.'
+    },
+    {
+      pattern: 'unknown_agent' as const,
+      fixHint: 'Use a valid agent from the Available list.'
+    },
+    {
+      pattern: 'unknown_error' as const,
+      fixHint: 'Retry delegate with corrected arguments and valid values.'
+    }
+  ])
+    test(`buildRetryGuidance emits fix hint for ${c.pattern}`, async () => {
+      const { buildRetryGuidance } = await import('./agents')
+      const out = buildRetryGuidance({ errorMessage: 'x', pattern: c.pattern })
+      expect(out.fixHint).toBe(c.fixHint)
+    })
+
+  test('buildRetryGuidance parses available options from mixed lines and deduplicates', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'Unknown. Available: quick, deep, deep\nvalid options: deep, ultrabrain, quick',
+      pattern: 'unknown_category'
+    })
+    expect(out.availableOptions).toEqual(['quick', 'deep', 'ultrabrain'])
+  })
+
+  for (const p of [
+    'Invalid arguments: run_in_background missing',
+    'Invalid arguments: load_skills missing',
+    'Unknown category alpha. Available: quick, deep',
+    'Unknown agent beta. valid options: explore, oracle'
+  ] as const)
+    test(`delegate error adapter returns guidance payload for ${p.split(':')[0]}`, async () => {
+      const { createOrchestratorTools } = await import('./agents')
+      const tools = createOrchestratorTools({
+        ctx: {
+          runMutation: async () => {
+            throw new Error(p)
+          },
+          runQuery: async () => null
+        } as never,
+        parentThreadId: `delegate-deep-parent-${crypto.randomUUID()}`,
+        sessionId: `delegate-deep-session-${crypto.randomUUID()}` as never
+      })
+      const delegate = tools.delegate as unknown as {
+        execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<{ ok: boolean; pattern: string }>
+      }
+      const out = await delegate.execute({
+        description: 'delegate-deep',
+        isBackground: true,
+        prompt: 'delegate-deep'
+      })
+      expect(out.ok).toBe(false)
+      expect(typeof out.pattern).toBe('string')
+    })
+
+  test('delegate forwards payload metadata and returns pending contract', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    let seen:
+      | {
+          description: string
+          isBackground: boolean
+          parentThreadId: string
+          prompt: string
+          sessionId: string
+        }
+      | undefined
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async (_ref: unknown, args: unknown) => {
+          const payload = args as {
+            description: string
+            isBackground: boolean
+            parentThreadId: string
+            prompt: string
+            sessionId: string
+          }
+          seen = payload
+          return { taskId: 'delegate-deep-task', threadId: 'delegate-deep-thread' }
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-deep-parent',
+      sessionId: 'delegate-deep-session' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<{
+        status: string
+        taskId: string
+        threadId: string
+      }>
+    }
+    const out = await delegate.execute({
+      description: 'delegate-deep-description',
+      isBackground: false,
+      prompt: 'delegate-deep-prompt'
+    })
+    expect(seen?.description).toBe('delegate-deep-description')
+    expect(seen?.isBackground).toBe(false)
+    expect(seen?.parentThreadId).toBe('delegate-deep-parent')
+    expect(seen?.sessionId).toBe('delegate-deep-session')
+    expect(out.status).toBe('pending')
+    expect(out.taskId).toBe('delegate-deep-task')
+    expect(out.threadId).toBe('delegate-deep-thread')
+  })
+
+  test('delegate schema defaults isBackground=true', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      parentThreadId: 'delegate-schema-parent',
+      sessionId: 'delegate-schema-session' as never
+    })
+    const schema = (tools.delegate as {
+      inputSchema?: { safeParse: (v: unknown) => { data?: { isBackground?: boolean }; success: boolean } }
+    }).inputSchema
+    const parsed = schema?.safeParse({ description: 'schema', prompt: 'schema' })
+    expect(parsed?.success).toBe(true)
+    expect(parsed?.data?.isBackground).toBe(true)
+  })
+
+  for (const c of [
+    { status: 'cancelled', result: null },
+    { status: 'failed', result: null },
+    { status: 'pending', result: null },
+    { status: 'running', result: null },
+    { status: 'timed_out', result: null },
+    { status: 'completed', result: 'ok-output' }
+  ] as const)
+    test(`taskOutput status contract for ${c.status}`, async () => {
+      const { createOrchestratorTools } = await import('./agents')
+      const tools = createOrchestratorTools({
+        ctx: {
+          runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
+          runQuery: async () => ({ result: c.result === null ? undefined : c.result, status: c.status })
+        } as never,
+        parentThreadId: 'delegate-output-parent',
+        sessionId: 'delegate-output-session' as never
+      })
+      const taskOutput = tools.taskOutput as unknown as {
+        execute: (input: { taskId: string }) => Promise<{ result: null | string; status: null | string }>
+      }
+      const out = await taskOutput.execute({ taskId: `delegate-output-${c.status}` })
+      expect(out.status).toBe(c.status)
+      expect(out.result).toBe(c.result)
+    })
+
+  test('taskStatus returns null contract when row missing', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      parentThreadId: 'delegate-status-parent',
+      sessionId: 'delegate-status-session' as never
+    })
+    const taskStatus = tools.taskStatus as unknown as {
+      execute: (input: { taskId: string }) => Promise<{ description: null | string; status: null | string }>
+    }
+    const out = await taskStatus.execute({ taskId: 'delegate-status-missing' })
+    expect(out.description).toBeNull()
+    expect(out.status).toBeNull()
+  })
+
+  test('taskStatus returns description and status for existing row', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: async () => ({ description: 'delegate-status-found', status: 'running' })
+      } as never,
+      parentThreadId: 'delegate-status-parent-2',
+      sessionId: 'delegate-status-session-2' as never
+    })
+    const taskStatus = tools.taskStatus as unknown as {
+      execute: (input: { taskId: string }) => Promise<{ description: null | string; status: null | string }>
+    }
+    const out = await taskStatus.execute({ taskId: 'delegate-status-found-id' })
+    expect(out.description).toBe('delegate-status-found')
+    expect(out.status).toBe('running')
+  })
+
+  test('worker toolset excludes delegate and todo tools', async () => {
+    const { createWorkerTools } = await import('./agents')
+    const tools = createWorkerTools({
+      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      parentThreadId: 'delegate-worker-parent',
+      sessionId: 'delegate-worker-session' as never
+    })
+    expect(Object.keys(tools).includes('delegate')).toBe(false)
+    expect(Object.keys(tools).includes('todoRead')).toBe(false)
+    expect(Object.keys(tools).includes('todoWrite')).toBe(false)
+    expect(Object.keys(tools)).toEqual(['webSearch'])
+  })
+
+  test('orchestrator toolset includes delegate, task and todo tools', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      parentThreadId: 'delegate-orch-parent',
+      sessionId: 'delegate-orch-session' as never
+    })
+    const keys = Object.keys(tools).sort()
+    expect(keys.includes('delegate')).toBe(true)
+    expect(keys.includes('taskStatus')).toBe(true)
+    expect(keys.includes('taskOutput')).toBe(true)
+    expect(keys.includes('todoRead')).toBe(true)
+    expect(keys.includes('todoWrite')).toBe(true)
+    expect(keys.includes('webSearch')).toBe(true)
+  })
+
+  test('unknown options parser keeps order while trimming whitespace', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const out = buildRetryGuidance({
+      errorMessage: 'Unknown agent. valid options:  explore ,  librarian , oracle  ',
+      pattern: 'unknown_agent'
+    })
+    expect(out.availableOptions).toEqual(['explore', 'librarian', 'oracle'])
+  })
+})
+
+describe('omo parity: continuation deep coverage', () => {
+  for (const c of [
+    { status: 'pending', shouldContinue: true },
+    { status: 'in_progress', shouldContinue: true },
+    { status: 'completed', shouldContinue: false },
+    { status: 'cancelled', shouldContinue: false }
+  ] as const)
+    test(`postTurnAudit continuation decision for todo status=${c.status}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `continuation-status-${c.status}-start`,
+        reason: 'user_message',
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.run(async d => {
+        await d.db.insert('todos', {
+          content: `continuation-status-${c.status}`,
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: c.status
+        })
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: state?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(out.shouldContinue).toBe(c.shouldContinue)
+    })
+
+  for (const blocker of ['pending', 'running'] as const)
+    test(`postTurnAudit blocks continuation when ${blocker} task exists`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `continuation-blocker-${blocker}-start`,
+        reason: 'user_message',
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.run(async d => {
+        await d.db.insert('todos', {
+          content: `continuation-blocker-${blocker}-todo`,
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: 'pending'
+        })
+        await d.db.insert('tasks', {
+          description: `continuation-blocker-${blocker}-task`,
+          isBackground: true,
+          parentThreadId: threadId,
+          pendingAt: blocker === 'pending' ? Date.now() : undefined,
+          retryCount: 0,
+          sessionId,
+          startedAt: blocker === 'running' ? Date.now() : undefined,
+          status: blocker,
+          threadId: `continuation-blocker-${blocker}-${crypto.randomUUID()}`
+        })
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: state?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(out.shouldContinue).toBe(false)
+    })
+
+  test('postTurnAudit enqueues todo_continuation with lowest priority marker', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-priority-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-priority-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(true)
+    expect(after?.queuedReason).toBe('todo_continuation')
+    expect(after?.queuedPriority).toBe('todo_continuation')
+  })
+
+  test('queued user_message replaces queued todo_continuation payload', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-replace-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-replace-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-replace-user',
+      reason: 'user_message',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.queuedReason).toBe('user_message')
+    expect(after?.queuedPromptMessageId).toBe('continuation-replace-user')
+  })
+
+  for (const c of [
+    { blockedMs: 9_000, consecutiveFailures: 1, shouldContinue: false },
+    { blockedMs: 19_000, consecutiveFailures: 2, shouldContinue: false },
+    { blockedMs: 39_000, consecutiveFailures: 3, shouldContinue: false },
+    { blockedMs: 11_000, consecutiveFailures: 1, shouldContinue: true },
+    { blockedMs: 21_000, consecutiveFailures: 2, shouldContinue: true },
+    { blockedMs: 41_000, consecutiveFailures: 3, shouldContinue: true }
+  ])
+    test(`cooldown/backoff continuation gate failures=${c.consecutiveFailures} age=${c.blockedMs}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `continuation-cooldown-${c.consecutiveFailures}-${c.blockedMs}`,
+        reason: 'user_message',
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.run(async d => {
+        await d.db.insert('todos', {
+          content: 'continuation-cooldown-todo',
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: 'pending'
+        })
+        const runState = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (runState)
+          await d.db.patch(runState._id, {
+            consecutiveFailures: c.consecutiveFailures,
+            lastContinuationAt: Date.now() - c.blockedMs
+          })
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: state?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(out.shouldContinue).toBe(c.shouldContinue)
+    })
+
+  test('max consecutive failures blocks continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-max-failure-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-max-failure-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState)
+        await d.db.patch(runState._id, {
+          consecutiveFailures: 5,
+          lastContinuationAt: Date.now() - 120_000
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(false)
+  })
+
+  test('failure counter resets after reset window and allows continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-failure-reset-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-failure-reset-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState)
+        await d.db.patch(runState._id, {
+          consecutiveFailures: 5,
+          lastContinuationAt: Date.now() - 6 * 60 * 1000
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(true)
+    expect(after?.consecutiveFailures).toBe(0)
+  })
+
+  test('unchanged todo snapshot increments stagnation and blocks at cap', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-stagnation-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const todoId = await ctx.run(async d =>
+      d.db.insert('todos', {
+        content: 'continuation-stagnation-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    )
+    await ctx.run(async d => {
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState)
+        await d.db.patch(runState._id, {
+          lastTodoSnapshot: JSON.stringify([
+            { content: 'continuation-stagnation-todo', id: String(todoId), status: 'pending' }
+          ]),
+          stagnationCount: 2
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(false)
+  })
+
+  test('todo snapshot progress resets stagnation and allows continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-progress-reset-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const todoId = await ctx.run(async d =>
+      d.db.insert('todos', {
+        content: 'continuation-progress-old',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    )
+    await ctx.run(async d => {
+      await d.db.patch(todoId, { content: 'continuation-progress-new' })
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState)
+        await d.db.patch(runState._id, {
+          lastTodoSnapshot: JSON.stringify([{ content: 'continuation-progress-old', id: String(todoId), status: 'pending' }]),
+          stagnationCount: 2
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(true)
+    expect(after?.stagnationCount).toBe(0)
+  })
+
+  test('stale run token returns ok=false and shouldContinue=false', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: 'continuation-stale-token',
+        threadId,
+        turnRequestedInput: false
+      })
+    expect(out.ok).toBe(false)
+    expect(out.shouldContinue).toBe(false)
+  })
+
+  test('turnRequestedInput=true blocks continuation and stores todo snapshot', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-input-block-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-input-block-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: true
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(false)
+    expect(typeof after?.lastTodoSnapshot).toBe('string')
+    expect((after?.lastTodoSnapshot ?? '').includes('continuation-input-block-todo')).toBe(true)
+  })
+
+  test('malformed previous snapshot does not block continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-malformed-snapshot-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-malformed-snapshot-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState) await d.db.patch(runState._id, { lastTodoSnapshot: '{bad-json' })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(true)
+  })
+
+  test('invalid snapshot shape does not block continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-invalid-shape-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-invalid-shape-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const runState = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (runState) await d.db.patch(runState._id, { lastTodoSnapshot: JSON.stringify([{ nope: true }]) })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: state?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(true)
+  })
+
+  test('existing queued user_message blocks todo continuation enqueue', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-queued-user-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-queued-user-message',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'continuation-queued-user-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(false)
+    expect(after?.queuedReason).toBe('user_message')
+    expect(after?.queuedPromptMessageId).toBe('continuation-queued-user-message')
+  })
+
+  test('archived session blocks continuation and resets autoContinueStreak', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'continuation-archived-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      const row = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (row) await c.db.patch(row._id, { autoContinueStreak: 4 })
+    })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(out.shouldContinue).toBe(false)
+    expect(state?.autoContinueStreak).toBe(0)
+  })
+})
