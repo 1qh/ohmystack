@@ -14283,3 +14283,169 @@ describe('append parity source utility and tools matrix', () => {
       expect(source.includes(marker)).toBe(true)
     })
 })
+
+describe('remaining adaptable parity append', () => {
+  const createContinuationCase = async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: `remaining-continuation-start-${crypto.randomUUID()}`,
+      reason: 'user_message',
+      threadId: created.threadId
+    })
+    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'remaining-continuation-todo',
+        position: 0,
+        priority: 'high',
+        sessionId: created.sessionId,
+        status: 'pending'
+      })
+    })
+    return {
+      ctx,
+      runToken: runState?.activeRunToken ?? '',
+      threadId: created.threadId
+    }
+  }
+
+  test('source(todo-continuation): 5s cooldown allows retry before 10s when no failures', async () => {
+    const { ctx, runToken, threadId } = await createContinuationCase()
+    await ctx.run(async d => {
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await d.db.patch(state._id, {
+          consecutiveFailures: 0,
+          lastContinuationAt: Date.now() - 6_000
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken,
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(true)
+  })
+
+  test('source(todo-continuation): no cooldown gate applies before first failure even under 5s', async () => {
+    const { ctx, runToken, threadId } = await createContinuationCase()
+    await ctx.run(async d => {
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await d.db.patch(state._id, {
+          consecutiveFailures: 0,
+          lastContinuationAt: Date.now() - 4_999
+        })
+    })
+    const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken,
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(out.shouldContinue).toBe(true)
+  })
+
+  test('source(background-manager): listActiveTasksByThread returns empty list when no rows exist', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {}),
+      rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, { threadId: created.threadId })
+    expect(rows).toEqual([])
+  })
+
+  test('source(background-manager): listActiveTasksByThread excludes terminal task statuses', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async d => {
+      for (const status of ['completed', 'failed', 'timed_out', 'cancelled'] as const)
+        await d.db.insert('tasks', {
+          completedAt: Date.now(),
+          description: `remaining-terminal-${status}`,
+          isBackground: true,
+          parentThreadId: created.threadId,
+          retryCount: 0,
+          sessionId: created.sessionId,
+          status,
+          threadId: `remaining-terminal-${status}-${crypto.randomUUID()}`
+        })
+    })
+    const rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, { threadId: created.threadId })
+    expect(rows).toEqual([])
+  })
+
+  test('source(background-manager): timeoutStaleTasks does not time out running rows with missing heartbeatAt', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async d =>
+      d.db.insert('tasks', {
+        description: 'remaining-running-no-heartbeat',
+        isBackground: true,
+        parentThreadId: created.threadId,
+        retryCount: 0,
+        sessionId: created.sessionId,
+        startedAt: Date.now() - 10 * 60 * 1000,
+        status: 'running',
+        threadId: `remaining-running-no-heartbeat-${crypto.randomUUID()}`
+      })
+    )
+    const out = await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.timedOutCount).toBe(0)
+    expect(row?.status).toBe('running')
+  })
+
+  test('source(background-manager): timeoutStaleTasks does not time out pending rows with missing pendingAt', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async d =>
+      d.db.insert('tasks', {
+        description: 'remaining-pending-no-pendingAt',
+        isBackground: true,
+        parentThreadId: created.threadId,
+        retryCount: 0,
+        sessionId: created.sessionId,
+        status: 'pending',
+        threadId: `remaining-pending-no-pendingAt-${crypto.randomUUID()}`
+      })
+    )
+    const out = await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.timedOutCount).toBe(0)
+    expect(row?.status).toBe('pending')
+  })
+
+  test('source(delegate-task): delegate schema rejects null isBackground equivalent to malformed required fields', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      parentThreadId: 'remaining-schema-parent',
+      sessionId: 'remaining-schema-session' as never
+    })
+    const schema = (tools.delegate as {
+      inputSchema?: { safeParse: (v: unknown) => { success: boolean } }
+    }).inputSchema
+    const parsed = schema?.safeParse({ description: 'd', isBackground: null, prompt: 'p' })
+    expect(parsed?.success).toBe(false)
+  })
+
+  test('source(delegate-task): classifier precedence keeps missing_run_in_background above category hints', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({
+      errorMessage: 'Unknown category quickx and run_in_background is required and load_skills missing'
+    })
+    expect(pattern).toBe('missing_run_in_background')
+  })
+})
