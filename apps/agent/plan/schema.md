@@ -44,8 +44,8 @@ The backend keeps noboil schema conventions:
 ### `session`
 
 - User-owned conversation containers.
-- Tracks `threadId`, status, title, activity, archive timestamps.
-- Core indexes support user list and thread lookups.
+- Fields: threadId (string), status (active|idle|archived), title (string, optional), lastActivityAt (number), archivedAt (number, optional)
+- Indexes: by_threadId [threadId], by_user_status [userId, status], by_user_threadId [userId, threadId], by_status [status]
 
 ### `tasks`
 
@@ -73,36 +73,26 @@ The backend keeps noboil schema conventions:
 ### `todos`
 
 - Ordered task checklist per session.
-- Supports deterministic rendering and continuation audit.
+- Fields: content (string), position (number), priority (low|medium|high), sessionId (id), status (pending|in_progress|completed|cancelled)
+- Indexes: by_session_position [sessionId, position]
 
 ### `tokenUsage`
 
 - Per-run usage ledger keyed by session/thread for aggregation.
+- Fields: agentName (string), inputTokens (number), model (string), outputTokens (number), provider (string), sessionId (id), threadId (string), totalTokens (number)
+- Indexes: by_session [sessionId], by_threadId [threadId]
 
 ### `mcpServers`
 
 - User-owned MCP endpoint configs and optional discovery cache.
+- Fields: name (string), url (string), transport (http), isEnabled (boolean), authHeaders (string, optional), cachedAt (number, optional), cachedTools (string, optional)
+- Indexes: by_user_enabled [userId, isEnabled], by_user_name [userId, name]
 
 ### `threadRunState`
 
 - Per-thread singleton run/queue/compaction coordination state.
-- Fields:
-  - `threadId`
-  - `status`
-  - `activatedAt`
-  - `activeRunToken`
-  - `claimedAt`
-  - `runClaimed`
-  - `runHeartbeatAt`
-  - `queuedPriority`
-  - `queuedPromptMessageId`
-  - `queuedReason`
-  - `autoContinueStreak`
-  - `lastError`
-  - `compactionLock`
-  - `compactionLockAt`
-  - `compactionSummary`
-  - `lastCompactedMessageId`
+- Fields: threadId (string), status (idle|active), activatedAt (number, optional), activeRunToken (string, optional), claimedAt (number, optional), runClaimed (boolean, optional), runHeartbeatAt (number, optional), queuedPriority (user_message|task_completion|todo_continuation, optional), queuedPromptMessageId (string, optional), queuedReason (string, optional), autoContinueStreak (number), lastError (string, optional), compactionLock (string, optional), compactionLockAt (number, optional), compactionSummary (string, optional), lastCompactedMessageId (string, optional), consecutiveFailures (number, optional), stagnationCount (number, optional), turnsSinceTaskTool (number, optional)
+- Indexes: by_threadId [threadId], by_status [status]
 
 ## ER Diagram
 
@@ -201,8 +191,8 @@ All major query paths are covered with explicit indexes.
 
 | Query Pattern                          | Index                                  |
 | -------------------------------------- | -------------------------------------- |
-| list messages by thread                | `messages.by_thread_creationTime`      |
-| read latest message for thread checks  | `messages.by_thread_creationTime`      |
+| list messages by thread                | `messages.by_threadId`                 |
+| read latest message for thread checks  | `messages.by_threadId`                 |
 | resolve session from thread            | `session.by_threadId`                  |
 | resolve owned session by user+thread   | `session.by_user_threadId`             |
 | list sessions for user                 | `session.by_user_status`               |
@@ -221,8 +211,7 @@ All major query paths are covered with explicit indexes.
 ```mermaid
 flowchart TB
     subgraph Messages
-      I1[by_thread_creationTime]
-      I2[by_threadId]
+      I1[by_threadId]
     end
 
     subgraph Session

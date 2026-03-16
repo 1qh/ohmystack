@@ -164,3 +164,53 @@ flowchart LR
 | 78 | E2E: Real-World Flows | End-to-end user workflow | Session create, chat, delegate, task completion, and settings all work together |
 
 Coverage note: this matrix is the flat reference checklist for the full 934-test suite, grouped by category while preserving one-table navigation.
+
+## Running Tests
+
+### Backend (convex-test)
+```bash
+cd packages/be-agent
+CONVEX_TEST_MODE=true bun with-env bun test convex/f.test.ts
+```
+
+### Production Smoke (real Vertex API)
+```bash
+cd packages/be-agent
+GOOGLE_VERTEX_API_KEY=<key> bun with-env bun test convex/prod-smoke.test.ts
+```
+
+### E2E (Playwright)
+```bash
+# Deploy backend in test mode first
+cd packages/be-agent && bun with-env convex dev --once
+
+# Run E2E
+cd apps/agent
+NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3212 bun with-env npx playwright test
+```
+
+### Adding a New Test
+
+Backend tests go in `packages/be-agent/convex/f.test.ts`. Follow the existing pattern:
+1. Create a new `describe` block or add to an existing one
+2. Each test creates its own session via `asUser(0).mutation(api.sessions.createSession, {})`
+3. Use `internal` API for internal mutations, `api` for public endpoints
+4. Use `ctx.run(async c => c.db.query(...))` to inspect DB state
+
+E2E tests go in `apps/agent/e2e/<category>.test.ts`. Follow the fixture pattern:
+1. Import `{ test, expect }` from `./fixtures`
+2. Use page objects (`sessionListPage`, `chatPage`) for locators
+3. Use `.is-user, .is-assistant` selector for message elements (ai-elements DOM)
+
+### Test File Layout
+```
+packages/be-agent/convex/f.test.ts        — 858 backend tests
+packages/be-agent/convex/prod-smoke.test.ts — 1 production smoke test
+apps/agent/e2e/session.test.ts             — session management E2E
+apps/agent/e2e/chat.test.ts                — chat & streaming E2E
+apps/agent/e2e/settings.test.ts            — MCP settings E2E
+apps/agent/e2e/error.test.ts               — error states E2E
+apps/agent/e2e/a11y.test.ts                — accessibility E2E
+apps/agent/e2e/frontend-states.test.ts     — frontend states E2E
+apps/agent/e2e/real-world.test.ts          — real-world scenario E2E
+```
