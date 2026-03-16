@@ -14,8 +14,6 @@
   "dependencies": {
     "@a/be-agent": "workspace:*",
     "@a/ui": "workspace:*",
-    "@convex-dev/auth": "latest",
-    "convex": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
