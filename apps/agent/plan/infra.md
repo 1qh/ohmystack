@@ -160,6 +160,28 @@ Incremental deploys:
 
 Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:convex:deploy`, and `agent:dev`.
 
+## Deployment Commands
+
+### First-Time Setup
+
+1. Generate auth/encryption material with `bash scripts/genkey.sh`.
+2. Set required backend environment variables with `convex env set` in the be-agent backend project.
+3. Push initial schema and functions with `convex dev --once` from `packages/be-agent`.
+
+### Incremental Deploys
+
+1. Apply backend changes with `convex deploy` in `packages/be-agent`.
+2. Re-run `convex env set` only for changed secrets or config.
+3. Deploy frontend with `NEXT_PUBLIC_CONVEX_URL` targeting the be-agent Convex deployment.
+
+## Separate Convex Project
+
+`packages/be-agent` runs in its own Convex project and deployment lifecycle, separate from `packages/be-convex`.
+
+- Environment variables are managed independently per project.
+- Cron schedules and retention behavior are owned by the be-agent deployment.
+- Backend rollout cadence is independent from other monorepo Convex apps.
+
 ## Dependencies
 
 Implementation manifests:

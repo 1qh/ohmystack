@@ -207,6 +207,26 @@ Continuation failures are rate-limited with exponential backoff so repeated fail
 
 Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/idle-event.ts`
 
+## Lifecycle Summary
+
+The orchestrator run lifecycle is built from three compare-and-set mutations that fence each stage of execution and keep scheduling idempotent.
+
+- `enqueueRun` is the entry mutation for user turns and internal reminders; it either activates an idle thread by minting a run token and scheduling `runOrchestrator`, or updates the single queued slot using persisted priority rules.
+- `claimRun` is the consumption mutation for scheduled work; only the action instance that presents the matching active token and sees `runClaimed` unset can flip the claim bit and proceed.
+- `finishRun` is the terminal mutation; it closes the active token, schedules the next token if queued work exists, or returns the thread to `idle` when the queue is empty.
+
+Together these mutations create a deterministic lifecycle: enqueue establishes intent, claim establishes a single executor, and finish resolves the run while safely draining queued follow-up work.
+
+## Task Reminder Injection
+
+The runtime tracks task-follow-up drift with a `turnsSinceTaskTool` counter in thread run state.
+
+- The counter increments when turns complete without using task tools.
+- It resets immediately when the model uses task-related tools (`delegate`, `taskStatus`, or `taskOutput`).
+- At a threshold of `10`, the orchestrator injects a system reminder listing pending tasks so the model explicitly checks task progress or outputs.
+
+This mechanism prevents long conversational runs from forgetting delegated background work while keeping reminder behavior deterministic and bounded.
+
 ## Tests
 
 See `apps/agent/plan/testing.md`.

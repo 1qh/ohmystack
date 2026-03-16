@@ -101,6 +101,110 @@ flowchart LR
 - Non-terminal task output uses explicit status payload, not thrown errors.
 - MCP and search failures return structured error objects suitable for follow-up reasoning.
 
+## Per-Tool Definitions
+
+### `delegate`
+
+Description: delegates independent work to a worker thread and returns task identifiers for follow-up.
+
+Args:
+- `description` (string): concise task label shown in task tracking and reminders.
+- `prompt` (string): worker instruction payload.
+- `isBackground` (boolean): whether delegation should run as background work.
+
+What it does:
+- Creates a pending task bound to the parent thread/session.
+- Generates a worker thread id and schedules worker execution.
+- Returns normalized task metadata so the model can poll or fetch output later.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+### `taskStatus`
+
+Description: reads current lifecycle status for a delegated task.
+
+Args:
+- `taskId` (string): delegated task identifier.
+
+What it does:
+- Resolves ownership from requester thread/session before exposing task state.
+- Returns status-centric metadata such as retry count, completion timing, and latest error when present.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+### `taskOutput`
+
+Description: retrieves terminal worker output for a delegated task.
+
+Args:
+- `taskId` (string): delegated task identifier.
+
+What it does:
+- Returns final task result for completed tasks.
+- Returns a structured non-terminal payload for pending/running tasks so orchestration can continue without thrown errors.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+### `todoWrite`
+
+Description: writes or updates todo items for the active session.
+
+Args:
+- `todos` (array): todo records with optional `id`, plus `content`, `status`, and `priority`.
+
+What it does:
+- Updates existing todos when `id` is present.
+- Inserts new todos when `id` is omitted.
+- Preserves omitted existing rows unless explicitly updated by id.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+### `todoRead`
+
+Description: reads ordered todo state for the active session/thread.
+
+Args:
+- no arguments.
+
+What it does:
+- Resolves owned session by thread.
+- Returns todos in deterministic session position order.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+### `webSearch`
+
+Description: runs grounded web search and returns model-usable summary plus source references.
+
+Args:
+- `query` (string): search request.
+
+What it does:
+- Calls the dedicated grounding action.
+- Normalizes provider output into `{ summary, sources }`.
+- Returns structured failures when grounding call errors.
+
+Implementation: `packages/be-agent/convex/agents.ts`
+
+## Search Integration
+
+Gemini grounding search is isolated into a separate Convex action because provider-defined tools cannot be safely mixed with function tools in the same generation call.
+
+- Orchestrator and worker turns run with function tools such as `delegate`, task tools, todo tools, and MCP tools.
+- Grounding calls run in a dedicated action that enables only provider grounding support, then returns normalized results.
+- This separation prevents provider tool preparation from suppressing function-tool execution and keeps tool contracts deterministic.
+
+## Delegate Retry Guidance
+
+Delegate failures are inspected for known error signatures and transformed into actionable hints instead of opaque raw failures.
+
+- `missing_run_in_background`: include `run_in_background` in the delegated task payload.
+- `missing_load_skills`: include explicit `load_skills` list.
+- `unknown_category`: use a valid category from the supported delegation categories.
+- `unknown_agent`: use a valid target agent name from configured agents.
+
+This guidance lets the model correct malformed delegate calls on the next turn without requiring manual debugging.
+
 ## Tests
 
 See `apps/agent/plan/testing.md`.

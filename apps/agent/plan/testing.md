@@ -13,6 +13,32 @@ Test-first, break-nothing, move-with-confidence. Every feature ships with its te
 | E2E (Playwright) | 75 | 75 |
 | **Total** | **934** | **934** |
 
+## E2E Infrastructure
+
+Playwright coverage is organized as product-level browser tests around `apps/agent`, with shared E2E support code separated into reusable test infrastructure layers.
+
+- Test files are grouped by feature flows (session list, chat runtime, settings/MCP, and error/accessibility paths) so failures map directly to user workflows.
+- Playwright configuration defines the agent app target, test-mode environment wiring, and browser/project settings used across local and CI runs.
+- Global setup provisions deterministic test preconditions before browser tests begin, including test-auth bootstrap and backend mode alignment.
+- Page objects encapsulate stable interaction contracts for key surfaces (session navigation, composer/chat stream assertions, task panel behavior, and settings forms).
+- Shared fixtures provide typed setup helpers for auth state, seeded context, and reusable UI bootstrap steps to keep specs focused on behavior assertions.
+
+## Action Testing Strategy
+
+Action behavior is validated in `convex-test` through direct action invocation and deterministic scheduler/timer control.
+
+- Use `t.action()` to execute action handlers in real Convex test context so `runMutation`, `runQuery`, `runAction`, and scheduler wiring are exercised together.
+- Use `vi.useFakeTimers()` for timeout/backoff/heartbeat paths, then flush scheduled execution deterministically to assert state transitions.
+- Assert compare-and-set lifecycle transitions as state contracts instead of implementation details, especially for queue, run-token fencing, retry loops, and terminalization paths.
+
+## Mock Model
+
+The mock model provides deterministic generation and streaming behavior for stable tests while preserving production contracts.
+
+- In backend test mode, model selection resolves to the mock model so action tests are repeatable and do not depend on live provider variability.
+- In E2E mode, test configuration still uses deterministic model behavior through test-mode model selection, while exercising full app wiring end to end.
+- Scenario-specific behaviors are introduced by stubbing internal boundaries around tools/actions rather than changing the public runtime model contract.
+
 ## Test Infrastructure
 
 ### E2E Infrastructure

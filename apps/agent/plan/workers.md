@@ -139,6 +139,27 @@ Terminal reminders are emitted for `completed`, `failed`, and `timed_out`. `canc
 - Completion notification marker is deferred so interrupted notification paths stay recoverable.
 - Final worker output transition is fenced to avoid TOCTOU between timeout/cancel checks and final write.
 
+## Retry Policy
+
+Worker retries use transient-error classification with bounded exponential backoff.
+
+- Backoff delay uses `min(1000 * 2^retryCount, 30000)` milliseconds.
+- Retries are capped at `3`; once the cap is reached, subsequent transient failures resolve to terminal failure instead of another pending cycle.
+- Before requeueing, retry logic checks whether the parent session is archived; archived parents convert the task directly to `cancelled` and skip rescheduling.
+
+This keeps retry behavior fast for short disruptions, bounded under repeated failures, and safe against replaying work after session archival.
+
+## Terminal State Reminders
+
+Terminal reminder emission is explicit by status.
+
+- `completed` emits a completion reminder to the parent thread.
+- `failed` emits a failure reminder to the parent thread.
+- `timed_out` emits a timeout reminder to the parent thread.
+- `cancelled` does not emit an automatic reminder because cancellation is session/user-driven, not an unexpected runtime terminal event.
+
+This contract ensures orchestrator follow-up is triggered for meaningful runtime terminal outcomes while avoiding noise for intentional cancellation paths.
+
 ## Tests
 
 See `apps/agent/plan/testing.md`.
