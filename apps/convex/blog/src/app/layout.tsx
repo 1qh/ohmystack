@@ -9,13 +9,14 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 
 const metadata: Metadata = { description: 'lazyconvex blog demo', title: 'Blog' },
+  renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>,
   Layout = async ({ children }: { children: ReactNode }) => {
     const requestHeaders = await headers(),
       pathname = requestHeaders.get('x-pathname') ?? '/',
       isLogin = pathname === '/login' || pathname.startsWith('/login/')
 
     return (
-      <AuthLayout convexProvider={inner => <ConvexProvider fileApi>{inner}</ConvexProvider>}>
+      <AuthLayout convexProvider={renderConvexProvider}>
         {isLogin ? (
           children
         ) : (

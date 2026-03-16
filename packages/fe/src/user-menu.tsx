@@ -18,13 +18,12 @@ const UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Tri
       : null,
     email = profile?.email,
     image = profile?.image,
-    name = profile?.name
-
-  const onLogout = async () => {
-    'use server'
-    await fetchAction(api.auth.signOut, undefined, { token })
-    redirect('/login')
-  }
+    name = profile?.name,
+    onLogout = async () => {
+      'use server'
+      await fetchAction(api.auth.signOut, undefined, { token })
+      redirect('/login')
+    }
 
   return (
     <UserMenuShell

@@ -20,8 +20,8 @@ const createSession = m({
         consecutiveFailures: 0,
         stagnationCount: 0,
         status: 'idle',
-        turnsSinceTaskTool: 0,
-        threadId
+        threadId,
+        turnsSinceTaskTool: 0
       })
       return { sessionId, threadId }
     }

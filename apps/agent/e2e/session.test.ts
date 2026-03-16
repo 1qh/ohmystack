@@ -1,12 +1,14 @@
-import { ConvexHttpClient } from 'convex/browser'
 import type { FunctionReference } from 'convex/server'
+
+import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
+
 import { expect, test } from './fixtures'
 
-const convex = new ConvexHttpClient('http://127.0.0.1:3212')
-const CHAT_URL_RE = /\/chat\//u
-const SESSIONS_RE = /sessions/iu
-const GOOGLE_RE = /continue with google/iu
+const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
+  CHAT_URL_RE = /\/chat\//u,
+  SESSIONS_RE = /sessions/iu,
+  GOOGLE_RE = /continue with google/iu
 
 test.describe
   .serial('Session Management', () => {

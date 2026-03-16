@@ -1,18 +1,20 @@
-/** biome-ignore-all lint/style/noProcessEnv: env detection */
 'use client'
+
+import type { ReactNode } from 'react'
 
 import { ConvexAuthNextjsProvider } from '@convex-dev/auth/nextjs'
 import { ConvexProvider, ConvexReactClient } from 'convex/react'
-import type { ReactNode } from 'react'
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? 'http://127.0.0.1:3212'),
-  isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true'
+import env from '~/env'
 
-const AgentConvexProvider = ({ children }: { children: ReactNode }) =>
-  isTestMode ? (
-    <ConvexProvider client={convex}>{children}</ConvexProvider>
-  ) : (
-    <ConvexAuthNextjsProvider client={convex}>{children}</ConvexAuthNextjsProvider>
-  )
+const runtimeEnv = env as Record<'NEXT_PUBLIC_CONVEX_TEST_MODE' | 'NEXT_PUBLIC_CONVEX_URL', string>,
+  convex = new ConvexReactClient(runtimeEnv.NEXT_PUBLIC_CONVEX_URL),
+  isTestMode = runtimeEnv.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true',
+  AgentConvexProvider = ({ children }: { children: ReactNode }) =>
+    isTestMode ? (
+      <ConvexProvider client={convex}>{children}</ConvexProvider>
+    ) : (
+      <ConvexAuthNextjsProvider client={convex}>{children}</ConvexAuthNextjsProvider>
+    )
 
 export default AgentConvexProvider

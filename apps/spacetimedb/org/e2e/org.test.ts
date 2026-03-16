@@ -15,7 +15,11 @@ import {
 import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-app-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  readStringId = (value: unknown): string => {
+    if (typeof value === 'string' && value.length > 0) return value
+    throw new TypeError('Expected non-empty string id')
+  }
 
 test.describe
   .serial('Org Dashboard', () => {
@@ -200,7 +204,7 @@ test.describe
       testOrgId = created.orgId
 
       const memberEmail = `${testPrefix}-member@test.local`
-      memberUserId = (await createTestUser(memberEmail, 'Test Member')) ?? ''
+      memberUserId = readStringId(await createTestUser(memberEmail, 'Test Member'))
     })
 
     test.afterAll(async () => {
@@ -223,7 +227,7 @@ test.describe
     })
 
     test('add member via test helper - success', async () => {
-      const memberId = await addTestOrgMember(testOrgId, memberUserId, false)
+      const memberId = readStringId(await addTestOrgMember(testOrgId, memberUserId, false))
       expect(memberId).toBeDefined()
       const members = await tc.query(api.org.members, { orgId: testOrgId }),
         found = members.find(m => m.userId === memberUserId)
@@ -233,8 +237,8 @@ test.describe
 
     test('removeMember - owner can remove member', async () => {
       const tempEmail = `${testPrefix}-temp@test.local`,
-        tempUserId = (await createTestUser(tempEmail, 'Temp Member')) ?? '',
-        tempMemberId = await addTestOrgMember(testOrgId, tempUserId, false)
+        tempUserId = readStringId(await createTestUser(tempEmail, 'Temp Member')),
+        tempMemberId = readStringId(await addTestOrgMember(testOrgId, tempUserId, false))
       await tc.mutation(api.org.removeMember, { memberId: tempMemberId })
       const members = await tc.query(api.org.members, { orgId: testOrgId }),
         found = members.find(m => m.userId === tempUserId)
@@ -243,7 +247,7 @@ test.describe
 
     test('leave - member can leave org', async () => {
       const leaveEmail = `${testPrefix}-leave@test.local`,
-        leaveUserId = (await createTestUser(leaveEmail, 'Leave Member')) ?? ''
+        leaveUserId = readStringId(await createTestUser(leaveEmail, 'Leave Member'))
       await addTestOrgMember(testOrgId, leaveUserId, false)
       await removeTestOrgMember(testOrgId, leaveUserId)
       const members = await tc.query(api.org.members, { orgId: testOrgId }),

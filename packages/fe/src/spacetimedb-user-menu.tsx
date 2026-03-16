@@ -51,14 +51,13 @@ const toHttpUri = (uri: string) => {
       profile = token ? await readUserFromSql(token) : null,
       email = profile?.email,
       image = profile?.image,
-      name = profile?.name
-
-    const onLogout = async () => {
-      'use server'
-      const store = await cookies()
-      store.delete('spacetimedb_token')
-      redirect('/login')
-    }
+      name = profile?.name,
+      onLogout = async () => {
+        'use server'
+        const store = await cookies()
+        store.delete('spacetimedb_token')
+        redirect('/login')
+      }
 
     return (
       <UserMenuShell

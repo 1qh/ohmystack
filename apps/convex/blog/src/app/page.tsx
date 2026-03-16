@@ -15,21 +15,20 @@ const Page = () => {
     deferredQuery = useDeferredValue(query.toLowerCase()),
     handleRemove = useCallback((id: string) => {
       setRemovedIds(prev => new Set(prev).add(id))
-    }, [])
-
-  const filtered = useMemo(
-    () =>
-      items.filter(b => {
-        if (removedIds.has(b._id)) return false
-        if (!deferredQuery) return true
-        return (
-          b.title.toLowerCase().includes(deferredQuery) ||
-          b.content.toLowerCase().includes(deferredQuery) ||
-          b.tags?.some((t: string) => t.toLowerCase().includes(deferredQuery))
-        )
-      }),
-    [deferredQuery, items, removedIds]
-  )
+    }, []),
+    filtered = useMemo(
+      () =>
+        items.filter(b => {
+          if (removedIds.has(b._id)) return false
+          if (!deferredQuery) return true
+          return (
+            b.title.toLowerCase().includes(deferredQuery) ||
+            b.content.toLowerCase().includes(deferredQuery) ||
+            b.tags?.some((t: string) => t.toLowerCase().includes(deferredQuery))
+          )
+        }),
+      [deferredQuery, items, removedIds]
+    )
   return (
     <div data-testid='crud-dynamic-page'>
       <Create />

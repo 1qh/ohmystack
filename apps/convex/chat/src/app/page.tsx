@@ -22,7 +22,9 @@ const Page = () => {
       if (!text.trim() || isSubmitting) return
       setIsSubmitting(true)
       try {
-        const chatId = await createChat({ isPublic, title: text })
+        const created = await createChat({ isPublic, title: text }),
+          chatId = Array.isArray(created) ? created[0] : created
+        if (typeof chatId !== 'string') return
         startTransition(() => router.push(`/${chatId}?query=${encodeURIComponent(text)}`))
       } finally {
         setIsSubmitting(false)

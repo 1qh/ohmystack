@@ -229,8 +229,8 @@ export {
   getOwnedTaskStatus,
   listTasks,
   markRunning,
-  maybeContinueOrchestratorInline,
   maybeContinueOrchestrator,
+  maybeContinueOrchestratorInline,
   scheduleRetry,
   spawnTask,
   updateTaskHeartbeat

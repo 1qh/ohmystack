@@ -104,8 +104,8 @@ const messagePart = union([
     runHeartbeatAt: number().optional(),
     stagnationCount: number().optional(),
     status: zenum(['idle', 'active']),
-    turnsSinceTaskTool: number().optional(),
-    threadId: string()
+    threadId: string(),
+    turnsSinceTaskTool: number().optional()
   })
 
 export { messageSchema, owned, taskSchema, threadRunStateSchema, todoSchema, tokenUsageSchema }

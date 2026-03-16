@@ -13,10 +13,11 @@ const testAuth = makeTestAuth({
     args: {},
     handler: async ctx => {
       if (!isTestMode()) throw new Error('test_mode_only')
-      const existing = ctx.db
-        .query('users')
-        .filter(q => q.eq(q.field('email'), TEST_EMAIL))
-        .first()
+      const existingPromise = ctx.db
+          .query('users')
+          .filter(q => q.eq(q.field('email'), TEST_EMAIL))
+          .first(),
+        existing = await existingPromise
       if (existing) return { userId: existing._id }
       const userId = await ctx.db.insert('users', {
         email: TEST_EMAIL,

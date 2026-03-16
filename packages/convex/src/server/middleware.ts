@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential middleware chain */
+/* eslint-disable no-await-in-loop */
 import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from './types'
 
 import { log } from './helpers'

@@ -1,4 +1,6 @@
-// biome-ignore-all lint/performance/noAwaitInLoops: x
+/* oxlint-disable eslint/no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
+/* eslint-disable no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 
 import { zid } from 'convex-helpers/server/zod4'
@@ -168,13 +170,13 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
       orgIdArg = { orgId: zid('org') },
       useAcl = Boolean(opt?.acl) || Boolean(opt?.aclFrom),
       softDel = Boolean(opt?.softDelete),
-      enrich = async (c: ReadCtx, docs: Rec[]) =>
-        // oxlint-disable-next-line promise/prefer-await-to-then
-        Promise.all(
-          (await c.withAuthor(docs as { userId: string }[])).map(async d =>
-            addUrls({ doc: d, fileFields: fileFs, storage: c.storage })
+      enrich = async (c: ReadCtx, docs: Rec[]) => {
+        const withAuthorDocs = await c.withAuthor(docs as { userId: string }[]),
+          enrichedDocs = await Promise.all(
+            withAuthorDocs.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage }))
           )
-        ) as Promise<OrgEnrichedDoc<S>[]>,
+        return enrichedDocs as OrgEnrichedDoc<S>[]
+      },
       cascadeDelete = async (db: DbLike, id: string) => {
         if (!opt?.cascade) return
         const { foreignKey, table: tbl } = opt.cascade,
@@ -230,8 +232,10 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
         args: { ...orgIdArg, ...idArgs },
         handler: typed(async (c: MutCtx & ReadCtx, { id, orgId }: { id: string; orgId: string }) => {
           await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          const doc = requireOrgDoc(await c.db.get(id), orgId)
-          return (await enrich(c, [doc]))[0]
+          const dbDoc = await c.db.get(id),
+            doc = requireOrgDoc(dbDoc, orgId),
+            enriched = await enrich(c, [doc])
+          return enriched[0]
         })
       }),
       updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
@@ -377,8 +381,10 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
         handler: typed(async (c: MutCtx, a: Rec) => {
           const { editorId, itemId, orgId } = aclArgs(a)
           await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const doc = requireOrgDoc(await c.db.get(itemId), orgId),
-            editorIsOwner = (await c.db.get(orgId))?.userId === editorId,
+          const itemDoc = await c.db.get(itemId),
+            doc = requireOrgDoc(itemDoc, orgId),
+            orgDoc = await c.db.get(orgId),
+            editorIsOwner = orgDoc?.userId === editorId,
             editorMember = await getOrgMember({ db: c.db, orgId, userId: editorId })
           if (!(editorIsOwner || editorMember)) return err('NOT_ORG_MEMBER')
           const eds = getEditors(doc),
@@ -427,13 +433,16 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
         handler: typed(async (c: MutCtx, a: Rec) => {
           const { editorIds, itemId, orgId } = aclArgs(a)
           await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const doc = requireOrgDoc(await c.db.get(itemId), orgId)
-          if (editorIds)
+          const itemDoc = await c.db.get(itemId),
+            doc = requireOrgDoc(itemDoc, orgId)
+          if (editorIds) {
+            const orgDoc = await c.db.get(orgId)
             for (const editorId of editorIds) {
-              const isOwner = (await c.db.get(orgId))?.userId === editorId,
+              const isOwner = orgDoc?.userId === editorId,
                 member = await getOrgMember({ db: c.db, orgId, userId: editorId })
               if (!(isOwner || member)) return err('NOT_ORG_MEMBER')
             }
+          }
           const now = time(),
             patch = { editors: editorIds ?? [], ...now }
           await dbPatch(c.db, itemId, patch)

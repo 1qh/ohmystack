@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
 
 import type { FunctionReference, OptionalRestArgs } from 'convex/server'

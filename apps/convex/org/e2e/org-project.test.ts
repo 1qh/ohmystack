@@ -1,6 +1,5 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import {
   addTestOrgMember,
   api,
@@ -15,6 +14,15 @@ import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-proj-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  readStringId = (value: unknown): string => {
+    if (typeof value === 'string' && value.length > 0) return value
+    throw new TypeError('Expected non-empty string id')
+  },
+  readCompleted = (value: unknown): boolean | undefined => {
+    if (typeof value !== 'object' || !value) return
+    const { completed } = value as { completed?: unknown }
+    return typeof completed === 'boolean' ? completed : undefined
+  },
   expectSingle = <T>(value: T | T[]): T => {
     if (Array.isArray(value)) {
       const [first] = value
@@ -224,12 +232,12 @@ test.describe
             title: 'Toggle Test Task'
           })
         ),
-        toggled = await tc.mutation(api.task.toggle, {
+        toggledRaw: unknown = await tc.mutation(api.task.toggle, {
           id: taskId,
           orgId: testOrgId
         }),
-        toggledTask = Array.isArray(toggled) ? toggled[0] : toggled
-      expect(toggledTask?.completed).toBe(true)
+        toggledTask: unknown = Array.isArray(toggledRaw) ? (toggledRaw as unknown[]).at(0) : toggledRaw
+      expect(readCompleted(toggledTask)).toBe(true)
     })
 
     test('rm task - owner can delete', async () => {
@@ -262,7 +270,7 @@ test.describe
       testOrgId = created.orgId
 
       const memberEmail = `${testPrefix}-proj-member@test.local`
-      memberUserId = (await createTestUser(memberEmail, 'Project Member')) ?? ''
+      memberUserId = readStringId(await createTestUser(memberEmail, 'Project Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
 

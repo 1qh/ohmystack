@@ -1,6 +1,7 @@
 'use client'
 
 import MembersPageShell from '@a/fe/members-page-shell'
+
 import { useOrg } from '~/hook/use-org'
 
 import InviteDialog from './invite-dialog'
@@ -12,12 +13,12 @@ const MembersPage = () => {
   const { canManageMembers, org } = useOrg()
   return (
     <MembersPageShell
+      canManageMembers={canManageMembers}
+      InviteDialog={InviteDialog}
       JoinRequests={JoinRequests}
       MemberList={MemberList}
-      PendingInvites={PendingInvites}
-      InviteDialog={InviteDialog}
-      canManageMembers={canManageMembers}
       orgId={org._id}
+      PendingInvites={PendingInvites}
     />
   )
 }

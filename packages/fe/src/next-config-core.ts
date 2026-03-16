@@ -1,5 +1,6 @@
-import { env as nodeEnv } from 'node:process'
 import type { NextConfig } from 'next'
+
+import { env as nodeEnv } from 'node:process'
 
 interface CreateNextConfigOptions {
   experimental?: NextConfig['experimental']
@@ -7,14 +8,14 @@ interface CreateNextConfigOptions {
   imgSrc?: string[]
 }
 
-interface CspOptions {
-  connectSrc: string[]
-  imgSrc: string[]
-}
-
 interface CreateNextConfigWithCspOptions extends CreateNextConfigOptions {
   csp: CspOptions
   serverExternalPackages?: string[]
+}
+
+interface CspOptions {
+  connectSrc: string[]
+  imgSrc: string[]
 }
 
 const isPlaywright = nodeEnv.PLAYWRIGHT === '1',

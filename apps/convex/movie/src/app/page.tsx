@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /** biome-ignore-all lint/performance/noImgElement: external TMDB image URLs */
 /** biome-ignore-all lint/correctness/useImageSize: external TMDB image URLs */
 'use client'
@@ -16,7 +17,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   MovieCard = ({ movie }: { movie: SearchResult }) => (
     <div className='flex gap-3 rounded-lg border p-3' data-testid='movie-card'>
       {movie.poster_path ? (
-        // oxlint-disable-next-line @next/next/no-img-element
         <img
           alt={movie.title}
           className='h-32 w-20 shrink-0 rounded-sm object-cover'

@@ -104,15 +104,15 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
         }[]
       }
     const todos = await ctx.db
-      .query('todos')
-      .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
-      .collect()
-    const snapshot: {
-      content: string
-      position: number
-      priority: 'high' | 'low' | 'medium'
-      status: 'cancelled' | 'completed' | 'in_progress' | 'pending'
-    }[] = []
+        .query('todos')
+        .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
+        .collect(),
+      snapshot: {
+        content: string
+        position: number
+        priority: 'high' | 'low' | 'medium'
+        status: 'cancelled' | 'completed' | 'in_progress' | 'pending'
+      }[] = []
     for (const t of todos)
       snapshot.push({
         content: t.content,
@@ -146,7 +146,7 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
       .collect()
     if (existing.length > 0) return { restored: 0 }
     await Promise.all(
-      snapshot.map(t =>
+      snapshot.map(async t =>
         ctx.db.insert('todos', {
           content: t.content,
           position: t.position,
@@ -183,7 +183,7 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
       if (!runState) return { ok: false }
       if (runState.compactionLock !== lockToken) return { ok: false }
       const nextBoundary = await ctx.db.get(lastCompactedMessageId as Id<'messages'>)
-      if (!nextBoundary || nextBoundary.threadId !== threadId) return { ok: false }
+      if (nextBoundary?.threadId !== threadId) return { ok: false }
       if (runState.lastCompactedMessageId) {
         const currentBoundary = await ctx.db.get(runState.lastCompactedMessageId as Id<'messages'>)
         if (!currentBoundary) return { ok: false }
@@ -235,15 +235,6 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
         await restoreTodosIfMissingInline({ ctx, snapshot, threadId })
         return { compacted: false, reason: 'no_closed_groups' as const }
       }
-      console.log(
-        JSON.stringify({
-          charCount: contextSize.charCount,
-          groupCount: groups.length,
-          messageCount: contextSize.messageCount,
-          threadId,
-          type: 'compaction_placeholder'
-        })
-      )
       await releaseCompactionLockInline({
         ctx,
         lockToken: lock.lockToken,

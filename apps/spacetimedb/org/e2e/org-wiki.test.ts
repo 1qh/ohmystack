@@ -1,6 +1,7 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 // biome-ignore-all lint/performance/noAwaitInLoops: e2e sequential
 // oxlint-disable no-await-in-loop
+/* eslint-disable no-await-in-loop */
 
 import type { Page } from '@playwright/test'
 

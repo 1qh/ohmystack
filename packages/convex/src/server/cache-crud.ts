@@ -1,3 +1,6 @@
+/* oxlint-disable eslint/no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
+/* eslint-disable no-await-in-loop */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import type { GenericDataModel } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'

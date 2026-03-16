@@ -1,3 +1,5 @@
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
 'use client'

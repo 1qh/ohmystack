@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable complexity */
+
 /* eslint-disable no-console */
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
@@ -39,7 +39,17 @@ interface TableSnapshot {
   name: string
 }
 
-const WRAPPER_FACTORIES = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'] as const,
+const findBracketEnd = (text: string, startPos: number): number => {
+    let depth = 1,
+      pos = startPos
+    while (pos < text.length && depth > 0) {
+      if (text[pos] === '{') depth += 1
+      else if (text[pos] === '}') depth -= 1
+      pos += 1
+    }
+    return pos - 1
+  },
+  WRAPPER_FACTORIES = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'] as const,
   FACTORY_MAP: Record<string, string> = {
     makeBase: 'cacheCrud',
     makeOrgScoped: 'orgCrud',
@@ -84,41 +94,30 @@ const WRAPPER_FACTORIES = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeB
     return fields
   },
   parseSchemaContent = (content: string): SchemaSnapshot => {
-    const tables: TableSnapshot[] = []
-    for (const factory of WRAPPER_FACTORIES) {
-      const pat = new RegExp(`${factory}\\(\\{`, 'gu')
-      let fm = pat.exec(content)
-      while (fm !== null) {
-        let depth = 1,
-          pos = fm.index + fm[0].length
-        while (pos < content.length && depth > 0) {
-          if (content[pos] === '{') depth += 1
-          else if (content[pos] === '}') depth -= 1
-          pos += 1
-        }
-        const outerBlock = content.slice(fm.index + fm[0].length, pos - 1),
-          propPat = /(?<tname>\w+)\s*:\s*object\(\{/gu
-        let pm = propPat.exec(outerBlock)
-        while (pm) {
-          const start = pm.index + pm[0].length
-          let d = 1,
-            p = start
-          while (p < outerBlock.length && d > 0) {
-            if (outerBlock[p] === '{') d += 1
-            else if (outerBlock[p] === '}') d -= 1
-            p += 1
+    const tables: TableSnapshot[] = [],
+      processFactory = (factory: string) => {
+        const pat = new RegExp(`${factory}\\(\\{`, 'gu')
+        let fm = pat.exec(content)
+        while (fm !== null) {
+          const endPos = findBracketEnd(content, fm.index + fm[0].length),
+            outerBlock = content.slice(fm.index + fm[0].length, endPos),
+            propPat = /(?<tname>\w+)\s*:\s*object\(\{/gu
+          let pm = propPat.exec(outerBlock)
+          while (pm) {
+            const start = pm.index + pm[0].length,
+              fieldEnd = findBracketEnd(outerBlock, start),
+              fieldBlock = outerBlock.slice(start, fieldEnd)
+            tables.push({
+              factory: FACTORY_MAP[factory] ?? factory,
+              fields: parseFieldsFromBlock(fieldBlock),
+              name: pm.groups?.tname ?? ''
+            })
+            pm = propPat.exec(outerBlock)
           }
-          const fieldBlock = outerBlock.slice(start, p - 1)
-          tables.push({
-            factory: FACTORY_MAP[factory] ?? factory,
-            fields: parseFieldsFromBlock(fieldBlock),
-            name: pm.groups?.tname ?? ''
-          })
-          pm = propPat.exec(outerBlock)
+          fm = pat.exec(content)
         }
-        fm = pat.exec(content)
       }
-    }
+    for (const factory of WRAPPER_FACTORIES) processFactory(factory)
     const childPat = /(?<cname>\w+)\s*:\s*child\(\{/gu
     let cm = childPat.exec(content)
     while (cm) {

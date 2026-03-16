@@ -1,3 +1,4 @@
+/* oxlint-disable promise/prefer-await-to-then */
 'use client'
 
 import { Button } from '@a/ui/button'
@@ -76,7 +77,10 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
                     <span className='flex-1 truncate'>{getTitle ? getTitle(t) : (t.title ?? 'Untitled')}</span>
                     <SidebarMenuAction
                       data-testid='delete-thread-button'
-                      onClick={async e => handleDelete(e, id)}
+                      onClick={e => {
+                        const deletingThread = handleDelete(e, id)
+                        deletingThread.catch(() => undefined)
+                      }}
                       showOnHover
                       type='button'>
                       <Trash2Icon className='size-3' />

@@ -48,7 +48,6 @@ export default defineConfig({
       }
     ],
     rules: {
-      'eslint/sort-keys': 'off',
       'import/no-unassigned-import': 'off'
     }
   }

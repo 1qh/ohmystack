@@ -137,7 +137,7 @@ const filterSupportedParts = (parts: Record<string, unknown>[]) =>
         onFinish: async ({ messages: finishedMessages }) => {
           if (isToolApprovalFlow)
             await Promise.all(
-              finishedMessages.map(msg => {
+              finishedMessages.map(async msg => {
                 const existingMsg = uiMessages.find(m => m.id === msg.id)
                 if (existingMsg)
                   return fetchMutation(
@@ -154,14 +154,15 @@ const filterSupportedParts = (parts: Record<string, unknown>[]) =>
             )
           else if (finishedMessages.length > 0)
             await Promise.all(
-              finishedMessages.map(msg => {
-                if (msg.role !== 'assistant' || existingIds.has(msg.id)) return Promise.resolve()
-                return fetchMutation(
-                  api.message.create,
-                  { chatId, parts: filterSupportedParts(msg.parts), role: msg.role },
-                  opts
+              finishedMessages
+                .filter(msg => msg.role === 'assistant' && !existingIds.has(msg.id))
+                .map(async msg =>
+                  fetchMutation(
+                    api.message.create,
+                    { chatId, parts: filterSupportedParts(msg.parts), role: msg.role },
+                    opts
+                  )
                 )
-              })
             )
         },
         originalMessages: uiMessages

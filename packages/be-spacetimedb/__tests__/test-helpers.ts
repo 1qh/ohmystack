@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/max-params */
 import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
 
-// oxlint-disable max-params
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/test'
 
 type Row = Record<string, unknown>
@@ -60,7 +60,6 @@ const none = { none: [] as [] },
   createChat = async (ctx: TestContext, user: TestUser, title: string) => {
     await callReducer(ctx, 'create_chat', { isPublic: false, title }, user)
   },
-  // eslint-disable-next-line @typescript-eslint/max-params
   createMessage = async (ctx: TestContext, user: TestUser, chatId: number, text: string) => {
     await callReducer(
       ctx,

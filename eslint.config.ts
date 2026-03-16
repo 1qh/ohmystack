@@ -1,4 +1,6 @@
 import { eslint } from 'lintmax/eslint'
+import { recommended as convexRecommended } from '@noboil/convex/eslint'
+import { recommended as spacetimeRecommended } from '@noboil/spacetimedb/eslint'
 
 export default eslint({
   append: [
@@ -45,9 +47,17 @@ export default eslint({
       }
     },
     {
+      ...convexRecommended,
+      files: ['packages/be-convex/**/*.ts', 'packages/be-convex/**/*.tsx']
+    },
+    {
+      ...spacetimeRecommended,
+      files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
+    },
+    {
       files: [
-        'apps/**/*.ts',
-        'apps/**/*.tsx',
+        'apps/**/src/**/*.ts',
+        'apps/**/src/**/*.tsx',
         'packages/be-convex/**/*.ts',
         'packages/be-spacetimedb/**/*.ts',
         'packages/be-convex/**/*.tsx',
@@ -72,9 +82,29 @@ export default eslint({
           }
         ]
       }
+    },
+    {
+      files: [
+        'packages/be-convex/**/*.test.ts',
+        'packages/be-convex/**/*.test.tsx',
+        'packages/be-spacetimedb/**/*.test.ts',
+        'packages/be-spacetimedb/**/*.test.tsx'
+      ],
+      rules: {
+        '@typescript-eslint/require-await': 'off'
+      }
     }
   ],
-  ignores: ['*.config.ts', 'packages/ui/**', '.source/**', '**/_generated/**', '**/generated/**', '**/module_bindings/**'],
+  ignores: [
+    '**/*.config.ts',
+    '**/*.config.mjs',
+    'packages/be-agent/convex/f.test.ts',
+    'packages/ui/**',
+    '**/.source/**',
+    '**/_generated/**',
+    '**/generated/**',
+    '**/module_bindings/**'
+  ],
   rules: {
     '@typescript-eslint/no-magic-numbers': 'off',
     'no-magic-numbers': 'off'

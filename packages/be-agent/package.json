@@ -29,8 +29,5 @@
     "convex": "latest",
     "convex-helpers": "latest",
     "convex-test": "latest"
-  },
-  "devDependencies": {
-    "@auth/core": "^0.34.3"
   }
 }

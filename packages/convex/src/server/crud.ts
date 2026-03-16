@@ -1,8 +1,10 @@
+/* oxlint-disable eslint/no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 // oxlint-disable promise/prefer-await-to-then
+/* eslint-disable no-await-in-loop */
 /* eslint-disable complexity */
 /* eslint-disable max-depth */
 // biome-ignore-all lint/suspicious/useAwait: x
-// biome-ignore-all lint/performance/noAwaitInLoops: x
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 
 import { zid } from 'convex-helpers/server/zod4'
@@ -91,12 +93,12 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
         return r.success ? (r.data as W) : errValidation('INVALID_WHERE', r.error)
       },
       defaults = { auth: parseW(opt?.auth?.where), pub: parseW(opt?.pub?.where) },
-      enrich = async (c: ReadCtx, docs: Rec[]) =>
-        Promise.all(
-          (await c.withAuthor(docs as { userId: string }[])).map(async d =>
-            addUrls({ doc: d, fileFields: fileFs, storage: c.storage })
-          )
-        ) as Promise<EnrichedDoc<S>[]>,
+      enrich = async (c: ReadCtx, docs: Rec[]) => {
+        const withAuthorDocs = await c.withAuthor(docs as { userId: string }[])
+        return Promise.all(
+          withAuthorDocs.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage }))
+        ) as Promise<EnrichedDoc<S>[]>
+      },
       buildExpr = (fb: FilterLike, w: WG, vid: null | string) => {
         let e: unknown = null
         const and = (x: unknown) => {
@@ -191,7 +193,8 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
             if (!c.viewerId) return null
             if ((doc as { userId?: string }).userId !== c.viewerId) return null
           }
-          return (await enrich(c, [doc]))[0] ?? null
+          const enrichedDocs = await enrich(c, [doc])
+          return enrichedDocs[0] ?? null
         },
       searchIndexed = async (c: ReadCtx, qry: string, w: undefined | W) => {
         const sIdx = searchCfg?.index ?? 'search_field',

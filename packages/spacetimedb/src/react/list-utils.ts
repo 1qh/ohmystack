@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/no-empty-function */
 'use client'
 
 import type { ComparisonOp } from '../server/types'

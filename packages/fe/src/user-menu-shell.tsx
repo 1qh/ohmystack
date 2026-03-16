@@ -1,5 +1,5 @@
 import type { Popover as PopoverPrimitive } from 'radix-ui'
-import { createElement, type ComponentProps } from 'react'
+import type { ComponentProps } from 'react'
 
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import { Button } from '@a/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@a/ui/popover'
 import Image from 'next/image'
 import Link from 'next/link'
+import { createElement } from 'react'
 
 import ThemeToggle from './theme-toggle'
 

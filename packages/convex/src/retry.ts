@@ -1,5 +1,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/useAwait: x
+/* eslint-disable no-await-in-loop */
 
 import { sleep } from './constants'
 

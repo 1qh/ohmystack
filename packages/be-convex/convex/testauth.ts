@@ -104,7 +104,7 @@ const testAuth = makeTestAuth({
           'orgProfile'
         ].map(async table => {
           const docs = await ctx.db.query(table).take(BATCH_SIZE)
-          await Promise.all(docs.map(d => ctx.db.delete(d._id)))
+          await Promise.all(docs.map(async d => ctx.db.delete(d._id)))
           return docs.length
         })
       )

@@ -1,3 +1,5 @@
+/* oxlint-disable promise/prefer-await-to-then */
+
 'use client'
 
 import { useAuthActions } from '@convex-dev/auth/react'
@@ -8,11 +10,13 @@ import { useEffect } from 'react'
 const LoginPage = () => {
   const { signIn } = useAuthActions(),
     { isAuthenticated, isLoading } = useConvexAuth(),
-    router = useRouter()
-
-  const onGoogle = async () => {
-    await signIn('google', { redirectTo: '/' })
-  }
+    router = useRouter(),
+    signInWithGoogle = async () => {
+      await signIn('google', { redirectTo: '/' })
+    },
+    onGoogle = () => {
+      signInWithGoogle().catch(() => undefined)
+    }
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return

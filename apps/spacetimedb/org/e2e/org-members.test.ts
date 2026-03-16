@@ -12,7 +12,11 @@ import {
 import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-members-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  readStringId = (value: unknown): string => {
+    if (typeof value === 'string' && value.length > 0) return value
+    throw new TypeError('Expected non-empty string id')
+  }
 
 test.beforeEach(async ({ page }) => {
   await login(page)
@@ -29,7 +33,7 @@ test.describe
       testOrgId = created.orgId
 
       const memberEmail = `${testPrefix}-member@test.local`,
-        memberUserId = (await createTestUser(memberEmail, 'UI Test Member')) ?? ''
+        memberUserId = readStringId(await createTestUser(memberEmail, 'UI Test Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
 
@@ -122,7 +126,7 @@ test.describe
 
     test('admin sees pending requests on members page', async ({ page }) => {
       const joinerEmail = `${testPrefix}-joiner@test.local`,
-        joinerUserId = (await createTestUser(joinerEmail, 'Join Requester')) ?? ''
+        joinerUserId = readStringId(await createTestUser(joinerEmail, 'Join Requester'))
       await tc.raw.mutation('testauth:requestJoinAsUser', {
         message: 'I want to join',
         orgId: testOrgId,

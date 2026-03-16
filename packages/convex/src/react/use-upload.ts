@@ -1,4 +1,6 @@
+/* oxlint-disable eslint/no-await-in-loop */
 // oxlint-disable unicorn/prefer-add-event-listener
+/* eslint-disable no-await-in-loop */
 
 /** biome-ignore-all lint/performance/noAwaitInLoops: retry logic */
 'use client'

@@ -8,8 +8,7 @@ const isTestEnvironment =
   typeof process !== 'undefined' &&
   Boolean(process.env.PLAYWRIGHT ?? process.env.TEST_MODE ?? process.env.CONVEX_TEST_MODE)
 
-let cached: LanguageModel | undefined
-let pending: Promise<LanguageModel> | undefined
+let cached: LanguageModel | undefined, pending: Promise<LanguageModel> | undefined
 
 const getModel = async (): Promise<LanguageModel> => {
   if (cached) return cached
@@ -18,17 +17,18 @@ const getModel = async (): Promise<LanguageModel> => {
     cached = mockModel
     return mockModel
   }
-  pending = (async () => {
+  const currentPending = (async () => {
     const { createVertex } = await import('@ai-sdk/google-vertex'),
       vertex = createVertex({ apiKey: process.env.GOOGLE_VERTEX_API_KEY }),
       model = vertex('gemini-2.5-flash') as LanguageModel
     cached = model
     return model
   })()
+  pending = currentPending
   try {
-    return await pending
+    return await currentPending
   } finally {
-    pending = undefined
+    if (pending === currentPending) pending = undefined
   }
 }
 

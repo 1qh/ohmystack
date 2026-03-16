@@ -1,16 +1,16 @@
 'use client'
 
-import type { FormEventHandler, ReactNode } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 
 import { Button } from '@a/ui/button'
 
 interface EmailAuthShellProps {
   children: ReactNode
   login: boolean
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onToggle: () => void
   pending: boolean
   submitLabel: string
-  onSubmit: FormEventHandler<HTMLFormElement>
-  onToggle: () => void
 }
 
 const EmailAuthShell = ({ children, login, onSubmit, onToggle, pending, submitLabel }: EmailAuthShellProps) => (

@@ -1,3 +1,5 @@
+ 
+/* oxlint-disable eslint/no-empty-function */
 // biome-ignore-all lint/suspicious/noEmptyBlockStatements: WASM syscall mock
 
 import { mock } from 'bun:test'

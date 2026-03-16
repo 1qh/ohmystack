@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/dom/no-dangerously-set-innerhtml, react/no-danger, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 // biome-ignore-all lint/security/noDangerouslySetInnerHtml: controlled redirect
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access

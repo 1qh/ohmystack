@@ -6,7 +6,17 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
+const findBracketEnd = (text: string, startPos: number): number => {
+    let depth = 1,
+      pos = startPos
+    while (pos < text.length && depth > 0) {
+      if (text[pos] === '{') depth += 1
+      else if (text[pos] === '}') depth -= 1
+      pos += 1
+    }
+    return pos - 1
+  },
+  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
@@ -88,41 +98,30 @@ const isSchemaFile = (content: string): boolean => {
     return fields
   },
   extractWrapperTables = (content: string): TableInfo[] => {
-    const tables: TableInfo[] = []
-    for (const factory of wrapperFactories) {
-      const pat = new RegExp(`${factory}\\(\\{`, 'gu')
-      let fm = pat.exec(content)
-      while (fm !== null) {
-        let depth = 1,
-          pos = fm.index + fm[0].length
-        while (pos < content.length && depth > 0) {
-          if (content[pos] === '{') depth += 1
-          else if (content[pos] === '}') depth -= 1
-          pos += 1
-        }
-        const outerBlock = content.slice(fm.index + fm[0].length, pos - 1),
-          propPat = /(?<tname>\w+)\s*:\s*object\(\{/gu
-        let pm = propPat.exec(outerBlock)
-        while (pm !== null) {
-          const start = pm.index + pm[0].length
-          let d = 1,
-            p = start
-          while (p < outerBlock.length && d > 0) {
-            if (outerBlock[p] === '{') d += 1
-            else if (outerBlock[p] === '}') d -= 1
-            p += 1
+    const tables: TableInfo[] = [],
+      processFactory = (factory: string) => {
+        const pat = new RegExp(`${factory}\\(\\{`, 'gu')
+        let fm = pat.exec(content)
+        while (fm !== null) {
+          const endPos = findBracketEnd(content, fm.index + fm[0].length),
+            outerBlock = content.slice(fm.index + fm[0].length, endPos),
+            propPat = /(?<tname>\w+)\s*:\s*object\(\{/gu
+          let pm = propPat.exec(outerBlock)
+          while (pm !== null) {
+            const start = pm.index + pm[0].length,
+              fieldEnd = findBracketEnd(outerBlock, start),
+              fieldBlock = outerBlock.slice(start, fieldEnd)
+            tables.push({
+              fields: extractFieldsFromBlock(fieldBlock),
+              name: pm.groups?.tname ?? pm[1] ?? '',
+              tableType: TYPE_LABELS[factory] ?? factory
+            })
+            pm = propPat.exec(outerBlock)
           }
-          const fieldBlock = outerBlock.slice(start, p - 1)
-          tables.push({
-            fields: extractFieldsFromBlock(fieldBlock),
-            name: pm.groups?.tname ?? pm[1] ?? '',
-            tableType: TYPE_LABELS[factory] ?? factory
-          })
-          pm = propPat.exec(outerBlock)
+          fm = pat.exec(content)
         }
-        fm = pat.exec(content)
       }
-    }
+    for (const factory of wrapperFactories) processFactory(factory)
     return tables
   },
   extractChildren = (content: string): ChildInfo[] => {

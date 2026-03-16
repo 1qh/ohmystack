@@ -1,6 +1,7 @@
+/* eslint-disable no-await-in-loop, max-depth */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
-import { buildTaskTerminalReminder, maybeContinueOrchestratorInline } from './tasks'
 import { internalMutation } from './_generated/server'
+import { buildTaskTerminalReminder, maybeContinueOrchestratorInline } from './tasks'
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000,
   INTERRUPTED_RESULT = 'Interrupted: agent run terminated before tool completion',
@@ -87,7 +88,6 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
           .collect()
       let cleanedCount = 0
       for (const s of idleStates) {
-        // oxlint-disable-next-line eslint/no-await-in-loop
         const messages = await ctx.db
           .query('messages')
           .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
@@ -97,8 +97,7 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
             const nextContent =
                 m.streamingContent && m.streamingContent.length > 0 ? m.streamingContent : INTERRUPTED_TEXT,
               nextParts: typeof m.parts = []
-            for (const p of m.parts) {
-              // oxlint-disable-next-line eslint/max-depth
+            for (const p of m.parts)
               if (p.type === 'tool-call' && p.status === 'pending')
                 nextParts.push({
                   args: p.args,
@@ -109,9 +108,7 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
                   type: 'tool-call'
                 })
               else nextParts.push(p)
-            }
 
-            // oxlint-disable-next-line eslint/no-await-in-loop
             await ctx.db.patch(m._id, {
               content: nextContent,
               isComplete: true,

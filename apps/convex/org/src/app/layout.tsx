@@ -22,7 +22,8 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
   needsOrgLayout = (pathname: string) => {
     for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
     return false
-  }
+  },
+  renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>
 
 interface MembershipResult {
   memberId: null | string
@@ -81,7 +82,7 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
       const ctx = await resolveOrgContext(pathname)
       if (ctx.kind === 'redirect')
         return (
-          <AuthLayout convexProvider={inner => <ConvexProvider fileApi>{inner}</ConvexProvider>}>
+          <AuthLayout convexProvider={renderConvexProvider}>
             <OrgRedirect orgId={ctx.orgId} slug={ctx.slug} to={ctx.to} />
           </AuthLayout>
         )
@@ -92,7 +93,7 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
       )
     }
 
-    return <AuthLayout convexProvider={inner => <ConvexProvider fileApi>{inner}</ConvexProvider>}>{content}</AuthLayout>
+    return <AuthLayout convexProvider={renderConvexProvider}>{content}</AuthLayout>
   }
 
 export default Layout

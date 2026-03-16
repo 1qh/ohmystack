@@ -1,3 +1,4 @@
+/* oxlint-disable promise/prefer-await-to-callbacks, promise/prefer-await-to-then */
 'use client'
 
 import { useAuthActions } from '@convex-dev/auth/react'
@@ -10,16 +11,14 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ emailLoginPath = '/login/email', redirectTo = '/' }: LoginPageProps) => {
-  const { signIn } = useAuthActions()
-
-  const onGoogleClick = async () => {
-    try {
-      await signIn('google', { redirectTo })
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error)
+  const { signIn } = useAuthActions(),
+    onGoogleClick = () => {
+      const signInAttempt = signIn('google', { redirectTo })
+      signInAttempt.catch(error => {
+        // eslint-disable-next-line no-console
+        console.error(error)
+      })
     }
-  }
 
   return (
     <OAuthLoginShell emailLoginPath={emailLoginPath} emailLoginText='Log in with password' onGoogleClick={onGoogleClick} />

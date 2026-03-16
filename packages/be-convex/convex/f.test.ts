@@ -1,10 +1,10 @@
-/* eslint-disable max-statements, no-await-in-loop */
-// oxlint-disable promise/prefer-await-to-then
-// biome-ignore-all lint/performance/noAwaitInLoops: test fixtures
-import { describe, expect, test } from 'bun:test'
-import { convexTest } from 'convex-test'
+/* eslint-disable no-await-in-loop, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* oxlint-disable promise/prefer-await-to-then */
+/** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
 import { createTestContext } from '@noboil/convex/test'
 import { discoverModules } from '@noboil/convex/test/discover'
+import { describe, expect, test } from 'bun:test'
+import { convexTest } from 'convex-test'
 
 import { api } from './_generated/api'
 import schema from './schema'
@@ -757,7 +757,7 @@ describe('cacheCrud factory', () => {
       const ttl = 7 * 24 * 60 * 60 * 1000,
         updatedAt = movie?.updatedAt
       expect(updatedAt).toBeDefined()
-      // oxlint-disable-next-line eslint-plugin-jest/no-conditional-in-test
+      // oxlint-disable-next-line no-conditional-in-test
       const isExpired = (updatedAt ?? 0) + ttl < Date.now()
       expect(isExpired).toBe(true)
     })
@@ -2317,15 +2317,13 @@ describe('singletonCrud profile', () => {
 
     test('upsert updates updatedAt timestamp', async () => {
       const ctx = t(),
-        { asUser } = await createTestContext(ctx)
-
-      const first = await asUser(0).mutation(api.blogProfile.upsert, {
-        displayName: 'Timestamp Test',
-        notifications: true,
-        theme: 'system'
-      })
-
-      const second = await asUser(0).mutation(api.blogProfile.upsert, { bio: 'Update' })
+        { asUser } = await createTestContext(ctx),
+        first = await asUser(0).mutation(api.blogProfile.upsert, {
+          displayName: 'Timestamp Test',
+          notifications: true,
+          theme: 'system'
+        }),
+        second = await asUser(0).mutation(api.blogProfile.upsert, { bio: 'Update' })
       expect(second.updatedAt).toBeGreaterThanOrEqual(first.updatedAt)
     })
   })
@@ -2441,18 +2439,16 @@ describe('singletonCrud profile', () => {
   describe('conflict detection', () => {
     test('upsert with correct expectedUpdatedAt succeeds', async () => {
       const ctx = t(),
-        { asUser } = await createTestContext(ctx)
-
-      const created = await asUser(0).mutation(api.blogProfile.upsert, {
-        displayName: 'Conflict OK',
-        notifications: true,
-        theme: 'system'
-      })
-
-      const updated = await asUser(0).mutation(api.blogProfile.upsert, {
-        displayName: 'Updated OK',
-        expectedUpdatedAt: created.updatedAt
-      })
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.blogProfile.upsert, {
+          displayName: 'Conflict OK',
+          notifications: true,
+          theme: 'system'
+        }),
+        updated = await asUser(0).mutation(api.blogProfile.upsert, {
+          displayName: 'Updated OK',
+          expectedUpdatedAt: created.updatedAt
+        })
 
       expect(updated.displayName).toBe('Updated OK')
     })
@@ -2513,8 +2509,8 @@ describe('singletonCrud profile', () => {
         theme: 'light'
       })
 
-      const profile1 = await asUser(0).query(api.blogProfile.get, {})
-      const profile2 = await asUser(1).query(api.blogProfile.get, {})
+      const profile1 = await asUser(0).query(api.blogProfile.get, {}),
+        profile2 = await asUser(1).query(api.blogProfile.get, {})
 
       expect(profile1?.displayName).toBe('User A Profile')
       expect(profile1?.theme).toBe('dark')

@@ -1,14 +1,17 @@
+/* eslint-disable no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright page interactions */
+/** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import { expect, test } from './fixtures'
 
-const DELETE_RE = /delete/iu
-const NAME_RE = /name/iu
-const URL_RE = /url/iu
-const ADD_RE = /add/iu
-const DUPLICATE_RE = /name.*taken|duplicate/iu
-const BLOCKED_RE = /blocked/iu
-const DISABLE_RE = /disable/iu
-const ENABLE_RE = /enable/iu
-const MCP_SERVERS_RE = /mcp servers/iu
+const DELETE_RE = /delete/iu,
+  NAME_RE = /name/iu,
+  URL_RE = /url/iu,
+  ADD_RE = /add/iu,
+  DUPLICATE_RE = /name.*taken|duplicate/iu,
+  BLOCKED_RE = /blocked/iu,
+  DISABLE_RE = /disable/iu,
+  ENABLE_RE = /enable/iu,
+  MCP_SERVERS_RE = /mcp servers/iu
 
 test.describe
   .serial('Settings (MCP)', () => {
@@ -17,12 +20,9 @@ test.describe
       const names = ['test-server', 'evil-server']
       for (const name of names) {
         const row = page.locator('li', { hasText: name })
-        /** biome-ignore lint/performance/noAwaitInLoops: sequential Playwright page interactions */
         while ((await row.count()) > 0) {
-          /** biome-ignore lint/performance/noAwaitInLoops: sequential Playwright page interactions */
-          await row.first().getByRole('button', { name: DELETE_RE }).click() // oxlint-disable-line eslint/no-await-in-loop
-          /** biome-ignore lint/performance/noAwaitInLoops: sequential Playwright page interactions */
-          await expect(page.getByText(name, { exact: true })).not.toBeVisible() // oxlint-disable-line eslint/no-await-in-loop
+          await row.first().getByRole('button', { name: DELETE_RE }).click()
+          await expect(page.getByText(name, { exact: true })).not.toBeVisible()
         }
       }
     })
@@ -80,7 +80,6 @@ test.describe
       await expect(page.getByText(name)).toBeVisible()
       const disableBtn = page.getByRole('button', { name: DISABLE_RE }).first()
       await disableBtn.click()
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: wait for Convex reactive update */
       await page.waitForTimeout(2000)
       await expect(page.getByRole('button', { name: ENABLE_RE }).first()).toBeVisible({ timeout: 10_000 })
     })

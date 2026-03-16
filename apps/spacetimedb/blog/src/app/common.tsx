@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* oxlint-disable react-perf/jsx-no-jsx-as-prop, @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'

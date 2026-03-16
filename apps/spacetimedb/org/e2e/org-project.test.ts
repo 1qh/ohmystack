@@ -14,7 +14,16 @@ import {
 import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-proj-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  readStringId = (value: unknown): string => {
+    if (typeof value === 'string' && value.length > 0) return value
+    throw new TypeError('Expected non-empty string id')
+  },
+  readName = (value: unknown): string | undefined => {
+    if (typeof value !== 'object' || !value) return
+    const { name } = value as { name?: unknown }
+    return typeof name === 'string' ? name : undefined
+  }
 
 test.describe
   .serial('Projects Page UI', () => {
@@ -122,12 +131,12 @@ test.describe
           name: 'Update Test Project',
           orgId: testOrgId
         }),
-        updated = await tc.mutation(api.project.update, {
+        updated: unknown = await tc.mutation(api.project.update, {
           id: projectId,
           name: 'Updated Project Name',
           orgId: testOrgId
         })
-      expect(updated?.name).toBe('Updated Project Name')
+      expect(readName(updated)).toBe('Updated Project Name')
     })
 
     test('rm project - owner can delete', async () => {
@@ -251,7 +260,7 @@ test.describe
 
       const memberEmail = `${testPrefix}-proj-member@test.local`
 
-      memberUserId = (await createTestUser(memberEmail, 'Project Member')) ?? ''
+      memberUserId = readStringId(await createTestUser(memberEmail, 'Project Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
 

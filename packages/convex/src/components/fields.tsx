@@ -1,4 +1,6 @@
+/* oxlint-disable react-perf/jsx-no-jsx-as-prop, react-perf/jsx-no-new-object-as-prop, react-perf/jsx-no-new-array-as-prop */
 // oxlint-disable promise/prefer-await-to-then
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/performance/noAwaitInLoops: x

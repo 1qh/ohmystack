@@ -1,3 +1,5 @@
+/* oxlint-disable promise/prefer-await-to-then */
+
 'use client'
 
 import { api } from '@a/be-convex'
@@ -64,8 +66,8 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
             <div className='space-y-4 text-center'>
               <p className='text-muted-foreground'>Your request is pending approval.</p>
               <Button
-                onClick={async () => {
-                  await handleCancel()
+                onClick={() => {
+                  handleCancel().catch(() => undefined)
                 }}
                 variant='outline'>
                 Cancel request

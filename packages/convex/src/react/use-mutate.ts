@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
-/* eslint-disable complexity */
+/* eslint-disable complexity, @typescript-eslint/no-unsafe-return */
 'use client'
 
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'

@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 import type { Locator } from '@playwright/test'
 
@@ -10,10 +11,10 @@ class BlogPage extends BasePage {
     await tagsInput.waitFor({ state: 'visible', timeout: 5000 })
     for (const tag of tags) {
       // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
-      await tagsInput.fill(tag) // oxlint-disable-line eslint/no-await-in-loop
+      await tagsInput.fill(tag)
 
       // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
-      await tagsInput.press('Enter') // oxlint-disable-line eslint/no-await-in-loop
+      await tagsInput.press('Enter')
     }
   }
   public async clearSearch(): Promise<void> {

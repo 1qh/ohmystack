@@ -1,16 +1,12 @@
 import { serve } from 'bun'
+
 const BACKEND_API = 'http://127.0.0.1:3212',
   BACKEND_WS = 'ws://127.0.0.1:3212',
-  SITE_URL = 'http://127.0.0.1:3211'
+  SITE_URL = 'http://127.0.0.1:3211',
+  swallow = () => undefined
 
-/** biome-ignore lint/suspicious/noEmptyBlockStatements: intentional empty handler */
-process.on('uncaughtException', () => {
-  void 0
-})
-/** biome-ignore lint/suspicious/noEmptyBlockStatements: intentional empty handler */
-process.on('unhandledRejection', () => {
-  void 0
-})
+process.on('uncaughtException', swallow)
+process.on('unhandledRejection', swallow)
 
 serve({
   fetch: async (req, server) => {
@@ -18,7 +14,12 @@ serve({
       const url = new URL(req.url)
 
       if (req.headers.get('upgrade')?.toLowerCase() === 'websocket') {
-        if (server.upgrade(req, { data: { url: `${BACKEND_WS}${url.pathname}${url.search}` } })) return
+        if (
+          server.upgrade(req, {
+            data: { url: `${BACKEND_WS}${url.pathname}${url.search}` }
+          })
+        )
+          return
 
         return new Response('WebSocket upgrade failed', { status: 500 })
       }
@@ -53,8 +54,7 @@ serve({
         const d = ws.data as Record<string, unknown>
         if (d.upstream) (d.upstream as WebSocket).close()
       } catch {
-        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-        void 0
+        swallow()
       }
     },
     message: (ws, message) => {
@@ -67,8 +67,7 @@ serve({
           ;(d.queue as (ArrayBuffer | Buffer | string)[]).push(message)
         }
       } catch {
-        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-        void 0
+        swallow()
       }
     },
     open: ws => {
@@ -88,29 +87,25 @@ serve({
           try {
             ws.send(event.data as string)
           } catch {
-            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-            void 0
+            swallow()
           }
         })
         upstream.addEventListener('close', () => {
           try {
             ws.close()
           } catch {
-            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-            void 0
+            swallow()
           }
         })
         upstream.addEventListener('error', () => {
           try {
             ws.close()
           } catch {
-            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-            void 0
+            swallow()
           }
         })
       } catch {
-        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
-        void 0
+        swallow()
       }
     }
   }

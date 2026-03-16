@@ -1,3 +1,5 @@
+/* oxlint-disable promise/prefer-await-to-then */
+
 'use client'
 
 import { api } from '@a/be-agent'
@@ -9,9 +11,12 @@ const SessionListPage = () => {
   const sessions = useQuery(api.sessions.listSessions, {}),
     createSession = useMutation(api.sessions.createSession),
     router = useRouter(),
-    handleNew = async () => {
+    createNewSession = async () => {
       const { sessionId } = await createSession({})
       router.push(`/chat/${sessionId}`)
+    },
+    handleNew = () => {
+      createNewSession().catch(() => undefined)
     }
 
   if (!sessions) return <main className='p-8'>Loading...</main>

@@ -129,6 +129,7 @@ const IMAGE_TYPES = new Set(['image/gif', 'image/jpeg', 'image/png', 'image/svg+
       }
     },
   makeImageRoute = async ({ convexUrl, fileInfoQuery = 'file:info' }: ImageRouteConfig) => {
+    await Promise.resolve()
     const getClient = () => new ConvexHttpClient(convexUrl),
       opts = { getClient, queryRef: fileInfoQuery }
     return { GET: makeGet(opts), POST: makePost(opts) }

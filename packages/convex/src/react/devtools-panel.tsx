@@ -1,4 +1,5 @@
-/* eslint-disable complexity, react-hooks/refs */
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop */
+/* eslint-disable complexity, react-hooks/refs, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable eslint/complexity */
 'use client'
 import { useEffect, useRef, useState } from 'react'

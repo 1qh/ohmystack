@@ -1,7 +1,6 @@
 'use client'
-import type { OrgRole } from '@noboil/convex'
-
 import type { OrgListGridItem } from '@a/fe/org-list-grid'
+import type { OrgRole } from '@noboil/convex'
 
 import OrgListGrid from '@a/fe/org-list-grid'
 import { OrgAvatar, RoleBadge } from '@noboil/convex/components'

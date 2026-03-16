@@ -1,3 +1,4 @@
+/* oxlint-disable react-perf/jsx-no-jsx-as-prop */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
 

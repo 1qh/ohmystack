@@ -13,7 +13,7 @@
     "build:ts": "turbo run build",
     "check": "lintmax check",
     "ci": "bun tsc && lintmax check && bun build:ts",
-    "clean": "git clean -xdf",
+    "clean": "rm -f bun.lock && git clean -xdf",
     "clean:all": "bun clean && bun clean:desktop && bun clean:mobile",
     "clean:desktop": "rm -rf desktop/convex/*/.build swift-core/.build",
     "clean:mobile": "rm -rf mobile/convex/*/.build mobile/convex/*/Android/.gradle mobile/convex/*/Android/build mobile/convex/*/Android/app/build ~/Library/Developer/Xcode/DerivedData/Project-*",
@@ -48,7 +48,6 @@
   "devDependencies": {
     "@types/bun": "latest",
     "babel-plugin-react-compiler": "latest",
-    "bun": "^1.3.10",
     "depcheck": "latest",
     "dotenv-cli": "latest",
     "jose": "latest",

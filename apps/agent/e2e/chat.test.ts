@@ -1,14 +1,15 @@
+/* eslint-disable no-await-in-loop */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright ops */
 /** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import { expect, test } from './fixtures'
 
-const CHAT_URL_RE = /\/chat\//u
-const SESSIONS_RE = /sessions/iu
-const UNTITLED_RE = /untitled/iu
-const DISCOVER_RE = /discover/iu
-const COMPLETED_RE = /completed|running|error/iu
-const LETTER_RE = /[a-z]/iu
-const TOOL_CALL_RE = / - /u
+const CHAT_URL_RE = /\/chat\//u,
+  SESSIONS_RE = /sessions/iu,
+  UNTITLED_RE = /untitled/iu,
+  DISCOVER_RE = /discover/iu,
+  COMPLETED_RE = /completed|running|error/iu,
+  LETTER_RE = /[a-z]/iu,
+  TOOL_CALL_RE = / - /u
 
 test.describe
   .serial('Chat & Streaming', () => {
@@ -17,7 +18,6 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Hello agent')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(2000)
       await expect(chatPage.getMessages().first()).toContainText('Hello agent', { timeout: 10_000 })
     })
@@ -70,13 +70,11 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('First message')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(1500)
       await chatPage.sendMessage('Second message')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(1500)
-      const messages = chatPage.getMessages()
-      const count = await messages.count()
+      const messages = chatPage.getMessages(),
+        count = await messages.count()
       expect(count).toBeGreaterThanOrEqual(2)
       const first = await messages.first().textContent()
       expect(first).toContain('First message')
@@ -107,26 +105,21 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       for (let i = 0; i < 6; i += 1) {
-        /** biome-ignore lint/performance/noAwaitInLoops: sequential Playwright page interactions */
-        await chatPage.sendMessage(`scroll-seed-${i}`) // oxlint-disable-line eslint/no-await-in-loop
-        /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
-        await page.waitForTimeout(1000) // oxlint-disable-line eslint/no-await-in-loop
+        await chatPage.sendMessage(`scroll-seed-${i}`)
+        await page.waitForTimeout(1000)
       }
-      const log = chatPage.getMessageLog()
-      const before = await log.evaluate(element => ({
-        clientHeight: element.clientHeight,
-        scrollHeight: element.scrollHeight
-      }))
-      if (before.scrollHeight <= before.clientHeight) {
+      const log = chatPage.getMessageLog(),
+        before = await log.evaluate(element => ({
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight
+        }))
+      if (before.scrollHeight <= before.clientHeight)
         for (let i = 6; i < 20; i += 1) {
-          /** biome-ignore lint/performance/noAwaitInLoops: sequential Playwright page interactions */
-          await chatPage.sendMessage(`scroll-extra-${i}`) // oxlint-disable-line eslint/no-await-in-loop
-          /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
-          await page.waitForTimeout(500) // oxlint-disable-line eslint/no-await-in-loop
+          await chatPage.sendMessage(`scroll-extra-${i}`)
+          await page.waitForTimeout(500)
         }
-      }
+
       await chatPage.sendMessage('final-scroll-check')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(2000)
       const lastMsg = chatPage.getMessages().last()
       await expect(lastMsg).toBeVisible({ timeout: 5000 })
@@ -150,10 +143,9 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Tell me something')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(3000)
-      const messages = chatPage.getMessages()
-      const count = await messages.count()
+      const messages = chatPage.getMessages(),
+        count = await messages.count()
       expect(count).toBeGreaterThanOrEqual(1)
     })
   })
@@ -177,7 +169,6 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Please use available tools and then summarize results')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(5000)
       const toolCallSummaries = page.locator('article details > summary').filter({ hasText: TOOL_CALL_RE })
       if ((await toolCallSummaries.count()) > 0) {
@@ -193,7 +184,6 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Share one source link')
-      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
       await page.waitForTimeout(5000)
       const sourceCardLinks = page.locator('article a[href^="http"]')
       if ((await sourceCardLinks.count()) > 0) {
@@ -207,8 +197,8 @@ test.describe
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
-      const typingDetails = page.getByTestId('typing-panel')
-      const typingSummary = typingDetails.locator('summary')
+      const typingDetails = page.getByTestId('typing-panel'),
+        typingSummary = typingDetails.locator('summary')
       await expect(typingDetails).toHaveAttribute('open', '')
       await typingSummary.focus()
       await page.keyboard.press('Enter')

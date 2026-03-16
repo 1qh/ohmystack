@@ -41,8 +41,8 @@ const OrgListGrid = <TRole extends string>({
         onClick={() => {
           onSelect(o)
         }}
-        variant='ghost'
-        type='button'>
+        type='button'
+        variant='ghost'>
         {renderAvatar(o)}
         <div className='flex-1'>
           <div className='font-medium'>{o.name}</div>

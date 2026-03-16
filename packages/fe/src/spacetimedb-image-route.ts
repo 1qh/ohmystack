@@ -26,7 +26,7 @@ const allowedProtocol = (value: string) => {
       }
     })
   },
-  GET = (request: NextRequest) => {
+  GET = async (request: NextRequest) => {
     const url = request.nextUrl.searchParams.get('url')
     if (!url) return NextResponse.json({ error: 'url is required' }, { status: 400 })
     if (!allowedProtocol(url)) return NextResponse.json({ error: 'url must be http or https' }, { status: 400 })

@@ -1,6 +1,8 @@
+/* oxlint-disable eslint/no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /** biome-ignore-all lint/complexity/useMaxParams: test helpers */
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential deletes */
+/* eslint-disable no-await-in-loop */
 /* eslint-disable @typescript-eslint/max-params, @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable max-depth */
 import type { GenericDataModel, MutationBuilder, QueryBuilder } from 'convex/server'

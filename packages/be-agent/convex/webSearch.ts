@@ -6,8 +6,15 @@ import { v } from 'convex/values'
 
 import { internalAction } from './_generated/server'
 
-type GroundedSource = { snippet: string; title: string; url: string }
-type GroundingResult = { sources: GroundedSource[]; summary: string }
+interface GroundedSource {
+  snippet: string
+  title: string
+  url: string
+}
+interface GroundingResult {
+  sources: GroundedSource[]
+  summary: string
+}
 
 const recordModelUsageRef = makeFunctionReference<
     'mutation',
@@ -20,7 +27,7 @@ const recordModelUsageRef = makeFunctionReference<
       threadId: string
       totalTokens: number
     },
-    string | null
+    null | string
   >('tokenUsage:recordModelUsage'),
   normalizeGrounding = ({ result }: { result: GroundingResult }): GroundingResult => ({
     sources: result.sources,

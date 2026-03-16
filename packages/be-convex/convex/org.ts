@@ -37,16 +37,13 @@ const {
       .query('org')
       .withIndex('by_slug', o => o.eq('slug', slug))
       .unique(),
-  findUniqueSlug = async (ctx: MutationCtx, base: string) => {
-    let candidate = base,
-      attempt = 0
-    /** biome-ignore lint/performance/noAwaitInLoops: sequential slug check */
-    // oxlint-disable-next-line eslint/no-await-in-loop
-    while (await slugTaken(ctx, candidate)) {
-      attempt += 1
-      candidate = `${base}-${String(attempt)}`
+  findUniqueSlug = async (ctx: MutationCtx, base: string): Promise<string> => {
+    const next = async (attempt: number): Promise<string> => {
+      const candidate = attempt === 0 ? base : `${base}-${String(attempt)}`
+      if (!(await slugTaken(ctx, candidate))) return candidate
+      return next(attempt + 1)
     }
-    return candidate
+    return next(0)
   },
   getOrCreate = mutation({
     args: {},

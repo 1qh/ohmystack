@@ -5,7 +5,11 @@ import { addTestOrgMember, createTestOrg, createTestUser, ensureTestUser, makeOr
 import { expect, test } from '@playwright/test'
 
 const testPrefix = `e2e-org-settings-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
+  readStringId = (value: unknown): string => {
+    if (typeof value === 'string' && value.length > 0) return value
+    throw new TypeError('Expected non-empty string id')
+  }
 
 test.beforeEach(async ({ page }) => {
   await login(page)
@@ -22,7 +26,7 @@ test.describe
       testOrgId = created.orgId
 
       const adminEmail = `${testPrefix}-settings-admin@test.local`,
-        adminUserId = (await createTestUser(adminEmail, 'Settings Admin')) ?? ''
+        adminUserId = readStringId(await createTestUser(adminEmail, 'Settings Admin'))
       await addTestOrgMember(testOrgId, adminUserId, true)
     })
 
@@ -72,7 +76,7 @@ test.describe
       testOrgId = created.orgId
 
       const adminEmail = `${testPrefix}-transfer-admin@test.local`
-      adminUserId = (await createTestUser(adminEmail, 'Transfer Admin')) ?? ''
+      adminUserId = readStringId(await createTestUser(adminEmail, 'Transfer Admin'))
       await addTestOrgMember(testOrgId, adminUserId, true)
     })
 
@@ -126,7 +130,7 @@ test.describe
       testOrgId = created.orgId
 
       const memberEmail = `${testPrefix}-leave-member@test.local`,
-        memberUserId = (await createTestUser(memberEmail, 'Leave Member')) ?? ''
+        memberUserId = readStringId(await createTestUser(memberEmail, 'Leave Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
 

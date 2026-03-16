@@ -1,7 +1,11 @@
 /* eslint-disable no-await-in-loop, @typescript-eslint/no-magic-numbers */
+/* oxlint-disable unicorn/consistent-function-scoping */
 /** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures
  * biome-ignore-all lint/performance/noDelete: test cleanup
- * biome-ignore-all lint/style/noProcessEnv: test mode configuration */
+ * biome-ignore-all lint/style/noProcessEnv: test mode configuration
+ * biome-ignore-all lint/nursery/noShadow: test scoped variables
+ * biome-ignore-all lint/nursery/noContinue: early-exit in loops
+ * biome-ignore-all lint/style/noCommonJs: test-only fs access */
 import { describe, expect, test } from 'bun:test'
 import { createTestContext } from '@noboil/convex/test'
 import { discoverModules } from '@noboil/convex/test/discover'
@@ -15,7 +19,10 @@ const modules = discoverModules('convex', {
     './_generated/api.js': async () => import('./_generated/api'),
     './_generated/server.js': async () => import('./_generated/server')
   }),
-  t = () => convexTest(schema, modules)
+  t = () => convexTest(schema, modules),
+  brokenReadableStream = () => {
+    throw new Error('forced_readable_stream_failure')
+  }
 
 describe('sessions', () => {
   test('creates session with threadId and threadRunState', async () => {
@@ -1857,13 +1864,13 @@ describe('tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
     })
-    expect(Object.keys(tools).sort()).toEqual([
+    expect(Object.keys(tools).toSorted()).toEqual([
       'delegate',
       'mcpCall',
       'mcpDiscover',
@@ -1879,8 +1886,8 @@ describe('tool factories', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
@@ -3756,11 +3763,7 @@ describe('orchestrator action', () => {
     const originalFetch = globalThis.fetch,
       originalReadableStream = globalThis.ReadableStream
     globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 })) as typeof fetch
-    globalThis.ReadableStream = class BrokenReadableStream {
-      constructor() {
-        throw new Error('forced_readable_stream_failure')
-      }
-    } as typeof ReadableStream
+    globalThis.ReadableStream = brokenReadableStream as unknown as typeof ReadableStream
     try {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
@@ -4775,7 +4778,7 @@ describe('gap coverage tool factories', () => {
     let called = false
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           called = true
           const payload = args as {
             description: string
@@ -4791,7 +4794,7 @@ describe('gap coverage tool factories', () => {
           expect(payload.sessionId).toBe('session-1')
           return { taskId: 'task-1', threadId: 'worker-1' }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-1',
       sessionId: 'session-1' as never
@@ -4815,7 +4818,7 @@ describe('gap coverage tool factories', () => {
     let called = false
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           called = true
           const payload = args as {
             sessionId: string
@@ -4832,7 +4835,7 @@ describe('gap coverage tool factories', () => {
           expect(payload.todos[0]?.content).toBe('a')
           return { updated: payload.todos.length }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-2',
       sessionId: 'session-2' as never
@@ -4868,8 +4871,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => [{ content: 'todo 1' }]
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => [{ content: 'todo 1' }]
       } as never,
       parentThreadId: 'parent-3',
       sessionId: 'session-3' as never
@@ -4886,8 +4889,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => ({ todos: [{ content: 'todo passthrough' }] })
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => ({ todos: [{ content: 'todo passthrough' }] })
       } as never,
       parentThreadId: 'parent-4',
       sessionId: 'session-4' as never
@@ -4904,8 +4907,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-5',
       sessionId: 'session-5' as never
@@ -4925,8 +4928,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => ({
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => ({
           description: 'download file',
           status: 'running'
         })
@@ -4949,8 +4952,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => ({ status: 'running' })
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => ({ status: 'running' })
       } as never,
       parentThreadId: 'parent-7',
       sessionId: 'session-7' as never
@@ -4970,8 +4973,8 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => ({ result: 'done output', status: 'completed' })
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => ({ result: 'done output', status: 'completed' })
       } as never,
       parentThreadId: 'parent-8',
       sessionId: 'session-8' as never
@@ -5001,8 +5004,8 @@ describe('gap coverage tool factories', () => {
           ],
           summary: 'Mock search result for: convex'
         }),
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-9',
       sessionId: 'session-9' as never
@@ -5033,8 +5036,8 @@ describe('gap coverage tool factories', () => {
           ],
           summary: 'Mock search result for: worker query'
         }),
-        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
@@ -5707,9 +5710,9 @@ describe('auth and cron gap coverage', () => {
     }
   })
 
-  test('cron schedule wiring matches documented intervals', () => {
-    const { readFileSync } = require('node:fs')
-    const source = readFileSync(new URL('./crons.ts', import.meta.url), 'utf-8')
+  test('cron schedule wiring matches documented intervals', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('crons.ts', import.meta.url), 'utf8')
     expect(
       source.includes("crons.interval('timeout stale runs', { minutes: 5 }, internal.orchestrator.timeoutStaleRuns)")
     ).toBe(true)
@@ -5997,8 +6000,8 @@ describe('web search bridge', () => {
       tools = createOrchestratorTools({
         ctx: {
           runAction: async (ref, args) => ctx.action(ref, args),
-          runMutation:  (ref, args) => ctx.mutation(ref, args),
-          runQuery:  (ref, args) => ctx.query(ref, args)
+          runMutation: (ref, args) => ctx.mutation(ref, args),
+          runQuery: (ref, args) => ctx.query(ref, args)
         } as never,
         parentThreadId: threadId,
         sessionId
@@ -6224,9 +6227,9 @@ describe('mcp matrix remaining coverage', () => {
         isEnabled: true,
         name: 'json-test',
         transport: 'http',
+        updatedAt: Date.now(),
         url: 'https://example.com/mcp',
-        userId: session?.userId as never,
-        updatedAt: Date.now()
+        userId: session?.userId as never
       })
     })
     const result = await ctx.mutation(internal.mcp.mcpCallTool, {
@@ -6912,7 +6915,7 @@ describe('cron and lifecycle remaining blocked cases', () => {
       threadId
     })
     expect(msgs.length).toBe(1)
-    const parts = msgs[0]?.parts as Array<{ type: string }>
+    const parts = msgs[0]?.parts as { type: string }[]
     expect(parts.length).toBe(2)
     expect(parts[0]?.type).toBe('text')
     expect(parts[1]?.type).toBe('tool-call')
@@ -6949,18 +6952,18 @@ describe('cron and lifecycle remaining blocked cases', () => {
 describe('append gap list requested tests', () => {
   test('completionNotifiedAt deferred ordering keeps maybeContinue call after completion patch', async () => {
     const { readFileSync } = await import('node:fs'),
-      source = readFileSync(new URL('./tasks.ts', import.meta.url), 'utf-8'),
+      source = readFileSync(new URL('tasks.ts', import.meta.url), 'utf8'),
       completionPatchIndex = source.indexOf("status: 'completed'"),
       maybeContinueIndex = source.indexOf('await maybeContinueOrchestratorInline({ ctx, taskId })')
-    expect(completionPatchIndex > -1).toBe(true)
-    expect(maybeContinueIndex > -1).toBe(true)
+    expect(completionPatchIndex !== -1).toBe(true)
+    expect(maybeContinueIndex !== -1).toBe(true)
     expect(completionPatchIndex < maybeContinueIndex).toBe(true)
     expect(source.includes('completionNotifiedAt')).toBe(false)
   })
 
   test('exponential backoff formula uses 1s, 2s, 4s and caps retries at 3', async () => {
     const { readFileSync } = await import('node:fs'),
-      source = readFileSync(new URL('./tasks.ts', import.meta.url), 'utf-8')
+      source = readFileSync(new URL('tasks.ts', import.meta.url), 'utf8')
     expect(source.includes('delayMs = Math.min(1000 * 2 ** retryCount, 30_000)')).toBe(true)
     const expected = [1000 * 2 ** 1, 1000 * 2 ** 2, 1000 * 2 ** 3]
     expect(expected).toEqual([2000, 4000, 8000])
@@ -6986,7 +6989,7 @@ describe('append gap list requested tests', () => {
 
   test('isTransientError classification contains transient markers and excludes validation/auth', async () => {
     const { readFileSync } = await import('node:fs'),
-      source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes("'econnreset'")).toBe(true)
     expect(source.includes("'etimedout'")).toBe(true)
     expect(source.includes("'503'")).toBe(true)
@@ -7130,8 +7133,8 @@ describe('append gap list requested tests', () => {
     const tools = createOrchestratorTools({
       ctx: {
         runAction: async (ref, args) => ctx.action(ref, args),
-        runMutation:  (ref, args) => ctx.mutation(ref, args),
-        runQuery:  (ref, args) => ctx.query(ref, args)
+        runMutation: (ref, args) => ctx.mutation(ref, args),
+        runQuery: (ref, args) => ctx.query(ref, args)
       } as never,
       parentThreadId: threadId,
       sessionId
@@ -7195,7 +7198,7 @@ describe('append gap list requested tests', () => {
       })
     )
     const fs = await import('node:fs'),
-      source = fs.readFileSync(new URL('./agents.ts', import.meta.url), 'utf-8')
+      source = fs.readFileSync(new URL('agents.ts', import.meta.url), 'utf8')
     expect(source.includes('getOwnedTaskOutputRef = makeFunctionReference')).toBe(true)
     expect(source.includes("('tasks:getOwnedTaskOutput')")).toBe(true)
     const status = await asUser(0).query(api.tasks.getOwnedTaskStatus, {
@@ -7334,8 +7337,8 @@ describe('append gap list requested tests', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
@@ -7638,7 +7641,7 @@ describe('append gap list requested tests', () => {
 
   test('buildTodoReminder output contains continuation marker and todo list', async () => {
     const fs = await import('node:fs'),
-      source = fs.readFileSync(new URL('./orchestrator.ts', import.meta.url), 'utf-8')
+      source = fs.readFileSync(new URL('orchestrator.ts', import.meta.url), 'utf8')
     expect(source.includes("'[TODO CONTINUATION]'") || source.includes('"[TODO CONTINUATION]"')).toBe(true)
     expect(source.includes('Incomplete tasks remain:')).toBe(true)
     expect(source.includes('Continue working on the next pending task.')).toBe(true)
@@ -8943,10 +8946,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => {
+        runMutation: () => {
           throw new Error('Invalid arguments: run_in_background is required')
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-1',
       sessionId: 'delegate-session-1' as never
@@ -8967,10 +8970,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => {
+        runMutation: () => {
           throw new Error('Invalid arguments: load_skills missing')
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-2',
       sessionId: 'delegate-session-2' as never
@@ -8991,10 +8994,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => {
+        runMutation: () => {
           throw new Error('Unknown category bad. Available: quick, deep')
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-3',
       sessionId: 'delegate-session-3' as never
@@ -9016,10 +9019,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => {
+        runMutation: () => {
           throw new Error('Unknown agent bad. valid options: explore, librarian')
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-4',
       sessionId: 'delegate-session-4' as never
@@ -9041,10 +9044,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => {
+        runMutation: () => {
           throw new Error('rpc failed without signature')
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-5',
       sessionId: 'delegate-session-5' as never
@@ -9066,14 +9069,14 @@ describe('omo parity delegate gaps', () => {
     let payload: { isBackground: boolean } | null = null
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           payload = args as { isBackground: boolean }
           return {
             taskId: 'delegate-default-bg-task',
             threadId: 'delegate-default-bg-thread'
           }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-6',
       sessionId: 'delegate-session-6' as never
@@ -9094,14 +9097,14 @@ describe('omo parity delegate gaps', () => {
     let payload: { isBackground: boolean } | null = null
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           payload = args as { isBackground: boolean }
           return {
             taskId: 'delegate-sync-bg-task',
             threadId: 'delegate-sync-bg-thread'
           }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-parent-7',
       sessionId: 'delegate-session-7' as never
@@ -9122,11 +9125,11 @@ describe('omo parity delegate gaps', () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation:  () => ({
+          runMutation: () => ({
             taskId: 'task-id',
             threadId: 'thread-id'
           }),
-          runQuery:  () => ({ status })
+          runQuery: () => ({ status })
         } as never,
         parentThreadId: 'delegate-parent-8',
         sessionId: 'delegate-session-8' as never
@@ -9542,50 +9545,50 @@ describe('omo parity todo continuation gaps', () => {
 describe('omo parity error classifier gaps', () => {
   test('isTransientError marker list contains econnreset', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('econnreset')).toBe(true)
   })
 
   test('isTransientError marker list contains etimedout', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('etimedout')).toBe(true)
   })
 
   test('isTransientError marker list contains timeout', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('timeout')).toBe(true)
   })
 
   test('isTransientError marker list contains 503', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes("'503'")).toBe(true)
   })
 
   test('isTransientError marker list contains 429', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes("'429'")).toBe(true)
   })
 
   test('isTransientError marker list contains overloaded marker', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('overloaded')).toBe(true)
   })
 
   test('isTransientError marker list excludes auth keywords for permanent path', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('unauthorized')).toBe(false)
     expect(source.includes('forbidden')).toBe(false)
   })
 
   test('isTransientError marker list excludes validation keywords for permanent path', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
     expect(source.includes('validation')).toBe(false)
     expect(source.includes('invalid_argument')).toBe(false)
   })
@@ -10450,14 +10453,14 @@ describe('parity batch transient classifier source extras', () => {
   for (const marker of ['econnreset', 'etimedout', 'timeout', 'rate_limit', '429', '503', 'overloaded'] as const)
     test(`agentsNode transient marker includes ${marker}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
       expect(source.includes(marker)).toBe(true)
     })
 
   for (const token of ['invalid_request_error', 'missing required', 'authentication failed'] as const)
     test(`agentsNode transient marker set excludes ${token}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
       expect(source.includes(token)).toBe(false)
     })
 })
@@ -11280,8 +11283,8 @@ describe('parity delegate-task-english-directive equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
@@ -11299,8 +11302,8 @@ describe('parity delegate-task-english-directive equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
@@ -11318,8 +11321,8 @@ describe('parity delegate-task-english-directive equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
@@ -11358,8 +11361,8 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
@@ -11371,8 +11374,8 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
@@ -11384,8 +11387,8 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
@@ -11397,8 +11400,8 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'orchestrator-parent',
       sessionId: 'orchestrator-session' as never
@@ -11532,7 +11535,7 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           const payload = args as {
             description: string
             isBackground: boolean
@@ -11547,7 +11550,7 @@ describe('parity background-task tools equivalents', () => {
           expect(payload.sessionId).toBe('bg-tools-session')
           return { taskId: 'bg-task-id', threadId: 'bg-thread-id' }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'bg-tools-parent',
       sessionId: 'bg-tools-session' as never
@@ -11573,8 +11576,8 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'bg-status-parent',
       sessionId: 'bg-status-session' as never
@@ -11591,8 +11594,8 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => ({ status: 'running' })
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => ({ status: 'running' })
       } as never,
       parentThreadId: 'bg-output-parent',
       sessionId: 'bg-output-session' as never
@@ -11609,8 +11612,8 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => ({
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => ({
           result: 'worker-final-output',
           status: 'completed'
         })
@@ -11632,11 +11635,11 @@ describe('omo parity: manager deep coverage', () => {
 
   const listChildrenByParent = async ({ ctx, parentThreadId }: { ctx: ReturnType<typeof t>; parentThreadId: string }) => {
     const rows = await ctx.run(async c => {
-      const out: Array<{
+      const out: {
         _id: string
         parentThreadId: string
         threadId: string
-      }> = []
+      }[] = []
       for (const s of taskStatuses) {
         const batch = await c.db
           .query('tasks')
@@ -11771,30 +11774,30 @@ describe('omo parity: manager deep coverage', () => {
         parentThreadId: threadId,
         retryCount: 0,
         sessionId,
+        startedAt: Date.now(),
         status: 'running',
-        threadId: rightThread,
-        startedAt: Date.now()
+        threadId: rightThread
       })
       await c.db.insert('tasks', {
+        completedAt: Date.now(),
         description: 'desc-branch-left-leaf',
         isBackground: true,
         parentThreadId: leftThread,
         retryCount: 0,
         sessionId,
         status: 'completed',
-        threadId: `desc-left-leaf-${crypto.randomUUID()}`,
-        completedAt: Date.now()
+        threadId: `desc-left-leaf-${crypto.randomUUID()}`
       })
       await c.db.insert('tasks', {
+        completedAt: Date.now(),
         description: 'desc-branch-right-leaf',
         isBackground: true,
+        lastError: 'fail',
         parentThreadId: rightThread,
         retryCount: 0,
         sessionId,
         status: 'failed',
-        threadId: `desc-right-leaf-${crypto.randomUUID()}`,
-        completedAt: Date.now(),
-        lastError: 'fail'
+        threadId: `desc-right-leaf-${crypto.randomUUID()}`
       })
     })
     const descendants = await listDescendants({ ctx, rootThreadId: threadId })
@@ -12312,24 +12315,24 @@ describe('omo parity: delegate deep coverage', () => {
 
   for (const c of [
     {
-      pattern: 'missing_run_in_background' as const,
-      fixHint: 'Add run_in_background parameter.'
+      fixHint: 'Add run_in_background parameter.',
+      pattern: 'missing_run_in_background' as const
     },
     {
-      pattern: 'missing_load_skills' as const,
-      fixHint: 'Add load_skills=[] parameter.'
+      fixHint: 'Add load_skills=[] parameter.',
+      pattern: 'missing_load_skills' as const
     },
     {
-      pattern: 'unknown_category' as const,
-      fixHint: 'Use a valid category from the Available list.'
+      fixHint: 'Use a valid category from the Available list.',
+      pattern: 'unknown_category' as const
     },
     {
-      pattern: 'unknown_agent' as const,
-      fixHint: 'Use a valid agent from the Available list.'
+      fixHint: 'Use a valid agent from the Available list.',
+      pattern: 'unknown_agent' as const
     },
     {
-      pattern: 'unknown_error' as const,
-      fixHint: 'Retry delegate with corrected arguments and valid values.'
+      fixHint: 'Retry delegate with corrected arguments and valid values.',
+      pattern: 'unknown_error' as const
     }
   ])
     test(`buildRetryGuidance emits fix hint for ${c.pattern}`, async () => {
@@ -12357,10 +12360,10 @@ describe('omo parity: delegate deep coverage', () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation:  () => {
+          runMutation: () => {
             throw new Error(p)
           },
-          runQuery:  () => null
+          runQuery: () => null
         } as never,
         parentThreadId: `delegate-deep-parent-${crypto.randomUUID()}`,
         sessionId: `delegate-deep-session-${crypto.randomUUID()}` as never
@@ -12394,7 +12397,7 @@ describe('omo parity: delegate deep coverage', () => {
       | undefined
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  (_ref: unknown, args: unknown) => {
+        runMutation: (_ref: unknown, args: unknown) => {
           const payload = args as {
             description: string
             isBackground: boolean
@@ -12408,7 +12411,7 @@ describe('omo parity: delegate deep coverage', () => {
             threadId: 'delegate-deep-thread'
           }
         },
-        runQuery:  () => null
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-deep-parent',
       sessionId: 'delegate-deep-session' as never
@@ -12438,8 +12441,8 @@ describe('omo parity: delegate deep coverage', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-schema-parent',
       sessionId: 'delegate-schema-session' as never
@@ -12463,19 +12466,19 @@ describe('omo parity: delegate deep coverage', () => {
   })
 
   for (const c of [
-    { status: 'cancelled', result: null },
-    { status: 'failed', result: null },
-    { status: 'pending', result: null },
-    { status: 'running', result: null },
-    { status: 'timed_out', result: null },
-    { status: 'completed', result: 'ok-output' }
+    { result: null, status: 'cancelled' },
+    { result: null, status: 'failed' },
+    { result: null, status: 'pending' },
+    { result: null, status: 'running' },
+    { result: null, status: 'timed_out' },
+    { result: 'ok-output', status: 'completed' }
   ] as const)
     test(`taskOutput status contract for ${c.status}`, async () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-          runQuery:  () => ({
+          runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+          runQuery: () => ({
             result: c.result === null ? undefined : c.result,
             status: c.status
           })
@@ -12497,8 +12500,8 @@ describe('omo parity: delegate deep coverage', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-status-parent',
       sessionId: 'delegate-status-session' as never
@@ -12515,8 +12518,8 @@ describe('omo parity: delegate deep coverage', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => ({
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => ({
           description: 'delegate-status-found',
           status: 'running'
         })
@@ -12538,8 +12541,8 @@ describe('omo parity: delegate deep coverage', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-worker-parent',
       sessionId: 'delegate-worker-session' as never
@@ -12554,19 +12557,19 @@ describe('omo parity: delegate deep coverage', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'delegate-orch-parent',
       sessionId: 'delegate-orch-session' as never
     })
-    const keys = Object.keys(tools).sort()
-    expect(keys.includes('delegate')).toBe(true)
-    expect(keys.includes('taskStatus')).toBe(true)
-    expect(keys.includes('taskOutput')).toBe(true)
-    expect(keys.includes('todoRead')).toBe(true)
-    expect(keys.includes('todoWrite')).toBe(true)
-    expect(keys.includes('webSearch')).toBe(true)
+    const keys = new Set(Object.keys(tools).toSorted())
+    expect(keys.has('delegate')).toBe(true)
+    expect(keys.has('taskStatus')).toBe(true)
+    expect(keys.has('taskOutput')).toBe(true)
+    expect(keys.has('todoRead')).toBe(true)
+    expect(keys.has('todoWrite')).toBe(true)
+    expect(keys.has('webSearch')).toBe(true)
   })
 
   test('unknown options parser keeps order while trimming whitespace', async () => {
@@ -12581,10 +12584,10 @@ describe('omo parity: delegate deep coverage', () => {
 
 describe('omo parity: continuation deep coverage', () => {
   for (const c of [
-    { status: 'pending', shouldContinue: true },
-    { status: 'in_progress', shouldContinue: true },
-    { status: 'completed', shouldContinue: false },
-    { status: 'cancelled', shouldContinue: false }
+    { shouldContinue: true, status: 'pending' },
+    { shouldContinue: true, status: 'in_progress' },
+    { shouldContinue: false, status: 'completed' },
+    { shouldContinue: false, status: 'cancelled' }
   ] as const)
     test(`postTurnAudit continuation decision for todo status=${c.status}`, async () => {
       const ctx = t(),
@@ -13176,20 +13179,20 @@ describe('final sweep error classifier adaptation', () => {
   ] as const)
     test(`worker transient markers include ${marker}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
       expect(source.includes(marker)).toBe(true)
     })
 
   for (const marker of ['401', '403', 'schema validation', 'unauthorized', 'forbidden', 'invalid_argument'] as const)
     test(`worker transient markers exclude permanent marker ${marker}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8').toLowerCase()
       expect(source.includes(marker)).toBe(false)
     })
 
   test('worker transient classifier defaults to permanent path via false return', async () => {
     const { readFileSync } = await import('node:fs')
-    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8')
+    const source = readFileSync(new URL('agentsNode.ts', import.meta.url), 'utf8')
     expect(source.includes('return false')).toBe(true)
   })
 })
@@ -13855,10 +13858,10 @@ describe('deep parity boundary race and classifier expansion', () => {
           .collect()
         if (state) {
           const snapshot = JSON.stringify(
-            todos.map(t => ({
-              content: t.content,
-              id: String(t._id),
-              status: t.status
+            todos.map(td => ({
+              content: td.content,
+              id: String(td._id),
+              status: td.status
             }))
           )
           await d.db.patch(state._id, {
@@ -13876,8 +13879,8 @@ describe('deep parity boundary race and classifier expansion', () => {
     })
 
   for (const c of [
-    { staleByMs: 900_000, shouldTimeout: false },
-    { staleByMs: 900_001, shouldTimeout: true }
+    { shouldTimeout: false, staleByMs: 900_000 },
+    { shouldTimeout: true, staleByMs: 900_001 }
   ] as const)
     test(`claimed heartbeat boundary at ${c.staleByMs}ms`, async () => {
       process.env.CONVEX_TEST_MODE = 'true'
@@ -13905,8 +13908,8 @@ describe('deep parity boundary race and classifier expansion', () => {
         if (state)
           await d.db.patch(state._id, {
             claimedAt: Date.now() - c.staleByMs,
-            runHeartbeatAt: Date.now() - c.staleByMs,
-            runClaimed: true
+            runClaimed: true,
+            runHeartbeatAt: Date.now() - c.staleByMs
           })
       })
       await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
@@ -14141,10 +14144,10 @@ describe('deep parity boundary race and classifier expansion', () => {
     })
 
   for (const c of [
-    { status: 'completed', mutation: 'fail' },
-    { status: 'failed', mutation: 'complete' },
-    { status: 'cancelled', mutation: 'complete' },
-    { status: 'timed_out', mutation: 'complete' }
+    { mutation: 'fail', status: 'completed' },
+    { mutation: 'complete', status: 'failed' },
+    { mutation: 'complete', status: 'cancelled' },
+    { mutation: 'complete', status: 'timed_out' }
   ] as const)
     test(`terminal task state ${c.status} rejects ${c.mutation} transition`, async () => {
       const ctx = t(),
@@ -14237,7 +14240,7 @@ describe('deep parity boundary race and classifier expansion', () => {
 describe('deep parity expansion batch three', () => {
   process.env.CONVEX_TEST_MODE = 'true'
 
-  const createTaskRow = async ({
+  const createTaskRow = ({
     ctx,
     parentThreadId,
     sessionId,
@@ -14576,53 +14579,53 @@ describe('deep parity expansion batch three', () => {
   for (const c of [
     {
       errorMessage: 'Unknown category. Available: quick, deep, quick,  deep',
-      pattern: 'unknown_category' as const,
-      expected: ['quick', 'deep']
+      expected: ['quick', 'deep'],
+      pattern: 'unknown_category' as const
     },
     {
       errorMessage: 'Unknown agent. valid options: oracle, explore, oracle,plan',
-      pattern: 'unknown_agent' as const,
-      expected: ['oracle', 'explore', 'plan']
+      expected: ['oracle', 'explore', 'plan'],
+      pattern: 'unknown_agent' as const
     },
     {
       errorMessage: 'Unknown category. Available: quick\nstack: at x',
-      pattern: 'unknown_category' as const,
-      expected: ['quick']
+      expected: ['quick'],
+      pattern: 'unknown_category' as const
     },
     {
       errorMessage: 'invalid category alpha\nvalid options: quick, deep\nAvailable: deep, quick',
-      pattern: 'unknown_category' as const,
-      expected: ['quick', 'deep']
+      expected: ['quick', 'deep'],
+      pattern: 'unknown_category' as const
     },
     {
       errorMessage: 'invalid agent beta\nvalid options: oracle\nAvailable: oracle, explore',
-      pattern: 'unknown_agent' as const,
-      expected: ['oracle', 'explore']
+      expected: ['oracle', 'explore'],
+      pattern: 'unknown_agent' as const
     },
     {
       errorMessage: `Unknown category. Available: quick, deep\n${'trace\n'.repeat(200)}`,
-      pattern: 'unknown_category' as const,
-      expected: ['quick', 'deep']
+      expected: ['quick', 'deep'],
+      pattern: 'unknown_category' as const
     },
     {
       errorMessage: 'missing run_in_background',
-      pattern: 'missing_run_in_background' as const,
-      expected: []
+      expected: [],
+      pattern: 'missing_run_in_background' as const
     },
     {
       errorMessage: 'missing load_skills',
-      pattern: 'missing_load_skills' as const,
-      expected: []
+      expected: [],
+      pattern: 'missing_load_skills' as const
     },
     {
       errorMessage: 'invalid agent, valid options:   oracle  ,   explore  ',
-      pattern: 'unknown_agent' as const,
-      expected: ['oracle', 'explore']
+      expected: ['oracle', 'explore'],
+      pattern: 'unknown_agent' as const
     },
     {
       errorMessage: 'invalid category, Available: quick,deep,quick,deep',
-      pattern: 'unknown_category' as const,
-      expected: ['quick', 'deep']
+      expected: ['quick', 'deep'],
+      pattern: 'unknown_category' as const
     }
   ] as const)
     test(`classifier guidance combinatoric options parse :: ${c.pattern}`, async () => {
@@ -14631,7 +14634,7 @@ describe('deep parity expansion batch three', () => {
           errorMessage: c.errorMessage,
           pattern: c.pattern
         })
-      expect([...out.availableOptions].sort()).toEqual([...c.expected].sort())
+      expect([...out.availableOptions].toSorted()).toEqual([...c.expected].toSorted())
     })
 
   const createQueueContext = async () => {
@@ -15505,7 +15508,7 @@ describe('append parity source utility and tools matrix', () => {
   ])
     test(`orchestrator source contains marker ${marker}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./orchestrator.ts', import.meta.url), 'utf-8')
+      const source = readFileSync(new URL('orchestrator.ts', import.meta.url), 'utf8')
       expect(source.includes(marker)).toBe(true)
     })
 
@@ -15533,7 +15536,7 @@ describe('append parity source utility and tools matrix', () => {
   ])
     test(`tasks source contains marker ${marker}`, async () => {
       const { readFileSync } = await import('node:fs')
-      const source = readFileSync(new URL('./tasks.ts', import.meta.url), 'utf-8')
+      const source = readFileSync(new URL('tasks.ts', import.meta.url), 'utf8')
       expect(source.includes(marker)).toBe(true)
     })
 })
@@ -15689,8 +15692,8 @@ describe('remaining adaptable parity append', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery:  () => null
+        runMutation: () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery: () => null
       } as never,
       parentThreadId: 'remaining-schema-parent',
       sessionId: 'remaining-schema-session' as never

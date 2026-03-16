@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
 
@@ -40,29 +41,29 @@ type Blog = FunctionReturnType<typeof api.blog.list>['page'][number]
 
 const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemove?: () => void }) => {
     const { execute, isPending } = useOptimisticMutation({
-      mutation: api.blog.rm,
-      onOptimistic: () => {
-        onOptimisticRemove?.()
-      },
-      onRollback: () => {
-        toast.error('Failed to delete')
-      },
-      onSuccess: () => {
-        toast.success('Deleted')
-      }
-    })
-    const deleteTrigger = createElement(
-      Button,
-      {
-        'aria-label': 'Delete blog',
-        className: 'group-hover:block hover:bg-destructive/10 hover:text-destructive',
-        'data-testid': 'delete-blog-trigger',
-        size: 'icon',
-        type: 'button',
-        variant: 'ghost'
-      },
-      createElement(Trash, { className: 'size-full stroke-1' })
-    )
+        mutation: api.blog.rm,
+        onOptimistic: () => {
+          onOptimisticRemove?.()
+        },
+        onRollback: () => {
+          toast.error('Failed to delete')
+        },
+        onSuccess: () => {
+          toast.success('Deleted')
+        }
+      }),
+      deleteTrigger = createElement(
+        Button,
+        {
+          'aria-label': 'Delete blog',
+          className: 'group-hover:block hover:bg-destructive/10 hover:text-destructive',
+          'data-testid': 'delete-blog-trigger',
+          size: 'icon',
+          type: 'button',
+          variant: 'ghost'
+        },
+        createElement(Trash, { className: 'size-full stroke-1' })
+      )
     return isPending ? (
       <Spinner className='size-8' data-testid='delete-spinner' />
     ) : (
@@ -219,7 +220,6 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
       />
       <Link className='mt-1 block' data-testid='blog-card-link' href={`/${_id}`}>
         {coverImageUrl ? (
-          // oxlint-disable-next-line @next/next/no-img-element
           <img
             alt={title}
             className='my-1 w-full rounded-lg object-cover'

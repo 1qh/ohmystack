@@ -1,6 +1,7 @@
+import { zid } from 'convex-helpers/server/zod4'
 /** biome-ignore-all lint/style/noProcessEnv: test mode detection */
 import { v } from 'convex/values'
-import { zid } from 'convex-helpers/server/zod4'
+import { URL } from 'node:url'
 
 import { crud, q } from '../lazy'
 import { owned } from '../t'
@@ -25,6 +26,11 @@ interface McpHookCtx {
 
 const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
   MCP_TIMEOUT_MS = 30_000,
+  getNameFromUnknown = ({ value }: { value: unknown }) => {
+    if (!value || typeof value !== 'object') return null
+    const name: unknown = Reflect.get(value, 'name')
+    return typeof name === 'string' ? name : null
+  },
   validateMcpUrl = (url: string) => {
     const parsed = new URL(url)
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid_url_protocol')
@@ -45,13 +51,13 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       const parsed = JSON.parse(cachedTools) as unknown
       if (!Array.isArray(parsed)) return []
       const names: string[] = []
-      for (const t of parsed) {
-        if (typeof t === 'string') {
-          names.push(t)
-        } else if (typeof t === 'object' && t && 'name' in t && typeof t.name === 'string') {
-          names.push(t.name)
+      for (const t of parsed)
+        if (typeof t === 'string') names.push(t)
+        else {
+          const name = getNameFromUnknown({ value: t })
+          if (name) names.push(name)
         }
-      }
+
       return names
     } catch {
       return []
@@ -66,7 +72,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
     // oxlint-disable-next-line promise/prefer-await-to-then
     Promise.race([
       promise,
-      new Promise<T>((_, reject) => {
+      new Promise<T>((_resolve, reject) => {
         const handle = setTimeout(() => {
           clearTimeout(handle)
           reject(new Error(`mcp_timeout:${operation}`))
@@ -81,9 +87,9 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
   hooks = {
     afterRead: (_ctx: unknown, { doc }: { doc: null | Record<string, unknown> }) => redactServer(doc),
     beforeCreate: async (ctx: McpHookCtx, { data }: { data: Record<string, unknown> }) => {
-      const name = data.name
+      const { name } = data
       if (typeof name !== 'string') throw new Error('name_required')
-      const url = data.url
+      const { url } = data
       if (typeof url !== 'string') throw new Error('url_required')
       validateMcpUrl(url)
       const existing = await ctx.db
@@ -137,7 +143,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
     args: { id: zid('mcpServers') },
     handler: async (ctx, { id }) => {
       const doc = await ctx.db.get(id)
-      if (!doc || doc.userId !== ctx.user._id) return null
+      if (doc?.userId !== ctx.user._id) return null
       return hooks.afterRead(ctx, { doc: doc as never })
     }
   }),
@@ -145,10 +151,10 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
     args: {},
     handler: async ctx => {
       const docs = await ctx.db
-        .query('mcpServers')
-        .withIndex('by_user_name', i => i.eq('userId', ctx.user._id as never))
-        .collect()
-      const out: ReturnType<typeof redactServer>[] = []
+          .query('mcpServers')
+          .withIndex('by_user_name', i => i.eq('userId', ctx.user._id as never))
+          .collect(),
+        out: ReturnType<typeof redactServer>[] = []
       for (const doc of docs) out.push(hooks.afterRead(ctx, { doc: doc as never }))
       return out
     }
@@ -159,10 +165,10 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       const session = await ctx.db.get(sessionId)
       if (!session) throw new Error('session_not_found')
       const servers = await ctx.db
-        .query('mcpServers')
-        .withIndex('by_user_enabled', idx => idx.eq('userId', session.userId).eq('isEnabled', true))
-        .collect()
-      const tools: { serverName: string; toolName: string }[] = []
+          .query('mcpServers')
+          .withIndex('by_user_enabled', idx => idx.eq('userId', session.userId).eq('isEnabled', true))
+          .collect(),
+        tools: { serverName: string; toolName: string }[] = []
       for (const server of servers) {
         const toolNames = parseCachedToolNames({
           cachedTools: server.cachedTools
@@ -196,7 +202,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       let parsedToolArgs: Record<string, unknown>
       try {
         parsedToolArgs = parseJsonObject({ raw: toolArgs })
-      } catch (_error) {
+      } catch {
         return { error: 'invalid_tool_args' as const, ok: false as const }
       }
 
@@ -214,13 +220,12 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       if (!server?.isEnabled) throw new Error('mcp_server_not_found')
 
       validateMcpUrl(server.url)
-      if (server.authHeaders) {
+      if (server.authHeaders)
         try {
           parseJsonObject({ raw: server.authHeaders })
-        } catch (_error) {
+        } catch {
           return { error: 'invalid_auth_headers' as const, ok: false as const }
         }
-      }
 
       const now = Date.now(),
         toolInCache = ({ allowStale, row }: { allowStale: boolean; row: { cachedAt?: number; cachedTools?: string } }) => {
@@ -245,6 +250,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
           }
       }
 
+      /** biome-ignore lint/style/noProcessEnv: test mode gate */
       if (process.env.CONVEX_TEST_MODE === 'true')
         return {
           content: `mock MCP result:${toolName}`,

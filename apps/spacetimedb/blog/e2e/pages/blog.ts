@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* oxlint-disable eslint/no-await-in-loop */
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 // biome-ignore-all lint/performance/noAwaitInLoops: e2e sequential
 import type { Locator } from '@playwright/test'

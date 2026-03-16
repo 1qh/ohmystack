@@ -3,11 +3,55 @@
 /** biome-ignore-all lint/suspicious/useAwait: async test stubs intentionally match Promise-shaped APIs */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/require-await */
+
+import type { GenericTableInfo, RegisteredQuery } from 'convex/server'
 
 import { describe, expect, test } from 'bun:test'
-import type { GenericTableInfo, RegisteredQuery } from 'convex/server'
 import { ConvexError } from 'convex/values'
 import { array, boolean, date, number, object, optional, string, enum as zenum } from 'zod/v4'
+
+import type { AccessEntry, FactoryCall } from '../check'
+import type { CheckResult } from '../doctor'
+import type { DevtoolsProps } from '../react/devtools-panel'
+import type { MutationType, PendingMutation } from '../react/optimistic-store'
+import type { PlaygroundProps } from '../react/schema-playground'
+import type { InfiniteListOptions } from '../react/use-infinite-list'
+import type { UseListOptions } from '../react/use-list'
+import type { MutateOptions, MutateToast } from '../react/use-mutate'
+import type { PresenceUser, UsePresenceOptions, UsePresenceResult } from '../react/use-presence'
+import type { UseSearchOptions, UseSearchResult } from '../react/use-search'
+import type { ConvexErrorData, MutationFail, MutationOk, MutationResult } from '../server/helpers'
+import type { OrgCrudOptions } from '../server/org-crud'
+import type {
+  AssertSchema,
+  BaseSchema,
+  BrandLabelMap,
+  CacheCrudResult,
+  CacheHookCtx,
+  CacheHooks,
+  CacheOptions,
+  CascadeOption,
+  CrudHooks,
+  CrudOptions,
+  DetectBrand,
+  ErrorCode,
+  GlobalHookCtx,
+  GlobalHooks,
+  HookCtx,
+  Middleware,
+  MiddlewareCtx,
+  OrgCascadeTableConfig,
+  OrgSchema,
+  OwnedSchema,
+  RateLimitConfig,
+  Rec,
+  SchemaTypeError,
+  SetupConfig,
+  SingletonSchema,
+  WhereOf
+} from '../server/types'
+
 import {
   add,
   defaultFields,
@@ -18,7 +62,6 @@ import {
   parseAddFlags,
   parseFieldDef
 } from '../add'
-import type { AccessEntry, FactoryCall } from '../check'
 import {
   accessForFactory,
   checkIndexCoverage,
@@ -46,7 +89,6 @@ import {
   sleep
 } from '../constants'
 import { extractJSDoc, generateMarkdown, resolveReExports } from '../docs-gen'
-import type { CheckResult } from '../doctor'
 import { calcHealthScore, checkDeps, checkEslintContent, checkRateLimit } from '../doctor'
 import { recommended as eslintRecommended, rules as eslintRules } from '../eslint'
 import { guardApi } from '../guard'
@@ -63,27 +105,18 @@ import {
   updateSubscription,
   updateSubscriptionData
 } from '../react/devtools'
-import type { DevtoolsProps } from '../react/devtools-panel'
 import { makeErrorHandler, toastFieldError } from '../react/error-toast'
 import { buildMeta, getMeta } from '../react/form'
-import type { MutationType, PendingMutation } from '../react/optimistic-store'
 import { createOptimisticStore, makeTempId } from '../react/optimistic-store'
 import { canEditResource } from '../react/org'
-import type { PlaygroundProps } from '../react/schema-playground'
 import { collectSettled, resolveBulkError } from '../react/use-bulk-mutate'
-import type { InfiniteListOptions } from '../react/use-infinite-list'
-import type { UseListOptions } from '../react/use-list'
 import { applyOptimistic, DEFAULT_PAGE_SIZE } from '../react/use-list'
-import type { MutateOptions, MutateToast } from '../react/use-mutate'
-import type { PresenceUser, UsePresenceOptions, UsePresenceResult } from '../react/use-presence'
-import type { UseSearchOptions, UseSearchResult } from '../react/use-search'
 import { DEFAULT_DEBOUNCE_MS, DEFAULT_MIN_LENGTH } from '../react/use-search'
 import { fetchWithRetry, withRetry } from '../retry'
 import { child, cvFile, cvFiles, makeBase, makeOrgScoped, makeOwned, makeSingleton } from '../schema'
 import { generateFieldValue, generateOne, generateSeed } from '../seed'
 import { flt, idx, indexFields, sch, typed } from '../server/bridge'
 import { ownedCascade } from '../server/crud'
-import type { ConvexErrorData, MutationFail, MutationOk, MutationResult } from '../server/helpers'
 import {
   cleanFiles,
   detectFiles,
@@ -117,39 +150,10 @@ import {
   sanitizeString,
   slowQueryWarn
 } from '../server/middleware'
-import type { OrgCrudOptions } from '../server/org-crud'
 import { orgCascade } from '../server/org-crud'
 import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '../server/presence'
 import { baseTable, orgTable, ownedTable, singletonTable } from '../server/schema-helpers'
 import { isTestMode } from '../server/test'
-import type {
-  AssertSchema,
-  BaseSchema,
-  BrandLabelMap,
-  CacheCrudResult,
-  CacheHookCtx,
-  CacheHooks,
-  CacheOptions,
-  CascadeOption,
-  CrudHooks,
-  CrudOptions,
-  DetectBrand,
-  ErrorCode,
-  GlobalHookCtx,
-  GlobalHooks,
-  HookCtx,
-  Middleware,
-  MiddlewareCtx,
-  OrgCascadeTableConfig,
-  OrgSchema,
-  OwnedSchema,
-  RateLimitConfig,
-  Rec,
-  SchemaTypeError,
-  SetupConfig,
-  SingletonSchema,
-  WhereOf
-} from '../server/types'
 import { ERROR_MESSAGES } from '../server/types'
 import { extractChildren, extractFieldsFromBlock, extractFieldType, extractWrapperTables, generateMermaid } from '../viz'
 import {

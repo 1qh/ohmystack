@@ -96,9 +96,9 @@ const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
     return { stream: simulateReadableStream<LanguageModelV3StreamPart>({ chunkDelayInMs: 50, chunks }) }
   },
   chatModel = new MockLanguageModelV3({
-    doGenerate: async ({ prompt }) => createGenerateResult(prompt),
+    doGenerate: ({ prompt }) => createGenerateResult(prompt),
 
-    doStream: async ({ prompt }) => createStreamResult(prompt),
+    doStream: ({ prompt }) => createStreamResult(prompt),
     modelId: 'mock-chat-model',
     provider: 'mock'
   })

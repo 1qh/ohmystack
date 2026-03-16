@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client'
 
 import type { FunctionReference } from 'convex/server'

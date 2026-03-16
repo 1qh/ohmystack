@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in test setup */
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-await-in-loop */
 import type { FunctionReference } from 'convex/server'
 
 import { ConvexHttpClient } from 'convex/browser'
@@ -35,8 +35,8 @@ const setConvexTestMode = (enabled: boolean) => {
     let result = await cleanup(client)
     while (!result.done) {
       console.log(`Cleaned up ${result.count} test records, continuing...`)
+       
       /** biome-ignore lint/performance/noAwaitInLoops: sequential cleanup required */
-      // oxlint-disable-next-line eslint/no-await-in-loop
       result = await cleanup(client)
     }
     console.log('Test data cleanup complete')

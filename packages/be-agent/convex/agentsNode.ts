@@ -1,4 +1,8 @@
+/* oxlint-disable promise/prefer-await-to-then */
+
 'use node'
+
+/* eslint-disable max-depth */
 
 import type { ModelMessage } from 'ai'
 
@@ -7,6 +11,7 @@ import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
 
 import type { Doc, Id } from './_generated/dataModel'
+import type { ActionCtx } from './_generated/server'
 
 import { getModel } from '../ai'
 import { WORKER_SYSTEM_PROMPT } from '../prompts'
@@ -88,9 +93,7 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
   },
   buildModelMessages = (messages: Doc<'messages'>[]) => {
     const modelMessages: ModelMessage[] = []
-    for (const m of messages)
-      if (m.role === 'assistant' || m.role === 'system' || m.role === 'user')
-        modelMessages.push({ content: collectMessageText(m), role: m.role })
+    for (const m of messages) modelMessages.push({ content: collectMessageText(m), role: m.role })
 
     return modelMessages
   },
@@ -116,6 +119,136 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
 
     return false
   },
+  startTaskHeartbeat = ({ ctx, taskId }: { ctx: ActionCtx; taskId: Id<'tasks'> }) =>
+    setInterval(() => {
+      const updateHeartbeat = async () => ctx.runMutation(updateTaskHeartbeatRef, { taskId })
+      updateHeartbeat().catch(() => undefined)
+    }, 30_000),
+  consumeWorkerStream = async ({
+    ctx,
+    messageId,
+    result
+  }: {
+    ctx: ActionCtx
+    messageId: Id<'messages'>
+    result: ReturnType<typeof streamText>
+  }) => {
+    const collectedParts: (
+      | {
+          args: string
+          result?: string
+          status: 'error' | 'pending' | 'success'
+          toolCallId: string
+          toolName: string
+          type: 'tool-call'
+        }
+      | { snippet?: string; title: string; type: 'source'; url: string }
+      | { text: string; type: 'reasoning' }
+      | { text: string; type: 'text' }
+    )[] = []
+    let fullText = '',
+      fullReasoning = ''
+    for await (const part of result.fullStream)
+      if (part.type === 'text-delta') {
+        fullText += part.text
+        await ctx.runMutation(patchStreamingMessageRef, {
+          messageId,
+          streamingContent: fullText
+        })
+      } else if (part.type === 'reasoning-delta') fullReasoning += part.text
+      else if (part.type === 'tool-call')
+        collectedParts.push({
+          args: JSON.stringify(part.input),
+          status: 'pending',
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          type: 'tool-call'
+        })
+      else if (part.type === 'tool-result')
+        for (const p of collectedParts)
+          if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
+            p.status = 'success'
+            p.result = JSON.stringify(part.output)
+            if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
+              const resultWithSources = part.output as {
+                sources?: { snippet?: string; title: string; url: string }[]
+              }
+              if (resultWithSources.sources)
+                for (const src of resultWithSources.sources)
+                  collectedParts.push({
+                    snippet: src.snippet,
+                    title: src.title,
+                    type: 'source',
+                    url: src.url
+                  })
+            }
+          }
+    await ctx.runMutation(patchStreamingMessageRef, {
+      messageId,
+      streamingContent: fullText
+    })
+    return { collectedParts, fullReasoning, fullText }
+  },
+  executeWorkerTask = async ({ ctx, taskId }: { ctx: ActionCtx; taskId: Id<'tasks'> }) => {
+    const task = await ctx.runQuery(getByIdRef, { taskId })
+    if (task?.status !== 'running') return
+    const runningTask = task,
+      dbMessages = await ctx.runQuery(listMessagesForPromptRef, { threadId: runningTask.threadId }),
+      modelMessages = buildModelMessages(dbMessages),
+      workerPrompt = runningTask.prompt ?? runningTask.description
+    modelMessages.push({ content: workerPrompt, role: 'user' })
+    const messageId = await ctx.runMutation(createAssistantMessageRef, {
+        sessionId: runningTask.sessionId,
+        threadId: runningTask.threadId
+      }),
+      model = await getModel(),
+      tools = createWorkerTools({
+        ctx,
+        parentThreadId: runningTask.parentThreadId,
+        sessionId: runningTask.sessionId
+      }),
+      result = streamText({
+        messages: modelMessages,
+        model,
+        onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
+          const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
+          await ctx.runMutation(appendStepMetadataRef, {
+            messageId,
+            stepPayload
+          })
+        },
+        system: WORKER_SYSTEM_PROMPT,
+        temperature: 0.7,
+        tools
+      }),
+      { collectedParts, fullReasoning, fullText } = await consumeWorkerStream({
+        ctx,
+        messageId,
+        result
+      }),
+      finalParts = [{ text: fullText, type: 'text' as const }, ...collectedParts]
+    if (fullReasoning.length > 0) finalParts.splice(1, 0, { text: fullReasoning, type: 'reasoning' as const })
+    await ctx.runMutation(finalizeMessageRef, {
+      content: fullText,
+      messageId,
+      parts: finalParts
+    })
+    await ctx.runMutation(completeTaskRef, {
+      result: fullText,
+      taskId
+    })
+  },
+  handleWorkerFailure = async ({ ctx, error, taskId }: { ctx: ActionCtx; error: unknown; taskId: Id<'tasks'> }) => {
+    const task = await ctx.runQuery(getByIdRef, { taskId }),
+      errorMessage = String(error),
+      shouldRetry = task !== null && task.retryCount < 3 && isTransientError({ errorMessage })
+    await (shouldRetry
+      ? ctx.runMutation(scheduleRetryRef, { taskId })
+      : ctx.runMutation(failTaskRef, {
+          lastError: errorMessage,
+          taskId
+        }))
+  },
   runWorker = internalAction({
     args: {
       prompt: v.optional(v.string()),
@@ -125,125 +258,11 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
     handler: async (ctx, { taskId }) => {
       const marked = await ctx.runMutation(markRunningRef, { taskId })
       if (!marked.ok) return
-      const heartbeat = setInterval(async () => {
-        try {
-          await ctx.runMutation(updateTaskHeartbeatRef, { taskId })
-        } catch (error) {
-          return error
-        }
-      }, 30_000)
+      const heartbeat = startTaskHeartbeat({ ctx, taskId })
       try {
-        const task = await ctx.runQuery(getByIdRef, { taskId })
-        if (task?.status !== 'running') return
-        const dbMessages = await ctx.runQuery(listMessagesForPromptRef, { threadId: task.threadId }),
-          modelMessages = buildModelMessages(dbMessages),
-          workerPrompt = task.prompt ?? task.description
-        modelMessages.push({ content: workerPrompt, role: 'user' })
-        const messageId = await ctx.runMutation(createAssistantMessageRef, {
-            sessionId: task.sessionId,
-            threadId: task.threadId
-          }),
-          model = await getModel(),
-          tools = createWorkerTools({
-            ctx,
-            parentThreadId: task.parentThreadId,
-            sessionId: task.sessionId
-          }),
-          result = streamText({
-            messages: modelMessages,
-            model,
-            onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
-              const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
-              await ctx.runMutation(appendStepMetadataRef, {
-                messageId,
-                stepPayload
-              })
-            },
-            system: WORKER_SYSTEM_PROMPT,
-            temperature: 0.7,
-            tools
-          })
-        const collectedParts: Array<
-          | { text: string; type: 'text' }
-          | { text: string; type: 'reasoning' }
-          | {
-              args: string
-              result?: string
-              status: 'pending' | 'success' | 'error'
-              toolCallId: string
-              toolName: string
-              type: 'tool-call'
-            }
-          | { snippet?: string; title: string; type: 'source'; url: string }
-        > = []
-        let fullText = '',
-          fullReasoning = ''
-        for await (const part of result.fullStream)
-          if (part.type === 'text-delta') {
-            fullText += part.text
-            await ctx.runMutation(patchStreamingMessageRef, {
-              messageId,
-              streamingContent: fullText
-            })
-          } else if (part.type === 'reasoning-delta') fullReasoning += part.text
-          else if (part.type === 'tool-call')
-            collectedParts.push({
-              args: JSON.stringify(part.input),
-              status: 'pending',
-              toolCallId: part.toolCallId,
-              toolName: part.toolName,
-              type: 'tool-call'
-            })
-          else if (part.type === 'tool-result')
-            // oxlint-disable-next-line eslint/max-depth
-            for (const p of collectedParts)
-              if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
-                p.status = 'success'
-                p.result = JSON.stringify(part.output)
-                // oxlint-disable-next-line eslint/max-depth
-                if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
-                  const resultWithSources = part.output as {
-                    sources?: Array<{ snippet?: string; title: string; url: string }>
-                  }
-                  // oxlint-disable-next-line eslint/max-depth
-                  if (resultWithSources.sources)
-                    // oxlint-disable-next-line eslint/max-depth
-                    for (const src of resultWithSources.sources)
-                      collectedParts.push({
-                        snippet: src.snippet,
-                        title: src.title,
-                        type: 'source',
-                        url: src.url
-                      })
-                }
-              }
-        await ctx.runMutation(patchStreamingMessageRef, {
-          messageId,
-          streamingContent: fullText
-        })
-        const finalParts = [{ text: fullText, type: 'text' as const }, ...collectedParts]
-        if (fullReasoning.length > 0) finalParts.splice(1, 0, { text: fullReasoning, type: 'reasoning' as const })
-        await ctx.runMutation(finalizeMessageRef, {
-          content: fullText,
-          messageId,
-          parts: finalParts
-        })
-        await ctx.runMutation(completeTaskRef, {
-          result: fullText,
-          taskId
-        })
+        await executeWorkerTask({ ctx, taskId })
       } catch (error) {
-        const task = await ctx.runQuery(getByIdRef, { taskId }),
-          errorMessage = String(error),
-          shouldRetry = task && task.retryCount < 3 && isTransientError({ errorMessage })
-        if (shouldRetry) {
-          await ctx.runMutation(scheduleRetryRef, { taskId })
-        } else {
-          await ctx.runMutation(failTaskRef, {
-            lastError: errorMessage,
-            taskId
-          })
-        }
+        await handleWorkerFailure({ ctx, error, taskId })
       } finally {
         clearInterval(heartbeat)
       }

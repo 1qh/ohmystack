@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use server'
 import type { FunctionReference } from 'convex/server'
 

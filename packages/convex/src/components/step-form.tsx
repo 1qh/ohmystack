@@ -1,3 +1,4 @@
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
 /* eslint-disable complexity, react-hooks/refs */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
 'use client'

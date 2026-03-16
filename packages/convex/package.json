@@ -64,7 +64,7 @@
     "tsdown": "latest"
   },
   "peerDependencies": {
-    "@auth/core": "latest",
+    "@auth/core": "0.41",
     "@convex-dev/auth": "latest",
     "@stepperize/react": "latest",
     "@tanstack/react-form": "latest",

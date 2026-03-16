@@ -1,6 +1,7 @@
 'use client'
 
 import type { Org } from '@a/be-spacetimedb/spacetimedb/types'
+import type { output } from 'zod'
 
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -11,7 +12,6 @@ import { pickValues } from '@noboil/spacetimedb/zod'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { useReducer } from 'spacetimedb/react'
-import type { output } from 'zod'
 
 import { orgTeam } from '~/schema'
 

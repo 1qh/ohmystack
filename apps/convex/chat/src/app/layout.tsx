@@ -12,6 +12,7 @@ import Sidebar from './sidebar'
 
 const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' },
   PUBLIC_PATHS = ['/login', '/public'],
+  renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider>{inner}</ConvexProvider>,
   isPublicPath = (pathname: string) => {
     for (const p of PUBLIC_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
     return false
@@ -25,7 +26,7 @@ const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' 
     const showSidebar = !isPublicPath(pathname)
 
     return (
-      <AuthLayout convexProvider={inner => <ConvexProvider>{inner}</ConvexProvider>}>
+      <AuthLayout convexProvider={renderConvexProvider}>
         {showSidebar ? (
           <SidebarProvider>
             <Sidebar />

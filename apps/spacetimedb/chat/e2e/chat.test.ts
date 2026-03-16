@@ -119,7 +119,7 @@ test.describe('Chat Persistence', () => {
 
   test('can return to existing chat via URL', async ({ chatPage, page }) => {
     test.setTimeout(60_000)
-    // eslint-disable-next-line no-restricted-properties
+
     const isTestMode = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1' || process.env.SPACETIMEDB_TEST_MODE === 'true'
     await chatPage.sendUserMessage('Remember this message')
     await chatPage.waitForResponse()

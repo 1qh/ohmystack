@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import { zid } from 'convex-helpers/server/zod4'
 import { v } from 'convex/values'
 
@@ -24,8 +25,9 @@ const syncOwned = internalMutation({
         if (t.id) {
           /** biome-ignore lint/performance/noAwaitInLoops: sequential upserts */
           const existing = await ctx.db.get(t.id)
+          // oxlint-disable-next-line unicorn/prefer-ternary
           if (existing?.sessionId === sessionId)
-            await ctx.db.patch(t.id, {
+            ctx.db.patch(t.id, {
               content: t.content,
               position: t.position,
               priority: t.priority,

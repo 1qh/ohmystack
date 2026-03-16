@@ -1,12 +1,16 @@
+/* oxlint-disable eslint/no-await-in-loop */
+/* eslint-disable complexity, no-await-in-loop */
+import { zid } from 'convex-helpers/server/zod4'
 /** biome-ignore-all lint/style/noProcessEnv: test mode detection */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
-import { zid } from 'convex-helpers/server/zod4'
 import { string } from 'zod/v4'
-import { m } from '../lazy'
+
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
+
+import { m } from '../lazy'
 import { internalMutation, internalQuery } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
 
@@ -48,13 +52,13 @@ const reasonPriority = {
   WALL_CLOCK_TIMEOUT_MS = 15 * 60 * 1000
 
 type EnqueueContext = Pick<MutationCtx, 'db' | 'scheduler'>
-type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
-type RunStateDoc = Doc<'threadRunState'>
-type NormalizedTodo = {
+interface NormalizedTodo {
   content: string
   id: string
   status: Doc<'todos'>['status']
 }
+type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
+type RunStateDoc = Doc<'threadRunState'>
 
 const readRunStateByThreadId = async ({
     ctx,
@@ -80,8 +84,8 @@ const readRunStateByThreadId = async ({
       consecutiveFailures: 0,
       stagnationCount: 0,
       status: 'idle',
-      turnsSinceTaskTool: 0,
-      threadId
+      threadId,
+      turnsSinceTaskTool: 0
     })
     return ctx.db.get(id)
   },
@@ -114,6 +118,7 @@ const readRunStateByThreadId = async ({
     runToken: string
     threadId: string
   }) => {
+    /** biome-ignore lint/style/noProcessEnv: test-mode scheduler guard */
     if (process.env.CONVEX_TEST_MODE === 'true') return
     await ctx.scheduler.runAfter(0, runOrchestratorRef, {
       promptMessageId,
@@ -214,21 +219,20 @@ const readRunStateByThreadId = async ({
   parseTodoSnapshot = ({ snapshot }: { snapshot?: string }) => {
     if (!snapshot) return null
     try {
-      const parsed = JSON.parse(snapshot)
+      const parsed: unknown = JSON.parse(snapshot)
       if (!Array.isArray(parsed)) return null
       const todos: NormalizedTodo[] = []
-      for (const t of parsed) {
+      for (const t of parsed as unknown[]) {
         if (!t || typeof t !== 'object') return null
-        const id = Reflect.get(t, 'id'),
-          content = Reflect.get(t, 'content'),
-          status = Reflect.get(t, 'status')
+        const item = t as Record<string, unknown>,
+          { content, id, status } = item
         if (typeof id !== 'string' || typeof content !== 'string') return null
         if (!(status === 'pending' || status === 'in_progress' || status === 'completed' || status === 'cancelled'))
           return null
         todos.push({ content, id, status })
       }
       return todos
-    } catch (_error) {
+    } catch {
       return null
     }
   },
@@ -236,6 +240,127 @@ const readRunStateByThreadId = async ({
     CONTINUATION_BASE_COOLDOWN_MS * 2 ** Math.min(consecutiveFailures, 5),
   isTaskToolName = ({ toolName }: { toolName: string }) =>
     toolName === 'delegate' || toolName === 'taskOutput' || toolName === 'taskStatus',
+  buildContinuationSnapshot = async ({
+    ctx,
+    sessionId,
+    state,
+    threadId
+  }: {
+    ctx: Pick<MutationCtx, 'db'>
+    sessionId: Id<'session'>
+    state: RunStateDoc
+    threadId: string
+  }) => {
+    const now = Date.now(),
+      todos = await ctx.db
+        .query('todos')
+        .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+        .collect(),
+      pendingTasks = await ctx.db
+        .query('tasks')
+        .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'pending'))
+        .collect(),
+      runningTasks = await ctx.db
+        .query('tasks')
+        .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'running'))
+        .collect(),
+      normalizedTodos = normalizeTodos({ todos }),
+      todoSnapshot = JSON.stringify(normalizedTodos),
+      previousTodos = parseTodoSnapshot({ snapshot: state.lastTodoSnapshot }),
+      currentSummary = summarizeTodoState({ todos: normalizedTodos }),
+      previousSummary = summarizeTodoState({ todos: previousTodos ?? [] })
+    let consecutiveFailures = state.consecutiveFailures ?? 0,
+      stagnationCount = state.stagnationCount ?? 0
+    if (state.lastContinuationAt && now - state.lastContinuationAt >= FAILURE_RESET_WINDOW_MS) consecutiveFailures = 0
+    if (!state.lastTodoSnapshot || state.lastTodoSnapshot !== todoSnapshot) stagnationCount = 0
+    else stagnationCount += 1
+    const progressDetected =
+        !state.lastTodoSnapshot ||
+        state.lastTodoSnapshot !== todoSnapshot ||
+        currentSummary.incompleteCount < previousSummary.incompleteCount ||
+        currentSummary.completedCount > previousSummary.completedCount,
+      nextStagnationCount = progressDetected ? 0 : stagnationCount,
+      hasStagnated = nextStagnationCount >= MAX_STAGNATION_COUNT,
+      hitFailureCap = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES,
+      safeFailures = consecutiveFailures,
+      cooldownMs = computeContinuationCooldownMs({
+        consecutiveFailures: safeFailures
+      }),
+      insideCooldown =
+        safeFailures > 0 && state.lastContinuationAt !== undefined && now - state.lastContinuationAt < cooldownMs,
+      hasActiveTasks = pendingTasks.length > 0 || runningTasks.length > 0,
+      atCap = state.autoContinueStreak >= 5,
+      incomingPriority = reasonPriority.todo_continuation,
+      queuedPriority = getQueuedPriority({ state }),
+      queueAllowsContinuation = incomingPriority >= queuedPriority,
+      shouldContinue =
+        currentSummary.incompleteCount > 0 &&
+        !hasActiveTasks &&
+        !atCap &&
+        queueAllowsContinuation &&
+        !hasStagnated &&
+        !hitFailureCap &&
+        !insideCooldown
+    return {
+      nextStagnationCount,
+      shouldContinue,
+      snapshot: {
+        currentSummary,
+        hasActiveTasks,
+        now,
+        safeFailures,
+        todos,
+        todoSnapshot
+      }
+    }
+  },
+  persistNoContinuationState = async ({
+    ctx,
+    nextStagnationCount,
+    safeFailures,
+    stateId,
+    todoSnapshot
+  }: {
+    ctx: Pick<MutationCtx, 'db'>
+    nextStagnationCount: number
+    safeFailures: number
+    stateId: Id<'threadRunState'>
+    todoSnapshot: string
+  }) =>
+    ctx.db.patch(stateId, {
+      autoContinueStreak: 0,
+      consecutiveFailures: safeFailures,
+      lastTodoSnapshot: todoSnapshot,
+      stagnationCount: nextStagnationCount
+    }),
+  enqueueContinuationRun = async ({
+    ctx,
+    reminderText,
+    sessionId,
+    threadId
+  }: {
+    ctx: EnqueueContext & Pick<MutationCtx, 'db'>
+    reminderText: string
+    sessionId: Id<'session'>
+    threadId: string
+  }) => {
+    const reminderMessageId = await ctx.db.insert('messages', {
+      content: reminderText,
+      isComplete: true,
+      parts: [{ text: reminderText, type: 'text' }],
+      role: 'system',
+      sessionId,
+      threadId
+    })
+    return enqueueRunInline({
+      ctx,
+      incrementStreak: true,
+      priority: reasonPriority.todo_continuation,
+      promptMessageId: String(reminderMessageId),
+      reason: 'todo_continuation',
+      threadId
+    })
+  },
   ensureRunState = internalMutation({
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => ensureRunStateInline({ ctx, threadId })
@@ -353,80 +478,32 @@ const readRunStateByThreadId = async ({
         await ctx.db.patch(state._id, { autoContinueStreak: 0 })
         return { ok: true, shouldContinue: false }
       }
-      const now = Date.now(),
-        todos = await ctx.db
-          .query('todos')
-          .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
-          .collect(),
-        pendingTasks = await ctx.db
-          .query('tasks')
-          .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'pending'))
-          .collect(),
-        runningTasks = await ctx.db
-          .query('tasks')
-          .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', threadId).eq('status', 'running'))
-          .collect(),
-        normalizedTodos = normalizeTodos({ todos }),
-        todoSnapshot = JSON.stringify(normalizedTodos),
-        previousTodos = parseTodoSnapshot({ snapshot: state.lastTodoSnapshot }),
-        currentSummary = summarizeTodoState({ todos: normalizedTodos }),
-        previousSummary = summarizeTodoState({ todos: previousTodos ?? [] })
-      let consecutiveFailures = state.consecutiveFailures ?? 0,
-        stagnationCount = state.stagnationCount ?? 0
-      if (state.lastContinuationAt && now - state.lastContinuationAt >= FAILURE_RESET_WINDOW_MS) consecutiveFailures = 0
-      if (!state.lastTodoSnapshot || state.lastTodoSnapshot !== todoSnapshot) stagnationCount = 0
-      else stagnationCount += 1
-      const hasActiveTasks = pendingTasks.length > 0 || runningTasks.length > 0,
-        atCap = state.autoContinueStreak >= 5,
-        incomingPriority = reasonPriority.todo_continuation,
-        queuedPriority = getQueuedPriority({ state }),
-        queueAllowsContinuation = incomingPriority >= queuedPriority,
-        progressDetected =
-          !state.lastTodoSnapshot ||
-          state.lastTodoSnapshot !== todoSnapshot ||
-          currentSummary.incompleteCount < previousSummary.incompleteCount ||
-          currentSummary.completedCount > previousSummary.completedCount,
-        nextStagnationCount = progressDetected ? 0 : stagnationCount,
-        hasStagnated = nextStagnationCount >= MAX_STAGNATION_COUNT,
-        hitFailureCap = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES,
-        safeFailures = consecutiveFailures ?? 0,
-        cooldownMs = computeContinuationCooldownMs({
-          consecutiveFailures: safeFailures
+      const {
+          nextStagnationCount,
+          shouldContinue: shouldContinueBase,
+          snapshot: { now, safeFailures, todos, todoSnapshot }
+        } = await buildContinuationSnapshot({
+          ctx,
+          sessionId: session._id,
+          state,
+          threadId
         }),
-        insideCooldown = safeFailures > 0 && !!state.lastContinuationAt && now - state.lastContinuationAt < cooldownMs,
-        shouldContinue =
-          currentSummary.incompleteCount > 0 &&
-          !hasActiveTasks &&
-          !turnRequestedInput &&
-          !atCap &&
-          queueAllowsContinuation &&
-          !hasStagnated &&
-          !hitFailureCap &&
-          !insideCooldown
+        shouldContinue = shouldContinueBase && !turnRequestedInput
       if (!shouldContinue) {
-        await ctx.db.patch(state._id, {
-          autoContinueStreak: 0,
-          consecutiveFailures,
-          lastTodoSnapshot: todoSnapshot,
-          stagnationCount: nextStagnationCount
+        await persistNoContinuationState({
+          ctx,
+          nextStagnationCount,
+          safeFailures,
+          stateId: state._id,
+          todoSnapshot
         })
         return { ok: true, shouldContinue: false }
       }
       const reminderText = buildTodoReminder({ todos }),
-        reminderMessageId = await ctx.db.insert('messages', {
-          content: reminderText,
-          isComplete: true,
-          parts: [{ text: reminderText, type: 'text' }],
-          role: 'system',
-          sessionId: session._id,
-          threadId
-        }),
-        enqueued = await enqueueRunInline({
+        enqueued = await enqueueContinuationRun({
           ctx,
-          incrementStreak: true,
-          priority: reasonPriority.todo_continuation,
-          promptMessageId: String(reminderMessageId),
-          reason: 'todo_continuation',
+          reminderText,
+          sessionId: session._id,
           threadId
         })
       if (!enqueued.ok) {
@@ -482,21 +559,21 @@ const readRunStateByThreadId = async ({
         now = Date.now()
       for (const state of activeStates) {
         const heartbeatBase = state.runHeartbeatAt ?? state.claimedAt ?? state.activatedAt,
-          claimedHeartbeatStale = state.runClaimed === true && !!heartbeatBase && now - heartbeatBase > CLAIMED_STALE_MS,
+          claimedHeartbeatStale =
+            state.runClaimed === true && heartbeatBase !== undefined && now - heartbeatBase > CLAIMED_STALE_MS,
           unclaimedStale =
-            state.runClaimed !== true && !!state.activatedAt && now - state.activatedAt > UNCLAIMED_STALE_MS,
-          wallClockStale = !!state.activatedAt && now - state.activatedAt > WALL_CLOCK_TIMEOUT_MS,
+            state.runClaimed !== true && state.activatedAt !== undefined && now - state.activatedAt > UNCLAIMED_STALE_MS,
+          wallClockStale = state.activatedAt !== undefined && now - state.activatedAt > WALL_CLOCK_TIMEOUT_MS,
           isStale = claimedHeartbeatStale || unclaimedStale || wallClockStale
         if (isStale) {
-          const queuedPromptMessageId = state.queuedPromptMessageId
+          const { queuedPromptMessageId } = state
           if (queuedPromptMessageId) {
-            // oxlint-disable-next-line eslint/no-await-in-loop
+            /** biome-ignore lint/performance/noAwaitInLoops: sequential stale-state recovery */
             const session = await resolveSessionByThreadId({
               ctx,
               threadId: state.threadId
             })
             if (session?.status === 'archived')
-              // oxlint-disable-next-line eslint/no-await-in-loop
               await ctx.db.patch(state._id, {
                 activatedAt: undefined,
                 activeRunToken: undefined,
@@ -510,14 +587,12 @@ const readRunStateByThreadId = async ({
               })
             else {
               const runToken = crypto.randomUUID()
-              // oxlint-disable-next-line eslint/no-await-in-loop
               await scheduleRun({
                 ctx,
                 promptMessageId: queuedPromptMessageId,
                 runToken,
                 threadId: state.threadId
               })
-              // oxlint-disable-next-line eslint/no-await-in-loop
               await ctx.db.patch(state._id, {
                 activatedAt: now,
                 activeRunToken: runToken,
@@ -530,8 +605,7 @@ const readRunStateByThreadId = async ({
                 status: 'active'
               })
             }
-          } else {
-            // oxlint-disable-next-line eslint/no-await-in-loop
+          } else
             await ctx.db.patch(state._id, {
               activatedAt: undefined,
               activeRunToken: undefined,
@@ -543,7 +617,6 @@ const readRunStateByThreadId = async ({
               runHeartbeatAt: undefined,
               status: 'idle'
             })
-          }
         }
       }
     }
@@ -676,7 +749,7 @@ const readRunStateByThreadId = async ({
       if (session.status === 'archived') throw new Error('session_archived')
       await enforceRateLimit({
         ctx,
-        key: String(ctx.user._id),
+        key: ctx.user._id,
         name: 'submitMessage'
       })
       const messageId = await ctx.db.insert('messages', {

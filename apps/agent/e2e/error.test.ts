@@ -1,14 +1,16 @@
-import { ConvexHttpClient } from 'convex/browser'
 import type { FunctionReference } from 'convex/server'
+
+import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
+
 import { expect, test } from './fixtures'
 
-const convex = new ConvexHttpClient('http://127.0.0.1:3212')
-const CHAT_URL_RE = /\/chat\//u
-const MESSAGE_RE = /message/iu
-const SEND_RE = /send/iu
-const SESSION_ARCHIVED_RE = /session_archived/iu
-const ERROR_INVALID_RE = /error|invalid|not found/iu
+const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
+  CHAT_URL_RE = /\/chat\//u,
+  MESSAGE_RE = /message/iu,
+  SEND_RE = /send/iu,
+  SESSION_ARCHIVED_RE = /session_archived/iu,
+  ERROR_INVALID_RE = /error|invalid|not found/iu
 
 test.describe
   .serial('Error States', () => {

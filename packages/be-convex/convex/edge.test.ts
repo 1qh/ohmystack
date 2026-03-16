@@ -1,10 +1,10 @@
-/* eslint-disable no-await-in-loop, @typescript-eslint/no-magic-numbers */
-// oxlint-disable promise/prefer-await-to-then
-// biome-ignore-all lint/performance/noAwaitInLoops: test fixtures
-import { describe, expect, test } from 'bun:test'
-import { convexTest } from 'convex-test'
+/* eslint-disable no-await-in-loop, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* oxlint-disable promise/prefer-await-to-then */
+/** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
 import { createTestContext } from '@noboil/convex/test'
 import { discoverModules } from '@noboil/convex/test/discover'
+import { describe, expect, test } from 'bun:test'
+import { convexTest } from 'convex-test'
 
 import { api } from './_generated/api'
 import schema from './schema'
