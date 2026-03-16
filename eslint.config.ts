@@ -51,17 +51,17 @@ export default eslint({
       files: ['packages/be-convex/**/*.ts', 'packages/be-convex/**/*.tsx']
     },
     {
-      files: ['packages/be-convex/**/*.ts', 'packages/be-convex/**/*.tsx'],
+      ...spacetimeRecommended,
+      files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
+    },
+    {
+      files: ['packages/be-convex/**/*.ts'],
       rules: {
         'noboil-convex/discovery-check': 'off'
       }
     },
     {
-      ...spacetimeRecommended,
-      files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
-    },
-    {
-      files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx'],
+      files: ['packages/be-spacetimedb/**/*.ts'],
       rules: {
         'noboil-stdb/discovery-check': 'off'
       }
