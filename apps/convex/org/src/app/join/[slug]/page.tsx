@@ -64,9 +64,8 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
             <div className='space-y-4 text-center'>
               <p className='text-muted-foreground'>Your request is pending approval.</p>
               <Button
-                // oxlint-disable-next-line promise/prefer-await-to-then
-                onClick={() => {
-                  handleCancel().catch(fail)
+                onClick={async () => {
+                  await handleCancel()
                 }}
                 variant='outline'>
                 Cancel request

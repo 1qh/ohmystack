@@ -1,12 +1,12 @@
-import { zid } from 'convex-helpers/server/zod4'
+/** biome-ignore-all lint/style/noProcessEnv: test mode detection */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
+import { zid } from 'convex-helpers/server/zod4'
 import { string } from 'zod/v4'
-
+import { m } from '../lazy'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
-
-import { m } from '../lazy'
 import { internalMutation, internalQuery } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
 
@@ -26,7 +26,12 @@ const reasonPriority = {
       toolName: v.string(),
       type: v.literal('tool-call')
     }),
-    v.object({ snippet: v.optional(v.string()), title: v.string(), type: v.literal('source'), url: v.string() })
+    v.object({
+      snippet: v.optional(v.string()),
+      title: v.string(),
+      type: v.literal('source'),
+      url: v.string()
+    })
   ),
   runOrchestratorRef = makeFunctionReference<
     'action',
@@ -34,7 +39,7 @@ const reasonPriority = {
     undefined
   >('orchestratorNode:runOrchestrator'),
   CLAIMED_STALE_MS = 15 * 60 * 1000,
-  CONTINUATION_BASE_COOLDOWN_MS = 5_000,
+  CONTINUATION_BASE_COOLDOWN_MS = 5000,
   FAILURE_RESET_WINDOW_MS = 5 * 60 * 1000,
   MAX_CONSECUTIVE_FAILURES = 5,
   MAX_STAGNATION_COUNT = 3,
@@ -45,9 +50,19 @@ const reasonPriority = {
 type EnqueueContext = Pick<MutationCtx, 'db' | 'scheduler'>
 type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
 type RunStateDoc = Doc<'threadRunState'>
-type NormalizedTodo = { content: string; id: string; status: Doc<'todos'>['status'] }
+type NormalizedTodo = {
+  content: string
+  id: string
+  status: Doc<'todos'>['status']
+}
 
-const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: MutationCtx['db']['query'] } }; threadId: string }) =>
+const readRunStateByThreadId = async ({
+    ctx,
+    threadId
+  }: {
+    ctx: { db: { query: MutationCtx['db']['query'] } }
+    threadId: string
+  }) =>
     ctx.db
       .query('threadRunState')
       .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
@@ -100,7 +115,11 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
     threadId: string
   }) => {
     if (process.env.CONVEX_TEST_MODE === 'true') return
-    await ctx.scheduler.runAfter(0, runOrchestratorRef, { promptMessageId, runToken, threadId })
+    await ctx.scheduler.runAfter(0, runOrchestratorRef, {
+      promptMessageId,
+      runToken,
+      threadId
+    })
   },
   enqueueRunInline = async ({
     ctx,
@@ -176,15 +195,20 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
       })
 
     normalized.sort((a, b) =>
-      a.id === b.id ? (a.content === b.content ? a.status.localeCompare(b.status) : a.content.localeCompare(b.content)) : a.id.localeCompare(b.id)
+      a.id === b.id
+        ? a.content === b.content
+          ? a.status.localeCompare(b.status)
+          : a.content.localeCompare(b.content)
+        : a.id.localeCompare(b.id)
     )
     return normalized
   },
   summarizeTodoState = ({ todos }: { todos: NormalizedTodo[] }) => {
     let completedCount = 0,
       incompleteCount = 0
-    for (const t of todos) if (t.status === 'completed' || t.status === 'cancelled') completedCount += 1
-    else incompleteCount += 1
+    for (const t of todos)
+      if (t.status === 'completed' || t.status === 'cancelled') completedCount += 1
+      else incompleteCount += 1
     return { completedCount, incompleteCount }
   },
   parseTodoSnapshot = ({ snapshot }: { snapshot?: string }) => {
@@ -199,7 +223,8 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
           content = Reflect.get(t, 'content'),
           status = Reflect.get(t, 'status')
         if (typeof id !== 'string' || typeof content !== 'string') return null
-        if (!(status === 'pending' || status === 'in_progress' || status === 'completed' || status === 'cancelled')) return null
+        if (!(status === 'pending' || status === 'in_progress' || status === 'completed' || status === 'cancelled'))
+          return null
         todos.push({ content, id, status })
       }
       return todos
@@ -314,7 +339,11 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
     }
   }),
   postTurnAuditFenced = internalMutation({
-    args: { runToken: v.string(), threadId: v.string(), turnRequestedInput: v.boolean() },
+    args: {
+      runToken: v.string(),
+      threadId: v.string(),
+      turnRequestedInput: v.boolean()
+    },
     handler: async (ctx, { runToken, threadId, turnRequestedInput }) => {
       const state = await ensureRunStateInline({ ctx, threadId })
       if (state.status !== 'active') return { ok: false, shouldContinue: false }
@@ -361,11 +390,10 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
         hasStagnated = nextStagnationCount >= MAX_STAGNATION_COUNT,
         hitFailureCap = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES,
         safeFailures = consecutiveFailures ?? 0,
-        cooldownMs = computeContinuationCooldownMs({ consecutiveFailures: safeFailures }),
-        insideCooldown =
-          safeFailures > 0 &&
-          !!state.lastContinuationAt &&
-          now - state.lastContinuationAt < cooldownMs,
+        cooldownMs = computeContinuationCooldownMs({
+          consecutiveFailures: safeFailures
+        }),
+        insideCooldown = safeFailures > 0 && !!state.lastContinuationAt && now - state.lastContinuationAt < cooldownMs,
         shouldContinue =
           currentSummary.incompleteCount > 0 &&
           !hasActiveTasks &&
@@ -462,8 +490,13 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
         if (isStale) {
           const queuedPromptMessageId = state.queuedPromptMessageId
           if (queuedPromptMessageId) {
-            const session = await resolveSessionByThreadId({ ctx, threadId: state.threadId })
+            // oxlint-disable-next-line eslint/no-await-in-loop
+            const session = await resolveSessionByThreadId({
+              ctx,
+              threadId: state.threadId
+            })
             if (session?.status === 'archived')
+              // oxlint-disable-next-line eslint/no-await-in-loop
               await ctx.db.patch(state._id, {
                 activatedAt: undefined,
                 activeRunToken: undefined,
@@ -477,12 +510,14 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
               })
             else {
               const runToken = crypto.randomUUID()
+              // oxlint-disable-next-line eslint/no-await-in-loop
               await scheduleRun({
                 ctx,
                 promptMessageId: queuedPromptMessageId,
                 runToken,
                 threadId: state.threadId
               })
+              // oxlint-disable-next-line eslint/no-await-in-loop
               await ctx.db.patch(state._id, {
                 activatedAt: now,
                 activeRunToken: runToken,
@@ -495,7 +530,8 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
                 status: 'active'
               })
             }
-          } else
+          } else {
+            // oxlint-disable-next-line eslint/no-await-in-loop
             await ctx.db.patch(state._id, {
               activatedAt: undefined,
               activeRunToken: undefined,
@@ -507,6 +543,7 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
               runHeartbeatAt: undefined,
               status: 'idle'
             })
+          }
         }
       }
     }
@@ -607,7 +644,11 @@ const readRunStateByThreadId = async ({ ctx, threadId }: { ctx: { db: { query: M
     }
   }),
   finalizeMessage = internalMutation({
-    args: { content: v.string(), messageId: v.id('messages'), parts: v.array(messagePartValidator) },
+    args: {
+      content: v.string(),
+      messageId: v.id('messages'),
+      parts: v.array(messagePartValidator)
+    },
     handler: async (ctx, { content, messageId, parts }) => {
       const msg = await ctx.db.get(messageId)
       if (!msg) return

@@ -1,10 +1,11 @@
 /* eslint-disable no-await-in-loop, @typescript-eslint/no-magic-numbers */
-// oxlint-disable promise/prefer-await-to-then
-/** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
+/** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures
+ * biome-ignore-all lint/performance/noDelete: test cleanup
+ * biome-ignore-all lint/style/noProcessEnv: test mode configuration */
 import { describe, expect, test } from 'bun:test'
-import { convexTest } from 'convex-test'
 import { createTestContext } from '@noboil/convex/test'
 import { discoverModules } from '@noboil/convex/test/discover'
+import { convexTest } from 'convex-test'
 
 import { api, internal } from './_generated/api'
 import { checkRateLimit, rateLimit, resetRateLimit } from './rateLimit'
@@ -41,7 +42,9 @@ describe('sessions', () => {
   test('creates session with title', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
-      result = await asUser(0).mutation(api.sessions.createSession, { title: 'My Chat' })
+      result = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'My Chat'
+      })
     const session = await ctx.run(async c => c.db.get(result.sessionId))
     expect(session?.title).toBe('My Chat')
   })
@@ -49,8 +52,12 @@ describe('sessions', () => {
   test('lists only own non-archived sessions', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx)
-    await asUser(0).mutation(api.sessions.createSession, { title: 'User0 Chat' })
-    await asUser(1).mutation(api.sessions.createSession, { title: 'User1 Chat' })
+    await asUser(0).mutation(api.sessions.createSession, {
+      title: 'User0 Chat'
+    })
+    await asUser(1).mutation(api.sessions.createSession, {
+      title: 'User1 Chat'
+    })
     const user0Sessions = await asUser(0).query(api.sessions.listSessions, {})
     expect(user0Sessions.length).toBe(1)
     expect(user0Sessions[0]?.title).toBe('User0 Chat')
@@ -63,9 +70,13 @@ describe('sessions', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
-    const ownResult = await asUser(0).query(api.sessions.getSession, { sessionId })
+    const ownResult = await asUser(0).query(api.sessions.getSession, {
+      sessionId
+    })
     expect(ownResult).not.toBeNull()
-    const otherResult = await asUser(1).query(api.sessions.getSession, { sessionId })
+    const otherResult = await asUser(1).query(api.sessions.getSession, {
+      sessionId
+    })
     expect(otherResult).toBeNull()
   })
 
@@ -118,7 +129,9 @@ describe('sessions', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId: _s1 } = await asUser(0).mutation(api.sessions.createSession, { title: 'Active' }),
-      { sessionId: s2 } = await asUser(0).mutation(api.sessions.createSession, { title: 'To Archive' })
+      { sessionId: s2 } = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'To Archive'
+      })
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId: s2 })
     const sessions = await asUser(0).query(api.sessions.listSessions, {})
     expect(sessions.length).toBe(1)
@@ -149,7 +162,9 @@ describe('messages', () => {
         threadId
       })
     })
-    const messages = await asUser(0).query(api.messages.listMessages, { threadId })
+    const messages = await asUser(0).query(api.messages.listMessages, {
+      threadId
+    })
     expect(messages.length).toBe(2)
     expect(messages[0]?.content).toBe('Hello')
     expect(messages[1]?.content).toBe('Hi there')
@@ -185,7 +200,9 @@ describe('messages', () => {
         })
       }
     })
-    const messages = await asUser(0).query(api.messages.listMessages, { threadId })
+    const messages = await asUser(0).query(api.messages.listMessages, {
+      threadId
+    })
     expect(messages.length).toBe(100)
     expect(messages[0]?.content).toBe('msg-10')
     expect(messages[99]?.content).toBe('msg-109')
@@ -1103,8 +1120,18 @@ describe('todos', () => {
       result = await ctx.mutation(internal.todos.syncOwned, {
         sessionId,
         todos: [
-          { content: 'todo a', position: 0, priority: 'high', status: 'pending' },
-          { content: 'todo b', position: 1, priority: 'low', status: 'in_progress' }
+          {
+            content: 'todo a',
+            position: 0,
+            priority: 'high',
+            status: 'pending'
+          },
+          {
+            content: 'todo b',
+            position: 1,
+            priority: 'low',
+            status: 'in_progress'
+          }
         ]
       }),
       rows = await ctx.run(async c =>
@@ -1134,7 +1161,15 @@ describe('todos', () => {
       )
     await ctx.mutation(internal.todos.syncOwned, {
       sessionId,
-      todos: [{ content: 'new content', id: todoId, position: 2, priority: 'high', status: 'completed' }]
+      todos: [
+        {
+          content: 'new content',
+          id: todoId,
+          position: 2,
+          priority: 'high',
+          status: 'completed'
+        }
+      ]
     })
     const todo = await ctx.run(async c => c.db.get(todoId))
     expect(todo?.content).toBe('new content')
@@ -1220,7 +1255,9 @@ describe('tokenUsage', () => {
       threadId,
       totalTokens: 10
     })
-    const usage = await asUser(0).query(api.tokenUsage.getTokenUsage, { sessionId })
+    const usage = await asUser(0).query(api.tokenUsage.getTokenUsage, {
+      sessionId
+    })
     expect(usage.count).toBe(2)
     expect(usage.inputTokens).toBe(13)
     expect(usage.outputTokens).toBe(11)
@@ -1234,7 +1271,9 @@ describe('retention', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
     await ctx.run(async c => {
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 25 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 25 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     const session = await ctx.run(async c => c.db.get(sessionId))
@@ -1388,7 +1427,15 @@ describe('stale cleanup', () => {
             c.db.insert('messages', {
               content: '',
               isComplete: false,
-              parts: [{ args: '{}', status: 'pending', toolCallId: 'call-1', toolName: 'tool', type: 'tool-call' }],
+              parts: [
+                {
+                  args: '{}',
+                  status: 'pending',
+                  toolCallId: 'call-1',
+                  toolName: 'tool',
+                  type: 'tool-call'
+                }
+              ],
               role: 'assistant',
               streamingContent: 'partial answer',
               threadId
@@ -1435,7 +1482,9 @@ describe('compaction', () => {
         threadId
       })
     })
-    const result = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const result = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(result.charCount).toBe(11)
     expect(result.messageCount).toBe(2)
     expect(result.hasMore).toBe(false)
@@ -1460,7 +1509,9 @@ describe('compaction', () => {
         .unique()
       if (runState) await c.db.patch(runState._id, { compactionSummary: 'summary-text' })
     })
-    const result = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const result = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(result.charCount).toBe('summary-text'.length + 'tail'.length)
     expect(result.messageCount).toBe(1)
   })
@@ -1469,7 +1520,9 @@ describe('compaction', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      result = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+      result = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+        threadId
+      })
     expect(result.ok).toBe(true)
     expect(result.lockToken.length > 0).toBe(true)
   })
@@ -1478,8 +1531,12 @@ describe('compaction', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      first = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId }),
-      second = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+      first = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+        threadId
+      }),
+      second = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+        threadId
+      })
     expect(first.ok).toBe(true)
     expect(second.ok).toBe(false)
     expect(second.lockToken).toBe(first.lockToken)
@@ -1489,13 +1546,18 @@ describe('compaction', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      first = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+      first = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+        threadId
+      })
     await ctx.run(async c => {
       const runState = await c.db
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (runState) await c.db.patch(runState._id, { compactionLockAt: Date.now() - 11 * 60 * 1000 })
+      if (runState)
+        await c.db.patch(runState._id, {
+          compactionLockAt: Date.now() - 11 * 60 * 1000
+        })
     })
     const second = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
     expect(first.ok).toBe(true)
@@ -1602,7 +1664,9 @@ describe('compaction', () => {
         threadId
       })
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId
+    })
     expect(groups.length).toBe(1)
     expect(groups[0]?.endMessageId).toBe(String(firstId))
   })
@@ -1623,7 +1687,15 @@ describe('compaction', () => {
       await c.db.insert('messages', {
         content: 'm-2',
         isComplete: true,
-        parts: [{ args: '{}', status: 'pending', toolCallId: 'call-1', toolName: 'tool-a', type: 'tool-call' }],
+        parts: [
+          {
+            args: '{}',
+            status: 'pending',
+            toolCallId: 'call-1',
+            toolName: 'tool-a',
+            type: 'tool-call'
+          }
+        ],
         role: 'assistant',
         sessionId,
         threadId
@@ -1637,7 +1709,9 @@ describe('compaction', () => {
         threadId
       })
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId
+    })
     expect(groups.length).toBe(1)
   })
 
@@ -1645,7 +1719,9 @@ describe('compaction', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+      result = await ctx.mutation(internal.compaction.compactIfNeeded, {
+        threadId
+      })
     expect(result.compacted).toBe(false)
     expect(result.reason).toBe('under_threshold')
   })
@@ -1703,8 +1779,14 @@ describe('message streaming', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
       messageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId })
-    await ctx.mutation(internal.orchestrator.appendStepMetadata, { messageId, stepPayload: 'step-a' })
-    await ctx.mutation(internal.orchestrator.appendStepMetadata, { messageId, stepPayload: 'step-b' })
+    await ctx.mutation(internal.orchestrator.appendStepMetadata, {
+      messageId,
+      stepPayload: 'step-a'
+    })
+    await ctx.mutation(internal.orchestrator.appendStepMetadata, {
+      messageId,
+      stepPayload: 'step-b'
+    })
     const message = await ctx.run(async c => c.db.get(messageId))
     expect(message?.metadata).toBe('step-a\nstep-b')
   })
@@ -1717,7 +1799,9 @@ describe('message streaming', () => {
       error: 'stream_failed',
       threadId
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(runState?.lastError).toBe('stream_failed')
   })
 
@@ -1725,7 +1809,9 @@ describe('message streaming', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      runState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
     expect(runState).not.toBeNull()
     expect(runState?.threadId).toBe(threadId)
     expect(runState?.status).toBe('idle')
@@ -1735,7 +1821,9 @@ describe('message streaming', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      session = await ctx.query(internal.orchestrator.readSessionByThread, { threadId })
+      session = await ctx.query(internal.orchestrator.readSessionByThread, {
+        threadId
+      })
     expect(String(session?._id)).toBe(String(sessionId))
   })
 
@@ -1769,8 +1857,8 @@ describe('tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
@@ -1791,8 +1879,8 @@ describe('tool factories', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
@@ -1827,12 +1915,16 @@ describe('auth ownership', () => {
         threadId: workerThreadId
       })
     })
-    const ownRows = await asUser(0).query(api.messages.listMessages, { threadId: workerThreadId })
+    const ownRows = await asUser(0).query(api.messages.listMessages, {
+      threadId: workerThreadId
+    })
     expect(ownRows.length).toBe(1)
     expect(String(taskId).length > 0).toBe(true)
     let threw = false
     try {
-      await asUser(1).query(api.messages.listMessages, { threadId: workerThreadId })
+      await asUser(1).query(api.messages.listMessages, {
+        threadId: workerThreadId
+      })
     } catch (error) {
       threw = true
       expect(String(error)).toContain('thread_not_found')
@@ -1855,8 +1947,12 @@ describe('auth ownership', () => {
           threadId: 'worker-thread-task-status'
         })
       )
-    const ownTask = await asUser(0).query(api.tasks.getOwnedTaskStatus, { taskId }),
-      otherTask = await asUser(1).query(api.tasks.getOwnedTaskStatus, { taskId })
+    const ownTask = await asUser(0).query(api.tasks.getOwnedTaskStatus, {
+        taskId
+      }),
+      otherTask = await asUser(1).query(api.tasks.getOwnedTaskStatus, {
+        taskId
+      })
     expect(ownTask).not.toBeNull()
     expect(otherTask).toBeNull()
   })
@@ -1957,7 +2053,13 @@ describe('edge cases', () => {
               content: '',
               isComplete: false,
               parts: [
-                { args: '{}', status: 'pending', toolCallId: 'call-pending', toolName: 'tool-a', type: 'tool-call' },
+                {
+                  args: '{}',
+                  status: 'pending',
+                  toolCallId: 'call-pending',
+                  toolName: 'tool-a',
+                  type: 'tool-call'
+                },
                 {
                   args: '{}',
                   result: 'ok',
@@ -2039,7 +2141,10 @@ describe('edge cases', () => {
         })
       )
     await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
-    const completeResult = await ctx.mutation(internal.tasks.completeTask, { result: 'late result', taskId }),
+    const completeResult = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'late result',
+        taskId
+      }),
       task = await ctx.run(async c => c.db.get(taskId))
     expect(task?.status).toBe('timed_out')
     expect(completeResult.ok).toBe(false)
@@ -2070,7 +2175,9 @@ describe('edge cases', () => {
         threadId
       })
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId
+    })
     expect(groups.length).toBe(1)
     expect(groups[0]?.endMessageId).toBe(String(completeId))
   })
@@ -2347,7 +2454,10 @@ describe('implementation details', () => {
 
   test('buildTaskCompletionReminder output format includes completion prefix', async () => {
     const { buildTaskCompletionReminder } = await import('./tasks'),
-      output = buildTaskCompletionReminder({ description: 'done task', taskId: 'task-1' })
+      output = buildTaskCompletionReminder({
+        description: 'done task',
+        taskId: 'task-1'
+      })
     expect(output.includes('[BACKGROUND TASK COMPLETED]')).toBe(true)
   })
 
@@ -2423,7 +2533,9 @@ describe('integration lifecycle', () => {
         sessionId,
         threadId: 'worker-thread-integration-chain'
       })
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     const idleSession = await ctx.run(async c => c.db.get(sessionId))
@@ -2762,7 +2874,7 @@ describe('mcp crud', () => {
     let threw = false
     try {
       await asUser(1).mutation(api.mcp.rm, { id })
-    } catch (_error) {
+    } catch {
       threw = true
     }
     expect(threw).toBe(true)
@@ -2847,9 +2959,14 @@ describe('integration: full message lifecycle', () => {
         sessionId
       }),
       userMessage = await ctx.run(async c => c.db.get(submitted.messageId as never)),
-      activeBefore = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+      activeBefore = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       runToken = activeBefore?.activeRunToken ?? '',
-      claimed = await ctx.mutation(internal.orchestrator.claimRun, { runToken, threadId }),
+      claimed = await ctx.mutation(internal.orchestrator.claimRun, {
+        runToken,
+        threadId
+      }),
       assistantMessageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId })
     await ctx.mutation(internal.orchestrator.patchStreamingMessage, {
       messageId: assistantMessageId,
@@ -2865,9 +2982,14 @@ describe('integration: full message lifecycle', () => {
       threadId,
       turnRequestedInput: false
     })
-    const finished = await ctx.mutation(internal.orchestrator.finishRun, { runToken, threadId }),
+    const finished = await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken,
+        threadId
+      }),
       assistantMessage = await ctx.run(async c => c.db.get(assistantMessageId)),
-      finalRunState = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+      finalRunState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       session = await ctx.run(async c => c.db.get(sessionId))
     expect(userMessage?.role).toBe('user')
     expect(claimed.ok).toBe(true)
@@ -2887,7 +3009,9 @@ describe('integration: full message lifecycle', () => {
       content: 'delegate this',
       sessionId
     })
-    const activeBefore = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+    const activeBefore = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       runToken = activeBefore?.activeRunToken ?? ''
     await ctx.mutation(internal.orchestrator.claimRun, { runToken, threadId })
     const spawned = await ctx.mutation(internal.tasks.spawnTask, {
@@ -2913,9 +3037,16 @@ describe('integration: full message lifecycle', () => {
       reason: 'task_completion',
       threadId
     })
-    const queuedState = await ctx.query(internal.orchestrator.readRunState, { threadId }),
-      finished = await ctx.mutation(internal.orchestrator.finishRun, { runToken, threadId }),
-      finalState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const queuedState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
+      finished = await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken,
+        threadId
+      }),
+      finalState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
     expect(continuation.ok).toBe(true)
     expect(completedTask?.status).toBe('completed')
     expect(completedTask?.completionReminderMessageId).toBeDefined()
@@ -2975,19 +3106,25 @@ describe('integration: full message lifecycle', () => {
         threadId,
         totalTokens: 7
       })
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 2 * 24 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 2 * 24 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     const idle = await ctx.run(async c => c.db.get(sessionId))
     expect(idle?.status).toBe('idle')
     await ctx.run(async c => {
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     const archived = await ctx.run(async c => c.db.get(sessionId))
     expect(archived?.status).toBe('archived')
     await ctx.run(async c => {
-      await c.db.patch(sessionId, { archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.cleanupArchivedSessions, {})
     const session = await ctx.run(async c => c.db.get(sessionId)),
@@ -3152,10 +3289,15 @@ describe('integration: full message lifecycle', () => {
       reason: 'task_completion',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       runToken = before?.activeRunToken ?? ''
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
-    const finished = await ctx.mutation(internal.orchestrator.finishRun, { runToken, threadId }),
+    const finished = await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken,
+        threadId
+      }),
       after = await ctx.query(internal.orchestrator.readRunState, { threadId })
     expect(finished.scheduled).toBe(false)
     expect(after?.status).toBe('idle')
@@ -3187,7 +3329,9 @@ describe('more edge cases', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.queuedPriority).toBe('user_message')
     expect(state?.queuedReason).toBe('user_message')
     expect(state?.queuedPromptMessageId).toBe('user-msg-2')
@@ -3203,7 +3347,9 @@ describe('more edge cases', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       runToken = active?.activeRunToken ?? ''
     await ctx.run(async c => {
       await c.db.insert('todos', {
@@ -3337,7 +3483,9 @@ describe('remaining edge cases', () => {
         content: 'second-rapid-message',
         sessionId
       }),
-      runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      runState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
     expect(String(first.messageId).length > 0).toBe(true)
     expect(runState?.status).toBe('active')
     expect(runState?.queuedPriority).toBe('user_message')
@@ -3355,10 +3503,17 @@ describe('remaining edge cases', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       runToken = before?.activeRunToken ?? ''
-    await ctx.mutation(internal.orchestrator.heartbeatRun, { runToken, threadId })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.heartbeatRun, {
+      runToken,
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.runHeartbeatAt).toBeDefined()
   })
 
@@ -3372,12 +3527,16 @@ describe('remaining edge cases', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.heartbeatRun, {
       runToken: 'wrong-token',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.runHeartbeatAt).toBe(before?.runHeartbeatAt)
   })
 
@@ -3385,8 +3544,12 @@ describe('remaining edge cases', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      first = await ctx.mutation(internal.orchestrator.ensureRunState, { threadId }),
-      second = await ctx.mutation(internal.orchestrator.ensureRunState, { threadId })
+      first = await ctx.mutation(internal.orchestrator.ensureRunState, {
+        threadId
+      }),
+      second = await ctx.mutation(internal.orchestrator.ensureRunState, {
+        threadId
+      })
     expect(String(first._id)).toBe(String(second._id))
     expect(first.threadId).toBe(threadId)
     expect(second.threadId).toBe(threadId)
@@ -3415,7 +3578,9 @@ describe('remaining edge cases', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('idle')
     expect(after?.activeRunToken).toBeUndefined()
   })
@@ -3463,7 +3628,9 @@ describe('remaining edge cases', () => {
         threadId: workerThreadId
       })
     })
-    const rows = await asUser(0).query(api.messages.listMessages, { threadId: workerThreadId })
+    const rows = await asUser(0).query(api.messages.listMessages, {
+      threadId: workerThreadId
+    })
     expect(rows.length).toBe(1)
     expect(rows[0]?.content).toBe('worker-chain-message')
   })
@@ -3495,7 +3662,9 @@ describe('orchestrator action', () => {
         reason: 'user_message',
         threadId
       })
-      const active = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+      const active = await ctx.query(internal.orchestrator.readRunState, {
+          threadId
+        }),
         runToken = active?.activeRunToken ?? ''
       try {
         await ctx.action(internal.orchestratorNode.runOrchestrator, {
@@ -3514,7 +3683,9 @@ describe('orchestrator action', () => {
             .collect()
         ),
         assistant = messages.find(m => m.role === 'assistant' && m.isComplete),
-        runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+        runState = await ctx.query(internal.orchestrator.readRunState, {
+          threadId
+        })
       expect(assistant).toBeDefined()
       expect(assistant?.content.length ?? 0).toBeGreaterThan(0)
       expect(runState?.status).toBe('idle')
@@ -3610,7 +3781,9 @@ describe('orchestrator action', () => {
         reason: 'user_message',
         threadId
       })
-      const active = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+      const active = await ctx.query(internal.orchestrator.readRunState, {
+          threadId
+        }),
         runToken = active?.activeRunToken ?? ''
       try {
         await ctx.action(internal.orchestratorNode.runOrchestrator, {
@@ -3622,7 +3795,9 @@ describe('orchestrator action', () => {
         expect(String(actionError)).toContain('Cannot')
         return
       }
-      const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const runState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(runState?.lastError).toContain('forced_readable_stream_failure')
       expect(runState?.status).toBe('idle')
     } finally {
@@ -3814,7 +3989,9 @@ describe('additional queue coverage', () => {
       error: 'second_error',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.lastError).toBe('second_error')
   })
 
@@ -3901,7 +4078,9 @@ describe('additional task lifecycle coverage', () => {
           threadId: 'worker-thread-no-reminder-extra'
         })
       ),
-      result = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId }),
+      result = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, {
+        taskId
+      }),
       task = await ctx.run(async c => c.db.get(taskId))
     expect(result.ok).toBe(false)
     expect(task?.continuationEnqueuedAt).toBeUndefined()
@@ -4003,7 +4182,9 @@ describe('additional task lifecycle coverage', () => {
         threadId: 'worker-thread-list-other-extra'
       })
     })
-    const ownRows = await asUser(0).query(api.tasks.listTasks, { sessionId: s0 }),
+    const ownRows = await asUser(0).query(api.tasks.listTasks, {
+        sessionId: s0
+      }),
       otherRows = await asUser(1).query(api.tasks.listTasks, { sessionId: s0 })
     expect(ownRows.length).toBe(1)
     expect(ownRows[0]?.description).toBe('owner-task')
@@ -4060,7 +4241,9 @@ describe('additional compaction coverage', () => {
           threadId
         })
     })
-    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(result.compacted).toBe(false)
     expect(result.reason).toBe('placeholder')
   })
@@ -4081,7 +4264,9 @@ describe('additional compaction coverage', () => {
           threadId
         })
     })
-    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(result.compacted).toBe(false)
     expect(result.reason).toBe('placeholder')
   })
@@ -4110,7 +4295,9 @@ describe('additional compaction coverage', () => {
         threadId
       })
     })
-    const result = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const result = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(result.compacted).toBe(false)
     expect(result.reason).toBe('no_closed_groups')
   })
@@ -4150,14 +4337,18 @@ describe('additional compaction coverage', () => {
       })
     )
     expect(String(m1).length > 0).toBe(true)
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId
+    })
     await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'boundary-summary',
       lastCompactedMessageId: String(m2),
       lockToken: lock.lockToken,
       threadId
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId
+    })
     expect(groups.length).toBe(1)
     expect(groups[0]?.endMessageId).toBe(String(m3))
   })
@@ -4187,7 +4378,9 @@ describe('additional compaction coverage', () => {
         threadId: t0
       })
     })
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: t0 }),
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+        threadId: t0
+      }),
       result = await ctx.mutation(internal.compaction.setCompactionSummary, {
         compactionSummary: 'reject-cross-thread',
         lastCompactedMessageId: String(foreignBoundary),
@@ -4212,7 +4405,9 @@ describe('additional compaction coverage', () => {
           threadId
         })
     })
-    const size = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const size = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(size.messageCount).toBe(500)
     expect(size.hasMore).toBe(true)
     expect(size.charCount).toBe(500)
@@ -4294,7 +4489,7 @@ describe('additional mcp and auth coverage', () => {
         id,
         name: 'hijacked-name'
       })
-    } catch (_error) {
+    } catch {
       threw = true
     }
     expect(threw).toBe(true)
@@ -4316,7 +4511,9 @@ describe('additional mcp and auth coverage', () => {
       threadId,
       totalTokens: 15
     })
-    const usage = await asUser(1).query(api.tokenUsage.getTokenUsage, { sessionId })
+    const usage = await asUser(1).query(api.tokenUsage.getTokenUsage, {
+      sessionId
+    })
     expect(usage.inputTokens).toBe(0)
     expect(usage.outputTokens).toBe(0)
     expect(usage.totalTokens).toBe(0)
@@ -4337,7 +4534,15 @@ describe('additional cleanup and retention coverage', () => {
             c.db.insert('messages', {
               content: '',
               isComplete: false,
-              parts: [{ args: '{}', status: 'pending', toolCallId: 'recent-call', toolName: 'tool', type: 'tool-call' }],
+              parts: [
+                {
+                  args: '{}',
+                  status: 'pending',
+                  toolCallId: 'recent-call',
+                  toolName: 'tool',
+                  type: 'tool-call'
+                }
+              ],
               role: 'assistant',
               streamingContent: 'recent-partial',
               threadId
@@ -4417,8 +4622,11 @@ describe('gap coverage implementation details', () => {
         second = await aiModule.getModel()
       expect(first).toBe(second)
     } finally {
-      if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
-      else process.env.CONVEX_TEST_MODE = originalTestMode
+      if (originalTestMode === undefined) {
+        delete process.env.CONVEX_TEST_MODE
+      } else {
+        process.env.CONVEX_TEST_MODE = originalTestMode
+      }
     }
   })
 
@@ -4450,7 +4658,10 @@ describe('gap coverage implementation details', () => {
 
   test('buildTaskCompletionReminder includes wrapper id and description', async () => {
     const { buildTaskCompletionReminder } = await import('./tasks'),
-      text = buildTaskCompletionReminder({ description: 'compile docs', taskId: 'task-123' })
+      text = buildTaskCompletionReminder({
+        description: 'compile docs',
+        taskId: 'task-123'
+      })
     expect(text.includes('<system-reminder>')).toBe(true)
     expect(text.includes('[BACKGROUND TASK COMPLETED]')).toBe(true)
     expect(text.includes('Task ID: task-123')).toBe(true)
@@ -4460,7 +4671,10 @@ describe('gap coverage implementation details', () => {
 
   test('buildTaskCompletionReminder has stable line structure', async () => {
     const { buildTaskCompletionReminder } = await import('./tasks'),
-      text = buildTaskCompletionReminder({ description: 'shape check', taskId: 'task-shape' }),
+      text = buildTaskCompletionReminder({
+        description: 'shape check',
+        taskId: 'task-shape'
+      }),
       lines = text.split('\n')
     expect(lines.length).toBe(6)
     expect(lines[0]).toBe('<system-reminder>')
@@ -4550,8 +4764,8 @@ describe('gap coverage implementation details', () => {
     expect(events[0]).toBe('stream-start')
     expect(events[1]).toBe('text-start')
     expect(events.includes('text-delta')).toBe(true)
-    expect(events[events.length - 2]).toBe('text-end')
-    expect(events[events.length - 1]).toBe('finish')
+    expect(events.at(-2)).toBe('text-end')
+    expect(events.at(-1)).toBe('finish')
   })
 })
 
@@ -4561,7 +4775,7 @@ describe('gap coverage tool factories', () => {
     let called = false
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           called = true
           const payload = args as {
             description: string
@@ -4577,7 +4791,7 @@ describe('gap coverage tool factories', () => {
           expect(payload.sessionId).toBe('session-1')
           return { taskId: 'task-1', threadId: 'worker-1' }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-1',
       sessionId: 'session-1' as never
@@ -4601,31 +4815,49 @@ describe('gap coverage tool factories', () => {
     let called = false
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           called = true
           const payload = args as {
             sessionId: string
-            todos: { content: string; id?: string; position: number; priority: string; status: string }[]
+            todos: {
+              content: string
+              id?: string
+              position: number
+              priority: string
+              status: string
+            }[]
           }
           expect(payload.sessionId).toBe('session-2')
           expect(payload.todos.length).toBe(2)
           expect(payload.todos[0]?.content).toBe('a')
           return { updated: payload.todos.length }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-2',
       sessionId: 'session-2' as never
     })
     const todoWrite = tools.todoWrite as unknown as {
       execute: (input: {
-        todos: { content: string; id?: string; position: number; priority: 'high' | 'low' | 'medium'; status: string }[]
+        todos: {
+          content: string
+          id?: string
+          position: number
+          priority: 'high' | 'low' | 'medium'
+          status: string
+        }[]
       }) => Promise<unknown>
     }
     const result = (await todoWrite.execute({
       todos: [
         { content: 'a', position: 0, priority: 'high', status: 'pending' },
-        { content: 'b', id: 'todo-b', position: 1, priority: 'low', status: 'in_progress' }
+        {
+          content: 'b',
+          id: 'todo-b',
+          position: 1,
+          priority: 'low',
+          status: 'in_progress'
+        }
       ]
     })) as { updated: number }
     expect(called).toBe(true)
@@ -4636,13 +4868,15 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => [{ content: 'todo 1' }]
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => [{ content: 'todo 1' }]
       } as never,
       parentThreadId: 'parent-3',
       sessionId: 'session-3' as never
     })
-    const todoRead = tools.todoRead as unknown as { execute: (input: object) => Promise<unknown> },
+    const todoRead = tools.todoRead as unknown as {
+        execute: (input: object) => Promise<unknown>
+      },
       result = (await todoRead.execute({})) as { todos: { content: string }[] }
     expect(result.todos.length).toBe(1)
     expect(result.todos[0]?.content).toBe('todo 1')
@@ -4652,13 +4886,15 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => ({ todos: [{ content: 'todo passthrough' }] })
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => ({ todos: [{ content: 'todo passthrough' }] })
       } as never,
       parentThreadId: 'parent-4',
       sessionId: 'session-4' as never
     })
-    const todoRead = tools.todoRead as unknown as { execute: (input: object) => Promise<unknown> },
+    const todoRead = tools.todoRead as unknown as {
+        execute: (input: object) => Promise<unknown>
+      },
       result = (await todoRead.execute({})) as { todos: { content: string }[] }
     expect(result.todos.length).toBe(1)
     expect(result.todos[0]?.content).toBe('todo passthrough')
@@ -4668,14 +4904,19 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-5',
       sessionId: 'session-5' as never
     })
-    const taskStatus = tools.taskStatus as unknown as { execute: (input: { taskId: string }) => Promise<unknown> },
-      result = (await taskStatus.execute({ taskId: 'missing' })) as { description: null; status: null }
+    const taskStatus = tools.taskStatus as unknown as {
+        execute: (input: { taskId: string }) => Promise<unknown>
+      },
+      result = (await taskStatus.execute({ taskId: 'missing' })) as {
+        description: null
+        status: null
+      }
     expect(result.description).toBeNull()
     expect(result.status).toBeNull()
   })
@@ -4684,13 +4925,18 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => ({ description: 'download file', status: 'running' })
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => ({
+          description: 'download file',
+          status: 'running'
+        })
       } as never,
       parentThreadId: 'parent-6',
       sessionId: 'session-6' as never
     })
-    const taskStatus = tools.taskStatus as unknown as { execute: (input: { taskId: string }) => Promise<unknown> },
+    const taskStatus = tools.taskStatus as unknown as {
+        execute: (input: { taskId: string }) => Promise<unknown>
+      },
       result = (await taskStatus.execute({ taskId: 'task-6' })) as {
         description: string
         status: 'cancelled' | 'completed' | 'failed' | 'pending' | 'running' | 'timed_out'
@@ -4703,13 +4949,15 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => ({ status: 'running' })
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => ({ status: 'running' })
       } as never,
       parentThreadId: 'parent-7',
       sessionId: 'session-7' as never
     })
-    const taskOutput = tools.taskOutput as unknown as { execute: (input: { taskId: string }) => Promise<unknown> },
+    const taskOutput = tools.taskOutput as unknown as {
+        execute: (input: { taskId: string }) => Promise<unknown>
+      },
       result = (await taskOutput.execute({ taskId: 'task-7' })) as {
         result: null | string
         status: null | 'cancelled' | 'completed' | 'failed' | 'pending' | 'running' | 'timed_out'
@@ -4722,14 +4970,19 @@ describe('gap coverage tool factories', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => ({ result: 'done output', status: 'completed' })
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => ({ result: 'done output', status: 'completed' })
       } as never,
       parentThreadId: 'parent-8',
       sessionId: 'session-8' as never
     })
-    const taskOutput = tools.taskOutput as unknown as { execute: (input: { taskId: string }) => Promise<unknown> },
-      result = (await taskOutput.execute({ taskId: 'task-8' })) as { result: string | null; status: string | null }
+    const taskOutput = tools.taskOutput as unknown as {
+        execute: (input: { taskId: string }) => Promise<unknown>
+      },
+      result = (await taskOutput.execute({ taskId: 'task-8' })) as {
+        result: string | null
+        status: string | null
+      }
     expect(result.status).toBe('completed')
     expect(result.result).toBe('done output')
   })
@@ -4739,17 +4992,28 @@ describe('gap coverage tool factories', () => {
     const tools = createOrchestratorTools({
       ctx: {
         runAction: async () => ({
-          sources: [{ snippet: 'Test snippet', title: 'Test Source', url: 'https://example.com' }],
+          sources: [
+            {
+              snippet: 'Test snippet',
+              title: 'Test Source',
+              url: 'https://example.com'
+            }
+          ],
           summary: 'Mock search result for: convex'
         }),
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-9',
       sessionId: 'session-9' as never
     })
-    const webSearch = tools.webSearch as unknown as { execute: (input: { query: string }) => Promise<unknown> },
-      result = (await webSearch.execute({ query: 'convex' })) as { sources: unknown[]; summary: string }
+    const webSearch = tools.webSearch as unknown as {
+        execute: (input: { query: string }) => Promise<unknown>
+      },
+      result = (await webSearch.execute({ query: 'convex' })) as {
+        sources: unknown[]
+        summary: string
+      }
     expect(Array.isArray(result.sources)).toBe(true)
     expect(result.sources.length).toBe(1)
     expect(result.summary).toBe('Mock search result for: convex')
@@ -4760,18 +5024,28 @@ describe('gap coverage tool factories', () => {
     const tools = createWorkerTools({
       ctx: {
         runAction: async () => ({
-          sources: [{ snippet: 'Test snippet', title: 'Test Source', url: 'https://example.com' }],
+          sources: [
+            {
+              snippet: 'Test snippet',
+              title: 'Test Source',
+              url: 'https://example.com'
+            }
+          ],
           summary: 'Mock search result for: worker query'
         }),
-        runMutation: async () => ({ taskId: 'task', threadId: 'thread' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task', threadId: 'thread' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
     })
     expect(Object.keys(tools)).toEqual(['webSearch'])
-    const webSearch = tools.webSearch as unknown as { execute: (input: { query: string }) => Promise<unknown> },
-      result = (await webSearch.execute({ query: 'worker query' })) as { summary: string }
+    const webSearch = tools.webSearch as unknown as {
+        execute: (input: { query: string }) => Promise<unknown>
+      },
+      result = (await webSearch.execute({ query: 'worker query' })) as {
+        summary: string
+      }
     expect(result.summary).toBe('Mock search result for: worker query')
   })
 
@@ -5021,7 +5295,9 @@ describe('gap coverage orchestrator runtime', () => {
       threadId: 'worker-aggregate-thread',
       totalTokens: 7
     })
-    const usage = await asUser(0).query(api.tokenUsage.getTokenUsage, { sessionId })
+    const usage = await asUser(0).query(api.tokenUsage.getTokenUsage, {
+      sessionId
+    })
     expect(usage.count).toBe(2)
     expect(usage.inputTokens).toBe(8)
     expect(usage.outputTokens).toBe(11)
@@ -5053,7 +5329,9 @@ describe('gap coverage orchestrator runtime', () => {
       threadId: tb,
       totalTokens: 3
     })
-    const usageA = await asUser(0).query(api.tokenUsage.getTokenUsage, { sessionId: a })
+    const usageA = await asUser(0).query(api.tokenUsage.getTokenUsage, {
+      sessionId: a
+    })
     expect(usageA.count).toBe(1)
     expect(usageA.totalTokens).toBe(20)
   })
@@ -5087,7 +5365,9 @@ describe('gap coverage orchestrator runtime', () => {
       reason: 'todo_continuation',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.ok).toBe(false)
     expect(result.reason).toBe('lower_priority')
     expect(state?.autoContinueStreak).toBe(4)
@@ -5117,7 +5397,9 @@ describe('gap coverage orchestrator runtime', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.autoContinueStreak).toBe(0)
   })
 
@@ -5137,7 +5419,9 @@ describe('gap coverage orchestrator runtime', () => {
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .collect()
     )
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'remaining todo',
@@ -5178,7 +5462,9 @@ describe('gap coverage orchestrator runtime', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'pending item',
@@ -5214,7 +5500,9 @@ describe('gap coverage orchestrator runtime', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const reminder = await ctx.run(async c => {
       const rows = await c.db
         .query('messages')
@@ -5273,7 +5561,15 @@ describe('gap coverage error and state surfaces', () => {
           c.db.insert('messages', {
             content: '',
             isComplete: false,
-            parts: [{ args: '{}', status: 'pending', toolCallId: 'p', toolName: 'x', type: 'tool-call' }],
+            parts: [
+              {
+                args: '{}',
+                status: 'pending',
+                toolCallId: 'p',
+                toolName: 'x',
+                type: 'tool-call'
+              }
+            ],
             role: 'assistant',
             streamingContent: '',
             threadId
@@ -5315,7 +5611,10 @@ describe('gap coverage error and state surfaces', () => {
         threadId: 'worker-failed-state-surface'
       })
     )
-    await ctx.mutation(internal.tasks.failTask, { lastError: 'boom state', taskId })
+    await ctx.mutation(internal.tasks.failTask, {
+      lastError: 'boom state',
+      taskId
+    })
     const task = await ctx.run(async c => c.db.get(taskId)),
       reminder = await ctx.run(async c => {
         const rows = await c.db
@@ -5379,7 +5678,7 @@ describe('auth and cron gap coverage', () => {
       let threw = false
       try {
         await ctx.query(api.sessions.listSessions, {})
-      } catch (_error) {
+      } catch {
         threw = true
       }
       expect(threw).toBe(true)
@@ -5411,21 +5710,23 @@ describe('auth and cron gap coverage', () => {
   test('cron schedule wiring matches documented intervals', () => {
     const { readFileSync } = require('node:fs')
     const source = readFileSync(new URL('./crons.ts', import.meta.url), 'utf-8')
-    expect(source.includes("crons.interval('timeout stale runs', { minutes: 5 }, internal.orchestrator.timeoutStaleRuns)")).toBe(
-      true
-    )
+    expect(
+      source.includes("crons.interval('timeout stale runs', { minutes: 5 }, internal.orchestrator.timeoutStaleRuns)")
+    ).toBe(true)
     expect(
       source.includes("crons.interval('timeout stale tasks', { minutes: 5 }, internal.staleTaskCleanup.timeoutStaleTasks)")
     ).toBe(true)
     expect(
-      source.includes("crons.interval('cleanup stale messages', { minutes: 5 }, internal.staleTaskCleanup.cleanupStaleMessages)")
+      source.includes(
+        "crons.interval('cleanup stale messages', { minutes: 5 }, internal.staleTaskCleanup.cleanupStaleMessages)"
+      )
     ).toBe(true)
-    expect(source.includes("crons.interval('archive idle sessions', { hours: 1 }, internal.retention.archiveIdleSessions)")).toBe(
-      true
-    )
-    expect(source.includes("crons.cron('cleanup archived sessions', '0 3 * * *', internal.retention.cleanupArchivedSessions)")).toBe(
-      true
-    )
+    expect(
+      source.includes("crons.interval('archive idle sessions', { hours: 1 }, internal.retention.archiveIdleSessions)")
+    ).toBe(true)
+    expect(
+      source.includes("crons.cron('cleanup archived sessions', '0 3 * * *', internal.retention.cleanupArchivedSessions)")
+    ).toBe(true)
   })
 })
 
@@ -5467,7 +5768,9 @@ describe('final sweep queue and runtime gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'keep working',
@@ -5493,7 +5796,9 @@ describe('final sweep queue and runtime gaps', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.ok).toBe(true)
     expect(result.shouldContinue).toBe(false)
     expect(state?.autoContinueStreak).toBe(0)
@@ -5511,8 +5816,14 @@ describe('final sweep auth gaps', () => {
       }
     setMode()
     try {
-      const first = await ctx.mutation(api.testauth.createTestUser, { email, name: 'Sweep User' }),
-        second = await ctx.mutation(api.testauth.createTestUser, { email, name: 'Sweep User' }),
+      const first = await ctx.mutation(api.testauth.createTestUser, {
+          email,
+          name: 'Sweep User'
+        }),
+        second = await ctx.mutation(api.testauth.createTestUser, {
+          email,
+          name: 'Sweep User'
+        }),
         row = await ctx.run(async c => (first ? c.db.get(first) : null))
       expect(first).toBe(second)
       expect(row?.email).toBe(email)
@@ -5550,7 +5861,9 @@ describe('mcp discover and call', () => {
         url: 'https://example.com/mcp-enabled'
       })
     await ctx.run(async c => {
-      await c.db.patch(serverId, { cachedTools: JSON.stringify(['alpha', 'beta']) })
+      await c.db.patch(serverId, {
+        cachedTools: JSON.stringify(['alpha', 'beta'])
+      })
     })
     const out = await ctx.mutation(internal.mcp.mcpDiscover, { sessionId })
     expect(out.tools).toEqual([
@@ -5576,8 +5889,12 @@ describe('mcp discover and call', () => {
         url: 'https://example.com/disabled-server'
       })
     await ctx.run(async c => {
-      await c.db.patch(enabledId, { cachedTools: JSON.stringify(['enabledTool']) })
-      await c.db.patch(disabledId, { cachedTools: JSON.stringify(['disabledTool']) })
+      await c.db.patch(enabledId, {
+        cachedTools: JSON.stringify(['enabledTool'])
+      })
+      await c.db.patch(disabledId, {
+        cachedTools: JSON.stringify(['disabledTool'])
+      })
     })
     const out = await ctx.mutation(internal.mcp.mcpDiscover, { sessionId })
     expect(out.tools).toEqual([{ serverName: 'enabled-only', toolName: 'enabledTool' }])
@@ -5588,11 +5905,11 @@ describe('mcp discover and call', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
       serverId = await asUser(0).mutation(api.mcp.create, {
-      isEnabled: true,
-      name: 'callable-server',
-      transport: 'http',
-      url: 'https://example.com/callable-server'
-    })
+        isEnabled: true,
+        name: 'callable-server',
+        transport: 'http',
+        url: 'https://example.com/callable-server'
+      })
     await ctx.run(async c => {
       await c.db.patch(serverId, {
         cachedAt: Date.now(),
@@ -5658,7 +5975,13 @@ describe('web search bridge', () => {
     const { normalizeGrounding } = await import('./webSearch'),
       out = normalizeGrounding({
         result: {
-          sources: [{ snippet: 'Snippet A', title: 'Source A', url: 'https://a.example' }],
+          sources: [
+            {
+              snippet: 'Snippet A',
+              title: 'Source A',
+              url: 'https://a.example'
+            }
+          ],
           summary: 'summary text'
         }
       })
@@ -5674,8 +5997,8 @@ describe('web search bridge', () => {
       tools = createOrchestratorTools({
         ctx: {
           runAction: async (ref, args) => ctx.action(ref, args),
-          runMutation: async (ref, args) => ctx.mutation(ref, args),
-          runQuery: async (ref, args) => ctx.query(ref, args)
+          runMutation:  (ref, args) => ctx.mutation(ref, args),
+          runQuery:  (ref, args) => ctx.query(ref, args)
         } as never,
         parentThreadId: threadId,
         sessionId
@@ -5692,7 +6015,7 @@ describe('web search bridge', () => {
         .collect()
     )
     expect(usageRows.length > 0).toBe(true)
-    expect(usageRows[usageRows.length - 1]?.agentName).toBe('search-bridge')
+    expect(usageRows.at(-1)?.agentName).toBe('search-bridge')
   })
 })
 
@@ -5896,12 +6219,13 @@ describe('mcp matrix remaining coverage', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
     await ctx.run(async c => {
+      const session = await c.db.get(sessionId)
       await c.db.insert('mcpServers', {
         isEnabled: true,
         name: 'json-test',
         transport: 'http',
         url: 'https://example.com/mcp',
-        userId: (await c.db.get(sessionId))?.userId as never,
+        userId: session?.userId as never,
         updatedAt: Date.now()
       })
     })
@@ -5998,7 +6322,7 @@ describe('mcp matrix remaining coverage', () => {
         .collect()
     )
     expect(rows.length > 0).toBe(true)
-    expect(rows[rows.length - 1]?.agentName).toBe('search-bridge')
+    expect(rows.at(-1)?.agentName).toBe('search-bridge')
   })
 
   test('mcp #20 invalid toolArgs JSON rejected', async () => {
@@ -6107,13 +6431,10 @@ describe('rate limiting matrix bypass coverage', () => {
   test('rate-limit #3 searchCall config exists', async () => {
     const ctx = t()
     const allowed = await ctx.run(async c =>
-      checkRateLimit(
-        { db: c.db } as never,
-        {
-          key: 'search-call-key',
-          name: 'searchCall'
-        }
-      )
+      checkRateLimit({ db: c.db } as never, {
+        key: 'search-call-key',
+        name: 'searchCall'
+      })
     )
     expect(allowed.ok).toBe(true)
   })
@@ -6123,11 +6444,11 @@ describe('rate limiting matrix bypass coverage', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
       serverId = await asUser(0).mutation(api.mcp.create, {
-      isEnabled: true,
-      name: 'rate-mcp-enforce',
-      transport: 'http',
-      url: 'https://example.com/rate-mcp-enforce'
-    })
+        isEnabled: true,
+        name: 'rate-mcp-enforce',
+        transport: 'http',
+        url: 'https://example.com/rate-mcp-enforce'
+      })
     await ctx.run(async c => {
       await c.db.patch(serverId, {
         cachedAt: Date.now(),
@@ -6207,57 +6528,49 @@ describe('rate limiting matrix bypass coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     for (let i = 0; i < 40; i += 1)
       await ctx.mutation(internal.orchestrator.heartbeatRun, {
         runToken: state?.activeRunToken ?? '',
         threadId
       })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('active')
   })
 
   test('rate-limit #7 refill window behavior', async () => {
     const ctx = t(),
       first = await ctx.run(async c =>
-        rateLimit(
-          { db: c.db } as never,
-          {
-            count: 20,
-            key: 'refill-window-user',
-            name: 'submitMessage'
-          }
-        )
+        rateLimit({ db: c.db } as never, {
+          count: 20,
+          key: 'refill-window-user',
+          name: 'submitMessage'
+        })
       ),
       blocked = await ctx.run(async c =>
-        checkRateLimit(
-          { db: c.db } as never,
-          {
-            key: 'refill-window-user',
-            name: 'submitMessage'
-          }
-        )
+        checkRateLimit({ db: c.db } as never, {
+          key: 'refill-window-user',
+          name: 'submitMessage'
+        })
       )
     expect(first.ok).toBe(true)
     expect(blocked.ok).toBe(false)
     const afterReset = await ctx.run(async c =>
-      resetRateLimit(
-        { db: c.db } as never,
-        {
-          key: 'refill-window-user',
-          name: 'submitMessage'
-        }
-      )
+      resetRateLimit({ db: c.db } as never, {
+        key: 'refill-window-user',
+        name: 'submitMessage'
+      })
     )
     expect(afterReset).toBeNull()
     const allowed = await ctx.run(async c =>
-      checkRateLimit(
-        { db: c.db } as never,
-        {
-          key: 'refill-window-user',
-          name: 'submitMessage'
-        }
-      )
+      checkRateLimit({ db: c.db } as never, {
+        key: 'refill-window-user',
+        name: 'submitMessage'
+      })
     )
     expect(allowed.ok).toBe(true)
   })
@@ -6265,13 +6578,10 @@ describe('rate limiting matrix bypass coverage', () => {
   test('rate-limit #8 storage index wiring', async () => {
     const ctx = t()
     await ctx.run(async c => {
-      await rateLimit(
-        { db: c.db } as never,
-        {
-          key: 'storage-wire-user',
-          name: 'mcpCall'
-        }
-      )
+      await rateLimit({ db: c.db } as never, {
+        key: 'storage-wire-user',
+        name: 'mcpCall'
+      })
     })
     const row = await ctx.run(async c =>
       c.db
@@ -6313,7 +6623,7 @@ describe('auth matrix remaining coverage', () => {
     try {
       process.env.CONVEX_TEST_MODE = 'true'
       const testUserId = await ctx.run(async c => {
-        const existing = await c.db
+        const existing = c.db
           .query('users')
           .filter(q => q.eq(q.field('email'), TEST_EMAIL))
           .first()
@@ -6333,7 +6643,9 @@ describe('auth matrix remaining coverage', () => {
         ),
         identityId = await ctx.run(async c =>
           getAuthUserIdOrTest({
-            auth: { getUserIdentity: async () => ({ subject: `${testUserId}|token` }) },
+            auth: {
+              getUserIdentity: async () => ({ subject: `${testUserId}|token` })
+            },
             db: c.db
           })
         )
@@ -6417,7 +6729,9 @@ describe('cron and lifecycle remaining blocked cases', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('idle')
     expect(after?.activeRunToken).toBeUndefined()
   })
@@ -6472,7 +6786,10 @@ describe('cron and lifecycle remaining blocked cases', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-    await asUser(0).mutation(api.orchestrator.submitMessage, { content: 'delegate this', sessionId })
+    await asUser(0).mutation(api.orchestrator.submitMessage, {
+      content: 'delegate this',
+      sessionId
+    })
     const taskId = await ctx.run(async c =>
       c.db.insert('tasks', {
         description: 'delegated',
@@ -6497,11 +6814,20 @@ describe('cron and lifecycle remaining blocked cases', () => {
       { asUser } = await createTestContext(ctx),
       { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
     await ctx.run(async c => {
-      const rs = await c.db.query('threadRunState').withIndex('by_threadId', i => i.eq('threadId', threadId)).unique()
-      if (rs) await c.db.patch(rs._id, { compactionSummary: 'Previous conversation summary about weather.' })
+      const rs = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', i => i.eq('threadId', threadId))
+        .unique()
+      if (rs)
+        await c.db.patch(rs._id, {
+          compactionSummary: 'Previous conversation summary about weather.'
+        })
     })
     const rs = await ctx.run(async c =>
-      c.db.query('threadRunState').withIndex('by_threadId', i => i.eq('threadId', threadId)).unique()
+      c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', i => i.eq('threadId', threadId))
+        .unique()
     )
     expect(rs?.compactionSummary).toBe('Previous conversation summary about weather.')
   })
@@ -6527,7 +6853,10 @@ describe('cron and lifecycle remaining blocked cases', () => {
     const task = await ctx.run(async c => c.db.get(taskId))
     expect(task?.completionReminderMessageId).toBeDefined()
     const rs = await ctx.run(async c =>
-      c.db.query('threadRunState').withIndex('by_threadId', i => i.eq('threadId', threadId)).unique()
+      c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', i => i.eq('threadId', threadId))
+        .unique()
     )
     expect(rs?.status).toBe('idle')
   })
@@ -6565,14 +6894,23 @@ describe('cron and lifecycle remaining blocked cases', () => {
         isComplete: true,
         parts: [
           { text: 'Let me search', type: 'text' },
-          { args: '{"q":"test"}', result: 'found it', status: 'success', toolCallId: 'tc-1', toolName: 'webSearch', type: 'tool-call' }
+          {
+            args: '{"q":"test"}',
+            result: 'found it',
+            status: 'success',
+            toolCallId: 'tc-1',
+            toolName: 'webSearch',
+            type: 'tool-call'
+          }
         ],
         role: 'assistant',
         sessionId,
         threadId
       })
     })
-    const msgs = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId })
+    const msgs = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      threadId
+    })
     expect(msgs.length).toBe(1)
     const parts = msgs[0]?.parts as Array<{ type: string }>
     expect(parts.length).toBe(2)
@@ -6596,7 +6934,9 @@ describe('cron and lifecycle remaining blocked cases', () => {
         threadId: crypto.randomUUID()
       })
     )
-    const status = await asUser(0).query(api.tasks.getOwnedTaskStatus, { taskId })
+    const status = await asUser(0).query(api.tasks.getOwnedTaskStatus, {
+      taskId
+    })
     expect(status?.status).toBe('pending')
     expect(status?.result).toBeUndefined()
   })
@@ -6720,42 +7060,44 @@ describe('append gap list requested tests', () => {
     const originalTestMode = process.env.CONVEX_TEST_MODE
     process.env.CONVEX_TEST_MODE = 'true'
     try {
-    const ctx = t(),
-      { asUser } = await createTestContext(ctx),
-      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-    await ctx.mutation(internal.orchestrator.enqueueRun, {
-      priority: 2,
-      promptMessageId: 'audit-task-wait-start',
-      reason: 'user_message',
-      threadId
-    })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
-    await ctx.run(async c => {
-      await c.db.insert('todos', {
-        content: 'still pending',
-        position: 0,
-        priority: 'high',
-        sessionId,
-        status: 'pending'
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: 'audit-task-wait-start',
+        reason: 'user_message',
+        threadId
       })
-      await c.db.insert('tasks', {
-        description: 'pending worker',
-        isBackground: true,
-        parentThreadId: threadId,
-        pendingAt: Date.now(),
-        retryCount: 0,
-        sessionId,
-        status: 'pending',
-        threadId: `pending-worker-${crypto.randomUUID()}`
+      const active = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
       })
-    })
-    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
-      runToken: active?.activeRunToken ?? '',
-      threadId,
-      turnRequestedInput: false
-    })
-    expect(result.ok).toBe(true)
-    expect(result.shouldContinue).toBe(false)
+      await ctx.run(async c => {
+        await c.db.insert('todos', {
+          content: 'still pending',
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: 'pending'
+        })
+        await c.db.insert('tasks', {
+          description: 'pending worker',
+          isBackground: true,
+          parentThreadId: threadId,
+          pendingAt: Date.now(),
+          retryCount: 0,
+          sessionId,
+          status: 'pending',
+          threadId: `pending-worker-${crypto.randomUUID()}`
+        })
+      })
+      const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: active?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(result.ok).toBe(true)
+      expect(result.shouldContinue).toBe(false)
     } finally {
       if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
       else process.env.CONVEX_TEST_MODE = originalTestMode
@@ -6788,8 +7130,8 @@ describe('append gap list requested tests', () => {
     const tools = createOrchestratorTools({
       ctx: {
         runAction: async (ref, args) => ctx.action(ref, args),
-        runMutation: async (ref, args) => ctx.mutation(ref, args),
-        runQuery: async (ref, args) => ctx.query(ref, args)
+        runMutation:  (ref, args) => ctx.mutation(ref, args),
+        runQuery:  (ref, args) => ctx.query(ref, args)
       } as never,
       parentThreadId: threadId,
       sessionId
@@ -6852,10 +7194,13 @@ describe('append gap list requested tests', () => {
         threadId: `task-output-pending-${crypto.randomUUID()}`
       })
     )
-    const source = (await import('node:fs')).readFileSync(new URL('./agents.ts', import.meta.url), 'utf-8')
-    expect(source.includes("getOwnedTaskOutputRef = makeFunctionReference")).toBe(true)
+    const fs = await import('node:fs'),
+      source = fs.readFileSync(new URL('./agents.ts', import.meta.url), 'utf-8')
+    expect(source.includes('getOwnedTaskOutputRef = makeFunctionReference')).toBe(true)
     expect(source.includes("('tasks:getOwnedTaskOutput')")).toBe(true)
-    const status = await asUser(0).query(api.tasks.getOwnedTaskStatus, { taskId })
+    const status = await asUser(0).query(api.tasks.getOwnedTaskStatus, {
+      taskId
+    })
     expect(status?.status).toBe('pending')
     expect(status?.result).toBeUndefined()
   })
@@ -6910,38 +7255,38 @@ describe('append gap list requested tests', () => {
     const originalTestMode = process.env.CONVEX_TEST_MODE
     process.env.CONVEX_TEST_MODE = 'true'
     try {
-    const ctx = t(),
-      { asUser } = await createTestContext(ctx),
-      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      serverId = await asUser(0).mutation(api.mcp.create, {
-        isEnabled: true,
-        name: 'refresh-miss-expiry',
-        transport: 'http',
-        url: 'https://example.com/refresh-miss-expiry'
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        serverId = await asUser(0).mutation(api.mcp.create, {
+          isEnabled: true,
+          name: 'refresh-miss-expiry',
+          transport: 'http',
+          url: 'https://example.com/refresh-miss-expiry'
+        })
+      await ctx.run(async c => {
+        await c.db.patch(serverId, {
+          cachedAt: Date.now() - 10 * 60 * 1000,
+          cachedTools: JSON.stringify(['tool-one'])
+        })
       })
-    await ctx.run(async c => {
-      await c.db.patch(serverId, {
-        cachedAt: Date.now() - 10 * 60 * 1000,
-        cachedTools: JSON.stringify(['tool-one'])
+      const expiredCall = await ctx.mutation(internal.mcp.mcpCallTool, {
+        serverName: 'refresh-miss-expiry',
+        sessionId,
+        toolArgs: '{}',
+        toolName: 'tool-one'
       })
-    })
-    const expiredCall = await ctx.mutation(internal.mcp.mcpCallTool, {
-      serverName: 'refresh-miss-expiry',
-      sessionId,
-      toolArgs: '{}',
-      toolName: 'tool-one'
-    })
-    expect(expiredCall.ok).toBe(true)
-    const afterExpired = await ctx.run(async c => c.db.get(serverId))
-    expect(afterExpired?.cachedAt).toBeUndefined()
-    const missCall = await ctx.mutation(internal.mcp.mcpCallTool, {
-      serverName: 'refresh-miss-expiry',
-      sessionId,
-      toolArgs: '{}',
-      toolName: 'missing-tool'
-    })
-    expect(missCall.ok).toBe(false)
-    expect((missCall as { retried?: boolean }).retried).toBe(true)
+      expect(expiredCall.ok).toBe(true)
+      const afterExpired = await ctx.run(async c => c.db.get(serverId))
+      expect(afterExpired?.cachedAt).toBeUndefined()
+      const missCall = await ctx.mutation(internal.mcp.mcpCallTool, {
+        serverName: 'refresh-miss-expiry',
+        sessionId,
+        toolArgs: '{}',
+        toolName: 'missing-tool'
+      })
+      expect(missCall.ok).toBe(false)
+      expect((missCall as { retried?: boolean }).retried).toBe(true)
     } finally {
       if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
       else process.env.CONVEX_TEST_MODE = originalTestMode
@@ -6989,8 +7334,8 @@ describe('append gap list requested tests', () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-        runQuery: async () => null
+        runMutation:  () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+        runQuery:  () => null
       } as never,
       parentThreadId: 'parent-thread',
       sessionId: 'session-id' as never
@@ -7040,13 +7385,13 @@ describe('append gap list requested tests', () => {
         id,
         name: 'hijack'
       })
-    } catch (_error) {
+    } catch {
       updateThrew = true
     }
     let deleteThrew = false
     try {
       await asUser(0).mutation(api.mcp.rm, { id })
-    } catch (_error) {
+    } catch {
       deleteThrew = true
     }
     const ownerRead = await asUser(1).query(api.mcp.read, { id })
@@ -7095,46 +7440,50 @@ describe('append gap list requested tests', () => {
     const originalTestMode = process.env.CONVEX_TEST_MODE
     process.env.CONVEX_TEST_MODE = 'true'
     try {
-    const ctx = t(),
-      { asUser } = await createTestContext(ctx),
-      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-    const queuedPromptId = await ctx.run(async c =>
-      c.db.insert('messages', {
-        content: 'wall-clock-cap',
-        isComplete: true,
-        parts: [{ text: 'wall-clock-cap', type: 'text' }],
-        role: 'system',
-        sessionId,
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const queuedPromptId = await ctx.run(async c =>
+        c.db.insert('messages', {
+          content: 'wall-clock-cap',
+          isComplete: true,
+          parts: [{ text: 'wall-clock-cap', type: 'text' }],
+          role: 'system',
+          sessionId,
+          threadId
+        })
+      )
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: 'wall-clock-start',
+        reason: 'user_message',
         threadId
       })
-    )
-    await ctx.mutation(internal.orchestrator.enqueueRun, {
-      priority: 2,
-      promptMessageId: 'wall-clock-start',
-      reason: 'user_message',
-      threadId
-    })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
-    await ctx.run(async c => {
-      const state = await c.db
-        .query('threadRunState')
-        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
-        .unique()
-      if (state)
-        await c.db.patch(state._id, {
-          activatedAt: Date.now() - 16 * 60 * 1000,
-          queuedPriority: 'task_completion',
-          queuedPromptMessageId: String(queuedPromptId),
-          queuedReason: 'task_completion',
-          runClaimed: true,
-          runHeartbeatAt: Date.now(),
-          status: 'active'
-        })
-    })
-    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
-    expect(after?.activeRunToken).toBeDefined()
-    expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+      const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
+      await ctx.run(async c => {
+        const state = await c.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await c.db.patch(state._id, {
+            activatedAt: Date.now() - 16 * 60 * 1000,
+            queuedPriority: 'task_completion',
+            queuedPromptMessageId: String(queuedPromptId),
+            queuedReason: 'task_completion',
+            runClaimed: true,
+            runHeartbeatAt: Date.now(),
+            status: 'active'
+          })
+      })
+      await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
+      expect(after?.activeRunToken).toBeDefined()
+      expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
     } finally {
       if (originalTestMode === undefined) delete process.env.CONVEX_TEST_MODE
       else process.env.CONVEX_TEST_MODE = originalTestMode
@@ -7267,7 +7616,10 @@ describe('append gap list requested tests', () => {
 
   test('buildTaskCompletionReminder output contains completion marker and task id', async () => {
     const { buildTaskCompletionReminder } = await import('./tasks'),
-      out = buildTaskCompletionReminder({ description: 'desc', taskId: 'task-123' })
+      out = buildTaskCompletionReminder({
+        description: 'desc',
+        taskId: 'task-123'
+      })
     expect(out.includes('[BACKGROUND TASK COMPLETED]')).toBe(true)
     expect(out.includes('Task ID: task-123')).toBe(true)
   })
@@ -7285,8 +7637,9 @@ describe('append gap list requested tests', () => {
   })
 
   test('buildTodoReminder output contains continuation marker and todo list', async () => {
-    const source = (await import('node:fs')).readFileSync(new URL('./orchestrator.ts', import.meta.url), 'utf-8')
-    expect(source.includes("'[TODO CONTINUATION]'" ) || source.includes('"[TODO CONTINUATION]"')).toBe(true)
+    const fs = await import('node:fs'),
+      source = fs.readFileSync(new URL('./orchestrator.ts', import.meta.url), 'utf-8')
+    expect(source.includes("'[TODO CONTINUATION]'") || source.includes('"[TODO CONTINUATION]"')).toBe(true)
     expect(source.includes('Incomplete tasks remain:')).toBe(true)
     expect(source.includes('Continue working on the next pending task.')).toBe(true)
   })
@@ -7390,7 +7743,9 @@ describe('real-world edge scenarios', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
     await ctx.run(async c => {
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 8 * 24 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
@@ -7498,7 +7853,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'todo-1',
@@ -7513,7 +7870,9 @@ describe('stagnation detection', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(true)
     expect(runState?.stagnationCount).toBe(0)
   })
@@ -7528,7 +7887,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'todo-unchanged',
@@ -7548,7 +7909,9 @@ describe('stagnation detection', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(runState?.stagnationCount).toBe(1)
   })
 
@@ -7562,7 +7925,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async c =>
       c.db.insert('todos', {
         content: 'todo-cap',
@@ -7601,7 +7966,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async c =>
       c.db.insert('todos', {
         content: 'todo-progress-complete',
@@ -7618,7 +7985,13 @@ describe('stagnation detection', () => {
         .unique()
       if (state)
         await c.db.patch(state._id, {
-          lastTodoSnapshot: JSON.stringify([{ content: 'todo-progress-complete', id: String(todoId), status: 'pending' }]),
+          lastTodoSnapshot: JSON.stringify([
+            {
+              content: 'todo-progress-complete',
+              id: String(todoId),
+              status: 'pending'
+            }
+          ]),
           stagnationCount: 2
         })
     })
@@ -7627,7 +8000,9 @@ describe('stagnation detection', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(runState?.stagnationCount).toBe(0)
   })
 
@@ -7641,7 +8016,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async c =>
       c.db.insert('todos', {
         content: 'todo-before-change',
@@ -7659,7 +8036,13 @@ describe('stagnation detection', () => {
       if (state) {
         await c.db.patch(todoId, { content: 'todo-after-change' })
         await c.db.patch(state._id, {
-          lastTodoSnapshot: JSON.stringify([{ content: 'todo-before-change', id: String(todoId), status: 'pending' }]),
+          lastTodoSnapshot: JSON.stringify([
+            {
+              content: 'todo-before-change',
+              id: String(todoId),
+              status: 'pending'
+            }
+          ]),
           stagnationCount: 2
         })
       }
@@ -7669,7 +8052,9 @@ describe('stagnation detection', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(runState?.stagnationCount).toBe(0)
   })
 
@@ -7683,7 +8068,9 @@ describe('stagnation detection', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const firstId = await ctx.run(async c =>
       c.db.insert('todos', {
         content: 'todo-a',
@@ -7723,7 +8110,9 @@ describe('stagnation detection', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(runState?.stagnationCount).toBe(0)
   })
 })
@@ -7739,7 +8128,9 @@ describe('continuation cooldown', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'cooldown-todo',
@@ -7755,7 +8146,7 @@ describe('continuation cooldown', () => {
       if (state)
         await c.db.patch(state._id, {
           consecutiveFailures: 1,
-          lastContinuationAt: Date.now() - 1_000
+          lastContinuationAt: Date.now() - 1000
         })
     })
     const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
@@ -7776,7 +8167,9 @@ describe('continuation cooldown', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'cooldown-exp',
@@ -7806,7 +8199,10 @@ describe('continuation cooldown', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (state) await c.db.patch(state._id, { lastContinuationAt: Date.now() - 25_000 })
+      if (state)
+        await c.db.patch(state._id, {
+          lastContinuationAt: Date.now() - 25_000
+        })
     })
     const allowed = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken: active?.activeRunToken ?? '',
@@ -7826,7 +8222,9 @@ describe('continuation cooldown', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'cooldown-stop',
@@ -7839,7 +8237,11 @@ describe('continuation cooldown', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (state) await c.db.patch(state._id, { consecutiveFailures: 5, lastContinuationAt: Date.now() })
+      if (state)
+        await c.db.patch(state._id, {
+          consecutiveFailures: 5,
+          lastContinuationAt: Date.now()
+        })
     })
     const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken: active?.activeRunToken ?? '',
@@ -7859,7 +8261,9 @@ describe('continuation cooldown', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'cooldown-reset',
@@ -7883,7 +8287,9 @@ describe('continuation cooldown', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(true)
     expect(runState?.consecutiveFailures).toBe(0)
   })
@@ -7898,7 +8304,9 @@ describe('continuation cooldown', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'cooldown-success',
@@ -7922,7 +8330,9 @@ describe('continuation cooldown', () => {
       threadId,
       turnRequestedInput: false
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(true)
     expect(runState?.consecutiveFailures).toBe(0)
   })
@@ -7991,7 +8401,14 @@ describe('compaction todo preservation', () => {
       await c.db.delete(insertedTodoId)
     })
     const restored = await ctx.mutation(restoreTodosIfMissingRef, {
-      snapshot: [{ content: 'restore-a', position: 0, priority: 'high', status: 'pending' }],
+      snapshot: [
+        {
+          content: 'restore-a',
+          position: 0,
+          priority: 'high',
+          status: 'pending'
+        }
+      ],
       threadId
     })
     const todos = await ctx.run(async c =>
@@ -8033,7 +8450,14 @@ describe('compaction todo preservation', () => {
       })
     })
     const restored = await ctx.mutation(restoreTodosIfMissingRef, {
-      snapshot: [{ content: 'already-present', position: 0, priority: 'high', status: 'pending' }],
+      snapshot: [
+        {
+          content: 'already-present',
+          position: 0,
+          priority: 'high',
+          status: 'pending'
+        }
+      ],
       threadId
     })
     expect(restored.restored).toBe(0)
@@ -8073,7 +8497,9 @@ describe('task reminder', () => {
         { shouldRemind: boolean; turnsSinceTaskTool: number }
       >('orchestrator:incrementTaskToolCounter')
     await ctx.mutation(incrementRef, { threadId, toolName: 'webSearch' })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.turnsSinceTaskTool).toBe(1)
   })
 
@@ -8089,7 +8515,9 @@ describe('task reminder', () => {
       >('orchestrator:incrementTaskToolCounter')
     await ctx.mutation(incrementRef, { threadId, toolName: 'webSearch' })
     await ctx.mutation(incrementRef, { threadId, toolName: 'taskStatus' })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.turnsSinceTaskTool).toBe(0)
   })
 
@@ -8126,7 +8554,9 @@ describe('task reminder', () => {
       )
     for (let i = 0; i < 10; i += 1) await ctx.mutation(incrementRef, { threadId, toolName: 'mcpCall' })
     await ctx.mutation(consumeRef, { threadId })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId }),
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      }),
       consumeAgain = await ctx.mutation(consumeRef, { threadId })
     expect(state?.turnsSinceTaskTool).toBe(0)
     expect(consumeAgain.shouldInject).toBe(false)
@@ -8200,8 +8630,14 @@ describe('omo parity manager gaps', () => {
         threadId: `history-complete-2-${crypto.randomUUID()}`
       })
     )
-    await ctx.mutation(internal.tasks.completeTask, { result: 'done-1', taskId: firstTaskId })
-    await ctx.mutation(internal.tasks.completeTask, { result: 'done-2', taskId: secondTaskId })
+    await ctx.mutation(internal.tasks.completeTask, {
+      result: 'done-1',
+      taskId: firstTaskId
+    })
+    await ctx.mutation(internal.tasks.completeTask, {
+      result: 'done-2',
+      taskId: secondTaskId
+    })
     const rows = await ctx.run(async c =>
       c.db
         .query('tasks')
@@ -8281,9 +8717,9 @@ describe('omo parity manager gaps', () => {
   })
 
   for (const c of [
-    { expectedDelay: 2_000, retryCount: 0 },
-    { expectedDelay: 4_000, retryCount: 1 },
-    { expectedDelay: 8_000, retryCount: 2 }
+    { expectedDelay: 2000, retryCount: 0 },
+    { expectedDelay: 4000, retryCount: 1 },
+    { expectedDelay: 8000, retryCount: 2 }
   ])
     test(`scheduleRetry backoff from retryCount=${c.retryCount} to ${c.expectedDelay}ms`, async () => {
       const ctx = t(),
@@ -8301,7 +8737,9 @@ describe('omo parity manager gaps', () => {
           threadId: `retry-backoff-${c.retryCount}-${crypto.randomUUID()}`
         })
       )
-      const result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
+      const result = await ctx.mutation(internal.tasks.scheduleRetry, {
+        taskId
+      })
       const row = await ctx.run(async d => d.db.get(taskId))
       expect(result.ok).toBe(true)
       expect(row?.retryCount).toBe(c.retryCount + 1)
@@ -8326,7 +8764,9 @@ describe('omo parity manager gaps', () => {
           threadId: `retry-cap-${retryCount}-${crypto.randomUUID()}`
         })
       )
-      const result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
+      const result = await ctx.mutation(internal.tasks.scheduleRetry, {
+        taskId
+      })
       const row = await ctx.run(async d => d.db.get(taskId))
       expect(result.ok).toBe(false)
       expect(row?.status).toBe('running')
@@ -8340,7 +8780,8 @@ describe('omo parity manager gaps', () => {
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
       const taskId = await ctx.run(async d =>
         d.db.insert('tasks', {
-          completedAt: s === 'completed' || s === 'failed' || s === 'cancelled' || s === 'timed_out' ? Date.now() : undefined,
+          completedAt:
+            s === 'completed' || s === 'failed' || s === 'cancelled' || s === 'timed_out' ? Date.now() : undefined,
           description: `mark-running-${s}`,
           isBackground: true,
           parentThreadId,
@@ -8371,12 +8812,16 @@ describe('omo parity manager gaps', () => {
       reason: 'task_completion',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.finishRun, {
       runToken: 'token-mismatch',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.activeRunToken).toBe(before?.activeRunToken)
     expect(after?.queuedPromptMessageId).toBe('atomic-queued')
   })
@@ -8391,7 +8836,9 @@ describe('omo parity manager gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.claimRun, {
       runToken: before?.activeRunToken ?? '',
       threadId
@@ -8406,7 +8853,9 @@ describe('omo parity manager gaps', () => {
       runToken: before?.activeRunToken ?? '',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('active')
     expect(after?.runClaimed).toBe(false)
     expect(after?.claimedAt).toBeUndefined()
@@ -8430,8 +8879,12 @@ describe('omo parity manager gaps', () => {
       reason: 'user_message',
       threadId: second.threadId
     })
-    const firstState = await ctx.query(internal.orchestrator.readRunState, { threadId: first.threadId }),
-      secondState = await ctx.query(internal.orchestrator.readRunState, { threadId: second.threadId })
+    const firstState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: first.threadId
+      }),
+      secondState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: second.threadId
+      })
     expect(firstState?.status).toBe('active')
     expect(secondState?.status).toBe('active')
     expect(firstState?.activeRunToken).not.toBe(secondState?.activeRunToken)
@@ -8441,25 +8894,33 @@ describe('omo parity manager gaps', () => {
 describe('omo parity delegate gaps', () => {
   test('detectDelegateError identifies missing run_in_background', async () => {
     const { detectDelegateError } = await import('./agents')
-    const pattern = detectDelegateError({ errorMessage: 'Invalid arguments: missing run_in_background field' })
+    const pattern = detectDelegateError({
+      errorMessage: 'Invalid arguments: missing run_in_background field'
+    })
     expect(pattern).toBe('missing_run_in_background')
   })
 
   test('detectDelegateError identifies missing load_skills', async () => {
     const { detectDelegateError } = await import('./agents')
-    const pattern = detectDelegateError({ errorMessage: 'Validation error: load_skills is required' })
+    const pattern = detectDelegateError({
+      errorMessage: 'Validation error: load_skills is required'
+    })
     expect(pattern).toBe('missing_load_skills')
   })
 
   test('detectDelegateError identifies unknown category', async () => {
     const { detectDelegateError } = await import('./agents')
-    const pattern = detectDelegateError({ errorMessage: 'Unknown category: nope' })
+    const pattern = detectDelegateError({
+      errorMessage: 'Unknown category: nope'
+    })
     expect(pattern).toBe('unknown_category')
   })
 
   test('detectDelegateError identifies unknown agent', async () => {
     const { detectDelegateError } = await import('./agents')
-    const pattern = detectDelegateError({ errorMessage: 'Unknown agent: nope' })
+    const pattern = detectDelegateError({
+      errorMessage: 'Unknown agent: nope'
+    })
     expect(pattern).toBe('unknown_agent')
   })
 
@@ -8482,10 +8943,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => {
+        runMutation:  () => {
           throw new Error('Invalid arguments: run_in_background is required')
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-1',
       sessionId: 'delegate-session-1' as never
@@ -8506,10 +8967,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => {
+        runMutation:  () => {
           throw new Error('Invalid arguments: load_skills missing')
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-2',
       sessionId: 'delegate-session-2' as never
@@ -8530,10 +8991,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => {
+        runMutation:  () => {
           throw new Error('Unknown category bad. Available: quick, deep')
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-3',
       sessionId: 'delegate-session-3' as never
@@ -8555,10 +9016,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => {
+        runMutation:  () => {
           throw new Error('Unknown agent bad. valid options: explore, librarian')
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-4',
       sessionId: 'delegate-session-4' as never
@@ -8580,10 +9041,10 @@ describe('omo parity delegate gaps', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => {
+        runMutation:  () => {
           throw new Error('rpc failed without signature')
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-5',
       sessionId: 'delegate-session-5' as never
@@ -8605,11 +9066,14 @@ describe('omo parity delegate gaps', () => {
     let payload: { isBackground: boolean } | null = null
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           payload = args as { isBackground: boolean }
-          return { taskId: 'delegate-default-bg-task', threadId: 'delegate-default-bg-thread' }
+          return {
+            taskId: 'delegate-default-bg-task',
+            threadId: 'delegate-default-bg-thread'
+          }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-6',
       sessionId: 'delegate-session-6' as never
@@ -8617,7 +9081,11 @@ describe('omo parity delegate gaps', () => {
     const delegate = tools.delegate as unknown as {
       execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
     }
-    await delegate.execute({ description: 'default bg', isBackground: true, prompt: 'run' })
+    await delegate.execute({
+      description: 'default bg',
+      isBackground: true,
+      prompt: 'run'
+    })
     expect(payload?.isBackground).toBe(true)
   })
 
@@ -8626,11 +9094,14 @@ describe('omo parity delegate gaps', () => {
     let payload: { isBackground: boolean } | null = null
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           payload = args as { isBackground: boolean }
-          return { taskId: 'delegate-sync-bg-task', threadId: 'delegate-sync-bg-thread' }
+          return {
+            taskId: 'delegate-sync-bg-task',
+            threadId: 'delegate-sync-bg-thread'
+          }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-parent-7',
       sessionId: 'delegate-session-7' as never
@@ -8638,7 +9109,11 @@ describe('omo parity delegate gaps', () => {
     const delegate = tools.delegate as unknown as {
       execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
     }
-    await delegate.execute({ description: 'sync-like bg', isBackground: false, prompt: 'run' })
+    await delegate.execute({
+      description: 'sync-like bg',
+      isBackground: false,
+      prompt: 'run'
+    })
     expect(payload?.isBackground).toBe(false)
   })
 
@@ -8647,8 +9122,11 @@ describe('omo parity delegate gaps', () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation: async () => ({ taskId: 'task-id', threadId: 'thread-id' }),
-          runQuery: async () => ({ status })
+          runMutation:  () => ({
+            taskId: 'task-id',
+            threadId: 'thread-id'
+          }),
+          runQuery:  () => ({ status })
         } as never,
         parentThreadId: 'delegate-parent-8',
         sessionId: 'delegate-session-8' as never
@@ -8682,7 +9160,7 @@ describe('omo parity delegate gaps', () => {
 
 describe('omo parity todo continuation gaps', () => {
   for (const c of [
-    { blockedMs: 9_000, consecutiveFailures: 1 },
+    { blockedMs: 9000, consecutiveFailures: 1 },
     { blockedMs: 19_000, consecutiveFailures: 2 },
     { blockedMs: 39_000, consecutiveFailures: 3 }
   ])
@@ -8696,7 +9174,9 @@ describe('omo parity todo continuation gaps', () => {
         reason: 'user_message',
         threadId
       })
-      const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const active = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('todos', {
           content: `cooldown-block-${c.consecutiveFailures}`,
@@ -8738,7 +9218,9 @@ describe('omo parity todo continuation gaps', () => {
         reason: 'user_message',
         threadId
       })
-      const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const active = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('todos', {
           content: `cooldown-allow-${c.consecutiveFailures}`,
@@ -8775,7 +9257,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'max-failure-block',
@@ -8788,7 +9272,11 @@ describe('omo parity todo continuation gaps', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (state) await d.db.patch(state._id, { consecutiveFailures: 5, lastContinuationAt: Date.now() - 60_000 })
+      if (state)
+        await d.db.patch(state._id, {
+          consecutiveFailures: 5,
+          lastContinuationAt: Date.now() - 60_000
+        })
     })
     const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken: active?.activeRunToken ?? '',
@@ -8808,7 +9296,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'failure-reset-window',
@@ -8832,7 +9322,9 @@ describe('omo parity todo continuation gaps', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(true)
     expect(state?.consecutiveFailures).toBe(0)
   })
@@ -8847,7 +9339,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'skip-pending-task',
@@ -8885,7 +9379,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'skip-running-task',
@@ -8923,7 +9419,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'turn-requested-input',
@@ -8951,7 +9449,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async d =>
       d.db.insert('todos', {
         content: 'stagnation-cap',
@@ -8968,7 +9468,13 @@ describe('omo parity todo continuation gaps', () => {
         .unique()
       if (state)
         await d.db.patch(state._id, {
-          lastTodoSnapshot: JSON.stringify([{ content: 'stagnation-cap', id: String(todoId), status: 'pending' }]),
+          lastTodoSnapshot: JSON.stringify([
+            {
+              content: 'stagnation-cap',
+              id: String(todoId),
+              status: 'pending'
+            }
+          ]),
           stagnationCount: 2
         })
     })
@@ -8990,7 +9496,9 @@ describe('omo parity todo continuation gaps', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async d =>
       d.db.insert('todos', {
         content: 'stagnation-progress-old',
@@ -9008,7 +9516,13 @@ describe('omo parity todo continuation gaps', () => {
         .unique()
       if (state)
         await d.db.patch(state._id, {
-          lastTodoSnapshot: JSON.stringify([{ content: 'stagnation-progress-old', id: String(todoId), status: 'pending' }]),
+          lastTodoSnapshot: JSON.stringify([
+            {
+              content: 'stagnation-progress-old',
+              id: String(todoId),
+              status: 'pending'
+            }
+          ]),
           stagnationCount: 2
         })
     })
@@ -9017,7 +9531,9 @@ describe('omo parity todo continuation gaps', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(true)
     expect(state?.stagnationCount).toBe(0)
   })
@@ -9115,7 +9631,9 @@ describe('omo parity concurrency gaps', () => {
         reason: 'task_completion',
         threadId
       })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.queuedPromptMessageId).toBe('rapid-queued-11')
   })
 
@@ -9131,7 +9649,9 @@ describe('omo parity concurrency gaps', () => {
         reason: 'user_message',
         threadId
       })
-      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.mutation(internal.orchestrator.enqueueRun, {
         priority,
         promptMessageId: `slot-open-next-${reason}`,
@@ -9142,7 +9662,9 @@ describe('omo parity concurrency gaps', () => {
         runToken: before?.activeRunToken ?? '',
         threadId
       })
-      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(finished.scheduled).toBe(true)
       expect(after?.status).toBe('active')
       expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
@@ -9169,7 +9691,8 @@ describe('omo parity concurrency gaps', () => {
     }
   ])
     test(`priority ordering replace=${String(c.shouldReplace)} for incoming ${c.incomingPriority}`, async () => {
-      const incomingReason = c.incomingPriority === 2 ? 'user_message' : c.incomingPriority === 1 ? 'task_completion' : 'todo_continuation'
+      const incomingReason =
+        c.incomingPriority === 2 ? 'user_message' : c.incomingPriority === 1 ? 'task_completion' : 'todo_continuation'
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
@@ -9191,7 +9714,9 @@ describe('omo parity concurrency gaps', () => {
         reason: incomingReason,
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(result.ok).toBe(c.shouldReplace)
       if (c.shouldReplace) expect(state?.queuedPromptMessageId).toBe('priority-ordering-incoming')
       else expect(state?.queuedPromptMessageId).toBe('priority-ordering-initial')
@@ -9213,20 +9738,26 @@ describe('omo parity concurrency gaps', () => {
       reason: 'task_completion',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
     await ctx.mutation(internal.orchestrator.finishRun, {
       runToken: before?.activeRunToken ?? '',
       threadId
     })
-    const idle = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const idle = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const reenqueue = await ctx.mutation(internal.orchestrator.enqueueRun, {
       priority: 2,
       promptMessageId: 'archive-free-slot-new',
       reason: 'user_message',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(idle?.status).toBe('idle')
     expect(reenqueue.scheduled).toBe(true)
     expect(after?.status).toBe('active')
@@ -9261,8 +9792,12 @@ describe('omo parity concurrency gaps', () => {
       reason: 'task_completion',
       threadId: b.threadId
     })
-    const aState = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
-      bState = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    const aState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: a.threadId
+      }),
+      bState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: b.threadId
+      })
     expect(aState?.status).toBe('active')
     expect(aState?.queuedPromptMessageId).toBe('concurrency-a-queued')
     expect(bState?.status).toBe('active')
@@ -9368,7 +9903,10 @@ describe('parity batch todo sync extras', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      result = await ctx.mutation(internal.todos.syncOwned, { sessionId, todos: [] })
+      result = await ctx.mutation(internal.todos.syncOwned, {
+        sessionId,
+        todos: []
+      })
     expect(result.updated).toBe(0)
   })
 
@@ -9410,7 +9948,15 @@ describe('parity batch todo sync extras', () => {
     })
     await ctx.mutation(internal.todos.syncOwned, {
       sessionId,
-      todos: [{ content: 'replacement', id: staleId, position: 0, priority: 'high', status: 'in_progress' }]
+      todos: [
+        {
+          content: 'replacement',
+          id: staleId,
+          position: 0,
+          priority: 'high',
+          status: 'in_progress'
+        }
+      ]
     })
     const rows = await ctx.run(async c =>
       c.db
@@ -9429,8 +9975,18 @@ describe('parity batch todo sync extras', () => {
     await ctx.mutation(internal.todos.syncOwned, {
       sessionId,
       todos: [
-        { content: 'first-at-zero', position: 0, priority: 'high', status: 'pending' },
-        { content: 'second-at-zero', position: 0, priority: 'medium', status: 'in_progress' }
+        {
+          content: 'first-at-zero',
+          position: 0,
+          priority: 'high',
+          status: 'pending'
+        },
+        {
+          content: 'second-at-zero',
+          position: 0,
+          priority: 'medium',
+          status: 'in_progress'
+        }
       ]
     })
     const rows = await ctx.run(async c =>
@@ -9449,7 +10005,9 @@ describe('parity batch todo sync extras', () => {
     await ctx.run(async c => {
       await c.db.delete(deletedSessionId)
     })
-    const rows = await asUser(0).query(api.todos.listTodos, { sessionId: deletedSessionId })
+    const rows = await asUser(0).query(api.todos.listTodos, {
+      sessionId: deletedSessionId
+    })
     expect(rows).toEqual([])
   })
 
@@ -9487,7 +10045,9 @@ describe('parity batch stale recovery extras', () => {
       error: 'late_error',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.lastError).toBe('late_error')
     expect(state?.status).toBe('idle')
   })
@@ -9502,7 +10062,9 @@ describe('parity batch stale recovery extras', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       const state = await c.db
         .query('threadRunState')
@@ -9517,7 +10079,9 @@ describe('parity batch stale recovery extras', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('idle')
     expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
   })
@@ -9532,7 +10096,9 @@ describe('parity batch stale recovery extras', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       const state = await c.db
         .query('threadRunState')
@@ -9548,7 +10114,9 @@ describe('parity batch stale recovery extras', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('active')
     expect(after?.activeRunToken).toBe(before?.activeRunToken)
   })
@@ -9583,7 +10151,9 @@ describe('parity batch stale recovery extras', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('idle')
     expect(after?.queuedPromptMessageId).toBeUndefined()
     expect(after?.queuedReason).toBeUndefined()
@@ -9614,7 +10184,9 @@ describe('parity batch idle handling extras', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       const state = await c.db
         .query('threadRunState')
@@ -9628,7 +10200,9 @@ describe('parity batch idle handling extras', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.ok).toBe(true)
     expect(result.shouldContinue).toBe(false)
     expect(state?.autoContinueStreak).toBe(0)
@@ -9644,7 +10218,9 @@ describe('parity batch idle handling extras', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'needs-followup',
@@ -9665,7 +10241,9 @@ describe('parity batch idle handling extras', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(false)
     expect(state?.queuedReason).toBe('user_message')
     expect(state?.queuedPromptMessageId).toBe('higher-priority-already-queued')
@@ -9681,7 +10259,9 @@ describe('parity batch idle handling extras', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'bad-snapshot-todo',
@@ -9715,7 +10295,9 @@ describe('parity batch idle handling extras', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'bad-shape-todo',
@@ -9728,7 +10310,10 @@ describe('parity batch idle handling extras', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (state) await c.db.patch(state._id, { lastTodoSnapshot: JSON.stringify([{ nope: true }]) })
+      if (state)
+        await c.db.patch(state._id, {
+          lastTodoSnapshot: JSON.stringify([{ nope: true }])
+        })
     })
     const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken: active?.activeRunToken ?? '',
@@ -9825,7 +10410,9 @@ describe('parity batch task polling equivalents', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'snapshot-store',
@@ -9850,7 +10437,9 @@ describe('parity batch task polling equivalents', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(result.shouldContinue).toBe(false)
     expect(typeof state?.lastTodoSnapshot).toBe('string')
     expect((state?.lastTodoSnapshot ?? '').includes('snapshot-store')).toBe(true)
@@ -9962,7 +10551,10 @@ describe('parity task-update equivalents', () => {
           threadId: `update-complete-${crypto.randomUUID()}`
         })
       )
-    const out = await ctx.mutation(internal.tasks.completeTask, { result: 'done', taskId }),
+    const out = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'done',
+        taskId
+      }),
       row = await ctx.run(async c => c.db.get(taskId))
     expect(out.ok).toBe(true)
     expect(row?.status).toBe('completed')
@@ -10012,7 +10604,10 @@ describe('parity task-update equivalents', () => {
           threadId: `update-complete-reject-${crypto.randomUUID()}`
         })
       ),
-      out = await ctx.mutation(internal.tasks.completeTask, { result: 'nope', taskId })
+      out = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'nope',
+        taskId
+      })
     expect(out.ok).toBe(false)
   })
 
@@ -10308,7 +10903,9 @@ describe('parity task-history equivalents', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
     await ctx.run(async c => {
-      await c.db.patch(sessionId, { lastActivityAt: Date.now() - 25 * 60 * 60 * 1000 })
+      await c.db.patch(sessionId, {
+        lastActivityAt: Date.now() - 25 * 60 * 60 * 1000
+      })
     })
     await ctx.mutation(internal.retention.archiveIdleSessions, {})
     const row = await ctx.run(async c => c.db.get(sessionId))
@@ -10334,7 +10931,9 @@ describe('parity cancel-task-cleanup equivalents', () => {
       threadId
     })
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.queuedPromptMessageId).toBeUndefined()
     expect(state?.queuedReason).toBeUndefined()
   })
@@ -10398,13 +10997,17 @@ describe('parity cancel-task-cleanup equivalents', () => {
       reason: 'task_completion',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
     const out = await ctx.mutation(internal.orchestrator.finishRun, {
       runToken: before?.activeRunToken ?? '',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.scheduled).toBe(false)
     expect(after?.status).toBe('idle')
   })
@@ -10455,7 +11058,10 @@ describe('parity task-completion-cleanup equivalents', () => {
         threadId: `completion-cleanup-fail-${crypto.randomUUID()}`
       })
     )
-    await ctx.mutation(internal.tasks.failTask, { lastError: 'broken', taskId })
+    await ctx.mutation(internal.tasks.failTask, {
+      lastError: 'broken',
+      taskId
+    })
     const row = await ctx.run(async c => c.db.get(taskId)),
       msg = await ctx.run(async c =>
         c.db
@@ -10495,7 +11101,9 @@ describe('parity task-completion-cleanup equivalents', () => {
         threadId: `completion-cleanup-continue-${crypto.randomUUID()}`
       })
     )
-    const out = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId }),
+    const out = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, {
+        taskId
+      }),
       row = await ctx.run(async c => c.db.get(taskId))
     expect(out.ok).toBe(true)
     expect(row?.continuationEnqueuedAt).toBeDefined()
@@ -10530,7 +11138,9 @@ describe('parity task-completion-cleanup equivalents', () => {
       })
     )
     await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
-    const out = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, { taskId })
+    const out = await ctx.mutation(internal.tasks.maybeContinueOrchestrator, {
+      taskId
+    })
     expect(out.ok).toBe(false)
   })
 })
@@ -10545,7 +11155,11 @@ describe('parity stop-continuation-guard equivalents', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (state) await c.db.patch(state._id, { autoContinueStreak: 5, status: 'active' })
+      if (state)
+        await c.db.patch(state._id, {
+          autoContinueStreak: 5,
+          status: 'active'
+        })
     })
     const out = await ctx.mutation(internal.orchestrator.enqueueRun, {
       incrementStreak: true,
@@ -10568,7 +11182,9 @@ describe('parity stop-continuation-guard equivalents', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'guard-input-todo',
@@ -10596,7 +11212,9 @@ describe('parity stop-continuation-guard equivalents', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       await c.db.insert('todos', {
         content: 'guard-task-todo',
@@ -10634,7 +11252,9 @@ describe('parity stop-continuation-guard equivalents', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       const row = await c.db
         .query('threadRunState')
@@ -10648,7 +11268,9 @@ describe('parity stop-continuation-guard equivalents', () => {
       threadId,
       turnRequestedInput: false
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.autoContinueStreak).toBe(0)
   })
 })
@@ -10657,45 +11279,71 @@ describe('parity delegate-task-english-directive equivalents', () => {
   test('delegate input schema requires description', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
     })
-    const schema = (tools.delegate as { inputSchema?: { safeParse: (v: unknown) => { success: boolean } } }).inputSchema,
-      parsed = schema?.safeParse({ isBackground: true, prompt: 'x' })
+    const inputSchema = (
+        tools.delegate as {
+          inputSchema?: { safeParse: (v: unknown) => { success: boolean } }
+        }
+      ).inputSchema,
+      parsed = inputSchema?.safeParse({ isBackground: true, prompt: 'x' })
     expect(parsed?.success).toBe(false)
   })
 
   test('delegate input schema requires prompt', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
     })
-    const schema = (tools.delegate as { inputSchema?: { safeParse: (v: unknown) => { success: boolean } } }).inputSchema,
-      parsed = schema?.safeParse({ description: 'x', isBackground: true })
+    const inputSchema = (
+        tools.delegate as {
+          inputSchema?: { safeParse: (v: unknown) => { success: boolean } }
+        }
+      ).inputSchema,
+      parsed = inputSchema?.safeParse({ description: 'x', isBackground: true })
     expect(parsed?.success).toBe(false)
   })
 
   test('delegate input schema accepts defaults for isBackground', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'schema-parent',
       sessionId: 'schema-session' as never
     })
-    const schema = (tools.delegate as {
-        inputSchema?: { safeParse: (v: unknown) => { data?: { isBackground?: boolean }; success: boolean } }
-      }).inputSchema,
-      parsed = schema?.safeParse({ description: 'x', prompt: 'y' })
+    const inputSchema = (
+        tools.delegate as {
+          inputSchema?: {
+            safeParse: (v: unknown) => {
+              data?: { isBackground?: boolean }
+              success: boolean
+            }
+          }
+        }
+      ).inputSchema,
+      parsed = inputSchema?.safeParse({ description: 'x', prompt: 'y' })
     expect(parsed?.success).toBe(true)
     expect(parsed?.data?.isBackground).toBe(true)
   })
 
   test('detectDelegateError and buildRetryGuidance map unknown agent errors', async () => {
     const { buildRetryGuidance, detectDelegateError } = await import('./agents')
-    const pattern = detectDelegateError({ errorMessage: 'Unknown agent: alpha. valid options: explore, oracle' }),
+    const pattern = detectDelegateError({
+        errorMessage: 'Unknown agent: alpha. valid options: explore, oracle'
+      }),
       guidance = buildRetryGuidance({
         errorMessage: 'Unknown agent: alpha. valid options: explore, oracle',
         pattern
@@ -10709,7 +11357,10 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
   test('worker tools exclude todoWrite', async () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
     })
@@ -10719,7 +11370,10 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
   test('worker tools exclude todoRead', async () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
     })
@@ -10729,7 +11383,10 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
   test('worker tools exclude delegate', async () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'worker-parent',
       sessionId: 'worker-session' as never
     })
@@ -10739,7 +11396,10 @@ describe('parity tasks-todowrite-disabler equivalents', () => {
   test('orchestrator tools keep todoWrite and todoRead enabled', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'orchestrator-parent',
       sessionId: 'orchestrator-session' as never
     })
@@ -10768,7 +11428,9 @@ describe('parity compaction-context-injector equivalents', () => {
         .unique()
       if (runState) await c.db.patch(runState._id, { compactionSummary: 'summary-abc' })
     })
-    const size = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const size = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(size.charCount).toBe('summary-abc'.length + 'tail-msg'.length)
     expect(size.messageCount).toBe(1)
   })
@@ -10787,7 +11449,9 @@ describe('parity compaction-context-injector equivalents', () => {
         threadId
       })
     )
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId
+    })
     const out = await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'persisted-summary',
       lastCompactedMessageId: String(messageId),
@@ -10820,7 +11484,9 @@ describe('parity compaction-context-injector equivalents', () => {
         threadId: b.threadId
       })
     )
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: a.threadId })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId: a.threadId
+    })
     const out = await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'reject-foreign',
       lastCompactedMessageId: String(foreignId),
@@ -10853,7 +11519,9 @@ describe('parity compaction-context-injector equivalents', () => {
         threadId
       })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.compacted).toBe(false)
     expect(out.reason).toBe('no_closed_groups')
   })
@@ -10864,7 +11532,7 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           const payload = args as {
             description: string
             isBackground: boolean
@@ -10879,13 +11547,17 @@ describe('parity background-task tools equivalents', () => {
           expect(payload.sessionId).toBe('bg-tools-session')
           return { taskId: 'bg-task-id', threadId: 'bg-thread-id' }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'bg-tools-parent',
       sessionId: 'bg-tools-session' as never
     })
     const delegate = tools.delegate as unknown as {
-      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<{ status: string; taskId: string; threadId: string }>
+      execute: (input: {
+        description: string
+        isBackground: boolean
+        prompt: string
+      }) => Promise<{ status: string; taskId: string; threadId: string }>
     }
     const out = await delegate.execute({
       description: 'bg-tools-delegate',
@@ -10900,7 +11572,10 @@ describe('parity background-task tools equivalents', () => {
   test('taskStatus tool returns null contract for missing task', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'bg-status-parent',
       sessionId: 'bg-status-session' as never
     })
@@ -10916,8 +11591,8 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery: async () => ({ status: 'running' })
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => ({ status: 'running' })
       } as never,
       parentThreadId: 'bg-output-parent',
       sessionId: 'bg-output-session' as never
@@ -10934,8 +11609,11 @@ describe('parity background-task tools equivalents', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery: async () => ({ result: 'worker-final-output', status: 'completed' })
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => ({
+          result: 'worker-final-output',
+          status: 'completed'
+        })
       } as never,
       parentThreadId: 'bg-output-parent',
       sessionId: 'bg-output-session' as never
@@ -10952,15 +11630,13 @@ describe('parity background-task tools equivalents', () => {
 describe('omo parity: manager deep coverage', () => {
   const taskStatuses = ['pending', 'running', 'completed', 'failed', 'timed_out', 'cancelled'] as const
 
-  const listChildrenByParent = async ({
-    ctx,
-    parentThreadId
-  }: {
-    ctx: ReturnType<typeof t>
-    parentThreadId: string
-  }) => {
+  const listChildrenByParent = async ({ ctx, parentThreadId }: { ctx: ReturnType<typeof t>; parentThreadId: string }) => {
     const rows = await ctx.run(async c => {
-      const out: Array<{ _id: string; parentThreadId: string; threadId: string }> = []
+      const out: Array<{
+        _id: string
+        parentThreadId: string
+        threadId: string
+      }> = []
       for (const s of taskStatuses) {
         const batch = await c.db
           .query('tasks')
@@ -10978,20 +11654,17 @@ describe('omo parity: manager deep coverage', () => {
     return rows
   }
 
-  const listDescendants = async ({
-    ctx,
-    rootThreadId
-  }: {
-    ctx: ReturnType<typeof t>
-    rootThreadId: string
-  }) => {
+  const listDescendants = async ({ ctx, rootThreadId }: { ctx: ReturnType<typeof t>; rootThreadId: string }) => {
     const seen = new Set<string>()
     const stack = [rootThreadId]
     const descendants: string[] = []
     while (stack.length > 0) {
       const current = stack.pop()
       if (!current) continue
-      const children = await listChildrenByParent({ ctx, parentThreadId: current })
+      const children = await listChildrenByParent({
+        ctx,
+        parentThreadId: current
+      })
       for (const child of children)
         if (!seen.has(child._id)) {
           seen.add(child._id)
@@ -11144,7 +11817,10 @@ describe('omo parity: manager deep coverage', () => {
         threadId: `desc-unrelated-${crypto.randomUUID()}`
       })
     )
-    const descendants = await listDescendants({ ctx, rootThreadId: rootA.threadId })
+    const descendants = await listDescendants({
+      ctx,
+      rootThreadId: rootA.threadId
+    })
     expect(descendants.includes(String(unrelated))).toBe(false)
   })
 
@@ -11164,8 +11840,14 @@ describe('omo parity: manager deep coverage', () => {
           threadId: `cas-complete-${crypto.randomUUID()}`
         })
       )
-    const first = await ctx.mutation(internal.tasks.completeTask, { result: 'first', taskId }),
-      second = await ctx.mutation(internal.tasks.completeTask, { result: 'second', taskId }),
+    const first = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'first',
+        taskId
+      }),
+      second = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'second',
+        taskId
+      }),
       row = await ctx.run(async c => c.db.get(taskId))
     expect(first.ok).toBe(true)
     expect(second.ok).toBe(false)
@@ -11189,8 +11871,14 @@ describe('omo parity: manager deep coverage', () => {
           threadId: `cas-fail-${crypto.randomUUID()}`
         })
       )
-    const first = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom-1', taskId }),
-      second = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom-2', taskId }),
+    const first = await ctx.mutation(internal.tasks.failTask, {
+        lastError: 'boom-1',
+        taskId
+      }),
+      second = await ctx.mutation(internal.tasks.failTask, {
+        lastError: 'boom-2',
+        taskId
+      }),
       row = await ctx.run(async c => c.db.get(taskId))
     expect(first.ok).toBe(true)
     expect(second.ok).toBe(false)
@@ -11242,7 +11930,10 @@ describe('omo parity: manager deep coverage', () => {
       )
     const [completeOut, failOut] = await Promise.all([
       ctx.mutation(internal.tasks.completeTask, { result: 'done', taskId }),
-      ctx.mutation(internal.tasks.failTask, { lastError: 'mixed-fail', taskId })
+      ctx.mutation(internal.tasks.failTask, {
+        lastError: 'mixed-fail',
+        taskId
+      })
     ])
     expect(Number(completeOut.ok) + Number(failOut.ok)).toBe(1)
   })
@@ -11259,7 +11950,9 @@ describe('omo parity: manager deep coverage', () => {
         reason: 'user_message',
         threadId
       })
-      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.mutation(internal.orchestrator.enqueueRun, {
         priority,
         promptMessageId: `manager-deep-${reason}-queued`,
@@ -11270,7 +11963,9 @@ describe('omo parity: manager deep coverage', () => {
         runToken: before?.activeRunToken ?? '',
         threadId
       })
-      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(finished.scheduled).toBe(true)
       expect(after?.queuedPromptMessageId).toBeUndefined()
       expect(after?.queuedReason).toBeUndefined()
@@ -11293,12 +11988,16 @@ describe('omo parity: manager deep coverage', () => {
       reason: 'task_completion',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const out = await ctx.mutation(internal.orchestrator.finishRun, {
       runToken: 'manager-deep-mismatch-token',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.scheduled).toBe(false)
     expect(after?.activeRunToken).toBe(before?.activeRunToken)
     expect(after?.queuedPromptMessageId).toBe('manager-deep-mismatch-queued')
@@ -11415,7 +12114,8 @@ describe('omo parity: manager deep coverage', () => {
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
       const taskId = await ctx.run(async c =>
         c.db.insert('tasks', {
-          completedAt: s === 'completed' || s === 'failed' || s === 'timed_out' || s === 'cancelled' ? Date.now() : undefined,
+          completedAt:
+            s === 'completed' || s === 'failed' || s === 'timed_out' || s === 'cancelled' ? Date.now() : undefined,
           description: `manager-mark-running-${s}`,
           isBackground: true,
           parentThreadId,
@@ -11489,7 +12189,9 @@ describe('omo parity: manager deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.claimRun, {
       runToken: before?.activeRunToken ?? '',
       threadId
@@ -11515,7 +12217,9 @@ describe('omo parity: manager deep coverage', () => {
         })
     })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('active')
     expect(after?.runClaimed).toBe(false)
     expect(after?.queuedPromptMessageId).toBeUndefined()
@@ -11563,7 +12267,9 @@ describe('omo parity: manager deep coverage', () => {
         .unique()
       if (state) await c.db.patch(state._id, { compactionSummary: 'summary-prefix' })
     })
-    const size = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const size = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(size.charCount).toBe('summary-prefix'.length + 'tail-content'.length)
   })
 
@@ -11589,7 +12295,10 @@ describe('omo parity: manager deep coverage', () => {
 
 describe('omo parity: delegate deep coverage', () => {
   for (const c of [
-    { errorMessage: 'missing run_in_background', expected: 'missing_run_in_background' },
+    {
+      errorMessage: 'missing run_in_background',
+      expected: 'missing_run_in_background'
+    },
     { errorMessage: 'LOAD_SKILLS required', expected: 'missing_load_skills' },
     { errorMessage: 'invalid category: custom', expected: 'unknown_category' },
     { errorMessage: 'invalid agent: no-such', expected: 'unknown_agent' },
@@ -11648,16 +12357,20 @@ describe('omo parity: delegate deep coverage', () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation: async () => {
+          runMutation:  () => {
             throw new Error(p)
           },
-          runQuery: async () => null
+          runQuery:  () => null
         } as never,
         parentThreadId: `delegate-deep-parent-${crypto.randomUUID()}`,
         sessionId: `delegate-deep-session-${crypto.randomUUID()}` as never
       })
       const delegate = tools.delegate as unknown as {
-        execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<{ ok: boolean; pattern: string }>
+        execute: (input: {
+          description: string
+          isBackground: boolean
+          prompt: string
+        }) => Promise<{ ok: boolean; pattern: string }>
       }
       const out = await delegate.execute({
         description: 'delegate-deep',
@@ -11681,7 +12394,7 @@ describe('omo parity: delegate deep coverage', () => {
       | undefined
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async (_ref: unknown, args: unknown) => {
+        runMutation:  (_ref: unknown, args: unknown) => {
           const payload = args as {
             description: string
             isBackground: boolean
@@ -11690,9 +12403,12 @@ describe('omo parity: delegate deep coverage', () => {
             sessionId: string
           }
           seen = payload
-          return { taskId: 'delegate-deep-task', threadId: 'delegate-deep-thread' }
+          return {
+            taskId: 'delegate-deep-task',
+            threadId: 'delegate-deep-thread'
+          }
         },
-        runQuery: async () => null
+        runQuery:  () => null
       } as never,
       parentThreadId: 'delegate-deep-parent',
       sessionId: 'delegate-deep-session' as never
@@ -11721,14 +12437,27 @@ describe('omo parity: delegate deep coverage', () => {
   test('delegate schema defaults isBackground=true', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'delegate-schema-parent',
       sessionId: 'delegate-schema-session' as never
     })
-    const schema = (tools.delegate as {
-      inputSchema?: { safeParse: (v: unknown) => { data?: { isBackground?: boolean }; success: boolean } }
-    }).inputSchema
-    const parsed = schema?.safeParse({ description: 'schema', prompt: 'schema' })
+    const inputSchema = (
+      tools.delegate as {
+        inputSchema?: {
+          safeParse: (v: unknown) => {
+            data?: { isBackground?: boolean }
+            success: boolean
+          }
+        }
+      }
+    ).inputSchema
+    const parsed = inputSchema?.safeParse({
+      description: 'schema',
+      prompt: 'schema'
+    })
     expect(parsed?.success).toBe(true)
     expect(parsed?.data?.isBackground).toBe(true)
   })
@@ -11745,8 +12474,11 @@ describe('omo parity: delegate deep coverage', () => {
       const { createOrchestratorTools } = await import('./agents')
       const tools = createOrchestratorTools({
         ctx: {
-          runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
-          runQuery: async () => ({ result: c.result === null ? undefined : c.result, status: c.status })
+          runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+          runQuery:  () => ({
+            result: c.result === null ? undefined : c.result,
+            status: c.status
+          })
         } as never,
         parentThreadId: 'delegate-output-parent',
         sessionId: 'delegate-output-session' as never
@@ -11754,7 +12486,9 @@ describe('omo parity: delegate deep coverage', () => {
       const taskOutput = tools.taskOutput as unknown as {
         execute: (input: { taskId: string }) => Promise<{ result: null | string; status: null | string }>
       }
-      const out = await taskOutput.execute({ taskId: `delegate-output-${c.status}` })
+      const out = await taskOutput.execute({
+        taskId: `delegate-output-${c.status}`
+      })
       expect(out.status).toBe(c.status)
       expect(out.result).toBe(c.result)
     })
@@ -11762,7 +12496,10 @@ describe('omo parity: delegate deep coverage', () => {
   test('taskStatus returns null contract when row missing', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'delegate-status-parent',
       sessionId: 'delegate-status-session' as never
     })
@@ -11778,8 +12515,11 @@ describe('omo parity: delegate deep coverage', () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
       ctx: {
-        runMutation: async () => ({ taskId: 'x', threadId: 'y' }),
-        runQuery: async () => ({ description: 'delegate-status-found', status: 'running' })
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => ({
+          description: 'delegate-status-found',
+          status: 'running'
+        })
       } as never,
       parentThreadId: 'delegate-status-parent-2',
       sessionId: 'delegate-status-session-2' as never
@@ -11787,7 +12527,9 @@ describe('omo parity: delegate deep coverage', () => {
     const taskStatus = tools.taskStatus as unknown as {
       execute: (input: { taskId: string }) => Promise<{ description: null | string; status: null | string }>
     }
-    const out = await taskStatus.execute({ taskId: 'delegate-status-found-id' })
+    const out = await taskStatus.execute({
+      taskId: 'delegate-status-found-id'
+    })
     expect(out.description).toBe('delegate-status-found')
     expect(out.status).toBe('running')
   })
@@ -11795,7 +12537,10 @@ describe('omo parity: delegate deep coverage', () => {
   test('worker toolset excludes delegate and todo tools', async () => {
     const { createWorkerTools } = await import('./agents')
     const tools = createWorkerTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'delegate-worker-parent',
       sessionId: 'delegate-worker-session' as never
     })
@@ -11808,7 +12553,10 @@ describe('omo parity: delegate deep coverage', () => {
   test('orchestrator toolset includes delegate, task and todo tools', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'delegate-orch-parent',
       sessionId: 'delegate-orch-session' as never
     })
@@ -11848,7 +12596,9 @@ describe('omo parity: continuation deep coverage', () => {
         reason: 'user_message',
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('todos', {
           content: `continuation-status-${c.status}`,
@@ -11877,7 +12627,9 @@ describe('omo parity: continuation deep coverage', () => {
         reason: 'user_message',
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('todos', {
           content: `continuation-blocker-${blocker}-todo`,
@@ -11916,7 +12668,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-priority-todo',
@@ -11931,7 +12685,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: false
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(true)
     expect(after?.queuedReason).toBe('todo_continuation')
     expect(after?.queuedPriority).toBe('todo_continuation')
@@ -11947,7 +12703,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-replace-todo',
@@ -11968,13 +12726,15 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.queuedReason).toBe('user_message')
     expect(after?.queuedPromptMessageId).toBe('continuation-replace-user')
   })
 
   for (const c of [
-    { blockedMs: 9_000, consecutiveFailures: 1, shouldContinue: false },
+    { blockedMs: 9000, consecutiveFailures: 1, shouldContinue: false },
     { blockedMs: 19_000, consecutiveFailures: 2, shouldContinue: false },
     { blockedMs: 39_000, consecutiveFailures: 3, shouldContinue: false },
     { blockedMs: 11_000, consecutiveFailures: 1, shouldContinue: true },
@@ -11991,7 +12751,9 @@ describe('omo parity: continuation deep coverage', () => {
         reason: 'user_message',
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('todos', {
           content: 'continuation-cooldown-todo',
@@ -12028,7 +12790,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-max-failure-todo',
@@ -12065,7 +12829,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-failure-reset-todo',
@@ -12089,7 +12855,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: false
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(true)
     expect(after?.consecutiveFailures).toBe(0)
   })
@@ -12104,7 +12872,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async d =>
       d.db.insert('todos', {
         content: 'continuation-stagnation-todo',
@@ -12122,7 +12892,11 @@ describe('omo parity: continuation deep coverage', () => {
       if (runState)
         await d.db.patch(runState._id, {
           lastTodoSnapshot: JSON.stringify([
-            { content: 'continuation-stagnation-todo', id: String(todoId), status: 'pending' }
+            {
+              content: 'continuation-stagnation-todo',
+              id: String(todoId),
+              status: 'pending'
+            }
           ]),
           stagnationCount: 2
         })
@@ -12145,7 +12919,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const todoId = await ctx.run(async d =>
       d.db.insert('todos', {
         content: 'continuation-progress-old',
@@ -12163,7 +12939,13 @@ describe('omo parity: continuation deep coverage', () => {
         .unique()
       if (runState)
         await d.db.patch(runState._id, {
-          lastTodoSnapshot: JSON.stringify([{ content: 'continuation-progress-old', id: String(todoId), status: 'pending' }]),
+          lastTodoSnapshot: JSON.stringify([
+            {
+              content: 'continuation-progress-old',
+              id: String(todoId),
+              status: 'pending'
+            }
+          ]),
           stagnationCount: 2
         })
     })
@@ -12172,7 +12954,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: false
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(true)
     expect(after?.stagnationCount).toBe(0)
   })
@@ -12200,7 +12984,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-input-block-todo',
@@ -12215,7 +13001,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: true
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(false)
     expect(typeof after?.lastTodoSnapshot).toBe('string')
     expect((after?.lastTodoSnapshot ?? '').includes('continuation-input-block-todo')).toBe(true)
@@ -12231,7 +13019,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-malformed-snapshot-todo',
@@ -12264,7 +13054,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'continuation-invalid-shape-todo',
@@ -12277,7 +13069,10 @@ describe('omo parity: continuation deep coverage', () => {
         .query('threadRunState')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .unique()
-      if (runState) await d.db.patch(runState._id, { lastTodoSnapshot: JSON.stringify([{ nope: true }]) })
+      if (runState)
+        await d.db.patch(runState._id, {
+          lastTodoSnapshot: JSON.stringify([{ nope: true }])
+        })
     })
     const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken: state?.activeRunToken ?? '',
@@ -12297,7 +13092,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.enqueueRun, {
       priority: 2,
       promptMessageId: 'continuation-queued-user-message',
@@ -12318,7 +13115,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: false
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(false)
     expect(after?.queuedReason).toBe('user_message')
     expect(after?.queuedPromptMessageId).toBe('continuation-queued-user-message')
@@ -12334,7 +13133,9 @@ describe('omo parity: continuation deep coverage', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async c => {
       const row = await c.db
         .query('threadRunState')
@@ -12348,7 +13149,9 @@ describe('omo parity: continuation deep coverage', () => {
       threadId,
       turnRequestedInput: false
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(out.shouldContinue).toBe(false)
     expect(state?.autoContinueStreak).toBe(0)
   })
@@ -12393,9 +13196,18 @@ describe('final sweep error classifier adaptation', () => {
 
 describe('final sweep delegate retry matrix', () => {
   for (const c of [
-    { expected: 'missing_run_in_background', value: 'run_in_background is required' },
-    { expected: 'missing_run_in_background', value: 'RUN_IN_BACKGROUND missing' },
-    { expected: 'missing_run_in_background', value: 'invalid args: run_in_background' },
+    {
+      expected: 'missing_run_in_background',
+      value: 'run_in_background is required'
+    },
+    {
+      expected: 'missing_run_in_background',
+      value: 'RUN_IN_BACKGROUND missing'
+    },
+    {
+      expected: 'missing_run_in_background',
+      value: 'invalid args: run_in_background'
+    },
     { expected: 'missing_load_skills', value: 'load_skills is required' },
     { expected: 'missing_load_skills', value: 'LOAD_SKILLS required' },
     { expected: 'missing_load_skills', value: 'invalid args: load_skills' },
@@ -12415,10 +13227,22 @@ describe('final sweep delegate retry matrix', () => {
     })
 
   for (const c of [
-    { expected: 'Add run_in_background parameter.', pattern: 'missing_run_in_background' as const },
-    { expected: 'Add load_skills=[] parameter.', pattern: 'missing_load_skills' as const },
-    { expected: 'Use a valid category from the Available list.', pattern: 'unknown_category' as const },
-    { expected: 'Use a valid agent from the Available list.', pattern: 'unknown_agent' as const },
+    {
+      expected: 'Add run_in_background parameter.',
+      pattern: 'missing_run_in_background' as const
+    },
+    {
+      expected: 'Add load_skills=[] parameter.',
+      pattern: 'missing_load_skills' as const
+    },
+    {
+      expected: 'Use a valid category from the Available list.',
+      pattern: 'unknown_category' as const
+    },
+    {
+      expected: 'Use a valid agent from the Available list.',
+      pattern: 'unknown_agent' as const
+    },
     {
       expected: 'Retry delegate with corrected arguments and valid values.',
       pattern: 'unknown_error' as const
@@ -12497,18 +13321,46 @@ describe('final sweep compaction-aware prompt resolver parity', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-    const older = await insertMessage({ content: 'old-before-boundary', ctx, role: 'user', sessionId, threadId }),
-      boundary = await insertMessage({ content: 'boundary', ctx, role: 'assistant', sessionId, threadId })
-    await insertMessage({ content: 'after-boundary-1', ctx, role: 'user', sessionId, threadId })
-    await insertMessage({ content: 'after-boundary-2', ctx, role: 'assistant', sessionId, threadId })
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    const older = await insertMessage({
+        content: 'old-before-boundary',
+        ctx,
+        role: 'user',
+        sessionId,
+        threadId
+      }),
+      boundary = await insertMessage({
+        content: 'boundary',
+        ctx,
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    await insertMessage({
+      content: 'after-boundary-1',
+      ctx,
+      role: 'user',
+      sessionId,
+      threadId
+    })
+    await insertMessage({
+      content: 'after-boundary-2',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId
+    })
     await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'summary',
       lastCompactedMessageId: String(boundary),
       lockToken: lock.lockToken,
       threadId
     })
-    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId })
+    const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      threadId
+    })
     expect(rows.some(r => String(r._id) === String(older))).toBe(false)
     expect(rows.some(r => String(r._id) === String(boundary))).toBe(false)
     expect(rows.map(r => r.content)).toEqual(['after-boundary-1', 'after-boundary-2'])
@@ -12525,9 +13377,23 @@ describe('final sweep compaction-aware prompt resolver parity', () => {
       sessionId,
       threadId
     })
-    const boundary = await insertMessage({ content: 'boundary-after-prompt', ctx, role: 'assistant', sessionId, threadId })
-    await insertMessage({ content: 'after-boundary', ctx, role: 'assistant', sessionId, threadId })
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    const boundary = await insertMessage({
+      content: 'boundary-after-prompt',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    await insertMessage({
+      content: 'after-boundary',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId
+    })
     await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'summary-2',
       lastCompactedMessageId: String(boundary),
@@ -12546,19 +13412,53 @@ describe('final sweep compaction-aware prompt resolver parity', () => {
       { asUser } = await createTestContext(ctx),
       a = await asUser(0).mutation(api.sessions.createSession, {}),
       b = await asUser(0).mutation(api.sessions.createSession, {})
-    await insertMessage({ content: 'a-1', ctx, role: 'user', sessionId: a.sessionId, threadId: a.threadId })
-    const aBoundary = await insertMessage({ content: 'a-boundary', ctx, role: 'assistant', sessionId: a.sessionId, threadId: a.threadId })
-    await insertMessage({ content: 'a-2', ctx, role: 'assistant', sessionId: a.sessionId, threadId: a.threadId })
-    await insertMessage({ content: 'b-1', ctx, role: 'user', sessionId: b.sessionId, threadId: b.threadId })
-    await insertMessage({ content: 'b-2', ctx, role: 'assistant', sessionId: b.sessionId, threadId: b.threadId })
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: a.threadId })
+    await insertMessage({
+      content: 'a-1',
+      ctx,
+      role: 'user',
+      sessionId: a.sessionId,
+      threadId: a.threadId
+    })
+    const aBoundary = await insertMessage({
+      content: 'a-boundary',
+      ctx,
+      role: 'assistant',
+      sessionId: a.sessionId,
+      threadId: a.threadId
+    })
+    await insertMessage({
+      content: 'a-2',
+      ctx,
+      role: 'assistant',
+      sessionId: a.sessionId,
+      threadId: a.threadId
+    })
+    await insertMessage({
+      content: 'b-1',
+      ctx,
+      role: 'user',
+      sessionId: b.sessionId,
+      threadId: b.threadId
+    })
+    await insertMessage({
+      content: 'b-2',
+      ctx,
+      role: 'assistant',
+      sessionId: b.sessionId,
+      threadId: b.threadId
+    })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId: a.threadId
+    })
     await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'summary-a',
       lastCompactedMessageId: String(aBoundary),
       lockToken: lock.lockToken,
       threadId: a.threadId
     })
-    const bRows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId: b.threadId })
+    const bRows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+      threadId: b.threadId
+    })
     expect(bRows.map(r => r.content)).toEqual(['b-1', 'b-2'])
   })
 
@@ -12566,13 +13466,51 @@ describe('final sweep compaction-aware prompt resolver parity', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-    await insertMessage({ content: 'm-1', ctx, role: 'user', sessionId, threadId })
-    const boundary = await insertMessage({ content: 'm-2-boundary', ctx, role: 'assistant', sessionId, threadId })
-    const afterBoundaryA = await insertMessage({ content: 'm-3', ctx, role: 'user', sessionId, threadId })
-    await insertMessage({ content: 'm-4', ctx, role: 'assistant', sessionId, threadId })
-    const prompt = await insertMessage({ content: 'm-5-prompt', ctx, role: 'user', sessionId, threadId })
-    await insertMessage({ content: 'm-6-after-prompt', ctx, role: 'assistant', sessionId, threadId })
-    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId })
+    await insertMessage({
+      content: 'm-1',
+      ctx,
+      role: 'user',
+      sessionId,
+      threadId
+    })
+    const boundary = await insertMessage({
+      content: 'm-2-boundary',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    const afterBoundaryA = await insertMessage({
+      content: 'm-3',
+      ctx,
+      role: 'user',
+      sessionId,
+      threadId
+    })
+    await insertMessage({
+      content: 'm-4',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    const prompt = await insertMessage({
+      content: 'm-5-prompt',
+      ctx,
+      role: 'user',
+      sessionId,
+      threadId
+    })
+    await insertMessage({
+      content: 'm-6-after-prompt',
+      ctx,
+      role: 'assistant',
+      sessionId,
+      threadId
+    })
+    const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, {
+      threadId
+    })
     await ctx.mutation(internal.compaction.setCompactionSummary, {
       compactionSummary: 'summary-3',
       lastCompactedMessageId: String(boundary),
@@ -12603,7 +13541,9 @@ describe('final sweep compaction threshold parity', () => {
         threadId
       })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.compacted).toBe(false)
     expect(out.reason).toBe('under_threshold')
   })
@@ -12622,7 +13562,9 @@ describe('final sweep compaction threshold parity', () => {
         threadId
       })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.compacted).toBe(false)
     expect(out.reason === 'placeholder' || out.reason === 'no_closed_groups').toBe(true)
   })
@@ -12642,7 +13584,9 @@ describe('final sweep compaction threshold parity', () => {
           threadId
         })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.reason).toBe('under_threshold')
   })
 
@@ -12661,7 +13605,9 @@ describe('final sweep compaction threshold parity', () => {
           threadId
         })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.reason === 'placeholder' || out.reason === 'no_closed_groups').toBe(true)
   })
 
@@ -12680,7 +13626,9 @@ describe('final sweep compaction threshold parity', () => {
           threadId
         })
     })
-    const out = await ctx.query(internal.compaction.getContextSize, { threadId })
+    const out = await ctx.query(internal.compaction.getContextSize, {
+      threadId
+    })
     expect(out.messageCount).toBe(500)
     expect(out.hasMore).toBe(true)
   })
@@ -12724,8 +13672,12 @@ describe('final sweep session and continuation coordination parity', () => {
       reason: 'user_message',
       threadId: b.threadId
     })
-    const aState = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
-      bState = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    const aState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: a.threadId
+      }),
+      bState = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: b.threadId
+      })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'a-pending',
@@ -12752,8 +13704,12 @@ describe('final sweep session and continuation coordination parity', () => {
       threadId: b.threadId,
       turnRequestedInput: false
     })
-    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
-      afterB = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: a.threadId
+      }),
+      afterB = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: b.threadId
+      })
     expect(aOut.shouldContinue).toBe(false)
     expect(bOut.shouldContinue).toBe(true)
     expect(afterA?.queuedReason).toBeUndefined()
@@ -12784,8 +13740,12 @@ describe('final sweep session and continuation coordination parity', () => {
       reason: 'user_message',
       threadId: a.threadId
     })
-    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
-      afterB = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: a.threadId
+      }),
+      afterB = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: b.threadId
+      })
     expect(afterA?.autoContinueStreak).toBe(0)
     expect(afterB?.autoContinueStreak).toBe(4)
   })
@@ -12803,7 +13763,9 @@ describe('deep parity boundary race and classifier expansion', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'parity todo',
@@ -12817,7 +13779,7 @@ describe('deep parity boundary race and classifier expansion', () => {
   }
 
   for (const c of [
-    { ageMs: 9_999, blocked: true },
+    { ageMs: 9999, blocked: true },
     { ageMs: 10_000, blocked: false }
   ] as const)
     test(`continuation cooldown boundary at ${c.ageMs}ms`, async () => {
@@ -12870,7 +13832,9 @@ describe('deep parity boundary race and classifier expansion', () => {
         threadId,
         turnRequestedInput: true
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(state?.consecutiveFailures).toBe(c.expectedFailures)
     })
 
@@ -12926,7 +13890,9 @@ describe('deep parity boundary race and classifier expansion', () => {
         reason: 'user_message',
         threadId
       })
-      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       await ctx.mutation(internal.orchestrator.claimRun, {
         runToken: before?.activeRunToken ?? '',
         threadId
@@ -12944,7 +13910,9 @@ describe('deep parity boundary race and classifier expansion', () => {
           })
       })
       await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(after?.status === 'idle').toBe(c.shouldTimeout)
       expect(after?.status === 'active').toBe(!c.shouldTimeout)
     })
@@ -12977,7 +13945,9 @@ describe('deep parity boundary race and classifier expansion', () => {
           })
       })
       await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(after?.status === 'idle').toBe(c.shouldTimeout)
       expect(after?.status === 'active').toBe(!c.shouldTimeout)
     })
@@ -13007,7 +13977,9 @@ describe('deep parity boundary race and classifier expansion', () => {
         threadId
       })
     ])
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.queuedPriority).toBe('task_completion')
     expect(state?.queuedPromptMessageId).toBe('equal-priority-b')
   })
@@ -13023,11 +13995,18 @@ describe('deep parity boundary race and classifier expansion', () => {
       reason: 'user_message',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const token = state?.activeRunToken ?? ''
-    const claimOut = await ctx.mutation(internal.orchestrator.claimRun, { runToken: token, threadId })
+    const claimOut = await ctx.mutation(internal.orchestrator.claimRun, {
+      runToken: token,
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(claimOut.ok).toBe(true)
     expect(after?.status).toBe('active')
     expect(after?.runClaimed).toBe(true)
@@ -13040,13 +14019,17 @@ describe('deep parity boundary race and classifier expansion', () => {
       threadId,
       turnRequestedInput: false
     })
-    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const b = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
       runToken,
       threadId,
       turnRequestedInput: false
     })
-    const afterB = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const afterB = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     const reminders = await ctx.run(async d =>
       d.db
         .query('messages')
@@ -13075,7 +14058,9 @@ describe('deep parity boundary race and classifier expansion', () => {
       reason: 'task_completion',
       threadId
     })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(state?.queuedPromptMessageId).toBeUndefined()
   })
 
@@ -13089,13 +14074,31 @@ describe('deep parity boundary race and classifier expansion', () => {
   })
 
   for (const c of [
-    { errorMessage: 'missing run_in_background', expected: 'missing_run_in_background' },
-    { errorMessage: 'RUN_IN_BACKGROUND is required', expected: 'missing_run_in_background' },
-    { errorMessage: 'invalid args: run_in_background field missing', expected: 'missing_run_in_background' },
-    { errorMessage: 'run_in_background=false rejected by policy', expected: 'missing_run_in_background' },
+    {
+      errorMessage: 'missing run_in_background',
+      expected: 'missing_run_in_background'
+    },
+    {
+      errorMessage: 'RUN_IN_BACKGROUND is required',
+      expected: 'missing_run_in_background'
+    },
+    {
+      errorMessage: 'invalid args: run_in_background field missing',
+      expected: 'missing_run_in_background'
+    },
+    {
+      errorMessage: 'run_in_background=false rejected by policy',
+      expected: 'missing_run_in_background'
+    },
     { errorMessage: 'load_skills missing', expected: 'missing_load_skills' },
-    { errorMessage: 'LOAD_SKILLS is required', expected: 'missing_load_skills' },
-    { errorMessage: 'bad payload load_skills', expected: 'missing_load_skills' },
+    {
+      errorMessage: 'LOAD_SKILLS is required',
+      expected: 'missing_load_skills'
+    },
+    {
+      errorMessage: 'bad payload load_skills',
+      expected: 'missing_load_skills'
+    },
     { errorMessage: 'Unknown category: ultra', expected: 'unknown_category' },
     { errorMessage: 'INVALID CATEGORY supplied', expected: 'unknown_category' },
     { errorMessage: 'invalid category selected', expected: 'unknown_category' },
@@ -13161,8 +14164,14 @@ describe('deep parity boundary race and classifier expansion', () => {
         )
       const out =
         c.mutation === 'fail'
-          ? await ctx.mutation(internal.tasks.failTask, { lastError: 'nope', taskId })
-          : await ctx.mutation(internal.tasks.completeTask, { result: 'nope', taskId })
+          ? await ctx.mutation(internal.tasks.failTask, {
+              lastError: 'nope',
+              taskId
+            })
+          : await ctx.mutation(internal.tasks.completeTask, {
+              result: 'nope',
+              taskId
+            })
       const row = await ctx.run(async d => d.db.get(taskId))
       expect(out.ok).toBe(false)
       expect(row?.status).toBe(c.status)
@@ -13179,12 +14188,16 @@ describe('deep parity boundary race and classifier expansion', () => {
       reason: 'user_message',
       threadId
     })
-    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const active = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.finishRun, {
       runToken: active?.activeRunToken ?? '',
       threadId
     })
-    const idle = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const idle = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(active?.status).toBe('active')
     expect(idle?.status).toBe('idle')
   })
@@ -13200,7 +14213,9 @@ describe('deep parity boundary race and classifier expansion', () => {
       reason: 'user_message',
       threadId
     })
-    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const before = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     await ctx.mutation(internal.orchestrator.enqueueRun, {
       priority: 1,
       promptMessageId: 'state-queue-next',
@@ -13211,7 +14226,9 @@ describe('deep parity boundary race and classifier expansion', () => {
       runToken: before?.activeRunToken ?? '',
       threadId
     })
-    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const after = await ctx.query(internal.orchestrator.readRunState, {
+      threadId
+    })
     expect(after?.status).toBe('active')
     expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
   })
@@ -13234,7 +14251,10 @@ describe('deep parity expansion batch three', () => {
     const now = Date.now()
     return ctx.run(async d =>
       d.db.insert('tasks', {
-        completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? now : undefined,
+        completedAt:
+          status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out'
+            ? now
+            : undefined,
         description: `matrix-${status}`,
         heartbeatAt: status === 'running' ? now : undefined,
         isBackground: true,
@@ -13253,7 +14273,12 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'pending' }),
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'pending'
+      }),
       out = await ctx.mutation(internal.tasks.markRunning, { taskId }),
       row = await ctx.run(async d => d.db.get(taskId))
     expect(out.ok).toBe(true)
@@ -13264,8 +14289,16 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
-      out = await ctx.mutation(internal.tasks.completeTask, { result: 'ok', taskId }),
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'running'
+      }),
+      out = await ctx.mutation(internal.tasks.completeTask, {
+        result: 'ok',
+        taskId
+      }),
       row = await ctx.run(async d => d.db.get(taskId))
     expect(out.ok).toBe(true)
     expect(row?.status).toBe('completed')
@@ -13275,8 +14308,16 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
-      out = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom', taskId }),
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'running'
+      }),
+      out = await ctx.mutation(internal.tasks.failTask, {
+        lastError: 'boom',
+        taskId
+      }),
       row = await ctx.run(async d => d.db.get(taskId))
     expect(out.ok).toBe(true)
     expect(row?.status).toBe('failed')
@@ -13286,7 +14327,12 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' })
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'running'
+      })
     await ctx.run(async d => {
       await d.db.patch(taskId, { heartbeatAt: Date.now() - 6 * 60 * 1000 })
     })
@@ -13299,7 +14345,12 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'pending' })
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'pending'
+      })
     await ctx.run(async d => {
       await d.db.patch(taskId, { pendingAt: Date.now() - 6 * 60 * 1000 })
     })
@@ -13312,7 +14363,12 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId,
+        sessionId,
+        status: 'running'
+      }),
       out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
       row = await ctx.run(async d => d.db.get(taskId))
     expect(out.ok).toBe(true)
@@ -13324,8 +14380,15 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       created = await asUser(0).mutation(api.sessions.createSession, {}),
-      taskId = await createTaskRow({ ctx, parentThreadId: created.threadId, sessionId: created.sessionId, status: 'running' })
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+      taskId = await createTaskRow({
+        ctx,
+        parentThreadId: created.threadId,
+        sessionId: created.sessionId,
+        status: 'running'
+      })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: created.sessionId
+    })
     const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
     const row = await ctx.run(async d => d.db.get(taskId))
     expect(out.ok).toBe(false)
@@ -13337,7 +14400,12 @@ describe('deep parity expansion batch three', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        taskId = await createTaskRow({
+          ctx,
+          parentThreadId,
+          sessionId,
+          status: s
+        }),
         out = await ctx.mutation(internal.tasks.markRunning, { taskId }),
         row = await ctx.run(async d => d.db.get(taskId))
       expect(out.ok).toBe(false)
@@ -13349,8 +14417,16 @@ describe('deep parity expansion batch three', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
-        out = await ctx.mutation(internal.tasks.completeTask, { result: 'no', taskId }),
+        taskId = await createTaskRow({
+          ctx,
+          parentThreadId,
+          sessionId,
+          status: s
+        }),
+        out = await ctx.mutation(internal.tasks.completeTask, {
+          result: 'no',
+          taskId
+        }),
         row = await ctx.run(async d => d.db.get(taskId))
       expect(out.ok).toBe(false)
       expect(row?.status).toBe(s)
@@ -13361,8 +14437,16 @@ describe('deep parity expansion batch three', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
-        out = await ctx.mutation(internal.tasks.failTask, { lastError: 'no', taskId }),
+        taskId = await createTaskRow({
+          ctx,
+          parentThreadId,
+          sessionId,
+          status: s
+        }),
+        out = await ctx.mutation(internal.tasks.failTask, {
+          lastError: 'no',
+          taskId
+        }),
         row = await ctx.run(async d => d.db.get(taskId))
       expect(out.ok).toBe(false)
       expect(row?.status).toBe(s)
@@ -13373,7 +14457,12 @@ describe('deep parity expansion batch three', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        taskId = await createTaskRow({
+          ctx,
+          parentThreadId,
+          sessionId,
+          status: s
+        }),
         out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
         row = await ctx.run(async d => d.db.get(taskId))
       expect(out.ok).toBe(false)
@@ -13385,7 +14474,12 @@ describe('deep parity expansion batch three', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
-        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' })
+        taskId = await createTaskRow({
+          ctx,
+          parentThreadId,
+          sessionId,
+          status: 'running'
+        })
       await ctx.run(async d => {
         await d.db.patch(taskId, { retryCount })
       })
@@ -13399,8 +14493,14 @@ describe('deep parity expansion batch three', () => {
   for (const c of [
     { expected: 'missing_run_in_background', value: 'run_in_background' },
     { expected: 'missing_run_in_background', value: ' run_in_background ' },
-    { expected: 'missing_run_in_background', value: 'RUN_IN_BACKGROUND\nmissing' },
-    { expected: 'missing_run_in_background', value: 'missing run_in_background and load_skills' },
+    {
+      expected: 'missing_run_in_background',
+      value: 'RUN_IN_BACKGROUND\nmissing'
+    },
+    {
+      expected: 'missing_run_in_background',
+      value: 'missing run_in_background and load_skills'
+    },
     { expected: 'missing_load_skills', value: 'load_skills required' },
     { expected: 'missing_load_skills', value: ' LOAD_SKILLS required ' },
     { expected: 'missing_load_skills', value: 'error:load_skills\nstack...' },
@@ -13412,7 +14512,10 @@ describe('deep parity expansion batch three', () => {
     { expected: 'unknown_agent', value: 'Unknown Agent: ghost' },
     { expected: 'unknown_agent', value: 'invalid agent' },
     { expected: 'unknown_error', value: 'invalid    agent selected' },
-    { expected: 'unknown_error', value: 'agent unknown but no keyword ordering??' },
+    {
+      expected: 'unknown_error',
+      value: 'agent unknown but no keyword ordering??'
+    },
     { expected: 'unknown_error', value: 'カテゴリーが見つかりません' },
     { expected: 'unknown_error', value: '代理人不存在, 类别未知' },
     { expected: 'unknown_error', value: 'trace:\n at fn (file.ts:1:1)' },
@@ -13524,7 +14627,10 @@ describe('deep parity expansion batch three', () => {
   ] as const)
     test(`classifier guidance combinatoric options parse :: ${c.pattern}`, async () => {
       const { buildRetryGuidance } = await import('./agents'),
-        out = buildRetryGuidance({ errorMessage: c.errorMessage, pattern: c.pattern })
+        out = buildRetryGuidance({
+          errorMessage: c.errorMessage,
+          pattern: c.pattern
+        })
       expect([...out.availableOptions].sort()).toEqual([...c.expected].sort())
     })
 
@@ -13603,7 +14709,9 @@ describe('deep parity expansion batch three', () => {
         reason: c.incoming.reason,
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(out.ok).toBe(c.shouldReplace)
       if (c.shouldReplace) {
         expect(state?.queuedReason).toBe(c.incoming.reason)
@@ -13630,14 +14738,18 @@ describe('deep parity expansion batch three', () => {
         reason,
         threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(state?.queuedPromptMessageId).toBe(`${reason}-second`)
     })
 
   for (const reason of ['todo_continuation', 'task_completion', 'user_message'] as const)
     test(`queue drain preserves next run for ${reason}`, async () => {
       const { ctx, threadId } = await createQueueContext()
-      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const before = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       const priority = reason === 'user_message' ? 2 : reason === 'task_completion' ? 1 : 0
       await ctx.mutation(internal.orchestrator.enqueueRun, {
         priority,
@@ -13649,7 +14761,9 @@ describe('deep parity expansion batch three', () => {
         runToken: before?.activeRunToken ?? '',
         threadId
       })
-      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const after = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(after?.status).toBe('active')
       expect(after?.queuedReason).toBeUndefined()
       expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
@@ -13659,8 +14773,12 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       threadId = `empty-thread-${crypto.randomUUID()}`,
       size = await ctx.query(internal.compaction.getContextSize, { threadId }),
-      groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId }),
-      compact = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+      groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+        threadId
+      }),
+      compact = await ctx.mutation(internal.compaction.compactIfNeeded, {
+        threadId
+      })
     expect(size.messageCount).toBe(0)
     expect(groups).toEqual([])
     expect(compact.compacted).toBe(false)
@@ -13680,7 +14798,9 @@ describe('deep parity expansion batch three', () => {
         threadId
       })
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId
+    })
     expect(groups.length).toBe(1)
   })
 
@@ -13710,7 +14830,9 @@ describe('deep parity expansion batch three', () => {
         .unique()
       if (state) await d.db.patch(state._id, { lastCompactedMessageId: String(ids[2]) })
     })
-    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId: created.threadId })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, {
+      threadId: created.threadId
+    })
     expect(groups.length).toBe(0)
   })
 
@@ -13729,38 +14851,59 @@ describe('deep parity expansion batch three', () => {
         threadId
       })
     })
-    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, {
+      threadId
+    })
     expect(out.reason).toBe('no_closed_groups')
   })
 
   test('session lifecycle create then immediate archive', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
-      created = await asUser(0).mutation(api.sessions.createSession, { title: 'lifecycle-a' })
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
-    const row = await asUser(0).query(api.sessions.getSession, { sessionId: created.sessionId })
+      created = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'lifecycle-a'
+      })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: created.sessionId
+    })
+    const row = await asUser(0).query(api.sessions.getSession, {
+      sessionId: created.sessionId
+    })
     expect(row?.status).toBe('archived')
   })
 
   test('session lifecycle archive then immediate cleanup deletion path', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
-      created = await asUser(0).mutation(api.sessions.createSession, { title: 'lifecycle-b' })
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+      created = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'lifecycle-b'
+      })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: created.sessionId
+    })
     await ctx.run(async d => {
       const row = await d.db.get(created.sessionId)
-      if (row) await d.db.patch(created.sessionId, { archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000 })
+      if (row)
+        await d.db.patch(created.sessionId, {
+          archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000
+        })
     })
     await ctx.mutation(internal.retention.cleanupArchivedSessions, {})
-    const row = await asUser(0).query(api.sessions.getSession, { sessionId: created.sessionId })
+    const row = await asUser(0).query(api.sessions.getSession, {
+      sessionId: created.sessionId
+    })
     expect(row).toBeNull()
   })
 
   test('session lifecycle create with same title twice keeps distinct sessions', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx)
-    await asUser(0).mutation(api.sessions.createSession, { title: 'same-title' })
-    await asUser(0).mutation(api.sessions.createSession, { title: 'same-title' })
+    await asUser(0).mutation(api.sessions.createSession, {
+      title: 'same-title'
+    })
+    await asUser(0).mutation(api.sessions.createSession, {
+      title: 'same-title'
+    })
     const rows = await asUser(0).query(api.sessions.listSessions, {})
     let count = 0
     for (const r of rows) if (r.title === 'same-title') count += 1
@@ -13770,10 +14913,18 @@ describe('deep parity expansion batch three', () => {
   test('session lifecycle list is empty after all sessions archived', async () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
-      a = await asUser(0).mutation(api.sessions.createSession, { title: 'all-1' }),
-      b = await asUser(0).mutation(api.sessions.createSession, { title: 'all-2' })
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: a.sessionId })
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: b.sessionId })
+      a = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'all-1'
+      }),
+      b = await asUser(0).mutation(api.sessions.createSession, {
+        title: 'all-2'
+      })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: a.sessionId
+    })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: b.sessionId
+    })
     const rows = await asUser(0).query(api.sessions.listSessions, {})
     expect(rows.length).toBe(0)
   })
@@ -13840,7 +14991,9 @@ describe('deep parity expansion batch three', () => {
       { asUser } = await createTestContext(ctx)
     let threw = false
     try {
-      await asUser(0).query(api.messages.listMessages, { threadId: `missing-thread-${crypto.randomUUID()}` })
+      await asUser(0).query(api.messages.listMessages, {
+        threadId: `missing-thread-${crypto.randomUUID()}`
+      })
     } catch (error) {
       threw = true
       expect(String(error)).toContain('thread_not_found')
@@ -13852,10 +15005,23 @@ describe('deep parity expansion batch three', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
-    const todos: { content: string; position: number; priority: 'high' | 'medium' | 'low'; status: 'pending' | 'in_progress' | 'completed' | 'cancelled' }[] = []
+    const todos: {
+      content: string
+      position: number
+      priority: 'high' | 'medium' | 'low'
+      status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+    }[] = []
     for (let i = 0; i < 100; i += 1)
-      todos.push({ content: `todo-${i}`, position: i, priority: 'low', status: 'pending' })
-    const out = await ctx.mutation(internal.todos.syncOwned, { sessionId, todos })
+      todos.push({
+        content: `todo-${i}`,
+        position: i,
+        priority: 'low',
+        status: 'pending'
+      })
+    const out = await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos
+    })
     const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
     expect(out.updated).toBe(100)
     expect(rows.length).toBe(100)
@@ -13896,7 +15062,14 @@ describe('deep parity expansion batch three', () => {
         { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
       await ctx.mutation(internal.todos.syncOwned, {
         sessionId,
-        todos: [{ content: `status-${status}`, position: 0, priority: 'medium', status }]
+        todos: [
+          {
+            content: `status-${status}`,
+            position: 0,
+            priority: 'medium',
+            status
+          }
+        ]
       })
       const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
       expect(rows[0]?.status).toBe(status)
@@ -13932,8 +15105,12 @@ describe('append parity session storage matrix', () => {
             queuedReason: reason
           })
       })
-      await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      await asUser(0).mutation(api.sessions.archiveSession, {
+        sessionId: created.sessionId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: created.threadId
+      })
       expect(state?.queuedPriority).toBeUndefined()
       expect(state?.queuedPromptMessageId).toBeUndefined()
       expect(state?.queuedReason).toBeUndefined()
@@ -13948,7 +15125,9 @@ describe('append parity session storage matrix', () => {
         await ctx.run(async d => {
           await d.db.patch(created.sessionId, { status })
         })
-      const out = await asUser(1).query(api.sessions.getSession, { sessionId: created.sessionId })
+      const out = await asUser(1).query(api.sessions.getSession, {
+        sessionId: created.sessionId
+      })
       expect(out).toBeNull()
     })
 
@@ -13956,14 +15135,29 @@ describe('append parity session storage matrix', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       created = await asUser(0).mutation(api.sessions.createSession, {})
-    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
-    const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+    await asUser(0).mutation(api.sessions.archiveSession, {
+      sessionId: created.sessionId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, {
+      threadId: created.threadId
+    })
     expect(state).not.toBeNull()
   })
 })
 
 describe('append parity task reminder counter matrix', () => {
-  for (const toolName of ['read', 'write', 'edit', 'bash', 'webSearch', 'mcpCall', 'grep', 'glob', 'look_at', 'session_read'])
+  for (const toolName of [
+    'read',
+    'write',
+    'edit',
+    'bash',
+    'webSearch',
+    'mcpCall',
+    'grep',
+    'glob',
+    'look_at',
+    'session_read'
+  ])
     test(`incrementTaskToolCounter increments for non-task tool ${toolName}`, async () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
@@ -13971,7 +15165,9 @@ describe('append parity task reminder counter matrix', () => {
         out = await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName })
       expect(out.turnsSinceTaskTool).toBe(1)
       expect(out.shouldRemind).toBe(false)
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       expect(state?.turnsSinceTaskTool).toBe(1)
     })
 
@@ -13980,7 +15176,10 @@ describe('append parity task reminder counter matrix', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
-      await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName: 'read' })
+      await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, {
+        threadId,
+        toolName: 'read'
+      })
       const out = await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName })
       expect(out.turnsSinceTaskTool).toBe(0)
       expect(out.shouldRemind).toBe(false)
@@ -13992,10 +15191,15 @@ describe('append parity task reminder counter matrix', () => {
         { asUser } = await createTestContext(ctx),
         { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
       for (let i = 0; i < turns; i += 1)
-        await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName: 'read' })
+        await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, {
+          threadId,
+          toolName: 'read'
+        })
       const consumed = await ctx.mutation(internal.orchestrator.consumeTaskReminder, { threadId })
       expect(consumed.shouldInject).toBe(turns >= 10)
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId
+      })
       if (turns >= 10) expect(state?.turnsSinceTaskTool).toBe(0)
       else expect(state?.turnsSinceTaskTool).toBe(turns)
     })
@@ -14035,9 +15239,27 @@ describe('append parity compaction prompt boundary matrix', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         created = await asUser(0).mutation(api.sessions.createSession, {})
-      const m1 = await insertPromptMessage({ content: 'p-1', ctx, role: 'user', sessionId: String(created.sessionId), threadId: created.threadId }),
-        m2 = await insertPromptMessage({ content: 'p-2', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId }),
-        m3 = await insertPromptMessage({ content: 'p-3', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId })
+      const m1 = await insertPromptMessage({
+          content: 'p-1',
+          ctx,
+          role: 'user',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        }),
+        m2 = await insertPromptMessage({
+          content: 'p-2',
+          ctx,
+          role: 'assistant',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        }),
+        m3 = await insertPromptMessage({
+          content: 'p-3',
+          ctx,
+          role: 'assistant',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        })
       const promptId = c.promptIndex === 1 ? m1 : c.promptIndex === 2 ? m2 : m3
       const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
         promptMessageId: String(promptId),
@@ -14051,9 +15273,27 @@ describe('append parity compaction prompt boundary matrix', () => {
       const ctx = t(),
         { asUser } = await createTestContext(ctx),
         created = await asUser(0).mutation(api.sessions.createSession, {})
-      const m1 = await insertPromptMessage({ content: 'b-1', ctx, role: 'user', sessionId: String(created.sessionId), threadId: created.threadId }),
-        m2 = await insertPromptMessage({ content: 'b-2', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId }),
-        m3 = await insertPromptMessage({ content: 'b-3', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId })
+      const m1 = await insertPromptMessage({
+          content: 'b-1',
+          ctx,
+          role: 'user',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        }),
+        m2 = await insertPromptMessage({
+          content: 'b-2',
+          ctx,
+          role: 'assistant',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        }),
+        m3 = await insertPromptMessage({
+          content: 'b-3',
+          ctx,
+          role: 'assistant',
+          sessionId: String(created.sessionId),
+          threadId: created.threadId
+        })
       const boundaryId = anchor === 1 ? m1 : m2
       const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: created.threadId })
       await ctx.mutation(internal.compaction.setCompactionSummary, {
@@ -14098,7 +15338,10 @@ describe('append parity polling and task status matrix', () => {
         created = await asUser(0).mutation(api.sessions.createSession, {})
       const taskId = await ctx.run(async d =>
         d.db.insert('tasks', {
-          completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? Date.now() : undefined,
+          completedAt:
+            status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out'
+              ? Date.now()
+              : undefined,
           description: `poll-${status}`,
           isBackground: true,
           lastError: status === 'failed' ? 'poll-failure' : undefined,
@@ -14112,7 +15355,9 @@ describe('append parity polling and task status matrix', () => {
           threadId: `poll-${status}-${crypto.randomUUID()}`
         })
       )
-      const out = await asUser(0).query(api.tasks.getOwnedTaskStatus, { taskId })
+      const out = await asUser(0).query(api.tasks.getOwnedTaskStatus, {
+        taskId
+      })
       expect(out?.status).toBe(status)
     })
 
@@ -14123,7 +15368,10 @@ describe('append parity polling and task status matrix', () => {
         created = await asUser(0).mutation(api.sessions.createSession, {})
       await ctx.run(async d => {
         await d.db.insert('tasks', {
-          completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? Date.now() : undefined,
+          completedAt:
+            status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out'
+              ? Date.now()
+              : undefined,
           description: `list-${status}`,
           isBackground: true,
           parentThreadId: created.threadId,
@@ -14135,7 +15383,9 @@ describe('append parity polling and task status matrix', () => {
           threadId: `list-${status}-${crypto.randomUUID()}`
         })
       })
-      const rows = await asUser(0).query(api.tasks.listTasks, { sessionId: created.sessionId })
+      const rows = await asUser(0).query(api.tasks.listTasks, {
+        sessionId: created.sessionId
+      })
       expect(rows.some(r => r.status === status)).toBe(true)
     })
 })
@@ -14152,7 +15402,9 @@ describe('append parity continuation question guard equivalents', () => {
         reason: 'user_message',
         threadId: created.threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: created.threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('messages', {
           content: `Need input${suffix}`,
@@ -14189,7 +15441,9 @@ describe('append parity continuation question guard equivalents', () => {
         reason: 'user_message',
         threadId: created.threadId
       })
-      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      const state = await ctx.query(internal.orchestrator.readRunState, {
+        threadId: created.threadId
+      })
       await ctx.run(async d => {
         await d.db.insert('messages', {
           content: `Completed${suffix}`,
@@ -14218,10 +15472,10 @@ describe('append parity continuation question guard equivalents', () => {
 
 describe('append parity source utility and tools matrix', () => {
   for (const marker of [
-    "reasonPriority =",
-    "task_completion: 1",
-    "todo_continuation: 0",
-    "user_message: 2",
+    'reasonPriority =',
+    'task_completion: 1',
+    'todo_continuation: 0',
+    'user_message: 2',
     'TASK_REMINDER_THRESHOLD = 10',
     'MAX_STAGNATION_COUNT = 3',
     'MAX_CONSECUTIVE_FAILURES = 5',
@@ -14246,7 +15500,7 @@ describe('append parity source utility and tools matrix', () => {
     'runOrchestratorRef',
     'scheduleRun',
     "if (state.status !== 'active') return { ok: false, shouldContinue: false }",
-    "if (state.activeRunToken !== runToken) return { ok: false, shouldContinue: false }",
+    'if (state.activeRunToken !== runToken) return { ok: false, shouldContinue: false }',
     'turnRequestedInput'
   ])
     test(`orchestrator source contains marker ${marker}`, async () => {
@@ -14266,7 +15520,7 @@ describe('append parity source utility and tools matrix', () => {
     "status: 'failed'",
     "status: 'cancelled'",
     'delayMs = Math.min(1000 * 2 ** retryCount, 30_000)',
-    "if (task.retryCount >= 3) return { ok: false }",
+    'if (task.retryCount >= 3) return { ok: false }',
     "if (!session || session.status === 'archived') return { ok: false }",
     'updateTaskHeartbeat',
     'getOwnedTaskStatus',
@@ -14296,7 +15550,9 @@ describe('remaining adaptable parity append', () => {
       reason: 'user_message',
       threadId: created.threadId
     })
-    const runState = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+    const runState = await ctx.query(internal.orchestrator.readRunState, {
+      threadId: created.threadId
+    })
     await ctx.run(async d => {
       await d.db.insert('todos', {
         content: 'remaining-continuation-todo',
@@ -14323,7 +15579,7 @@ describe('remaining adaptable parity append', () => {
       if (state)
         await d.db.patch(state._id, {
           consecutiveFailures: 0,
-          lastContinuationAt: Date.now() - 6_000
+          lastContinuationAt: Date.now() - 6000
         })
     })
     const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
@@ -14344,7 +15600,7 @@ describe('remaining adaptable parity append', () => {
       if (state)
         await d.db.patch(state._id, {
           consecutiveFailures: 0,
-          lastContinuationAt: Date.now() - 4_999
+          lastContinuationAt: Date.now() - 4999
         })
     })
     const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
@@ -14359,7 +15615,9 @@ describe('remaining adaptable parity append', () => {
     const ctx = t(),
       { asUser } = await createTestContext(ctx),
       created = await asUser(0).mutation(api.sessions.createSession, {}),
-      rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, { threadId: created.threadId })
+      rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, {
+        threadId: created.threadId
+      })
     expect(rows).toEqual([])
   })
 
@@ -14430,14 +15688,23 @@ describe('remaining adaptable parity append', () => {
   test('source(delegate-task): delegate schema rejects null isBackground equivalent to malformed required fields', async () => {
     const { createOrchestratorTools } = await import('./agents')
     const tools = createOrchestratorTools({
-      ctx: { runMutation: async () => ({ taskId: 'x', threadId: 'y' }), runQuery: async () => null } as never,
+      ctx: {
+        runMutation:  () => ({ taskId: 'x', threadId: 'y' }),
+        runQuery:  () => null
+      } as never,
       parentThreadId: 'remaining-schema-parent',
       sessionId: 'remaining-schema-session' as never
     })
-    const schema = (tools.delegate as {
-      inputSchema?: { safeParse: (v: unknown) => { success: boolean } }
-    }).inputSchema
-    const parsed = schema?.safeParse({ description: 'd', isBackground: null, prompt: 'p' })
+    const inputSchema = (
+      tools.delegate as {
+        inputSchema?: { safeParse: (v: unknown) => { success: boolean } }
+      }
+    ).inputSchema
+    const parsed = inputSchema?.safeParse({
+      description: 'd',
+      isBackground: null,
+      prompt: 'p'
+    })
     expect(parsed?.success).toBe(false)
   })
 

@@ -40,7 +40,7 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
     const runState = await readRunStateByThreadId({ ctx, threadId })
     if (!runState) return { lockToken: '', ok: false }
     const now = Date.now(),
-      lockExpired = !!runState.compactionLockAt && now - runState.compactionLockAt > LOCK_TTL_MS,
+      lockExpired = runState.compactionLockAt !== undefined && now - runState.compactionLockAt > LOCK_TTL_MS,
       lockOpen = !(runState.compactionLock && runState.compactionLockAt) || lockExpired,
       lockToken = crypto.randomUUID()
     if (lockOpen) {
@@ -94,12 +94,25 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
   },
   snapshotTodosInline = async ({ ctx, threadId }: { ctx: Pick<MutationCtx, 'db'>; threadId: string }) => {
     const session = await resolveSessionByThreadId({ ctx, threadId })
-    if (!session) return { snapshot: [] as { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[] }
+    if (!session)
+      return {
+        snapshot: [] as {
+          content: string
+          position: number
+          priority: 'high' | 'low' | 'medium'
+          status: 'cancelled' | 'completed' | 'in_progress' | 'pending'
+        }[]
+      }
     const todos = await ctx.db
       .query('todos')
       .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
       .collect()
-    const snapshot: { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[] = []
+    const snapshot: {
+      content: string
+      position: number
+      priority: 'high' | 'low' | 'medium'
+      status: 'cancelled' | 'completed' | 'in_progress' | 'pending'
+    }[] = []
     for (const t of todos)
       snapshot.push({
         content: t.content,
@@ -116,7 +129,12 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
     threadId
   }: {
     ctx: Pick<MutationCtx, 'db'>
-    snapshot: { content: string; position: number; priority: 'high' | 'low' | 'medium'; status: 'cancelled' | 'completed' | 'in_progress' | 'pending' }[]
+    snapshot: {
+      content: string
+      position: number
+      priority: 'high' | 'low' | 'medium'
+      status: 'cancelled' | 'completed' | 'in_progress' | 'pending'
+    }[]
     threadId: string
   }) => {
     if (snapshot.length === 0) return { restored: 0 }
@@ -127,17 +145,18 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
       .withIndex('by_session_position', idx => idx.eq('sessionId', session._id))
       .collect()
     if (existing.length > 0) return { restored: 0 }
-    let restored = 0
-    for (const t of snapshot) {
-      await ctx.db.insert('todos', {
-        content: t.content,
-        position: t.position,
-        priority: t.priority,
-        sessionId: session._id,
-        status: t.status
-      })
-      restored += 1
-    }
+    await Promise.all(
+      snapshot.map(t =>
+        ctx.db.insert('todos', {
+          content: t.content,
+          position: t.position,
+          priority: t.priority,
+          sessionId: session._id,
+          status: t.status
+        })
+      )
+    )
+    const restored = snapshot.length
     return { restored }
   },
   getContextSize = internalQuery({

@@ -15,7 +15,7 @@ import { AutoSaveIndicator, Form, useForm } from '@noboil/convex/components'
 import { useMutation, usePreloadedQuery } from 'convex/react'
 import { Settings } from 'lucide-react'
 import Link from 'next/link'
-import { useId, useTransition } from 'react'
+import { createElement, useId, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { editBlog } from '~/schema'
@@ -123,6 +123,17 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
           Blog not found
         </p>
       )
+    const settingsTrigger = createElement(
+      'button',
+      {
+        'aria-label': 'Open settings',
+        className: 'rounded-lg hover:bg-muted',
+        'data-testid': 'settings-trigger',
+        type: 'button'
+      },
+      createElement(Settings, { className: 'size-8 stroke-1 p-1.5 group-hover:block' })
+    )
+
     return (
       <div data-testid='edit-blog-page'>
         <div className='mb-3 flex justify-between'>
@@ -130,17 +141,7 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
             &larr; Back
           </Link>
           <Popover>
-            <PopoverTrigger
-              render={
-                <button
-                  aria-label='Open settings'
-                  className='rounded-lg hover:bg-muted'
-                  data-testid='settings-trigger'
-                  type='button'>
-                  <Settings className='size-8 stroke-1 p-1.5 group-hover:block' />
-                </button>
-              }
-            />
+            <PopoverTrigger render={settingsTrigger} />
             <PopoverContent data-testid='settings-popover'>
               <Setting blog={b} key={b._id} />
             </PopoverContent>

@@ -9,9 +9,11 @@ class BlogPage extends BasePage {
     await tagsInput.scrollIntoViewIfNeeded()
     await tagsInput.waitFor({ state: 'visible', timeout: 5000 })
     for (const tag of tags) {
-      await tagsInput.fill(tag)
+      // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
+      await tagsInput.fill(tag) // oxlint-disable-line eslint/no-await-in-loop
 
-      await tagsInput.press('Enter')
+      // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
+      await tagsInput.press('Enter') // oxlint-disable-line eslint/no-await-in-loop
     }
   }
   public async clearSearch(): Promise<void> {

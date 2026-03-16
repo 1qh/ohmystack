@@ -1,41 +1,164 @@
+/** biome-ignore-all lint/nursery/noFloatingPromises: test hooks may return void or Promise */
 // biome-ignore-all lint/style/noProcessEnv: test env
 // biome-ignore-all lint/suspicious/useAwait: test async
 // biome-ignore-all lint/performance/noDelete: process.env requires delete to truly unset
 /* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unnecessary-condition */
 
+import { describe, expect, test } from 'bun:test'
 import type { ComponentProps } from 'react'
 import type { Identity } from 'spacetimedb'
 import type { z } from 'zod/v4'
-
-import { describe, expect, test } from 'bun:test'
 import { array, boolean, date, globalRegistry, number, object, optional, string, enum as zenum } from 'zod/v4'
-
+import {
+  add,
+  defaultFields,
+  fieldToTypeExpr as fieldToZod,
+  genReducerContent as genEndpointContent,
+  genPageContent,
+  genTableContent as genSchemaContent,
+  parseAddFlags,
+  parseFieldDef
+} from '../add'
 import type { AccessEntry, FactoryCall } from '../check'
+import {
+  accessForFactory,
+  checkIndexCoverage,
+  checkSchemaConsistency,
+  endpointsForFactory,
+  extractCustomIndexes,
+  extractSchemaFields,
+  extractWhereFromOptions,
+  FACTORY_DEFAULT_INDEXES,
+  HEALTH_ERROR_PENALTY,
+  HEALTH_MAX,
+  HEALTH_WARN_PENALTY,
+  parseObjectFields,
+  printSchemaPreview
+} from '../check'
 import type BetterspaceErrorBoundary from '../components/error-boundary'
 // oxlint-disable-next-line import/no-namespace
 import type * as FieldsModule from '../components/fields'
+import { defineSteps } from '../components/step-form'
+import {
+  ACTIVE_ORG_COOKIE,
+  ACTIVE_ORG_SLUG_COOKIE,
+  BULK_MAX,
+  BYTES_PER_KB,
+  BYTES_PER_MB,
+  ONE_YEAR_SECONDS,
+  sleep
+} from '../constants'
+import { extractJSDoc, generateMarkdown, resolveReExports } from '../docs-gen'
 import type { CheckResult } from '../doctor'
+import { calcHealthScore, checkDeps, checkEslintContent } from '../doctor'
+import { recommended as eslintRecommended, rules as eslintRules } from '../eslint'
+import { guardApi } from '../guard'
+import { diffSnapshots, isOptionalField as isOptionalRaw, parseFieldsFromBlock, parseSchemaContent } from '../migrate'
+import {
+  clearMutations,
+  completeMutation,
+  injectError,
+  SLOW_THRESHOLD_MS,
+  STALE_THRESHOLD_MS,
+  trackCacheAccess,
+  trackMutation,
+  trackSubscription,
+  untrackSubscription,
+  updateSubscription,
+  updateSubscriptionData
+} from '../react/devtools'
 import type { DevtoolsProps } from '../react/devtools-panel'
+import { makeErrorHandler, toastFieldError } from '../react/error-toast'
 import type { ConflictData, FormToastOption } from '../react/form'
+import { buildMeta, getMeta, resolveFormToast } from '../react/form'
 // oxlint-disable-next-line import/no-namespace
 import type * as ReactIndexTypes from '../react/index'
 import type { ListSort, SortDirection, SortMap, SortObject, WhereFieldValue } from '../react/list-utils'
+import { compareValues, getSortConfig, noop, searchMatches, sortData, toSortableString } from '../react/list-utils'
 import type { MutationType, PendingMutation } from '../react/optimistic-store'
+import { createOptimisticStore, makeTempId } from '../react/optimistic-store'
+import { canEditResource } from '../react/org'
 import type { PlaygroundProps } from '../react/schema-playground'
 import type {
   BulkMutateToast,
   BulkProgress,
   BulkResult,
-  useBulkMutate,
-  UseBulkMutateOptions
+  UseBulkMutateOptions,
+  useBulkMutate
 } from '../react/use-bulk-mutate'
+import { collectSettled, resolveBulkError } from '../react/use-bulk-mutate'
 import type { InfiniteListOptions, SkipInfiniteListResult, useInfiniteList } from '../react/use-infinite-list'
-import type { ListWhere, SkipListResult, useList, UseListOptions, WhereGroup } from '../react/use-list'
+import type { ListWhere, SkipListResult, UseListOptions, useList, WhereGroup } from '../react/use-list'
+import { DEFAULT_PAGE_SIZE, useOwnRows } from '../react/use-list'
 import type { MutateOptions } from '../react/use-mutate'
+import { useMutation as useMutationDirect, useMut as useMutDirect } from '../react/use-mutate'
 import type { PresenceUser, UsePresenceOptions, UsePresenceResult } from '../react/use-presence'
-import type { useSearch, UseSearchOptions, UseSearchResult } from '../react/use-search'
+import type { UseSearchOptions, UseSearchResult, useSearch } from '../react/use-search'
+import { DEFAULT_DEBOUNCE_MS } from '../react/use-search'
 import type { RetryOptions } from '../retry'
+import { fetchWithRetry, withRetry } from '../retry'
+import {
+  schema as buildSchema,
+  child,
+  cvFile,
+  cvFiles,
+  makeBase,
+  makeOrg,
+  makeOrgScoped,
+  makeOwned,
+  makeSingleton
+} from '../schema'
+import { generateFieldValue, generateOne, generateSeed } from '../seed'
+import { flt, idx, indexFields, sch, typed } from '../server/bridge'
+import { ownedCascade } from '../server/crud'
 import type { ErrorData, MutationFail, MutationOk, MutationResult } from '../server/helpers'
+import {
+  cleanFiles,
+  detectFiles,
+  enforceRateLimit,
+  err,
+  errValidation,
+  extractErrorData,
+  fail,
+  generateToken,
+  getErrorCode,
+  getErrorDetail,
+  getErrorMessage,
+  getFieldErrors,
+  getFirstFieldError,
+  groupList,
+  handleError,
+  idFromWire,
+  isErrorCode,
+  isMutationError,
+  isRecord,
+  makeUnique,
+  matchError,
+  matchW,
+  normalizeRateLimit,
+  ok,
+  parseSenderMessage,
+  RUNTIME_FILTER_WARN_THRESHOLD,
+  resetRateLimitState,
+  SEVEN_DAYS_MS,
+  time,
+  warnLargeFilterSet
+} from '../server/helpers'
+import {
+  auditLog,
+  composeMiddleware,
+  inputSanitize,
+  sanitizeRec,
+  sanitizeString,
+  slowQueryWarn
+} from '../server/middleware'
+import { orgCascade } from '../server/org-crud'
+import { makeInviteToken } from '../server/org-invites'
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '../server/presence'
+import { rlsChildSql, rlsSql } from '../server/rls'
+import { baseTable, orgTable, ownedTable, singletonTable } from '../server/schema-helpers'
+import { noboilStdb } from '../server/setup'
+import { isTestMode } from '../server/test'
 import type {
   AssertSchema,
   BaseSchema,
@@ -66,6 +189,7 @@ import type {
   SingletonSchema,
   WhereOf
 } from '../server/types'
+import { ERROR_MESSAGES } from '../server/types'
 import type {
   InferCreate,
   InferReducerArgs,
@@ -81,132 +205,6 @@ import type {
   RegisteredQuery,
   SchemaPhantoms
 } from '../server/types/common'
-
-import {
-  add,
-  defaultFields,
-  fieldToTypeExpr as fieldToZod,
-  genReducerContent as genEndpointContent,
-  genPageContent,
-  genTableContent as genSchemaContent,
-  parseAddFlags,
-  parseFieldDef
-} from '../add'
-import {
-  accessForFactory,
-  checkIndexCoverage,
-  checkSchemaConsistency,
-  endpointsForFactory,
-  extractCustomIndexes,
-  extractSchemaFields,
-  extractWhereFromOptions,
-  FACTORY_DEFAULT_INDEXES,
-  HEALTH_ERROR_PENALTY,
-  HEALTH_MAX,
-  HEALTH_WARN_PENALTY,
-  parseObjectFields,
-  printSchemaPreview
-} from '../check'
-import { defineSteps } from '../components/step-form'
-import {
-  ACTIVE_ORG_COOKIE,
-  ACTIVE_ORG_SLUG_COOKIE,
-  BULK_MAX,
-  BYTES_PER_KB,
-  BYTES_PER_MB,
-  ONE_YEAR_SECONDS,
-  sleep
-} from '../constants'
-import { extractJSDoc, generateMarkdown, resolveReExports } from '../docs-gen'
-import { calcHealthScore, checkDeps, checkEslintContent } from '../doctor'
-import { recommended as eslintRecommended, rules as eslintRules } from '../eslint'
-import { guardApi } from '../guard'
-import { diffSnapshots, isOptionalField as isOptionalRaw, parseFieldsFromBlock, parseSchemaContent } from '../migrate'
-import {
-  clearMutations,
-  completeMutation,
-  injectError,
-  SLOW_THRESHOLD_MS,
-  STALE_THRESHOLD_MS,
-  trackCacheAccess,
-  trackMutation,
-  trackSubscription,
-  untrackSubscription,
-  updateSubscription,
-  updateSubscriptionData
-} from '../react/devtools'
-import { makeErrorHandler, toastFieldError } from '../react/error-toast'
-import { buildMeta, getMeta, resolveFormToast } from '../react/form'
-import { compareValues, getSortConfig, noop, searchMatches, sortData, toSortableString } from '../react/list-utils'
-import { createOptimisticStore, makeTempId } from '../react/optimistic-store'
-import { canEditResource } from '../react/org'
-import { collectSettled, resolveBulkError } from '../react/use-bulk-mutate'
-import { DEFAULT_PAGE_SIZE, useOwnRows } from '../react/use-list'
-import { useMutation as useMutationDirect, useMut as useMutDirect } from '../react/use-mutate'
-import { DEFAULT_DEBOUNCE_MS } from '../react/use-search'
-import { fetchWithRetry, withRetry } from '../retry'
-import {
-  schema as buildSchema,
-  child,
-  cvFile,
-  cvFiles,
-  makeBase,
-  makeOrg,
-  makeOrgScoped,
-  makeOwned,
-  makeSingleton
-} from '../schema'
-import { generateFieldValue, generateOne, generateSeed } from '../seed'
-import { flt, idx, indexFields, sch, typed } from '../server/bridge'
-import { ownedCascade } from '../server/crud'
-import {
-  cleanFiles,
-  detectFiles,
-  enforceRateLimit,
-  err,
-  errValidation,
-  extractErrorData,
-  fail,
-  generateToken,
-  getErrorCode,
-  getErrorDetail,
-  getErrorMessage,
-  getFieldErrors,
-  getFirstFieldError,
-  groupList,
-  handleError,
-  idFromWire,
-  isErrorCode,
-  isMutationError,
-  isRecord,
-  makeUnique,
-  matchError,
-  matchW,
-  normalizeRateLimit,
-  ok,
-  parseSenderMessage,
-  resetRateLimitState,
-  RUNTIME_FILTER_WARN_THRESHOLD,
-  SEVEN_DAYS_MS,
-  time,
-  warnLargeFilterSet
-} from '../server/helpers'
-import {
-  auditLog,
-  composeMiddleware,
-  inputSanitize,
-  sanitizeRec,
-  sanitizeString,
-  slowQueryWarn
-} from '../server/middleware'
-import { orgCascade } from '../server/org-crud'
-import { makeInviteToken } from '../server/org-invites'
-import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '../server/presence'
-import { rlsChildSql, rlsSql } from '../server/rls'
-import { baseTable, orgTable, ownedTable, singletonTable } from '../server/schema-helpers'
-import { noboilStdb } from '../server/setup'
-import { isTestMode } from '../server/test'
-import { ERROR_MESSAGES } from '../server/types'
 import { extractChildren, extractFieldType, extractWrapperTables, generateMermaid } from '../viz'
 import {
   coerceOptionals,
@@ -1890,17 +1888,36 @@ describe('warnLargeFilterSet', () => {
   })
 
   test('strict mode throws above threshold', () => {
-    expect(() => warnLargeFilterSet({ context: 'list', count: 1001, strict: true, table: 'blog' })).toThrow(
-      'Runtime filtering 1001 docs'
-    )
+    expect(() =>
+      warnLargeFilterSet({
+        context: 'list',
+        count: 1001,
+        strict: true,
+        table: 'blog'
+      })
+    ).toThrow('Runtime filtering 1001 docs')
   })
 
   test('strict mode does not throw below threshold', () => {
-    expect(() => warnLargeFilterSet({ context: 'list', count: 999, strict: true, table: 'blog' })).not.toThrow()
+    expect(() =>
+      warnLargeFilterSet({
+        context: 'list',
+        count: 999,
+        strict: true,
+        table: 'blog'
+      })
+    ).not.toThrow()
   })
 
   test('strict mode does not throw at exactly threshold', () => {
-    expect(() => warnLargeFilterSet({ context: 'list', count: 1000, strict: true, table: 'blog' })).not.toThrow()
+    expect(() =>
+      warnLargeFilterSet({
+        context: 'list',
+        count: 1000,
+        strict: true,
+        table: 'blog'
+      })
+    ).not.toThrow()
   })
 })
 
@@ -4854,7 +4871,11 @@ describe('useSearch', () => {
 
 describe('useSearch type safety', () => {
   test('UseSearchOptions fields type is keyof T & string', () => {
-    type Row = Record<string, unknown> & { content: string; id: number; title: string }
+    type Row = Record<string, unknown> & {
+      content: string
+      id: number
+      title: string
+    }
     type Fields = UseSearchOptions<Row>['fields']
     type Expected = (keyof Row)[]
     type Match = Fields extends Expected ? (Expected extends Fields ? true : false) : false
@@ -6482,7 +6503,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeCreate?.(mockCtx, {
+        result = hooks.beforeCreate?.(mockCtx, {
           data: { title: 'test' }
         })
       expect(result).toEqual({ added1: true, added2: true, title: 'test' })
@@ -6504,7 +6525,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
+      hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6518,7 +6539,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
+        result = hooks.beforeUpdate?.(mockCtx, {
           patch: { title: 'x' },
           prev: {}
         })
@@ -6540,7 +6561,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.afterUpdate?.(mockCtx, { next: {}, patch: {}, prev: {} })
+      hooks.afterUpdate?.(mockCtx, { next: {}, patch: {}, prev: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6559,7 +6580,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.beforeDelete?.(mockCtx, { row: {} })
+      hooks.beforeDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6578,7 +6599,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.afterDelete?.(mockCtx, { row: {} })
+      hooks.afterDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6593,7 +6614,7 @@ describe('middleware', () => {
         },
         mw2: Middleware = { name: 'mw2' },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.beforeCreate?.(mockCtx, { data: { x: 1 } })
+      hooks.beforeCreate?.(mockCtx, { data: { x: 1 } })
       expect(calls).toEqual(['mw1'])
     })
 
@@ -6621,7 +6642,7 @@ describe('middleware', () => {
           name: 'capture'
         },
         hooks = composeMiddleware(mw)
-      await hooks.beforeCreate?.(mockCtx, { data: {} })
+      hooks.beforeCreate?.(mockCtx, { data: {} })
       expect(capturedOp).toBe('create')
     })
 
@@ -6634,7 +6655,7 @@ describe('middleware', () => {
           name: 'capture'
         },
         hooks = composeMiddleware(mw)
-      await hooks.beforeDelete?.(mockCtx, { row: {} })
+      hooks.beforeDelete?.(mockCtx, { row: {} })
       expect(capturedOp).toBe('delete')
     })
 
@@ -6648,7 +6669,7 @@ describe('middleware', () => {
           name: 'capture'
         },
         hooks = composeMiddleware(mw)
-      await hooks.beforeUpdate?.(mockCtx, { patch: {}, prev: {} })
+      hooks.beforeUpdate?.(mockCtx, { patch: {}, prev: {} })
       expect(capturedOp).toBe('update')
     })
   })
@@ -6919,8 +6940,8 @@ describe('middleware', () => {
           name: 'second'
         },
         hooks = composeMiddleware(mw1, mw2)
-      await hooks.beforeCreate?.(mockCtx, { data: {} })
-      await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
+      hooks.beforeCreate?.(mockCtx, { data: {} })
+      hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(order).toEqual(['sanitize', 'validate', 'audit', 'log'])
     })
 
@@ -6938,7 +6959,7 @@ describe('middleware', () => {
           name: 'step3'
         },
         hooks = composeMiddleware(mw1, mw2, mw3),
-        result = await hooks.beforeCreate?.(mockCtx, {
+        result = hooks.beforeCreate?.(mockCtx, {
           data: { original: true }
         })
       expect(result).toEqual({
@@ -6959,7 +6980,7 @@ describe('middleware', () => {
           name: 'validate'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
+        result = hooks.beforeUpdate?.(mockCtx, {
           patch: { title: 'x' },
           prev: {}
         })
@@ -8582,7 +8603,11 @@ describe('doctor', () => {
   test('checkDeps — all present', () => {
     expect(
       checkDeps({
-        dependencies: { '@noboil/spacetimedb': '2', spacetimedb: '1', zod: '3' }
+        dependencies: {
+          '@noboil/spacetimedb': '2',
+          spacetimedb: '1',
+          zod: '3'
+        }
       }).status
     ).toBe('pass')
   })
@@ -8594,7 +8619,11 @@ describe('doctor', () => {
   test('checkDeps — devDependencies count', () => {
     expect(
       checkDeps({
-        devDependencies: { '@noboil/spacetimedb': '2', spacetimedb: '1', zod: '3' }
+        devDependencies: {
+          '@noboil/spacetimedb': '2',
+          spacetimedb: '1',
+          zod: '3'
+        }
       }).status
     ).toBe('pass')
   })
@@ -8831,7 +8860,12 @@ describe('doctor', () => {
     const toastCfg: BulkMutateToast = {
         loading: p => `Processing ${p.succeeded} of ${p.total} (${p.failed} failed, ${p.pending} pending)`
       },
-      progress: BulkProgress = { failed: 1, pending: 3, succeeded: 6, total: 10 }
+      progress: BulkProgress = {
+        failed: 1,
+        pending: 3,
+        succeeded: 6,
+        total: 10
+      }
     if (typeof toastCfg.loading === 'function')
       expect(toastCfg.loading(progress)).toBe('Processing 6 of 10 (1 failed, 3 pending)')
   })
@@ -10584,7 +10618,12 @@ describe('RLS SQL generation from pub metadata', () => {
 
 describe('Children RLS parent inheritance', () => {
   test('child inherits parent pub field — generates JOIN filter with pub OR sender', () => {
-    const sqls = rlsChildSql({ fk: 'chatId', name: 'message', parent: 'chat', parentPub: 'isPublic' })
+    const sqls = rlsChildSql({
+      fk: 'chatId',
+      name: 'message',
+      parent: 'chat',
+      parentPub: 'isPublic'
+    })
     expect(sqls).toHaveLength(1)
     expect(sqls[0]).toContain('JOIN "chat"')
     expect(sqls[0]).toContain('"message"."chatId" = "chat"."id"')
@@ -10594,7 +10633,12 @@ describe('Children RLS parent inheritance', () => {
   })
 
   test('child with fully-public parent (pub=true) generates no RLS', () => {
-    const sqls = rlsChildSql({ fk: 'postId', name: 'comment', parent: 'post', parentPub: true })
+    const sqls = rlsChildSql({
+      fk: 'postId',
+      name: 'comment',
+      parent: 'post',
+      parentPub: true
+    })
     expect(sqls).toHaveLength(0)
   })
 
@@ -10606,18 +10650,32 @@ describe('Children RLS parent inheritance', () => {
   })
 
   test('child with undefined parent pub generates sender-only filter', () => {
-    const sqls = rlsChildSql({ fk: 'docId', name: 'attachment', parent: 'doc' })
+    const sqls = rlsChildSql({
+      fk: 'docId',
+      name: 'attachment',
+      parent: 'doc'
+    })
     expect(sqls).toHaveLength(1)
     expect(sqls[0]).toContain('"attachment"."userId" = :sender')
   })
 
   test('child JOIN SQL uses SELECT child.* format', () => {
-    const sqls = rlsChildSql({ fk: 'chatId', name: 'message', parent: 'chat', parentPub: 'isPublic' })
+    const sqls = rlsChildSql({
+      fk: 'chatId',
+      name: 'message',
+      parent: 'chat',
+      parentPub: 'isPublic'
+    })
     expect(sqls[0]?.startsWith('SELECT "message".* FROM "message" JOIN')).toBe(true)
   })
 
   test('child JOIN references parent id column', () => {
-    const sqls = rlsChildSql({ fk: 'commentId', name: 'reply', parent: 'comment', parentPub: 'visible' })
+    const sqls = rlsChildSql({
+      fk: 'commentId',
+      name: 'reply',
+      parent: 'comment',
+      parentPub: 'visible'
+    })
     expect(sqls[0]).toContain('"reply"."commentId" = "comment"."id"')
     expect(sqls[0]).toContain('"comment"."visible" = true')
   })
@@ -10653,7 +10711,12 @@ describe('enforceRateLimit', () => {
 
   test('first call within window passes', () => {
     resetRateLimitState()
-    expect(() => enforceRateLimit('posts', mockIdentity('aaa'), { max: 3, window: 60_000 })).not.toThrow()
+    expect(() =>
+      enforceRateLimit('posts', mockIdentity('aaa'), {
+        max: 3,
+        window: 60_000
+      })
+    ).not.toThrow()
   })
 
   test('calls within limit pass', () => {
@@ -10725,7 +10788,9 @@ describe('bulk validation: BULK_MAX enforcement', () => {
   })
 
   test('arrays exceeding BULK_MAX should be rejected by client', () => {
-    const items = Array.from({ length: BULK_MAX + 1 }, (_, i) => ({ name: `item-${i}` }))
+    const items = Array.from({ length: BULK_MAX + 1 }, (_, i) => ({
+      name: `item-${i}`
+    }))
     expect(items.length).toBeGreaterThan(BULK_MAX)
   })
 })
@@ -10742,7 +10807,10 @@ describe('resolveFormToast', () => {
   })
 
   test('composes onSuccess with toast.success into new function', () => {
-    const { success } = resolveFormToast({ onSuccess: noop, toast: { success: 'Saved' } })
+    const { success } = resolveFormToast({
+      onSuccess: noop,
+      toast: { success: 'Saved' }
+    })
     expect(success).not.toBe(noop)
     expect(typeof success).toBe('function')
   })
@@ -10754,12 +10822,18 @@ describe('resolveFormToast', () => {
 
   test('returns onError unchanged when provided', () => {
     const handler: (e: unknown) => void = noop,
-      { error } = resolveFormToast({ onError: handler, toast: { error: 'Failed' } })
+      { error } = resolveFormToast({
+        onError: handler,
+        toast: { error: 'Failed' }
+      })
     expect(error).toBe(handler)
   })
 
   test('returns false when onError is false (suppress errors)', () => {
-    const { error } = resolveFormToast({ onError: false, toast: { error: 'Failed' } })
+    const { error } = resolveFormToast({
+      onError: false,
+      toast: { error: 'Failed' }
+    })
     expect(error).toBe(false)
   })
 
@@ -10775,12 +10849,17 @@ describe('resolveFormToast', () => {
 
   test('onError takes precedence over toast.error', () => {
     const handler: (e: unknown) => void = noop,
-      { error } = resolveFormToast({ onError: handler, toast: { error: 'Ignored' } })
+      { error } = resolveFormToast({
+        onError: handler,
+        toast: { error: 'Ignored' }
+      })
     expect(error).toBe(handler)
   })
 
   test('both toast fields resolve independently', () => {
-    const { error, success } = resolveFormToast({ toast: { error: 'Failed', success: 'Done' } })
+    const { error, success } = resolveFormToast({
+      toast: { error: 'Failed', success: 'Done' }
+    })
     expect(typeof success).toBe('function')
     expect(typeof error).toBe('function')
   })
@@ -10799,7 +10878,11 @@ describe('resolveFormToast', () => {
 
   test('empty toast object returns original callbacks', () => {
     const onE: (e: unknown) => void = noop,
-      { error, success } = resolveFormToast({ onError: onE, onSuccess: noop, toast: {} })
+      { error, success } = resolveFormToast({
+        onError: onE,
+        onSuccess: noop,
+        toast: {}
+      })
     expect(success).toBe(noop)
     expect(error).toBe(onE)
   })

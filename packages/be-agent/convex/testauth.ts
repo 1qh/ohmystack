@@ -13,7 +13,7 @@ const testAuth = makeTestAuth({
     args: {},
     handler: async ctx => {
       if (!isTestMode()) throw new Error('test_mode_only')
-      const existing = await ctx.db
+      const existing = ctx.db
         .query('users')
         .filter(q => q.eq(q.field('email'), TEST_EMAIL))
         .first()

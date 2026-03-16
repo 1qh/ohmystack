@@ -1,12 +1,9 @@
 'use client'
 
-/** biome-ignore-all lint/style/noProcessEnv: env detection */
 import { api } from '@a/be-agent'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
-const isTestMode = process.env.NEXT_PUBLIC_CONVEX_TEST_MODE === 'true'
 
 const SessionListPage = () => {
   const sessions = useQuery(api.sessions.listSessions, {}),

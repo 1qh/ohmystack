@@ -13,15 +13,33 @@ const mockModel = {
         }
       const mockArgs: Record<string, unknown> =
         firstTool.name === 'delegate'
-          ? { description: 'Test task', isBackground: true, prompt: 'Test prompt' }
+          ? {
+              description: 'Test task',
+              isBackground: true,
+              prompt: 'Test prompt'
+            }
           : firstTool.name === 'webSearch'
             ? { query: 'test' }
             : firstTool.name === 'todoWrite'
-              ? { todos: [{ content: 'Test task', id: undefined, position: 0, priority: 'medium', status: 'pending' }] }
+              ? {
+                  todos: [
+                    {
+                      content: 'Test task',
+                      id: undefined,
+                      position: 0,
+                      priority: 'medium',
+                      status: 'pending'
+                    }
+                  ]
+                }
               : firstTool.name === 'taskStatus' || firstTool.name === 'taskOutput'
                 ? { taskId: 'mock-task-id' }
                 : firstTool.name === 'mcpCall'
-                  ? { serverName: 'test-server', toolArgs: '{}', toolName: 'test-tool' }
+                  ? {
+                      serverName: 'test-server',
+                      toolArgs: '{}',
+                      toolName: 'test-tool'
+                    }
                   : {}
       return {
         content: [
@@ -49,10 +67,17 @@ const mockModel = {
       start: (c: ReadableStreamDefaultController) => {
         c.enqueue({ type: 'stream-start', warnings: [] })
         c.enqueue({ id: 'mock-text-0', type: 'text-start' })
-        const words = 'This is a mock response with enough content to make the chat scrollable and test streaming behavior properly across multiple lines of output'.split(' ')
+        const words =
+          'This is a mock response with enough content to make the chat scrollable and test streaming behavior properly across multiple lines of output'.split(
+            ' '
+          )
         for (const w of words) c.enqueue({ delta: `${w} `, id: 'mock-text-0', type: 'text-delta' })
         c.enqueue({ id: 'mock-text-0', type: 'text-end' })
-        c.enqueue({ finishReason: 'stop', type: 'finish', usage: { inputTokens: 5, outputTokens: 10 } })
+        c.enqueue({
+          finishReason: 'stop',
+          type: 'finish',
+          usage: { inputTokens: 5, outputTokens: 10 }
+        })
         c.close()
       }
     })

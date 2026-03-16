@@ -24,20 +24,21 @@ const syncOwned = internalMutation({
         if (t.id) {
           /** biome-ignore lint/performance/noAwaitInLoops: sequential upserts */
           const existing = await ctx.db.get(t.id)
-          await (existing?.sessionId === sessionId
-            ? ctx.db.patch(t.id, {
-                content: t.content,
-                position: t.position,
-                priority: t.priority,
-                status: t.status
-              })
-            : ctx.db.insert('todos', {
-                content: t.content,
-                position: t.position,
-                priority: t.priority,
-                sessionId,
-                status: t.status
-              }))
+          if (existing?.sessionId === sessionId)
+            await ctx.db.patch(t.id, {
+              content: t.content,
+              position: t.position,
+              priority: t.priority,
+              status: t.status
+            })
+          else
+            await ctx.db.insert('todos', {
+              content: t.content,
+              position: t.position,
+              priority: t.priority,
+              sessionId,
+              status: t.status
+            })
         } else
           await ctx.db.insert('todos', {
             content: t.content,

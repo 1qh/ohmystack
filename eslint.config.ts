@@ -74,32 +74,10 @@ export default eslint({
       }
     }
   ],
-  ignores: [
-    '*.config.ts',
-    'apps/**',
-    'packages/be-convex/**',
-    'packages/be-spacetimedb/**',
-    'packages/fe/**',
-    'packages/e2e/**',
-    'packages/ui/**',
-    '.source/**'
-  ],
+  ignores: ['*.config.ts', 'packages/ui/**', '.source/**', '**/_generated/**', '**/generated/**', '**/module_bindings/**'],
   rules: {
-    '@eslint-react/dom/no-dangerously-set-innerhtml': 'off',
-    '@eslint-react/hooks-extra/no-direct-set-state-in-use-effect': 'off',
-    '@next/next/no-img-element': 'off',
-    '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-magic-numbers': 'off',
-    '@typescript-eslint/no-unsafe-assignment': 'off',
-    '@typescript-eslint/no-unsafe-return': 'off',
-    '@typescript-eslint/require-await': 'off',
-    'jest/no-conditional-in-test': 'off',
-    'no-await-in-loop': 'off',
-    'no-magic-numbers': 'off',
-    'react-hooks/preserve-manual-memoization': 'off',
-    'react-hooks/set-state-in-effect': 'off',
-    'react/no-danger': 'off',
-    'react/no-unstable-nested-components': 'off'
+    'no-magic-numbers': 'off'
   },
   tailwind: 'packages/ui/src/styles/globals.css'
 })

@@ -4,7 +4,7 @@ import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
 import { useList } from '@noboil/convex/react'
-import { useCallback, useDeferredValue, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 
 import { Create, List } from './common'
 
@@ -13,18 +13,23 @@ const Page = () => {
     [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set()),
     [query, setQuery] = useState(''),
     deferredQuery = useDeferredValue(query.toLowerCase()),
-    filtered = items.filter(b => {
-      if (removedIds.has(b._id)) return false
-      if (!deferredQuery) return true
-      return (
-        b.title.toLowerCase().includes(deferredQuery) ||
-        b.content.toLowerCase().includes(deferredQuery) ||
-        b.tags?.some((t: string) => t.toLowerCase().includes(deferredQuery))
-      )
-    }),
     handleRemove = useCallback((id: string) => {
       setRemovedIds(prev => new Set(prev).add(id))
     }, [])
+
+  const filtered = useMemo(
+    () =>
+      items.filter(b => {
+        if (removedIds.has(b._id)) return false
+        if (!deferredQuery) return true
+        return (
+          b.title.toLowerCase().includes(deferredQuery) ||
+          b.content.toLowerCase().includes(deferredQuery) ||
+          b.tags?.some((t: string) => t.toLowerCase().includes(deferredQuery))
+        )
+      }),
+    [deferredQuery, items, removedIds]
+  )
   return (
     <div data-testid='crud-dynamic-page'>
       <Create />

@@ -56,6 +56,7 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
           row = findByUser(table as unknown as SingletonTableLike<SingletonRow>, ctx.sender)
         if (!row) throw makeError('NOT_FOUND', `${tableName}:get`)
         if (hooks?.beforeRead)
+          /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.beforeRead({ db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }, { row: row as unknown as Row })
       }),
       upsertReducer = spacetimedb.reducer({ name: upsertName }, upsertParams, (ctx, args) => {
@@ -67,6 +68,7 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
 
         if (existing) {
           if (hooks?.beforeUpdate)
+            /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
             hooks.beforeUpdate(hookCtx, {
               patch: patchRecord as unknown as Partial<SingletonFieldValues<F>>,
               prev: existing as unknown as Row
@@ -79,6 +81,7 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
             ) as unknown as Row
           table.update(nextRecord)
           if (hooks?.afterUpdate)
+            /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
             hooks.afterUpdate(hookCtx, {
               next: nextRecord,
               patch: patchRecord as unknown as Partial<SingletonFieldValues<F>>,
@@ -86,10 +89,12 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
             })
         } else {
           if (hooks?.beforeCreate)
+            /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
             hooks.beforeCreate(hookCtx, { data: patchRecord as unknown as Partial<SingletonFieldValues<F>> })
           const newRow = { ...patchRecord, createdAt: ctx.timestamp, updatedAt: ctx.timestamp, userId: ctx.sender } as Row
           table.insert(newRow)
           if (hooks?.afterCreate)
+            /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
             hooks.afterCreate(hookCtx, {
               data: patchRecord as unknown as Partial<SingletonFieldValues<F>>,
               row: newRow

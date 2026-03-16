@@ -67,18 +67,22 @@ const spawnTaskRef = makeFunctionReference<
     z.literal('completed'),
     z.literal('cancelled')
   ]),
+  addOptionIfMissing = ({ options, value }: { options: string[]; value: string }) => {
+    if (value.length === 0 || options.includes(value)) return
+    options.push(value)
+  },
   extractAvailableOptions = ({ message }: { message: string }) => {
     const options: string[] = [],
-      regexes = [/Available\s*[:=]\s*([^\n]+)/gi, /valid\s+options\s*[:=]\s*([^\n]+)/gi]
+      regexes = [/Available\s*[:=]\s*(?<options>[^\n]+)/giu, /valid\s+options\s*[:=]\s*(?<options>[^\n]+)/giu]
     for (const regex of regexes) {
       let match = regex.exec(message)
       while (match) {
-        const segment = match[1]
+        const segment = match.groups?.options
         if (segment) {
           const parts = segment.split(',')
           for (const part of parts) {
             const value = part.trim()
-            if (value.length > 0 && !options.includes(value)) options.push(value)
+            addOptionIfMissing({ options, value })
           }
         }
         match = regex.exec(message)

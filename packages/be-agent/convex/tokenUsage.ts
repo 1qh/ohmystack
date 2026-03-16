@@ -25,7 +25,7 @@ const recordModelUsage = internalMutation({
         if (session) resolvedSessionId = session._id
       }
       if (!resolvedSessionId) {
-        const task = await ctx.db
+        const task = ctx.db
           .query('tasks')
           .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
           .first()

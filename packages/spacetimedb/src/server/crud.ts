@@ -69,7 +69,9 @@ const makeCrud = <
             updatedAt: ctx.timestamp,
             userId: ctx.sender
           } as unknown as Row)
-        if (hooks?.afterCreate) hooks.afterCreate(hookCtx, { data, row })
+        if (hooks?.afterCreate)
+          /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
+          hooks.afterCreate(hookCtx, { data, row })
       }),
       updateReducer = spacetimedb.reducer({ name: updateName }, updateParams, (ctx, args) => {
         const typedArgs = args as UpdateArgs<F, Id>,
@@ -97,6 +99,7 @@ const makeCrud = <
         const prev = row as unknown as Row,
           next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
         if (hooks?.afterUpdate)
+          /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.afterUpdate(hookCtx, {
             next,
             patch: patch as unknown as Partial<CrudFieldValues<F>>,
@@ -116,7 +119,9 @@ const makeCrud = <
             tableName
           })
 
-        if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
+        if (hooks?.beforeDelete)
+          /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
+          hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
 
         if (options?.softDelete) {
           const nextRecord = {
@@ -130,7 +135,9 @@ const makeCrud = <
           if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
         }
 
-        if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: row as unknown as Row })
+        if (hooks?.afterDelete)
+          /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
+          hooks.afterDelete(hookCtx, { row: row as unknown as Row })
       }),
       exportsRecord = {
         [createName]: createReducer,

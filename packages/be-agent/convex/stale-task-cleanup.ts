@@ -1,4 +1,5 @@
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
+// oxlint-disable eslint-plugin-unicorn/filename-case
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB operations */
 import { buildTaskTerminalReminder, maybeContinueOrchestratorInline } from './tasks'
 import { internalMutation } from './_generated/server'
 

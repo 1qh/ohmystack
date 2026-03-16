@@ -15,7 +15,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { CheckIcon, MessageSquareIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useRef } from 'react'
+import { createElement, useEffect, useMemo, useRef } from 'react'
 import { Streamdown } from 'streamdown'
 
 import ChatInput from './chat-input'
@@ -247,6 +247,8 @@ const getToolDisplayName = (toolName: string): string => {
       }
     }, [query, sendMessage, chatId])
 
+    const emptyStateIcon = createElement(MessageSquareIcon, { className: 'size-8' })
+
     return (
       <div className='flex flex-1 flex-col overflow-hidden'>
         <Conversation className='flex-1'>
@@ -255,15 +257,13 @@ const getToolDisplayName = (toolName: string): string => {
               <ConversationEmptyState
                 data-testid='empty-state'
                 description='Send a message to start a conversation'
-                icon={<MessageSquareIcon className='size-8' />}
+                icon={emptyStateIcon}
                 title='Start a conversation'
               />
             ) : (
               messages.map((m, i) => (
                 <MessageItem
-                  addToolApprovalResponse={args => {
-                    addToolApprovalResponse(args)
-                  }}
+                  addToolApprovalResponse={addToolApprovalResponse}
                   isLast={i === messages.length - 1}
                   key={m.id}
                   message={m}

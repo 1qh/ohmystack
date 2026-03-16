@@ -13,17 +13,12 @@ export default defineConfig({
         includes: ['**/generated/**', '**/_generated/**', '**/module_bindings/**']
       },
       {
-        includes: ['**/e2e/**', '**/maestro/**'],
+        includes: ['**/maestro/**'],
         rules: {
-          'performance/noAwaitInLoops': 'off',
-          'suspicious/noEmptyBlockStatements': 'off'
+          'performance/noAwaitInLoops': 'off'
         }
       }
-    ],
-    rules: {
-      'nursery/noPlaywrightUselessAwait': 'off',
-      'nursery/useAwaitThenable': 'off'
-    }
+    ]
   },
   oxlint: {
     ignorePatterns: [
@@ -36,29 +31,25 @@ export default defineConfig({
     ],
     overrides: [
       {
-        files: ['**/convex/blogProfile.ts', '**/convex/mobileAi.ts', '**/convex/orgProfile.ts'],
+        files: [
+          '**/convex/blogProfile.ts',
+          '**/convex/mobileAi.ts',
+          '**/convex/orgProfile.ts',
+          '**/convex/tokenUsage.ts',
+          '**/convex/orchestratorNode.ts',
+          '**/convex/agentsNode.ts',
+          '**/convex/staleTaskCleanup.ts',
+          '**/convex/webSearch.ts',
+          '**/convex/rateLimit.ts'
+        ],
         rules: {
           'unicorn/filename-case': 'off'
         }
       }
     ],
     rules: {
-      '@next/next/no-img-element': 'off',
-      'eslint/max-depth': 'off',
-      'eslint/no-await-in-loop': 'off',
-      'eslint/no-empty-function': 'off',
       'eslint/sort-keys': 'off',
-      'import/no-unassigned-import': 'off',
-      'jsx-a11y/prefer-tag-over-role': 'off',
-      'promise/prefer-await-to-callbacks': 'off',
-      'promise/prefer-await-to-then': 'off',
-      'react-perf/jsx-no-jsx-as-prop': 'off',
-      'react-perf/jsx-no-new-array-as-prop': 'off',
-      'react-perf/jsx-no-new-object-as-prop': 'off',
-      'react/jsx-handler-names': 'off',
-      'react/no-danger': 'off',
-      'unicorn/no-await-expression-member': 'off',
-      'unicorn/no-document-cookie': 'off'
+      'import/no-unassigned-import': 'off'
     }
   }
 })

@@ -88,7 +88,6 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
   },
   buildModelMessages = (messages: Doc<'messages'>[]) => {
     const modelMessages: ModelMessage[] = []
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     for (const m of messages)
       if (m.role === 'assistant' || m.role === 'system' || m.role === 'user')
         modelMessages.push({ content: collectMessageText(m), role: m.role })
@@ -126,8 +125,12 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
     handler: async (ctx, { taskId }) => {
       const marked = await ctx.runMutation(markRunningRef, { taskId })
       if (!marked.ok) return
-      const heartbeat = setInterval(() => {
-        ctx.runMutation(updateTaskHeartbeatRef, { taskId }).catch((error: unknown) => error)
+      const heartbeat = setInterval(async () => {
+        try {
+          await ctx.runMutation(updateTaskHeartbeatRef, { taskId })
+        } catch (error) {
+          return error
+        }
       }, 30_000)
       try {
         const task = await ctx.runQuery(getByIdRef, { taskId })
@@ -161,18 +164,18 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
             tools
           })
         const collectedParts: Array<
-            | { text: string; type: 'text' }
-            | { text: string; type: 'reasoning' }
-            | {
-                args: string
-                result?: string
-                status: 'pending' | 'success' | 'error'
-                toolCallId: string
-                toolName: string
-                type: 'tool-call'
-              }
-            | { snippet?: string; title: string; type: 'source'; url: string }
-          > = []
+          | { text: string; type: 'text' }
+          | { text: string; type: 'reasoning' }
+          | {
+              args: string
+              result?: string
+              status: 'pending' | 'success' | 'error'
+              toolCallId: string
+              toolName: string
+              type: 'tool-call'
+            }
+          | { snippet?: string; title: string; type: 'source'; url: string }
+        > = []
         let fullText = '',
           fullReasoning = ''
         for await (const part of result.fullStream)
@@ -192,13 +195,19 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
               type: 'tool-call'
             })
           else if (part.type === 'tool-result')
+            // oxlint-disable-next-line eslint/max-depth
             for (const p of collectedParts)
               if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
                 p.status = 'success'
                 p.result = JSON.stringify(part.output)
+                // oxlint-disable-next-line eslint/max-depth
                 if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
-                  const resultWithSources = part.output as { sources?: Array<{ snippet?: string; title: string; url: string }> }
+                  const resultWithSources = part.output as {
+                    sources?: Array<{ snippet?: string; title: string; url: string }>
+                  }
+                  // oxlint-disable-next-line eslint/max-depth
                   if (resultWithSources.sources)
+                    // oxlint-disable-next-line eslint/max-depth
                     for (const src of resultWithSources.sources)
                       collectedParts.push({
                         snippet: src.snippet,
@@ -227,12 +236,14 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
         const task = await ctx.runQuery(getByIdRef, { taskId }),
           errorMessage = String(error),
           shouldRetry = task && task.retryCount < 3 && isTransientError({ errorMessage })
-        await (shouldRetry
-          ? ctx.runMutation(scheduleRetryRef, { taskId })
-          : ctx.runMutation(failTaskRef, {
-              lastError: errorMessage,
-              taskId
-            }))
+        if (shouldRetry) {
+          await ctx.runMutation(scheduleRetryRef, { taskId })
+        } else {
+          await ctx.runMutation(failTaskRef, {
+            lastError: errorMessage,
+            taskId
+          })
+        }
       } finally {
         clearInterval(heartbeat)
       }

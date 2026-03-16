@@ -11,18 +11,18 @@ interface LoginPageProps {
 
 const LoginPage = ({ emailLoginPath = '/login/email', redirectTo = '/' }: LoginPageProps) => {
   const { signIn } = useAuthActions()
+
+  const onGoogleClick = async () => {
+    try {
+      await signIn('google', { redirectTo })
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error)
+    }
+  }
+
   return (
-    <OAuthLoginShell
-      emailLoginPath={emailLoginPath}
-      emailLoginText='Log in with password'
-      // oxlint-disable-next-line promise/prefer-await-to-then
-      onGoogleClick={() => {
-        signIn('google', { redirectTo }).catch((error: unknown) => {
-          // eslint-disable-next-line no-console
-          console.error(error)
-        })
-      }}
-    />
+    <OAuthLoginShell emailLoginPath={emailLoginPath} emailLoginText='Log in with password' onGoogleClick={onGoogleClick} />
   )
 }
 

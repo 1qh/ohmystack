@@ -8,10 +8,11 @@ import { useEffect } from 'react'
 const LoginPage = () => {
   const { signIn } = useAuthActions(),
     { isAuthenticated, isLoading } = useConvexAuth(),
-    router = useRouter(),
-    onGoogle = () => {
-      void signIn('google', { redirectTo: '/' })
-    }
+    router = useRouter()
+
+  const onGoogle = async () => {
+    await signIn('google', { redirectTo: '/' })
+  }
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return

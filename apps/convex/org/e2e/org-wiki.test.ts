@@ -400,9 +400,10 @@ test.describe
       restoreAllViaBackend = async () => {
         for (const id of wikiIds)
           try {
+            // biome-ignore lint/performance/noAwaitInLoops: sequential restore
             await tc.mutation(wikiRestore, { id, orgId })
           } catch {
-            // oxlint-disable-next-line no-empty
+            // biome-ignore lint/suspicious/noEmptyBlockStatements: intentional
           }
       },
       gotoWikiListAndWait = async (pg: Page) => {

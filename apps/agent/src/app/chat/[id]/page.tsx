@@ -12,13 +12,13 @@ import { Message, MessageContent, MessageResponse } from '@a/ui/components/ai-el
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@a/ui/components/ai-elements/reasoning'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@a/ui/components/ai-elements/sources'
 import { Tool, ToolContent, ToolHeader } from '@a/ui/components/ai-elements/tool'
-import type { FormEvent } from 'react'
-import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import type { FormEvent } from 'react'
+import { useState } from 'react'
 
-type MessagePart = {
+interface MessagePart {
   args?: string
   result?: string
   snippet?: string
@@ -29,6 +29,35 @@ type MessagePart = {
   toolName?: string
   type: string
   url?: string
+}
+
+interface SessionTask {
+  _id: string
+  description: string
+  status: string
+}
+
+interface SessionTodo {
+  _id: string
+  content: string
+  priority: string
+  status: string
+}
+
+interface SessionTokenUsage {
+  count: number
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+}
+
+interface ChatMessageData {
+  _id: string
+  content: string
+  isComplete: boolean
+  parts?: MessagePart[]
+  role: string
+  streamingContent?: string
 }
 
 const mapToolState = (status?: string) => {
@@ -48,6 +77,24 @@ const parseDelegateTaskId = (result?: string): Id<'tasks'> | null => {
   } catch {
     return null
   }
+}
+
+const messagePartKey = ({ messageId, part, prefix }: { messageId: string; part: MessagePart; prefix: string }) => {
+  if (part.toolCallId) return `${prefix}-${part.toolCallId}`
+  if (part.type === 'source') return `${prefix}-${messageId}-${part.url ?? ''}-${part.title ?? ''}`
+  return `${prefix}-${messageId}-${part.toolName ?? ''}-${part.text ?? ''}-${part.args ?? ''}`
+}
+
+const splitMessageParts = ({ parts }: { parts: MessagePart[] }) => {
+  const reasoningParts: MessagePart[] = [],
+    sourceParts: MessagePart[] = [],
+    toolParts: MessagePart[] = []
+  for (const p of parts) {
+    if (p.type === 'reasoning') reasoningParts.push(p)
+    else if (p.type === 'tool-call') toolParts.push(p)
+    else if (p.type === 'source') sourceParts.push(p)
+  }
+  return { reasoningParts, sourceParts, toolParts }
 }
 
 const WorkerStreamPanel = ({ taskId }: { taskId: Id<'tasks'> }) => {
@@ -91,6 +138,151 @@ const WorkerStreamPanel = ({ taskId }: { taskId: Id<'tasks'> }) => {
   )
 }
 
+const ChatMessageRow = ({ message }: { message: ChatMessageData }) => {
+  const parts = message.parts ?? [],
+    isAssistantStreaming = !message.isComplete && message.role === 'assistant',
+    textContent = message.isComplete ? message.content : (message.streamingContent ?? message.content),
+    { reasoningParts, sourceParts, toolParts } = splitMessageParts({ parts })
+  return (
+    <Message from={message.role as 'user' | 'assistant' | 'system'} key={message._id}>
+      <MessageContent>
+        {reasoningParts.map(p => (
+          <Reasoning
+            isStreaming={isAssistantStreaming && p === reasoningParts.at(-1)}
+            key={messagePartKey({
+              messageId: message._id,
+              part: p,
+              prefix: 'reasoning'
+            })}>
+            <ReasoningTrigger />
+            <ReasoningContent>{p.text ?? ''}</ReasoningContent>
+          </Reasoning>
+        ))}
+
+        {textContent ? (
+          message.role === 'user' ? (
+            <p className='whitespace-pre-wrap'>{textContent}</p>
+          ) : (
+            <MessageResponse>{textContent}</MessageResponse>
+          )
+        ) : null}
+
+        {toolParts.map(p => {
+          const delegateTaskId = p.toolName === 'delegate' ? parseDelegateTaskId(p.result) : null
+          return (
+            <div
+              key={messagePartKey({
+                messageId: message._id,
+                part: p,
+                prefix: 'tool'
+              })}>
+              <Tool>
+                <ToolHeader state={mapToolState(p.status)} title={p.toolName} type='tool-invocation' />
+                <ToolContent>
+                  {p.args ? <pre className='overflow-x-auto rounded-md bg-muted/50 p-2 text-xs'>{p.args}</pre> : null}
+                  {p.result ? <pre className='overflow-x-auto rounded-md bg-muted/50 p-2 text-xs'>{p.result}</pre> : null}
+                </ToolContent>
+              </Tool>
+              {delegateTaskId ? <WorkerStreamPanel taskId={delegateTaskId} /> : null}
+            </div>
+          )
+        })}
+
+        {sourceParts.length > 0 ? (
+          <Sources>
+            <SourcesTrigger count={sourceParts.length} />
+            <SourcesContent>
+              {sourceParts.map(p => (
+                <Source
+                  href={p.url}
+                  key={messagePartKey({
+                    messageId: message._id,
+                    part: p,
+                    prefix: 'source'
+                  })}
+                  title={p.title}
+                />
+              ))}
+            </SourcesContent>
+          </Sources>
+        ) : null}
+      </MessageContent>
+    </Message>
+  )
+}
+
+const SidePanel = ({
+  isTyping,
+  tasks,
+  todos,
+  tokenUsage
+}: {
+  isTyping: boolean
+  tasks: SessionTask[] | undefined
+  todos: SessionTodo[] | undefined
+  tokenUsage: SessionTokenUsage | undefined
+}) => (
+  <aside className='space-y-3 overflow-y-auto'>
+    <details className='rounded-lg border p-3' data-testid='typing-panel' open>
+      <summary className='cursor-pointer text-sm font-medium'>Typing</summary>
+      <p className='mt-2 text-sm text-muted-foreground'>
+        {isTyping ? <span className='animate-pulse text-chart-1'>Agent is typing...</span> : 'Idle'}
+      </p>
+    </details>
+
+    <details className='rounded-lg border p-3' data-testid='task-panel' open>
+      <summary className='cursor-pointer text-sm font-medium'>Tasks</summary>
+      {tasks === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading tasks...</p> : null}
+      {tasks && tasks.length === 0 ? <p className='mt-2 text-sm text-muted-foreground'>No background tasks</p> : null}
+      {tasks && tasks.length > 0 ? (
+        <div className='mt-2 space-y-2'>
+          {tasks.map(t => (
+            <article className='rounded border bg-muted/50 p-2 text-xs' key={t._id}>
+              <p className='font-medium'>{t.description}</p>
+              <p className='mt-1 font-mono uppercase text-muted-foreground'>{t.status}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </details>
+
+    <details className='rounded-lg border p-3' data-testid='todo-panel' open>
+      <summary className='cursor-pointer text-sm font-medium'>Todos</summary>
+      {todos === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading todos...</p> : null}
+      {todos && todos.length === 0 ? <p className='mt-2 text-sm text-muted-foreground'>No todos</p> : null}
+      {todos && todos.length > 0 ? (
+        <ul className='mt-2 space-y-2'>
+          {todos.map(t => (
+            <li className='rounded border bg-muted/50 p-2 text-xs' key={t._id}>
+              <p className='font-medium'>{t.content}</p>
+              <p className='mt-1 text-muted-foreground'>
+                {t.status} - {t.priority}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </details>
+
+    <details className='rounded-lg border p-3' data-testid='token-usage-panel' open>
+      <summary className='cursor-pointer text-sm font-medium'>Token usage</summary>
+      {tokenUsage === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading token usage...</p> : null}
+      {tokenUsage ? (
+        <dl className='mt-2 grid grid-cols-2 gap-1 text-xs'>
+          <dt className='text-muted-foreground'>Input</dt>
+          <dd className='text-right'>{tokenUsage.inputTokens}</dd>
+          <dt className='text-muted-foreground'>Output</dt>
+          <dd className='text-right'>{tokenUsage.outputTokens}</dd>
+          <dt className='text-muted-foreground'>Total</dt>
+          <dd className='text-right font-medium'>{tokenUsage.totalTokens}</dd>
+          <dt className='text-muted-foreground'>Events</dt>
+          <dd className='text-right'>{tokenUsage.count}</dd>
+        </dl>
+      ) : null}
+    </details>
+  </aside>
+)
+
 const ChatPage = () => {
   const [draft, setDraft] = useState(''),
     [sending, setSending] = useState(false),
@@ -98,13 +290,15 @@ const ChatPage = () => {
     params = useParams<{ id: string }>(),
     id = params.id as Id<'session'>,
     session = useQuery(api.sessions.getSession, { sessionId: id }),
-    messages = useQuery(api.messages.listMessages, session ? { threadId: session.threadId } : 'skip'),
-    tasks = useQuery(api.tasks.listTasks, { sessionId: id }),
-    todos = useQuery(api.todos.listTodos, { sessionId: id }),
-    tokenUsage = useQuery(api.tokenUsage.getTokenUsage, { sessionId: id }),
+    messages = useQuery(api.messages.listMessages, session ? { threadId: session.threadId } : 'skip') as
+      | ChatMessageData[]
+      | undefined,
+    tasks = useQuery(api.tasks.listTasks, { sessionId: id }) as SessionTask[] | undefined,
+    todos = useQuery(api.todos.listTodos, { sessionId: id }) as SessionTodo[] | undefined,
+    tokenUsage = useQuery(api.tokenUsage.getTokenUsage, { sessionId: id }) as SessionTokenUsage | undefined,
     submitMessage = useMutation(api.orchestrator.submitMessage),
-    lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null,
-    isTyping = !!lastMessage && lastMessage.role === 'assistant' && !lastMessage.isComplete,
+    lastMessage = messages && messages.length > 0 ? messages.at(-1) : null,
+    isTyping = lastMessage?.role === 'assistant' && !lastMessage.isComplete,
     onSubmit = async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       const content = draft.trim()
@@ -114,8 +308,8 @@ const ChatPage = () => {
         await submitMessage({ content, sessionId: session._id })
         setDraft('')
         setSubmitError('')
-      } catch (submitErr) {
-        setSubmitError(String(submitErr))
+      } catch (error) {
+        setSubmitError(String(error))
       } finally {
         setSending(false)
       }
@@ -145,153 +339,18 @@ const ChatPage = () => {
             ) : null}
 
             {submitError ? (
-              <p className='text-sm text-destructive' data-testid='submit-error'>{submitError}</p>
+              <p className='text-sm text-destructive' data-testid='submit-error'>
+                {submitError}
+              </p>
             ) : null}
 
-            {messages.map(m => {
-              const parts = (m.parts ?? []) as MessagePart[],
-                isAssistantStreaming = !m.isComplete && m.role === 'assistant',
-                textContent = m.isComplete ? m.content : (m.streamingContent ?? m.content),
-                reasoningParts: MessagePart[] = [],
-                toolParts: MessagePart[] = [],
-                sourceParts: MessagePart[] = []
-
-              for (const p of parts) {
-                if (p.type === 'reasoning') reasoningParts.push(p)
-                else if (p.type === 'tool-call') toolParts.push(p)
-                else if (p.type === 'source') sourceParts.push(p)
-              }
-
-              return (
-                <Message from={m.role as 'user' | 'assistant' | 'system'} key={m._id}>
-                  <MessageContent>
-                    {reasoningParts.map((p, i) => (
-                      <Reasoning
-                        isStreaming={isAssistantStreaming && i === reasoningParts.length - 1}
-                        key={p.toolCallId ?? `r-${m._id}-${String(i)}`}
-                      >
-                        <ReasoningTrigger />
-                        <ReasoningContent>{p.text ?? ''}</ReasoningContent>
-                      </Reasoning>
-                    ))}
-
-                    {textContent ? (
-                      m.role === 'user' ? (
-                        <p className='whitespace-pre-wrap'>{textContent}</p>
-                      ) : (
-                        <MessageResponse>{textContent}</MessageResponse>
-                      )
-                    ) : null}
-
-                    {toolParts.map((p, i) => {
-                      const delegateTaskId = p.toolName === 'delegate' ? parseDelegateTaskId(p.result) : null
-                      return (
-                        <div key={p.toolCallId ?? `t-${m._id}-${String(i)}`}>
-                          <Tool>
-                            <ToolHeader
-                              state={mapToolState(p.status)}
-                              title={p.toolName}
-                              type='tool-invocation'
-                            />
-                            <ToolContent>
-                              {p.args ? (
-                                <pre className='overflow-x-auto rounded-md bg-muted/50 p-2 text-xs'>{p.args}</pre>
-                              ) : null}
-                              {p.result ? (
-                                <pre className='overflow-x-auto rounded-md bg-muted/50 p-2 text-xs'>{p.result}</pre>
-                              ) : null}
-                            </ToolContent>
-                          </Tool>
-                          {delegateTaskId ? <WorkerStreamPanel taskId={delegateTaskId} /> : null}
-                        </div>
-                      )
-                    })}
-
-                    {sourceParts.length > 0 ? (
-                      <Sources>
-                        <SourcesTrigger count={sourceParts.length} />
-                        <SourcesContent>
-                          {sourceParts.map((p, i) => (
-                            <Source href={p.url} key={`s-${m._id}-${String(i)}`} title={p.title} />
-                          ))}
-                        </SourcesContent>
-                      </Sources>
-                    ) : null}
-                  </MessageContent>
-                </Message>
-              )
-            })}
+            {messages.map(m => (
+              <ChatMessageRow key={m._id} message={m} />
+            ))}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
-
-        <aside className='space-y-3 overflow-y-auto'>
-          <details className='rounded-lg border p-3' data-testid='typing-panel' open>
-            <summary className='cursor-pointer text-sm font-medium'>Typing</summary>
-            <p className='mt-2 text-sm text-muted-foreground'>
-              {isTyping ? (
-                <span className='animate-pulse text-chart-1'>Agent is typing...</span>
-              ) : (
-                'Idle'
-              )}
-            </p>
-          </details>
-
-          <details className='rounded-lg border p-3' data-testid='task-panel' open>
-            <summary className='cursor-pointer text-sm font-medium'>Tasks</summary>
-            {tasks === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading tasks...</p> : null}
-            {tasks && tasks.length === 0 ? (
-              <p className='mt-2 text-sm text-muted-foreground'>No background tasks</p>
-            ) : null}
-            {tasks && tasks.length > 0 ? (
-              <div className='mt-2 space-y-2'>
-                {tasks.map(t => (
-                  <article className='rounded border bg-muted/50 p-2 text-xs' key={t._id}>
-                    <p className='font-medium'>{t.description}</p>
-                    <p className='mt-1 font-mono uppercase text-muted-foreground'>{t.status}</p>
-                  </article>
-                ))}
-              </div>
-            ) : null}
-          </details>
-
-          <details className='rounded-lg border p-3' data-testid='todo-panel' open>
-            <summary className='cursor-pointer text-sm font-medium'>Todos</summary>
-            {todos === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading todos...</p> : null}
-            {todos && todos.length === 0 ? <p className='mt-2 text-sm text-muted-foreground'>No todos</p> : null}
-            {todos && todos.length > 0 ? (
-              <ul className='mt-2 space-y-2'>
-                {todos.map(t => (
-                  <li className='rounded border bg-muted/50 p-2 text-xs' key={t._id}>
-                    <p className='font-medium'>{t.content}</p>
-                    <p className='mt-1 text-muted-foreground'>
-                      {t.status} - {t.priority}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </details>
-
-          <details className='rounded-lg border p-3' data-testid='token-usage-panel' open>
-            <summary className='cursor-pointer text-sm font-medium'>Token usage</summary>
-            {tokenUsage === undefined ? (
-              <p className='mt-2 text-sm text-muted-foreground'>Loading token usage...</p>
-            ) : null}
-            {tokenUsage ? (
-              <dl className='mt-2 grid grid-cols-2 gap-1 text-xs'>
-                <dt className='text-muted-foreground'>Input</dt>
-                <dd className='text-right'>{tokenUsage.inputTokens}</dd>
-                <dt className='text-muted-foreground'>Output</dt>
-                <dd className='text-right'>{tokenUsage.outputTokens}</dd>
-                <dt className='text-muted-foreground'>Total</dt>
-                <dd className='text-right font-medium'>{tokenUsage.totalTokens}</dd>
-                <dt className='text-muted-foreground'>Events</dt>
-                <dd className='text-right'>{tokenUsage.count}</dd>
-              </dl>
-            ) : null}
-          </details>
-        </aside>
+        <SidePanel isTyping={isTyping} tasks={tasks} todos={todos} tokenUsage={tokenUsage} />
       </div>
 
       <form className='flex shrink-0 gap-2' onSubmit={onSubmit}>
@@ -305,8 +364,7 @@ const ChatPage = () => {
         <button
           className='rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60'
           disabled={sending}
-          type='submit'
-        >
+          type='submit'>
           Send
         </button>
       </form>

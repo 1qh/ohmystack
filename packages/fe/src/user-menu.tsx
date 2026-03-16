@@ -13,9 +13,12 @@ const UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Tri
   await connection()
   const token = await tok(),
     { user } = api,
-    { email, image, name } = token
+    profile = token
       ? ((await fetchQuery(user.me, {}, { token })) as { email?: string; image?: string; name?: string })
-      : {}
+      : null,
+    email = profile?.email,
+    image = profile?.image,
+    name = profile?.name
 
   const onLogout = async () => {
     'use server'

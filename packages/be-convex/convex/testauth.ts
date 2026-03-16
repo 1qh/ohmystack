@@ -83,31 +83,32 @@ const testAuth = makeTestAuth({
     args: {},
     handler: async ctx => {
       if (!isTestMode()) return { count: 0, done: true }
-      const u = await ctx.db
+      const u = ctx.db
         .query('users')
         .filter(q => q.eq(q.field('email'), TEST_EMAIL))
         .first()
       if (!u) return { count: 0, done: true }
       let count = 0
-      for (const table of [
-        'task',
-        'wiki',
-        'project',
-        'orgInvite',
-        'orgMember',
-        'org',
-        'message',
-        'chat',
-        'blog',
-        'blogProfile',
-        'orgProfile'
-      ] as const) {
-        const docs = await ctx.db.query(table).take(BATCH_SIZE)
-        for (const d of docs) {
-          await ctx.db.delete(d._id)
-          count += 1
-        }
-      }
+      const tableDocs = await Promise.all(
+        [
+          'task',
+          'wiki',
+          'project',
+          'orgInvite',
+          'orgMember',
+          'org',
+          'message',
+          'chat',
+          'blog',
+          'blogProfile',
+          'orgProfile'
+        ].map(async table => {
+          const docs = await ctx.db.query(table).take(BATCH_SIZE)
+          await Promise.all(docs.map(d => ctx.db.delete(d._id)))
+          return docs.length
+        })
+      )
+      for (const removedCount of tableDocs) count += removedCount
       return { count, done: count < BATCH_SIZE }
     }
   }),

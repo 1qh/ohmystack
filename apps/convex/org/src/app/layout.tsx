@@ -72,7 +72,8 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
     return { kind: 'ok', membership, org }
   },
   Layout = async ({ children }: { children: ReactNode }) => {
-    const pathname = (await headers()).get('x-pathname') ?? '/'
+    const requestHeaders = await headers(),
+      pathname = requestHeaders.get('x-pathname') ?? '/'
 
     let content: ReactNode = children
 

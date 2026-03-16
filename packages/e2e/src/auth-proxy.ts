@@ -1,13 +1,16 @@
-/* eslint-disable no-empty */
 import { serve } from 'bun'
 const BACKEND_API = 'http://127.0.0.1:3212',
   BACKEND_WS = 'ws://127.0.0.1:3212',
   SITE_URL = 'http://127.0.0.1:3211'
 
-// oxlint-disable-next-line no-empty-function
-process.on('uncaughtException', () => {})
-// oxlint-disable-next-line no-empty-function
-process.on('unhandledRejection', () => {})
+/** biome-ignore lint/suspicious/noEmptyBlockStatements: intentional empty handler */
+process.on('uncaughtException', () => {
+  void 0
+})
+/** biome-ignore lint/suspicious/noEmptyBlockStatements: intentional empty handler */
+process.on('unhandledRejection', () => {
+  void 0
+})
 
 serve({
   fetch: async (req, server) => {
@@ -49,7 +52,10 @@ serve({
       try {
         const d = ws.data as Record<string, unknown>
         if (d.upstream) (d.upstream as WebSocket).close()
-      } catch {}
+      } catch {
+        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+        void 0
+      }
     },
     message: (ws, message) => {
       try {
@@ -60,7 +66,10 @@ serve({
           d.queue ??= []
           ;(d.queue as (ArrayBuffer | Buffer | string)[]).push(message)
         }
-      } catch {}
+      } catch {
+        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+        void 0
+      }
     },
     open: ws => {
       try {
@@ -78,19 +87,31 @@ serve({
         upstream.addEventListener('message', event => {
           try {
             ws.send(event.data as string)
-          } catch {}
+          } catch {
+            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+            void 0
+          }
         })
         upstream.addEventListener('close', () => {
           try {
             ws.close()
-          } catch {}
+          } catch {
+            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+            void 0
+          }
         })
         upstream.addEventListener('error', () => {
           try {
             ws.close()
-          } catch {}
+          } catch {
+            /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+            void 0
+          }
         })
-      } catch {}
+      } catch {
+        /** biome-ignore lint/complexity/noVoid: intentional empty catch */
+        void 0
+      }
     }
   }
 })

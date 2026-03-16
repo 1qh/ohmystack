@@ -37,18 +37,19 @@ const Page = async () => {
     if (first) return <OrgRedirect orgId={first.org._id} slug={first.org.slug} to='/dashboard' />
   }
 
+  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+  const orgList = orgs.map((o: MyOrgsItem) => ({
+    avatarId: o.org.avatarId,
+    id: o.org._id,
+    name: o.org.name,
+    role: o.role,
+    slug: o.org.slug
+  }))
+
   return (
     <div className='container py-8'>
       <h1 className='mb-6 text-2xl font-bold'>Your Organizations</h1>
-      <OrgList
-        orgs={orgs.map((o: MyOrgsItem) => ({
-          avatarId: o.org.avatarId,
-          id: o.org._id,
-          name: o.org.name,
-          role: o.role,
-          slug: o.org.slug
-        }))}
-      />
+      <OrgList orgs={orgList} />
     </div>
   )
 }

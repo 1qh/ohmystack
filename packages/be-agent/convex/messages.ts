@@ -10,7 +10,7 @@ const listMessages = q({
       .withIndex('by_user_threadId', idx => idx.eq('userId', ctx.user._id as never).eq('threadId', threadId))
       .unique()
     if (!session) {
-      const task = await ctx.db
+      const task = ctx.db
         .query('tasks')
         .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
         .first()

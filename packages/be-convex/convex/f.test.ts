@@ -483,12 +483,11 @@ describe('crud factory', () => {
         })
       })
 
-      const ownPosts = (
-        await asUser(0).query(api.blog.list, {
+      const ownPostsResult = await asUser(0).query(api.blog.list, {
           paginationOpts: { cursor: null, numItems: 100 },
           where: { own: true }
-        })
-      ).page
+        }),
+        ownPosts = ownPostsResult.page
 
       expect(ownPosts.length).toBe(1)
       expect(ownPosts[0]?.title).toBe('User 1 Post')

@@ -424,6 +424,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       if (replaceDependencyInSection(pkg.dependencies, context.installedPackage)) changed = true
       if (replaceDependencyInSection(pkg.devDependencies, context.installedPackage)) changed = true
 
+      /** biome-ignore lint/nursery/noUnnecessaryConditions: changed is conditionally set above */
       if (changed) {
         packageJsonFilesUpdated += 1
         if (!dryRun) writeJson(filePath, pkg)

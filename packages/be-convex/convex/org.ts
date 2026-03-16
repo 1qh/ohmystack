@@ -40,8 +40,8 @@ const {
   findUniqueSlug = async (ctx: MutationCtx, base: string) => {
     let candidate = base,
       attempt = 0
-    // oxlint-disable-next-line no-await-in-loop
     /** biome-ignore lint/performance/noAwaitInLoops: sequential slug check */
+    // oxlint-disable-next-line eslint/no-await-in-loop
     while (await slugTaken(ctx, candidate)) {
       attempt += 1
       candidate = `${base}-${String(attempt)}`

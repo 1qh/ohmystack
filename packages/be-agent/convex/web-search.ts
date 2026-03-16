@@ -1,4 +1,5 @@
-/** biome-ignore-all lint/style/noProcessEnv: test mode detection */
+// oxlint-disable eslint-plugin-unicorn/filename-case
+/** biome-ignore-all lint/style/noProcessEnv: env detection */
 'use node'
 
 import { makeFunctionReference } from 'convex/server'
@@ -6,8 +7,15 @@ import { v } from 'convex/values'
 
 import { internalAction } from './_generated/server'
 
-type GroundedSource = { snippet: string; title: string; url: string }
-type GroundingResult = { sources: GroundedSource[]; summary: string }
+interface GroundedSource {
+  snippet: string
+  title: string
+  url: string
+}
+interface GroundingResult {
+  sources: GroundedSource[]
+  summary: string
+}
 
 const recordModelUsageRef = makeFunctionReference<
     'mutation',

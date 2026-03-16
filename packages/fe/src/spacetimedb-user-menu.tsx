@@ -46,8 +46,12 @@ const toHttpUri = (uri: string) => {
     return getFirstRow(body)
   },
   UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Trigger>) => {
-    const token = (await cookies()).get('spacetimedb_token')?.value,
-      { email, image, name } = token ? await readUserFromSql(token) : {}
+    const cookieStore = await cookies(),
+      token = cookieStore.get('spacetimedb_token')?.value,
+      profile = token ? await readUserFromSql(token) : null,
+      email = profile?.email,
+      image = profile?.image,
+      name = profile?.name
 
     const onLogout = async () => {
       'use server'

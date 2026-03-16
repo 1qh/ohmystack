@@ -17,7 +17,8 @@ const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' 
     return false
   },
   Layout = async ({ children }: { children: ReactNode }) => {
-    const pathname = (await headers()).get('x-pathname') ?? '/'
+    const requestHeaders = await headers(),
+      pathname = requestHeaders.get('x-pathname') ?? '/'
 
     if (!(isPublicPath(pathname) || (await isAuthenticated()))) redirect('/login')
 

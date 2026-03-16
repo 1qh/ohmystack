@@ -1,6 +1,6 @@
+/** biome-ignore-all lint/style/noProcessEnv: env detection */
 'use client'
 
-/** biome-ignore-all lint/style/noProcessEnv: env detection */
 import { ConvexAuthNextjsProvider } from '@convex-dev/auth/nextjs'
 import { ConvexProvider, ConvexReactClient } from 'convex/react'
 import type { ReactNode } from 'react'

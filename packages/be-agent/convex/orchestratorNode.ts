@@ -110,7 +110,6 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
   },
   buildModelMessages = (messages: Doc<'messages'>[]) => {
     const modelMessages: ModelMessage[] = []
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     for (const m of messages)
       if (m.role === 'assistant' || m.role === 'system' || m.role === 'user')
         modelMessages.push({ content: collectMessageText(m), role: m.role })
@@ -141,7 +140,7 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
         },
         heartbeat = setInterval(
           () => {
-            ctx.runMutation(heartbeatRunRef, { runToken, threadId }).catch((error: unknown) => error)
+            ctx.runMutation(heartbeatRunRef, { runToken, threadId }).catch((_e: unknown) => _e)
           },
           2 * 60 * 1000
         )
@@ -153,7 +152,8 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
         let systemPrompt = ORCHESTRATOR_SYSTEM_PROMPT
         if (reminderState.shouldInject) {
           const activeTasks = await ctx.runQuery(listActiveTasksByThreadRef, { threadId })
-          if (activeTasks.length > 0) systemPrompt = `${ORCHESTRATOR_SYSTEM_PROMPT}\n\n${buildTaskReminder({ tasks: activeTasks })}`
+          if (activeTasks.length > 0)
+            systemPrompt = `${ORCHESTRATOR_SYSTEM_PROMPT}\n\n${buildTaskReminder({ tasks: activeTasks })}`
         }
         const dbMessages = await ctx.runQuery(listMessagesForPromptRef, {
             promptMessageId,
@@ -165,34 +165,46 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
             threadId
           }),
           model = await getModel(),
-            result = streamText({
-              messages: modelMessages,
-              model,
-              onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
-                const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
-                await ctx.runMutation(appendStepMetadataRef, {
-                  messageId,
-                  stepPayload
-                })
-                for (const r of toolResults ?? []) {
-                  const toolName = Reflect.get(r, 'toolName')
-                  if (typeof toolName === 'string')
-                    await ctx.runMutation(incrementTaskToolCounterRef, {
-                      threadId,
-                      toolName
-                    })
-                }
-              },
-              system: systemPrompt,
-              temperature: 0.7,
-              tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
-            })
+          result = streamText({
+            messages: modelMessages,
+            model,
+            onStepFinish: async ({ text, toolCalls, toolResults, usage }) => {
+              const stepPayload = JSON.stringify({ text, toolCalls, toolResults, usage })
+              await ctx.runMutation(appendStepMetadataRef, {
+                messageId,
+                stepPayload
+              })
+              const toolNames: string[] = []
+              for (const r of toolResults ?? []) {
+                const toolName = Reflect.get(r, 'toolName')
+                if (typeof toolName === 'string') toolNames.push(toolName)
+              }
+              await Promise.all(
+                toolNames.map(toolName =>
+                  ctx.runMutation(incrementTaskToolCounterRef, {
+                    threadId,
+                    toolName
+                  })
+                )
+              )
+            },
+            system: systemPrompt,
+            temperature: 0.7,
+            tools: createOrchestratorTools({ ctx, parentThreadId: threadId, sessionId: session._id })
+          })
         const collectedParts: Array<
-            | { text: string; type: 'text' }
-            | { text: string; type: 'reasoning' }
-            | { args: string; result?: string; status: 'pending' | 'success' | 'error'; toolCallId: string; toolName: string; type: 'tool-call' }
-            | { snippet?: string; title: string; type: 'source'; url: string }
-          > = []
+          | { text: string; type: 'text' }
+          | { text: string; type: 'reasoning' }
+          | {
+              args: string
+              result?: string
+              status: 'pending' | 'success' | 'error'
+              toolCallId: string
+              toolName: string
+              type: 'tool-call'
+            }
+          | { snippet?: string; title: string; type: 'source'; url: string }
+        > = []
         let fullText = '',
           flushAt = Date.now()
         for await (const part of result.fullStream) {
@@ -216,13 +228,18 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
             })
           } else if (part.type === 'tool-result') {
             for (const p of collectedParts) {
+              // oxlint-disable-next-line eslint/max-depth
               if (p.type === 'tool-call' && p.toolCallId === part.toolCallId) {
                 p.status = 'success'
                 p.result = JSON.stringify(part.output)
+                // oxlint-disable-next-line eslint/max-depth
                 if (p.toolName === 'webSearch' && typeof part.output === 'object' && part.output !== null) {
                   const r = part.output as { sources?: Array<{ snippet?: string; title: string; url: string }> }
+                  // oxlint-disable-next-line eslint/max-depth
                   if (r.sources) {
-                    for (const src of r.sources) collectedParts.push({ snippet: src.snippet, title: src.title, type: 'source', url: src.url })
+                    // oxlint-disable-next-line eslint/max-depth
+                    for (const src of r.sources)
+                      collectedParts.push({ snippet: src.snippet, title: src.title, type: 'source', url: src.url })
                   }
                 }
               }

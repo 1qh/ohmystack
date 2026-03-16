@@ -8,7 +8,7 @@ import { Switch } from '@a/ui/switch'
 import { useMutation } from 'convex/react'
 import { SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useId, useState, useTransition } from 'react'
+import { createElement, useId, useState, useTransition } from 'react'
 
 const Page = () => {
   const router = useRouter(),
@@ -17,6 +17,7 @@ const Page = () => {
     [isPublic, setIsPublic] = useState(false),
     [isPending, startTransition] = useTransition(),
     toggleId = useId(),
+    emptyStateIcon = createElement(SparklesIcon, { className: 'size-8' }),
     handleSubmit = async ({ text }: { text: string }) => {
       if (!text.trim() || isSubmitting) return
       setIsSubmitting(true)
@@ -34,7 +35,7 @@ const Page = () => {
           <ConversationEmptyState
             data-testid='empty-state'
             description='Ask me about the weather anywhere in the world'
-            icon={<SparklesIcon className='size-8' />}
+            icon={emptyStateIcon}
             title='How can I help you today?'
           />
         </ConversationContent>

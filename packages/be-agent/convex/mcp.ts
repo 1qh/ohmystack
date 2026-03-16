@@ -1,10 +1,11 @@
-import { zid } from 'convex-helpers/server/zod4'
+/** biome-ignore-all lint/style/noProcessEnv: test mode detection */
 import { v } from 'convex/values'
+import { zid } from 'convex-helpers/server/zod4'
 
 import { crud, q } from '../lazy'
+import { owned } from '../t'
 import { internalMutation } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
-import { owned } from '../t'
 
 interface IndexEq {
   eq: (field: string, value: unknown) => IndexEq
@@ -13,7 +14,10 @@ interface IndexEq {
 interface McpHookCtx {
   db: {
     query: (table: 'mcpServers') => {
-      withIndex: (name: 'by_user_name', fn: (i: IndexEq) => unknown) => { collect: () => Promise<Record<string, unknown>[]> }
+      withIndex: (
+        name: 'by_user_name',
+        fn: (i: IndexEq) => unknown
+      ) => { collect: () => Promise<Record<string, unknown>[]> }
     }
   }
   userId: string
@@ -44,12 +48,12 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       for (const t of parsed) {
         if (typeof t === 'string') {
           names.push(t)
-          continue
+        } else if (typeof t === 'object' && t && 'name' in t && typeof t.name === 'string') {
+          names.push(t.name)
         }
-        if (typeof t === 'object' && t && 'name' in t && typeof t.name === 'string') names.push(t.name)
       }
       return names
-    } catch (_error) {
+    } catch {
       return []
     }
   },
@@ -59,6 +63,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
     return parsed as Record<string, unknown>
   },
   withMcpTimeout = async <T>({ operation, promise }: { operation: string; promise: Promise<T> }) =>
+    // oxlint-disable-next-line promise/prefer-await-to-then
     Promise.race([
       promise,
       new Promise<T>((_, reject) => {
@@ -96,7 +101,15 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
     },
     beforeUpdate: async (
       ctx: McpHookCtx,
-      { id, patch, prev }: { id: string; patch: Record<string, unknown>; prev: Record<string, unknown> }
+      {
+        id,
+        patch,
+        prev
+      }: {
+        id: string
+        patch: Record<string, unknown>
+        prev: Record<string, unknown>
+      }
     ) => {
       const patchUrl = patch.url,
         prevUrl = prev.url
@@ -151,7 +164,9 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
         .collect()
       const tools: { serverName: string; toolName: string }[] = []
       for (const server of servers) {
-        const toolNames = parseCachedToolNames({ cachedTools: server.cachedTools })
+        const toolNames = parseCachedToolNames({
+          cachedTools: server.cachedTools
+        })
         for (const toolName of toolNames) tools.push({ serverName: server.name, toolName })
       }
       return { tools }
@@ -196,7 +211,7 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
             .withIndex('by_user_name', idx => idx.eq('userId', session.userId).eq('name', serverName))
             .first(),
         server = await loadServer()
-      if (!server || !server.isEnabled) throw new Error('mcp_server_not_found')
+      if (!server?.isEnabled) throw new Error('mcp_server_not_found')
 
       validateMcpUrl(server.url)
       if (server.authHeaders) {
@@ -208,25 +223,26 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       }
 
       const now = Date.now(),
-        toolInCache = ({
-          allowStale,
-          row
-        }: {
-          allowStale: boolean
-          row: { cachedAt?: number; cachedTools?: string }
-        }) => {
+        toolInCache = ({ allowStale, row }: { allowStale: boolean; row: { cachedAt?: number; cachedTools?: string } }) => {
           const withinTtl = row.cachedAt !== undefined && now - row.cachedAt <= MCP_CACHE_TTL_MS
-          if (!allowStale && !withinTtl) return false
-          const toolNames = parseCachedToolNames({ cachedTools: row.cachedTools })
+          if (!(allowStale || withinTtl)) return false
+          const toolNames = parseCachedToolNames({
+            cachedTools: row.cachedTools
+          })
           return toolNames.includes(toolName)
         },
         firstHit = toolInCache({ allowStale: false, row: server })
       if (!firstHit) {
         await ctx.db.patch(server._id, { cachedAt: undefined })
         const refreshed = await loadServer()
-        if (!refreshed || !refreshed.isEnabled) throw new Error('mcp_server_not_found')
+        if (!refreshed?.isEnabled) throw new Error('mcp_server_not_found')
         const secondHit = toolInCache({ allowStale: true, row: refreshed })
-        if (!secondHit) return { error: 'tool_not_found' as const, ok: false as const, retried: true as const }
+        if (!secondHit)
+          return {
+            error: 'tool_not_found' as const,
+            ok: false as const,
+            retried: true as const
+          }
       }
 
       if (process.env.CONVEX_TEST_MODE === 'true')

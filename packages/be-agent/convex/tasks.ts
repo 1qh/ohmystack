@@ -45,13 +45,7 @@ const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: I
       .filter(Boolean)
       .join('\n')
   },
-  maybeContinueOrchestratorInline = async ({
-    ctx,
-    taskId
-  }: {
-    ctx: Pick<MutationCtx, 'db'>
-    taskId: Id<'tasks'>
-  }) => {
+  maybeContinueOrchestratorInline = async ({ ctx, taskId }: { ctx: Pick<MutationCtx, 'db'>; taskId: Id<'tasks'> }) => {
     const task = await ctx.db.get(taskId)
     if (!task?.completionReminderMessageId) return { ok: false }
     const session = await ctx.db.get(task.sessionId)

@@ -7,7 +7,7 @@ import Link from 'next/link'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
-type McpServerRow = {
+interface McpServerRow {
   _id: Id<'mcpServers'>
   hasAuthHeaders: boolean
   isEnabled: boolean
@@ -142,7 +142,9 @@ const SettingsPage = () => {
                   <div className='min-w-0 space-y-1'>
                     <p className='truncate text-sm font-medium'>{server.name}</p>
                     <p className='truncate text-xs text-gray-500'>{server.url}</p>
-                    <p className='text-xs text-gray-500'>Auth headers: {server.hasAuthHeaders ? 'Configured' : 'Not set'}</p>
+                    <p className='text-xs text-gray-500'>
+                      Auth headers: {server.hasAuthHeaders ? 'Configured' : 'Not set'}
+                    </p>
                   </div>
                   <div className='flex items-center gap-2'>
                     <button

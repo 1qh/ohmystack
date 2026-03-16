@@ -10,7 +10,8 @@ import Link from 'next/link'
 
 const metadata: Metadata = { description: 'lazyconvex blog demo', title: 'Blog' },
   Layout = async ({ children }: { children: ReactNode }) => {
-    const pathname = (await headers()).get('x-pathname') ?? '/',
+    const requestHeaders = await headers(),
+      pathname = requestHeaders.get('x-pathname') ?? '/',
       isLogin = pathname === '/login' || pathname.startsWith('/login/')
 
     return (

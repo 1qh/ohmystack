@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { internalMutation } from './_generated/server'
 
 const DAY_MS = 24 * 60 * 60 * 1000,
@@ -78,17 +79,19 @@ const DAY_MS = 24 * 60 * 60 * 1000,
               .query('threadRunState')
               .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
               .unique()
-          for (const u of tokenUsages) await ctx.db.delete(u._id)
-          for (const t of todos) await ctx.db.delete(t._id)
-          for (const m of sessionMessages) await ctx.db.delete(m._id)
-          for (const t of tasks) {
-            const workerMessages = await ctx.db
-              .query('messages')
-              .withIndex('by_threadId', idx => idx.eq('threadId', t.threadId))
-              .collect()
-            for (const m of workerMessages) await ctx.db.delete(m._id)
-            await ctx.db.delete(t._id)
-          }
+          await Promise.all(tokenUsages.map(u => ctx.db.delete(u._id)))
+          await Promise.all(todos.map(t => ctx.db.delete(t._id)))
+          await Promise.all(sessionMessages.map(m => ctx.db.delete(m._id)))
+          await Promise.all(
+            tasks.map(async t => {
+              const workerMessages = await ctx.db
+                .query('messages')
+                .withIndex('by_threadId', idx => idx.eq('threadId', t.threadId))
+                .collect()
+              await Promise.all(workerMessages.map(m => ctx.db.delete(m._id)))
+              await ctx.db.delete(t._id)
+            })
+          )
           if (runState) await ctx.db.delete(runState._id)
           await ctx.db.delete(s._id)
           deletedCount += 1

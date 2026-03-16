@@ -1,3 +1,4 @@
+// oxlint-disable eslint-plugin-unicorn/filename-case
 import { defineRateLimits } from 'convex-helpers/server/rateLimit'
 
 import type { MutationCtx } from './_generated/server'

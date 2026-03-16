@@ -1,13 +1,16 @@
 import BasePage from '@a/e2e/base-page'
 
+const MESSAGE_RE = /message/iu
+const SEND_RE = /send/iu
+
 class ChatPage extends BasePage {
-  getComposer = () => this.page.getByPlaceholder(/message/iu)
+  getComposer = () => this.page.getByPlaceholder(MESSAGE_RE)
 
   getMessages = () => this.page.locator('.is-user, .is-assistant')
 
   getMessageLog = () => this.page.getByRole('log')
 
-  getSendButton = () => this.page.getByRole('button', { name: /send/iu })
+  getSendButton = () => this.page.getByRole('button', { name: SEND_RE })
 
   getTitle = () => this.page.locator('h1')
 

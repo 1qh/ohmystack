@@ -13,7 +13,12 @@ const messagePart = union([
       toolName: string(),
       type: zenum(['tool-call'])
     }),
-    object({ snippet: string().optional(), title: string(), type: zenum(['source']), url: string() })
+    object({
+      snippet: string().optional(),
+      title: string(),
+      type: zenum(['source']),
+      url: string()
+    })
   ]),
   owned = makeOwned({
     mcpServer: object({
