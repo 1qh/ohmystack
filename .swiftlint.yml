@@ -5,6 +5,7 @@ excluded:
   - "**/Darwin"
   - "**/Tests"
   - "**/Package.swift"
+  - "**/node_modules"
 
 disabled_rules:
   - multiple_closures_with_trailing_closure

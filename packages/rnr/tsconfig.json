@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react-native",
+    "lib": ["ESNext"],
+    "paths": {
+      "@a/rnr": ["./src/lib/utils.ts"],
+      "@a/rnr/*": ["./src/*"]
+    },
+    "rootDir": ".",
+    "strict": false
+  },
+  "exclude": ["node_modules"],
+  "extends": "lintmax/tsconfig",
+  "include": ["src"]
+}

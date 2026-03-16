@@ -7,9 +7,14 @@ export default defineConfig({
       'apps/*/next-env.d.ts',
       'apps/*/*/next-env.d.ts',
       'apps/docs/.source',
+      'packages/rnr/**',
       'packages/ui/**'
     ],
     overrides: [
+      {
+        disableLinter: true,
+        includes: ['packages/rnr/**']
+      },
       {
         disableLinter: true,
         includes: ['packages/ui/**']
@@ -32,6 +37,7 @@ export default defineConfig({
       'generated/',
       'module_bindings/',
       'mobile/convex/maestro/',
+      'packages/rnr/',
       'packages/ui/',
       '.source/'
     ],

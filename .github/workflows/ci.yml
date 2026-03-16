@@ -121,6 +121,22 @@ jobs:
       - run: bun i
       - run: bun ui:sync:check
 
+  rnr-sync-check:
+    needs: changes
+    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+        with:
+          bun-version: 'latest'
+      - run: bun i
+      - run: bun rnr:sync:check
+
   lint-swift:
     needs: changes
     if: needs.changes.outputs.swift == 'true' || needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')

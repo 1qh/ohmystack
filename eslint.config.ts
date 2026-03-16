@@ -102,6 +102,7 @@ export default eslint({
     'packages/be-convex/convex/edge.test.ts',
     'packages/be-convex/convex/f.test.ts',
     'packages/be-convex/convex/org-api.test.ts',
+    'packages/rnr/**',
     'packages/ui/**',
     '**/.source/**',
     '**/_generated/**',
