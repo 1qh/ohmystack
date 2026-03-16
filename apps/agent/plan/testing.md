@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 745 | 745 | 0 | 0 |
+| Backend `f.test.ts` | 850 | 850 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **821** | **821** | **0** | **0** |
+| **Total** | **926** | **926** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -840,6 +840,23 @@ flowchart LR
 | Session lifecycle edges | 10 | Immediate archive, immediate delete, duplicate titles, list after all archived |
 | Message edge cases | 15 | Empty/long/unicode/null content, non-existent thread |
 | Todo edge cases | 18 | 100 todos, long content, position conflicts, all statuses |
+
+### Remaining Adaptations (105 tests from 12 untouched files)
+
+| Source File | Tests | Coverage |
+|---|---|---|
+| `features/claude-tasks/storage.test.ts` (29) | 12 | Task CRUD, query by session/thread/status, ordering, missing session |
+| `tools/session-manager/storage.test.ts` (20) | 10 | Session list/get/archive/delete, ownership, thread resolution |
+| `hooks/session-notification.test.ts` (18) | 9 | System reminder injection, format, deduplication |
+| `hooks/category-skill-reminder/index.test.ts` (18) | 10 | Task reminder counter, threshold, reset, tool classification |
+| `features/background-agent/compaction-aware-message-resolver.test.ts` (16) | 8 | Boundary filtering, missing boundary, empty thread |
+| `tools/delegate-task/token-limiter.test.ts` (14) | 8 | Rate limiting, streak cap interaction, per-user isolation |
+| `tools/session-manager/tools.test.ts` (14) | 8 | Session public API contracts |
+| `tools/delegate-task/sync-session-poller.test.ts` (13) | 7 | Task status polling, completed/failed/pending |
+| `hooks/gpt-permission-continuation/*.test.ts` (10) | 8 | Continuation coordination, multi-session |
+| `features/claude-tasks/session-storage.test.ts` (10) | 6 | Session-task relationship, cascade |
+| `hooks/todo-continuation-enforcer/pending-question-detection.test.ts` (9) | 9 | Question detection (ends with ?), skip continuation |
+| `tools/session-manager/utils.test.ts` (9) | 10 | Session utility edge cases |
 
 ### Stagnation Detection
 

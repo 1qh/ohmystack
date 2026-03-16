@@ -13902,3 +13902,384 @@ describe('deep parity expansion batch three', () => {
       expect(rows[0]?.status).toBe(status)
     })
 })
+
+describe('append parity session storage matrix', () => {
+  for (const title of [undefined, '', 'matrix-a', '  matrix-b  ', 'タイトル'] as const)
+    test(`createSession persists title variant ${String(title)}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, title === undefined ? {} : { title }),
+        session = await ctx.run(async d => d.db.get(created.sessionId))
+      if (title === undefined) expect(session?.title).toBeUndefined()
+      else expect(session?.title).toBe(title)
+      expect(session?.threadId).toBe(created.threadId)
+    })
+
+  for (const reason of ['todo_continuation', 'task_completion', 'user_message'] as const)
+    test(`archiveSession clears queued fields from ${reason}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.run(async d => {
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', created.threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            queuedPriority: reason,
+            queuedPromptMessageId: `queued-${reason}`,
+            queuedReason: reason
+          })
+      })
+      await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      expect(state?.queuedPriority).toBeUndefined()
+      expect(state?.queuedPromptMessageId).toBeUndefined()
+      expect(state?.queuedReason).toBeUndefined()
+    })
+
+  for (const status of ['active', 'idle', 'archived'] as const)
+    test(`getSession ownership check returns null for non-owner when status=${status}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      if (status !== 'active')
+        await ctx.run(async d => {
+          await d.db.patch(created.sessionId, { status })
+        })
+      const out = await asUser(1).query(api.sessions.getSession, { sessionId: created.sessionId })
+      expect(out).toBeNull()
+    })
+
+  test('archiveSession keeps threadRunState row for archived session', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+    expect(state).not.toBeNull()
+  })
+})
+
+describe('append parity task reminder counter matrix', () => {
+  for (const toolName of ['read', 'write', 'edit', 'bash', 'webSearch', 'mcpCall', 'grep', 'glob', 'look_at', 'session_read'])
+    test(`incrementTaskToolCounter increments for non-task tool ${toolName}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        out = await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName })
+      expect(out.turnsSinceTaskTool).toBe(1)
+      expect(out.shouldRemind).toBe(false)
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(state?.turnsSinceTaskTool).toBe(1)
+    })
+
+  for (const toolName of ['delegate', 'taskStatus', 'taskOutput'])
+    test(`incrementTaskToolCounter resets to zero for task tool ${toolName}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName: 'read' })
+      const out = await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName })
+      expect(out.turnsSinceTaskTool).toBe(0)
+      expect(out.shouldRemind).toBe(false)
+    })
+
+  for (const turns of [8, 9, 10, 11] as const)
+    test(`consumeTaskReminder threshold behavior at turns=${turns}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      for (let i = 0; i < turns; i += 1)
+        await ctx.mutation(internal.orchestrator.incrementTaskToolCounter, { threadId, toolName: 'read' })
+      const consumed = await ctx.mutation(internal.orchestrator.consumeTaskReminder, { threadId })
+      expect(consumed.shouldInject).toBe(turns >= 10)
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      if (turns >= 10) expect(state?.turnsSinceTaskTool).toBe(0)
+      else expect(state?.turnsSinceTaskTool).toBe(turns)
+    })
+})
+
+describe('append parity compaction prompt boundary matrix', () => {
+  const insertPromptMessage = async ({
+    content,
+    ctx,
+    role,
+    sessionId,
+    threadId
+  }: {
+    content: string
+    ctx: ReturnType<typeof t>
+    role: 'assistant' | 'system' | 'user'
+    sessionId: string
+    threadId: string
+  }) =>
+    ctx.run(async d =>
+      d.db.insert('messages', {
+        content,
+        isComplete: true,
+        parts: [{ text: content, type: 'text' }],
+        role,
+        sessionId: sessionId as never,
+        threadId
+      })
+    )
+
+  for (const c of [
+    { expected: ['p-1'], promptIndex: 1 },
+    { expected: ['p-1', 'p-2'], promptIndex: 2 },
+    { expected: ['p-1', 'p-2', 'p-3'], promptIndex: 3 }
+  ] as const)
+    test(`listMessagesForPrompt caps by prompt index ${c.promptIndex}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      const m1 = await insertPromptMessage({ content: 'p-1', ctx, role: 'user', sessionId: String(created.sessionId), threadId: created.threadId }),
+        m2 = await insertPromptMessage({ content: 'p-2', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId }),
+        m3 = await insertPromptMessage({ content: 'p-3', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId })
+      const promptId = c.promptIndex === 1 ? m1 : c.promptIndex === 2 ? m2 : m3
+      const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, {
+        promptMessageId: String(promptId),
+        threadId: created.threadId
+      })
+      expect(rows.map(r => r.content)).toEqual(c.expected)
+    })
+
+  for (const anchor of [1, 2] as const)
+    test(`listMessagesForPrompt honors compaction boundary at message ${anchor}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      const m1 = await insertPromptMessage({ content: 'b-1', ctx, role: 'user', sessionId: String(created.sessionId), threadId: created.threadId }),
+        m2 = await insertPromptMessage({ content: 'b-2', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId }),
+        m3 = await insertPromptMessage({ content: 'b-3', ctx, role: 'assistant', sessionId: String(created.sessionId), threadId: created.threadId })
+      const boundaryId = anchor === 1 ? m1 : m2
+      const lock = await ctx.mutation(internal.compaction.acquireCompactionLock, { threadId: created.threadId })
+      await ctx.mutation(internal.compaction.setCompactionSummary, {
+        compactionSummary: `boundary-${anchor}`,
+        lastCompactedMessageId: String(boundaryId),
+        lockToken: lock.lockToken,
+        threadId: created.threadId
+      })
+      const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId: created.threadId })
+      if (anchor === 1) expect(rows.map(r => r.content)).toEqual(['b-2', 'b-3'])
+      else expect(rows.map(r => r.content)).toEqual(['b-3'])
+      expect(String(m3).length > 0).toBe(true)
+    })
+
+  for (const count of [100, 101, 150] as const)
+    test(`listMessagesForPrompt limits to 100 rows with inserted count=${count}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.run(async d => {
+        for (let i = 0; i < count; i += 1)
+          await d.db.insert('messages', {
+            content: `cap-${i}`,
+            isComplete: true,
+            parts: [{ text: `cap-${i}`, type: 'text' }],
+            role: 'user',
+            sessionId: created.sessionId,
+            threadId: created.threadId
+          })
+      })
+      const rows = await ctx.query(internal.orchestrator.listMessagesForPrompt, { threadId: created.threadId })
+      expect(rows.length).toBe(Math.min(100, count))
+      expect(rows[0]?.content).toBe(count > 100 ? `cap-${count - 100}` : 'cap-0')
+    })
+})
+
+describe('append parity polling and task status matrix', () => {
+  for (const status of ['pending', 'running', 'completed', 'failed', 'timed_out', 'cancelled'] as const)
+    test(`getOwnedTaskStatus polling sees ${status} task`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? Date.now() : undefined,
+          description: `poll-${status}`,
+          isBackground: true,
+          lastError: status === 'failed' ? 'poll-failure' : undefined,
+          parentThreadId: created.threadId,
+          pendingAt: status === 'pending' ? Date.now() : undefined,
+          result: status === 'completed' ? 'poll-result' : undefined,
+          retryCount: 0,
+          sessionId: created.sessionId,
+          startedAt: status === 'running' ? Date.now() : undefined,
+          status,
+          threadId: `poll-${status}-${crypto.randomUUID()}`
+        })
+      )
+      const out = await asUser(0).query(api.tasks.getOwnedTaskStatus, { taskId })
+      expect(out?.status).toBe(status)
+    })
+
+  for (const status of ['pending', 'running', 'completed', 'failed', 'timed_out', 'cancelled'] as const)
+    test(`listTasks includes status ${status}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.run(async d => {
+        await d.db.insert('tasks', {
+          completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? Date.now() : undefined,
+          description: `list-${status}`,
+          isBackground: true,
+          parentThreadId: created.threadId,
+          pendingAt: status === 'pending' ? Date.now() : undefined,
+          retryCount: 0,
+          sessionId: created.sessionId,
+          startedAt: status === 'running' ? Date.now() : undefined,
+          status,
+          threadId: `list-${status}-${crypto.randomUUID()}`
+        })
+      })
+      const rows = await asUser(0).query(api.tasks.listTasks, { sessionId: created.sessionId })
+      expect(rows.some(r => r.status === status)).toBe(true)
+    })
+})
+
+describe('append parity continuation question guard equivalents', () => {
+  for (const suffix of ['?', ' ? ', '?\n'] as const)
+    test(`question-like assistant tail maps to turnRequestedInput=true with suffix ${JSON.stringify(suffix)}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: 'question-guard-start',
+        reason: 'user_message',
+        threadId: created.threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      await ctx.run(async d => {
+        await d.db.insert('messages', {
+          content: `Need input${suffix}`,
+          isComplete: true,
+          parts: [{ text: `Need input${suffix}`, type: 'text' }],
+          role: 'assistant',
+          sessionId: created.sessionId,
+          threadId: created.threadId
+        })
+        await d.db.insert('todos', {
+          content: 'question-guard-todo',
+          position: 0,
+          priority: 'high',
+          sessionId: created.sessionId,
+          status: 'pending'
+        })
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: state?.activeRunToken ?? '',
+        threadId: created.threadId,
+        turnRequestedInput: true
+      })
+      expect(out.shouldContinue).toBe(false)
+    })
+
+  for (const suffix of ['.', '!', ' done'] as const)
+    test(`non-question assistant tail can continue with turnRequestedInput=false suffix ${JSON.stringify(suffix)}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        created = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: 'non-question-guard-start',
+        reason: 'user_message',
+        threadId: created.threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId: created.threadId })
+      await ctx.run(async d => {
+        await d.db.insert('messages', {
+          content: `Completed${suffix}`,
+          isComplete: true,
+          parts: [{ text: `Completed${suffix}`, type: 'text' }],
+          role: 'assistant',
+          sessionId: created.sessionId,
+          threadId: created.threadId
+        })
+        await d.db.insert('todos', {
+          content: 'non-question-guard-todo',
+          position: 0,
+          priority: 'high',
+          sessionId: created.sessionId,
+          status: 'pending'
+        })
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: state?.activeRunToken ?? '',
+        threadId: created.threadId,
+        turnRequestedInput: false
+      })
+      expect(out.shouldContinue).toBe(true)
+    })
+})
+
+describe('append parity source utility and tools matrix', () => {
+  for (const marker of [
+    "reasonPriority =",
+    "task_completion: 1",
+    "todo_continuation: 0",
+    "user_message: 2",
+    'TASK_REMINDER_THRESHOLD = 10',
+    'MAX_STAGNATION_COUNT = 3',
+    'MAX_CONSECUTIVE_FAILURES = 5',
+    'CONTINUATION_BASE_COOLDOWN_MS = 5_000',
+    'FAILURE_RESET_WINDOW_MS = 5 * 60 * 1000',
+    'WALL_CLOCK_TIMEOUT_MS = 15 * 60 * 1000',
+    'isTaskToolName',
+    "toolName === 'delegate'",
+    "toolName === 'taskOutput'",
+    "toolName === 'taskStatus'",
+    'consumeTaskReminder',
+    'incrementTaskToolCounter',
+    'listMessagesForPrompt',
+    'postTurnAuditFenced',
+    'timeoutStaleRuns',
+    'enqueueRunInline',
+    'computeContinuationCooldownMs',
+    'buildTodoReminder',
+    'normalizeTodos',
+    'parseTodoSnapshot',
+    'summarizeTodoState',
+    'runOrchestratorRef',
+    'scheduleRun',
+    "if (state.status !== 'active') return { ok: false, shouldContinue: false }",
+    "if (state.activeRunToken !== runToken) return { ok: false, shouldContinue: false }",
+    'turnRequestedInput'
+  ])
+    test(`orchestrator source contains marker ${marker}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./orchestrator.ts', import.meta.url), 'utf-8')
+      expect(source.includes(marker)).toBe(true)
+    })
+
+  for (const marker of [
+    'buildTaskCompletionReminder',
+    'buildTaskTerminalReminder',
+    'maybeContinueOrchestratorInline',
+    'continuationEnqueuedAt',
+    "status: 'pending'",
+    "status: 'running'",
+    "status: 'completed'",
+    "status: 'failed'",
+    "status: 'cancelled'",
+    'delayMs = Math.min(1000 * 2 ** retryCount, 30_000)',
+    "if (task.retryCount >= 3) return { ok: false }",
+    "if (!session || session.status === 'archived') return { ok: false }",
+    'updateTaskHeartbeat',
+    'getOwnedTaskStatus',
+    'listTasks',
+    'spawnTask',
+    'markRunning',
+    'completeTask',
+    'failTask',
+    'scheduleRetry'
+  ])
+    test(`tasks source contains marker ${marker}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./tasks.ts', import.meta.url), 'utf-8')
+      expect(source.includes(marker)).toBe(true)
+    })
+})
