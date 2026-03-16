@@ -55,13 +55,17 @@ export default eslint({
       files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
     },
     {
-      files: ['packages/be-convex/check-schema.ts', 'packages/be-convex/t.ts'],
+      files: ['packages/be-convex/check-schema.ts', 'packages/be-convex/env.ts', 'packages/be-convex/t.ts'],
       rules: {
         'noboil-convex/discovery-check': 'off'
       }
     },
     {
-      files: ['packages/be-spacetimedb/env.ts', 'packages/be-spacetimedb/t.ts'],
+      files: [
+        'packages/be-spacetimedb/env.ts',
+        'packages/be-spacetimedb/t.ts',
+        'packages/be-spacetimedb/test-skeleton.ts'
+      ],
       rules: {
         'noboil-stdb/discovery-check': 'off'
       }
