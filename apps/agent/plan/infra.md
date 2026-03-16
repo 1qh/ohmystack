@@ -1,17 +1,56 @@
 # Infrastructure and Configuration
 
-## Model Selection
+## Model Selection Pattern
 
-Gemini 2.5 Flash is the production model. Test mode uses a deterministic mock model.
+Gemini 2.5 Flash stays fixed for v1, while test environments switch to a deterministic mock model so CI and E2E are stable.
 
-Implementation:
-- `packages/be-agent/ai.ts`
-- `packages/be-agent/models.mock.ts`
-- `packages/be-agent/env.ts`
+- The model module validates environment configuration on import before any model is constructed.
+- `getModel()` memoizes the selected model instance so repeated calls reuse a single initialized model.
+- In test-mode signals (`PLAYWRIGHT`, `TEST_MODE`, or `CONVEX_TEST_MODE`), `getModel()` returns the mock model.
+- Outside test mode, `getModel()` lazily initializes the Vertex provider and returns the real Gemini model.
 
-## Backend Package Layout
+Implementation: `packages/be-agent/ai.ts`
+
+## Backend Structure
 
 Backend runs as an independent Convex package under `packages/be-agent`.
+
+File tree:
+
+- `packages/be-agent/`
+- `packages/be-agent/convex/`
+- `packages/be-agent/convex/_generated/`
+- `packages/be-agent/convex/convex.config.ts`
+- `packages/be-agent/convex/schema.ts`
+- `packages/be-agent/convex/auth.ts`
+- `packages/be-agent/convex/auth.config.ts`
+- `packages/be-agent/convex/testauth.ts`
+- `packages/be-agent/convex/http.ts`
+- `packages/be-agent/convex/crons.ts`
+- `packages/be-agent/convex/sessions.ts`
+- `packages/be-agent/convex/messages.ts`
+- `packages/be-agent/convex/orchestrator.ts`
+- `packages/be-agent/convex/orchestratorNode.ts`
+- `packages/be-agent/convex/agentsNode.ts`
+- `packages/be-agent/convex/tasks.ts`
+- `packages/be-agent/convex/todos.ts`
+- `packages/be-agent/convex/mcp.ts`
+- `packages/be-agent/convex/search.ts`
+- `packages/be-agent/convex/tokenUsage.ts`
+- `packages/be-agent/convex/compaction.ts`
+- `packages/be-agent/convex/rateLimit.ts`
+- `packages/be-agent/convex/staleTaskCleanup.ts`
+- `packages/be-agent/convex/retention.ts`
+- `packages/be-agent/ai.ts`
+- `packages/be-agent/env.ts`
+- `packages/be-agent/lazy.ts`
+- `packages/be-agent/prompts.ts`
+- `packages/be-agent/t.ts`
+- `packages/be-agent/models.mock.ts`
+- `packages/be-agent/check-schema.ts`
+- `packages/be-agent/SOURCES.md`
+- `packages/be-agent/package.json`
+- `packages/be-agent/tsconfig.json`
 
 ```mermaid
 flowchart TD
@@ -51,10 +90,14 @@ flowchart TD
 
 ## Implementation Notes
 
-- Action files that depend on Node-only SDK internals are split into `*Node.ts` modules.
-- Cross-file action/mutation references use Convex function references.
-- Test-mode auth path uses backend test identity while frontend can bypass OAuth guard flow in tests.
-- Env validation runs at module load and blocks unsafe deployment combinations.
+- `m()` and `q()` handler signatures use `(ctx, args)` with Zod validators; they do not use the old `(c)` shape with `c.ctx`/`c.args`.
+- `ctx.user._id` is typed as a string in noboil handlers while Convex indexes/inserts expect `Id<'users'>`; the implementation uses explicit casts at the boundary.
+- Action files that depend on Node-only SDK internals are split into `*Node.ts` modules with `'use node'`.
+- Convex scheduler module references cannot include dotted names; action files use camelCase modules like `orchestratorNode`.
+- Cross-file action/mutation calls rely on Convex function references for `*.ts` <-> `*Node.ts` boundaries.
+- `@ai-sdk/google-vertex` initialization uses the provider option shape expected by the current SDK runtime.
+- Test mode auth keeps backend ownership intact via `getAuthUserIdOrTest`, while frontend test mode bypasses OAuth UX.
+- Environment validation executes at module load and includes production-safety fuses for test-mode variables.
 
 ## Configuration Files
 
@@ -76,29 +119,46 @@ File uploads are not included in this product scope. Text input/paste is support
 
 ## Environment Variables
 
-Frontend runtime variables:
-- `NEXT_PUBLIC_CONVEX_URL`
-- `NEXT_PUBLIC_CONVEX_TEST_MODE` (test only)
+### Frontend env (`apps/agent/.env.local`)
 
-Backend runtime variables:
-- `CONVEX_DEPLOYMENT`
-- `AUTH_SECRET`
-- `AUTH_GOOGLE_ID`
-- `AUTH_GOOGLE_SECRET`
-- `GOOGLE_VERTEX_API_KEY`
+| Variable | Dev | Test | Prod | Notes |
+| --- | --- | --- | --- | --- |
+| `NEXT_PUBLIC_CONVEX_URL` | optional (falls back to `http://127.0.0.1:3210`) | required | required | Agent app Convex URL, separate from demo apps |
+| `NEXT_PUBLIC_CONVEX_TEST_MODE` | omit | `true` | omit | Enables `TestLoginProvider` bypass of Google OAuth |
 
-Built-in Convex runtime URLs are provided by platform runtime.
+### Backend env (`packages/be-agent`, set via `convex env set`)
+
+| Variable | Dev | Test | Prod | Notes |
+| --- | --- | --- | --- | --- |
+| `CONVEX_DEPLOYMENT` | local deployment | test deployment | production deployment | Convex target for dev/deploy scripts |
+| `AUTH_SECRET` | required | required | required | Auth.js signing/encryption secret used by Convex auth |
+| `AUTH_GOOGLE_ID` | required when Google auth enabled | optional | required | OAuth client id for `@convex-dev/auth` |
+| `AUTH_GOOGLE_SECRET` | required when Google auth enabled | optional | required | OAuth client secret for `@convex-dev/auth` |
+| `CONVEX_SITE_URL` | optional | optional | optional | Domain value for auth provider configuration |
+| `GOOGLE_VERTEX_API_KEY` | required in non-mock runtime | mock or test key | required | Vertex AI Express mode API key |
+
+Built-in Convex runtime URLs are platform-provided and not set through normal env var commands.
 
 ## Deployment
 
-Backend and frontend deploy independently:
+Backend and frontend deploy independently with separate environments and rollout cadence.
 
-- Backend target: `packages/be-agent` Convex project.
-- Frontend target: `apps/agent` with `NEXT_PUBLIC_CONVEX_URL` pointing to agent backend.
-- Cron schedules and env management are maintained per backend deployment.
+First-time setup:
 
-Implementation scripts:
-- `package.json` workspace scripts for `agent:convex:dev`, `agent:convex:deploy`, and `agent:dev`.
+1. Create or select the dedicated Convex project for `packages/be-agent`.
+2. Configure backend env vars in that project with `convex env set`.
+3. Push initial schema/functions with `bun --cwd packages/be-agent with-env convex dev --once`.
+4. Start backend dev with `bun --cwd packages/be-agent with-env convex dev`.
+5. Start frontend dev with `bun --cwd apps/agent dev`.
+
+Incremental deploys:
+
+1. Run `bun fix` at repo root.
+2. Deploy backend updates using `bun --cwd packages/be-agent with-env convex deploy`.
+3. Deploy frontend with `NEXT_PUBLIC_CONVEX_URL` targeting the agent backend deployment.
+4. Verify cron schedules and environment settings in the deployed backend project.
+
+Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:convex:deploy`, and `agent:dev`.
 
 ## Dependencies
 

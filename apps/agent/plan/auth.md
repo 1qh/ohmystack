@@ -60,6 +60,15 @@ flowchart TD
   G --> B["AuthGuard bypass + authenticated backend ownership context"]
 ```
 
+## Test Auth Model
+
+Test mode uses backend-issued deterministic identity so public handlers still execute ownership checks against a real `userId`, without requiring OAuth during E2E runs.
+
+- `signInAsTestUser` is callable only when test mode is enabled.
+- `getAuthUserIdOrTest` first attempts normal auth, then allows test-user fallback only when `isTestMode()` is true.
+- Public handlers call `getAuthUserIdOrTest` instead of raw `getAuthUserId`, so test mode bypasses external login but preserves server-side ownership enforcement.
+- Frontend `TestLoginProvider` bootstraps this flow before protected UI renders.
+
 ## Ownership Boundary Rule
 
 - Public handlers derive `userId` from auth context only.
@@ -75,19 +84,33 @@ flowchart LR
   CHK -- "no" --> DENY["Reject (not found/unauthorized)"]
 ```
 
-## Endpoint Ownership Coverage
+## Full Ownership Audit
 
-- Sessions: list/create/get/submit/archive/run-state all ownership-gated.
-- Messages: parent-thread and worker-thread reads gated through session/task ownership chain.
-- Tasks: list/status/output gated by owned session lineage.
-- Todos and token usage: session ownership required.
-- MCP CRUD: user-scoped ownership enforced by CRUD layer and hooks.
+| Public endpoint | Ownership check |
+| --- | --- |
+| `sessions.list` | Filters by authenticated `userId` via `by_user_status`. |
+| `sessions.createSession` | Writes session row with authenticated `userId`. |
+| `sessions.getSession` | Loads session and verifies `session.userId === authUserId`. |
+| `sessions.submitMessage` | Resolves `sessionId`, verifies ownership, then writes message/enqueue. |
+| `sessions.archiveSession` | Verifies owned session before archive mutation. |
+| `sessions.getRunState` | Resolves owned session by `threadId` before returning run state. |
+| `messages.listMessages` | Resolves ownership via `session.by_user_threadId`; for worker threads resolves `task -> session -> user`. |
+| `tasks.listTasks` | Verifies `sessionId` ownership before listing task rows. |
+| `tasks.getOwnedTaskStatus` | Verifies requester owns `requesterThreadId` session, then verifies `task.sessionId` matches. |
+| `todos.listTodos` | Verifies session ownership before listing todos. |
+| `tokenUsage.getTokenUsage` | Verifies session ownership before aggregation; unauthorized access returns zeroed counters. |
+| `mcp.listMcpServers` | User-scoped row ownership enforced by CRUD ownership layer. |
+| `mcp.addMcpServer` | Create path is user-scoped; server row is owned by authenticated user. |
+| `mcp.updateMcpServer` | Update path is user-scoped by CRUD ownership resolution. |
+| `mcp.deleteMcpServer` | Delete path is user-scoped by CRUD ownership resolution. |
+| `testauth.signInAsTestUser` | Enabled only in test mode; unavailable in production mode. |
 
 ## Production Safety
 
-- `CONVEX_TEST_MODE` is forbidden in production deployment.
-- Environment validation hard-fails unsafe auth/test combinations at module load.
-- CI and deployment environment groups enforce test-only variables outside production.
+- Runtime fuse: `getAuthUserIdOrTest` checks `isTestMode()` at call time before allowing test identity fallback.
+- Deployment-stage fuse: backend env validation fails module load if production `CONVEX_CLOUD_URL` is detected while `CONVEX_TEST_MODE` is set.
+- Defense-in-depth: keep `CONVEX_TEST_MODE` defined only in non-production env groups, and enforce CI/CD assertions that production deploys do not carry test-mode variables.
+- Production auth secrets (`AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`) are validated early so misconfiguration fails fast.
 
 ## Tests
 

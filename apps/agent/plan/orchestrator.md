@@ -107,22 +107,26 @@ flowchart TD
     FIN --> D[done]
 ```
 
-## Streaming Write Model
+## DIY Streaming Architecture
 
-- Create assistant row with `isComplete: false`, empty `content`, empty `streamingContent`, and `parts: []`.
-- Patch `streamingContent` during deltas.
-- On completion, set final `content`/`parts`, clear streaming field, set `isComplete: true`.
-- Frontend renders reactively from `api.messages.listMessages`.
+The orchestrator writes stream output directly to Convex message rows instead of relying on framework-managed message storage.
 
-## Post-Turn Continuation Audit
+- The turn starts with `streamText()` in the Node action.
+- Each text delta appends to an in-memory buffer and patches the assistant row's `streamingContent` so the client can render partial output immediately.
+- The frontend subscribes via `useQuery` to the thread messages list, so each patch re-renders in real time without a separate stream channel.
+- On stream completion, the row is finalized by moving the full text into `content`, marking `isComplete: true`, and clearing transient streaming state.
 
-`postTurnAuditFenced` performs token-fenced continuation decisions in one mutation:
+Implementation: `packages/be-agent/convex/orchestratorNode.ts`
 
-- verify active token still matches run token,
-- evaluate todo/task/input stop conditions,
-- write reminder when continuation is needed,
-- enqueue `todo_continuation` with streak increment,
-- reset streak when continuation should stop.
+## Post-Turn Auto-Continue Audit
+
+`postTurnAuditFenced` performs the continuation decision as one token-fenced mutation, so decision and side effects stay atomic and stale runs cannot schedule new work.
+
+- Verify `activeRunToken === runToken` before doing any audit work.
+- Evaluate stop conditions in order: incomplete todos, active background tasks, input requested, and streak cap.
+- If any stop condition applies, reset continuation state and stop.
+- If continuation is allowed, write a reminder system message and enqueue `todo_continuation` with streak increment.
+- Update completion notification metadata inside the same fenced mutation when applicable.
 
 ```mermaid
 flowchart TD
@@ -139,12 +143,14 @@ flowchart TD
     ENQ --> S1[continue scheduled or queue-updated]
 ```
 
-## Heartbeat and Timeout Recovery
+## Heartbeat and Wall-Clock Timeout
 
-- Runtime heartbeat every ~2 minutes while action is alive.
-- Claimed stale run threshold: 15 minutes from latest heartbeat (fallback `claimedAt`).
-- Unclaimed stale run threshold: 5 minutes from `activatedAt`.
-- Wall-clock cap: 15 minutes from `activatedAt`.
+`runOrchestrator` sends heartbeats while running so stale-run recovery can distinguish live execution from dead actions.
+
+- `claimRun` initializes `runHeartbeatAt` when a token is consumed.
+- While the action is alive, it updates `runHeartbeatAt` on a regular interval (about every two minutes).
+- `timeoutStaleRuns` treats claimed runs as stale when heartbeat age exceeds 15 minutes (falling back to `claimedAt`), and unclaimed active runs as stale after 5 minutes from `activatedAt`.
+- A hard wall-clock cap of 15 minutes from `activatedAt` is enforced even if heartbeats continue.
 
 Recovery behavior:
 
@@ -178,6 +184,28 @@ sequenceDiagram
 - Token fencing prevents stale runs from enqueueing new continuations.
 - All terminal tool outcomes are serialized into model context so follow-up turns keep full tool history.
 - Completion reminders and continuation enqueue remain separate operations, which preserves observability and retryability in operational recovery paths.
+
+## Stagnation Detection
+
+To avoid infinite continuation loops when todos are not changing, the runtime tracks a normalized todo snapshot between continuation cycles.
+
+- The snapshot stores stable todo identity and status fields in a deterministic order.
+- If two consecutive continuation checks see the same snapshot, `stagnationCount` increments.
+- When the counter reaches the configured threshold, continuation stops and streak state resets.
+- Any real progress (status transitions, completed-count increase, or reduced incomplete set) resets stagnation tracking.
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/stagnation-detection.ts`
+
+## Continuation Cooldown
+
+Continuation failures are rate-limited with exponential backoff so repeated failures do not thrash the queue.
+
+- The runtime tracks consecutive continuation failures and timestamp of the latest attempt.
+- Cooldown duration grows as `5000ms * 2^min(consecutiveFailures, 5)`.
+- After repeated failures at the cap, continuation is paused until the reset window elapses.
+- A successful continuation resets the failure counter.
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/idle-event.ts`
 
 ## Tests
 
