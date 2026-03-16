@@ -1,120 +1,102 @@
 # Execution Phases
 
-This document restructures the `PLAN.md` execution plan into seven delivery phases, with explicit phase dependencies and success criteria.
+All delivery phases are complete. This document records scope, outcomes, and dependency flow.
 
 ## Phase 1: Foundation
 
 Scope:
 
 1. Schema and table design (`session`, `tasks`, `todos`, `mcpServers`, `tokenUsage`, `threadRunState`, rate-limit tables)
-2. Backend configuration scaffolding and environment validation
-3. Lazy setup pattern and ownership-safe query/mutation wrappers
-4. Model selection abstraction with deterministic test-mode fallback
-5. Session creation and ownership-safe mapping to threads
+2. Backend configuration scaffolding and env validation
+3. Ownership-safe query/mutation wrappers
+4. Model selection abstraction with deterministic test fallback
+5. Session creation and thread mapping
 
-Success criteria:
+Outcome:
 
-- Separate backend package is bootstrapped and deployable
-- Schema checks and typecheck pass
-- Session CRUD and ownership boundaries work as designed
+- Backend package is deployable, schema/type checks pass, and ownership boundaries are enforced.
 
 ## Phase 2: Core Runtime
 
 Scope:
 
-1. Orchestrator run loop and queue-per-thread state machine
+1. Orchestrator queue-per-thread state machine
 2. CAS transitions for claim/enqueue/finish
 3. Streaming execution path and prompt chaining
 4. Message persistence and non-blocking queue behavior
-5. Worker lifecycle primitives (`pending`, `running`, `completed`, `failed`, `timed_out`, `cancelled`)
+5. Worker lifecycle primitives
 
-Success criteria:
+Outcome:
 
-- One active run per thread with priority queue behavior
-- Streaming completes with persisted messages and stable replay behavior
-- Core runtime retries and stale-state guards are in place
+- Active-run isolation, deterministic queue behavior, and resilient runtime guards are in place.
 
 ## Phase 3: Tools and Delegation
 
 Scope:
 
-1. Full tool set wiring (`delegate`, `todoRead`, `todoWrite`, `taskStatus`, `taskOutput`, `webSearch`, `mcpCall`, `mcpDiscover`)
-2. Background worker system for delegated tasks
-3. MCP integration with discovery, call execution, and cache refresh retry path
-4. Structured tool-error payloads and ownership-safe tool execution
+1. Tool wiring (`delegate`, `todoRead`, `todoWrite`, `taskStatus`, `taskOutput`, `webSearch`, `mcpCall`, `mcpDiscover`)
+2. Background worker execution chain
+3. MCP discovery, invocation, cache refresh retry path
+4. Structured tool-error payloads with ownership-safe execution
 
-Success criteria:
+Outcome:
 
-- Delegated tasks execute end-to-end and report completion
-- Tool results are visible in conversation flow
-- MCP tool calls and discovery function with predictable error handling
+- Delegation and tool workflows execute end-to-end with stable result contracts.
 
 ## Phase 4: Operations
 
 Scope:
 
-1. Retention crons (active -> idle -> archived -> hard-delete)
-2. Stale task/run recovery and timeout transitions
-3. Compaction pre-generation flow and lock safety
+1. Retention crons
+2. Stale task/run recovery
+3. Compaction lock and summary flow
 4. Token usage recording and aggregation
-5. Per-user rate limiting for submit/delegate/search/MCP calls
+5. Per-user rate limiting
 
-Success criteria:
+Outcome:
 
-- Cron transitions run on schedule and enforce retention policy
-- Hung run recovery includes 15-minute wall-clock cap
-- Compaction and stale recovery preserve runtime safety invariants
-- Rate limiting is enforced at entry points
+- Retention, recovery, compaction, and limit enforcement run on schedule and preserve runtime invariants.
 
 ## Phase 5: Frontend
 
 Scope:
 
 1. Session list, chat view, and settings page
-2. Streaming UI for text, reasoning, tool calls, and source cards
-3. Task/todo/token side panels and responsive layout behavior
-4. Auth flow wiring (including test-mode behavior)
+2. Streaming UI for text, reasoning, tools, and sources
+3. Task/todo/token side panels with responsive behavior
+4. Auth and test-mode wiring
 
-Success criteria:
+Outcome:
 
-- Core pages are functional on desktop/tablet/mobile
-- Streaming and background task visibility are clear in UI
-- Ownership and auth behavior match backend boundaries
+- Core product flows are functional across desktop and mobile breakpoints.
 
 ## Phase 6: Polish
 
 Scope:
 
 1. Loading/error/empty states
-2. Accessibility rules (log roles, live regions, keyboard flows)
-3. UX quality improvements on list/chat/settings flows
-4. Performance and failure-path hardening
+2. Accessibility constraints
+3. UX hardening across session/chat/settings flows
+4. Failure-path and performance hardening
 
-Success criteria:
+Outcome:
 
-- User-facing states are complete and consistent
-- Accessibility requirements are met
-- Runtime and UI degrade gracefully under failures
+- UX states are consistent and resilient under degraded conditions.
 
 ## Phase 7: Testing and Verification
 
 Scope:
 
-1. **Backend tests (convex-test)** — 175+ cases covering every mutation, query, action, cron handler, ownership guard, CAS transition, and edge case. Written alongside code in Phase 1-4.
-2. **E2E infrastructure** — playwright.config.ts, global-setup.ts, page objects, fixtures, helpers. Follows monorepo pattern from `@a/e2e`.
-3. **E2E test implementation** — 60+ Playwright test cases across 7 files (session, chat, tools, settings, error, a11y, frontend-states).
-4. **Pre-E2E deployment** — `CONVEX_TEST_MODE=true bun --cwd packages/be-agent with-env convex dev --once` before test run.
-5. **Final quality gates** — `bun fix` passes, `bun test` (backend) green, `bun test:e2e` (Playwright) green.
+1. Backend convex-test coverage across runtime, ownership, and cron paths
+2. E2E infrastructure and Playwright suites
+3. Pre-E2E deployment workflow
+4. Final quality gates
 
-Success criteria:
+Outcome:
 
-- All 175+ backend tests pass
-- All 60+ E2E tests pass in headless Chromium
-- `bun fix` produces zero errors on `packages/be-agent` and `apps/agent`
-- Deployment path validated (backend deploy + frontend build)
-- E2E covers: session CRUD, chat streaming, tool execution, MCP settings, error states, accessibility, responsive
+- Backend and E2E suites pass with documented totals in `testing.md`.
 
-## Phase dependency graph
+## Phase Dependency Graph
 
 ```mermaid
 flowchart LR
@@ -128,7 +110,7 @@ flowchart LR
   P4 --> P7
 ```
 
-## Phase timeline
+## Phase Timeline
 
 ```mermaid
 gantt
@@ -145,14 +127,12 @@ gantt
   Phase 7 Testing and Verification:done, p7, 6, 1
 ```
 
-## Delivery dependencies
+## Delivery Dependencies
 
-Technical dependencies extracted from plan-level dependency notes:
-
-- AI SDK v6 core APIs for generation and streaming
-- Convex functions, schema, and scheduling support
-- Convex auth integration for ownership-safe APIs
-- `convex-helpers` for rate limit tables and limit checks
-- MCP client stack for external tool transport
-- Next.js App Router frontend runtime
-- Playwright for E2E verification
+- AI SDK v6 streaming and tool APIs
+- Convex schema/functions/scheduler primitives
+- Convex auth for ownership-safe APIs
+- `convex-helpers` rate limiting
+- MCP client stack
+- Next.js App Router runtime
+- Playwright E2E tooling

@@ -141,7 +141,7 @@ Tool results serialization: All terminal tool outcomes (both `success` and `erro
 
 This ensures the model sees the full conversation history including prior tool interactions, not just plain text. Without this, follow-up turns after tool-heavy conversations would lose all tool context.
 
-**Multi-step turn handling**: when an assistant turn includes multiple steps (text → tool-call → tool-result → more text), all steps are stored in one message row’s `parts` array in execution order. During serialization, `buildModelMessages` emits: (1) an assistant CoreMessage with text + tool-call parts, then (2) a tool CoreMessage with tool results, preserving the correct assistant→tool ordering. If a turn has multiple sequential tool calls, each call-result pair is serialized in order. The single-row storage is a deliberate v1 simplification — it handles the common case (1-2 tool calls per turn) correctly. Turns with complex interleaving (text → tool → text → tool) serialize the tool calls in order but may not perfectly reconstruct mid-turn text boundaries. This is acceptable for v1; the model still sees all content and tool outcomes.
+**Multi-step turn handling**: when an assistant turn includes multiple steps (text → tool-call → tool-result → more text), all steps are stored in one message row’s `parts` array in execution order. During serialization, `buildModelMessages` emits: (1) an assistant CoreMessage with text + tool-call parts, then (2) a tool CoreMessage with tool results, preserving the correct assistant→tool ordering. If a turn has multiple sequential tool calls, each call-result pair is serialized in order. Single-row storage is a deliberate simplification that preserves full content and tool outcomes.
 
 ## Thread Model
 

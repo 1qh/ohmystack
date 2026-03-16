@@ -9,7 +9,7 @@ Reference docs and code:
 - MCP spec: https://modelcontextprotocol.io
 - oh-my-openagent MCP references: `src/mcp/`
 
-## v1 Architecture
+## Architecture
 
 - User-owned MCP server configs only (per-user CRUD in settings).
 - Transport is HTTP-only via `StreamableHTTPClientTransport`.
@@ -100,11 +100,11 @@ sequenceDiagram
   - `localhost`, `127.0.0.1`, `0.0.0.0`, `[::1]`
   - `169.254.169.254`, `metadata.google.internal`
   - `*.internal`
-  - private ranges (`10.*`, `192.168.*`, and `172.*` per current v1 guard)
+  - private ranges (`10.*`, `192.168.*`, and `172.*`)
 
 ### Call-Time SSRF Enforcement
 
-Save-time hostname validation (`validateMcpUrl`) is a first line of defense but insufficient alone. A public hostname can resolve to private IPs after save, or redirect to internal targets at call time. v1 implementation MUST implement call-time checks: resolve A/AAAA records before connecting, block private/loopback/link-local/ULA/metadata IPs, disable HTTP redirects.
+Save-time hostname validation (`validateMcpUrl`) is a first line of defense but insufficient alone. A public hostname can resolve to private IPs after save, or redirect to internal targets at call time. Call-time checks resolve A/AAAA records before connecting, block private/loopback/link-local/ULA/metadata IPs, and disable HTTP redirects.
 
 - If `http:` (non-TLS) is allowed for local dev, disallow `authHeaders` on `http:` URLs outside test mode
 

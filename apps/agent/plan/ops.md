@@ -105,7 +105,7 @@ Reference:
 
 ## Cleanup scope and cascade
 
-Legacy v1 wording called out app-layer-only cleanup and component-layer orphans. For the DIY-owned agent stack, that limitation is removed: cleanup is full-stack and deletes all session-owned data.
+Cleanup is full-stack and deletes all session-owned data.
 
 Deletion cascade for hard-delete:
 

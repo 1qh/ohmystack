@@ -10,7 +10,7 @@ Reference test coverage:
 
 ## Why Compaction Exists
 
-v1 uses bounded live context to keep orchestrator runs stable:
+Bounded live context keeps orchestrator runs stable:
 
 - Live window keeps the most recent 100 messages in active model context.
 - Older closed conversation segments are summarized into `compactionSummary`.
@@ -143,17 +143,11 @@ flowchart LR
   C --> D[Model generation]
 ```
 
-## v1 Limitations
-
-Documented limitations retained for v1:
+## Operational Caveats
 
 - 500-message working scan window can miss older segments if a thread advances beyond that span between compaction runs.
 - Stale-stream overlap can include partially written content during race conditions; stale-run checks reduce impact but do not fully eliminate side effects.
-
-Planned direction:
-
-- Page forward from `lastCompactedMessageId` for full coverage.
-- Tighten active-stream exclusion to remove stale overlap risk.
+- Coverage is improved by paging forward from `lastCompactedMessageId` and tightening active-stream exclusion.
 
 ## Todo Preservation
 
