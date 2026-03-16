@@ -1,4 +1,4 @@
-/* eslint-disable noboil-convex/discovery-check, @typescript-eslint/require-await */
+/* eslint-disable @typescript-eslint/require-await */
 
 import { httpRouter } from 'convex/server'
 

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-unsafe-assignment, noboil-stdb/discovery-check */
+/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-unsafe-assignment */
 import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
 
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/test'
