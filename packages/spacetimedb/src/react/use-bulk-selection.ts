@@ -14,6 +14,7 @@ interface UseBulkSelectionOpts {
   restore?: (args: { id: string }) => Promise<unknown>
   rm?: (args: { id?: string; ids?: string[]; orgId: string }) => Promise<unknown>
   toast?: ToastFn
+  undoLabel?: string
   undoMs?: number
 }
 
