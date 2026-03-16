@@ -4,6 +4,8 @@
   "workspaces": [
     "apps/convex/*",
     "apps/docs",
+    "apps/mobile/convex/*",
+    "apps/mobile/spacetimedb/*",
     "apps/spacetimedb/*",
     "packages/*"
   ],
