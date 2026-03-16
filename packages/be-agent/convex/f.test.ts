@@ -8170,3 +8170,1102 @@ describe('delegate retry guidance', () => {
     expect(guidance.availableOptions).toEqual(['explore', 'librarian', 'oracle'])
   })
 })
+
+describe('omo parity manager gaps', () => {
+  test('task history keeps completed rows with same parent thread', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const firstTaskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'history-complete-1',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `history-complete-1-${crypto.randomUUID()}`
+      })
+    )
+    const secondTaskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'history-complete-2',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `history-complete-2-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.tasks.completeTask, { result: 'done-1', taskId: firstTaskId })
+    await ctx.mutation(internal.tasks.completeTask, { result: 'done-2', taskId: secondTaskId })
+    const rows = await ctx.run(async c =>
+      c.db
+        .query('tasks')
+        .withIndex('by_parentThreadId_status', idx => idx.eq('parentThreadId', parentThreadId).eq('status', 'completed'))
+        .collect()
+    )
+    expect(rows.length).toBe(2)
+  })
+
+  test('task history keeps failed rows with terminal reminder ids', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'history-failed',
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `history-failed-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.tasks.failTask, {
+      lastError: 'history boom',
+      taskId
+    })
+    const row = await ctx.run(async c => c.db.get(taskId))
+    expect(row?.status).toBe('failed')
+    expect(row?.completionReminderMessageId).toBeDefined()
+  })
+
+  test('pending timeout preserves task row and marks timed_out', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'pending-timeout-history',
+        isBackground: true,
+        parentThreadId,
+        pendingAt: Date.now() - 6 * 60 * 1000,
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `pending-timeout-history-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async c => c.db.get(taskId))
+    expect(row).not.toBeNull()
+    expect(row?.status).toBe('timed_out')
+  })
+
+  test('running timeout preserves task row and marks timed_out', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const taskId = await ctx.run(async c =>
+      c.db.insert('tasks', {
+        description: 'running-timeout-history',
+        heartbeatAt: Date.now() - 6 * 60 * 1000,
+        isBackground: true,
+        parentThreadId,
+        retryCount: 0,
+        sessionId,
+        status: 'running',
+        threadId: `running-timeout-history-${crypto.randomUUID()}`
+      })
+    )
+    await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async c => c.db.get(taskId))
+    expect(row).not.toBeNull()
+    expect(row?.status).toBe('timed_out')
+  })
+
+  for (const c of [
+    { expectedDelay: 2_000, retryCount: 0 },
+    { expectedDelay: 4_000, retryCount: 1 },
+    { expectedDelay: 8_000, retryCount: 2 }
+  ])
+    test(`scheduleRetry backoff from retryCount=${c.retryCount} to ${c.expectedDelay}ms`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          description: `retry-backoff-${c.retryCount}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount: c.retryCount,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `retry-backoff-${c.retryCount}-${crypto.randomUUID()}`
+        })
+      )
+      const result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
+      const row = await ctx.run(async d => d.db.get(taskId))
+      expect(result.ok).toBe(true)
+      expect(row?.retryCount).toBe(c.retryCount + 1)
+      expect(row?.status).toBe('pending')
+      expect(c.expectedDelay > 0).toBe(true)
+    })
+
+  for (const retryCount of [3, 4])
+    test(`scheduleRetry rejects once retryCount reaches ${retryCount}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          description: `retry-cap-${retryCount}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount,
+          sessionId,
+          startedAt: Date.now(),
+          status: 'running',
+          threadId: `retry-cap-${retryCount}-${crypto.randomUUID()}`
+        })
+      )
+      const result = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
+      const row = await ctx.run(async d => d.db.get(taskId))
+      expect(result.ok).toBe(false)
+      expect(row?.status).toBe('running')
+      expect(row?.retryCount).toBe(retryCount)
+    })
+
+  for (const s of ['running', 'completed', 'failed', 'cancelled', 'timed_out'] as const)
+    test(`markRunning rejects non-pending status ${s}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      const taskId = await ctx.run(async d =>
+        d.db.insert('tasks', {
+          completedAt: s === 'completed' || s === 'failed' || s === 'cancelled' || s === 'timed_out' ? Date.now() : undefined,
+          description: `mark-running-${s}`,
+          isBackground: true,
+          parentThreadId,
+          retryCount: 0,
+          sessionId,
+          startedAt: s === 'running' ? Date.now() : undefined,
+          status: s,
+          threadId: `mark-running-${s}-${crypto.randomUUID()}`
+        })
+      )
+      const result = await ctx.mutation(internal.tasks.markRunning, { taskId })
+      expect(result.ok).toBe(false)
+    })
+
+  test('finishRun mismatch token does not change active token or queue', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'atomic-start',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'atomic-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: 'token-mismatch',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.activeRunToken).toBe(before?.activeRunToken)
+    expect(after?.queuedPromptMessageId).toBe('atomic-queued')
+  })
+
+  test('finishRun drains queue atomically and clears claimed fields', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'atomic-claim-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.claimRun, {
+      runToken: before?.activeRunToken ?? '',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'atomic-claim-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: before?.activeRunToken ?? '',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('active')
+    expect(after?.runClaimed).toBe(false)
+    expect(after?.claimedAt).toBeUndefined()
+    expect(after?.queuedPromptMessageId).toBeUndefined()
+  })
+
+  test('multiple parent sessions can hold independent active runs', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      first = await asUser(0).mutation(api.sessions.createSession, {}),
+      second = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'multi-parent-first',
+      reason: 'user_message',
+      threadId: first.threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'multi-parent-second',
+      reason: 'user_message',
+      threadId: second.threadId
+    })
+    const firstState = await ctx.query(internal.orchestrator.readRunState, { threadId: first.threadId }),
+      secondState = await ctx.query(internal.orchestrator.readRunState, { threadId: second.threadId })
+    expect(firstState?.status).toBe('active')
+    expect(secondState?.status).toBe('active')
+    expect(firstState?.activeRunToken).not.toBe(secondState?.activeRunToken)
+  })
+})
+
+describe('omo parity delegate gaps', () => {
+  test('detectDelegateError identifies missing run_in_background', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({ errorMessage: 'Invalid arguments: missing run_in_background field' })
+    expect(pattern).toBe('missing_run_in_background')
+  })
+
+  test('detectDelegateError identifies missing load_skills', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({ errorMessage: 'Validation error: load_skills is required' })
+    expect(pattern).toBe('missing_load_skills')
+  })
+
+  test('detectDelegateError identifies unknown category', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({ errorMessage: 'Unknown category: nope' })
+    expect(pattern).toBe('unknown_category')
+  })
+
+  test('detectDelegateError identifies unknown agent', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({ errorMessage: 'Unknown agent: nope' })
+    expect(pattern).toBe('unknown_agent')
+  })
+
+  test('detectDelegateError falls back to unknown_error', async () => {
+    const { detectDelegateError } = await import('./agents')
+    const pattern = detectDelegateError({ errorMessage: 'rpc exploded' })
+    expect(pattern).toBe('unknown_error')
+  })
+
+  test('buildRetryGuidance extracts and de-duplicates available options', async () => {
+    const { buildRetryGuidance } = await import('./agents')
+    const guidance = buildRetryGuidance({
+      errorMessage: 'Unknown. Available: quick, deep\nvalid options: deep, ultrabrain',
+      pattern: 'unknown_category'
+    })
+    expect(guidance.availableOptions).toEqual(['quick', 'deep', 'ultrabrain'])
+  })
+
+  test('delegate returns guidance for missing_run_in_background errors', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => {
+          throw new Error('Invalid arguments: run_in_background is required')
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-1',
+      sessionId: 'delegate-session-1' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    const result = await delegate.execute({
+      description: 'delegate guidance',
+      isBackground: true,
+      prompt: 'run'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.pattern).toBe('missing_run_in_background')
+  })
+
+  test('delegate returns guidance for missing_load_skills errors', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => {
+          throw new Error('Invalid arguments: load_skills missing')
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-2',
+      sessionId: 'delegate-session-2' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    const result = await delegate.execute({
+      description: 'delegate guidance',
+      isBackground: true,
+      prompt: 'run'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.pattern).toBe('missing_load_skills')
+  })
+
+  test('delegate returns guidance for unknown category errors', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => {
+          throw new Error('Unknown category bad. Available: quick, deep')
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-3',
+      sessionId: 'delegate-session-3' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    const result = await delegate.execute({
+      description: 'delegate guidance',
+      isBackground: true,
+      prompt: 'run'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.pattern).toBe('unknown_category')
+    expect(result.availableOptions).toEqual(['quick', 'deep'])
+  })
+
+  test('delegate returns guidance for unknown agent errors', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => {
+          throw new Error('Unknown agent bad. valid options: explore, librarian')
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-4',
+      sessionId: 'delegate-session-4' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    const result = await delegate.execute({
+      description: 'delegate guidance',
+      isBackground: true,
+      prompt: 'run'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.pattern).toBe('unknown_agent')
+    expect(result.availableOptions).toEqual(['explore', 'librarian'])
+  })
+
+  test('delegate returns unknown_error guidance for uncategorized failures', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async () => {
+          throw new Error('rpc failed without signature')
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-5',
+      sessionId: 'delegate-session-5' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    const result = await delegate.execute({
+      description: 'delegate guidance',
+      isBackground: true,
+      prompt: 'run'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.pattern).toBe('unknown_error')
+  })
+
+  test('delegate forwards explicit isBackground=true', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    let payload: { isBackground: boolean } | null = null
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async (_ref: unknown, args: unknown) => {
+          payload = args as { isBackground: boolean }
+          return { taskId: 'delegate-default-bg-task', threadId: 'delegate-default-bg-thread' }
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-6',
+      sessionId: 'delegate-session-6' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    await delegate.execute({ description: 'default bg', isBackground: true, prompt: 'run' })
+    expect(payload?.isBackground).toBe(true)
+  })
+
+  test('delegate forwards explicit isBackground=false', async () => {
+    const { createOrchestratorTools } = await import('./agents')
+    let payload: { isBackground: boolean } | null = null
+    const tools = createOrchestratorTools({
+      ctx: {
+        runMutation: async (_ref: unknown, args: unknown) => {
+          payload = args as { isBackground: boolean }
+          return { taskId: 'delegate-sync-bg-task', threadId: 'delegate-sync-bg-thread' }
+        },
+        runQuery: async () => null
+      } as never,
+      parentThreadId: 'delegate-parent-7',
+      sessionId: 'delegate-session-7' as never
+    })
+    const delegate = tools.delegate as unknown as {
+      execute: (input: { description: string; isBackground: boolean; prompt: string }) => Promise<Record<string, unknown>>
+    }
+    await delegate.execute({ description: 'sync-like bg', isBackground: false, prompt: 'run' })
+    expect(payload?.isBackground).toBe(false)
+  })
+
+  for (const status of ['cancelled', 'failed', 'pending', 'running', 'timed_out'] as const)
+    test(`taskOutput returns ${status} status with null result contract`, async () => {
+      const { createOrchestratorTools } = await import('./agents')
+      const tools = createOrchestratorTools({
+        ctx: {
+          runMutation: async () => ({ taskId: 'task-id', threadId: 'thread-id' }),
+          runQuery: async () => ({ status })
+        } as never,
+        parentThreadId: 'delegate-parent-8',
+        sessionId: 'delegate-session-8' as never
+      })
+      const taskOutput = tools.taskOutput as unknown as {
+          execute: (input: { taskId: string }) => Promise<{ result: null | string; status: null | string }>
+        },
+        out = await taskOutput.execute({ taskId: `output-${status}` })
+      expect(out.status).toBe(status)
+      expect(out.result).toBeNull()
+    })
+
+  test('spawnTask stores description, prompt, parentThreadId, and sessionId metadata', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const spawned = await ctx.mutation(internal.tasks.spawnTask, {
+      description: 'metadata-preservation',
+      isBackground: true,
+      parentThreadId,
+      prompt: 'line-1\nline-2',
+      sessionId
+    })
+    const row = await ctx.run(async c => c.db.get(spawned.taskId))
+    expect(row?.description).toBe('metadata-preservation')
+    expect(row?.prompt).toBe('line-1\nline-2')
+    expect(row?.parentThreadId).toBe(parentThreadId)
+    expect(row?.sessionId).toBe(sessionId)
+  })
+})
+
+describe('omo parity todo continuation gaps', () => {
+  for (const c of [
+    { blockedMs: 9_000, consecutiveFailures: 1 },
+    { blockedMs: 19_000, consecutiveFailures: 2 },
+    { blockedMs: 39_000, consecutiveFailures: 3 }
+  ])
+    test(`cooldown blocks injection within backoff window for ${c.consecutiveFailures} failures`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `cooldown-block-${c.consecutiveFailures}`,
+        reason: 'user_message',
+        threadId
+      })
+      const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.run(async d => {
+        await d.db.insert('todos', {
+          content: `cooldown-block-${c.consecutiveFailures}`,
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: 'pending'
+        })
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            consecutiveFailures: c.consecutiveFailures,
+            lastContinuationAt: Date.now() - c.blockedMs
+          })
+      })
+      const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: active?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(result.shouldContinue).toBe(false)
+    })
+
+  for (const c of [
+    { allowedMs: 11_000, consecutiveFailures: 1 },
+    { allowedMs: 21_000, consecutiveFailures: 2 },
+    { allowedMs: 41_000, consecutiveFailures: 3 }
+  ])
+    test(`cooldown allows injection after backoff window for ${c.consecutiveFailures} failures`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `cooldown-allow-${c.consecutiveFailures}`,
+        reason: 'user_message',
+        threadId
+      })
+      const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.run(async d => {
+        await d.db.insert('todos', {
+          content: `cooldown-allow-${c.consecutiveFailures}`,
+          position: 0,
+          priority: 'high',
+          sessionId,
+          status: 'pending'
+        })
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            consecutiveFailures: c.consecutiveFailures,
+            lastContinuationAt: Date.now() - c.allowedMs
+          })
+      })
+      const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: active?.activeRunToken ?? '',
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(result.shouldContinue).toBe(true)
+    })
+
+  test('max consecutive failures blocks continuation entirely', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'max-failure-block',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'max-failure-block',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state) await d.db.patch(state._id, { consecutiveFailures: 5, lastContinuationAt: Date.now() - 60_000 })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('failure counter resets after reset window when previously capped', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'failure-reset-window',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'failure-reset-window',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await d.db.patch(state._id, {
+          consecutiveFailures: 5,
+          lastContinuationAt: Date.now() - 6 * 60 * 1000
+        })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(result.shouldContinue).toBe(true)
+    expect(state?.consecutiveFailures).toBe(0)
+  })
+
+  test('skip continuation when pending task exists', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'skip-pending-task',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'skip-pending-task',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      await d.db.insert('tasks', {
+        description: 'pending-blocker',
+        isBackground: true,
+        parentThreadId: threadId,
+        pendingAt: Date.now(),
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `pending-blocker-${crypto.randomUUID()}`
+      })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('skip continuation when running task exists', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'skip-running-task',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'skip-running-task',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      await d.db.insert('tasks', {
+        description: 'running-blocker',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `running-blocker-${crypto.randomUUID()}`
+      })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('turnRequestedInput=true blocks continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'turn-requested-input',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'turn-requested-input',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: true
+    })
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('stagnation reaches cap and blocks continuation on unchanged snapshot', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'stagnation-cap',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const todoId = await ctx.run(async d =>
+      d.db.insert('todos', {
+        content: 'stagnation-cap',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    )
+    await ctx.run(async d => {
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await d.db.patch(state._id, {
+          lastTodoSnapshot: JSON.stringify([{ content: 'stagnation-cap', id: String(todoId), status: 'pending' }]),
+          stagnationCount: 2
+        })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('progress update resets stagnation and allows continuation', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'stagnation-progress-reset',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const todoId = await ctx.run(async d =>
+      d.db.insert('todos', {
+        content: 'stagnation-progress-old',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    )
+    await ctx.run(async d => {
+      await d.db.patch(todoId, { content: 'stagnation-progress-new' })
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await d.db.patch(state._id, {
+          lastTodoSnapshot: JSON.stringify([{ content: 'stagnation-progress-old', id: String(todoId), status: 'pending' }]),
+          stagnationCount: 2
+        })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(result.shouldContinue).toBe(true)
+    expect(state?.stagnationCount).toBe(0)
+  })
+})
+
+describe('omo parity error classifier gaps', () => {
+  test('isTransientError marker list contains econnreset', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('econnreset')).toBe(true)
+  })
+
+  test('isTransientError marker list contains etimedout', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('etimedout')).toBe(true)
+  })
+
+  test('isTransientError marker list contains timeout', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('timeout')).toBe(true)
+  })
+
+  test('isTransientError marker list contains 503', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes("'503'")).toBe(true)
+  })
+
+  test('isTransientError marker list contains 429', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes("'429'")).toBe(true)
+  })
+
+  test('isTransientError marker list contains overloaded marker', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('overloaded')).toBe(true)
+  })
+
+  test('isTransientError marker list excludes auth keywords for permanent path', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('unauthorized')).toBe(false)
+    expect(source.includes('forbidden')).toBe(false)
+  })
+
+  test('isTransientError marker list excludes validation keywords for permanent path', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+    expect(source.includes('validation')).toBe(false)
+    expect(source.includes('invalid_argument')).toBe(false)
+  })
+
+  test('rate limiting errors are surfaced distinctly from worker transient markers', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    for (let i = 0; i < 20; i += 1)
+      await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: `rate-distinct-${i}`,
+        sessionId
+      })
+    let errorText = ''
+    try {
+      await asUser(0).mutation(api.orchestrator.submitMessage, {
+        content: 'rate-distinct-over-limit',
+        sessionId
+      })
+    } catch (error) {
+      errorText = String(error)
+    }
+    expect(errorText.includes('rate_limited:submitMessage')).toBe(true)
+    expect(errorText.includes('econnreset')).toBe(false)
+  })
+})
+
+describe('omo parity concurrency gaps', () => {
+  test('single thread keeps one queued payload under rapid enqueues', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'rapid-start',
+      reason: 'user_message',
+      threadId
+    })
+    for (let i = 0; i < 12; i += 1)
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 1,
+        promptMessageId: `rapid-queued-${i}`,
+        reason: 'task_completion',
+        threadId
+      })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(state?.queuedPromptMessageId).toBe('rapid-queued-11')
+  })
+
+  for (const reason of ['task_completion', 'todo_continuation', 'user_message'] as const)
+    test(`queued ${reason} payload starts when active slot finishes`, async () => {
+      const priority = reason === 'user_message' ? 2 : reason === 'task_completion' ? 1 : 0
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `slot-open-start-${reason}`,
+        reason: 'user_message',
+        threadId
+      })
+      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority,
+        promptMessageId: `slot-open-next-${reason}`,
+        reason,
+        threadId
+      })
+      const finished = await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken: before?.activeRunToken ?? '',
+        threadId
+      })
+      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(finished.scheduled).toBe(true)
+      expect(after?.status).toBe('active')
+      expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+    })
+
+  for (const c of [
+    {
+      incomingPriority: 0,
+      initialPriority: 1,
+      initialReason: 'task_completion' as const,
+      shouldReplace: false
+    },
+    {
+      incomingPriority: 1,
+      initialPriority: 1,
+      initialReason: 'task_completion' as const,
+      shouldReplace: true
+    },
+    {
+      incomingPriority: 2,
+      initialPriority: 1,
+      initialReason: 'task_completion' as const,
+      shouldReplace: true
+    }
+  ])
+    test(`priority ordering replace=${String(c.shouldReplace)} for incoming ${c.incomingPriority}`, async () => {
+      const incomingReason = c.incomingPriority === 2 ? 'user_message' : c.incomingPriority === 1 ? 'task_completion' : 'todo_continuation'
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: 'priority-ordering-start',
+        reason: 'user_message',
+        threadId
+      })
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: c.initialPriority,
+        promptMessageId: 'priority-ordering-initial',
+        reason: c.initialReason,
+        threadId
+      })
+      const result = await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: c.incomingPriority,
+        promptMessageId: 'priority-ordering-incoming',
+        reason: incomingReason,
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(result.ok).toBe(c.shouldReplace)
+      if (c.shouldReplace) expect(state?.queuedPromptMessageId).toBe('priority-ordering-incoming')
+      else expect(state?.queuedPromptMessageId).toBe('priority-ordering-initial')
+    })
+
+  test('archiving active thread frees slot for immediate re-enqueue', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'archive-free-slot-start',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'archive-free-slot-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: before?.activeRunToken ?? '',
+      threadId
+    })
+    const idle = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const reenqueue = await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'archive-free-slot-new',
+      reason: 'user_message',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(idle?.status).toBe('idle')
+    expect(reenqueue.scheduled).toBe(true)
+    expect(after?.status).toBe('active')
+  })
+
+  test('different threads can each have active and queued runs simultaneously', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'concurrency-a-start',
+      reason: 'user_message',
+      threadId: a.threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'concurrency-a-queued',
+      reason: 'task_completion',
+      threadId: a.threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'concurrency-b-start',
+      reason: 'user_message',
+      threadId: b.threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'concurrency-b-queued',
+      reason: 'task_completion',
+      threadId: b.threadId
+    })
+    const aState = await ctx.query(internal.orchestrator.readRunState, { threadId: a.threadId }),
+      bState = await ctx.query(internal.orchestrator.readRunState, { threadId: b.threadId })
+    expect(aState?.status).toBe('active')
+    expect(aState?.queuedPromptMessageId).toBe('concurrency-a-queued')
+    expect(bState?.status).toBe('active')
+    expect(bState?.queuedPromptMessageId).toBe('concurrency-b-queued')
+  })
+})

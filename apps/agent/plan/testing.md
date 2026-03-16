@@ -770,10 +770,22 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 276 | 276 | 0 | 0 |
+| Backend `f.test.ts` | 366 | 366 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **352** | **352** | **0** | **0** |
+| **Total** | **442** | **442** | **0** | **0** |
+
+### oh-my-openagent Parity Tests
+
+67 tests adapted from oh-my-openagent's battle-tested test suite (1,173 relevant tests across 93 files). These cover the core reliability behaviors that make the agent production-grade:
+
+| Source File | Tests Adapted | Coverage |
+|---|---|---|
+| `features/background-agent/manager.test.ts` (120) | 15 | Task cancellation, cleanup, retry, timeout, multi-session |
+| `tools/delegate-task/tools.test.ts` (112) | 12 | Invalid args guidance, sync/async flow, metadata, failure |
+| `hooks/todo-continuation-enforcer/*.test.ts` (91) | 18 | Cooldown, backoff, failure cap, stagnation, progress reset |
+| `features/background-agent/error-classifier.test.ts` (65) | 10 | Transient/permanent/rate-limit error classification |
+| `features/background-agent/concurrency.test.ts` (37) | 12 | CAS queue, priority matrix, slot release, per-thread isolation |
 
 ### Stagnation Detection
 
