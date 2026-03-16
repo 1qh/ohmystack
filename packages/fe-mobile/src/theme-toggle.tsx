@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/strict-void-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { cn } from '@a/rnr'
 import { Button } from '@a/rnr/components/button'
 import { Text } from '@a/rnr/components/text'
