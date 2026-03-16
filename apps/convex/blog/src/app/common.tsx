@@ -57,7 +57,6 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
         {
           'aria-label': 'Delete blog',
           className: 'group-hover:block hover:bg-destructive/10 hover:text-destructive',
-          'data-testid': 'delete-blog-trigger',
           size: 'icon',
           type: 'button',
           variant: 'ghost'

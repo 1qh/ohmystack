@@ -35,7 +35,7 @@ const setConvexTestMode = (enabled: boolean) => {
     let result = await cleanup(client)
     while (!result.done) {
       console.log(`Cleaned up ${result.count} test records, continuing...`)
-       
+
       /** biome-ignore lint/performance/noAwaitInLoops: sequential cleanup required */
       result = await cleanup(client)
     }

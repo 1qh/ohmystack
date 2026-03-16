@@ -6506,7 +6506,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeCreate?.(mockCtx, {
+        result = await hooks.beforeCreate?.(mockCtx, {
           data: { title: 'test' }
         })
       expect(result).toEqual({ added1: true, added2: true, title: 'test' })
@@ -6528,7 +6528,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
+      await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6542,7 +6542,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeUpdate?.(mockCtx, {
+        result = await hooks.beforeUpdate?.(mockCtx, {
           patch: { title: 'x' },
           prev: {}
         })
@@ -6564,7 +6564,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterUpdate?.(mockCtx, { next: {}, patch: {}, prev: {} })
+      await hooks.afterUpdate?.(mockCtx, { next: {}, patch: {}, prev: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6583,7 +6583,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.beforeDelete?.(mockCtx, { row: {} })
+      await hooks.beforeDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6602,7 +6602,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterDelete?.(mockCtx, { row: {} })
+      await hooks.afterDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6943,8 +6943,8 @@ describe('middleware', () => {
           name: 'second'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.beforeCreate?.(mockCtx, { data: {} })
-      hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
+      await hooks.beforeCreate?.(mockCtx, { data: {} })
+      await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(order).toEqual(['sanitize', 'validate', 'audit', 'log'])
     })
 
@@ -6962,7 +6962,7 @@ describe('middleware', () => {
           name: 'step3'
         },
         hooks = composeMiddleware(mw1, mw2, mw3),
-        result = hooks.beforeCreate?.(mockCtx, {
+        result = await hooks.beforeCreate?.(mockCtx, {
           data: { original: true }
         })
       expect(result).toEqual({
@@ -6983,7 +6983,7 @@ describe('middleware', () => {
           name: 'validate'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeUpdate?.(mockCtx, {
+        result = await hooks.beforeUpdate?.(mockCtx, {
           patch: { title: 'x' },
           prev: {}
         })

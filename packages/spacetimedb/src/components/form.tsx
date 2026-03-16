@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable react/jsx-handler-names */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context

@@ -102,7 +102,7 @@ const getToolDisplayName = (toolName: string): string => {
         </Tool>
       )
 
-    if (state === 'approval-requested' && approvalId && toolPart.input)
+    if (state === 'approval-requested' && toolPart.input)
       return (
         <div data-testid='tool-approval-card' key={partKey}>
           <Tool className='w-full' defaultOpen>
@@ -110,8 +110,12 @@ const getToolDisplayName = (toolName: string): string => {
             <ToolContent>
               <ToolInput input={toolPart.input} />
               <ToolApprovalButtons
-                onApprove={() => addToolApprovalResponse({ approved: true, id: approvalId })}
-                onDeny={() => addToolApprovalResponse({ approved: false, id: approvalId, reason: 'User denied' })}
+                onApprove={() => {
+                  addToolApprovalResponse({ approved: true, id: approvalId })
+                }}
+                onDeny={() => {
+                  addToolApprovalResponse({ approved: false, id: approvalId, reason: 'User denied' })
+                }}
               />
             </ToolContent>
           </Tool>
@@ -223,6 +227,9 @@ const getToolDisplayName = (toolName: string): string => {
           }
         })
       }),
+      handleToolApprovalResponse = (args: { approved: boolean; id: string; reason?: string }) => {
+        addToolApprovalResponse(args)
+      },
       isRunning = status === 'streaming' || status === 'submitted',
       showThinking = useMemo(() => {
         if (status !== 'submitted') return false
@@ -263,7 +270,7 @@ const getToolDisplayName = (toolName: string): string => {
             ) : (
               messages.map((m, i) => (
                 <MessageItem
-                  addToolApprovalResponse={addToolApprovalResponse}
+                  addToolApprovalResponse={handleToolApprovalResponse}
                   isLast={i === messages.length - 1}
                   key={m.id}
                   message={m}

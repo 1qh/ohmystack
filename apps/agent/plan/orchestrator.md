@@ -9,6 +9,7 @@ The orchestrator runs directly in Convex actions with AI SDK `streamText()`. Mes
 - OpenAgent loop reference: `oh-my-openagent/src/index.ts`
 
 Implementation:
+
 - `packages/be-agent/convex/orchestrator.ts`
 - `packages/be-agent/convex/orchestratorNode.ts`
 - `packages/be-agent/convex/messages.ts`
@@ -112,7 +113,7 @@ flowchart TD
 The orchestrator writes stream output directly to Convex message rows instead of relying on framework-managed message storage.
 
 - The turn starts with `streamText()` in the Node action.
-- Each text delta appends to an in-memory buffer and patches the assistant row's `streamingContent` so the client can render partial output immediately.
+- Each text delta appends to an in-memory buffer and patches the assistant row’s `streamingContent` so the client can render partial output immediately.
 - The frontend subscribes via `useQuery` to the thread messages list, so each patch re-renders in real time without a separate stream channel.
 - On stream completion, the row is finalized by moving the full text into `content`, marking `isComplete: true`, and clearing transient streaming state.
 

@@ -14,7 +14,7 @@ const LoginPage = ({ emailLoginPath = '/login/email', redirectTo = '/' }: LoginP
   const { signIn } = useAuthActions(),
     onGoogleClick = () => {
       const signInAttempt = signIn('google', { redirectTo })
-      signInAttempt.catch(error => {
+      signInAttempt.catch((error: unknown) => {
         // eslint-disable-next-line no-console
         console.error(error)
       })

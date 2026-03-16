@@ -1,4 +1,3 @@
-/* oxlint-disable eslint/no-empty-function */
 'use client'
 
 import type { ComparisonOp } from '../server/types'
@@ -98,8 +97,7 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
     out.sort((a, b) => compareValues(a[config.field], b[config.field]) * factor)
     return out
   },
-  /** biome-ignore lint/suspicious/noEmptyBlockStatements: intentional noop */
-  noop = () => {}
+  noop = () => undefined
 
 export type { ListSort, ListWhere, Rec, SortDirection, SortMap, SortObject, WhereFieldValue, WhereGroup }
 export { compareValues, getSortConfig, noop, searchMatches, sortData, toSortableString }

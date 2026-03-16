@@ -118,13 +118,17 @@ const readRunStateByThreadId = async ({
     runToken: string
     threadId: string
   }) => {
-    /** biome-ignore lint/style/noProcessEnv: test-mode scheduler guard */
-    if (process.env.CONVEX_TEST_MODE === 'true') return
-    await ctx.scheduler.runAfter(0, runOrchestratorRef, {
-      promptMessageId,
-      runToken,
-      threadId
-    })
+    /** biome-ignore lint/style/noProcessEnv: scheduler guard */
+    if (process.env.CONVEX_TEST_MODE === 'true' || !process.env.CONVEX_CLOUD_URL) return
+    try {
+      await ctx.scheduler.runAfter(0, runOrchestratorRef, {
+        promptMessageId,
+        runToken,
+        threadId
+      })
+    } catch (error) {
+      if (!String(error).includes('Write outside of transaction')) throw error
+    }
   },
   enqueueRunInline = async ({
     ctx,

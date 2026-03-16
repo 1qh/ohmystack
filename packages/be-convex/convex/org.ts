@@ -37,6 +37,7 @@ const {
       .query('org')
       .withIndex('by_slug', o => o.eq('slug', slug))
       .unique(),
+  /** biome-ignore lint/suspicious/useAwait: promise-function-async compatibility */
   findUniqueSlug = async (ctx: MutationCtx, base: string): Promise<string> => {
     const next = async (attempt: number): Promise<string> => {
       const candidate = attempt === 0 ? base : `${base}-${String(attempt)}`

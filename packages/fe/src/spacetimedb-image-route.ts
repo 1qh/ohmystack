@@ -26,6 +26,7 @@ const allowedProtocol = (value: string) => {
       }
     })
   },
+  /** biome-ignore lint/suspicious/useAwait: promise-function-async compatibility */
   GET = async (request: NextRequest) => {
     const url = request.nextUrl.searchParams.get('url')
     if (!url) return NextResponse.json({ error: 'url is required' }, { status: 400 })

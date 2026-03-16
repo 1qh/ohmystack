@@ -7,10 +7,9 @@ const login = async () => {
   cleanupTestData = async () => {
     await ensureTestUser()
     let result = await tc.mutation(api.testauth.cleanupTestData, {})
-    while (!result.done) 
+    while (!result.done)
       /** biome-ignore lint/performance/noAwaitInLoops: sequential cleanup required */
       result = await tc.mutation(api.testauth.cleanupTestData, {})
-    
   }
 
 export { cleanupTestData, login }

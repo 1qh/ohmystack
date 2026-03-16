@@ -1,12 +1,13 @@
+/** biome-ignore-all lint/style/noProcessEnv: playwright global setup reads injected env */
+
 import type { FunctionReference } from 'convex/server'
 
-import { env } from 'bun'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { execSync } from 'node:child_process'
 
 const readEnvUrl = ({ fallback, key }: { fallback: string; key: 'NEXT_PUBLIC_CONVEX_URL' }) => {
-    const raw = env[key],
+    const raw = process.env[key],
       candidate = typeof raw === 'string' && raw.trim().length > 0 ? raw : fallback
     return URL.canParse(candidate) ? candidate : fallback
   },
@@ -16,8 +17,8 @@ const readEnvUrl = ({ fallback, key }: { fallback: string; key: 'NEXT_PUBLIC_CON
         cwd: '../../packages/be-agent',
         stdio: 'pipe'
       })
-    } catch {
-      /* Expected: convex env may not be configured yet */
+    } catch (error) {
+      globalThis.console.debug(String(error))
     }
 
     const convexUrl = readEnvUrl({ fallback: 'http://127.0.0.1:3212', key: 'NEXT_PUBLIC_CONVEX_URL' }),

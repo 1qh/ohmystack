@@ -11,6 +11,7 @@ References:
 - oh-my-openagent background task reference: `src/tools/background-task/`
 
 Implementation:
+
 - `packages/be-agent/convex/toolFactories.ts`
 - `packages/be-agent/convex/tasks.ts`
 - `packages/be-agent/convex/todos.ts`
@@ -108,11 +109,13 @@ flowchart LR
 Description: delegates independent work to a worker thread and returns task identifiers for follow-up.
 
 Args:
+
 - `description` (string): concise task label shown in task tracking and reminders.
 - `prompt` (string): worker instruction payload.
 - `isBackground` (boolean): whether delegation should run as background work.
 
 What it does:
+
 - Creates a pending task bound to the parent thread/session.
 - Generates a worker thread id and schedules worker execution.
 - Returns normalized task metadata so the model can poll or fetch output later.
@@ -124,9 +127,11 @@ Implementation: `packages/be-agent/convex/agents.ts`
 Description: reads current lifecycle status for a delegated task.
 
 Args:
+
 - `taskId` (string): delegated task identifier.
 
 What it does:
+
 - Resolves ownership from requester thread/session before exposing task state.
 - Returns status-centric metadata such as retry count, completion timing, and latest error when present.
 
@@ -137,9 +142,11 @@ Implementation: `packages/be-agent/convex/agents.ts`
 Description: retrieves terminal worker output for a delegated task.
 
 Args:
+
 - `taskId` (string): delegated task identifier.
 
 What it does:
+
 - Returns final task result for completed tasks.
 - Returns a structured non-terminal payload for pending/running tasks so orchestration can continue without thrown errors.
 
@@ -150,9 +157,11 @@ Implementation: `packages/be-agent/convex/agents.ts`
 Description: writes or updates todo items for the active session.
 
 Args:
+
 - `todos` (array): todo records with optional `id`, plus `content`, `status`, and `priority`.
 
 What it does:
+
 - Updates existing todos when `id` is present.
 - Inserts new todos when `id` is omitted.
 - Preserves omitted existing rows unless explicitly updated by id.
@@ -164,9 +173,11 @@ Implementation: `packages/be-agent/convex/agents.ts`
 Description: reads ordered todo state for the active session/thread.
 
 Args:
+
 - no arguments.
 
 What it does:
+
 - Resolves owned session by thread.
 - Returns todos in deterministic session position order.
 
@@ -177,9 +188,11 @@ Implementation: `packages/be-agent/convex/agents.ts`
 Description: runs grounded web search and returns model-usable summary plus source references.
 
 Args:
+
 - `query` (string): search request.
 
 What it does:
+
 - Calls the dedicated grounding action.
 - Normalizes provider output into `{ summary, sources }`.
 - Returns structured failures when grounding call errors.

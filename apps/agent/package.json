@@ -7,7 +7,7 @@
     "dev": "PORT=3010 bun with-env next dev --turbo",
     "lint": "eslint",
     "start": "bun with-env next start",
-    "test": "NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",
+    "test": "NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3212 bun with-env playwright test --reporter=dot",
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env --"
   },

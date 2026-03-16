@@ -1,6 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 'use server'
 
+/* eslint-disable @typescript-eslint/require-await */
 import type { NextRequest } from 'next/server'
 import type { Sharp } from 'sharp'
 

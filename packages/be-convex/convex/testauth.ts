@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential deletes */
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { getOrgMembership, makeOrgTestCrud, makeTestAuth } from '@noboil/convex/test'
@@ -83,14 +84,15 @@ const testAuth = makeTestAuth({
     args: {},
     handler: async ctx => {
       if (!isTestMode()) return { count: 0, done: true }
-      const u = ctx.db
-        .query('users')
-        .filter(q => q.eq(q.field('email'), TEST_EMAIL))
-        .first()
-      if (!u) return { count: 0, done: true }
+      if (
+        !ctx.db
+          .query('users')
+          .filter(q => q.eq(q.field('email'), TEST_EMAIL))
+          .first()
+      )
+        return { count: 0, done: true }
       let count = 0
-      const tableDocs = await Promise.all(
-        [
+      const tables = [
           'task',
           'wiki',
           'project',
@@ -102,12 +104,14 @@ const testAuth = makeTestAuth({
           'blog',
           'blogProfile',
           'orgProfile'
-        ].map(async table => {
-          const docs = await ctx.db.query(table).take(BATCH_SIZE)
-          await Promise.all(docs.map(async d => ctx.db.delete(d._id)))
-          return docs.length
-        })
-      )
+        ] as const,
+        tableDocs = await Promise.all(
+          tables.map(async table => {
+            const docs = await ctx.db.query(table).take(BATCH_SIZE)
+            await Promise.all(docs.map(async d => ctx.db.delete(d._id)))
+            return docs.length
+          })
+        )
       for (const removedCount of tableDocs) count += removedCount
       return { count, done: count < BATCH_SIZE }
     }

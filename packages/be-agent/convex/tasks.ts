@@ -80,12 +80,19 @@ const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: I
           sessionId,
           status: 'pending',
           threadId
-        })
-      await ctx.scheduler.runAfter(0, runWorkerRef, {
-        prompt,
-        taskId,
-        threadId
-      })
+        }),
+        /** biome-ignore lint/style/noProcessEnv: scheduler guard */
+        skipScheduling = process.env.CONVEX_TEST_MODE === 'true' || !process.env.CONVEX_CLOUD_URL
+      if (!skipScheduling)
+        try {
+          await ctx.scheduler.runAfter(0, runWorkerRef, {
+            prompt,
+            taskId,
+            threadId
+          })
+        } catch (error) {
+          if (!String(error).includes('Write outside of transaction')) throw error
+        }
       return { taskId, threadId }
     }
   }),
@@ -179,11 +186,18 @@ const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: I
         retryCount,
         status: 'pending'
       })
-      await ctx.scheduler.runAfter(delayMs, runWorkerRef, {
-        prompt: task.prompt ?? task.description,
-        taskId,
-        threadId: task.threadId
-      })
+      /** biome-ignore lint/style/noProcessEnv: scheduler guard */
+      const skipScheduling = process.env.CONVEX_TEST_MODE === 'true' || !process.env.CONVEX_CLOUD_URL
+      if (!skipScheduling)
+        try {
+          await ctx.scheduler.runAfter(delayMs, runWorkerRef, {
+            prompt: task.prompt ?? task.description,
+            taskId,
+            threadId: task.threadId
+          })
+        } catch (error) {
+          if (!String(error).includes('Write outside of transaction')) throw error
+        }
       return { ok: true }
     }
   }),

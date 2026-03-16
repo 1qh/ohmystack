@@ -1,3 +1,5 @@
+/* eslint-disable noboil-convex/discovery-check, @typescript-eslint/require-await */
+
 import { httpRouter } from 'convex/server'
 
 import { api } from './_generated/api'
@@ -22,7 +24,11 @@ http.route({
 
 http.route({
   handler: httpAction(async (ctx, request) => {
-    const body = (await request.json()) as { params?: Record<string, string>; provider?: string; verifier?: string },
+    const body = (await request.json()) as {
+        params?: Record<string, string>
+        provider?: string
+        verifier?: string
+      },
       result = await ctx.runAction(api.auth.signIn, {
         params: body.params,
         provider: body.provider,

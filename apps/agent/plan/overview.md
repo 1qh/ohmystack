@@ -107,27 +107,27 @@ Undo, forked conversations, model switching, slash commands, file editing, code 
 
 ## Key Decisions
 
-| Decision        | Choice                                              | Rationale                                                               |
-| --------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
-| Agent framework | DIY (AI SDK + own tables)                           | Full data control and portable architecture                             |
-| LLM             | Gemini 2.5 Flash via Vertex AI Express              | Reliable throughput with grounding support                              |
-| Streaming       | Own messages table + `streamingContent` field       | Reactive query updates without framework-managed message store           |
-| Schema          | Zod via `@noboil/convex` (`ownedTable`, `makeBase`) | Matches monorepo conventions                                            |
-| CRUD            | noboil `crud()` with hooks where applicable         | Ownership guardrails with reduced boilerplate                           |
-| Auth            | `@convex-dev/auth` + Google OAuth                   | Standard Convex auth with deterministic test path                       |
-| MCP transport   | HTTP only (StreamableHTTPClientTransport)           | Matches serverless runtime constraints                                  |
+| Decision        | Choice                                              | Rationale                                                      |
+| --------------- | --------------------------------------------------- | -------------------------------------------------------------- |
+| Agent framework | DIY (AI SDK + own tables)                           | Full data control and portable architecture                    |
+| LLM             | Gemini 2.5 Flash via Vertex AI Express              | Reliable throughput with grounding support                     |
+| Streaming       | Own messages table + `streamingContent` field       | Reactive query updates without framework-managed message store |
+| Schema          | Zod via `@noboil/convex` (`ownedTable`, `makeBase`) | Matches monorepo conventions                                   |
+| CRUD            | noboil `crud()` with hooks where applicable         | Ownership guardrails with reduced boilerplate                  |
+| Auth            | `@convex-dev/auth` + Google OAuth                   | Standard Convex auth with deterministic test path              |
+| MCP transport   | HTTP only (StreamableHTTPClientTransport)           | Matches serverless runtime constraints                         |
 
 ## Original Requirements
 
 Now, i want to make a simplified version of you, oh-my-openagent (latest version) but for the web, built on noboil convex. Think of it like an agent harness, but built on the web technologies and for the web infrastructure.
 
-This is a complex app to push the boundary of both convex and our library to maximum. Let's leverage all the best of both worlds: Our noboil/convex setup and convex itself.
+This is a complex app to push the boundary of both convex and our library to maximum. Let’s leverage all the best of both worlds: Our noboil/convex setup and convex itself.
 
 After this app is done and verified working, we will try to make our building blocks to be generic and release @noboil/agent as a solution for anyone to build their own web-based agent harness with maximum customizability.
 
 First, clone the repo and pinpoint the exact commit hash, this is to know the exact version of our reference, so when they have newer releases, we can compare and see their improvements to adopt what we can.
 
-Let create a new app inside apps/ called 'agent', this is where this new app lives.
+Let create a new app inside apps/ called ‘agent’, this is where this new app lives.
 
 ### Capabilities
 

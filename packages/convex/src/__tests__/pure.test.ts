@@ -670,8 +670,8 @@ describe('typesafe field references', () => {
   })
 
   test('child() rejects invalid foreignKey', () => {
-    // @ts-expect-error - 'chatI' is not a key of messageSchema
     const result = child({
+      // @ts-expect-error - 'chatI' is not a key of messageSchema
       foreignKey: 'chatI',
       parent: 'chat',
       schema: messageSchema
@@ -718,8 +718,8 @@ describe('typesafe field references', () => {
 
   test('aclFrom.field rejects invalid schema keys', () => {
     type TaskShape = typeof taskSchema.shape
-    // @ts-expect-error - 'projctId' is not a key of TaskShape
     const _invalid: OrgCrudOptions<TaskShape> = {
+      // @ts-expect-error - 'projctId' is not a key of TaskShape
       aclFrom: { field: 'projctId', table: 'project' }
     }
     expect(_invalid).toBeDefined()
@@ -735,8 +735,8 @@ describe('typesafe field references', () => {
   })
 
   test('orgCascade rejects invalid foreignKey', () => {
-    // @ts-expect-error - 'projctId' is not a key of taskSchema
     const result = orgCascade(taskSchema, {
+      // @ts-expect-error - 'projctId' is not a key of taskSchema
       foreignKey: 'projctId',
       table: 'task'
     })
@@ -2778,8 +2778,8 @@ describe('Fix #4: ownedCascade helper', () => {
   })
 
   test('ownedCascade rejects invalid foreignKey', () => {
-    // @ts-expect-error — 'projctId' is not a key of taskSchema
     const _invalid = ownedCascade(taskSchema, {
+      // @ts-expect-error — 'projctId' is not a key of taskSchema
       foreignKey: 'projctId',
       table: 'task'
     })
@@ -2787,8 +2787,8 @@ describe('Fix #4: ownedCascade helper', () => {
   })
 
   test('ownedCascade rejects completely wrong foreignKey', () => {
-    // @ts-expect-error — 'nonExistentField' is not a key of taskSchema
     const _invalid = ownedCascade(taskSchema, {
+      // @ts-expect-error — 'nonExistentField' is not a key of taskSchema
       foreignKey: 'nonExistentField',
       table: 'task'
     })
@@ -2796,8 +2796,8 @@ describe('Fix #4: ownedCascade helper', () => {
   })
 
   test('ownedCascade rejects misspelled foreignKey on messageSchema', () => {
-    // @ts-expect-error — 'chatI' is not a key of messageSchema
     const _invalid = ownedCascade(messageSchema, {
+      // @ts-expect-error — 'chatI' is not a key of messageSchema
       foreignKey: 'chatI',
       table: 'message'
     })
@@ -6384,7 +6384,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeCreate?.(mockCtx, {
+        result = await hooks.beforeCreate?.(mockCtx, {
           data: { title: 'test' }
         })
       expect(result).toEqual({ added1: true, added2: true, title: 'test' })
@@ -6406,7 +6406,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
+      await hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6420,7 +6420,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeUpdate?.(mockCtx, {
+        result = await hooks.beforeUpdate?.(mockCtx, {
           id: 'id1',
           patch: { title: 'x' },
           prev: {}
@@ -6443,7 +6443,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterUpdate?.(mockCtx, { id: 'id1', patch: {}, prev: {} })
+      await hooks.afterUpdate?.(mockCtx, { id: 'id1', patch: {}, prev: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6462,7 +6462,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.beforeDelete?.(mockCtx, { doc: {}, id: 'id1' })
+      await hooks.beforeDelete?.(mockCtx, { doc: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6481,7 +6481,7 @@ describe('middleware', () => {
           name: 'mw2'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.afterDelete?.(mockCtx, { doc: {}, id: 'id1' })
+      await hooks.afterDelete?.(mockCtx, { doc: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
 
@@ -6833,8 +6833,8 @@ describe('middleware', () => {
           name: 'second'
         },
         hooks = composeMiddleware(mw1, mw2)
-      hooks.beforeCreate?.(mockCtx, { data: {} })
-      hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
+      await hooks.beforeCreate?.(mockCtx, { data: {} })
+      await hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
       expect(order).toEqual(['sanitize', 'validate', 'audit', 'log'])
     })
 
@@ -6852,7 +6852,7 @@ describe('middleware', () => {
           name: 'step3'
         },
         hooks = composeMiddleware(mw1, mw2, mw3),
-        result = hooks.beforeCreate?.(mockCtx, {
+        result = await hooks.beforeCreate?.(mockCtx, {
           data: { original: true }
         })
       expect(result).toEqual({
@@ -6873,7 +6873,7 @@ describe('middleware', () => {
           name: 'validate'
         },
         hooks = composeMiddleware(mw1, mw2),
-        result = hooks.beforeUpdate?.(mockCtx, {
+        result = await hooks.beforeUpdate?.(mockCtx, {
           id: 'id1',
           patch: { title: 'x' },
           prev: {}

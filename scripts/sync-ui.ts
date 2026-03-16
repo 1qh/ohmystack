@@ -10,7 +10,8 @@ const lineBreakRegex = /\r?\n/u,
   readJson = async (filePath: string): Promise<JsonRecord | null> => {
     const handle = file(filePath)
     if (!(await handle.exists())) return null
-    const value = await handle.json()
+    const source = await handle.text(),
+      value = JSON.parse(source) as unknown
     return isRecord(value) ? value : null
   },
   readJsonFromGit = ({ filePath }: { filePath: string }): JsonRecord | null => {
@@ -118,7 +119,7 @@ const lineBreakRegex = /\r?\n/u,
     for (const entry of entries) {
       const absPath = join(dirPath, entry.name)
       if (entry.isDirectory()) tasks.push(pruneGitkeepFiles({ dirPath: absPath }))
-      if (entry.isFile() && entry.name === '.gitkeep') tasks.push((async () => run({ cmd: ['rm', '-f', absPath] }))())
+      if (entry.isFile() && entry.name === '.gitkeep') tasks.push(Promise.resolve(run({ cmd: ['rm', '-f', absPath] })))
     }
 
     await Promise.all(tasks)

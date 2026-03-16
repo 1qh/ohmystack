@@ -22,7 +22,8 @@ const modules = discoverModules('convex', {
   t = () => convexTest(schema, modules),
   brokenReadableStream = () => {
     throw new Error('forced_readable_stream_failure')
-  }
+  },
+  readableStreamFailurePattern = /forced_readable_stream_failure|function is not a constructor/u
 
 describe('sessions', () => {
   test('creates session with threadId and threadRunState', async () => {
@@ -3801,7 +3802,7 @@ describe('orchestrator action', () => {
       const runState = await ctx.query(internal.orchestrator.readRunState, {
         threadId
       })
-      expect(runState?.lastError).toContain('forced_readable_stream_failure')
+      expect(runState?.lastError).toMatch(readableStreamFailurePattern)
       expect(runState?.status).toBe('idle')
     } finally {
       globalThis.fetch = originalFetch

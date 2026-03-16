@@ -8,6 +8,7 @@ import type {
 } from '@ai-sdk/provider'
 
 import { simulateReadableStream } from 'ai'
+/* eslint-disable @typescript-eslint/require-await */
 import { MockLanguageModelV3 } from 'ai/test'
 
 const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
@@ -96,9 +97,9 @@ const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
     return { stream: simulateReadableStream<LanguageModelV3StreamPart>({ chunkDelayInMs: 50, chunks }) }
   },
   chatModel = new MockLanguageModelV3({
-    doGenerate: ({ prompt }) => createGenerateResult(prompt),
+    doGenerate: async ({ prompt }) => createGenerateResult(prompt),
 
-    doStream: ({ prompt }) => createStreamResult(prompt),
+    doStream: async ({ prompt }) => createStreamResult(prompt),
     modelId: 'mock-chat-model',
     provider: 'mock'
   })

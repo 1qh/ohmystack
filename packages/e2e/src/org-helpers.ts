@@ -74,9 +74,16 @@ const api = anyApi as unknown as typeof BeApi,
       Id<'users'>
     >,
   addTestOrgMember = async (orgId: Id<'org'> | string, userId: Id<'users'> | string, isAdmin: boolean) =>
-    getClient().mutation(ref('testauth', 'addTestOrgMember') as FunctionReference<'mutation'>, { isAdmin, orgId, userId }),
+    getClient().mutation(ref('testauth', 'addTestOrgMember') as FunctionReference<'mutation'>, {
+      isAdmin,
+      orgId,
+      userId
+    }) as Promise<void>,
   removeTestOrgMember = async (orgId: Id<'org'> | string, userId: Id<'users'> | string) =>
-    getClient().mutation(ref('testauth', 'removeTestOrgMember') as FunctionReference<'mutation'>, { orgId, userId }),
+    getClient().mutation(ref('testauth', 'removeTestOrgMember') as FunctionReference<'mutation'>, {
+      orgId,
+      userId
+    }) as Promise<void>,
   createTestOrg = async (slug: string, name: string) =>
     getClient().mutation(ref('org', 'create') as FunctionReference<'mutation'>, { data: { name, slug } }) as Promise<{
       orgId: string

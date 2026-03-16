@@ -137,6 +137,7 @@ const filterSupportedParts = (parts: Record<string, unknown>[]) =>
         onFinish: async ({ messages: finishedMessages }) => {
           if (isToolApprovalFlow)
             await Promise.all(
+              /** biome-ignore lint/suspicious/useAwait: promise-function-async compatibility */
               finishedMessages.map(async msg => {
                 const existingMsg = uiMessages.find(m => m.id === msg.id)
                 if (existingMsg)

@@ -110,7 +110,7 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
       builder
         .withUri(ctx.baseWsUrl)
         .withDatabaseName(ctx.moduleName)
-        .onConnect((connection, identity, token) => {
+        .onConnect((connection: DbConnectionImpl<typeof REMOTE_MODULE>, identity, token) => {
           if (finished) return
           finished = true
           clearTimeout(timeout)

@@ -18,7 +18,6 @@ interface ConvexProviderProps {
 }
 
 const FILE_API = { info: api.file.info, upload: api.file.upload },
-  DEFAULT_CONVEX_URL = 'http://127.0.0.1:3210',
   clients = new Map<string, Client>(),
   getClient = (url: string) => {
     let c = clients.get(url)
@@ -29,7 +28,7 @@ const FILE_API = { info: api.file.info, upload: api.file.upload },
     return c
   },
   ConvexProvider = ({ children, convexUrl, fileApi, noAuth }: ConvexProviderProps) => {
-    const client = getClient(convexUrl ?? env.NEXT_PUBLIC_CONVEX_URL ?? DEFAULT_CONVEX_URL),
+    const client = getClient(convexUrl ?? env.NEXT_PUBLIC_CONVEX_URL),
       guarded = <NavigationGuardProvider>{children}</NavigationGuardProvider>,
       inner = fileApi ? <FileApiProvider value={FILE_API}>{guarded}</FileApiProvider> : guarded
     return noAuth ? (
