@@ -30,7 +30,7 @@ const { create, list, read, rm, update } = orgCrud('task', orgScoped.task, {
     handler: async (ctx, { id, orgId }) => {
       const { role } = await requireOrgMember({ db: ctx.db, orgId, userId: ctx.user._id }),
         task = (await ctx.db.get(id)) as null | OrgDoc<'task'>
-      if (!task || task.orgId !== orgId) return err('NOT_FOUND')
+      if (task?.orgId !== orgId) return err('NOT_FOUND')
       const projectId = task.projectId as Id<'project'>,
         project = projectId ? ((await ctx.db.get(projectId)) as null | OrgDoc<'project'>) : null,
         pEditors = project ? (project.editors ?? []) : []
@@ -61,7 +61,7 @@ const { create, list, read, rm, update } = orgCrud('task', orgScoped.task, {
     ) => {
       await requireOrgRole({ db: ctx.db, minRole: 'admin', orgId, userId: ctx.user._id })
       const task = (await ctx.db.get(id)) as null | OrgDoc<'task'>
-      if (!task || task.orgId !== orgId) return err('NOT_FOUND')
+      if (task?.orgId !== orgId) return err('NOT_FOUND')
       if (assigneeId) await requireOrgMember({ db: ctx.db, orgId, userId: assigneeId })
       await ctx.db.patch(id, { assigneeId: assigneeId ?? null, ...time() } as never)
       return ctx.db.get(id)
