@@ -1,5 +1,3 @@
-/* eslint-disable noboil-convex/discovery-check */
-
 import {
   child,
   cvFile,

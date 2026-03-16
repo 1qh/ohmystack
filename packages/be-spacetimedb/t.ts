@@ -1,5 +1,3 @@
-/* eslint-disable noboil-stdb/discovery-check */
-
 import { child, cvFile, cvFiles, schema } from '@noboil/spacetimedb/schema'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
 
