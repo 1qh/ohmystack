@@ -12790,3 +12790,1115 @@ describe('final sweep session and continuation coordination parity', () => {
     expect(afterB?.autoContinueStreak).toBe(4)
   })
 })
+
+describe('deep parity boundary race and classifier expansion', () => {
+  const createContinuationContext = async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: `start-${crypto.randomUUID()}`,
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async d => {
+      await d.db.insert('todos', {
+        content: 'parity todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    return { ctx, runToken: state?.activeRunToken ?? '', sessionId, threadId }
+  }
+
+  for (const c of [
+    { ageMs: 9_999, blocked: true },
+    { ageMs: 10_000, blocked: false }
+  ] as const)
+    test(`continuation cooldown boundary at ${c.ageMs}ms`, async () => {
+      const { ctx, runToken, threadId } = await createContinuationContext()
+      const realDateNow = Date.now,
+        baseNow = realDateNow()
+      try {
+        Date.now = () => baseNow
+        await ctx.run(async d => {
+          const state = await d.db
+            .query('threadRunState')
+            .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+            .unique()
+          if (state)
+            await d.db.patch(state._id, {
+              consecutiveFailures: 1,
+              lastContinuationAt: baseNow - c.ageMs
+            })
+        })
+        const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+          runToken,
+          threadId,
+          turnRequestedInput: false
+        })
+        expect(out.shouldContinue).toBe(!c.blocked)
+      } finally {
+        Date.now = realDateNow
+      }
+    })
+
+  for (const c of [
+    { ageMs: 299_999, expectedFailures: 4 },
+    { ageMs: 300_001, expectedFailures: 0 }
+  ] as const)
+    test(`failure reset window boundary at ${c.ageMs}ms`, async () => {
+      const { ctx, runToken, threadId } = await createContinuationContext()
+      await ctx.run(async d => {
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            consecutiveFailures: 4,
+            lastContinuationAt: Date.now() - c.ageMs
+          })
+      })
+      await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken,
+        threadId,
+        turnRequestedInput: true
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(state?.consecutiveFailures).toBe(c.expectedFailures)
+    })
+
+  for (const c of [
+    { current: 1, shouldContinue: true },
+    { current: 2, shouldContinue: false }
+  ] as const)
+    test(`stagnation boundary from ${c.current} cycles`, async () => {
+      const { ctx, runToken, sessionId, threadId } = await createContinuationContext()
+      await ctx.run(async d => {
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        const todos = await d.db
+          .query('todos')
+          .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+          .collect()
+        if (state) {
+          const snapshot = JSON.stringify(
+            todos.map(t => ({
+              content: t.content,
+              id: String(t._id),
+              status: t.status
+            }))
+          )
+          await d.db.patch(state._id, {
+            lastTodoSnapshot: snapshot,
+            stagnationCount: c.current
+          })
+        }
+      })
+      const out = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken,
+        threadId,
+        turnRequestedInput: false
+      })
+      expect(out.shouldContinue).toBe(c.shouldContinue)
+    })
+
+  for (const c of [
+    { staleByMs: 900_000, shouldTimeout: false },
+    { staleByMs: 900_001, shouldTimeout: true }
+  ] as const)
+    test(`claimed heartbeat boundary at ${c.staleByMs}ms`, async () => {
+      process.env.CONVEX_TEST_MODE = 'true'
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `hb-${crypto.randomUUID()}`,
+        reason: 'user_message',
+        threadId
+      })
+      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      await ctx.mutation(internal.orchestrator.claimRun, {
+        runToken: before?.activeRunToken ?? '',
+        threadId
+      })
+      await ctx.run(async d => {
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            claimedAt: Date.now() - c.staleByMs,
+            runHeartbeatAt: Date.now() - c.staleByMs,
+            runClaimed: true
+          })
+      })
+      await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(after?.status === 'idle').toBe(c.shouldTimeout)
+      expect(after?.status === 'active').toBe(!c.shouldTimeout)
+    })
+
+  for (const c of [
+    { ageMs: 14 * 60 * 1000, shouldTimeout: false },
+    { ageMs: 15 * 60 * 1000 + 1, shouldTimeout: true }
+  ] as const)
+    test(`wall clock timeout boundary at ${c.ageMs}ms`, async () => {
+      process.env.CONVEX_TEST_MODE = 'true'
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 2,
+        promptMessageId: `wall-${crypto.randomUUID()}`,
+        reason: 'user_message',
+        threadId
+      })
+      await ctx.run(async d => {
+        const state = await d.db
+          .query('threadRunState')
+          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+          .unique()
+        if (state)
+          await d.db.patch(state._id, {
+            activatedAt: Date.now() - c.ageMs,
+            runClaimed: true,
+            runHeartbeatAt: Date.now()
+          })
+      })
+      await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(after?.status === 'idle').toBe(c.shouldTimeout)
+      expect(after?.status === 'active').toBe(!c.shouldTimeout)
+    })
+
+  test('simultaneous enqueueRun with equal priority keeps last payload', async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'equal-priority-start',
+      reason: 'user_message',
+      threadId
+    })
+    await Promise.all([
+      ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 1,
+        promptMessageId: 'equal-priority-a',
+        reason: 'task_completion',
+        threadId
+      }),
+      ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: 1,
+        promptMessageId: 'equal-priority-b',
+        reason: 'task_completion',
+        threadId
+      })
+    ])
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(state?.queuedPriority).toBe('task_completion')
+    expect(state?.queuedPromptMessageId).toBe('equal-priority-b')
+  })
+
+  test('claimRun then timeoutStaleRuns in same tick keeps claimed run active', async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'claim-race-start',
+      reason: 'user_message',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const token = state?.activeRunToken ?? ''
+    const claimOut = await ctx.mutation(internal.orchestrator.claimRun, { runToken: token, threadId })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(claimOut.ok).toBe(true)
+    expect(after?.status).toBe('active')
+    expect(after?.runClaimed).toBe(true)
+  })
+
+  test('double continuation enqueue keeps latest queued continuation payload', async () => {
+    const { ctx, runToken, threadId } = await createContinuationContext()
+    const a = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken,
+      threadId,
+      turnRequestedInput: false
+    })
+    const afterA = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const b = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken,
+      threadId,
+      turnRequestedInput: false
+    })
+    const afterB = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    const reminders = await ctx.run(async d =>
+      d.db
+        .query('messages')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .collect()
+    )
+    const todoReminders = reminders.filter(m => m.role === 'system' && m.content.includes('[TODO CONTINUATION]'))
+    expect(a.shouldContinue).toBe(true)
+    expect(b.shouldContinue).toBe(true)
+    expect(afterB?.queuedReason).toBe('todo_continuation')
+    expect(afterB?.queuedPromptMessageId).not.toBe(afterA?.queuedPromptMessageId)
+    expect(todoReminders.length).toBe(2)
+  })
+
+  test('enqueueRun with undefined promptMessageId preserves undefined through queue', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      reason: 'task_completion',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(state?.queuedPromptMessageId).toBeUndefined()
+  })
+
+  test('claimRun auto-creates missing threadRunState and returns false', async () => {
+    const ctx = t(),
+      out = await ctx.mutation(internal.orchestrator.claimRun, {
+        runToken: 'missing-state-token',
+        threadId: `missing-thread-${crypto.randomUUID()}`
+      })
+    expect(out.ok).toBe(false)
+  })
+
+  for (const c of [
+    { errorMessage: 'missing run_in_background', expected: 'missing_run_in_background' },
+    { errorMessage: 'RUN_IN_BACKGROUND is required', expected: 'missing_run_in_background' },
+    { errorMessage: 'invalid args: run_in_background field missing', expected: 'missing_run_in_background' },
+    { errorMessage: 'run_in_background=false rejected by policy', expected: 'missing_run_in_background' },
+    { errorMessage: 'load_skills missing', expected: 'missing_load_skills' },
+    { errorMessage: 'LOAD_SKILLS is required', expected: 'missing_load_skills' },
+    { errorMessage: 'bad payload load_skills', expected: 'missing_load_skills' },
+    { errorMessage: 'Unknown category: ultra', expected: 'unknown_category' },
+    { errorMessage: 'INVALID CATEGORY supplied', expected: 'unknown_category' },
+    { errorMessage: 'invalid category selected', expected: 'unknown_category' },
+    { errorMessage: 'Unknown agent: foo', expected: 'unknown_agent' },
+    { errorMessage: 'invalid agent selected', expected: 'unknown_agent' },
+    { errorMessage: 'UNKNOWN AGENT provided', expected: 'unknown_agent' },
+    { errorMessage: 'agent???', expected: 'unknown_error' },
+    { errorMessage: 'カテゴリーが不明です', expected: 'unknown_error' },
+    { errorMessage: '代理人不存在', expected: 'unknown_error' },
+    { errorMessage: '', expected: 'unknown_error' }
+  ] as const)
+    test(`detectDelegateError expanded classifier ${c.expected} :: ${c.errorMessage || 'empty'}`, async () => {
+      const { detectDelegateError } = await import('./agents')
+      expect(detectDelegateError({ errorMessage: c.errorMessage })).toBe(c.expected)
+    })
+
+  for (const c of [
+    {
+      errorMessage: 'Unknown category. Available: quick, deep, quick',
+      expected: ['quick', 'deep']
+    },
+    {
+      errorMessage: 'invalid agent. valid options: oracle, explore, oracle',
+      expected: ['oracle', 'explore']
+    },
+    {
+      errorMessage: 'Unknown category. Available:  quick  ,  deep  ',
+      expected: ['quick', 'deep']
+    },
+    {
+      errorMessage: 'Unknown category',
+      expected: []
+    }
+  ] as const)
+    test(`buildRetryGuidance options parsing expanded :: ${c.errorMessage}`, async () => {
+      const { buildRetryGuidance, detectDelegateError } = await import('./agents'),
+        pattern = detectDelegateError({ errorMessage: c.errorMessage }),
+        out = buildRetryGuidance({ errorMessage: c.errorMessage, pattern })
+      expect(out.availableOptions).toEqual(c.expected)
+    })
+
+  for (const c of [
+    { status: 'completed', mutation: 'fail' },
+    { status: 'failed', mutation: 'complete' },
+    { status: 'cancelled', mutation: 'complete' },
+    { status: 'timed_out', mutation: 'complete' }
+  ] as const)
+    test(`terminal task state ${c.status} rejects ${c.mutation} transition`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await ctx.run(async d =>
+          d.db.insert('tasks', {
+            completedAt: Date.now(),
+            description: `terminal-${c.status}`,
+            isBackground: true,
+            parentThreadId,
+            retryCount: 0,
+            sessionId,
+            status: c.status,
+            threadId: `terminal-${c.status}-${crypto.randomUUID()}`
+          })
+        )
+      const out =
+        c.mutation === 'fail'
+          ? await ctx.mutation(internal.tasks.failTask, { lastError: 'nope', taskId })
+          : await ctx.mutation(internal.tasks.completeTask, { result: 'nope', taskId })
+      const row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe(c.status)
+    })
+
+  test('run state valid transition idle -> active -> idle', async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'state-valid-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: active?.activeRunToken ?? '',
+      threadId
+    })
+    const idle = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(active?.status).toBe('active')
+    expect(idle?.status).toBe('idle')
+  })
+
+  test('run state valid transition active -> active when draining queue', async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'state-queue-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'state-queue-next',
+      reason: 'task_completion',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.finishRun, {
+      runToken: before?.activeRunToken ?? '',
+      threadId
+    })
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('active')
+    expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+  })
+})
+
+describe('deep parity expansion batch three', () => {
+  process.env.CONVEX_TEST_MODE = 'true'
+
+  const createTaskRow = async ({
+    ctx,
+    parentThreadId,
+    sessionId,
+    status
+  }: {
+    ctx: ReturnType<typeof t>
+    parentThreadId: string
+    sessionId: Id<'session'>
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timed_out'
+  }) => {
+    const now = Date.now()
+    return ctx.run(async d =>
+      d.db.insert('tasks', {
+        completedAt: status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timed_out' ? now : undefined,
+        description: `matrix-${status}`,
+        heartbeatAt: status === 'running' ? now : undefined,
+        isBackground: true,
+        parentThreadId,
+        pendingAt: status === 'pending' ? now : undefined,
+        retryCount: 0,
+        sessionId,
+        startedAt: status === 'running' ? now : undefined,
+        status,
+        threadId: `matrix-${status}-${crypto.randomUUID()}`
+      })
+    )
+  }
+
+  test('valid transition pending -> running', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'pending' }),
+      out = await ctx.mutation(internal.tasks.markRunning, { taskId }),
+      row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.ok).toBe(true)
+    expect(row?.status).toBe('running')
+  })
+
+  test('valid transition running -> completed', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
+      out = await ctx.mutation(internal.tasks.completeTask, { result: 'ok', taskId }),
+      row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.ok).toBe(true)
+    expect(row?.status).toBe('completed')
+  })
+
+  test('valid transition running -> failed', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
+      out = await ctx.mutation(internal.tasks.failTask, { lastError: 'boom', taskId }),
+      row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.ok).toBe(true)
+    expect(row?.status).toBe('failed')
+  })
+
+  test('valid transition running -> timed_out', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' })
+    await ctx.run(async d => {
+      await d.db.patch(taskId, { heartbeatAt: Date.now() - 6 * 60 * 1000 })
+    })
+    await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async d => d.db.get(taskId))
+    expect(row?.status).toBe('timed_out')
+  })
+
+  test('valid transition pending -> timed_out', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'pending' })
+    await ctx.run(async d => {
+      await d.db.patch(taskId, { pendingAt: Date.now() - 6 * 60 * 1000 })
+    })
+    await ctx.mutation(internal.staleTaskCleanup.timeoutStaleTasks, {})
+    const row = await ctx.run(async d => d.db.get(taskId))
+    expect(row?.status).toBe('timed_out')
+  })
+
+  test('valid transition running -> pending via scheduleRetry when retryCount < 3', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' }),
+      out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+      row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.ok).toBe(true)
+    expect(row?.status).toBe('pending')
+    expect(row?.retryCount).toBe(1)
+  })
+
+  test('valid transition running -> cancelled via archived session scheduleRetry', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {}),
+      taskId = await createTaskRow({ ctx, parentThreadId: created.threadId, sessionId: created.sessionId, status: 'running' })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+    const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId })
+    const row = await ctx.run(async d => d.db.get(taskId))
+    expect(out.ok).toBe(false)
+    expect(row?.status).toBe('cancelled')
+  })
+
+  for (const s of ['running', 'completed', 'failed', 'cancelled', 'timed_out'] as const)
+    test(`invalid transition ${s} -> running rejected`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        out = await ctx.mutation(internal.tasks.markRunning, { taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe(s)
+    })
+
+  for (const s of ['pending', 'completed', 'failed', 'cancelled', 'timed_out'] as const)
+    test(`invalid transition ${s} -> completed rejected`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        out = await ctx.mutation(internal.tasks.completeTask, { result: 'no', taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe(s)
+    })
+
+  for (const s of ['pending', 'completed', 'failed', 'cancelled', 'timed_out'] as const)
+    test(`invalid transition ${s} -> failed rejected`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        out = await ctx.mutation(internal.tasks.failTask, { lastError: 'no', taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe(s)
+    })
+
+  for (const s of ['pending', 'completed', 'failed', 'cancelled', 'timed_out'] as const)
+    test(`invalid transition ${s} -> pending by scheduleRetry rejected`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: s }),
+        out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe(s)
+    })
+
+  for (const retryCount of [3, 4, 10] as const)
+    test(`invalid transition running -> pending rejected when retryCount=${retryCount}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId, threadId: parentThreadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+        taskId = await createTaskRow({ ctx, parentThreadId, sessionId, status: 'running' })
+      await ctx.run(async d => {
+        await d.db.patch(taskId, { retryCount })
+      })
+      const out = await ctx.mutation(internal.tasks.scheduleRetry, { taskId }),
+        row = await ctx.run(async d => d.db.get(taskId))
+      expect(out.ok).toBe(false)
+      expect(row?.status).toBe('running')
+      expect(row?.retryCount).toBe(retryCount)
+    })
+
+  for (const c of [
+    { expected: 'missing_run_in_background', value: 'run_in_background' },
+    { expected: 'missing_run_in_background', value: ' run_in_background ' },
+    { expected: 'missing_run_in_background', value: 'RUN_IN_BACKGROUND\nmissing' },
+    { expected: 'missing_run_in_background', value: 'missing run_in_background and load_skills' },
+    { expected: 'missing_load_skills', value: 'load_skills required' },
+    { expected: 'missing_load_skills', value: ' LOAD_SKILLS required ' },
+    { expected: 'missing_load_skills', value: 'error:load_skills\nstack...' },
+    { expected: 'unknown_category', value: 'unknown category' },
+    { expected: 'unknown_category', value: 'Unknown Category: deepx' },
+    { expected: 'unknown_category', value: 'invalid category' },
+    { expected: 'unknown_error', value: 'invalid    category selected' },
+    { expected: 'unknown_agent', value: 'unknown agent' },
+    { expected: 'unknown_agent', value: 'Unknown Agent: ghost' },
+    { expected: 'unknown_agent', value: 'invalid agent' },
+    { expected: 'unknown_error', value: 'invalid    agent selected' },
+    { expected: 'unknown_error', value: 'agent unknown but no keyword ordering??' },
+    { expected: 'unknown_error', value: 'カテゴリーが見つかりません' },
+    { expected: 'unknown_error', value: '代理人不存在, 类别未知' },
+    { expected: 'unknown_error', value: 'trace:\n at fn (file.ts:1:1)' },
+    { expected: 'unknown_error', value: '   ' }
+  ] as const)
+    test(`classifier detect base combinatoric :: ${c.expected}`, async () => {
+      const { detectDelegateError } = await import('./agents')
+      expect(detectDelegateError({ errorMessage: c.value })).toBe(c.expected)
+    })
+
+  for (const c of [
+    {
+      expected: 'missing_run_in_background',
+      value: 'unknown category and run_in_background missing and load_skills missing'
+    },
+    {
+      expected: 'missing_run_in_background',
+      value: 'invalid agent and RUN_IN_BACKGROUND required'
+    },
+    {
+      expected: 'missing_load_skills',
+      value: 'unknown category and load_skills missing'
+    },
+    {
+      expected: 'unknown_category',
+      value: 'unknown category and unknown agent'
+    },
+    {
+      expected: 'unknown_agent',
+      value: 'unknown agent only with stack\n at x\n at y'
+    },
+    {
+      expected: 'unknown_error',
+      value: `prefix-${'x'.repeat(5000)}-suffix`
+    },
+    {
+      expected: 'unknown_category',
+      value: '  invalid category:\talpha\nvalid options: quick, deep  '
+    },
+    {
+      expected: 'unknown_agent',
+      value: '  invalid agent:\toracle2\nvalid options: oracle, explore  '
+    },
+    {
+      expected: 'missing_load_skills',
+      value: 'error: LOAD_SKILLS\nstack: at executor\n at delegate'
+    },
+    {
+      expected: 'missing_run_in_background',
+      value: 'Error: run_in_background\n    at delegate (tools.ts:123:9)'
+    }
+  ] as const)
+    test(`classifier detect combined combinatoric :: ${c.expected}`, async () => {
+      const { detectDelegateError } = await import('./agents')
+      expect(detectDelegateError({ errorMessage: c.value })).toBe(c.expected)
+    })
+
+  for (const c of [
+    {
+      errorMessage: 'Unknown category. Available: quick, deep, quick,  deep',
+      pattern: 'unknown_category' as const,
+      expected: ['quick', 'deep']
+    },
+    {
+      errorMessage: 'Unknown agent. valid options: oracle, explore, oracle,plan',
+      pattern: 'unknown_agent' as const,
+      expected: ['oracle', 'explore', 'plan']
+    },
+    {
+      errorMessage: 'Unknown category. Available: quick\nstack: at x',
+      pattern: 'unknown_category' as const,
+      expected: ['quick']
+    },
+    {
+      errorMessage: 'invalid category alpha\nvalid options: quick, deep\nAvailable: deep, quick',
+      pattern: 'unknown_category' as const,
+      expected: ['quick', 'deep']
+    },
+    {
+      errorMessage: 'invalid agent beta\nvalid options: oracle\nAvailable: oracle, explore',
+      pattern: 'unknown_agent' as const,
+      expected: ['oracle', 'explore']
+    },
+    {
+      errorMessage: `Unknown category. Available: quick, deep\n${'trace\n'.repeat(200)}`,
+      pattern: 'unknown_category' as const,
+      expected: ['quick', 'deep']
+    },
+    {
+      errorMessage: 'missing run_in_background',
+      pattern: 'missing_run_in_background' as const,
+      expected: []
+    },
+    {
+      errorMessage: 'missing load_skills',
+      pattern: 'missing_load_skills' as const,
+      expected: []
+    },
+    {
+      errorMessage: 'invalid agent, valid options:   oracle  ,   explore  ',
+      pattern: 'unknown_agent' as const,
+      expected: ['oracle', 'explore']
+    },
+    {
+      errorMessage: 'invalid category, Available: quick,deep,quick,deep',
+      pattern: 'unknown_category' as const,
+      expected: ['quick', 'deep']
+    }
+  ] as const)
+    test(`classifier guidance combinatoric options parse :: ${c.pattern}`, async () => {
+      const { buildRetryGuidance } = await import('./agents'),
+        out = buildRetryGuidance({ errorMessage: c.errorMessage, pattern: c.pattern })
+      expect([...out.availableOptions].sort()).toEqual([...c.expected].sort())
+    })
+
+  const createQueueContext = async () => {
+    process.env.CONVEX_TEST_MODE = 'true'
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: `queue-start-${crypto.randomUUID()}`,
+      reason: 'user_message',
+      threadId
+    })
+    return { ctx, threadId }
+  }
+
+  for (const c of [
+    {
+      base: { priority: 0 as const, reason: 'todo_continuation' as const },
+      incoming: { priority: 1 as const, reason: 'task_completion' as const },
+      shouldReplace: true
+    },
+    {
+      base: { priority: 1 as const, reason: 'task_completion' as const },
+      incoming: { priority: 2 as const, reason: 'user_message' as const },
+      shouldReplace: true
+    },
+    {
+      base: { priority: 2 as const, reason: 'user_message' as const },
+      incoming: { priority: 1 as const, reason: 'task_completion' as const },
+      shouldReplace: false
+    },
+    {
+      base: { priority: 2 as const, reason: 'user_message' as const },
+      incoming: { priority: 0 as const, reason: 'todo_continuation' as const },
+      shouldReplace: false
+    },
+    {
+      base: { priority: 1 as const, reason: 'task_completion' as const },
+      incoming: { priority: 0 as const, reason: 'todo_continuation' as const },
+      shouldReplace: false
+    },
+    {
+      base: { priority: 0 as const, reason: 'todo_continuation' as const },
+      incoming: { priority: 2 as const, reason: 'user_message' as const },
+      shouldReplace: true
+    },
+    {
+      base: { priority: 1 as const, reason: 'task_completion' as const },
+      incoming: { priority: 1 as const, reason: 'task_completion' as const },
+      shouldReplace: true
+    },
+    {
+      base: { priority: 2 as const, reason: 'user_message' as const },
+      incoming: { priority: 2 as const, reason: 'user_message' as const },
+      shouldReplace: true
+    },
+    {
+      base: { priority: 0 as const, reason: 'todo_continuation' as const },
+      incoming: { priority: 0 as const, reason: 'todo_continuation' as const },
+      shouldReplace: true
+    }
+  ] as const)
+    test(`queue replacement matrix ${c.base.reason} <- ${c.incoming.reason}`, async () => {
+      const { ctx, threadId } = await createQueueContext()
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: c.base.priority,
+        promptMessageId: `base-${c.base.reason}`,
+        reason: c.base.reason,
+        threadId
+      })
+      const out = await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority: c.incoming.priority,
+        promptMessageId: `incoming-${c.incoming.reason}`,
+        reason: c.incoming.reason,
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(out.ok).toBe(c.shouldReplace)
+      if (c.shouldReplace) {
+        expect(state?.queuedReason).toBe(c.incoming.reason)
+        expect(state?.queuedPromptMessageId).toBe(`incoming-${c.incoming.reason}`)
+      } else {
+        expect(state?.queuedReason).toBe(c.base.reason)
+        expect(state?.queuedPromptMessageId).toBe(`base-${c.base.reason}`)
+      }
+    })
+
+  for (const reason of ['todo_continuation', 'task_completion', 'user_message'] as const)
+    test(`queue same-priority replacement keeps last wins for ${reason}`, async () => {
+      const { ctx, threadId } = await createQueueContext()
+      const priority = reason === 'user_message' ? 2 : reason === 'task_completion' ? 1 : 0
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority,
+        promptMessageId: `${reason}-first`,
+        reason,
+        threadId
+      })
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority,
+        promptMessageId: `${reason}-second`,
+        reason,
+        threadId
+      })
+      const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(state?.queuedPromptMessageId).toBe(`${reason}-second`)
+    })
+
+  for (const reason of ['todo_continuation', 'task_completion', 'user_message'] as const)
+    test(`queue drain preserves next run for ${reason}`, async () => {
+      const { ctx, threadId } = await createQueueContext()
+      const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      const priority = reason === 'user_message' ? 2 : reason === 'task_completion' ? 1 : 0
+      await ctx.mutation(internal.orchestrator.enqueueRun, {
+        priority,
+        promptMessageId: `drain-${reason}`,
+        reason,
+        threadId
+      })
+      await ctx.mutation(internal.orchestrator.finishRun, {
+        runToken: before?.activeRunToken ?? '',
+        threadId
+      })
+      const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+      expect(after?.status).toBe('active')
+      expect(after?.queuedReason).toBeUndefined()
+      expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+    })
+
+  test('compaction edge empty thread', async () => {
+    const ctx = t(),
+      threadId = `empty-thread-${crypto.randomUUID()}`,
+      size = await ctx.query(internal.compaction.getContextSize, { threadId }),
+      groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId }),
+      compact = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(size.messageCount).toBe(0)
+    expect(groups).toEqual([])
+    expect(compact.compacted).toBe(false)
+  })
+
+  test('compaction edge single complete message produces one closed group', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async d => {
+      await d.db.insert('messages', {
+        content: 'one',
+        isComplete: true,
+        parts: [{ text: 'one', type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId })
+    expect(groups.length).toBe(1)
+  })
+
+  test('compaction edge all messages already compacted yields zero groups', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, {})
+    const ids = await ctx.run(async d => {
+      const out: Id<'messages'>[] = []
+      for (let i = 0; i < 3; i += 1)
+        out.push(
+          await d.db.insert('messages', {
+            content: `m-${i}`,
+            isComplete: true,
+            parts: [{ text: `m-${i}`, type: 'text' }],
+            role: 'assistant',
+            sessionId: created.sessionId,
+            threadId: created.threadId
+          })
+        )
+      return out
+    })
+    await ctx.run(async d => {
+      const state = await d.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', created.threadId))
+        .unique()
+      if (state) await d.db.patch(state._id, { lastCompactedMessageId: String(ids[2]) })
+    })
+    const groups = await ctx.query(internal.compaction.listClosedPrefixGroups, { threadId: created.threadId })
+    expect(groups.length).toBe(0)
+  })
+
+  test('compaction edge active streaming message prevents closed prefix compaction', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async d => {
+      await d.db.insert('messages', {
+        content: 'x'.repeat(100_001),
+        isComplete: false,
+        parts: [],
+        role: 'assistant',
+        sessionId,
+        streamingContent: 'streaming',
+        threadId
+      })
+    })
+    const out = await ctx.mutation(internal.compaction.compactIfNeeded, { threadId })
+    expect(out.reason).toBe('no_closed_groups')
+  })
+
+  test('session lifecycle create then immediate archive', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, { title: 'lifecycle-a' })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+    const row = await asUser(0).query(api.sessions.getSession, { sessionId: created.sessionId })
+    expect(row?.status).toBe('archived')
+  })
+
+  test('session lifecycle archive then immediate cleanup deletion path', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      created = await asUser(0).mutation(api.sessions.createSession, { title: 'lifecycle-b' })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: created.sessionId })
+    await ctx.run(async d => {
+      const row = await d.db.get(created.sessionId)
+      if (row) await d.db.patch(created.sessionId, { archivedAt: Date.now() - 181 * 24 * 60 * 60 * 1000 })
+    })
+    await ctx.mutation(internal.retention.cleanupArchivedSessions, {})
+    const row = await asUser(0).query(api.sessions.getSession, { sessionId: created.sessionId })
+    expect(row).toBeNull()
+  })
+
+  test('session lifecycle create with same title twice keeps distinct sessions', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    await asUser(0).mutation(api.sessions.createSession, { title: 'same-title' })
+    await asUser(0).mutation(api.sessions.createSession, { title: 'same-title' })
+    const rows = await asUser(0).query(api.sessions.listSessions, {})
+    let count = 0
+    for (const r of rows) if (r.title === 'same-title') count += 1
+    expect(count).toBe(2)
+  })
+
+  test('session lifecycle list is empty after all sessions archived', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, { title: 'all-1' }),
+      b = await asUser(0).mutation(api.sessions.createSession, { title: 'all-2' })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: a.sessionId })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId: b.sessionId })
+    const rows = await asUser(0).query(api.sessions.listSessions, {})
+    expect(rows.length).toBe(0)
+  })
+
+  test('message edge very long content 10k preserved', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      content = 'a'.repeat(10_000)
+    await ctx.run(async d => {
+      await d.db.insert('messages', {
+        content,
+        isComplete: true,
+        parts: [{ text: content, type: 'text' }],
+        role: 'user',
+        sessionId,
+        threadId
+      })
+    })
+    const rows = await asUser(0).query(api.messages.listMessages, { threadId })
+    expect(rows[0]?.content.length).toBe(10_000)
+  })
+
+  test('message edge unicode content preserved', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      content = 'こんにちは 🌍 Привет'
+    await ctx.run(async d => {
+      await d.db.insert('messages', {
+        content,
+        isComplete: true,
+        parts: [{ text: content, type: 'text' }],
+        role: 'user',
+        sessionId,
+        threadId
+      })
+    })
+    const rows = await asUser(0).query(api.messages.listMessages, { threadId })
+    expect(rows[0]?.content).toBe(content)
+  })
+
+  test('message edge content with null bytes preserved', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      content = 'abc\u0000def\u0000ghi'
+    await ctx.run(async d => {
+      await d.db.insert('messages', {
+        content,
+        isComplete: true,
+        parts: [{ text: content, type: 'text' }],
+        role: 'assistant',
+        sessionId,
+        threadId
+      })
+    })
+    const rows = await asUser(0).query(api.messages.listMessages, { threadId })
+    expect(rows[0]?.content).toBe(content)
+  })
+
+  test('message edge non-existent thread rejects listMessages', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    let threw = false
+    try {
+      await asUser(0).query(api.messages.listMessages, { threadId: `missing-thread-${crypto.randomUUID()}` })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('thread_not_found')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('todo edge supports 100 todos in one session', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const todos: { content: string; position: number; priority: 'high' | 'medium' | 'low'; status: 'pending' | 'in_progress' | 'completed' | 'cancelled' }[] = []
+    for (let i = 0; i < 100; i += 1)
+      todos.push({ content: `todo-${i}`, position: i, priority: 'low', status: 'pending' })
+    const out = await ctx.mutation(internal.todos.syncOwned, { sessionId, todos })
+    const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
+    expect(out.updated).toBe(100)
+    expect(rows.length).toBe(100)
+  })
+
+  test('todo edge very long content preserved', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      content = 'x'.repeat(5000)
+    await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos: [{ content, position: 0, priority: 'high', status: 'pending' }]
+    })
+    const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
+    expect(rows[0]?.content.length).toBe(5000)
+  })
+
+  test('todo edge position conflicts keep both rows', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos: [
+        { content: 'a', position: 1, priority: 'low', status: 'pending' },
+        { content: 'b', position: 1, priority: 'high', status: 'pending' }
+      ]
+    })
+    const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
+    expect(rows.length).toBe(2)
+  })
+
+  for (const status of ['pending', 'in_progress', 'completed', 'cancelled'] as const)
+    test(`todo edge supports status ${status}`, async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+      await ctx.mutation(internal.todos.syncOwned, {
+        sessionId,
+        todos: [{ content: `status-${status}`, position: 0, priority: 'medium', status }]
+      })
+      const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
+      expect(rows[0]?.status).toBe(status)
+    })
+})

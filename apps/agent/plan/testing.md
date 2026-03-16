@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 599 | 599 | 0 | 0 |
+| Backend `f.test.ts` | 745 | 745 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **675** | **675** | **0** | **0** |
+| **Total** | **821** | **821** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -824,6 +824,22 @@ flowchart LR
 | Session/continuation coordination (misc) | 12 | Archive blocks continuation, multi-session isolation, per-thread independence |
 | Delegate retry matrix (10) | 8 | Full error pattern → fix hint → available options extraction |
 | Stop continuation guard (10) | 7 | Streak cap, archive, input-request, task-wait all block |
+
+### Boundary, Race & Exhaustive Coverage (146 tests)
+
+| Category | Tests | Coverage |
+|---|---|---|
+| Boundary timing | 12 | Cooldown exact ms, failure reset window, stagnation cap boundary, heartbeat/wall-clock staleness thresholds |
+| Race conditions | 8 | Concurrent completeTask, simultaneous enqueue, claimRun vs timeout, double continuation |
+| Null/empty handling | 6 | Undefined promptMessageId, missing threadRunState auto-create, empty fields |
+| Error classifier deep | 21 | Case variants, partials, unicode, combined patterns, long strings with stack traces |
+| Retry guidance parsing | 4 | Option extraction order-insensitive, whitespace variations |
+| State transition matrix | 22 | Every valid + every invalid task transition, terminal state rejection |
+| Queue priority permutations | 18 | All 9 priority replacement combinations, queue drain per priority type |
+| Compaction edge cases | 12 | Empty thread, single message, all compacted, active streaming message |
+| Session lifecycle edges | 10 | Immediate archive, immediate delete, duplicate titles, list after all archived |
+| Message edge cases | 15 | Empty/long/unicode/null content, non-existent thread |
+| Todo edge cases | 18 | 100 todos, long content, position conflicts, all statuses |
 
 ### Stagnation Detection
 
