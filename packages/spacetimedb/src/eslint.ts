@@ -31,8 +31,7 @@ interface JsxNode {
 let cachedModules: string[] | undefined
 let cachedSchema: Map<string, Map<string, string>> | undefined
 let discoveredSchemaDir: string | undefined
-let discoveryWarned = false
-let cachedHasSpacetimeImports: boolean | undefined
+const discoveryWarnedRoots = new Set<string>()
 const seenCrudTables = new Map<string, string>()
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
 
@@ -157,7 +156,7 @@ const extractTables = (content: string): Map<string, Map<string, string>> => {
 
 const findSchemaContent = (root: string): string => {
   const schemaDir = findSchemaDir(root)
-  const searchDir = schemaDir ? dirname(schemaDir) : root
+  const searchDir = schemaDir ?? root
   if (!existsSync(searchDir)) return ''
   for (const entry of readdirSync(searchDir))
     if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
@@ -171,6 +170,59 @@ const parseSchemaFile = (root: string): Map<string, Map<string, string>> => {
   if (cachedSchema) return cachedSchema
   cachedSchema = extractTables(findSchemaContent(root))
   return cachedSchema
+}
+
+const getContextRoot = (context: EslintContext): string => {
+  if (!context.filename.startsWith(context.cwd)) return context.cwd
+  let current = dirname(context.filename)
+  while (current.startsWith(context.cwd)) {
+    if (existsSync(join(current, 'package.json'))) return current
+    if (current === context.cwd) return context.cwd
+    const parent = dirname(current)
+    if (parent === current) return context.cwd
+    current = parent
+  }
+  return context.cwd
+}
+
+const findSchemaDirFresh = (root: string): string | undefined => (hasSchemaMarkers(root) ? root : searchSubdirs(root))
+
+const findSchemaContentFresh = (root: string): string => {
+  const schemaDir = findSchemaDirFresh(root)
+  const searchDir = schemaDir ?? root
+  if (!existsSync(searchDir)) return ''
+  for (const entry of readdirSync(searchDir))
+    if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
+      const content = readFileSync(join(searchDir, entry), 'utf8')
+      if (isSchemaFile(content)) return content
+    }
+  return ''
+}
+
+const hasSpacetimeImportsFresh = (root: string): boolean => {
+  if (existsSync(join(root, 'module_bindings'))) return true
+  const schemaDir = findSchemaDirFresh(root)
+  const searchRoots: string[] = [root]
+  if (schemaDir) searchRoots.push(dirname(schemaDir))
+  for (const dir of searchRoots)
+    if (existsSync(dir))
+      for (const entry of readdirSync(dir, { withFileTypes: true }))
+        if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+          const content = readFileSync(join(dir, entry.name), 'utf8')
+          if (
+            content.includes("'@a/be-spacetimedb'") ||
+            content.includes('"@a/be-spacetimedb"') ||
+            content.includes("'@a/be-spacetimedb/spacetimedb'") ||
+            content.includes('"@a/be-spacetimedb/spacetimedb"') ||
+            content.includes("'@noboil/spacetimedb'") ||
+            content.includes('"@noboil/spacetimedb"') ||
+            content.includes("'@noboil/spacetimedb/server'") ||
+            content.includes('"@noboil/spacetimedb/server"')
+          )
+            return true
+          if (content.includes("'spacetimedb/react'") || content.includes('"spacetimedb/react"')) return true
+        }
+  return false
 }
 
 const getModules = (root: string): string[] => {
@@ -286,30 +338,6 @@ const getCalleeProperty = (node: CallNode): string | undefined => {
   const [first] = node.arguments
   if (first?.type !== 'MemberExpression') return
   return getPropertyName(first)
-}
-
-const hasSpacetimeImports = (root: string): boolean => {
-  if (typeof cachedHasSpacetimeImports === 'boolean') return cachedHasSpacetimeImports
-  const schemaDir = findSchemaDir(root)
-  const searchRoots: string[] = [root]
-  if (schemaDir) searchRoots.push(dirname(schemaDir))
-  for (const dir of searchRoots)
-    if (existsSync(dir))
-      for (const entry of readdirSync(dir, { withFileTypes: true }))
-        if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
-          const content = readFileSync(join(dir, entry.name), 'utf8')
-          if (content.includes("'@a/be/spacetimedb'") || content.includes('"@a/be/spacetimedb"')) {
-            cachedHasSpacetimeImports = true
-            return true
-          }
-          if (content.includes("'spacetimedb/react'") || content.includes('"spacetimedb/react"')) {
-            cachedHasSpacetimeImports = true
-            return true
-          }
-        }
-
-  cachedHasSpacetimeImports = false
-  return false
 }
 
 const isInsideTryBlock = (ancestors: BaseNode[]): boolean => {
@@ -550,11 +578,12 @@ const formFieldKind = {
 /** ESLint rule to warn if SpacetimeDB bindings or schema file cannot be discovered. */
 const discoveryCheck = {
   create: (context: EslintContext) => {
-    if (discoveryWarned) return {}
-    const hasBindings = hasSpacetimeImports(context.cwd)
-    const hasSchema = parseSchemaFile(context.cwd).size > 0
+    const root = getContextRoot(context)
+    if (discoveryWarnedRoots.has(root)) return {}
+    const hasBindings = hasSpacetimeImportsFresh(root)
+    const hasSchema = extractTables(findSchemaContentFresh(root)).size > 0
     if (hasBindings && hasSchema) return {}
-    discoveryWarned = true
+    discoveryWarnedRoots.add(root)
     const parts: string[] = []
     if (!hasBindings) parts.push('SpacetimeDB imports (@a/be/spacetimedb or spacetimedb/react)')
     if (!hasSchema) parts.push('schema file')

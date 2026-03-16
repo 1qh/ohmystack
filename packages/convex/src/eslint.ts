@@ -31,7 +31,7 @@ interface JsxNode {
 let cachedModules: string[] | undefined
 let cachedSchema: Map<string, Map<string, string>> | undefined
 let discoveredConvexDir: string | undefined
-let discoveryWarned = false
+const discoveryWarnedRoots = new Set<string>()
 const seenCrudTables = new Map<string, string>()
 
 const hasGenerated = (dir: string): boolean => existsSync(join(dir, '_generated'))
@@ -170,6 +170,46 @@ const parseSchemaFile = (root: string): Map<string, Map<string, string>> => {
   if (cachedSchema) return cachedSchema
   cachedSchema = extractTables(findSchemaContent(root))
   return cachedSchema
+}
+
+const getContextRoot = (context: EslintContext): string => {
+  if (!context.filename.startsWith(context.cwd)) return context.cwd
+  let current = dirname(context.filename)
+  while (current.startsWith(context.cwd)) {
+    if (existsSync(join(current, 'package.json'))) return current
+    if (current === context.cwd) return context.cwd
+    const parent = dirname(current)
+    if (parent === current) return context.cwd
+    current = parent
+  }
+  return context.cwd
+}
+
+const findConvexDirFresh = (root: string): string | undefined => {
+  const direct = join(root, 'convex')
+  return hasGenerated(direct) ? direct : searchSubdirs(root)
+}
+
+const getModulesFresh = (root: string): string[] => {
+  const dir = findConvexDirFresh(root)
+  if (!dir) return []
+  const result: string[] = []
+  for (const entry of readdirSync(dir))
+    if (entry.endsWith('.ts') && !entry.startsWith('_') && !entry.includes('.test.') && !entry.includes('.config.'))
+      result.push(entry.slice(0, -'.ts'.length))
+  return result
+}
+
+const findSchemaContentFresh = (root: string): string => {
+  const convexDir = findConvexDirFresh(root)
+  const searchDir = convexDir ? dirname(convexDir) : root
+  if (!existsSync(searchDir)) return ''
+  for (const entry of readdirSync(searchDir))
+    if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
+      const content = readFileSync(join(searchDir, entry), 'utf8')
+      if (isSchemaFile(content)) return content
+    }
+  return ''
 }
 
 const getJsxNameProp = (node: JsxNode): string | undefined => {
@@ -501,11 +541,12 @@ const formFieldKind = {
 /** ESLint rule to warn if convex/ directory or schema file cannot be discovered. */
 const discoveryCheck = {
   create: (context: EslintContext) => {
-    if (discoveryWarned) return {}
-    const hasConvex = getModules(context.cwd).length > 0
-    const hasSchema = parseSchemaFile(context.cwd).size > 0
+    const root = getContextRoot(context)
+    if (discoveryWarnedRoots.has(root)) return {}
+    const hasConvex = getModulesFresh(root).length > 0
+    const hasSchema = extractTables(findSchemaContentFresh(root)).size > 0
     if (hasConvex && hasSchema) return {}
-    discoveryWarned = true
+    discoveryWarnedRoots.add(root)
     const parts: string[] = []
     if (!hasConvex) parts.push('convex/ directory')
     if (!hasSchema) parts.push('schema file')

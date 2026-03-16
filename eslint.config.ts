@@ -55,18 +55,6 @@ export default eslint({
       files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
     },
     {
-      files: ['packages/be-convex/**/*.ts'],
-      rules: {
-        'noboil-convex/discovery-check': 'off'
-      }
-    },
-    {
-      files: ['packages/be-spacetimedb/**/*.ts'],
-      rules: {
-        'noboil-stdb/discovery-check': 'off'
-      }
-    },
-    {
       files: [
         'apps/**/src/**/*.ts',
         'apps/**/src/**/*.tsx',
