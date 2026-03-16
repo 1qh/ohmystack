@@ -1,6 +1,8 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 
+import type { ComponentProps } from 'react'
+
 import { Input } from '@a/ui/input'
 import { useId, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
@@ -8,7 +10,22 @@ import { toast } from 'sonner'
 
 import EmailAuthShell from './email-auth-shell'
 
-const EmailLoginPage = () => {
+interface EmailLoginPageProps {
+  emailInputProps?: Omit<ComponentProps<typeof Input>, 'id' | 'name' | 'type'>
+  shellProps?: Omit<
+    ComponentProps<typeof EmailAuthShell>,
+    'children' | 'login' | 'onSubmit' | 'onToggle' | 'pending' | 'submitLabel'
+  >
+  signInLabel?: string
+  signUpLabel?: string
+}
+
+const EmailLoginPage = ({
+  emailInputProps,
+  shellProps,
+  signInLabel = 'Continue with email',
+  signUpLabel = 'Create account with email'
+}: EmailLoginPageProps) => {
   const emailId = useId(),
     auth = useAuth(),
     [login, setLogin] = useState(true),
@@ -31,6 +48,7 @@ const EmailLoginPage = () => {
     }
   return (
     <EmailAuthShell
+      {...shellProps}
       login={login}
       onSubmit={ev => {
         ev.preventDefault()
@@ -42,8 +60,8 @@ const EmailLoginPage = () => {
       }}
       onToggle={() => setLogin(!login)}
       pending={pending}
-      submitLabel={login ? 'Continue with email' : 'Create account with email'}>
-      <Input autoComplete='email' id={emailId} name='email' placeholder='Email' />
+      submitLabel={login ? signInLabel : signUpLabel}>
+      <Input {...emailInputProps} autoComplete='email' id={emailId} name='email' placeholder='Email' />
     </EmailAuthShell>
   )
 }

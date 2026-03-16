@@ -804,8 +804,8 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
     return result
   },
   DEFAULT_USERS: TestUser[] = [
-    { email: TEST_EMAIL, name: 'Primary Tester' },
-    { email: SECOND_TEST_EMAIL, name: 'Secondary Tester' },
+    { email: TEST_EMAIL, name: 'Test User' },
+    { email: SECOND_TEST_EMAIL, name: 'Other User' },
     { email: EDITOR_TEST_EMAIL, name: 'Editor Tester' }
   ],
   /** Creates test users in the database and returns helpers to impersonate them via `asUser(index)`. */

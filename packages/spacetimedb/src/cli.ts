@@ -35,9 +35,6 @@ else if (!(cmd in COMMANDS)) {
   console.log(`${red('Unknown command:')} ${cmd}\n`)
   printHelp()
   process.exit(1)
-} else if (cmd === 'init') {
-  console.log(`\n${bold('init')} has moved to the ${bold('noboil')} CLI.\n`)
-  console.log(`Run: ${dim('bunx noboil init')}\n`)
 } else if (cmd === 'add') {
   const { add } = await import('./add')
   await add(rest)

@@ -13,6 +13,13 @@ interface UserInfo {
   name?: string
 }
 
+interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
+  shellProps?: Omit<
+    ComponentProps<typeof UserMenuShell>,
+    'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
+  >
+}
+
 const toHttpUri = (uri: string) => {
     if (uri.startsWith('wss://')) return uri.replace('wss://', 'https://')
     if (uri.startsWith('ws://')) return uri.replace('ws://', 'http://')
@@ -45,7 +52,7 @@ const toHttpUri = (uri: string) => {
     const body = (await response.json()) as unknown
     return getFirstRow(body)
   },
-  UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Trigger>) => {
+  UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
     const cookieStore = await cookies(),
       token = cookieStore.get('spacetimedb_token')?.value,
       profile = token ? await readUserFromSql(token) : null,
@@ -61,12 +68,13 @@ const toHttpUri = (uri: string) => {
 
     return (
       <UserMenuShell
+        {...shellProps}
         email={email}
         image={image}
         isSignedIn={Boolean(token)}
         name={name}
         onLogout={onLogout}
-        triggerProps={props}
+        triggerProps={triggerProps}
       />
     )
   }

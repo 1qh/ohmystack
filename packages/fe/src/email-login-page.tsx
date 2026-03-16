@@ -1,5 +1,7 @@
 'use client'
 
+import type { ComponentProps } from 'react'
+
 import { Input } from '@a/ui/input'
 import { useAuthActions } from '@convex-dev/auth/react'
 import { ConvexError } from 'convex/values'
@@ -8,12 +10,30 @@ import { toast } from 'sonner'
 
 import EmailAuthShell from './email-auth-shell'
 
-const EmailLoginPage = () => {
+interface EmailLoginPageProps {
+  emailInputProps?: Omit<ComponentProps<typeof Input>, 'name' | 'type'>
+  passwordInputProps?: Omit<ComponentProps<typeof Input>, 'name' | 'type'>
+  shellProps?: Omit<
+    ComponentProps<typeof EmailAuthShell>,
+    'children' | 'login' | 'onSubmit' | 'onToggle' | 'pending' | 'submitLabel'
+  >
+  signInLabel?: string
+  signUpLabel?: string
+}
+
+const EmailLoginPage = ({
+  emailInputProps,
+  passwordInputProps,
+  shellProps,
+  signInLabel = 'Sign in',
+  signUpLabel = 'Sign up'
+}: EmailLoginPageProps) => {
   const { signIn } = useAuthActions(),
     [login, setLogin] = useState(true),
     [pending, setPending] = useState(false)
   return (
     <EmailAuthShell
+      {...shellProps}
       login={login}
       onSubmit={ev => {
         ev.preventDefault()
@@ -33,9 +53,10 @@ const EmailLoginPage = () => {
       }}
       onToggle={() => setLogin(!login)}
       pending={pending}
-      submitLabel={login ? 'Sign in' : 'Sign up'}>
-      <Input autoComplete='email' name='email' placeholder='Email' />
+      submitLabel={login ? signInLabel : signUpLabel}>
+      <Input {...emailInputProps} autoComplete='email' name='email' placeholder='Email' />
       <Input
+        {...passwordInputProps}
         autoComplete={login ? 'current-password' : 'new-password'}
         name='password'
         placeholder='Password'

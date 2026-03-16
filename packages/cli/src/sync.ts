@@ -28,7 +28,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   REPO = '1qh/noboil',
-  REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'apps/docs', '.github'],
+  REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'apps/docs', 'packages/shared', '.github'],
   ROOT_CONFIG_FILES = new Set([
     'biome.jsonc',
     'eslint.config.ts',

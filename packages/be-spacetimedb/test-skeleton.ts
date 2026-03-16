@@ -69,7 +69,7 @@ const sleep = async (ms: number) =>
   },
   run = async () => {
     console.log('[1/6] Creating test context...')
-    const ctx = await createTestContext({ moduleName: '@noboil/spacetimedb', userCount: 2 }),
+    const ctx = await createTestContext({ moduleName: 'noboil', userCount: 2 }),
       [, user2] = ctx.users
     if (!user2) throw new Error('Missing second test user')
     console.log(`  Connected as ${ctx.defaultUser.identity.slice(0, 12)}...`)

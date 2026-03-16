@@ -1,6 +1,7 @@
 import type { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 
+import { cn } from '@a/ui'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -19,59 +20,156 @@ import { createElement } from 'react'
 
 import ThemeToggle from './theme-toggle'
 
+/* eslint-disable complexity */
+
 interface UserMenuShellProps {
+  alertDialogContentProps?: Omit<ComponentProps<typeof AlertDialogContent>, 'children'>
+  alertDialogDescriptionProps?: Omit<ComponentProps<typeof AlertDialogDescription>, 'children'>
+  alertDialogTitleProps?: Omit<ComponentProps<typeof AlertDialogTitle>, 'children'>
   email?: string
   image?: string
   isSignedIn: boolean
+  loginButtonProps?: Omit<ComponentProps<typeof Button>, 'asChild' | 'children'>
+  loginHref?: string
+  loginLabel?: string
+  loginLinkProps?: Omit<ComponentProps<typeof Link>, 'children' | 'href'>
+  logoutButtonProps?: Omit<ComponentProps<typeof Button>, 'children' | 'type'>
+  logoutCancelLabel?: string
+  logoutCancelProps?: Omit<ComponentProps<typeof AlertDialogCancel>, 'children'>
+  logoutContinueButtonProps?: Omit<ComponentProps<typeof Button>, 'children' | 'type'>
+  logoutContinueLabel?: string
+  logoutDescription?: string
+  logoutFormProps?: Omit<ComponentProps<'form'>, 'action' | 'children'>
+  logoutLabel?: string
+  logoutTriggerClassName?: string
+  logoutTriggerProps?: Omit<ComponentProps<typeof AlertDialogTrigger>, 'children' | 'className' | 'render'>
+  menuClassName?: string
+  menuProps?: Omit<ComponentProps<typeof PopoverContent>, 'children'>
   name?: string
   onLogout: () => Promise<void>
+  popoverProps?: Omit<ComponentProps<typeof Popover>, 'children'>
+  themeToggleProps?: ComponentProps<typeof ThemeToggle>
+  triggerAriaLabel?: string
+  triggerClassName?: string
+  triggerFallbackProps?: Omit<ComponentProps<'span'>, 'children'>
+  triggerImageProps?: Omit<ComponentProps<typeof Image>, 'alt' | 'height' | 'src' | 'width'>
   triggerProps: ComponentProps<typeof PopoverPrimitive.Trigger>
 }
 
-const UserMenuShell = ({ email, image, isSignedIn, name, onLogout, triggerProps }: UserMenuShellProps) => {
-  const trigger = createElement(
+const UserMenuShell = ({
+  alertDialogContentProps,
+  alertDialogDescriptionProps,
+  alertDialogTitleProps,
+  email,
+  image,
+  isSignedIn,
+  loginButtonProps,
+  loginHref = '/login',
+  loginLabel = 'Log in',
+  loginLinkProps,
+  logoutButtonProps,
+  logoutCancelLabel = 'Cancel',
+  logoutCancelProps,
+  logoutContinueButtonProps,
+  logoutContinueLabel = 'Continue',
+  logoutDescription,
+  logoutFormProps,
+  logoutLabel = 'Log out',
+  logoutTriggerClassName,
+  logoutTriggerProps,
+  menuClassName,
+  menuProps,
+  name,
+  onLogout,
+  popoverProps,
+  themeToggleProps,
+  triggerAriaLabel = 'User menu',
+  triggerClassName,
+  triggerFallbackProps,
+  triggerImageProps,
+  triggerProps
+}: UserMenuShellProps) => {
+  const { className: triggerPropsClassName, ...triggerRestProps } = triggerProps,
+    { className: triggerImageClassName, ...triggerImageRestProps } = triggerImageProps ?? {},
+    { className: triggerFallbackClassName, ...triggerFallbackRestProps } = triggerFallbackProps ?? {},
+    description = logoutDescription ?? (email ? `Log out of ${email}?` : 'Log out?'),
+    title = name ?? 'Account',
+    trigger = createElement(
       'button',
       {
-        ...triggerProps,
-        'aria-label': 'User menu',
-        className: 'size-8 shrink-0 rounded-full',
+        ...triggerRestProps,
+        'aria-label': triggerAriaLabel,
+        className: cn('size-8 shrink-0 rounded-full', triggerClassName, triggerPropsClassName),
         type: 'button'
       },
       isSignedIn && image
-        ? createElement(Image, { alt: '', className: 'rounded-full', height: 32, src: image, width: 32 })
-        : createElement('span', { className: 'block size-8 rounded-full bg-muted-foreground' })
+        ? createElement(Image, {
+            ...triggerImageRestProps,
+            alt: '',
+            className: cn('rounded-full', triggerImageClassName),
+            height: 32,
+            src: image,
+            width: 32
+          })
+        : createElement('span', {
+            ...triggerFallbackRestProps,
+            className: cn('block size-8 rounded-full bg-muted-foreground', triggerFallbackClassName)
+          })
     ),
-    logoutTrigger = createElement(Button, { variant: 'ghost' })
+    logoutTrigger = createElement(Button, {
+      ...logoutButtonProps,
+      type: 'button',
+      variant: logoutButtonProps?.variant ?? 'ghost'
+    })
 
   return (
-    <Popover>
+    <Popover {...popoverProps}>
       <PopoverTrigger render={trigger} />
-      <PopoverContent className='mx-1 w-fit space-y-1 rounded-xl p-1.5'>
-        <ThemeToggle />
+      <PopoverContent
+        {...menuProps}
+        className={cn('mx-1 w-fit space-y-1 rounded-xl p-1.5', menuClassName, menuProps?.className)}>
+        <ThemeToggle {...themeToggleProps} />
         {isSignedIn ? (
           <AlertDialog>
-            <AlertDialogTrigger className='w-full' render={logoutTrigger}>
-              Log out
+            <AlertDialogTrigger
+              {...logoutTriggerProps}
+              className={cn('w-full', logoutTriggerClassName)}
+              render={logoutTrigger}>
+              {logoutLabel}
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent {...alertDialogContentProps}>
               <AlertDialogHeader>
-                <AlertDialogTitle className='flex items-center gap-2'>
+                <AlertDialogTitle
+                  {...alertDialogTitleProps}
+                  className={cn('flex items-center gap-2', alertDialogTitleProps?.className)}>
                   {image ? <Image alt='' className='rounded-full' height={24} src={image} width={24} /> : null}
-                  {name}
+                  {title}
                 </AlertDialogTitle>
-                <AlertDialogDescription>Log out of {email}?</AlertDialogDescription>
+                <AlertDialogDescription
+                  {...alertDialogDescriptionProps}
+                  className={cn(alertDialogDescriptionProps?.className)}>
+                  {description}
+                </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <form action={onLogout}>
-                  <Button>Continue</Button>
+                <AlertDialogCancel {...logoutCancelProps}>{logoutCancelLabel}</AlertDialogCancel>
+                <form {...logoutFormProps} action={onLogout}>
+                  <Button {...logoutContinueButtonProps} type='submit'>
+                    {logoutContinueLabel}
+                  </Button>
                 </form>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         ) : (
-          <Button asChild className='w-full' variant='ghost'>
-            <Link href='/login'>Log in</Link>
+          <Button
+            {...loginButtonProps}
+            asChild
+            className={cn('w-full', loginButtonProps?.className)}
+            variant={loginButtonProps?.variant ?? 'ghost'}>
+            <Link {...loginLinkProps} href={loginHref}>
+              {loginLabel}
+            </Link>
           </Button>
         )}
       </PopoverContent>

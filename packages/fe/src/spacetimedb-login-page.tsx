@@ -1,6 +1,8 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 
+import type { ComponentProps } from 'react'
+
 import { useAuth } from 'react-oidc-context'
 import { toast } from 'sonner'
 
@@ -8,10 +10,17 @@ import OAuthLoginShell from './oauth-login-shell'
 
 interface LoginPageProps {
   emailLoginPath?: string
+  emailLoginText?: string
   redirectTo?: string
+  shellProps?: Omit<ComponentProps<typeof OAuthLoginShell>, 'emailLoginPath' | 'emailLoginText' | 'onGoogleClick'>
 }
 
-const LoginPage = ({ emailLoginPath = '/login/email', redirectTo = '/' }: LoginPageProps) => {
+const LoginPage = ({
+  emailLoginPath = '/login/email',
+  emailLoginText = 'Log in with email',
+  redirectTo = '/',
+  shellProps
+}: LoginPageProps) => {
   const auth = useAuth(),
     signInWithGoogle = () => {
       ;(async () => {
@@ -26,7 +35,12 @@ const LoginPage = ({ emailLoginPath = '/login/email', redirectTo = '/' }: LoginP
       })()
     }
   return (
-    <OAuthLoginShell emailLoginPath={emailLoginPath} emailLoginText='Log in with email' onGoogleClick={signInWithGoogle} />
+    <OAuthLoginShell
+      {...shellProps}
+      emailLoginPath={emailLoginPath}
+      emailLoginText={emailLoginText}
+      onGoogleClick={signInWithGoogle}
+    />
   )
 }
 

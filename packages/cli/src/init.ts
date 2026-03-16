@@ -32,7 +32,7 @@ const REPO = '1qh/noboil',
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'apps/docs', '.github'],
+  REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'apps/docs', 'packages/shared', '.github'],
   /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
   ask = async (question: string) => {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
@@ -155,15 +155,14 @@ const REPO = '1qh/noboil',
     }
 
     console.log(`\n${bold('Creating project...')}\n`)
-    console.log(`  ${dim('cloning')} ${REPO}...`)
-    run('git', ['clone', '--depth', '1', `https://github.com/${REPO}.git`, fullPath], process.cwd())
-    const revResult = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: fullPath, encoding: 'utf8' })
+    console.log(`  ${dim('scaffolding')} ${REPO}...`)
+    run('bunx', ['-y', 'degit', REPO, fullPath], process.cwd())
+    const revResult = spawnSync('git', ['ls-remote', `https://github.com/${REPO}.git`, 'HEAD'], { encoding: 'utf8' })
     if (revResult.status !== 0 || !revResult.stdout.trim()) {
       console.error(`${red('Error:')} failed to read scaffold commit hash`)
       process.exit(1)
     }
-    const scaffoldedFrom = revResult.stdout.trim()
-    rmSync(join(fullPath, '.git'), { force: true, recursive: true })
+    const scaffoldedFrom = (revResult.stdout.split('\n')[0] ?? '').split('\t')[0] ?? ''
 
     console.log(`  ${dim('cleaning up')} unused files...`)
     removeDirs({ db, dir: fullPath, includeDemos, includeNative })

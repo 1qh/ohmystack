@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 
+import { cn } from '@a/ui'
 import { Avatar, AvatarFallback } from '@a/ui/avatar'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
@@ -12,6 +13,13 @@ interface EditorInfo {
   userId: string
 }
 
+interface EditorsSectionLabels {
+  addEditorPlaceholder?: string
+  emptyState?: string
+  title?: string
+  unknownMember?: string
+}
+
 interface MemberInfo {
   user: null | {
     email?: string
@@ -21,36 +29,52 @@ interface MemberInfo {
 }
 
 const EditorsSection = ({
+  contentClassName,
   editorsList,
+  emptyClassName,
+  headerClassName,
+  itemClassName,
+  labels,
   members,
   onAdd,
   onRemove,
+  triggerClassName,
   ...props
 }: Omit<ComponentProps<typeof Card>, 'children'> & {
+  contentClassName?: string
   editorsList: EditorInfo[]
+  emptyClassName?: string
+  headerClassName?: string
+  itemClassName?: string
+  labels?: EditorsSectionLabels
   members: MemberInfo[]
   onAdd: (userId: string) => void
   onRemove: (userId: string) => void
+  triggerClassName?: string
 }) => {
   const editorIds = new Set(editorsList.map(e => e.userId)),
-    available: MemberInfo[] = []
+    available: MemberInfo[] = [],
+    title = labels?.title ?? 'Editors',
+    addEditorPlaceholder = labels?.addEditorPlaceholder ?? 'Add editor',
+    unknownMember = labels?.unknownMember ?? 'Unknown',
+    emptyState = labels?.emptyState ?? 'No editors assigned'
 
   for (const m of members) if (!editorIds.has(m.userId)) available.push(m)
 
   return (
     <Card {...props} data-testid='editors-section'>
-      <CardHeader className='flex flex-row items-center justify-between'>
-        <CardTitle>Editors</CardTitle>
+      <CardHeader className={cn('flex flex-row items-center justify-between', headerClassName)}>
+        <CardTitle>{title}</CardTitle>
         {available.length > 0 ? (
           <Select onValueChange={onAdd}>
-            <SelectTrigger className='w-40' data-testid='add-editor-trigger'>
+            <SelectTrigger className={cn('w-40', triggerClassName)} data-testid='add-editor-trigger'>
               <UserPlus className='mr-2 size-4' />
-              <SelectValue placeholder='Add editor' />
+              <SelectValue placeholder={addEditorPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {available.map(m => (
                 <SelectItem key={m.userId} value={m.userId}>
-                  {m.user?.name ?? m.user?.email ?? 'Unknown'}
+                  {m.user?.name ?? m.user?.email ?? unknownMember}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -59,9 +83,12 @@ const EditorsSection = ({
       </CardHeader>
       {editorsList.length > 0 ? (
         <CardContent>
-          <div className='divide-y'>
+          <div className={cn('divide-y', contentClassName)}>
             {editorsList.map(e => (
-              <div className='flex items-center gap-3 py-2' data-testid={`editor-item-${e.userId}`} key={e.userId}>
+              <div
+                className={cn('flex items-center gap-3 py-2', itemClassName)}
+                data-testid={`editor-item-${e.userId}`}
+                key={e.userId}>
                 <Avatar className='size-7'>
                   <AvatarFallback className='text-xs'>{e.name.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
                 </Avatar>
@@ -79,7 +106,7 @@ const EditorsSection = ({
         </CardContent>
       ) : (
         <CardContent>
-          <p className='text-sm text-muted-foreground'>No editors assigned</p>
+          <p className={cn('text-sm text-muted-foreground', emptyClassName)}>{emptyState}</p>
         </CardContent>
       )}
     </Card>

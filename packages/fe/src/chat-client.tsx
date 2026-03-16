@@ -2,6 +2,7 @@
 
 import type { UIMessage } from 'ai'
 
+import { cn } from '@a/ui'
 import {
   Conversation,
   ConversationContent,
@@ -22,8 +23,14 @@ import ChatInput from './chat-input'
 
 interface ClientProps {
   chatId: string
+  conversationClassName?: string
+  conversationContentClassName?: string
+  emptyStateDescription?: string
+  emptyStateTitle?: string
   initialMessages: UIMessage[]
   readOnly?: boolean
+  rootClassName?: string
+  toolDisplayNames?: Readonly<Record<string, string>>
 }
 
 type MessagePart = TextPart | ToolPart | { [key: string]: unknown; type: string }
@@ -44,11 +51,7 @@ interface ToolPart {
   type: string
 }
 
-const getToolDisplayName = (toolName: string): string => {
-    if (toolName === 'getWeather') return 'Weather'
-    return toolName
-  },
-  SparklesAvatar = () => (
+const SparklesAvatar = () => (
     <div className='-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border'>
       <SparklesIcon className='size-4' />
     </div>
@@ -81,15 +84,17 @@ const getToolDisplayName = (toolName: string): string => {
   ToolPartDisplay = ({
     addToolApprovalResponse,
     partKey,
+    toolDisplayNames,
     toolPart
   }: {
     addToolApprovalResponse: (args: { approved: boolean; id: string; reason?: string }) => void
     partKey: string
+    toolDisplayNames?: Readonly<Record<string, string>>
     toolPart: ToolPart
   }) => {
     const approvalId = toolPart.approval?.id ?? toolPart.toolCallId,
       { state, toolName } = toolPart,
-      displayName = getToolDisplayName(toolName)
+      displayName = toolDisplayNames?.[toolName] ?? toolName
 
     if (state === 'output-available' || state === 'output-denied')
       return (
@@ -136,12 +141,14 @@ const getToolDisplayName = (toolName: string): string => {
     addToolApprovalResponse,
     isLast,
     message,
-    status
+    status,
+    toolDisplayNames
   }: {
     addToolApprovalResponse: (args: { approved: boolean; id: string; reason?: string }) => void
     isLast: boolean
     message: UIMessage
     status: string
+    toolDisplayNames?: Readonly<Record<string, string>>
   }) => {
     const isUser = message.role === 'user',
       isStreaming = status === 'streaming' && isLast,
@@ -179,6 +186,7 @@ const getToolDisplayName = (toolName: string): string => {
               addToolApprovalResponse={addToolApprovalResponse}
               key={tp.toolCallId}
               partKey={tp.toolCallId}
+              toolDisplayNames={toolDisplayNames}
               toolPart={tp}
             />
           ))}
@@ -192,7 +200,17 @@ const getToolDisplayName = (toolName: string): string => {
       </div>
     )
   },
-  ChatClient = ({ chatId, initialMessages, readOnly = false }: ClientProps) => {
+  ChatClient = ({
+    chatId,
+    conversationClassName,
+    conversationContentClassName,
+    emptyStateDescription = 'Send a message to start a conversation',
+    emptyStateTitle = 'Start a conversation',
+    initialMessages,
+    readOnly = false,
+    rootClassName,
+    toolDisplayNames
+  }: ClientProps) => {
     const searchParams = useSearchParams(),
       query = searchParams.get('query'),
       hasAppendedQueryRef = useRef(false),
@@ -257,15 +275,15 @@ const getToolDisplayName = (toolName: string): string => {
     const emptyStateIcon = createElement(MessageSquareIcon, { className: 'size-8' })
 
     return (
-      <div className='flex flex-1 flex-col overflow-hidden'>
-        <Conversation className='flex-1'>
-          <ConversationContent className='mx-auto max-w-3xl'>
+      <div className={cn('flex flex-1 flex-col overflow-hidden', rootClassName)}>
+        <Conversation className={cn('flex-1', conversationClassName)}>
+          <ConversationContent className={cn('mx-auto max-w-3xl', conversationContentClassName)}>
             {messages.length === 0 ? (
               <ConversationEmptyState
                 data-testid='empty-state'
-                description='Send a message to start a conversation'
+                description={emptyStateDescription}
                 icon={emptyStateIcon}
-                title='Start a conversation'
+                title={emptyStateTitle}
               />
             ) : (
               messages.map((m, i) => (
@@ -275,6 +293,7 @@ const getToolDisplayName = (toolName: string): string => {
                   key={m.id}
                   message={m}
                   status={status}
+                  toolDisplayNames={toolDisplayNames}
                 />
               ))
             )}

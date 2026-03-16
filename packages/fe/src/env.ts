@@ -8,7 +8,7 @@ export default createEnv({
   client: {
     NEXT_PUBLIC_CONVEX_URL: url().default('http://127.0.0.1:3210'),
     NEXT_PUBLIC_PLAYWRIGHT: literal('1').or(string().max(0)).optional(),
-    NEXT_PUBLIC_SPACETIMEDB_OIDC_CLIENT_ID: string().default('betterspace'),
+    NEXT_PUBLIC_SPACETIMEDB_OIDC_CLIENT_ID: string().default('noboil'),
     NEXT_PUBLIC_SPACETIMEDB_URI: url().default('ws://127.0.0.1:3000')
   },
   experimental__runtimeEnv: {
@@ -23,7 +23,7 @@ export default createEnv({
   server: {},
   shared: {
     NODE_ENV: zenum(['development', 'production', 'test']).default('development'),
-    SPACETIMEDB_MODULE_NAME: string().default('betterspace')
+    SPACETIMEDB_MODULE_NAME: string().default('noboil')
   },
   skipValidation: Boolean(process.env.CI) || process.env.npm_lifecycle_event === 'lint'
 })

@@ -9,7 +9,14 @@ import { connection } from 'next/server'
 
 import UserMenuShell from './user-menu-shell'
 
-const UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Trigger>) => {
+interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
+  shellProps?: Omit<
+    ComponentProps<typeof UserMenuShell>,
+    'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
+  >
+}
+
+const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
   await connection()
   const token = await tok(),
     { user } = api,
@@ -27,12 +34,13 @@ const UserMenu = async ({ ...props }: ComponentProps<typeof PopoverPrimitive.Tri
 
   return (
     <UserMenuShell
+      {...shellProps}
       email={email}
       image={image}
       isSignedIn={Boolean(token)}
       name={name}
       onLogout={onLogout}
-      triggerProps={props}
+      triggerProps={triggerProps}
     />
   )
 }

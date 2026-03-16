@@ -13,8 +13,8 @@ Three CLIs ship with noboil. `noboil` handles project creation. `noboil-convex` 
 | --- | ------- | ------------ |
 | `noboil` | `init` | Create a new project |
 | `noboil` | `doctor` | Check project health |
-| `noboil` | `sync` | Pull upstream template updates (coming soon) |
-| `noboil` | `eject` | Inline library code, remove deps (coming soon) |
+| `noboil` | `sync` | Pull upstream template updates |
+| `noboil` | `eject` | Inline library code, remove deps |
 | `noboil-convex` | `add` | Generate a new table with CRUD |
 | `noboil-convex` | `check` | Validate schema/factory consistency |
 | `noboil-convex` | `doctor` | Project diagnostics with health score |
@@ -82,13 +82,56 @@ Checks: `package.json` presence, `@noboil/*` packages installed, bun version, `n
 
 ### sync
 
-**Coming soon.** Pull upstream template updates into an existing project without overwriting local changes.
+Pull upstream template updates into an existing project without overwriting local changes.
+
+```bash
+noboil sync [options]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--dry-run` | boolean | `false` | Show what would change without writing files |
+| `--force` | boolean | `false` | Update files even when locally modified |
+
+**Examples**
+
+```bash
+noboil sync
+```
+
+```bash
+noboil sync --dry-run
+```
+
+```bash
+noboil sync --force
+```
 
 ---
 
 ### eject
 
-**Coming soon.** Inline all `@noboil/*` library code directly into your project and remove the package dependencies.
+Inline all `@noboil/*` library code directly into your project and remove the package dependencies.
+
+```bash
+noboil eject [options]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--dry-run` | boolean | `false` | Show what would change without writing files |
+
+**Examples**
+
+```bash
+noboil eject
+```
+
+```bash
+noboil eject --dry-run
+```
+
+**Note:** After ejecting, `sync` and `doctor` behavior changes because your project is detached from the upstream template.
 
 ---
 

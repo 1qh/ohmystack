@@ -47,10 +47,10 @@ cd my-app
 
 ```bash
 mkdir my-app && cd my-app
-bunx @noboil/spacetimedb init
+bunx noboil@latest init my-app --db=spacetimedb
 ```
 
-`@noboil/spacetimedb init` auto-installs all required dependencies and creates a `tsconfig.json` with the right settings. No manual `bun add` step needed.
+`noboil init` auto-installs all required dependencies and creates a `tsconfig.json` with the right settings. No manual `bun add` step needed.
 
 </Tab>
 </Tabs>
@@ -67,7 +67,7 @@ bun add @noboil/convex convex @convex-dev/auth zod
 </Tab>
 <Tab value="SpacetimeDB">
 
-Dependencies are installed automatically by `@noboil/spacetimedb init`. To add them manually:
+Dependencies are installed automatically by `noboil init`. To add them manually:
 
 ```bash
 bun add @noboil/spacetimedb spacetimedb zod
@@ -90,7 +90,7 @@ bunx convex dev --once
 Then scaffold the noboil files:
 
 ```bash
-bunx @noboil/convex init
+bunx noboil@latest init my-app --db=convex
 ```
 
 This generates four files:
@@ -156,7 +156,7 @@ docker compose ps
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-`bunx @noboil/convex init` generates `convex/t.ts` with your Zod schemas. Edit it to define your tables:
+`noboil init` generates `convex/t.ts` with your Zod schemas. Edit it to define your tables:
 
 ```typescript
 import { makeOwned } from '@noboil/convex/server'

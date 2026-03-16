@@ -1,5 +1,3 @@
-import { env as nodeEnv } from 'node:process'
-
 interface DiscoverModulesOptions {
   httpUrl?: string
   moduleName?: string
@@ -16,8 +14,12 @@ interface SchemaResponse {
 }
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
+  getEnv = (key: string) => {
+    const processRef = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    return processRef?.env?.[key]
+  },
   resolveModuleName = (moduleName?: string) =>
-    moduleName ?? nodeEnv.SPACETIMEDB_MODULE_NAME ?? nodeEnv.NEXT_PUBLIC_SPACETIMEDB_MODULE_NAME,
+    moduleName ?? getEnv('SPACETIMEDB_MODULE_NAME') ?? getEnv('NEXT_PUBLIC_SPACETIMEDB_MODULE_NAME'),
   ensureModuleName = (moduleName?: string): string => {
     if (!moduleName) throw new Error('SPACETIMEDB_MODULE_NAME is required in discoverModules options or env')
     return moduleName

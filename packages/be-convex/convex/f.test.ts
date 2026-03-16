@@ -441,7 +441,7 @@ describe('crud factory', () => {
     test('read with own: true returns null for unauthenticated', async () => {
       const ctx = t(),
         { userIds } = await createTestContext(ctx),
-        [userId] = userIds,
+        [, userId] = userIds,
         postId = await ctx.run(async c =>
           c.db.insert('blog', {
             category: 'tech',
@@ -1646,7 +1646,7 @@ describe('wiki ACL', () => {
 
     expect(editors.length).toBe(1)
     expect(editors[0]?.name).toBe('Other User')
-    expect(editors[0]?.email).toBe('other@example.com')
+    expect(editors[0]?.email).toBe('other@example.test')
   })
 })
 

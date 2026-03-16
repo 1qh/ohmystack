@@ -32,7 +32,7 @@ const none = { none: [] as [] },
   },
   withCtx = async <T>(fn: (ctx: TestContext) => Promise<T>) => {
     const ctx = await createTestContext({
-      moduleName: '@noboil/spacetimedb',
+      moduleName: 'noboil',
       userCount: 3
     })
     try {

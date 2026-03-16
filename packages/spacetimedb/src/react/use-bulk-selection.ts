@@ -1,8 +1,6 @@
-// biome-ignore-all lint/nursery/noFloatingPromises: event handler
-
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useBulkSelection as useSharedBulkSelection } from '@a/shared/react/use-bulk-selection'
 
 import type { ToastFn } from './use-soft-delete'
 
@@ -16,80 +14,14 @@ interface UseBulkSelectionOpts {
   restore?: (args: { id: string }) => Promise<unknown>
   rm?: (args: { id?: string; ids?: string[]; orgId: string }) => Promise<unknown>
   toast?: ToastFn
-  undoLabel?: string
   undoMs?: number
 }
 
-const useBulkSelection = ({
-  items,
-  onError,
-  onSuccess,
-  orgId,
-  restore,
-  rm,
-  toast: t,
-  undoLabel,
-  undoMs = UNDO_MS
-}: UseBulkSelectionOpts) => {
-  const [selected, setSelected] = useState<Set<string>>(() => new Set()),
-    clear = useCallback(() => {
-      setSelected(new Set<string>())
-    }, []),
-    toggleSelect = useCallback((id: string) => {
-      setSelected(prev => {
-        const next = new Set(prev)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        return next
-      })
-    }, []),
-    toggleSelectAll = useCallback(() => {
-      if (selected.size === items.length) {
-        setSelected(new Set<string>())
-        return
-      }
-      const next = new Set<string>()
-      for (const i of items) next.add(i._id)
-      setSelected(next)
-    }, [items, selected.size]),
-    handleBulkDelete = useCallback(async () => {
-      if (selected.size === 0 || !rm) return
-      const ids = [...selected],
-        count = ids.length
-      try {
-        await rm({ ids, orgId })
-        setSelected(new Set<string>())
-        if (!(t && restore)) {
-          onSuccess?.(count)
-          return
-        }
-        const label = undoLabel ?? 'item'
-        t(`${count} ${label}${count === 1 ? '' : 's'} deleted`, {
-          action: {
-            label: 'Undo',
-            onClick: () => {
-              const run = async () => {
-                try {
-                  const tasks: Promise<unknown>[] = []
-                  for (const id of ids) tasks.push(restore({ id }))
-                  await Promise.all(tasks)
-                  t(`${count} ${label}${count === 1 ? '' : 's'} restored`)
-                } catch (error) {
-                  onError?.(error)
-                }
-              }
-              run()
-            }
-          },
-          duration: undoMs
-        })
-      } catch (error) {
-        onError?.(error)
-      }
-    }, [onError, onSuccess, orgId, restore, rm, selected, t, undoLabel, undoMs])
-
-  return { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll }
-}
+const useBulkSelection = (options: UseBulkSelectionOpts) =>
+  useSharedBulkSelection({
+    ...options,
+    undoMs: options.undoMs ?? UNDO_MS
+  })
 
 export type { UseBulkSelectionOpts }
 export { useBulkSelection }
