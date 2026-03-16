@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 410 | 410 | 0 | 0 |
+| Backend `f.test.ts` | 458 | 458 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **486** | **486** | **0** | **0** |
+| **Total** | **534** | **534** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -793,6 +793,18 @@ flowchart LR
 | `tools/task/todo-sync.test.ts` (22) | 7 | Missing session, deleted ID, ordering, duplicates |
 | `tools/task/types.test.ts` (32) | 6 | Schema validation for task/todo/threadRunState |
 | `features/background-agent/session-idle-event-handler.test.ts` (13) | 7 | Idle fencing, queued priority, snapshot cases |
+| `tools/task/task-create.test.ts` (15) | 4 | spawnTask creation, defaults, state |
+| `tools/task/task-update.test.ts` (14) | 4 | completeTask/failTask transitions, reject paths |
+| `tools/task/task-get.test.ts` (9) | 4 | getOwnedTaskStatus ownership, missing, deleted |
+| `tools/task/task-list.test.ts` (8) | 4 | listTasks status inclusion, ownership gating |
+| `features/background-agent/task-history.test.ts` (12) | 4 | Lifecycle retention, cleanup cascade |
+| `features/background-agent/cancel-task-cleanup.test.ts` (3) | 4 | Archive-driven task/queue cancellation |
+| `features/background-agent/task-completion-cleanup.test.ts` (3) | 4 | Reminder + continuation stamping |
+| `hooks/stop-continuation-guard/index.test.ts` (10) | 4 | Streak cap, archive/input/task blocking |
+| `hooks/delegate-task-english-directive/index.test.ts` (8) | 4 | Delegate schema/error guidance |
+| `hooks/tasks-todowrite-disabler/index.test.ts` (7) | 4 | Worker tool restrictions |
+| `hooks/compaction-context-injector/index.test.ts` (9) | 4 | Compaction summary/boundary behavior |
+| `tools/background-task/tools.test.ts` (17) | 4 | delegate/taskStatus/taskOutput contracts |
 
 ### Stagnation Detection
 
