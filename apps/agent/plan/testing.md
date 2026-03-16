@@ -770,10 +770,10 @@ flowchart LR
 
 | Layer | Tests | Pass | Skip | Fail |
 |---|---|---|---|---|
-| Backend `f.test.ts` | 366 | 366 | 0 | 0 |
+| Backend `f.test.ts` | 410 | 410 | 0 | 0 |
 | Backend `prod-smoke.test.ts` | 1 | 1 | 0 | 0 |
 | E2E Playwright | 75 | 75 | 0 | 0 |
-| **Total** | **442** | **442** | **0** | **0** |
+| **Total** | **486** | **486** | **0** | **0** |
 
 ### oh-my-openagent Parity Tests
 
@@ -786,6 +786,13 @@ flowchart LR
 | `hooks/todo-continuation-enforcer/*.test.ts` (91) | 18 | Cooldown, backoff, failure cap, stagnation, progress reset |
 | `features/background-agent/error-classifier.test.ts` (65) | 10 | Transient/permanent/rate-limit error classification |
 | `features/background-agent/concurrency.test.ts` (37) | 12 | CAS queue, priority matrix, slot release, per-thread isolation |
+| `hooks/session-recovery/*.test.ts` (41) | 8 | Stale run recovery, error recording, run state cleanup |
+| `features/background-agent/fallback-retry-handler.test.ts` (19) | 6 | Retry with cooldown, backoff interactions |
+| `features/background-agent/task-poller.test.ts` (20) | 5 | Active task listing, audit snapshot |
+| `hooks/session-recovery/detect-error-type.test.ts` (17) | 5 | Transient error marker assertions |
+| `tools/task/todo-sync.test.ts` (22) | 7 | Missing session, deleted ID, ordering, duplicates |
+| `tools/task/types.test.ts` (32) | 6 | Schema validation for task/todo/threadRunState |
+| `features/background-agent/session-idle-event-handler.test.ts` (13) | 7 | Idle fencing, queued priority, snapshot cases |
 
 ### Stagnation Detection
 

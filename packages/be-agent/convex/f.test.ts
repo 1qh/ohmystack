@@ -9269,3 +9269,606 @@ describe('omo parity concurrency gaps', () => {
     expect(bState?.queuedPromptMessageId).toBe('concurrency-b-queued')
   })
 })
+
+describe('parity batch schema validation extras', () => {
+  for (const status of ['pending', 'running', 'completed', 'failed', 'timed_out', 'cancelled'] as const)
+    test(`taskSchema accepts task status ${status}`, async () => {
+      const { taskSchema } = await import('../t')
+      const parsed = taskSchema.safeParse({
+        description: `task-${status}`,
+        isBackground: true,
+        parentThreadId: 'schema-parent',
+        retryCount: 0,
+        sessionId: 'session-id' as never,
+        status,
+        threadId: `schema-thread-${status}`
+      })
+      expect(parsed.success).toBe(true)
+    })
+
+  for (const status of ['pending', 'in_progress', 'completed', 'cancelled'] as const)
+    test(`todoSchema accepts todo status ${status}`, async () => {
+      const { todoSchema } = await import('../t')
+      const parsed = todoSchema.safeParse({
+        content: `todo-${status}`,
+        position: 0,
+        priority: 'high',
+        sessionId: 'session-id' as never,
+        status
+      })
+      expect(parsed.success).toBe(true)
+    })
+
+  for (const status of ['idle', 'active'] as const)
+    test(`threadRunStateSchema accepts run status ${status}`, async () => {
+      const { threadRunStateSchema } = await import('../t')
+      const parsed = threadRunStateSchema.safeParse({
+        autoContinueStreak: 0,
+        consecutiveFailures: 0,
+        stagnationCount: 0,
+        status,
+        threadId: `run-state-${status}`
+      })
+      expect(parsed.success).toBe(true)
+    })
+
+  test('taskSchema rejects unknown task status', async () => {
+    const { taskSchema } = await import('../t')
+    const parsed = taskSchema.safeParse({
+      description: 'invalid-status',
+      isBackground: true,
+      parentThreadId: 'schema-parent',
+      retryCount: 0,
+      sessionId: 'session-id' as never,
+      status: 'unknown',
+      threadId: 'schema-thread'
+    })
+    expect(parsed.success).toBe(false)
+  })
+
+  test('todoSchema rejects unknown priority', async () => {
+    const { todoSchema } = await import('../t')
+    const parsed = todoSchema.safeParse({
+      content: 'bad-priority',
+      position: 1,
+      priority: 'urgent',
+      sessionId: 'session-id' as never,
+      status: 'pending'
+    })
+    expect(parsed.success).toBe(false)
+  })
+
+  test('threadRunStateSchema rejects invalid queued priority', async () => {
+    const { threadRunStateSchema } = await import('../t')
+    const parsed = threadRunStateSchema.safeParse({
+      autoContinueStreak: 0,
+      queuedPriority: 'invalid',
+      status: 'idle',
+      threadId: 'run-state-invalid'
+    })
+    expect(parsed.success).toBe(false)
+  })
+
+  test('taskSchema requires sessionId field', async () => {
+    const { taskSchema } = await import('../t')
+    const parsed = taskSchema.safeParse({
+      description: 'missing-session',
+      isBackground: true,
+      parentThreadId: 'schema-parent',
+      retryCount: 0,
+      status: 'pending',
+      threadId: 'schema-thread'
+    })
+    expect(parsed.success).toBe(false)
+  })
+})
+
+describe('parity batch todo sync extras', () => {
+  test('syncOwned returns zero updates for empty payload', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      result = await ctx.mutation(internal.todos.syncOwned, { sessionId, todos: [] })
+    expect(result.updated).toBe(0)
+  })
+
+  test('syncOwned throws when session does not exist', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId: deletedSessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.delete(deletedSessionId)
+    })
+    let threw = false
+    try {
+      await ctx.mutation(internal.todos.syncOwned, {
+        sessionId: deletedSessionId,
+        todos: [{ content: 'x', position: 0, priority: 'high', status: 'pending' }]
+      })
+    } catch (error) {
+      threw = true
+      expect(String(error)).toContain('session_not_found')
+    }
+    expect(threw).toBe(true)
+  })
+
+  test('syncOwned inserts when id points to deleted todo', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    const staleId = await ctx.run(async c =>
+      c.db.insert('todos', {
+        content: 'to-delete',
+        position: 0,
+        priority: 'low',
+        sessionId,
+        status: 'pending'
+      })
+    )
+    await ctx.run(async c => {
+      await c.db.delete(staleId)
+    })
+    await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos: [{ content: 'replacement', id: staleId, position: 0, priority: 'high', status: 'in_progress' }]
+    })
+    const rows = await ctx.run(async c =>
+      c.db
+        .query('todos')
+        .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+        .collect()
+    )
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.content).toBe('replacement')
+  })
+
+  test('syncOwned supports duplicate positions without collapsing rows', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.todos.syncOwned, {
+      sessionId,
+      todos: [
+        { content: 'first-at-zero', position: 0, priority: 'high', status: 'pending' },
+        { content: 'second-at-zero', position: 0, priority: 'medium', status: 'in_progress' }
+      ]
+    })
+    const rows = await ctx.run(async c =>
+      c.db
+        .query('todos')
+        .withIndex('by_session_position', idx => idx.eq('sessionId', sessionId))
+        .collect()
+    )
+    expect(rows.length).toBe(2)
+  })
+
+  test('listTodos returns empty array when session is missing', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId: deletedSessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.delete(deletedSessionId)
+    })
+    const rows = await asUser(0).query(api.todos.listTodos, { sessionId: deletedSessionId })
+    expect(rows).toEqual([])
+  })
+
+  test('listTodos returns position-ordered rows from index', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'later',
+        position: 3,
+        priority: 'low',
+        sessionId,
+        status: 'pending'
+      })
+      await c.db.insert('todos', {
+        content: 'earlier',
+        position: 1,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    const rows = await asUser(0).query(api.todos.listTodos, { sessionId })
+    expect(rows[0]?.content).toBe('earlier')
+    expect(rows[1]?.content).toBe('later')
+  })
+})
+
+describe('parity batch stale recovery extras', () => {
+  test('recordRunError creates run state for missing thread', async () => {
+    const ctx = t(),
+      threadId = `record-error-${crypto.randomUUID()}`
+    await ctx.mutation(internal.orchestrator.recordRunError, {
+      error: 'late_error',
+      threadId
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(state?.lastError).toBe('late_error')
+    expect(state?.status).toBe('idle')
+  })
+
+  test('timeoutStaleRuns uses claimedAt fallback when heartbeat absent', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'claimed-fallback-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await c.db.patch(state._id, {
+          claimedAt: Date.now() - 16 * 60 * 1000,
+          runClaimed: true,
+          runHeartbeatAt: undefined,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('idle')
+    expect(after?.activeRunToken).not.toBe(before?.activeRunToken)
+  })
+
+  test('timeoutStaleRuns keeps claimed run when heartbeat is fresh', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'fresh-claimed-start',
+      reason: 'user_message',
+      threadId
+    })
+    const before = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await c.db.patch(state._id, {
+          activatedAt: Date.now() - 3 * 60 * 1000,
+          claimedAt: Date.now() - 3 * 60 * 1000,
+          runClaimed: true,
+          runHeartbeatAt: Date.now() - 30_000,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('active')
+    expect(after?.activeRunToken).toBe(before?.activeRunToken)
+  })
+
+  test('timeoutStaleRuns rotates token and clears queued fields after archived queue drop', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'archived-drop-start',
+      reason: 'user_message',
+      threadId
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 1,
+      promptMessageId: 'archived-drop-queued',
+      reason: 'task_completion',
+      threadId
+    })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    await ctx.run(async c => {
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state)
+        await c.db.patch(state._id, {
+          activatedAt: Date.now() - 6 * 60 * 1000,
+          runClaimed: false,
+          status: 'active'
+        })
+    })
+    await ctx.mutation(internal.orchestrator.timeoutStaleRuns, {})
+    const after = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(after?.status).toBe('idle')
+    expect(after?.queuedPromptMessageId).toBeUndefined()
+    expect(after?.queuedReason).toBeUndefined()
+  })
+})
+
+describe('parity batch idle handling extras', () => {
+  test('postTurnAudit returns ok=false for idle run state token', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
+      result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+        runToken: 'no-active-token',
+        threadId,
+        turnRequestedInput: false
+      })
+    expect(result.ok).toBe(false)
+    expect(result.shouldContinue).toBe(false)
+  })
+
+  test('postTurnAudit resets streak when session is archived', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'idle-archive-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state) await c.db.patch(state._id, { autoContinueStreak: 4 })
+    })
+    await asUser(0).mutation(api.sessions.archiveSession, { sessionId })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(result.ok).toBe(true)
+    expect(result.shouldContinue).toBe(false)
+    expect(state?.autoContinueStreak).toBe(0)
+  })
+
+  test('postTurnAudit blocks when queued higher priority exists and keeps queue intact', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'higher-priority-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'needs-followup',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+    })
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'higher-priority-already-queued',
+      reason: 'user_message',
+      threadId
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(result.shouldContinue).toBe(false)
+    expect(state?.queuedReason).toBe('user_message')
+    expect(state?.queuedPromptMessageId).toBe('higher-priority-already-queued')
+  })
+
+  test('postTurnAudit can continue with malformed previous snapshot', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'bad-snapshot-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'bad-snapshot-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state) await c.db.patch(state._id, { lastTodoSnapshot: '{bad-json' })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.ok).toBe(true)
+    expect(result.shouldContinue).toBe(true)
+  })
+
+  test('postTurnAudit can continue with previous snapshot of invalid shape', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'bad-shape-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'bad-shape-todo',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      const state = await c.db
+        .query('threadRunState')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .unique()
+      if (state) await c.db.patch(state._id, { lastTodoSnapshot: JSON.stringify([{ nope: true }]) })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    expect(result.ok).toBe(true)
+    expect(result.shouldContinue).toBe(true)
+  })
+})
+
+describe('parity batch task polling equivalents', () => {
+  test('listActiveTasksByThread returns pending and running only', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('tasks', {
+        description: 'pending-x',
+        isBackground: true,
+        parentThreadId: threadId,
+        pendingAt: Date.now(),
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `poll-pending-${crypto.randomUUID()}`
+      })
+      await c.db.insert('tasks', {
+        description: 'running-x',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        startedAt: Date.now(),
+        status: 'running',
+        threadId: `poll-running-${crypto.randomUUID()}`
+      })
+      await c.db.insert('tasks', {
+        completedAt: Date.now(),
+        description: 'completed-x',
+        isBackground: true,
+        parentThreadId: threadId,
+        retryCount: 0,
+        sessionId,
+        status: 'completed',
+        threadId: `poll-completed-${crypto.randomUUID()}`
+      })
+    })
+    const rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, { threadId })
+    expect(rows.length).toBe(2)
+    expect(rows.some(r => r.status === 'pending')).toBe(true)
+    expect(rows.some(r => r.status === 'running')).toBe(true)
+  })
+
+  test('listActiveTasksByThread excludes other parent threads', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      a = await asUser(0).mutation(api.sessions.createSession, {}),
+      b = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.run(async c => {
+      await c.db.insert('tasks', {
+        description: 'a-pending',
+        isBackground: true,
+        parentThreadId: a.threadId,
+        pendingAt: Date.now(),
+        retryCount: 0,
+        sessionId: a.sessionId,
+        status: 'pending',
+        threadId: `poll-a-${crypto.randomUUID()}`
+      })
+      await c.db.insert('tasks', {
+        description: 'b-pending',
+        isBackground: true,
+        parentThreadId: b.threadId,
+        pendingAt: Date.now(),
+        retryCount: 0,
+        sessionId: b.sessionId,
+        status: 'pending',
+        threadId: `poll-b-${crypto.randomUUID()}`
+      })
+    })
+    const rows = await ctx.query(internal.orchestrator.listActiveTasksByThread, { threadId: a.threadId })
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.description).toBe('a-pending')
+  })
+
+  test('postTurnAudit stores snapshot when no continuation occurs', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {})
+    await ctx.mutation(internal.orchestrator.enqueueRun, {
+      priority: 2,
+      promptMessageId: 'snapshot-store-start',
+      reason: 'user_message',
+      threadId
+    })
+    const active = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    await ctx.run(async c => {
+      await c.db.insert('todos', {
+        content: 'snapshot-store',
+        position: 0,
+        priority: 'high',
+        sessionId,
+        status: 'pending'
+      })
+      await c.db.insert('tasks', {
+        description: 'snapshot-pending-task',
+        isBackground: true,
+        parentThreadId: threadId,
+        pendingAt: Date.now(),
+        retryCount: 0,
+        sessionId,
+        status: 'pending',
+        threadId: `snapshot-pending-${crypto.randomUUID()}`
+      })
+    })
+    const result = await ctx.mutation(internal.orchestrator.postTurnAuditFenced, {
+      runToken: active?.activeRunToken ?? '',
+      threadId,
+      turnRequestedInput: false
+    })
+    const state = await ctx.query(internal.orchestrator.readRunState, { threadId })
+    expect(result.shouldContinue).toBe(false)
+    expect(typeof state?.lastTodoSnapshot).toBe('string')
+    expect((state?.lastTodoSnapshot ?? '').includes('snapshot-store')).toBe(true)
+  })
+})
+
+describe('parity batch transient classifier source extras', () => {
+  for (const marker of ['econnreset', 'etimedout', 'timeout', 'rate_limit', '429', '503', 'overloaded'] as const)
+    test(`agentsNode transient marker includes ${marker}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      expect(source.includes(marker)).toBe(true)
+    })
+
+  for (const token of ['invalid_request_error', 'missing required', 'authentication failed'] as const)
+    test(`agentsNode transient marker set excludes ${token}`, async () => {
+      const { readFileSync } = await import('node:fs')
+      const source = readFileSync(new URL('./agentsNode.ts', import.meta.url), 'utf-8').toLowerCase()
+      expect(source.includes(token)).toBe(false)
+    })
+})
