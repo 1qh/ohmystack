@@ -1,0 +1,12 @@
+appId: dev.noboil.mobile.stdb.chat
+---
+- launchApp
+- assertVisible:
+    id: "chat-home-page"
+- tapOn:
+    id: "chat-input"
+- eraseText: 40
+- tapOn:
+    id: "send-button"
+- assertVisible:
+    id: "chat-home-page"

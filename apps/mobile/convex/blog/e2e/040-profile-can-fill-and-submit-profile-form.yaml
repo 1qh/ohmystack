@@ -1,0 +1,16 @@
+appId: dev.noboil.mobile.convex.blog
+---
+- launchApp
+- assertVisible:
+    id: "crud-dynamic-page"
+- tapOn:
+    id: "profile-link"
+- assertVisible:
+    id: "profile-page"
+- tapOn:
+    id: "profile-displayName"
+- inputText: "User 40"
+- tapOn:
+    id: "profile-submit"
+- assertVisible:
+    id: "profile-page"

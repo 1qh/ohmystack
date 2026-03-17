@@ -1,0 +1,21 @@
+appId: dev.noboil.mobile.stdb.blog
+---
+- launchApp
+- assertVisible:
+    id: "crud-dynamic-page"
+- tapOn:
+    id: "blog-title"
+- eraseText: 120
+- inputText: "Blog Title 35"
+- tapOn:
+    id: "blog-content"
+- eraseText: 200
+- inputText: "Blog Content 35"
+- tapOn:
+    id: "create-blog-submit"
+- assertVisible:
+    id: "blog-card-link"
+- tapOn:
+    id: "delete-blog-trigger"
+- assertVisible:
+    id: "delete-confirm"

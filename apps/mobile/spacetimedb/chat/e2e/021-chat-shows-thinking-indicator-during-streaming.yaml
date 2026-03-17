@@ -1,0 +1,21 @@
+appId: dev.noboil.mobile.stdb.chat
+---
+- launchApp
+- assertVisible:
+    id: "chat-home-page"
+- tapOn:
+    id: "chat-input"
+- inputText: "Chat message 21"
+- tapOn:
+    id: "send-button"
+- extendedWaitUntil:
+    visible:
+      id: "chat-page"
+    timeout: 15000
+- assertVisible:
+    id: "chat-page"
+- tapOn:
+    id: "chat-message-input"
+- inputText: "Follow up 21"
+- tapOn:
+    id: "chat-message-send"

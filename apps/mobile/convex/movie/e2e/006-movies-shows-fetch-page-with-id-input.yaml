@@ -1,0 +1,11 @@
+appId: dev.noboil.mobile.convex.movie
+---
+- launchApp
+- assertVisible:
+    id: "movie-search-page"
+- tapOn:
+    id: "movie-fetch-link"
+- assertVisible:
+    id: "movie-fetch-page"
+- assertVisible:
+    id: "movie-id-input"

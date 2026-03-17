@@ -1,0 +1,9 @@
+appId: dev.noboil.mobile.convex.org
+---
+- launchApp
+- assertVisible:
+    id: "org-home-page"
+- tapOn:
+    id: "route-_settings"
+- assertVisible:
+    id: "screen-page"

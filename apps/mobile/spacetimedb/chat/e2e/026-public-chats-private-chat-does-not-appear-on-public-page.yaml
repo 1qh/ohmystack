@@ -1,0 +1,9 @@
+appId: dev.noboil.mobile.stdb.chat
+---
+- launchApp
+- assertVisible:
+    id: "chat-home-page"
+- tapOn:
+    id: "public-list-link"
+- assertVisible:
+    id: "public-chats-page"

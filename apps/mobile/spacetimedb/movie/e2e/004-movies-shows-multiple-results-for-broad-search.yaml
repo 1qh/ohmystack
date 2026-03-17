@@ -1,0 +1,19 @@
+appId: dev.noboil.mobile.stdb.movie
+---
+- launchApp
+- assertVisible:
+    id: "movie-search-page"
+- tapOn:
+    id: "movie-search-input"
+- eraseText: 50
+- inputText: "Batman"
+- tapOn:
+    id: "movie-search-submit"
+- extendedWaitUntil:
+    visible:
+      id: "movie-results"
+    timeout: 15000
+- assertVisible:
+    id: "movie-results"
+- assertVisible:
+    id: "movie-card"

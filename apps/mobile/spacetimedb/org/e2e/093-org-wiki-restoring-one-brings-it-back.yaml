@@ -1,0 +1,13 @@
+appId: dev.noboil.mobile.stdb.org
+---
+- launchApp
+- assertVisible:
+    id: "org-home-page"
+- tapOn:
+    id: "route-_dashboard"
+- assertVisible:
+    id: "screen-page"
+- tapOn:
+    id: "back-home"
+- assertVisible:
+    id: "org-home-page"
