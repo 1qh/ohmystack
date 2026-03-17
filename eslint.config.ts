@@ -105,6 +105,7 @@ export default eslint({
     'apps/mobile/**/babel.config.js',
     'apps/mobile/**/metro.config.js',
     'apps/mobile/**/uniwind-env.d.ts',
+    'apps/mobile/**/uniwind-types.d.ts',
     'packages/rnr/**',
     'packages/ui/**',
     '**/.source/**',

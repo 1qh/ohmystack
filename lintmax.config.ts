@@ -7,6 +7,7 @@ export default defineConfig({
       'apps/mobile/**/global.css',
       'apps/mobile/**/metro.config.js',
       'apps/mobile/**/uniwind-env.d.ts',
+      'apps/mobile/**/uniwind-types.d.ts',
       'apps/*/next-env.d.ts',
       'apps/*/*/next-env.d.ts',
       'apps/docs/.source',
