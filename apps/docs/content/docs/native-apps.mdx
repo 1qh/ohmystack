@@ -1,9 +1,66 @@
 ---
 title: Native Apps
-description: Generate typed Swift wrappers from your Zod schemas and ship native iOS, Android, and macOS apps backed by Convex.
+description: Ship native iOS, Android, and macOS apps backed by Convex or SpacetimeDB with typed Swift wrappers and Expo mobile support.
 ---
 
-Native app support currently only covers Convex. SpacetimeDB native app integration is not yet available.
+noboil supports three native app platforms: **Expo** (React Native), **Skip** (iOS/Android), and **SwiftCrossUI** (macOS). Expo apps work with both Convex and SpacetimeDB. Swift apps currently only cover Convex.
+
+## Expo Mobile Apps
+
+8 cross-platform mobile apps (iOS + Android + Web) using [Expo](https://expo.dev) + [UniWind](https://uniwind.dev) + [React Native Reusables](https://reactnativereusables.com):
+
+| App | Backend | Features |
+| --- | ------- | -------- |
+| Movie | Convex | Search + fetch by ID, TMDB cache, no auth |
+| Movie | SpacetimeDB | Client-side search, offline indicator |
+| Blog | Convex | Auth + CRUD + file upload + pagination + search + profile |
+| Blog | SpacetimeDB | Auth + CRUD + pagination + search + profile |
+| Chat | Convex | AI chat + public/private + sidebar |
+| Chat | SpacetimeDB | Chat + public/private + sidebar |
+| Org | Convex | Multi-tenancy + projects + wiki + members + settings |
+| Org | SpacetimeDB | Multi-tenancy + projects + wiki + members + settings |
+
+All mobile apps reuse the **same backend packages** as web (`packages/be-convex`, `packages/be-spacetimedb`) with no mobile-specific backend code.
+
+### Mobile Architecture
+
+```
+packages/rnr/         32 React Native Reusables components (synced, READ-ONLY)
+packages/fe-mobile/   Mobile providers, layouts, and shared components
+apps/mobile/convex/   4 Expo apps (Convex backend)
+apps/mobile/spacetimedb/  4 Expo apps (SpacetimeDB backend)
+```
+
+### Expo Stack
+
+- **Expo Router** for file-based navigation
+- **UniWind** (Tailwind v4) for styling
+- **React Native Reusables** (RNR) components from `packages/rnr`
+- **Convex React** (`convex/react`) or **SpacetimeDB React** (`spacetimedb/react`) for data
+- **Maestro** for E2E testing (440 flows matching web test parity)
+
+### Quick Start (Expo)
+
+```bash
+# Start services
+docker compose -f noboil.yml up -d
+
+# Run a mobile app
+bun --cwd apps/mobile/convex/movie dev
+```
+
+### Mobile Test Parity
+
+Each mobile app has the same number of E2E tests as its web counterpart:
+
+| App | Web Tests | Mobile Tests |
+| --- | --------- | ------------ |
+| Movie | 14 | 14 |
+| Blog | 52 | 52 |
+| Chat | 26 | 26 |
+| Org | 128 | 128 |
+
+Verify parity: `bash apps/mobile/maestro/test-count-check.sh`
 
 `@noboil/convex` includes a Swift codegen CLI and ships with 8 native app examples (4 mobile + 4 desktop) that consume the same Convex backend as the web demos.
 
