@@ -1,0 +1,9 @@
+{
+  "extends": "lintmax/tsconfig",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "types": ["expo-router/types", "react", "react-native"]
+  },
+  "include": ["app", "**/*.ts", "**/*.tsx", ".expo/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

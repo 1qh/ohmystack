@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Blog",
+    "slug": "mobile-convex-blog",
+    "version": "1.0.0",
+    "scheme": "noboil-convex-blog",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "dev.noboil.mobileconvexblog"
+    },
+    "android": {
+      "package": "dev.noboil.mobileconvexblog"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

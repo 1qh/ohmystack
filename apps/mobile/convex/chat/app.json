@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Chat",
+    "slug": "mobile-convex-chat",
+    "version": "1.0.0",
+    "scheme": "noboil-convex-chat",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "dev.noboil.mobileconvexchat"
+    },
+    "android": {
+      "package": "dev.noboil.mobileconvexchat"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Org",
+    "slug": "mobile-spacetimedb-org",
+    "version": "1.0.0",
+    "scheme": "noboil-stdb-org",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "dev.noboil.mobilestdborg"
+    },
+    "android": {
+      "package": "dev.noboil.mobilestdborg"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
