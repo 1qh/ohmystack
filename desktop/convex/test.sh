@@ -2,7 +2,7 @@
 set -euo pipefail
 
 packages=(
-  swift-core
+  swiftcore
   desktop/convex/shared
   desktop/convex/blog
   desktop/convex/chat

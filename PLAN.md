@@ -22,7 +22,7 @@ Both betterspace and lazyconvex remain valid on their own — they are archived 
 
 - `1qh/betterspace` — SpacetimeDB framework (~31,700 LOC library, 1,170 tests)
 - `1qh/lazyconvex` — Convex framework (~25,000 LOC library, 934 unit + 219 backend tests)
-- `packages/ui/` is 100% identical across both repos (~12,700 LOC)
+- `lib/ui/` is 100% identical across both repos (~12,700 LOC)
 
 ## npm Packages
 
@@ -62,12 +62,12 @@ noboil/
 │   └── convex/                ← iOS/Android apps (from lazyconvex, Convex-only for now)
 ├── desktop/
 │   └── convex/                ← macOS apps (from lazyconvex, Convex-only for now)
-├── swift-core/                ← shared Swift protocols (from lazyconvex)
+├── swiftcore/                ← shared Swift protocols (from lazyconvex)
 ├── noboil.yml              ← Docker compose for ALL services (Convex + SpacetimeDB + MinIO)
 ├── lintmax.config.ts          ← unified linting config
 ├── eslint.config.ts           ← unified ESLint config
 ├── turbo.json                 ← unified Turbo config
-├── scripts/                   ← genkey.sh, genenv.ts, setup utilities
+├── script/                   ← genkey.sh, genenv.ts, setup utilities
 ├── package.json               ← workspace root
 ├── AGENTS.md                  ← project knowledge base
 └── PLAN.md                    ← this file
@@ -75,7 +75,7 @@ noboil/
 
 ## Code Sharing Strategy
 
-### packages/shared/ (internal, never published)
+### lib/shared/ (internal, never published)
 
 ~8,000 lines of code that is identical or near-identical across both libraries:
 
@@ -107,10 +107,10 @@ noboil/
 
 ### How sharing works
 
-Each published package imports from `packages/shared/` and re-exports:
+Each published package imports from `lib/shared/` and re-exports:
 
 ```ts
-// packages/convex/src/react/index.ts
+// lib/convex/src/react/index.ts
 export { useBulkMutate, useBulkSelection, useSearch } from '@a/shared/react'
 export { useList } from './use-list' // Convex-specific implementation
 ```
@@ -133,25 +133,25 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 ### Phase 1: Shared Packages (no DB-specific code)
 
-**Goal:** `packages/shared/`, `packages/ui/`, `packages/fe/`, `packages/e2e/` all building.
+**Goal:** `lib/shared/`, `lib/ui/`, `lib/fe/`, `lib/e2e/` all building.
 
-- [ ] 1.1 — Copy `packages/ui/` from lazyconvex (identical in both repos)
-- [ ] 1.2 — Copy `packages/fe/` (verify identical, pick one)
-- [ ] 1.3 — Copy `packages/e2e/` (verify identical, pick one)
-- [ ] 1.4 — Create `packages/shared/` — extract identical React hooks:
+- [ ] 1.1 — Copy `lib/ui/` from lazyconvex (identical in both repos)
+- [ ] 1.2 — Copy `lib/fe/` (verify identical, pick one)
+- [ ] 1.3 — Copy `lib/e2e/` (verify identical, pick one)
+- [ ] 1.4 — Create `lib/shared/` — extract identical React hooks:
   - `use-bulk-mutate.ts`, `use-search.ts`, `use-bulk-selection.ts`
   - `use-optimistic.ts`, `use-soft-delete.ts`, `use-presence.ts`
   - `schema-playground.tsx`, `devtools-panel.tsx`, `devtools.ts`
   - `error-toast.ts`, `use-online-status.ts`, `use-upload.ts`, `use-cache.ts`
   - `optimistic-store.ts`, `form.ts`, `org.tsx`
-- [ ] 1.5 — Extract shared server utils into `packages/shared/`:
+- [ ] 1.5 — Extract shared server utils into `lib/shared/`:
   - `presence.ts`, `middleware.ts`, `schema-helpers.ts`
   - `helpers.ts`, `file.ts`, `child.ts`, `singleton.ts`, `cache-crud.ts`
   - `org.ts`, `org-crud.ts`, `org-members.ts`, `org-invites.ts`, `org-join.ts`
-- [ ] 1.6 — Extract shared components into `packages/shared/`:
+- [ ] 1.6 — Extract shared components into `lib/shared/`:
   - `editors-section.tsx`, `misc.tsx`, `step-form.tsx`, `form.tsx`, `fields.tsx`
-- [ ] 1.7 — Extract shared ESLint plugin rules into `packages/shared/`
-- [ ] 1.8 — Extract shared CLI commands into `packages/shared/`
+- [ ] 1.7 — Extract shared ESLint plugin rules into `lib/shared/`
+- [ ] 1.8 — Extract shared CLI commands into `lib/shared/`
 - [ ] 1.9 — Extract shared Zod utils, schema types, seed utils, retry utils
 - [ ] 1.10 — `bun fix && bun typecheck` passes for all shared packages
 
@@ -159,15 +159,15 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 **Goal:** `@noboil/convex` and `@noboil/spacetimedb` build and export everything.
 
-- [ ] 2.1 — Create `packages/convex/` — copy DB-specific code from lazyconvex:
+- [ ] 2.1 — Create `lib/convex/` — copy DB-specific code from lazyconvex:
   - `crud.ts`, `use-list.ts`, `use-mutate.ts`, `types.ts`, `env.ts`
   - `codegen-swift.ts`, `setup.ts`
-  - Re-export shared code from `packages/shared/`
+  - Re-export shared code from `lib/shared/`
   - package.json with name `@noboil/convex`, same exports as lazyconvex
-- [ ] 2.2 — Create `packages/spacetimedb/` — copy DB-specific code from betterspace:
+- [ ] 2.2 — Create `lib/spacetimedb/` — copy DB-specific code from betterspace:
   - `crud.ts`, `use-list.ts`, `use-mutate.ts`, `provider.ts`, `list-utils.ts`
   - `rls.ts`, `stdb-tables.ts`, `reducer-utils.ts`, `s3.ts`, `setup.ts`
-  - Re-export shared code from `packages/shared/`
+  - Re-export shared code from `lib/shared/`
   - package.json with name `@noboil/spacetimedb`, same exports as betterspace
 - [ ] 2.3 — Migrate all tests:
   - Copy lazyconvex `pure.test.ts` (934 tests) → adapt imports to `@noboil/convex`
@@ -178,10 +178,10 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 **Goal:** Both backend packages deploy and pass backend tests.
 
-- [ ] 3.1 — Copy `packages/be/` from lazyconvex → `packages/be-convex/`
+- [ ] 3.1 — Copy `packages/be/` from lazyconvex → `backend/convex/`
   - Update imports from `lazyconvex` → `@noboil/convex`
   - Update package.json name to `@a/be-convex`
-- [ ] 3.2 — Copy `packages/be/` from betterspace → `packages/be-spacetimedb/`
+- [ ] 3.2 — Copy `packages/be/` from betterspace → `backend/spacetimedb/`
   - Update imports from `betterspace` → `@noboil/spacetimedb`
   - Update package.json name to `@a/be-spacetimedb`
 - [ ] 3.3 — Docker compose: Convex (postgres + minio + backend + dashboard) on ports 3212/6791/9000
@@ -193,11 +193,11 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 **Goal:** All 8 web demo apps build and run.
 
-- [ ] 4.1 — Copy lazyconvex `apps/{blog,chat,movie,org}` → `apps/convex/{blog,chat,movie,org}`
+- [ ] 4.1 — Copy lazyconvex `apps/{blog,chat,movie,org}` → `web/cvx/{blog,chat,movie,org}`
   - Update imports from `lazyconvex` → `@noboil/convex`
   - Update package.json names to `@a/convex-blog`, etc.
   - Update internal workspace references
-- [ ] 4.2 — Copy betterspace `apps/{blog,chat,movie,org}` → `apps/spacetimedb/{blog,chat,movie,org}`
+- [ ] 4.2 — Copy betterspace `apps/{blog,chat,movie,org}` → `web/stdb/{blog,chat,movie,org}`
   - Update imports from `betterspace` → `@noboil/spacetimedb`
   - Update package.json names to `@a/stdb-blog`, etc.
   - Update internal workspace references
@@ -210,17 +210,17 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 - [ ] 5.1 — Copy lazyconvex `mobile/` → `mobile/convex/`
 - [ ] 5.2 — Copy lazyconvex `desktop/` → `desktop/convex/`
-- [ ] 5.3 — Copy `swift-core/`
+- [ ] 5.3 — Copy `swiftcore/`
 - [ ] 5.4 — Swift codegen works: `bun codegen:swift`
 - [ ] 5.5 — All native builds pass, Maestro tests pass, Swift tests pass
 
 ### Phase 6: Documentation Site (fumadocs)
 
-**Goal:** `apps/docs/` serves unified documentation with DB switcher.
+**Goal:** `doc/` serves unified documentation with DB switcher.
 
-- [ ] 6.1 — Scaffold fumadocs app at `apps/docs/`
+- [ ] 6.1 — Scaffold fumadocs app at `doc/`
   - Next.js App Router, fumadocs-ui, fumadocs-mdx
-  - Tailwind + `packages/ui/` integration
+  - Tailwind + `lib/ui/` integration
 - [ ] 6.2 — Content architecture:
   - `content/docs/` — shared concepts (schema-first, zero-boilerplate philosophy)
   - Sidebar Tabs: “Convex” and “SpacetimeDB” as top-level navigation
@@ -239,14 +239,14 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 **Goal:** `bun noboil@latest init` creates a working project.
 
-- [ ] 7.1 — Create `packages/cli/` with name `noboil`
+- [ ] 7.1 — Create `tool/cli/` with name `noboil`
 - [ ] 7.2 — `init` command:
   1. Ask: “Pick your database” → Convex | SpacetimeDB
   2. Ask: “Include demo apps? (Y/n)”
   3. Ask: “Include mobile/desktop? (y/N)” (only if Convex)
   4. Clone repo (degit, no git history)
   5. Remove other DB’s demo apps, backend, library package
-  6. Remove `packages/shared/` source, `apps/docs/`, `PLAN.md`
+  6. Remove `lib/shared/` source, `doc/`, `PLAN.md`
   7. Patch all `package.json` files to use npm-published versions instead of `workspace:*`
   8. `bun i`
   9. Print: “Done! Run `bun dev` to start.”

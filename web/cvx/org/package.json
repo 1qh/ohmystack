@@ -1,0 +1,22 @@
+{
+  "name": "@a/convex-org",
+  "type": "module",
+  "scripts": {
+    "build": "bun with-env next build --turbo",
+    "clean": "git clean -xdf .cache .next .turbo node_modules",
+    "dev": "PORT=3004 bun with-env next dev --turbo",
+    "lint": "eslint",
+    "start": "bun with-env next start",
+    "test": "CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",
+    "test:e2e": "CONVEX_TEST_MODE=true bun --cwd ../../../backend/convex with-env convex dev --once && bun with-env playwright test --reporter=list",
+    "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e ../../../.env --"
+  },
+  "dependencies": {
+    "@sindresorhus/slugify": "latest"
+  },
+  "devDependencies": {
+    "@a/e2e": "workspace:*",
+    "@playwright/test": "latest"
+  }
+}

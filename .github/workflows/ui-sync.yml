@@ -39,7 +39,7 @@ jobs:
           body: |
             Automated sync from shadcn/ui and ai-elements.
             
-            - Regenerated `packages/ui` with `bun ui:sync`
+            - Regenerated `lib/ui` with `bun ui:sync`
             - Verified with `bun fix`
             - Verified with `bun test`
           labels: dependencies

@@ -197,22 +197,24 @@ export const { create, list, read, rm, update } = crud(owned, 'blog')
 
 ```
 noboil/
-  apps/
-    convex/           4 Convex demo web apps (blog, chat, movie, org)
-    spacetimedb/      4 SpacetimeDB demo web apps
-    docs/             Documentation site (fumadocs)
-  packages/
-    cli/              CLI — bun noboil@latest init
+  web/
+    cvx/              4 Convex demo web apps (blog, chat, movie, org)
+    stdb/             4 SpacetimeDB demo web apps
+  doc/                Documentation site (fumadocs)
+  lib/
     convex/           @noboil/convex library
     spacetimedb/      @noboil/spacetimedb library
-    be-convex/        Convex backend (schema + functions)
-    be-spacetimedb/   SpacetimeDB backend (module + bindings)
     ui/               Shared shadcn components
     fe/               Shared frontend utilities
     e2e/              Shared Playwright utilities
+  backend/
+    convex/           Convex backend (schema + functions)
+    spacetimedb/      SpacetimeDB backend (module + bindings)
+  tool/cli/           CLI — bun noboil@latest init
+  expo/               iOS/Android apps (Expo)
   mobile/convex/      iOS/Android apps (Swift + Skip)
   desktop/convex/     macOS apps (SwiftUI)
-  swift-core/         Shared Swift protocols
+  swiftcore/         Shared Swift protocols
 ```
 
 ## Packages

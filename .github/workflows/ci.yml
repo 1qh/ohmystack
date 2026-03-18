@@ -37,8 +37,13 @@ jobs:
         with:
           filters: |
             ts:
-              - 'packages/**'
-              - 'apps/**'
+              - 'lib/**'
+              - 'backend/**'
+              - 'tool/**'
+              - 'web/**'
+              - 'expo/**'
+              - 'doc/**'
+              - 'agent/**'
               - 'package.json'
               - 'bun.lock'
               - 'tsconfig*.json'
@@ -47,12 +52,12 @@ jobs:
               - 'eslint.config.ts'
             swift:
               - 'mobile/**'
-              - 'swift-core/**'
+              - 'swiftcore/**'
               - '.swiftlint.yml'
               - '.swiftformat'
             desktop:
               - 'desktop/**'
-              - 'swift-core/**'
+              - 'swiftcore/**'
               - '.swiftlint.yml'
               - '.swiftformat'
 
@@ -102,8 +107,8 @@ jobs:
         with:
           bun-version: 'latest'
       - run: bun i
-      - run: bun --cwd packages/convex test
-      - run: bun --cwd packages/spacetimedb test
+      - run: bun --cwd lib/convex test
+      - run: bun --cwd lib/spacetimedb test
 
   ui-sync-check:
     needs: changes
@@ -165,7 +170,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - run: swift test --package-path swift-core
+      - run: swift test --package-path swiftcore
       - run: swift test --package-path desktop/convex/shared
 
   build-mobile:

@@ -8,11 +8,11 @@ let package = Package(
         .library(name: "DesktopShared", targets: ["DesktopShared"]),
     ],
     dependencies: [
-        .package(path: "../../../swift-core"),
+        .package(path: "../../../swiftcore"),
     ],
     targets: [
         .target(name: "DesktopShared", dependencies: [
-            .product(name: "ConvexCore", package: "swift-core"),
+            .product(name: "ConvexCore", package: "swiftcore"),
         ]),
         .testTarget(name: "DesktopSharedTests", dependencies: ["DesktopShared"]),
     ]

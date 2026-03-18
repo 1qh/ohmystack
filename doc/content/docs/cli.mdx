@@ -1,0 +1,510 @@
+---
+title: CLI Reference
+description: Complete reference for all noboil CLI commands — project scaffolding, code generation, diagnostics, and migrations.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Three CLIs ship with noboil. `noboil` handles project creation. `noboil-convex` and `noboil-stdb` are database-specific and live inside your project.
+
+## Commands at a glance
+
+| CLI | Command | What it does |
+| --- | ------- | ------------ |
+| `noboil` | `init` | Create a new project |
+| `noboil` | `doctor` | Check project health |
+| `noboil` | `sync` | Pull upstream template updates |
+| `noboil` | `eject` | Inline library code, remove deps |
+| `noboil-convex` | `add` | Generate a new table with CRUD |
+| `noboil-convex` | `check` | Validate schema/factory consistency |
+| `noboil-convex` | `doctor` | Project diagnostics with health score |
+| `noboil-convex` | `migrate` | Schema diff and migration plans |
+| `noboil-convex` | `viz` | Visualize schema relationships |
+| `noboil-convex` | `codegen-swift` | Generate typed Swift APIs |
+| `noboil-convex` | `docs` | Generate API documentation |
+| `noboil-stdb` | `add` | Generate a new table with reducers |
+| `noboil-stdb` | `check` | Validate schema/factory consistency |
+| `noboil-stdb` | `doctor` | Project diagnostics with health score |
+| `noboil-stdb` | `dev` | Start integrated local dev workflow |
+| `noboil-stdb` | `migrate` | Schema diff and migration plans |
+| `noboil-stdb` | `use` | Switch SpacetimeDB target |
+| `noboil-stdb` | `generate docker` | Generate docker-compose.yml |
+| `noboil-stdb` | `viz` | Visualize schema relationships |
+| `noboil-stdb` | `docs` | Generate API documentation |
+| `noboil-stdb` | `validate` | Alias for `check --health` |
+
+---
+
+## noboil
+
+### init
+
+Create a new noboil project.
+
+```bash
+noboil init [directory]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--db` | `convex` \| `spacetimedb` | prompt | Skip the database selection prompt |
+| `--no-demos` | boolean | `false` | Skip demo apps |
+| `--with-native` | boolean | `false` | Include mobile and desktop apps (Convex only) |
+| `--skip-install` | boolean | `false` | Skip `bun install` after scaffolding |
+
+**Examples**
+
+```bash
+bunx noboil@latest init my-app
+```
+
+```bash
+bunx noboil@latest init my-app --db=convex --with-native
+```
+
+```bash
+bunx noboil@latest init my-app --db=spacetimedb --no-demos --skip-install
+```
+
+---
+
+### doctor
+
+Check project health. No flags.
+
+```bash
+noboil doctor
+```
+
+Checks: `package.json` presence, `@noboil/*` packages installed, bun version, `node_modules`, `tsconfig.json`, and database-specific directories.
+
+---
+
+### sync
+
+Pull upstream template updates into an existing project without overwriting local changes.
+
+```bash
+noboil sync [options]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--dry-run` | boolean | `false` | Show what would change without writing files |
+| `--force` | boolean | `false` | Update files even when locally modified |
+
+**Examples**
+
+```bash
+noboil sync
+```
+
+```bash
+noboil sync --dry-run
+```
+
+```bash
+noboil sync --force
+```
+
+---
+
+### eject
+
+Inline all `@noboil/*` library code directly into your project and remove the package dependencies.
+
+```bash
+noboil eject [options]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--dry-run` | boolean | `false` | Show what would change without writing files |
+
+**Examples**
+
+```bash
+noboil eject
+```
+
+```bash
+noboil eject --dry-run
+```
+
+**Note:** After ejecting, `sync` and `doctor` behavior changes because your project is detached from the upstream template.
+
+---
+
+## Database CLIs
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+
+<Tab value="Convex">
+
+### add
+
+Generate a new table with typed schema, factory wiring, and CRUD endpoints.
+
+```bash
+noboil-convex add <table> [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--type` | `owned` \| `org` \| `singleton` \| `cache` \| `child` | `owned` | Table type |
+| `--fields` | string | — | Comma-separated field definitions |
+| `--parent` | string | — | Parent table name (required for `child` type) |
+
+**Table types**
+
+| Type | Description |
+| ---- | ----------- |
+| `owned` | User-owned CRUD |
+| `org` | Org-scoped CRUD |
+| `singleton` | One record per user |
+| `cache` | External API cache |
+| `child` | Nested under a parent table |
+
+**Field syntax**
+
+| Syntax | Meaning |
+| ------ | ------- |
+| `name:type` | Required field |
+| `name:type?` | Optional field |
+| `status:enum(a,b,c)` | Enum field |
+
+**Examples**
+
+```bash
+noboil-convex add todo --fields="title:string,done:boolean"
+```
+
+```bash
+noboil-convex add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"
+```
+
+```bash
+noboil-convex add message --type=child --parent=chat --fields="text:string"
+```
+
+---
+
+### check
+
+Validate schema and factory consistency.
+
+```bash
+noboil-convex check [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--schema` | boolean | `false` | Check schema definitions |
+| `--endpoints` | boolean | `false` | Check endpoint coverage |
+| `--indexes` | boolean | `false` | Check index definitions |
+| `--access` | boolean | `false` | Check access control patterns |
+| `--health` | boolean | `false` | Run all health checks |
+
+---
+
+### doctor
+
+Run project diagnostics and print a health score.
+
+```bash
+noboil-convex doctor
+```
+
+---
+
+### migrate
+
+Generate a schema diff and migration plan.
+
+```bash
+noboil-convex migrate [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--from` | string | — | Git ref to diff from (e.g. `HEAD~3`) |
+| `--file` | string | — | Path to a schema file to diff against |
+| `--snapshot` | boolean | `false` | Save current schema as a snapshot |
+
+**Examples**
+
+```bash
+noboil-convex migrate
+```
+
+```bash
+noboil-convex migrate --from HEAD~3
+```
+
+```bash
+noboil-convex migrate --snapshot
+```
+
+---
+
+### viz
+
+Visualize schema relationships.
+
+```bash
+noboil-convex viz [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--mermaid` | boolean | `false` | Output as Mermaid diagram syntax |
+
+---
+
+### codegen-swift
+
+Generate typed Swift APIs from your Convex schema.
+
+```bash
+noboil-convex codegen-swift --schema PATH --convex PATH --output PATH [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--schema` | string | — | Path to schema file (required) |
+| `--convex` | string | — | Path to convex directory (required) |
+| `--output` | string | — | Output path for generated Swift (required) |
+| `--mobile-output` | string | — | Separate output path for mobile-specific Swift |
+
+---
+
+### docs
+
+Generate API documentation for your Convex backend.
+
+```bash
+noboil-convex docs [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--markdown` | boolean | `false` | Output as Markdown |
+| `--full` | boolean | `false` | Include internal endpoints |
+
+</Tab>
+
+<Tab value="SpacetimeDB">
+
+### add
+
+Generate a new SpacetimeDB table with typed schema and reducers.
+
+```bash
+noboil-stdb add <table> [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--type` | `owned` \| `org` \| `singleton` \| `cache` \| `child` | `owned` | Table type |
+| `--fields` | string | — | Comma-separated field definitions |
+| `--parent` | string | — | Parent table name (required for `child` type) |
+
+**Table types**
+
+| Type | Description |
+| ---- | ----------- |
+| `owned` | User-owned CRUD |
+| `org` | Org-scoped CRUD |
+| `singleton` | One record per user |
+| `cache` | External API cache |
+| `child` | Nested under a parent table |
+
+**Field syntax**
+
+| Syntax | Meaning |
+| ------ | ------- |
+| `name:type` | Required field |
+| `name:type?` | Optional field |
+| `status:enum(a,b,c)` | Enum field |
+
+**Examples**
+
+```bash
+noboil-stdb add todo --fields="title:string,done:boolean"
+```
+
+```bash
+noboil-stdb add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"
+```
+
+```bash
+noboil-stdb add message --type=child --parent=chat --fields="text:string"
+```
+
+---
+
+### check
+
+Validate schema and factory consistency.
+
+```bash
+noboil-stdb check [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--schema` | boolean | `false` | Check schema definitions |
+| `--endpoints` | boolean | `false` | Check endpoint coverage |
+| `--indexes` | boolean | `false` | Check index definitions |
+| `--access` | boolean | `false` | Check access control patterns |
+| `--health` | boolean | `false` | Run all health checks |
+
+---
+
+### doctor
+
+Run project diagnostics and print a health score. Checks SpacetimeDB-specific dependencies in addition to the standard checks.
+
+```bash
+noboil-stdb doctor
+```
+
+---
+
+### dev
+
+Start the integrated local dev workflow: Docker, module publish, watch mode, and Next.js.
+
+```bash
+noboil-stdb dev [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--module-dir` | string | — | Path to the SpacetimeDB module directory |
+| `--no-docker` | boolean | `false` | Skip starting Docker |
+| `--no-watch` | boolean | `false` | Skip watch mode for module changes |
+
+**Example**
+
+```bash
+noboil-stdb dev --module-dir backend/spacetimedb
+```
+
+---
+
+### migrate
+
+Generate a schema diff and migration plan.
+
+```bash
+noboil-stdb migrate [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--from` | string | — | Git ref to diff from (e.g. `HEAD~3`) |
+| `--file` | string | — | Path to a schema file to diff against |
+| `--snapshot` | boolean | `false` | Save current schema as a snapshot |
+
+**Examples**
+
+```bash
+noboil-stdb migrate
+```
+
+```bash
+noboil-stdb migrate --from HEAD~3
+```
+
+```bash
+noboil-stdb migrate --snapshot
+```
+
+---
+
+### use
+
+Switch the active SpacetimeDB target.
+
+```bash
+noboil-stdb use <local|cloud>
+```
+
+**Examples**
+
+```bash
+noboil-stdb use local
+```
+
+```bash
+noboil-stdb use cloud
+```
+
+---
+
+### generate docker
+
+Generate a `docker-compose.yml` for local SpacetimeDB development.
+
+```bash
+noboil-stdb generate docker [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--force` | boolean | `false` | Overwrite existing `docker-compose.yml` |
+| `--stdout` | boolean | `false` | Print to stdout instead of writing a file |
+
+**Examples**
+
+```bash
+noboil-stdb generate docker
+```
+
+```bash
+noboil-stdb generate docker --stdout
+```
+
+---
+
+### viz
+
+Visualize schema relationships.
+
+```bash
+noboil-stdb viz [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--mermaid` | boolean | `false` | Output as Mermaid diagram syntax |
+
+---
+
+### docs
+
+Generate API documentation for your SpacetimeDB module.
+
+```bash
+noboil-stdb docs [flags]
+```
+
+| Flag | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `--markdown` | boolean | `false` | Output as Markdown |
+| `--full` | boolean | `false` | Include internal reducers |
+
+---
+
+### validate
+
+Alias for `check --health`. Runs all health checks.
+
+```bash
+noboil-stdb validate
+```
+
+</Tab>
+
+</Tabs>

@@ -1,0 +1,365 @@
+---
+title: Deployment
+description: Deploy your noboil app to production — Convex Cloud, SpacetimeDB Maincloud, or self-hosted Docker.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+
+<Tab value="Convex">
+
+Convex handles hosting, scaling, and backups automatically. Deploy to Convex Cloud or self-host with Docker. See [convex.dev/docs](https://docs.convex.dev) for the full deployment guide.
+
+</Tab>
+
+<Tab value="SpacetimeDB">
+
+## Local development
+
+Start SpacetimeDB and MinIO with Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+This starts:
+
+- SpacetimeDB at `ws://localhost:3000` (WebSocket) and `http://localhost:3000` (HTTP SQL API)
+- MinIO at `http://localhost:9000` (S3 API) and `http://localhost:9001` (console)
+
+Publish your module (replace `my-app` with your SpacetimeDB module name):
+
+```bash
+spacetime publish my-app --module-path backend/spacetimedb/
+```
+
+Generate bindings:
+
+```bash
+spacetime generate \
+  --lang typescript \
+  --module-path backend/spacetimedb/ \
+  --out-dir backend/spacetimedb/module_bindings/
+```
+
+Start your Next.js app:
+
+```bash
+bun dev
+```
+
+### Environment variables (local)
+
+```bash
+NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:3000
+NEXT_PUBLIC_MODULE_NAME=my-app
+SPACETIMEDB_URL=http://localhost:3000
+MODULE_NAME=my-app
+
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET=my-bucket
+S3_REGION=us-east-1
+```
+
+### Create the MinIO bucket
+
+**macOS:**
+
+```bash
+brew install minio/stable/mc
+```
+
+For Linux, download the mc binary from https://min.io/docs/minio/linux/reference/minio-mc.html
+
+```bash
+mc alias set local http://localhost:9000 minioadmin minioadmin
+
+mc mb local/my-bucket
+
+mc anonymous set download local/my-bucket
+```
+
+---
+
+## Maincloud
+
+SpacetimeDB Maincloud is the managed cloud offering. It handles hosting, scaling, and backups.
+
+### Publish to Maincloud
+
+```bash
+spacetime login
+
+spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+```
+
+The module is now available at `wss://maincloud.spacetimedb.com/my-app`.
+
+### Environment variables (Maincloud)
+
+```bash
+NEXT_PUBLIC_SPACETIMEDB_URL=wss://maincloud.spacetimedb.com
+NEXT_PUBLIC_MODULE_NAME=my-app
+```
+
+### Republishing
+
+```bash
+spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+```
+
+Republishing applies schema changes and updates reducer logic. Existing data is preserved (see [schema evolution](./schema-evolution.md)).
+
+### Maincloud limitations
+
+- `ctx.http.fetch()` may work on Maincloud (it panics in local Docker due to networking). Test before relying on it.
+- Latency will be higher than local Docker. Measure before deciding whether to add optimistic updates.
+- Auth: Maincloud supports OIDC providers (Google, GitHub). Configure via the Maincloud dashboard.
+
+---
+
+## Self-hosted with Docker
+
+Run SpacetimeDB on your own server.
+
+### Docker Compose (production)
+
+```yaml
+services:
+  spacetimedb:
+    image: clockworklabs/spacetime:latest
+    command: start --listen-addr 0.0.0.0:3000
+    ports:
+      - '3000:3000'
+    volumes:
+      - spacetimedb_data:/stdb
+    restart: always
+    environment:
+      - SPACETIMEDB_LOG_LEVEL=info
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - spacetimedb
+    restart: always
+
+volumes:
+  spacetimedb_data:
+```
+
+### Nginx configuration
+
+Replace `stdb.yourdomain.com` with your actual domain throughout this configuration.
+
+```nginx
+events {}
+
+http {
+  upstream spacetimedb {
+    server spacetimedb:3000;
+  }
+
+  server {
+    listen 80;
+    server_name stdb.yourdomain.com;
+    return 301 https://$host$request_uri;
+  }
+
+  server {
+    listen 443 ssl;
+    server_name stdb.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/stdb.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/stdb.yourdomain.com/privkey.pem;
+
+    location / {
+      proxy_pass http://spacetimedb;
+      proxy_http_version 1.1;
+
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+
+      proxy_read_timeout 3600s;
+      proxy_send_timeout 3600s;
+    }
+  }
+}
+```
+
+### TLS with Let's Encrypt
+
+```bash
+apt install certbot python3-certbot-nginx
+
+certbot certonly --standalone -d stdb.yourdomain.com
+
+certbot renew --dry-run
+```
+
+### Publish to self-hosted
+
+```bash
+spacetime server add https://stdb.yourdomain.com --name myserver
+
+spacetime publish my-app --server myserver --module-path backend/spacetimedb/
+```
+
+### Environment variables (self-hosted)
+
+```bash
+NEXT_PUBLIC_SPACETIMEDB_URL=wss://stdb.yourdomain.com
+NEXT_PUBLIC_MODULE_NAME=my-app
+```
+
+---
+
+## Self-hosted manual install
+
+For bare-metal or custom setups, see the [official SpacetimeDB installation docs](https://spacetimedb.com/docs/getting-started).
+
+The SpacetimeDB binary can run without Docker. Review the script at the URL before executing. See https://spacetimedb.com/install for alternative installation methods.
+
+```bash
+curl -sSf https://install.spacetimedb.com | sh
+
+spacetimedb start --listen-addr 0.0.0.0:3000 --data-dir /var/lib/spacetimedb
+```
+
+---
+
+## Deploying the Next.js app
+
+The Next.js frontend deploys independently from SpacetimeDB. Any Node.js hosting works.
+
+### Vercel
+
+```bash
+bun add -g vercel
+vercel deploy
+```
+
+Set environment variables in the Vercel dashboard.
+
+### Docker
+
+```dockerfile
+FROM oven/bun:1 AS builder
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun run build
+
+FROM oven/bun:1-slim
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+EXPOSE 3001
+CMD ["bun", "start"]
+```
+
+### Environment variables for production
+
+```bash
+NEXT_PUBLIC_SPACETIMEDB_URL=wss://stdb.yourdomain.com
+NEXT_PUBLIC_MODULE_NAME=my-app
+
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_BUCKET=my-production-bucket
+S3_REGION=us-east-1
+```
+
+---
+
+## CI/CD
+
+Example GitHub Actions workflow:
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Install SpacetimeDB CLI
+        run: curl -sSf https://install.spacetimedb.com | sh
+
+      - name: Publish SpacetimeDB module
+run: spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+        env:
+          SPACETIMEDB_TOKEN: ${{ secrets.SPACETIMEDB_TOKEN }}
+
+      - name: Regenerate bindings
+        run: |
+          spacetime generate \
+            --lang typescript \
+  --module-path backend/spacetimedb/ \
+  --out-dir backend/spacetimedb/module_bindings/
+
+      - name: Build Next.js
+        run: bun run build
+        env:
+          NEXT_PUBLIC_SPACETIMEDB_URL: wss://maincloud.spacetimedb.com
+          NEXT_PUBLIC_MODULE_NAME: my-app
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+```
+
+---
+
+## Health checks
+
+SpacetimeDB exposes ping endpoints for health checks:
+
+```bash
+curl http://localhost:3000/v1/ping
+curl http://localhost:3000/database/ping
+```
+
+Both endpoints are valid; use either in Docker health checks and load balancer probes.
+
+## Monitoring
+
+SpacetimeDB logs to stdout. Collect logs with your preferred log aggregator (Datadog, Loki, CloudWatch, etc.).
+
+Key metrics to watch:
+
+- WebSocket connection count
+- Reducer call latency
+- Subscription count per connection
+- Memory usage (SpacetimeDB keeps all subscribed data in memory)
+
+</Tab>
+
+</Tabs>

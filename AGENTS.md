@@ -5,24 +5,24 @@ If `README.md` or `PLAN.md` exists at the repo root, read it first.
 ## Monorepo
 
 ```
-apps/convex/              — Convex demo web apps
-apps/spacetimedb/         — SpacetimeDB demo web apps
-apps/docs/                — fumadocs site
-packages/convex/          — @noboil/convex (npm published)
-packages/spacetimedb/     — @noboil/spacetimedb (npm published)
-packages/shared/          — internal shared code (NOT published)
-packages/ui/              — shared shadcn components (READ-ONLY, use bun ui:sync)
-packages/be-convex/       — Convex backend functions + schema
-packages/be-spacetimedb/  — SpacetimeDB module + schema
-packages/fe/              — shared frontend utilities
-packages/e2e/             — shared Playwright utilities
-packages/cli/             — noboil CLI (published as `noboil`)
+web/cvx/              — Convex demo web apps
+web/stdb/         — SpacetimeDB demo web apps
+doc/                — fumadocs site
+lib/convex/          — @noboil/convex (npm published)
+lib/spacetimedb/     — @noboil/spacetimedb (npm published)
+lib/shared/          — internal shared code (NOT published)
+lib/ui/              — shared shadcn components (READ-ONLY, use bun ui:sync)
+backend/convex/       — Convex backend functions + schema
+backend/spacetimedb/  — SpacetimeDB module + schema
+lib/fe/              — shared frontend utilities
+lib/e2e/             — shared Playwright utilities
+tool/cli/             — noboil CLI (published as `noboil`)
 mobile/convex/            — iOS/Android apps (Convex-only)
 desktop/convex/           — macOS apps (Convex-only)
-swift-core/               — shared Swift protocols
+swiftcore/               — shared Swift protocols
 ```
 
-Library packages (`packages/convex/`, `packages/spacetimedb/`, `packages/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
+Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
 
 ---
 
@@ -47,10 +47,10 @@ Library packages (`packages/convex/`, `packages/spacetimedb/`, `packages/shared/
 ### Must NOT do
 
 - NEVER write comments (lint ignores allowed)
-- NEVER touch `packages/ui/` manually
+- NEVER touch `lib/ui/` manually
 - NEVER use `!` (non-null assertion), `any`, `as any`, `@ts-ignore`, `@ts-expect-error`
 - NEVER disable lint rules globally/per-directory — fix the code
-- NEVER ignore written source code from linters — only auto-generated code (`_generated/`, `generated/`, `module_bindings/`, `packages/ui/`)
+- NEVER ignore written source code from linters — only auto-generated code (`_generated/`, `generated/`, `module_bindings/`, `lib/ui/`)
 - NEVER reduce lintmax strictness — if upstream removes rules, find replacements
 
 ---
@@ -137,7 +137,7 @@ bun test:e2e -- --workers=1 --timeout=10000 --reporter=dot             # full (u
 | Single file | 8s/test  | 30s  |
 | Full suite  | 10s/test | 180s |
 
-**AI agents**: Run only failing tests, verify 2-3x, stop. Full suite only when user asks. **Pre-test**: `bun fix` passes · `pkill -9 -f "next"` · `rm -rf test-results` **Convex**: `cd packages/be-convex && CONVEX_TEST_MODE=true bun with-env convex dev --once` **SpacetimeDB**: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish`
+**AI agents**: Run only failing tests, verify 2-3x, stop. Full suite only when user asks. **Pre-test**: `bun fix` passes · `pkill -9 -f "next"` · `rm -rf test-results` **Convex**: `cd backend/convex && CONVEX_TEST_MODE=true bun with-env convex dev --once` **SpacetimeDB**: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish`
 
 | Symptom                     | Fix                               |
 | --------------------------- | --------------------------------- |
@@ -234,7 +234,7 @@ Generates TS bindings from Rust module. Regenerate after schema changes: `bun sp
 
 Must derive ALL output from inputs (schema, convex dir, flags). Never hardcode project-specific data. Factory patterns are known: `crud()` → list/read/create/update/rm, `orgCrud(acl:true)` → addEditor/removeEditor/setEditors/editors, `pub` → pub.list/pub.read, `softDelete` → restore, `singletonCrud()` → get/upsert, `cacheCrud()` → get/all/list/create/update/rm/invalidate/purge/load/refresh.
 
-## packages/shared/
+## lib/shared/
 
 Internal, never published. Shared across both libraries: React hooks, server utils, components, ESLint plugin (16 rules), CLI framework, Zod/seed/retry utils. Each published package re-exports from shared.
 

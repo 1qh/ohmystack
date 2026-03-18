@@ -66,4 +66,4 @@ test-results.xml
 test-results/
 xcodebuild*.log
 xcuserdata/
-apps/docs/.source/source.config.mjs
+doc/.source/source.config.mjs

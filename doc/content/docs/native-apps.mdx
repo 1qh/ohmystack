@@ -1,0 +1,204 @@
+---
+title: Native Apps
+description: Ship native iOS, Android, and macOS apps backed by Convex or SpacetimeDB with typed Swift wrappers and Expo mobile support.
+---
+
+noboil supports three native app platforms: **Expo** (React Native), **Skip** (iOS/Android), and **SwiftCrossUI** (macOS). Expo apps work with both Convex and SpacetimeDB. Swift apps currently only cover Convex.
+
+## Expo Mobile Apps
+
+8 cross-platform mobile apps (iOS + Android + Web) using [Expo](https://expo.dev) + [UniWind](https://uniwind.dev) + [React Native Reusables](https://reactnativereusables.com):
+
+| App | Backend | Features |
+| --- | ------- | -------- |
+| Movie | Convex | Search + fetch by ID, TMDB cache, no auth |
+| Movie | SpacetimeDB | Client-side search, offline indicator |
+| Blog | Convex | Auth + CRUD + file upload + pagination + search + profile |
+| Blog | SpacetimeDB | Auth + CRUD + pagination + search + profile |
+| Chat | Convex | AI chat + public/private + sidebar |
+| Chat | SpacetimeDB | Chat + public/private + sidebar |
+| Org | Convex | Multi-tenancy + projects + wiki + members + settings |
+| Org | SpacetimeDB | Multi-tenancy + projects + wiki + members + settings |
+
+All mobile apps reuse the **same backend packages** as web (`backend/convex`, `backend/spacetimedb`) with no mobile-specific backend code.
+
+### Mobile Architecture
+
+```
+lib/rnr/         32 React Native Reusables components (synced, READ-ONLY)
+lib/femobile/   Mobile providers, layouts, and shared components
+expo/cvx/   4 Expo apps (Convex backend)
+expo/stdb/  4 Expo apps (SpacetimeDB backend)
+```
+
+### Expo Stack
+
+- **Expo Router** for file-based navigation
+- **UniWind** (Tailwind v4) for styling
+- **React Native Reusables** (RNR) components from `lib/rnr`
+- **Convex React** (`convex/react`) or **SpacetimeDB React** (`spacetimedb/react`) for data
+- **Maestro** for E2E testing (440 flows matching web test parity)
+
+### Quick Start (Expo)
+
+```bash
+# Start services
+docker compose -f noboil.yml up -d
+
+# Run a mobile app
+bun --cwd expo/cvx/movie dev
+```
+
+### Mobile Test Parity
+
+Each mobile app has the same number of E2E tests as its web counterpart:
+
+| App | Web Tests | Mobile Tests |
+| --- | --------- | ------------ |
+| Movie | 14 | 14 |
+| Blog | 52 | 52 |
+| Chat | 26 | 26 |
+| Org | 128 | 128 |
+
+Verify parity: `bash expo/maestro/test-count-check.sh`
+
+`@noboil/convex` includes a Swift codegen CLI and ships with 8 native app examples (4 mobile + 4 desktop) that consume the same Convex backend as the web demos.
+
+## Swift Codegen
+
+Generate typed Swift models, enums, and API wrappers from your Zod schemas:
+
+```bash
+bunx noboil-convex codegen-swift --schema backend/convex/t.ts --convex backend/convex/convex \
+  --output swiftcore/Sources/ConvexCore/Generated.swift \
+  --mobile-output mobile/convex/convex-shared/Sources/ConvexShared/MobileAPI.swift
+```
+
+Output includes:
+
+- **Structs** matching all fields from Zod schemas (`Blog`, `Chat`, `Wiki`, `Movie`, etc.)
+- **Enums** for Zod enum fields (`BlogCategory`, `WikiStatus`, `TaskItemPriority`, etc.)
+- **API constants** for every exported Convex function (`BlogAPI.list`, `OrgAPI.create`, etc.)
+- **Where structs** for typed filtering (`BlogWhere`, `WikiWhere`, etc.)
+- **Desktop wrappers** (Generated.swift) — typed CRUD, search, list with `ConvexClientProtocol`:
+
+```swift
+try await BlogAPI.create(client, category: .tech, content: "Hello", published: true, title: "Post")
+try await WikiAPI.update(client, orgId: orgId, id: wikiId, status: .published)
+let profile: BlogProfile? = try await BlogProfileAPI.get(client)
+```
+
+- **Mobile wrappers** (MobileAPI.swift) — typed mutations, actions, and subscriptions for Skip cross-platform apps:
+
+```swift
+try await MessageAPI.create(chatId: chatID, parts: [MessagePart(type: .text, text: text)], role: "user")
+let results = try await MovieAPI.search(query: "inception")
+let subID = BlogAPI.subscribePaginated(onUpdate: { result in ... }, onError: { error in ... })
+```
+
+Zero raw `ConvexService.shared` calls or `[String: Any]` dictionaries in consumer code. All platform branching (`#if !SKIP`) for Convex calls is hidden inside generated wrappers.
+
+A typo in a field name or wrong enum value is a Swift compile error.
+
+## ConvexClientProtocol
+
+The codegen output depends on a thin protocol in `swiftcore`:
+
+```swift
+public protocol ConvexClientProtocol: Sendable {
+    func query<T: Decodable & Sendable>(_ name: String, args: [String: Any]) async throws -> T
+    func mutation<T: Decodable & Sendable>(_ name: String, args: [String: Any]) async throws -> T
+    func mutation(_ name: String, args: [String: Any]) async throws
+    func action<T: Decodable & Sendable>(_ name: String, args: [String: Any]) async throws -> T
+    func action(_ name: String, args: [String: Any]) async throws
+}
+```
+
+Conform your Convex client to this protocol and the typed wrappers work automatically.
+
+## Mobile Apps (Skip)
+
+4 cross-platform apps (iOS + Android) using [Skip](https://skip.tools):
+
+| App | Features |
+| --- | -------- |
+| Movie | Search + detail, TMDB cache, no auth |
+| Blog | Auth + CRUD + file upload + pagination + search + profile |
+| Chat | Child CRUD + AI + public/private |
+| Org | Multi-tenancy + ACL + soft delete + bulk ops + invites + onboarding |
+
+## Desktop Apps (SwiftCrossUI)
+
+4 native macOS apps using [SwiftCrossUI](https://github.com/stackotter/swift-cross-ui) with 223 E2E tests:
+
+| App | E2E Tests |
+| --- | --------- |
+| Movie | 26 |
+| Blog | 65 |
+| Chat | 48 |
+| Org | 84 |
+
+## Architecture
+
+```
+swiftcore/                    Shared models, enums, protocol (Foundation-only)
+desktop/                       4 SwiftCrossUI macOS apps + HTTP/WebSocket Convex client
+mobile/                        4 Skip cross-platform apps (iOS + Android)
+lib/convex/                    Codegen CLI (codegen-swift.ts)
+```
+
+All native apps share the same generated `Generated.swift` via SPM dependencies and symlinks.
+
+## Step-by-Step: Adding Swift Support
+
+1. Define your Zod schemas in a schema file (e.g., `convex/t.ts`)
+2. Write your CRUD endpoints using `crud()`, `orgCrud()`, etc.
+3. Run the codegen:
+
+```bash
+bunx noboil-convex codegen-swift \
+  --schema convex/t.ts \
+  --convex convex/ \
+  --output Generated.swift \
+  --mobile-output MobileAPI.swift
+```
+
+4. Add the generated file to your Swift package or Xcode project
+5. Conform your Convex client to `ConvexClientProtocol`
+6. Use the typed API wrappers:
+
+```swift
+let posts: PaginatedResult<Blog> = try await BlogAPI.list(client, numItems: 20)
+try await BlogAPI.create(client, category: .tech, content: "Hello", published: true, title: "Post")
+```
+
+## When Schema Changes
+
+1. Update your Zod schema (add/remove/rename fields)
+2. Re-run `bunx noboil-convex codegen-swift` with the same flags
+3. Swift compiler errors show you every call site that needs updating
+
+```
+error: extra argument 'oldField' in call
+error: missing argument for parameter 'newField' in call
+```
+
+Schema changes surface as compile errors in both TypeScript and Swift. No runtime crashes from stale API calls.
+
+Add codegen to your CI pipeline or as a pre-commit hook:
+
+```bash
+bunx noboil-convex codegen-swift --schema convex/t.ts --convex convex/ --output Generated.swift
+git diff --exit-code Generated.swift || echo "Generated.swift is out of date — run codegen"
+```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| ------- | ----- | --- |
+| `No such module 'ConvexCore'` | SPM dependency not resolved | Run `swift package resolve` |
+| Codegen produces empty file | Schema file path wrong | Verify `--schema` points to the file exporting `makeOwned()` etc. |
+| Enum case mismatch | Zod enum values changed | Re-run codegen and fix Swift call sites |
+| `Decodable` conformance error | New field added without optional | Make new fields optional in Zod schema or provide defaults |
+| `#if DESKTOP` code not compiling | Missing Swift flag | Add `-DDESKTOP` to your Swift build flags |
+| Mobile subscription not cleaning up | Missing `cancelSubscription` call | Use `cancelSubscription(&subscriptionID)` in cleanup |

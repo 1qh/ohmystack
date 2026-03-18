@@ -40,16 +40,22 @@
   ],
   "eslint.workingDirectories": [
     {
-      "pattern": "apps/convex/*/"
+      "pattern": "web/cvx/*/"
     },
     {
-      "pattern": "apps/spacetimedb/*/"
+      "pattern": "web/stdb/*/"
     },
     {
-      "pattern": "apps/docs/"
+      "pattern": "doc/"
     },
     {
-      "pattern": "packages/*/"
+      "pattern": "lib/*/"
+    },
+    {
+      "pattern": "backend/*/"
+    },
+    {
+      "pattern": "tool/*/"
     }
   ],
   "files.associations": {

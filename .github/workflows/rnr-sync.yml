@@ -39,7 +39,7 @@ jobs:
           body: |
             Automated sync from React Native Reusables.
             
-            - Regenerated `packages/rnr` with `bun rnr:sync`
+            - Regenerated `lib/rnr` with `bun rnr:sync`
             - Verified with `bun fix`
             - Verified with `bun test`
           labels: dependencies

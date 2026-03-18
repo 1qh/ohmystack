@@ -1,0 +1,83 @@
+---
+title: Troubleshooting
+description: Common issues and solutions when working with noboil.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Setup & Installation
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `bun install` fails with workspace resolution errors | Package references use incorrect protocol | Verify `package.json` uses `workspace:*` not relative paths |
+| `noboil init` hangs | Network timeout cloning from GitHub | Pass `--skip-install`, then run `bun install` separately from the project root |
+| Docker Compose fails to start | Port conflicts on 9000/9001 (MinIO) or 3000 (SpacetimeDB) | Run `docker compose ps` to identify conflicts, then stop the conflicting service |
+| Missing environment variables | `.env` incomplete or not generated | Run `noboil doctor` to check project health and see which vars are missing |
+
+## TypeScript & Type Errors
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `name` prop not autocompleting in Form fields | Schema not passed to `useForm` or `useFormMutation` | Pass your Zod schema as the `schema` option. Check the import path resolves correctly |
+| `api.tableName` accepts wrong casing at runtime | Convex's `anyApi` Proxy accepts any property name without a type error | Match the EXACT filename casing in `convex/`. Rely on E2E tests to catch casing drift |
+| Type errors after schema change | Generated bindings are stale | Regenerate: `bunx convex dev --once` (Convex) or `spacetime generate` (SpacetimeDB) |
+| `workspace:*` resolution fails | `bun install` run from app directory instead of root | Always run `bun install` from the monorepo root |
+
+## Build & Lint
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `bun fix` fails on `next-env.d.ts` | Next.js generates this file with double quotes; biome enforces single quotes | Add `web/**/next-env.d.ts` to biome ignore. This is already handled in the repo config |
+| oxlint and eslint `sort-keys` conflict | oxlint uses ASCII sort order; eslint perfectionist uses natural sort | Disable `eslint/sort-keys` in the oxlint config |
+| `lib/ui` lint errors | Manual edits to `lib/ui` break the generated output | Never edit `lib/ui` directly. Regenerate with `bun ui:sync` |
+| Turbo env var not passed to tasks | New env var not declared in Turbo config | Add the var to `globalPassThroughEnv` in `turbo.json` |
+
+## Convex-Specific
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Mutation fails silently | Auth check failing before the mutation body runs | Every factory enforces authentication by default. Confirm the user is signed in before calling |
+| `RATE_LIMITED` error | Default rate limiting is active on the mutation | See the Security docs to customize or disable rate limits for your use case |
+| File upload fails | `FileApiProvider` not in the component tree | Wrap your app with `FileApiProvider`. Verify storage configuration in your Convex dashboard |
+| Schema deployment fails | Field type conflict or stale deployment | Run `bunx convex dev --once` to redeploy. Check the Convex dashboard for field type conflicts |
+
+## SpacetimeDB-Specific
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Module publish fails | Docker not running or SpacetimeDB container unhealthy | Run `docker compose ps` to verify the SpacetimeDB container is up and healthy |
+| WebSocket connection refused | `NEXT_PUBLIC_SPACETIMEDB_URI` missing or wrong | Check `.env` for the correct URI. Run `noboil-stdb use local` to reset to local defaults |
+| Generated bindings outdated | Schema changed without regenerating | Re-run `spacetime generate` after any schema change |
+| Column name mismatch at runtime | SpacetimeDB columns are snake_case in Rust, camelCase in generated TypeScript | Use the camelCase names from the generated bindings, not the Rust column names |
+
+## Testing
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| E2E test hangs on startup | Dev server still running from a previous session | Kill it first: `pkill -9 -f "next"`. Clean stale results: `rm -rf test-results` |
+| `waitForLoadState('networkidle')` hangs | Convex subscriptions keep the WebSocket connection active | Use `waitForSelector()` to wait for a specific element instead |
+| Flaky test counts | Tests interfering with each other when run in parallel | Run with `--workers=1` to serialize execution |
+| Backend tests fail | Convex functions not deployed to test environment | Deploy first: `CONVEX_TEST_MODE=true bun with-env convex dev --once` |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| E2E test hangs on startup | Dev server still running from a previous session | Kill it first: `pkill -9 -f "next"`. Clean stale results: `rm -rf test-results` |
+| `waitForLoadState('networkidle')` hangs | SpacetimeDB WebSocket subscriptions keep the connection active | Use `waitForSelector()` to wait for a specific element instead |
+| Flaky test counts | Tests interfering with each other when run in parallel | Run with `--workers=1` to serialize execution |
+| Backend tests fail | Module not published to test environment | Publish first: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish` |
+
+</Tab>
+</Tabs>
+
+## DevTools
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| DevTools panel not showing | App running in production mode | DevTools only render when `NODE_ENV=development`. Confirm you're running the dev server |
+| Subscription monitor empty | Component not wrapped in the correct provider | Check that the component using subscriptions is inside the appropriate database provider |

@@ -1,0 +1,37 @@
+{
+  "name": "noboil",
+  "version": "0.0.0",
+  "description": "Schema-first, zero-boilerplate fullstack. Pick your database.",
+  "keywords": [
+    "cli",
+    "fullstack",
+    "convex",
+    "spacetimedb",
+    "crud",
+    "zod",
+    "react",
+    "nextjs"
+  ],
+  "homepage": "https://github.com/1qh/noboil",
+  "bugs": "https://github.com/1qh/noboil/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1qh/noboil.git",
+    "directory": "tool/cli"
+  },
+  "license": "MIT",
+  "author": "1qh",
+  "type": "module",
+  "bin": {
+    "noboil": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}

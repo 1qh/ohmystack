@@ -3,33 +3,33 @@ import { defineConfig } from 'lintmax'
 export default defineConfig({
   biome: {
     ignorePatterns: [
-      'apps/mobile/**/babel.config.js',
-      'apps/mobile/**/global.css',
-      'apps/mobile/**/metro.config.js',
-      'apps/mobile/**/uniwind-env.d.ts',
-      'apps/mobile/**/uniwind-types.d.ts',
-      'apps/*/next-env.d.ts',
-      'apps/*/*/next-env.d.ts',
-      'apps/docs/.source',
+      'expo/**/babel.config.js',
+      'expo/**/global.css',
+      'expo/**/metro.config.js',
+      'expo/**/uniwind-env.d.ts',
+      'expo/**/uniwind-types.d.ts',
+      'web/*/*/next-env.d.ts',
+      'doc/next-env.d.ts',
+      'doc/.source',
       'mobile/convex/maestro',
-      'packages/rnr/**',
-      'packages/ui/**'
+      'lib/rnr/**',
+      'lib/ui/**'
     ],
     overrides: [
       {
         disableLinter: true,
-        includes: ['packages/rnr/**']
+        includes: ['lib/rnr/**']
       },
       {
         disableLinter: true,
-        includes: ['packages/ui/**']
+        includes: ['lib/ui/**']
       },
       {
         disableLinter: true,
         includes: ['**/generated/**', '**/_generated/**', '**/module_bindings/**']
       },
       {
-        includes: ['apps/mobile/**'],
+        includes: ['expo/**'],
         rules: {
           'style/noProcessEnv': 'off'
         }
@@ -45,20 +45,20 @@ export default defineConfig({
   oxlint: {
     ignorePatterns: [
       '_generated/',
-      'apps/mobile/**/babel.config.js',
-      'apps/mobile/**/metro.config.js',
-      'apps/mobile/**/uniwind-env.d.ts',
-      'apps/mobile/**/uniwind-types.d.ts',
+      'expo/**/babel.config.js',
+      'expo/**/metro.config.js',
+      'expo/**/uniwind-env.d.ts',
+      'expo/**/uniwind-types.d.ts',
       'generated/',
       'mobile/convex/maestro/',
       'module_bindings/',
-      'packages/rnr/',
-      'packages/ui/',
+      'lib/rnr/',
+      'lib/ui/',
       '.source/'
     ],
     overrides: [
       {
-        files: ['apps/mobile/**/*.tsx', 'apps/mobile/**/*.ts'],
+        files: ['expo/**/*.tsx', 'expo/**/*.ts'],
         rules: {
           'react/no-unstable-default-props': 'off',
           'react-perf/jsx-no-new-object-as-prop': 'off'

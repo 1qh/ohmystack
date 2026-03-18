@@ -36,7 +36,7 @@ if [ ! -x "$EMULATOR" ]; then
 fi
 
 if ! lsof -i :3210 -sTCP:LISTEN >/dev/null 2>&1; then
-  bun "$SCRIPT_DIR/../../../packages/e2e/src/auth-proxy.ts" &
+  bun "$SCRIPT_DIR/../../../lib/e2e/src/auth-proxy.ts" &
   PROXY_PID=$!
   sleep 1
 fi

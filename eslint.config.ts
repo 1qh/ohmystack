@@ -5,7 +5,7 @@ import { recommended as spacetimeRecommended } from '@noboil/spacetimedb/eslint'
 export default eslint({
   append: [
     {
-      files: ['apps/**/*.test.ts'],
+      files: ['web/**/*.test.ts', 'expo/**/*.test.ts'],
       plugins: {
         jest: {
           rules: {
@@ -48,20 +48,22 @@ export default eslint({
     },
     {
       ...convexRecommended,
-      files: ['packages/be-convex/**/*.ts', 'packages/be-convex/**/*.tsx']
+      files: ['backend/convex/**/*.ts', 'backend/convex/**/*.tsx']
     },
     {
       ...spacetimeRecommended,
-      files: ['packages/be-spacetimedb/**/*.ts', 'packages/be-spacetimedb/**/*.tsx']
+      files: ['backend/spacetimedb/**/*.ts', 'backend/spacetimedb/**/*.tsx']
     },
     {
       files: [
-        'apps/**/src/**/*.ts',
-        'apps/**/src/**/*.tsx',
-        'packages/be-convex/**/*.ts',
-        'packages/be-spacetimedb/**/*.ts',
-        'packages/be-convex/**/*.tsx',
-        'packages/be-spacetimedb/**/*.tsx'
+        'web/**/src/**/*.ts',
+        'web/**/src/**/*.tsx',
+        'expo/**/src/**/*.ts',
+        'expo/**/src/**/*.tsx',
+        'backend/convex/**/*.ts',
+        'backend/spacetimedb/**/*.ts',
+        'backend/convex/**/*.tsx',
+        'backend/spacetimedb/**/*.tsx'
       ],
       ignores: ['**/env.ts'],
       rules: {
@@ -85,10 +87,10 @@ export default eslint({
     },
     {
       files: [
-        'packages/be-convex/**/*.test.ts',
-        'packages/be-convex/**/*.test.tsx',
-        'packages/be-spacetimedb/**/*.test.ts',
-        'packages/be-spacetimedb/**/*.test.tsx'
+        'backend/convex/**/*.test.ts',
+        'backend/convex/**/*.test.tsx',
+        'backend/spacetimedb/**/*.test.ts',
+        'backend/spacetimedb/**/*.test.tsx'
       ],
       rules: {
         '@typescript-eslint/require-await': 'off'
@@ -98,16 +100,17 @@ export default eslint({
   ignores: [
     '**/*.config.ts',
     '**/*.config.mjs',
-    'packages/be-agent/convex/f.test.ts',
-    'packages/be-convex/convex/edge.test.ts',
-    'packages/be-convex/convex/f.test.ts',
-    'packages/be-convex/convex/org-api.test.ts',
-    'apps/mobile/**/babel.config.js',
-    'apps/mobile/**/metro.config.js',
-    'apps/mobile/**/uniwind-env.d.ts',
-    'apps/mobile/**/uniwind-types.d.ts',
-    'packages/rnr/**',
-    'packages/ui/**',
+    'backend/agent/convex/f.test.ts',
+    'backend/convex/convex/edge.test.ts',
+    'backend/convex/convex/f.test.ts',
+    'backend/convex/convex/org-api.test.ts',
+    'expo/**/babel.config.js',
+    'expo/**/metro.config.js',
+    'expo/**/uniwind-env.d.ts',
+    'expo/**/uniwind-types.d.ts',
+    'doc/**',
+    'lib/rnr/**',
+    'lib/ui/**',
     '**/.source/**',
     '**/_generated/**',
     '**/generated/**',
@@ -117,5 +120,5 @@ export default eslint({
     '@typescript-eslint/no-magic-numbers': 'off',
     'no-magic-numbers': 'off'
   },
-  tailwind: 'packages/ui/src/styles/globals.css'
+  tailwind: 'lib/ui/src/styles/globals.css'
 })
