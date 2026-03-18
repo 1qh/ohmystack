@@ -19,7 +19,10 @@ for db in "${dbs[@]}"; do
       continue
     fi
 
-    mapfile -t flows < <(ls "$flow_dir"/*.yaml 2>/dev/null || true)
+    flows=()
+    while IFS= read -r flow; do
+      [ -n "$flow" ] && flows+=("$flow")
+    done < <(ls "$flow_dir"/*.yaml 2>/dev/null || true)
     if [ "${#flows[@]}" -eq 0 ]; then
       printf 'No flows found in %s\n' "$flow_dir"
       continue

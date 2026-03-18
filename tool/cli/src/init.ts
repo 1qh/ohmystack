@@ -3,6 +3,7 @@
 
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 
+import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
@@ -26,7 +27,15 @@ interface NoboilManifest {
   version: 1
 }
 
-const REPO = '1qh/noboil',
+const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
+  REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO_URL,
+  REPO_GIT_URL =
+    REPO_SPEC.startsWith('/') || REPO_SPEC.startsWith('file://')
+      ? REPO_SPEC
+      : REPO_SPEC.endsWith('.git')
+        ? REPO_SPEC
+        : `${REPO_SPEC}.git`,
+  REPO = REPO_SPEC,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
@@ -52,59 +61,12 @@ const REPO = '1qh/noboil',
       process.exit(1)
     }
   },
-  patchOnePackageJson = (filePath: string, lib: string, rootDir: string) => {
-    const raw = readFileSync(filePath, 'utf8')
-    let content = raw.replaceAll('"workspace:*"', '"latest"')
-
-    if (filePath !== join(rootDir, 'package.json')) {
-      const parsed = JSON.parse(content) as {
-        dependencies?: Record<string, string>
-        devDependencies?: Record<string, string>
-      }
-      if (parsed.dependencies) {
-        const cleaned: Record<string, string> = {}
-        for (const [key, val] of Object.entries(parsed.dependencies)) if (!key.startsWith('@a/')) cleaned[key] = val
-
-        cleaned[lib] ??= 'latest'
-        parsed.dependencies = cleaned
-      }
-      if (parsed.devDependencies) {
-        const cleaned: Record<string, string> = {}
-        for (const [key, val] of Object.entries(parsed.devDependencies)) if (!key.startsWith('@a/')) cleaned[key] = val
-
-        parsed.devDependencies = cleaned
-      }
-      content = `${JSON.stringify(parsed, null, 2)}\n`
-    }
-
-    if (content !== raw) writeFileSync(filePath, content)
-  },
-  walkAndPatch = (d: string, lib: string, rootDir: string) => {
-    const entries = readdirSync(d, { withFileTypes: true })
-    for (const entry of entries)
-      if (entry.name !== 'node_modules' && entry.name !== '.git') {
-        const full = join(d, entry.name)
-        if (entry.isDirectory()) walkAndPatch(full, lib, rootDir)
-        else if (entry.name === 'package.json') patchOnePackageJson(full, lib, rootDir)
-      }
-  },
   removeDirs = ({ db, dir, includeDemos, includeNative }: InitOpts) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      otherPkg = db === 'convex' ? 'spacetimedb' : 'convex',
-      otherBe = db === 'convex' ? 'spacetimedb' : 'convex',
-      toRemove = [
-        ...REMOVE_ALWAYS,
-        `lib/${otherPkg}`,
-        `backend/${otherBe}`,
-        `web/${otherTag}`,
-        `expo/${otherTag}`,
-        'backend/agent',
-        'tool/cli'
-      ]
+      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `expo/${otherTag}`, 'backend/agent', 'tool/cli']
 
-    if (!includeDemos)
-      toRemove.push(`web/${dbTag}`, `expo/${dbTag}`, `backend/${db === 'convex' ? 'convex' : 'spacetimedb'}`)
+    if (!includeDemos) toRemove.push(`web/${dbTag}`, `expo/${dbTag}`)
 
     if (db !== 'convex' || !includeNative) toRemove.push('mobile', 'desktop', 'swiftcore')
 
@@ -120,6 +82,8 @@ const REPO = '1qh/noboil',
     const pkgPath = join(dir, 'package.json'),
       raw = readFileSync(pkgPath, 'utf8'),
       pkg = JSON.parse(raw) as {
+        dependencies?: Record<string, string>
+        devDependencies?: Record<string, string>
         name?: string
         private?: boolean
         scripts?: Record<string, string>
@@ -137,9 +101,9 @@ const REPO = '1qh/noboil',
         val.includes(otherDb)
 
     pkg.name = 'my-app'
-    pkg.private = undefined
+    pkg.private = true
 
-    const workspaces: string[] = ['lib/*', 'backend/*', 'tool/*']
+    const workspaces: string[] = ['lib/*', 'backend/*']
     if (includeDemos)
       if (db === 'convex') workspaces.push('web/cvx/*', 'expo/cvx/*')
       else workspaces.push('web/stdb/*', 'expo/stdb/*')
@@ -155,6 +119,20 @@ const REPO = '1qh/noboil',
       pkg.scripts = keep
     }
 
+    const selectedLib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb',
+      nextDependencies: Record<string, string> = {}
+    if (pkg.dependencies)
+      for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
+    nextDependencies[selectedLib] = 'workspace:*'
+    pkg.dependencies = nextDependencies
+
+    if (pkg.devDependencies) {
+      const nextDevDependencies: Record<string, string> = {}
+      for (const [key, val] of Object.entries(pkg.devDependencies))
+        if (!key.startsWith('@a/')) nextDevDependencies[key] = val
+      pkg.devDependencies = nextDevDependencies
+    }
+
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   },
   scaffoldProject = ({ args, db, dir, includeDemos, includeNative }: InitOpts & { args: string[] }) => {
@@ -167,8 +145,11 @@ const REPO = '1qh/noboil',
 
     console.log(`\n${bold('Creating project...')}\n`)
     console.log(`  ${dim('scaffolding')} ${REPO}...`)
-    run('bunx', ['-y', 'degit', REPO, fullPath], process.cwd())
-    const revResult = spawnSync('git', ['ls-remote', `https://github.com/${REPO}.git`, 'HEAD'], { encoding: 'utf8' })
+    if (REPO_SPEC.startsWith('/') || REPO_SPEC.startsWith('file://')) {
+      run('git', ['clone', '--depth', '1', REPO_GIT_URL, fullPath], process.cwd())
+      rmSync(join(fullPath, '.git'), { force: true, recursive: true })
+    } else run('bunx', ['-y', 'gitpick', REPO_SPEC, fullPath, '--overwrite'], process.cwd())
+    const revResult = spawnSync('git', ['ls-remote', REPO_GIT_URL, 'HEAD'], { encoding: 'utf8' })
     if (revResult.status !== 0 || !revResult.stdout.trim()) {
       console.error(`${red('Error:')} failed to read scaffold commit hash`)
       process.exit(1)
@@ -180,8 +161,6 @@ const REPO = '1qh/noboil',
 
     console.log(`  ${dim('patching')} package.json files...`)
     patchRootPackageJson({ db, dir: fullPath, includeDemos, includeNative })
-    const lib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb'
-    walkAndPatch(fullPath, lib, fullPath)
 
     if (!args.includes('--skip-install')) {
       console.log(`  ${dim('installing')} dependencies...`)

@@ -82,7 +82,13 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
     return out
   },
   findModuleDir = (root: string): string | undefined => {
-    const candidates = [join(root, 'module'), join(root, 'src', 'module')]
+    const candidates = [
+      root,
+      join(root, 'module'),
+      join(root, 'src', 'module'),
+      join(root, 'src'),
+      join(root, 'backend', 'spacetimedb', 'src')
+    ]
     for (const candidate of candidates)
       if (existsSync(candidate)) {
         const files = listTypeScriptFiles(candidate)
@@ -578,8 +584,8 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
 
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
-      console.log(red('✗ Could not find module/ directory with SpacetimeDB schema'))
-      console.log(dim('  Run from project root or a directory containing module/'))
+      console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
+      console.log(dim('  Run from project root or a directory containing module/ or src/'))
       process.exit(1)
     }
     console.log(`${dim('module dir:')} ${moduleDir}`)

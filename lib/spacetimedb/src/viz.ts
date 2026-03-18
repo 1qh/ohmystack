@@ -44,7 +44,13 @@ const isSchemaFile = (content: string): boolean => {
     return out
   },
   findModuleDir = (root: string): string | undefined => {
-    const candidates = [join(root, 'module'), join(root, 'src', 'module')]
+    const candidates = [
+      root,
+      join(root, 'module'),
+      join(root, 'src', 'module'),
+      join(root, 'src'),
+      join(root, 'backend', 'spacetimedb', 'src')
+    ]
     for (const candidate of candidates)
       if (existsSync(candidate)) {
         const files = listTypeScriptFiles(candidate)
@@ -162,7 +168,7 @@ const isSchemaFile = (content: string): boolean => {
 
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
-      console.log(red('✗ Could not find module/ directory with SpacetimeDB schema'))
+      console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
       process.exit(1)
     }
 

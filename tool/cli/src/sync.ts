@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 
+import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -27,7 +28,11 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  REPO = '1qh/noboil',
+  DEFAULT_REPO = '1qh/noboil',
+  REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO,
+  REPO_GIT_URL =
+    REPO_SPEC.includes('://') || REPO_SPEC.startsWith('/') ? REPO_SPEC : `https://github.com/${REPO_SPEC}.git`,
+  REPO = REPO_SPEC,
   REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', 'lib/shared', '.github'],
   ROOT_CONFIG_FILES = new Set([
     'biome.jsonc',
@@ -99,42 +104,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   rmSafe = (path: string) => {
     if (existsSync(path)) rmSync(path, { force: true, recursive: true })
   },
-  patchOnePackageJson = ({ filePath, lib, rootDir }: { filePath: string; lib: string; rootDir: string }) => {
-    const raw = readFileSync(filePath, 'utf8')
-    let content = raw.replaceAll('"workspace:*"', '"latest"')
-
-    if (filePath !== join(rootDir, 'package.json')) {
-      const parsed = JSON.parse(content) as {
-        dependencies?: Record<string, string>
-        devDependencies?: Record<string, string>
-      }
-      if (parsed.dependencies) {
-        const cleaned: Record<string, string> = {}
-        for (const [key, val] of Object.entries(parsed.dependencies)) if (!key.startsWith('@a/')) cleaned[key] = val
-
-        cleaned[lib] ??= 'latest'
-        parsed.dependencies = cleaned
-      }
-      if (parsed.devDependencies) {
-        const cleaned: Record<string, string> = {}
-        for (const [key, val] of Object.entries(parsed.devDependencies)) if (!key.startsWith('@a/')) cleaned[key] = val
-
-        parsed.devDependencies = cleaned
-      }
-      content = `${JSON.stringify(parsed, null, 2)}\n`
-    }
-
-    if (content !== raw) writeFileSync(filePath, content)
-  },
-  walkAndPatch = ({ dir, lib, rootDir }: { dir: string; lib: string; rootDir: string }) => {
-    const entries = readdirSync(dir, { withFileTypes: true })
-    for (const entry of entries)
-      if (entry.name !== 'node_modules' && entry.name !== '.git') {
-        const full = join(dir, entry.name)
-        if (entry.isDirectory()) walkAndPatch({ dir: full, lib, rootDir })
-        else if (entry.name === 'package.json') patchOnePackageJson({ filePath: full, lib, rootDir })
-      }
-  },
   patchRootPackageJson = ({
     db,
     dir,
@@ -149,6 +118,8 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     const pkgPath = join(dir, 'package.json'),
       raw = readFileSync(pkgPath, 'utf8'),
       pkg = JSON.parse(raw) as {
+        dependencies?: Record<string, string>
+        devDependencies?: Record<string, string>
         name?: string
         private?: boolean
         scripts?: Record<string, string>
@@ -166,9 +137,9 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         val.includes(otherDb)
 
     pkg.name = 'my-app'
-    pkg.private = undefined
+    pkg.private = true
 
-    const workspaces: string[] = ['lib/*', 'backend/*', 'tool/*']
+    const workspaces: string[] = ['lib/*', 'backend/*']
     if (includeDemos)
       if (db === 'convex') workspaces.push('web/cvx/*', 'expo/cvx/*')
       else workspaces.push('web/stdb/*', 'expo/stdb/*')
@@ -182,6 +153,20 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
 
       pkg.scripts = keep
+    }
+
+    const selectedLib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb',
+      nextDependencies: Record<string, string> = {}
+    if (pkg.dependencies)
+      for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
+    nextDependencies[selectedLib] = 'workspace:*'
+    pkg.dependencies = nextDependencies
+
+    if (pkg.devDependencies) {
+      const nextDevDependencies: Record<string, string> = {}
+      for (const [key, val] of Object.entries(pkg.devDependencies))
+        if (!key.startsWith('@a/')) nextDevDependencies[key] = val
+      pkg.devDependencies = nextDevDependencies
     }
 
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
@@ -199,20 +184,9 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   }) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      otherPkg = db === 'convex' ? 'spacetimedb' : 'convex',
-      otherBe = db === 'convex' ? 'spacetimedb' : 'convex',
-      toRemove = [
-        ...REMOVE_ALWAYS,
-        `lib/${otherPkg}`,
-        `backend/${otherBe}`,
-        `web/${otherTag}`,
-        `expo/${otherTag}`,
-        'backend/agent',
-        'tool/cli'
-      ]
+      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `expo/${otherTag}`, 'backend/agent', 'tool/cli']
 
-    if (!includeDemos)
-      toRemove.push(`web/${dbTag}`, `expo/${dbTag}`, `backend/${db === 'convex' ? 'convex' : 'spacetimedb'}`)
+    if (!includeDemos) toRemove.push(`web/${dbTag}`, `expo/${dbTag}`)
     if (db !== 'convex' || !includeNative) toRemove.push('mobile', 'desktop', 'swiftcore')
     for (const path of toRemove) rmSafe(join(dir, path))
   },
@@ -229,8 +203,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   }) => {
     removeDirs({ db, dir: root, includeDemos, includeNative })
     patchRootPackageJson({ db, dir: root, includeDemos, includeNative })
-    const lib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb'
-    walkAndPatch({ dir: root, lib, rootDir: root })
   },
   hashFile = (filePath: string) => createHash('sha256').update(readFileSync(filePath)).digest('hex'),
   listFiles = ({ rel = '', root }: { rel?: string; root: string }) => {
@@ -305,7 +277,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
 
     try {
       runGit({
-        args: ['clone', '--depth', '1', `https://github.com/${REPO}.git`, tmpDir],
+        args: ['clone', '--depth', '1', REPO_GIT_URL, tmpDir],
         cwd,
         err: 'git clone failed during sync'
       })
