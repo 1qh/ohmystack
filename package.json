@@ -43,6 +43,7 @@
     "spacetime:up": "docker compose -f noboil.yml up spacetimedb stdb-minio -d && PATH=\"$HOME/.local/bin:$PATH\" spacetime server add local --url http://localhost:3000 --no-fingerprint --default 2>/dev/null; echo 'SpacetimeDB ready on http://localhost:3000'",
     "test": "bun --cwd packages/convex test && bun --cwd packages/spacetimedb test",
     "test:all": "bash test-all.sh",
+    "test:all:watch": "bash scripts/watch-test-all.sh",
     "test:desktop": "bash desktop/convex/test.sh",
     "test:mobile": "bash mobile/convex/maestro/run-all.sh",
     "test:mobile:fast": "bash apps/mobile/maestro/run-impacted-smoke.sh",
