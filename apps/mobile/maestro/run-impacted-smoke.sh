@@ -44,38 +44,46 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-all_targets=(
-  convex/blog
-  convex/chat
-  convex/movie
-  convex/org
-  spacetimedb/blog
-  spacetimedb/chat
-  spacetimedb/movie
-  spacetimedb/org
-)
+all_targets=()
+while IFS= read -r dir; do
+  [ -z "$dir" ] && continue
+  rel="${dir#$ROOT_DIR/apps/mobile/}"
+  db="${rel%%/*}"
+  app="${rel##*/}"
+  all_targets+=("$db/$app")
+done < <(for d in "$ROOT_DIR"/apps/mobile/*/*; do [ -d "$d/e2e" ] && printf '%s\n' "$d"; done)
 
 get_smoke_flow() {
-  case "$1/$2" in
-    convex/blog|spacetimedb/blog)
-      printf '001-auth-session-persists-across-page-navigation.yaml'
-      ;;
-    convex/chat|spacetimedb/chat)
-      printf '001-chat-shows-empty-state-for-new-chat.yaml'
-      ;;
-    convex/movie|spacetimedb/movie)
-      printf '001-movies-shows-movie-search-page.yaml'
-      ;;
-    convex/org)
-      printf '002-onboarding-back-button-is-not-visible-on-first-step.yaml'
-      ;;
-    spacetimedb/org)
-      printf '001-onboarding-shows-step-1-profile-on-initial-load.yaml'
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  e2e_dir="$ROOT_DIR/apps/mobile/$1/$2/e2e"
+  best_flow=''
+  fallback_flow=''
+
+  while IFS= read -r flow; do
+    [ -z "$flow" ] && continue
+    if [ -z "$fallback_flow" ]; then
+      fallback_flow="$flow"
+    fi
+    app_id="$(python3 - <<PY
+from pathlib import Path
+p = Path('$flow')
+for line in p.read_text().splitlines():
+    if line.startswith('appId:'):
+        print(line.split(':', 1)[1].strip())
+        break
+PY
+)"
+    case "$app_id" in
+      *.mobile.*) ;;
+      *) best_flow="$flow"; break ;;
+    esac
+  done < <(for f in "$e2e_dir"/001-*.yaml "$e2e_dir"/*.yaml; do [ -f "$f" ] && printf '%s\n' "$f"; done)
+
+  if [ -n "$best_flow" ]; then
+    printf '%s' "${best_flow##*/}"
+    return 0
+  fi
+  [ -n "$fallback_flow" ] || return 1
+  printf '%s' "${fallback_flow##*/}"
 }
 
 selected_list=''
@@ -169,6 +177,45 @@ run_maestro() {
   fi
 }
 
+get_bundle_id() {
+  app_json="$ROOT_DIR/apps/mobile/$1/$2/app.json"
+  python3 - <<PY
+import json
+from pathlib import Path
+p = Path('$app_json')
+if not p.exists():
+    raise SystemExit(1)
+data = json.loads(p.read_text())
+print(data['expo']['ios']['bundleIdentifier'])
+PY
+}
+
+materialize_flow() {
+  source_flow="$1"
+  bundle_id="$2"
+  target_flow="/tmp/noboil-fast-$(basename "$source_flow")"
+  SOURCE_FLOW="$source_flow" TARGET_FLOW="$target_flow" BUNDLE_ID="$bundle_id" python3 - <<'PY'
+from pathlib import Path
+import os
+
+source = Path(os.environ['SOURCE_FLOW'])
+target = Path(os.environ['TARGET_FLOW'])
+bundle_id = os.environ['BUNDLE_ID']
+
+lines = source.read_text().splitlines()
+updated = []
+replaced = False
+for line in lines:
+    if not replaced and line.startswith('appId:'):
+        updated.append(f'appId: {bundle_id}')
+        replaced = True
+    else:
+        updated.append(line)
+target.write_text('\n'.join(updated) + '\n')
+PY
+  printf '%s' "$target_flow"
+}
+
 start_metro() {
   pid="$(lsof -tiTCP:8081 -sTCP:LISTEN || true)"
   if [ -n "$pid" ]; then
@@ -185,6 +232,7 @@ while IFS= read -r key; do
   [ -z "$key" ] && continue
   db="${key%%/*}"
   app="${key##*/}"
+  bundle_id="$(get_bundle_id "$db" "$app")"
   flow_file="$(get_smoke_flow "$db" "$app")"
   flow_path="$ROOT_DIR/apps/mobile/$db/$app/e2e/$flow_file"
 
@@ -194,13 +242,14 @@ while IFS= read -r key; do
   fi
 
   if [ "$DRY_RUN" = true ]; then
-    printf 'DRY RUN %s/%s -> %s\n' "$db" "$app" "$flow_file"
+    printf 'DRY RUN %s/%s -> %s (%s)\n' "$db" "$app" "$flow_file" "$bundle_id"
     continue
   fi
 
   printf '\n== %s/%s smoke ==\n' "$db" "$app"
   start_metro "$db" "$app"
-  run_maestro "$flow_path"
+  temp_flow="$(materialize_flow "$flow_path" "$bundle_id")"
+  run_maestro "$temp_flow"
 done <<EOF
 $selected_list
 EOF
