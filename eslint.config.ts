@@ -116,9 +116,5 @@ export default eslint({
     '**/generated/**',
     '**/module_bindings/**'
   ],
-  rules: {
-    '@typescript-eslint/no-magic-numbers': 'off',
-    'no-magic-numbers': 'off'
-  },
   tailwind: 'lib/ui/src/styles/globals.css'
 })

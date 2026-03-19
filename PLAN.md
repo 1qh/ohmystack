@@ -127,9 +127,8 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 - [ ] 0.2 — Copy and unify `lintmax.config.ts` (merge betterspace + lazyconvex overrides)
 - [ ] 0.3 — Copy and unify `eslint.config.ts`
 - [ ] 0.4 — Set up `.github/workflows/ci.yml` (multi-job with path filtering from lazyconvex, extended for both DBs)
-- [ ] 0.5 — Copy `.vscode/` settings
-- [ ] 0.6 — Create `noboil.yml` docker compose (Convex services + SpacetimeDB + shared MinIO on different ports)
-- [ ] 0.7 — Verify `bun i && bun fix` passes on empty workspace
+- [ ] 0.5 — Create `noboil.yml` docker compose (Convex services + SpacetimeDB + shared MinIO on different ports)
+- [ ] 0.6 — Verify `bun i && bun fix` passes on empty workspace
 
 ### Phase 1: Shared Packages (no DB-specific code)
 
