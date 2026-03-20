@@ -114,6 +114,5 @@ export default eslint({
     '**/_generated/**',
     '**/generated/**',
     '**/module_bindings/**'
-  ],
-  tailwind: 'lib/ui/src/styles/globals.css'
+  ]
 })

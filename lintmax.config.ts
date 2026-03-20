@@ -24,6 +24,33 @@ export default defineConfig({
     ]
   },
   eslint: {
+    append: [
+      {
+        files: ['**/*.ts', '**/*.tsx'],
+        rules: {
+          'better-tailwindcss/no-unknown-classes': [
+            'error',
+            {
+              ignore: [
+                'group',
+                'peer',
+                'nodrag',
+                'nopan',
+                'nowheel',
+                'not-prose',
+                'is-user',
+                'is-assistant',
+                'is-user:dark',
+                'animated',
+                'node-container',
+                'origin-top-center',
+                'toaster'
+              ]
+            }
+          ]
+        }
+      }
+    ],
     ignores: [
       'backend/agent/convex/f.test.ts',
       'backend/convex/convex/edge.test.ts',
@@ -73,5 +100,6 @@ export default defineConfig({
         off: ['unicorn/filename-case']
       }
     ]
-  }
+  },
+  tailwind: 'lib/ui/src/styles/globals.css'
 })
