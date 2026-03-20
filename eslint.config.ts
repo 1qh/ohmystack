@@ -1,7 +1,6 @@
-import { eslint } from 'lintmax/eslint'
 import { recommended as convexRecommended } from '@noboil/convex/eslint'
 import { recommended as spacetimeRecommended } from '@noboil/spacetimedb/eslint'
-
+import { eslint } from 'lintmax/eslint'
 export default eslint({
   append: [
     {
