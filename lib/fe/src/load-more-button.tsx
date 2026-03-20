@@ -1,15 +1,12 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
-
 interface LoadMoreButtonProps extends Omit<ComponentProps<typeof Button>, 'children' | 'onClick'> {
   label?: string
   onLoadMore: () => void
 }
-
 const LoadMoreButton = ({ className, label = 'Load more', onLoadMore, ...props }: LoadMoreButtonProps) => (
   <Button
     {...props}
@@ -20,5 +17,4 @@ const LoadMoreButton = ({ className, label = 'Load more', onLoadMore, ...props }
     {label}
   </Button>
 )
-
 export default LoadMoreButton

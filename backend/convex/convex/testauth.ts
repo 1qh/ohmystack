@@ -5,7 +5,6 @@ import { getOrgMembership, makeOrgTestCrud, makeTestAuth } from '@noboil/convex/
 import { v } from 'convex/values'
 
 import { mutation, query } from './_generated/server'
-
 const testAuth = makeTestAuth({
     getAuthUserId: getAuthUserId as (ctx: unknown) => Promise<null | string>,
     mutation,
@@ -170,7 +169,6 @@ const testAuth = makeTestAuth({
   }),
   updateProjectAsEditorUser = updateProjectAsUser,
   toggleTaskAsEditorUser = toggleTaskAsUser
-
 export {
   acceptInviteAsUser,
   addEditorAsUser,

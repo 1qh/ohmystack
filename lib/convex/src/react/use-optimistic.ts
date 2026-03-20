@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client'
-
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'
 
 import { useMutation } from 'convex/react'
 import { useCallback, useRef, useState } from 'react'
-
 type Args<T extends MutationFn> = OptionalRestArgs<T>[0]
 type MutationFn = FunctionReference<'mutation'>
-
 interface OptimisticOptions<T extends MutationFn, R = FunctionReturnType<T>> {
   mutation: T
   onOptimistic?: (args: Args<T>) => void
@@ -16,7 +13,6 @@ interface OptimisticOptions<T extends MutationFn, R = FunctionReturnType<T>> {
   onSettled?: (args: Args<T>, error: unknown, result?: R) => void
   onSuccess?: (result: R, args: Args<T>) => void
 }
-
 /** Wraps a Convex mutation with optimistic callback, automatic rollback on error, and pending state. */
 const useOptimisticMutation = <T extends MutationFn>({
   mutation,
@@ -55,6 +51,5 @@ const useOptimisticMutation = <T extends MutationFn>({
     )
   return { error: mutationError, execute, isPending }
 }
-
 export type { OptimisticOptions }
 export { useOptimisticMutation }

@@ -2,7 +2,6 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { internalMutation } from './_generated/server'
 import { buildTaskTerminalReminder, maybeContinueOrchestratorInline } from './tasks'
-
 const FIVE_MINUTES_MS = 5 * 60 * 1000,
   INTERRUPTED_RESULT = 'Interrupted: agent run terminated before tool completion',
   INTERRUPTED_TEXT = '[Message interrupted]',
@@ -46,7 +45,6 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
           })
           timedOutCount += 1
         }
-
       for (const t of pendingTasks)
         if (t.pendingAt && t.pendingAt < staleBefore) {
           const reminder = buildTaskTerminalReminder({
@@ -73,7 +71,6 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
           })
           timedOutCount += 1
         }
-
       return { timedOutCount }
     }
   }),
@@ -108,7 +105,6 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
                   type: 'tool-call'
                 })
               else nextParts.push(p)
-
             await ctx.db.patch(m._id, {
               content: nextContent,
               isComplete: true,
@@ -121,5 +117,4 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
       return { cleanedCount }
     }
   })
-
 export { cleanupStaleMessages, timeoutStaleTasks }

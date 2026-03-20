@@ -1,9 +1,6 @@
 "use client"
-
 import * as ResizablePrimitive from "react-resizable-panels"
-
 import { cn } from "@a/ui/lib/utils"
-
 function ResizablePanelGroup({
   className,
   ...props
@@ -19,11 +16,9 @@ function ResizablePanelGroup({
     />
   )
 }
-
 function ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {
   return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />
 }
-
 function ResizableHandle({
   withHandle,
   className,
@@ -46,5 +41,4 @@ function ResizableHandle({
     </ResizablePrimitive.Separator>
   )
 }
-
 export { ResizableHandle, ResizablePanel, ResizablePanelGroup }

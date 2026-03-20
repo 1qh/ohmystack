@@ -1,7 +1,5 @@
 "use client";
-
 import type { ComponentProps } from "react";
-
 import { Button } from "@a/ui/components/button";
 import {
   Collapsible,
@@ -11,7 +9,6 @@ import {
 import { ScrollArea } from "@a/ui/components/scroll-area";
 import { cn } from "@a/ui";
 import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
-
 export interface QueueMessagePart {
   type: string;
   text?: string;
@@ -19,21 +16,17 @@ export interface QueueMessagePart {
   filename?: string;
   mediaType?: string;
 }
-
 export interface QueueMessage {
   id: string;
   parts: QueueMessagePart[];
 }
-
 export interface QueueTodo {
   id: string;
   title: string;
   description?: string;
   status?: "pending" | "completed";
 }
-
 export type QueueItemProps = ComponentProps<"li">;
-
 export const QueueItem = ({ className, ...props }: QueueItemProps) => (
   <li
     className={cn(
@@ -43,11 +36,9 @@ export const QueueItem = ({ className, ...props }: QueueItemProps) => (
     {...props}
   />
 );
-
 export type QueueItemIndicatorProps = ComponentProps<"span"> & {
   completed?: boolean;
 };
-
 export const QueueItemIndicator = ({
   completed = false,
   className,
@@ -64,11 +55,9 @@ export const QueueItemIndicator = ({
     {...props}
   />
 );
-
 export type QueueItemContentProps = ComponentProps<"span"> & {
   completed?: boolean;
 };
-
 export const QueueItemContent = ({
   completed = false,
   className,
@@ -85,11 +74,9 @@ export const QueueItemContent = ({
     {...props}
   />
 );
-
 export type QueueItemDescriptionProps = ComponentProps<"div"> & {
   completed?: boolean;
 };
-
 export const QueueItemDescription = ({
   completed = false,
   className,
@@ -106,21 +93,17 @@ export const QueueItemDescription = ({
     {...props}
   />
 );
-
 export type QueueItemActionsProps = ComponentProps<"div">;
-
 export const QueueItemActions = ({
   className,
   ...props
 }: QueueItemActionsProps) => (
   <div className={cn("flex gap-1", className)} {...props} />
 );
-
 export type QueueItemActionProps = Omit<
   ComponentProps<typeof Button>,
   "variant" | "size"
 >;
-
 export const QueueItemAction = ({
   className,
   ...props
@@ -136,18 +119,14 @@ export const QueueItemAction = ({
     {...props}
   />
 );
-
 export type QueueItemAttachmentProps = ComponentProps<"div">;
-
 export const QueueItemAttachment = ({
   className,
   ...props
 }: QueueItemAttachmentProps) => (
   <div className={cn("mt-1 flex flex-wrap gap-2", className)} {...props} />
 );
-
 export type QueueItemImageProps = ComponentProps<"img">;
-
 export const QueueItemImage = ({
   className,
   ...props
@@ -160,9 +139,7 @@ export const QueueItemImage = ({
     {...props}
   />
 );
-
 export type QueueItemFileProps = ComponentProps<"span">;
-
 export const QueueItemFile = ({
   children,
   className,
@@ -179,9 +156,7 @@ export const QueueItemFile = ({
     <span className="max-w-[100px] truncate">{children}</span>
   </span>
 );
-
 export type QueueListProps = ComponentProps<typeof ScrollArea>;
-
 export const QueueList = ({
   children,
   className,
@@ -193,10 +168,8 @@ export const QueueList = ({
     </div>
   </ScrollArea>
 );
-
 // QueueSection - collapsible section container
 export type QueueSectionProps = ComponentProps<typeof Collapsible>;
-
 export const QueueSection = ({
   className,
   defaultOpen = true,
@@ -204,10 +177,8 @@ export const QueueSection = ({
 }: QueueSectionProps) => (
   <Collapsible className={cn(className)} defaultOpen={defaultOpen} {...props} />
 );
-
 // QueueSectionTrigger - section header/trigger
 export type QueueSectionTriggerProps = ComponentProps<"button">;
-
 export const QueueSectionTrigger = ({
   children,
   className,
@@ -226,14 +197,12 @@ export const QueueSectionTrigger = ({
     </button>
   </CollapsibleTrigger>
 );
-
 // QueueSectionLabel - label content with icon and count
 export type QueueSectionLabelProps = ComponentProps<"span"> & {
   count?: number;
   label: string;
   icon?: React.ReactNode;
 };
-
 export const QueueSectionLabel = ({
   count,
   label,
@@ -249,21 +218,17 @@ export const QueueSectionLabel = ({
     </span>
   </span>
 );
-
 // QueueSectionContent - collapsible content area
 export type QueueSectionContentProps = ComponentProps<
   typeof CollapsibleContent
 >;
-
 export const QueueSectionContent = ({
   className,
   ...props
 }: QueueSectionContentProps) => (
   <CollapsibleContent className={cn(className)} {...props} />
 );
-
 export type QueueProps = ComponentProps<"div">;
-
 export const Queue = ({ className, ...props }: QueueProps) => (
   <div
     className={cn(

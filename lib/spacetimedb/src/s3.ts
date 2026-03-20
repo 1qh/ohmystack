@@ -8,9 +8,7 @@ interface S3PresignCommonOptions {
   secretAccessKey: string
   sessionToken?: string
 }
-
 type S3PresignDownloadOptions = S3PresignCommonOptions
-
 interface S3PresignedUrl {
   expiresAt: number
   headers: Record<string, string>
@@ -18,11 +16,9 @@ interface S3PresignedUrl {
   method: 'GET' | 'PUT'
   url: string
 }
-
 interface S3PresignUploadOptions extends S3PresignCommonOptions {
   contentType?: string
 }
-
 const HEX_RADIX = 16,
   YEAR_LENGTH = 4,
   SECONDS_IN_MILLISECOND = 1000,
@@ -120,14 +116,11 @@ const HEX_RADIX = 16,
         host
       },
       signedHeaderNames: string[] = ['host']
-
     if (contentType) {
       headers['content-type'] = contentType
       signedHeaderNames.push('content-type')
     }
-
     signedHeaderNames.sort((a, b) => a.localeCompare(b))
-
     const canonicalHeaders = `${signedHeaderNames.map(name => `${name}:${headers[name]}`).join('\n')}\n`,
       signedHeaders = signedHeaderNames.join(';'),
       queryParams: Record<string, string> = {
@@ -137,9 +130,7 @@ const HEX_RADIX = 16,
         'X-Amz-Expires': String(normalizedExpiry),
         'X-Amz-SignedHeaders': signedHeaders
       }
-
     if (sessionToken) queryParams['X-Amz-Security-Token'] = sessionToken
-
     const canonicalQuery = toCanonicalQuery(queryParams),
       canonicalRequest = `${method}\n${canonicalUri}\n${canonicalQuery}\n${canonicalHeaders}\n${signedHeaders}\nUNSIGNED-PAYLOAD`,
       canonicalRequestHash = await sha256Hex(canonicalRequest),
@@ -149,9 +140,7 @@ const HEX_RADIX = 16,
       finalQuery = `${canonicalQuery}&X-Amz-Signature=${signature}`,
       url = `${endpointUrl.protocol}//${host}${canonicalUri}?${finalQuery}`,
       clientHeaders: Record<string, string> = {}
-
     if (contentType) clientHeaders['content-type'] = contentType
-
     return {
       expiresAt: now.getTime() + normalizedExpiry * SECONDS_IN_MILLISECOND,
       headers: clientHeaders,
@@ -164,6 +153,5 @@ const HEX_RADIX = 16,
     makePresignedRequest({ ...options, method: 'PUT' }),
   createS3DownloadPresignedUrl = async (options: S3PresignDownloadOptions): Promise<S3PresignedUrl> =>
     makePresignedRequest({ ...options, method: 'GET' })
-
 export type { S3PresignDownloadOptions, S3PresignedUrl, S3PresignUploadOptions }
 export { createS3DownloadPresignedUrl, createS3UploadPresignedUrl }

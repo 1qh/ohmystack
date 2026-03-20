@@ -1,7 +1,6 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -9,16 +8,13 @@ appId: dev.noboil.org
 - inputText: "Status Test Project"
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Status Test Project"
     timeout: 10000
-
 - assertVisible: "Status Test Project"
 - assertVisible:
     text: "Active"
     optional: true
-
 - tapOn:
     text: "Edit"
     index: 0
@@ -27,17 +23,14 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Edit Project"
     timeout: 10000
-
 - assertVisible: "Details"
 - assertVisible:
     id: "projectNameField"
 - assertVisible:
     id: "projectStatusPicker"
-
 - tapOn:
     id: "saveProjectButton"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Status Test Project"
     timeout: 10000

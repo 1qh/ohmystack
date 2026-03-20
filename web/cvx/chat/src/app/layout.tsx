@@ -9,7 +9,6 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import Sidebar from './sidebar'
-
 const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' },
   PUBLIC_PATHS = ['/login', '/public'],
   renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider>{inner}</ConvexProvider>,
@@ -20,11 +19,8 @@ const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' 
   Layout = async ({ children }: { children: ReactNode }) => {
     const requestHeaders = await headers(),
       pathname = requestHeaders.get('x-pathname') ?? '/'
-
     if (!(isPublicPath(pathname) || (await isAuthenticated()))) redirect('/login')
-
     const showSidebar = !isPublicPath(pathname)
-
     return (
       <AuthLayout convexProvider={renderConvexProvider}>
         {showSidebar ? (
@@ -38,6 +34,5 @@ const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' 
       </AuthLayout>
     )
   }
-
 export { metadata }
 export default Layout

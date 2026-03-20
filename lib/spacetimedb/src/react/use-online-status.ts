@@ -1,8 +1,6 @@
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 'use client'
-
 import { useSyncExternalStore } from 'react'
-
 const subscribe = (onStoreChange: () => void) => {
     window.addEventListener('online', onStoreChange)
     window.addEventListener('offline', onStoreChange)
@@ -18,5 +16,4 @@ const subscribe = (onStoreChange: () => void) => {
    * @returns `true` when online, otherwise `false`.
    */
   useOnlineStatus = () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-
 export default useOnlineStatus

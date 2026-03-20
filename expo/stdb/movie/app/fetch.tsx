@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router'
 import { ArrowLeft, Search } from 'lucide-react-native'
 import { useState, useTransition } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
-
 interface MovieDetail {
   backdropPath?: string
   budget?: number
@@ -28,7 +27,6 @@ interface MovieDetail {
   voteAverage: number
   voteCount: number
 }
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
   PLAYWRIGHT_MOVIES = new Map<number, MovieDetail>([
     [
@@ -119,7 +117,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           }
         })
       }
-
     return (
       <ScrollView
         className='flex-1 bg-background'
@@ -131,7 +128,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           </Pressable>
           <Text className='text-2xl font-semibold'>Fetch by ID</Text>
         </View>
-
         <View className='gap-2' testID='movie-fetch-form'>
           <Input
             keyboardType='number-pad'
@@ -146,13 +142,11 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
             <Text>{pending ? 'Fetching...' : 'Fetch Movie'}</Text>
           </Button>
         </View>
-
         {fetchError ? (
           <Text className='text-sm text-destructive' testID='movie-error'>
             {fetchError}
           </Text>
         ) : null}
-
         {pending ? (
           <View className='gap-4' testID='movie-loading'>
             <Skeleton className='h-6 w-32' />
@@ -180,5 +174,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
       </ScrollView>
     )
   }
-
 export default Page

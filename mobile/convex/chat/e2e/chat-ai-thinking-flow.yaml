@@ -1,9 +1,7 @@
 appId: dev.noboil.chat
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -14,21 +12,17 @@ appId: dev.noboil.chat
     text: "New Chat"
     index: 0
 - waitForAnimationToEnd
-
 - tapOn: "Message..."
 - inputText: "Hello, tell me a joke"
 - tapOn:
     id: "sendButton"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Hello, tell me a joke"
     timeout: 15000
-
 - assertVisible:
     text: "Thinking..."
     optional: true
-
 - extendedWaitUntil:
     notVisible: "Thinking..."
     timeout: 30000

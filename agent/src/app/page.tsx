@@ -1,12 +1,9 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import { api } from '@a/be-agent'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
 const SessionListPage = () => {
   const sessions = useQuery(api.sessions.listSessions, {}),
     createSession = useMutation(api.sessions.createSession),
@@ -18,7 +15,6 @@ const SessionListPage = () => {
     handleNew = () => {
       createNewSession().catch(() => undefined)
     }
-
   if (!sessions) return <main className='p-8'>Loading...</main>
   if (sessions.length === 0)
     return (
@@ -28,7 +24,6 @@ const SessionListPage = () => {
         </button>
       </main>
     )
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <div className='mb-6 flex items-center justify-between'>
@@ -57,5 +52,4 @@ const SessionListPage = () => {
     </main>
   )
 }
-
 export default SessionListPage

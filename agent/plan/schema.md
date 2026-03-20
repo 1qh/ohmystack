@@ -102,20 +102,16 @@ erDiagram
     SESSION ||--o{ TODOS : has
     SESSION ||--o{ TASKS : has
     SESSION ||--o{ TOKEN_USAGE : has
-
     SESSION ||--|| THREAD_RUN_STATE : controls_thread
     SESSION ||--o{ MESSAGES : threadId
     TASKS ||--o{ MESSAGES : worker_threadId
-
     USERS ||--o{ MCP_SERVERS : owns
-
     SESSION {
       string userId
       string threadId
       string status
       number lastActivityAt
     }
-
     MESSAGES {
       string threadId
       string role
@@ -126,7 +122,6 @@ erDiagram
       id sessionId
       json metadata
     }
-
     TASKS {
       id sessionId
       string threadId
@@ -146,7 +141,6 @@ erDiagram
       string completionReminderMessageId
       boolean isBackground
     }
-
     THREAD_RUN_STATE {
       string threadId
       string status
@@ -213,14 +207,12 @@ flowchart TB
     subgraph Messages
       I1[by_threadId]
     end
-
     subgraph Session
       I3[by_threadId]
       I4[by_user_threadId]
       I5[by_user_status]
       I6[by_status]
     end
-
     subgraph Tasks
       I7[by_session]
       I8[by_parentThreadId_status]
@@ -228,12 +220,10 @@ flowchart TB
       I10[by_completionReminderMessageId]
       I11[by_status]
     end
-
     subgraph Runtime
       I12[threadRunState.by_threadId]
       I13[threadRunState.by_status]
     end
-
     Q1[list thread transcript] --> I1
     Q2[get latest message] --> I1
     Q3[owned session lookup] --> I4

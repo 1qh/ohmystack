@@ -1,7 +1,6 @@
 /* oxlint-disable react-perf/jsx-no-jsx-as-prop */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
 import type { ComponentProps } from 'react'
 
@@ -20,7 +19,6 @@ import { useId, useTransition } from 'react'
 import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
 
 import { editBlog } from '~/schema'
-
 const Publish = ({
     className,
     id,
@@ -147,7 +145,6 @@ const Publish = ({
   },
   Client = ({ blog }: { blog: Blog | null }) => {
     const { identity } = useSpacetimeDB(),
-      // eslint-disable-next-line no-restricted-properties
       isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
     if (!(blog && (isPlaywrightTest || (identity && blog.userId.isEqual(identity)))))
       return (
@@ -182,5 +179,4 @@ const Publish = ({
       </div>
     )
   }
-
 export { Client, Publish }

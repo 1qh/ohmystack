@@ -3,7 +3,6 @@
 import type { Locator } from '@playwright/test'
 
 import BasePage from '@a/e2e/base-page'
-
 class BlogPage extends BasePage {
   public async addTags(tags: string[]): Promise<void> {
     const tagsInput = this.getTagsInput()
@@ -12,7 +11,6 @@ class BlogPage extends BasePage {
     for (const tag of tags) {
       // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
       await tagsInput.fill(tag)
-
       // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
       await tagsInput.press('Enter')
     }
@@ -20,7 +18,6 @@ class BlogPage extends BasePage {
   public async clearSearch(): Promise<void> {
     await this.getSearchInput().clear()
   }
-
   public async createBlog(
     title: string,
     content: string,
@@ -95,23 +92,18 @@ class BlogPage extends BasePage {
   public getLoadMoreTrigger(): Locator {
     return this.$('load-more-trigger')
   }
-
   public getPaginationExhausted(): Locator {
     return this.$('pagination-exhausted')
   }
-
   public getSearchInput(): Locator {
     return this.$('blog-search-input').first()
   }
-
   public getTagsInput(): Locator {
     return this.page.getByRole('textbox', { name: 'Tags' })
   }
-
   public getTitleInput(): Locator {
     return this.$('blog-title', 'input')
   }
-
   public async goto(path: '/' | '/pagination' = '/'): Promise<void> {
     await this.page.goto(path)
     await this.page.locator('[data-testid="blog-list"], [data-testid="empty-state"]').first().waitFor()
@@ -120,5 +112,4 @@ class BlogPage extends BasePage {
     await this.getSearchInput().fill(query)
   }
 }
-
 export default BlogPage

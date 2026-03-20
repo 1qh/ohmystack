@@ -10,7 +10,6 @@ const ACTIVE_ORG_COOKIE = 'activeOrgId',
     new Promise<void>(resolve => {
       setTimeout(resolve, ms)
     })
-
 export {
   ACTIVE_ORG_COOKIE,
   ACTIVE_ORG_SLUG_COOKIE,

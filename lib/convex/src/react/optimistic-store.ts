@@ -1,17 +1,13 @@
 'use client'
-
 import { createContext, use, useRef, useSyncExternalStore } from 'react'
-
 /** The kind of mutation: create, update, or delete. */
 type MutationType = 'create' | 'delete' | 'update'
-
 interface OptimisticStore {
   add: (entry: PendingMutation) => void
   getSnapshot: () => PendingMutation[]
   remove: (tempId: string) => void
   subscribe: (cb: () => void) => () => void
 }
-
 /** Represents a mutation that has been optimistically applied but not yet confirmed by the server. */
 interface PendingMutation {
   args: Record<string, unknown>
@@ -20,12 +16,10 @@ interface PendingMutation {
   timestamp: number
   type: MutationType
 }
-
 const noop = () => {
   /* No-op */
 }
 let counter = 0
-
 const makeTempId = () => {
     counter += 1
     return `__optimistic_${counter}_${Date.now()}`
@@ -67,6 +61,5 @@ const makeTempId = () => {
       store ? store.getSnapshot : () => emptyRef.current
     )
   }
-
 export type { MutationType, OptimisticStore, PendingMutation }
 export { createOptimisticStore, makeTempId, OptimisticContext, useOptimisticStore, usePendingMutations }

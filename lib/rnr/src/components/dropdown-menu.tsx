@@ -8,19 +8,12 @@ import * as React from 'react'
 import { Platform, type StyleProp, StyleSheet, Text, type TextProps, View, type ViewStyle } from 'react-native'
 import { FadeIn } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 const DropdownMenu = DropdownMenuPrimitive.Root
-
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
-
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
-
 const DropdownMenuPortal = DropdownMenuPrimitive.Portal
-
 const DropdownMenuSub = DropdownMenuPrimitive.Sub
-
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
-
 function DropdownMenuSubTrigger({
   className,
   inset,
@@ -55,7 +48,6 @@ function DropdownMenuSubTrigger({
     </TextClassContext.Provider>
   )
 }
-
 function DropdownMenuSubContent({
   className,
   ...props
@@ -75,9 +67,7 @@ function DropdownMenuSubContent({
     </NativeOnlyAnimatedView>
   )
 }
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function DropdownMenuContent({
   className,
   overlayClassName,
@@ -124,7 +114,6 @@ function DropdownMenuContent({
     </DropdownMenuPrimitive.Portal>
   )
 }
-
 function DropdownMenuItem({
   className,
   inset,
@@ -161,7 +150,6 @@ function DropdownMenuItem({
     </TextClassContext.Provider>
   )
 }
-
 function DropdownMenuCheckboxItem({
   className,
   children,
@@ -192,7 +180,6 @@ function DropdownMenuCheckboxItem({
     </TextClassContext.Provider>
   )
 }
-
 function DropdownMenuRadioItem({
   className,
   children,
@@ -223,7 +210,6 @@ function DropdownMenuRadioItem({
     </TextClassContext.Provider>
   )
 }
-
 function DropdownMenuLabel({
   className,
   inset,
@@ -240,18 +226,15 @@ function DropdownMenuLabel({
     />
   )
 }
-
 function DropdownMenuSeparator({
   className,
   ...props
 }: DropdownMenuPrimitive.SeparatorProps & React.RefAttributes<DropdownMenuPrimitive.SeparatorRef>) {
   return <DropdownMenuPrimitive.Separator className={cn('bg-border -mx-1 my-1 h-px', className)} {...props} />
 }
-
 function DropdownMenuShortcut({ className, ...props }: TextProps & React.RefAttributes<Text>) {
   return <Text className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)} {...props} />
 }
-
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,

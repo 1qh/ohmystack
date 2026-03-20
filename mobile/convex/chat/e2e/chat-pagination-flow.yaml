@@ -1,9 +1,7 @@
 appId: dev.noboil.chat
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -24,7 +22,6 @@ appId: dev.noboil.chat
     timeout: 15000
 - back
 - waitForAnimationToEnd
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -45,7 +42,6 @@ appId: dev.noboil.chat
     timeout: 15000
 - back
 - waitForAnimationToEnd
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -66,24 +62,19 @@ appId: dev.noboil.chat
     timeout: 15000
 - back
 - waitForAnimationToEnd
-
 - assertVisible: "Chats"
-
 - swipe:
     direction: UP
     duration: 500
-
 - swipe:
     direction: DOWN
     duration: 500
-
 - scrollUntilVisible:
     element:
       id: "loadMore"
     direction: DOWN
     timeout: 5000
     optional: true
-
 - extendedWaitUntil:
     visible: "Load More"
     timeout: 5000

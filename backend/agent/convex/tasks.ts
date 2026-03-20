@@ -8,7 +8,6 @@ import type { MutationCtx } from './_generated/server'
 import { q } from '../lazy'
 import { internalMutation } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
-
 const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: Id<'tasks'>; threadId: string }, undefined>(
     'agentsNode:runWorker'
   ),
@@ -234,7 +233,6 @@ const runWorkerRef = makeFunctionReference<'action', { prompt: string; taskId: I
       return task
     }
   })
-
 export {
   buildTaskCompletionReminder,
   buildTaskTerminalReminder,

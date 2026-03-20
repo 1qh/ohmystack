@@ -13,9 +13,7 @@ import { useRouter } from 'expo-router'
 import { ArrowLeft, Search } from 'lucide-react-native'
 import { useState, useTransition } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
-
 type Movie = FunctionReturnType<typeof api.movie.load>
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
   TMDB_BACKDROP = 'https://image.tmdb.org/t/p/w780',
   formatMoney = (n: null | number) => (n ? `$${(n / 1_000_000).toFixed(1)}M` : 'N/A'),
@@ -29,7 +27,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           ID: {movie.tmdb_id}
         </Text>
       </View>
-
       {movie.backdrop_path ? (
         <Image
           className='h-44 w-full rounded-lg'
@@ -37,7 +34,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           source={{ uri: `${TMDB_BACKDROP}${movie.backdrop_path}` }}
         />
       ) : null}
-
       <Card className='gap-0 py-0'>
         <CardContent className='gap-4 p-4'>
           <View className='flex-row gap-4'>
@@ -110,7 +106,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           }
         })
       }
-
     return (
       <ScrollView
         className='flex-1 bg-background'
@@ -127,7 +122,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
           </Pressable>
           <Text className='text-2xl font-semibold'>Fetch by ID</Text>
         </View>
-
         <View className='gap-2' testID='movie-fetch-form'>
           <Input
             keyboardType='number-pad'
@@ -143,17 +137,14 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
             <Text>{pending ? 'Fetching...' : 'Fetch Movie'}</Text>
           </Button>
         </View>
-
         <Text className='text-xs text-muted-foreground'>
           Try: 27205 (Inception), 550 (Fight Club), 680 (Pulp Fiction), 155 (The Dark Knight)
         </Text>
-
         {fetchError ? (
           <Text className='text-sm text-destructive' testID='movie-error'>
             {fetchError}
           </Text>
         ) : null}
-
         {pending ? (
           <View className='gap-4' testID='movie-loading'>
             <Skeleton className='h-6 w-32' />
@@ -174,5 +165,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
       </ScrollView>
     )
   }
-
 export default Page

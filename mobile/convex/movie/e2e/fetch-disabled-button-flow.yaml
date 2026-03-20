@@ -5,14 +5,11 @@ appId: dev.noboil.movie
 - assertVisible: "Fetch by ID"
 - assertVisible: "TMDB ID (e.g. 27205)"
 - assertVisible: "Try: 27205 (Inception), 550 (Fight Club), 680 (Pulp Fiction)"
-
 - assertVisible:
     text: "Fetch"
     enabled: false
-
 - tapOn: "TMDB ID (e.g. 27205)"
 - inputText: "27205"
-
 - tapOn: "Fetch"
 - extendedWaitUntil:
     visible: "Inception"

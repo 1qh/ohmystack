@@ -2,9 +2,7 @@
 
 ## Scope
 
-This document extracts and rewrites the MCP integration plan for the agent app.
-
-Reference docs and code:
+This document extracts and rewrites the MCP integration plan for the agent app. Reference docs and code:
 
 - MCP spec: https://modelcontextprotocol.io
 - oh-my-openagent MCP references: `src/mcp/`
@@ -25,9 +23,7 @@ Discovery flow:
 1. Resolve requesting user from thread ownership.
 2. List enabled servers for that user.
 3. For each server, call `ensureServerToolsCache`.
-4. Return flattened tool list (`serverName`, `toolName`, `description`, `inputSchema`) plus per-server errors.
-
-Cache policy:
+4. Return flattened tool list (`serverName`, `toolName`, `description`, `inputSchema`) plus per-server errors. Cache policy:
 
 - `cachedTools` + `cachedAt` are persisted on each server row.
 - TTL is 5 minutes.
@@ -59,9 +55,7 @@ Call flow:
 5. Parse `toolArgs` JSON.
 6. Call `client.callTool({ name, arguments })`.
 7. On `tool_not_found` or `schema_mismatch`, refresh cache and retry once.
-8. Return structured success or structured error payload.
-
-Retry behavior:
+8. Return structured success or structured error payload. Retry behavior:
 
 - Single retry is cache-refresh driven.
 - Retry uses active live connection after refresh.
@@ -74,7 +68,6 @@ sequenceDiagram
   participant A as callToolOwned action
   participant C as MCP Client
   participant DB as mcpServers cache
-
   O->>T: mcpCallTool(serverName, toolName, toolArgs)
   T->>A: runAction(...)
   A->>DB: resolve owned server + config
@@ -106,9 +99,7 @@ sequenceDiagram
 
 Save-time hostname validation (`validateMcpUrl`) is a first line of defense but insufficient alone. A public hostname can resolve to private IPs after save, or redirect to internal targets at call time. Call-time checks resolve A/AAAA records before connecting, block private/loopback/link-local/ULA/metadata IPs, and disable HTTP redirects.
 
-- If `http:` (non-TLS) is allowed for local dev, disallow `authHeaders` on `http:` URLs outside test mode
-
-This hardens the SSRF boundary from “hostname string check” to “resolved IP check at connection time.”
+- If `http:` (non-TLS) is allowed for local dev, disallow `authHeaders` on `http:` URLs outside test mode This hardens the SSRF boundary from “hostname string check” to “resolved IP check at connection time.”
 
 ### Auth Header Redaction
 
@@ -133,7 +124,6 @@ flowchart TD
   B -->|allowed| D[Persist server row]
   D --> E[authHeaders stored write-only]
   E --> F[afterRead redacts authHeaders]
-
   G[mcpCallTool] --> H[30s connect timeout race]
   H --> I[30s call timeout race]
   I --> J[Structured success/error]
@@ -172,9 +162,7 @@ flowchart LR
 All MCP tool calls return model-readable structured payloads:
 
 - Success: `{ ok: true, content }`
-- Failure: `{ ok: false, error, message?, retryable }`
-
-This keeps failures actionable for the model while preserving UI/debug visibility.
+- Failure: `{ ok: false, error, message?, retryable }` This keeps failures actionable for the model while preserving UI/debug visibility.
 
 ## Tests
 

@@ -7,9 +7,7 @@ import type { CrudConfig, CrudExports, CrudFieldBuilders, CrudFieldValues, CrudP
 
 import { enforceRateLimit } from './helpers'
 import { applyPatch, getOwnedRow, makeError, makeOptionalFields, pickPatch, timestampEquals } from './reducer-utils'
-
 type UpdateArgs<F extends CrudFieldBuilders, Id> = Partial<CrudFieldValues<F>> & { expectedUpdatedAt?: Timestamp; id: Id }
-
 /** Creates create/update/remove reducers for owned tables.
  * @param spacetimedb - SpacetimeDB reducer factory
  * @param config - CRUD reducer configuration
@@ -51,9 +49,7 @@ const makeCrud = <
       const field = optionalFields[key]
       if (field) updateParams[key] = field as TypeBuilder<unknown, AlgebraicTypeType>
     }
-
     if (expectedUpdatedAtField) updateParams.expectedUpdatedAt = expectedUpdatedAtField.optional()
-
     const createReducer = spacetimedb.reducer({ name: createName }, fields, (ctx, args) => {
         if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
         const typedArgs = args as CrudFieldValues<F>,
@@ -85,17 +81,14 @@ const makeCrud = <
             table: table as unknown as TableLike<OwnedRow>,
             tableName
           })
-
         if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
           throw makeError('CONFLICT', `${tableName}:update`)
-
         let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
         if (hooks?.beforeUpdate)
           patch = hooks.beforeUpdate(hookCtx, {
             patch: patch as unknown as Partial<CrudFieldValues<F>>,
             prev: row as unknown as Row
           }) as unknown as Record<string, unknown>
-
         const prev = row as unknown as Row,
           next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
         if (hooks?.afterUpdate)
@@ -118,11 +111,9 @@ const makeCrud = <
             table: table as unknown as TableLike<OwnedRow>,
             tableName
           })
-
         if (hooks?.beforeDelete)
           /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
-
         if (options?.softDelete) {
           const nextRecord = {
             ...(row as unknown as Record<string, unknown>),
@@ -134,7 +125,6 @@ const makeCrud = <
           const deleted = pk.delete(id)
           if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
         }
-
         if (hooks?.afterDelete)
           /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.afterDelete(hookCtx, { row: row as unknown as Row })
@@ -144,7 +134,6 @@ const makeCrud = <
         [rmName]: rmReducer,
         [updateName]: updateReducer
       } as unknown as CrudExports['exports']
-
     return {
       exports: exportsRecord
     }
@@ -154,5 +143,4 @@ const makeCrud = <
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }
   ): { foreignKey: string; table: string } => config
-
 export { makeCrud, ownedCascade }

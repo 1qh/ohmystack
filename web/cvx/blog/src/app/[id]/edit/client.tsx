@@ -1,5 +1,4 @@
 'use client'
-
 import type { Preloaded } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import type { ComponentProps } from 'react'
@@ -19,7 +18,6 @@ import { createElement, useId, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { editBlog } from '~/schema'
-
 const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> & { id: string; published: boolean }) => {
     const update = useMutation(api.blog.update),
       [pending, go] = useTransition(),
@@ -133,7 +131,6 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
       },
       createElement(Settings, { className: 'size-8 stroke-1 p-1.5 group-hover:block' })
     )
-
     return (
       <div data-testid='edit-blog-page'>
         <div className='mb-3 flex justify-between'>
@@ -151,5 +148,4 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
       </div>
     )
   }
-
 export { Client, Publish }

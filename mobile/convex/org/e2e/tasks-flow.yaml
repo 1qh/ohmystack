@@ -1,7 +1,6 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -9,26 +8,21 @@ appId: dev.noboil.org
 - inputText: "Task Test Project"
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Task Test Project"
     timeout: 10000
 - tapOn: "Task Test Project"
 - waitForAnimationToEnd
-
 - assertVisible: "Tasks"
 - assertVisible: "New task..."
-
 - tapOn: "New task..."
 - inputText: "First test task"
-
 - tapOn:
     id: "addTaskButton"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "First test task"
     timeout: 10000
-
 - tapOn: "New task..."
 - inputText: "Second test task"
 - tapOn:
@@ -37,7 +31,6 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Second test task"
     timeout: 10000
-
 - tapOn: "New task..."
 - inputText: "Third test task"
 - tapOn:
@@ -46,16 +39,13 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Third test task"
     timeout: 10000
-
 - assertVisible: "First test task"
 - assertVisible: "Second test task"
 - assertVisible: "Third test task"
-
 - tapOn:
     id: "toggleTask"
     index: 0
 - waitForAnimationToEnd
-
 - hideKeyboard
 - back
 - extendedWaitUntil:

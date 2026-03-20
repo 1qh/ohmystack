@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -12,7 +11,6 @@ import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { joinRequest } from '~/schema'
-
 const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const { slug } = use(params),
     router = useRouter(),
@@ -44,17 +42,14 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
       resetOnSuccess: true,
       schema: joinRequest
     })
-
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!orgs) return <Skeleton className='mx-auto h-64 max-w-md' />
   if (!org) return <div className='text-center text-muted-foreground'>Organization not found</div>
-
   if (membership) {
     setActiveOrgCookieClient({ orgId: `${org.id}`, slug })
     router.push('/dashboard')
     return null
   }
-
   return (
     <div className='mx-auto max-w-md py-12'>
       <Card>
@@ -98,5 +93,4 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
     </div>
   )
 }
-
 export default JoinPage

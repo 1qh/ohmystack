@@ -1,7 +1,5 @@
 'use client'
-
 import { useCallback, useRef, useState } from 'react'
-
 interface OptimisticOptions<A, R = void> {
   mutate: (args: A) => Promise<R>
   onOptimistic?: (args: A) => void
@@ -9,7 +7,6 @@ interface OptimisticOptions<A, R = void> {
   onSettled?: (args: A, error: unknown, result?: R) => void
   onSuccess?: (result: R, args: A) => void
 }
-
 /**
  * Executes a mutation with optimistic callbacks and rollback support.
  * @param options Mutation function and optimistic lifecycle callbacks.
@@ -49,9 +46,7 @@ const useOptimisticMutation = <A, R = void>({
       },
       [mutate, onOptimistic, onRollback, onSettled, onSuccess]
     )
-
   return { error: mutationError, execute, isPending }
 }
-
 export type { OptimisticOptions }
 export { useOptimisticMutation }

@@ -1,36 +1,29 @@
 "use client"
-
 import * as React from "react"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
-
 import { cn } from "@a/ui"
 import { Button } from "@a/ui/components/button"
-
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
-
 function DialogTrigger({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
-
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
-
 function DialogClose({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Close>) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
-
 function DialogOverlay({
   className,
   ...props
@@ -46,7 +39,6 @@ function DialogOverlay({
     />
   )
 }
-
 function DialogContent({
   className,
   children,
@@ -80,7 +72,6 @@ function DialogContent({
     </DialogPortal>
   )
 }
-
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -90,7 +81,6 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     />
   )
 }
-
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -117,7 +107,6 @@ function DialogFooter({
     </div>
   )
 }
-
 function DialogTitle({
   className,
   ...props
@@ -130,7 +119,6 @@ function DialogTitle({
     />
   )
 }
-
 function DialogDescription({
   className,
   ...props
@@ -143,7 +131,6 @@ function DialogDescription({
     />
   )
 }
-
 export {
   Dialog,
   DialogClose,

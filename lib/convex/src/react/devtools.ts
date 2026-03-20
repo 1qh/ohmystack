@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ConvexErrorData } from '../server/helpers'
 
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
-
 /** Tracks cache entry access statistics for the devtools panel. */
 interface DevCacheEntry {
   hitCount: number
@@ -15,7 +14,6 @@ interface DevCacheEntry {
   stale: boolean
   table: string
 }
-
 /** Represents a captured error in the devtools error log. */
 interface DevError {
   data?: ConvexErrorData
@@ -24,7 +22,6 @@ interface DevError {
   message: string
   timestamp: number
 }
-
 /** Tracks a mutation's lifecycle (pending → success/error) in devtools. */
 interface DevMutation {
   args: string
@@ -35,7 +32,6 @@ interface DevMutation {
   startedAt: number
   status: 'error' | 'pending' | 'success'
 }
-
 /** Tracks a real-time subscription's lifecycle and latency in devtools. */
 interface DevSubscription {
   args: string
@@ -51,7 +47,6 @@ interface DevSubscription {
   status: 'error' | 'loaded' | 'loading'
   updateCount: number
 }
-
 const MAX_ERRORS = 50,
   MAX_MUTATIONS = 100,
   /** Threshold in ms above which a subscription is considered slow. */
@@ -62,10 +57,8 @@ const MAX_ERRORS = 50,
   mutationStore: DevMutation[] = [],
   cacheStore = new Map<string, DevCacheEntry>(),
   subStore = new Map<number, DevSubscription>()
-
 let nextId = 1,
   listeners: (() => void)[] = []
-
 const notify = () => {
     for (const fn of listeners) fn()
   },
@@ -212,11 +205,9 @@ const notify = () => {
         push: pushError,
         subscriptions: [...subStore.values()]
       }),
-
       []
     )
   }
-
 export type { DevCacheEntry, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

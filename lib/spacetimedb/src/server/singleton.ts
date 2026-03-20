@@ -9,16 +9,13 @@ import type {
 } from './types/singleton'
 
 import { applyPatch, identityEquals, makeError, makeOptionalFields, pickPatch } from './reducer-utils'
-
 interface SingletonRow {
   createdAt: Timestamp
   updatedAt: Timestamp
   userId: Identity
 }
-
 const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): null | SingletonRow => {
     for (const row of table) if (identityEquals(row.userId, sender)) return row
-
     return null
   },
   /** Generates get and upsert reducers for a per-user singleton table. */
@@ -45,12 +42,10 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
       upsertParams: SingletonFieldBuilders = {},
       optionalFields = makeOptionalFields(fields),
       optionalKeys = Object.keys(optionalFields)
-
     for (const key of optionalKeys) {
       const field = optionalFields[key]
       if (field) upsertParams[key] = field
     }
-
     const getReducer = spacetimedb.reducer({ name: getName }, {}, ctx => {
         const table = tableAccessor(ctx.db),
           row = findByUser(table as unknown as SingletonTableLike<SingletonRow>, ctx.sender)
@@ -65,7 +60,6 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
           table = tableAccessor(ctx.db),
           existing = findByUser(table as unknown as SingletonTableLike<SingletonRow>, ctx.sender),
           patchRecord = typedArgs as Record<string, unknown>
-
         if (existing) {
           if (hooks?.beforeUpdate)
             /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
@@ -105,10 +99,8 @@ const findByUser = (table: SingletonTableLike<SingletonRow>, sender: Identity): 
         [getName]: getReducer,
         [upsertName]: upsertReducer
       } as unknown as SingletonExports['exports']
-
     return {
       exports: exportsRecord
     }
   }
-
 export { makeSingletonCrud }

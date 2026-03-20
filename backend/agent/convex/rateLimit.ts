@@ -1,7 +1,6 @@
 import { defineRateLimits } from 'convex-helpers/server/rateLimit'
 
 import type { MutationCtx } from './_generated/server'
-
 const RATE_LIMITS = {
     delegation: { kind: 'token bucket' as const, period: 60_000, rate: 10 },
     mcpCall: { kind: 'token bucket' as const, period: 60_000, rate: 20 },
@@ -29,5 +28,4 @@ const RATE_LIMITS = {
       throw new Error(`rate_limited:${name}:${retryAt}`)
     }
   }
-
 export { checkRateLimit, enforceRateLimit, rateLimit, resetRateLimit }

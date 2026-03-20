@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail, formatExpiry } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -11,14 +10,11 @@ import { useOrgQuery } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
 import { Copy, Trash } from 'lucide-react'
 import { toast } from 'sonner'
-
 const PendingInvites = () => {
   const invites = useOrgQuery(api.org.pendingInvites),
     revokeInvite = useMutation(api.org.revokeInvite)
-
   if (invites === undefined) return <Skeleton className='h-20 w-full' />
   if (invites.length === 0) return null
-
   const handleCopy = (token: string) => {
       const url = `${globalThis.location.origin}/invite/${token}`
       navigator.clipboard
@@ -31,7 +27,6 @@ const PendingInvites = () => {
         .then(() => toast.success('Invite revoked'))
         .catch(fail)
     }
-
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Pending Invites</h3>
@@ -67,5 +62,4 @@ const PendingInvites = () => {
     </div>
   )
 }
-
 export default PendingInvites

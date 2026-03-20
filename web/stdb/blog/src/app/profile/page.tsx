@@ -1,6 +1,5 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { FieldGroup } from '@a/ui/field'
 import { Spinner } from '@a/ui/spinner'
@@ -9,11 +8,9 @@ import Link from 'next/link'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { profileSchema } from '~/schema'
-
 const Page = () => {
   const [profiles, isReady] = useTable(tables.blogProfile),
     { identity } = useSpacetimeDB(),
-    // eslint-disable-next-line no-restricted-properties
     isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
     profile = profiles.find(p => identity && p.userId.isEqual(identity)) ?? null,
     shouldShowContent = isReady || isPlaywright,
@@ -34,14 +31,12 @@ const Page = () => {
           : { displayName: '', notifications: true, theme: 'system' as const }
         : undefined
     })
-
   if (!shouldShowContent)
     return (
       <div className='flex min-h-40 items-center justify-center'>
         <Spinner />
       </div>
     )
-
   return (
     <div className='space-y-4' data-testid='profile-page'>
       <Link className='rounded-lg px-3 py-2 hover:bg-muted' data-testid='profile-back' href='/'>
@@ -82,5 +77,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

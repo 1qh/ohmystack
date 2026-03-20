@@ -34,7 +34,6 @@ import { composeMiddleware } from './middleware'
 import { makeOrg } from './org'
 import { makeOrgCrud } from './org-crud'
 import { makeSingletonCrud } from './singleton'
-
 const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined): GlobalHooks | undefined => {
     if (!(a || b)) return
     if (!a) return b
@@ -323,5 +322,4 @@ const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined
       user = { me: q({ handler: (c: Rec) => c.user }) }
     return { cacheCrud, childCrud, cm, cq, crud, m, org, orgCrud, pq, q, singletonCrud, uniqueCheck, user }
   }
-
 export { setup }

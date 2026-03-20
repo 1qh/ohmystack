@@ -3,7 +3,6 @@ appId: dev.noboil.movie
 - launchApp
 - tapOn: "Fetch"
 - assertVisible: "Fetch by ID"
-
 - tapOn: "TMDB ID (e.g. 27205)"
 - inputText: "27205"
 - tapOn: "Fetch"
@@ -14,19 +13,16 @@ appId: dev.noboil.movie
     visible: "Inception"
     timeout: 15000
 - assertVisible: "Inception"
-
 - extendedWaitUntil:
     visible: "Cache Miss → Fetched"
     timeout: 5000
     optional: true
-
 - swipe:
     direction: DOWN
     duration: 500
 - swipe:
     direction: DOWN
     duration: 500
-
 - tapOn: "27205"
 - eraseText: 50
 - inputText: "27205"
@@ -34,19 +30,16 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Inception"
     timeout: 15000
-
 - extendedWaitUntil:
     visible: ".*Cache (Hit|Miss → Fetched).*"
     timeout: 15000
     optional: true
-
 - swipe:
     direction: DOWN
     duration: 500
 - swipe:
     direction: DOWN
     duration: 500
-
 - tapOn: "27205"
 - eraseText: 50
 - inputText: "550"
@@ -55,7 +48,6 @@ appId: dev.noboil.movie
     visible: "Fight Club"
     timeout: 15000
 - assertVisible: "Fight Club"
-
 - extendedWaitUntil:
     visible: "Cache Miss → Fetched"
     timeout: 5000

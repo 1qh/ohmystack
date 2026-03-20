@@ -25,7 +25,6 @@ import {
   unwrapZod
 } from '../zod'
 import { defaultOnError } from './use-mutate'
-
 type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
 /** Metadata describing how a form field should be rendered. */
 interface FieldMeta {
@@ -34,7 +33,6 @@ interface FieldMeta {
   max?: number
   title?: string
 }
-
 /** Lookup table of field metadata keyed by field name. */
 type FieldMetaMap = Record<string, FieldMeta>
 interface FormToastOption {
@@ -42,7 +40,6 @@ interface FormToastOption {
   success?: string
 }
 type ShapeKey<S extends ZodObject<ZodRawShape>> = keyof S['shape'] & string
-
 type Widen<T> = T extends string
   ? string
   : T extends number
@@ -54,7 +51,6 @@ type Widen<T> = T extends string
         : T extends Record<string, unknown>
           ? { [K in keyof T]: Widen<T[K]> }
           : T
-
 const resolveFormToast = ({
     onError,
     onSuccess,
@@ -138,7 +134,6 @@ const resolveFormToast = ({
     for (const key of Object.keys(resolved))
       if (!hasShapeKey(schema.shape, key)) throw new Error(`Form values include unknown key: ${key}`)
   }
-
 type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   T,
   undefined,
@@ -153,14 +148,12 @@ type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   undefined,
   unknown
 >
-
 /** Conflict payload returned by optimistic concurrency checks. */
 interface ConflictData<T = unknown> {
   code: 'CONFLICT'
   current?: T
   incoming?: T
 }
-
 /** Return shape produced by Betterspace `useForm`. */
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
   conflict: ConflictData<T> | null
@@ -176,7 +169,6 @@ interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodR
   schema: S
   watch: <K extends keyof T>(name: K) => T[K]
 }
-
 const submitError = (error: unknown): Error => new Error(getErrorMessage(error), { cause: error }),
   handleConflict = <T = unknown>(error: unknown): ConflictData<T> | null => {
     if (getErrorCode(error) !== 'CONFLICT') return null
@@ -223,13 +215,11 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       [lastSaved, setLastSaved] = useState<null | number>(null),
       vRef = useRef(resolved),
       autoSaveTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
-
     vRef.current = resolved
     ensureKnownValueKeys(resolved, schema)
     const meta = useMemo(() => buildMeta(schema), [schema]),
       instance = useTanStackForm({
         defaultValues: resolved,
-
         onSubmit: async ({ value }) => {
           setEr(null)
           setFieldErrors({})
@@ -264,7 +254,6 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       storeState = useStore(instance.store, s => ({ isDirty: s.isDirty, isSubmitting: s.isSubmitting, values: s.values })),
       { isDirty, isSubmitting } = storeState,
       watchedValues = storeState.values
-
     useEffect(() => {
       if (!(autoSave?.enabled && isDirty)) return
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
@@ -361,6 +350,5 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
       values
     })
   }
-
 export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn, FormToastOption, Widen }
 export { buildMeta, getMeta, resolveFormToast, useForm, useFormMutation }

@@ -1,23 +1,18 @@
 'use client'
-
 import { useCallback } from 'react'
 
 import { extractErrorData, getErrorMessage, getFirstFieldError, handleError } from '../server/helpers'
 import { noop } from './list-utils'
-
 type ErrorCode = ErrorData['code']
 type ErrorData = NonNullable<ReturnType<typeof extractErrorData>>
 type ErrorHandlers = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
   default?: (error: unknown) => void
 }
-
 interface ErrorToastOptions {
   handlers?: ErrorHandlers
   toast: ToastFn
 }
-
 type ToastFn = (message: string) => void
-
 /**
  * Creates a stable callback that toasts Betterspace errors.
  * @param options Toast function plus optional code-specific handlers.
@@ -48,7 +43,6 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
       ...overrides,
       default: noop
     }
-
     return (error: unknown) => {
       const data = extractErrorData(error),
         code = data?.code,
@@ -80,6 +74,5 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
     }
     return false
   }
-
 export type { ErrorToastOptions, ToastFn }
 export { makeErrorHandler, toastFieldError, useErrorToast }

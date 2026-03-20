@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return */
 /* eslint-disable no-alert */
 'use client'
-
 import type { Id } from '@a/be-convex/model'
 
 import { api } from '@a/be-convex'
@@ -20,7 +19,6 @@ import { use } from 'react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; taskCount: number }) => {
     const router = useRouter(),
       { org } = useOrg(),
@@ -51,9 +49,7 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
           })
           .catch(fail)
       }
-
     if (!project) return <Skeleton className='h-40' />
-
     return (
       <Form
         className='space-y-4'
@@ -83,11 +79,8 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
       project = useOrgQuery(api.project.read, { id: projectId }),
       tasks = useOrgQuery(api.task.byProject, { projectId }),
       editorsList = useOrgQuery(api.project.editors, { projectId })
-
     if (!(project && tasks !== undefined && me && editorsList)) return <Skeleton className='h-40' />
-
     const canEditProject = canEditResource({ editorsList, isAdmin, resource: project, userId: me._id })
-
     return (
       <PermissionGuard
         backHref={`/projects/${projectId}`}
@@ -107,5 +100,4 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
       </PermissionGuard>
     )
   }
-
 export default EditProjectPage

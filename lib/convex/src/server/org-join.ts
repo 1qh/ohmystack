@@ -8,7 +8,6 @@ import type { DbLike, FilterLike, Mb, OrgUserLike, Qb, Rec } from './types'
 import { idx } from './bridge'
 import { err, time } from './helpers'
 import { getOrgMember, requireOrgRole } from './org-crud'
-
 /** Shape of a join request item returned by pendingJoinRequests, including the request doc and associated user. */
 interface JoinRequestItem {
   request: {
@@ -22,7 +21,6 @@ interface JoinRequestItem {
   }
   user: null | OrgUserLike
 }
-
 const makeJoinHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
   const requestJoin = m({
       args: { message: z.string().optional(), orgId: zid('org') },
@@ -140,6 +138,5 @@ const makeJoinHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
     })
   return { approveJoinRequest, cancelJoinRequest, myJoinRequest, pendingJoinRequests, rejectJoinRequest, requestJoin }
 }
-
 export type { JoinRequestItem }
 export { makeJoinHandlers }

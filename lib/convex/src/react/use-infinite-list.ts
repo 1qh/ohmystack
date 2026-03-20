@@ -1,25 +1,20 @@
 'use client'
-
 import type { PaginatedQueryArgs, PaginatedQueryReference } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 
 import { useCallback, useEffect, useRef } from 'react'
 
 import { DEFAULT_PAGE_SIZE, useList } from './use-list'
-
 interface InfiniteListOptions {
   pageSize?: number
   rootMargin?: string
   threshold?: number
 }
-
 type InfiniteListRest<F extends PaginatedQueryReference> =
   PaginatedQueryArgs<F> extends Record<string, never>
     ? [args?: PaginatedQueryArgs<F>, options?: InfiniteListOptions]
     : [args: PaginatedQueryArgs<F>, options?: InfiniteListOptions]
-
 type ListItems<F extends PaginatedQueryReference> = FunctionReturnType<F>['page']
-
 /** Wraps useList with an IntersectionObserver sentinel for automatic infinite scroll pagination. */
 const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: InfiniteListRest<F>) => {
   const [args, opts] = rest as [PaginatedQueryArgs<F> | undefined, InfiniteListOptions | undefined],
@@ -39,7 +34,6 @@ const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: I
       },
       [canLoad, isLoadingMore, loadMore, pageSize]
     )
-
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -51,7 +45,6 @@ const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: I
     observerRef.current.observe(el)
     return () => observerRef.current?.disconnect()
   }, [handleIntersect, opts?.rootMargin, opts?.threshold])
-
   return {
     hasMore: !isDone,
     isLoadingMore,
@@ -61,6 +54,5 @@ const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: I
     status
   }
 }
-
 export type { InfiniteListOptions }
 export { useInfiniteList }

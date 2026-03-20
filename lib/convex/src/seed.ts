@@ -2,7 +2,6 @@
 import type { output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
 
 import { cvFileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod } from './zod'
-
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz',
   DIGITS = '0123456789',
   WORDS = [
@@ -90,23 +89,18 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyz',
     const cv = cvFileKindOf(field)
     if (cv === 'file') return randomStorageId()
     if (cv === 'files') return [randomStorageId(), randomStorageId()]
-
     const { schema: base, type } = unwrapZod(field)
-
     if (isBooleanType(type)) return Math.random() > 0.5
     if (isNumberType(type)) return randomInt(1, 1000)
     if (isStringType(type)) return generateStringValue(base)
     if (isArrayType(type)) return generateArrayValue(base)
-
     if (type === 'object') {
       const shape = (base as undefined | ZodObject<ZodRawShape>)?.shape
       if (shape) return generateOne(base as ZodObject<ZodRawShape>)
       return {}
     }
-
     const zidTable = (base?.def as undefined | { schema?: { description?: string } })?.schema?.description
     if (zidTable) return randomTableId(zidTable)
-
     return randomSentence(1)
   },
   /** Generates a single random document matching the Zod schema. */
@@ -125,5 +119,4 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyz',
     for (let i = 0; i < count; i += 1) results.push(generateOne(schema))
     return results
   }
-
 export { generateFieldValue, generateOne, generateSeed }

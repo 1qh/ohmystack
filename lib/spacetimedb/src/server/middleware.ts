@@ -3,7 +3,6 @@
 import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from './types'
 
 import { log } from './helpers'
-
 const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareCtx => ({ ...ctx, operation: op }),
   // oxlint-disable-next-line max-statements
   composeMiddleware = (...middlewares: Middleware[]): GlobalHooks => {
@@ -14,7 +13,6 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
       hasAfterUpdate = middlewares.some(mw => mw.afterUpdate),
       hasBeforeDelete = middlewares.some(mw => mw.beforeDelete),
       hasAfterDelete = middlewares.some(mw => mw.afterDelete)
-
     if (hasBeforeCreate)
       hooks.beforeCreate = async (ctx: GlobalHookCtx, args: { data: Rec }) => {
         let { data } = args
@@ -22,13 +20,11 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
         for (const mw of middlewares) if (mw.beforeCreate) data = await mw.beforeCreate(mCtx, { data })
         return data
       }
-
     if (hasAfterCreate)
       hooks.afterCreate = async (ctx: GlobalHookCtx, args: { data: Rec; row: Rec }) => {
         const mCtx = withOp(ctx, 'create')
         for (const mw of middlewares) if (mw.afterCreate) await mw.afterCreate(mCtx, args)
       }
-
     if (hasBeforeUpdate)
       hooks.beforeUpdate = async (ctx: GlobalHookCtx, args: { patch: Rec; prev: Rec }) => {
         let { patch } = args
@@ -36,25 +32,21 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
         for (const mw of middlewares) if (mw.beforeUpdate) patch = await mw.beforeUpdate(mCtx, { patch, prev: args.prev })
         return patch
       }
-
     if (hasAfterUpdate)
       hooks.afterUpdate = async (ctx: GlobalHookCtx, args: { next: Rec; patch: Rec; prev: Rec }) => {
         const mCtx = withOp(ctx, 'update')
         for (const mw of middlewares) if (mw.afterUpdate) await mw.afterUpdate(mCtx, args)
       }
-
     if (hasBeforeDelete)
       hooks.beforeDelete = async (ctx: GlobalHookCtx, args: { row: Rec }) => {
         const mCtx = withOp(ctx, 'delete')
         for (const mw of middlewares) if (mw.beforeDelete) await mw.beforeDelete(mCtx, args)
       }
-
     if (hasAfterDelete)
       hooks.afterDelete = async (ctx: GlobalHookCtx, args: { row: Rec }) => {
         const mCtx = withOp(ctx, 'delete')
         for (const mw of middlewares) if (mw.afterDelete) await mw.afterDelete(mCtx, args)
       }
-
     return hooks
   },
   auditLog = (opts?: { logLevel?: 'debug' | 'info'; verbose?: boolean }): Middleware => {
@@ -151,5 +143,4 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
       name: 'inputSanitize'
     }
   }
-
 export { auditLog, composeMiddleware, inputSanitize, sanitizeRec, sanitizeString, slowQueryWarn }

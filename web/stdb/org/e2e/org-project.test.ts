@@ -1,5 +1,4 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
-
 import { login } from '@a/e2e/helpers'
 import {
   addTestOrgMember,
@@ -12,7 +11,6 @@ import {
   tc
 } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
-
 const testPrefix = `e2e-org-proj-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
   readStringId = (value: unknown): string => {
@@ -24,43 +22,35 @@ const testPrefix = `e2e-org-proj-${Date.now()}`,
     const { name } = value as { name?: unknown }
     return typeof name === 'string' ? name : undefined
   }
-
 test.describe
   .serial('Projects Page UI', () => {
     let testOrgId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('proj-ui'),
         created = await createTestOrg(slug, 'Project UI Test Org')
       testOrgId = created.orgId
-
       await tc.mutation(api.project.create, {
         name: 'UI Test Project',
         orgId: testOrgId
       })
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test.beforeEach(async ({ page }) => {
       await login(page)
     })
-
     test('projects page loads', async ({ page }) => {
       await page.goto('/projects')
       const heading = page.getByRole('heading', { name: /projects/iu }).first()
       await expect(heading).toBeVisible({ timeout: 8000 })
     })
-
     test('projects list shows created project', async ({ page }) => {
       await page.goto('/projects')
       const projectName = page.getByText('UI Test Project').first()
       await expect(projectName).toBeVisible({ timeout: 8000 })
     })
-
     test('new project link navigates to /projects/new', async ({ page }) => {
       await page.goto('/projects')
       const newLink = page.getByRole('link', { name: /new|create/iu }).first()
@@ -70,22 +60,18 @@ test.describe
       }
     })
   })
-
 test.describe
   .serial('Project CRUD (API)', () => {
     let testOrgId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('proj-crud'),
         created = await createTestOrg(slug, 'Project CRUD Test Org')
       testOrgId = created.orgId
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test('create project - success', async () => {
       const projectId = await tc.mutation(api.project.create, {
         description: 'Test project description',
@@ -95,7 +81,6 @@ test.describe
       })
       expect(projectId).toBeDefined()
     })
-
     test('create project - minimal fields', async () => {
       const projectId = await tc.mutation(api.project.create, {
         name: 'Minimal Project',
@@ -103,7 +88,6 @@ test.describe
       })
       expect(projectId).toBeDefined()
     })
-
     test('read project - success', async () => {
       const projectId = await tc.mutation(api.project.create, {
           name: 'Read Test Project',
@@ -116,7 +100,6 @@ test.describe
       expect(project.name).toBe('Read Test Project')
       expect(project.orgId).toBe(testOrgId)
     })
-
     test('list projects - returns paginated results', async () => {
       const result = await tc.query(api.project.list, {
         orgId: testOrgId,
@@ -125,7 +108,6 @@ test.describe
       expect(result.page).toBeDefined()
       expect(result.page.length).toBeGreaterThan(0)
     })
-
     test('update project - owner can update', async () => {
       const projectId = await tc.mutation(api.project.create, {
           name: 'Update Test Project',
@@ -138,7 +120,6 @@ test.describe
         })
       expect(readName(updated)).toBe('Updated Project Name')
     })
-
     test('rm project - owner can delete', async () => {
       const projectId = await tc.mutation(api.project.create, {
         name: 'Delete Test Project',
@@ -156,7 +137,6 @@ test.describe
       )
       expect(result).toHaveProperty('code', 'NOT_FOUND')
     })
-
     test('rm multiple projects via ids', async () => {
       const id1 = await tc.mutation(api.project.create, {
           name: 'Bulk Delete 1',
@@ -173,11 +153,9 @@ test.describe
       expect(deleted).toBe(2)
     })
   })
-
 test.describe
   .serial('Task CRUD (API)', () => {
     let testOrgId: string, testProjectId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('task-crud'),
@@ -188,11 +166,9 @@ test.describe
         orgId: testOrgId
       })
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test('create task - success', async () => {
       const taskId = await tc.mutation(api.task.create, {
         completed: false,
@@ -203,7 +179,6 @@ test.describe
       })
       expect(taskId).toBeDefined()
     })
-
     test('read task - success', async () => {
       const taskId = await tc.mutation(api.task.create, {
           orgId: testOrgId,
@@ -216,7 +191,6 @@ test.describe
         })
       expect(task.title).toBe('Read Test Task')
     })
-
     test('toggle task - owner can toggle', async () => {
       const taskId = await tc.mutation(api.task.create, {
           completed: false,
@@ -230,7 +204,6 @@ test.describe
         })
       expect(toggled?.completed).toBe(true)
     })
-
     test('rm task - owner can delete', async () => {
       const taskId = await tc.mutation(api.task.create, {
         orgId: testOrgId,
@@ -247,32 +220,25 @@ test.describe
       expect(result).toHaveProperty('code', 'NOT_FOUND')
     })
   })
-
 test.describe
   .serial('Project Permissions (API)', () => {
     let testOrgId: string, memberUserId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('proj-perms'),
         created = await createTestOrg(slug, 'Project Perms Test Org')
       testOrgId = created.orgId
-
       const memberEmail = `${testPrefix}-proj-member@test.local`
-
       memberUserId = readStringId(await createTestUser(memberEmail, 'Project Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
       await cleanupTestUsers()
     })
-
     test('member exists in org', () => {
       expect(memberUserId).toBeDefined()
     })
-
     test('read project - not found for wrong org', async () => {
       const otherSlug = generateSlug('other-org'),
         otherOrg = await createTestOrg(otherSlug, 'Other Org'),
@@ -289,22 +255,18 @@ test.describe
       expect(result).toHaveProperty('code', 'NOT_FOUND')
     })
   })
-
 test.describe
   .serial('Cascade Deletion (API)', () => {
     let testOrgId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('cascade'),
         created = await createTestOrg(slug, 'Cascade Test Org')
       testOrgId = created.orgId
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test('delete project - cascades to tasks', async () => {
       const projectId = await tc.mutation(api.project.create, {
           name: 'Cascade Project',
@@ -324,7 +286,6 @@ test.describe
       )
       expect(taskResult).toHaveProperty('code', 'NOT_FOUND')
     })
-
     test('delete org - cascades projects and tasks', async () => {
       const cascadeSlug = generateSlug('full-cascade'),
         cascadeOrg = await createTestOrg(cascadeSlug, 'Full Cascade Org'),

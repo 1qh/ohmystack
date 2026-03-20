@@ -8,9 +8,7 @@ import env from '../env'
 import { cacheCrud } from '../lazy'
 import { base } from '../t'
 import { action } from './_generated/server'
-
 type TmdbMovie = Omit<output<typeof base.movie>, 'tmdb_id'> & { id: number }
-
 const apiKey = env.TMDB_KEY,
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   tmdb = (path: string, params: Record<string, unknown>) =>

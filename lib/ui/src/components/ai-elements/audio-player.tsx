@@ -1,8 +1,6 @@
 "use client";
-
 import type { Experimental_SpeechResult as SpeechResult } from "ai";
 import type { ComponentProps, CSSProperties } from "react";
-
 import { Button } from "@a/ui/components/button";
 import {
   ButtonGroup,
@@ -21,12 +19,10 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
-
 export type AudioPlayerProps = Omit<
   ComponentProps<typeof MediaController>,
   "audio"
 >;
-
 export const AudioPlayer = ({
   children,
   style,
@@ -65,7 +61,6 @@ export const AudioPlayer = ({
     {children}
   </MediaController>
 );
-
 export type AudioPlayerElementProps = Omit<ComponentProps<"audio">, "src"> &
   (
     | {
@@ -75,7 +70,6 @@ export type AudioPlayerElementProps = Omit<ComponentProps<"audio">, "src"> &
         src: string;
       }
   );
-
 export const AudioPlayerElement = ({ ...props }: AudioPlayerElementProps) => (
   // oxlint-disable-next-line eslint-plugin-jsx-a11y(media-has-caption) -- audio player captions are provided by consumer
   <audio
@@ -89,9 +83,7 @@ export const AudioPlayerElement = ({ ...props }: AudioPlayerElementProps) => (
     {...props}
   />
 );
-
 export type AudioPlayerControlBarProps = ComponentProps<typeof MediaControlBar>;
-
 export const AudioPlayerControlBar = ({
   children,
   ...props
@@ -100,9 +92,7 @@ export const AudioPlayerControlBar = ({
     <ButtonGroup orientation="horizontal">{children}</ButtonGroup>
   </MediaControlBar>
 );
-
 export type AudioPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
-
 export const AudioPlayerPlayButton = ({
   className,
   ...props
@@ -115,11 +105,9 @@ export const AudioPlayerPlayButton = ({
     />
   </Button>
 );
-
 export type AudioPlayerSeekBackwardButtonProps = ComponentProps<
   typeof MediaSeekBackwardButton
 >;
-
 export const AudioPlayerSeekBackwardButton = ({
   seekOffset = 10,
   ...props
@@ -132,11 +120,9 @@ export const AudioPlayerSeekBackwardButton = ({
     />
   </Button>
 );
-
 export type AudioPlayerSeekForwardButtonProps = ComponentProps<
   typeof MediaSeekForwardButton
 >;
-
 export const AudioPlayerSeekForwardButton = ({
   seekOffset = 10,
   ...props
@@ -149,11 +135,9 @@ export const AudioPlayerSeekForwardButton = ({
     />
   </Button>
 );
-
 export type AudioPlayerTimeDisplayProps = ComponentProps<
   typeof MediaTimeDisplay
 >;
-
 export const AudioPlayerTimeDisplay = ({
   className,
   ...props
@@ -166,9 +150,7 @@ export const AudioPlayerTimeDisplay = ({
     />
   </ButtonGroupText>
 );
-
 export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
-
 export const AudioPlayerTimeRange = ({
   className,
   ...props
@@ -181,11 +163,9 @@ export const AudioPlayerTimeRange = ({
     />
   </ButtonGroupText>
 );
-
 export type AudioPlayerDurationDisplayProps = ComponentProps<
   typeof MediaDurationDisplay
 >;
-
 export const AudioPlayerDurationDisplay = ({
   className,
   ...props
@@ -198,9 +178,7 @@ export const AudioPlayerDurationDisplay = ({
     />
   </ButtonGroupText>
 );
-
 export type AudioPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
-
 export const AudioPlayerMuteButton = ({
   className,
   ...props
@@ -213,11 +191,9 @@ export const AudioPlayerMuteButton = ({
     />
   </ButtonGroupText>
 );
-
 export type AudioPlayerVolumeRangeProps = ComponentProps<
   typeof MediaVolumeRange
 >;
-
 export const AudioPlayerVolumeRange = ({
   className,
   ...props

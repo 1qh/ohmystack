@@ -2,7 +2,6 @@ appId: dev.noboil.movie
 ---
 - launchApp
 - assertVisible: "Movie Search"
-
 - tapOn: "Search movies..."
 - inputText: "Fight Club"
 - tapOn:
@@ -10,7 +9,6 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Fight Club"
     timeout: 15000
-
 - tapOn:
     text: "Fight Club"
     index: 0
@@ -22,17 +20,14 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Fight Club"
     timeout: 15000
-
 - scrollUntilVisible:
     element: ".*Release.*|.*Rating.*"
     direction: DOWN
     timeout: 10000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Movie Search"
 - assertVisible: "Fight Club"
-
 - tapOn: "Fight Club"
 - eraseText: 50
 - inputText: "Pulp Fiction"
@@ -41,7 +36,6 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Pulp Fiction"
     timeout: 15000
-
 - tapOn:
     text: "Pulp Fiction"
     index: 0
@@ -49,7 +43,6 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Pulp Fiction"
     timeout: 15000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Movie Search"

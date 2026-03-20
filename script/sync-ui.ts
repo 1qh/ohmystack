@@ -2,7 +2,6 @@ import { file, spawnSync, write } from 'bun'
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { argv as nodeArgv, env as nodeEnv } from 'node:process'
-
 type JsonRecord = Record<string, unknown>
 const lineBreakRegex = /\r?\n/u,
   isRecord = (value: unknown): value is JsonRecord => typeof value === 'object' && value !== null && !Array.isArray(value),
@@ -57,19 +56,16 @@ const lineBreakRegex = /\r?\n/u,
       shadcnImportLine = '@import "shadcn/tailwind.css";',
       rows = source.split(lineBreakRegex),
       withoutPlugin: string[] = []
-
     for (const row of rows) {
       const trimmed = row.trim()
       if (trimmed !== pluginLine && trimmed !== shadcnImportLine) withoutPlugin.push(row)
     }
-
     let importIndex = 0
     for (let i = 0; i < withoutPlugin.length; i += 1)
       if (withoutPlugin[i].trim().startsWith('@import ')) {
         importIndex = i
         break
       }
-
     withoutPlugin.splice(importIndex, 0, pluginLine)
     let next = withoutPlugin.join(lineBreak)
     if (!next.endsWith(lineBreak)) next = `${next}${lineBreak}`
@@ -77,11 +73,8 @@ const lineBreakRegex = /\r?\n/u,
   },
   mergeWithOrder = ({ base, overlay }: { base: JsonRecord; overlay: JsonRecord }) => {
     const merged: JsonRecord = {}
-
     for (const key of Object.keys(base)) merged[key] = Object.hasOwn(overlay, key) ? overlay[key] : base[key]
-
     for (const key of Object.keys(overlay)) if (!Object.hasOwn(merged, key)) merged[key] = overlay[key]
-
     return merged
   },
   getNestedString = ({ keys, source }: { keys: string[]; source: JsonRecord | null }): null | string => {
@@ -100,28 +93,23 @@ const lineBreakRegex = /\r?\n/u,
     const entries = await readdir(dirPath, { withFileTypes: true }),
       files: string[] = [],
       nestedPromises: Promise<string[]>[] = []
-
     for (const entry of entries) {
       const absPath = join(dirPath, entry.name)
       if (entry.isDirectory()) nestedPromises.push(collectSourceFiles({ dirPath: absPath }))
       if (entry.isFile() && (absPath.endsWith('.ts') || absPath.endsWith('.tsx'))) files.push(absPath)
     }
-
     const nestedGroups = await Promise.all(nestedPromises)
     for (const group of nestedGroups) for (const nestedPath of group) files.push(nestedPath)
-
     return files
   },
   pruneGitkeepFiles = async ({ dirPath }: { dirPath: string }) => {
     const entries = await readdir(dirPath, { withFileTypes: true }),
       tasks: Promise<void>[] = []
-
     for (const entry of entries) {
       const absPath = join(dirPath, entry.name)
       if (entry.isDirectory()) tasks.push(pruneGitkeepFiles({ dirPath: absPath }))
       if (entry.isFile() && entry.name === '.gitkeep') tasks.push(Promise.resolve(run({ cmd: ['rm', '-f', absPath] })))
     }
-
     await Promise.all(tasks)
   },
   replaceImportPrefix = async ({
@@ -136,7 +124,6 @@ const lineBreakRegex = /\r?\n/u,
     if (fromPrefix === null || toPrefix === null || fromPrefix === toPrefix) return
     const files = await collectSourceFiles({ dirPath: srcDir }),
       writes: Promise<void>[] = []
-
     for (const abs of files)
       writes.push(
         (async () => {
@@ -145,7 +132,6 @@ const lineBreakRegex = /\r?\n/u,
           if (next !== source) await write(file(abs), next)
         })()
       )
-
     await Promise.all(writes)
   },
   uniquePaths = ({ values }: { values: string[] }) => {
@@ -177,7 +163,6 @@ const lineBreakRegex = /\r?\n/u,
   },
   collectRelatedPaths = ({ errorPaths, rootDir }: { errorPaths: string[]; rootDir: string }) => {
     const related: string[] = []
-
     for (const relPath of errorPaths)
       if (relPath.startsWith('src/components/ai-elements/')) {
         const gitPath = `lib/ui/${relPath}`,
@@ -185,13 +170,11 @@ const lineBreakRegex = /\r?\n/u,
             cmd: ['git', 'show', `HEAD:${gitPath}`],
             cwd: rootDir
           })
-
         if (gitFile.exitCode === 0) {
           const imports = extractComponentImportPaths({ source: decode(gitFile.stdout) })
           for (const importPath of imports) related.push(importPath)
         }
       }
-
     return uniquePaths({ values: [...errorPaths, ...related] })
   },
   restoreOrDeleteFromGit = async ({
@@ -204,17 +187,14 @@ const lineBreakRegex = /\r?\n/u,
     uiTmpDir: string
   }) => {
     if (relPath.startsWith('..')) return false
-
     const gitPath = `lib/ui/${relPath}`,
       absolutePath = join(uiTmpDir, relPath),
       gitFile = runCapture({ cmd: ['git', 'show', `HEAD:${gitPath}`], cwd: rootDir })
-
     if (gitFile.exitCode === 0) {
       run({ cmd: ['mkdir', '-p', dirname(absolutePath)] })
       await write(file(absolutePath), decode(gitFile.stdout))
       return true
     }
-
     run({ cmd: ['rm', '-f', absolutePath] })
     return true
   },
@@ -241,11 +221,9 @@ const lineBreakRegex = /\r?\n/u,
     const gitPrefix = `lib/ui/${relDir}`,
       files = listGitTreeFiles({ prefix: gitPrefix, rootDir }),
       targetDir = join(uiTmpDir, relDir)
-
     if (files.length === 0) return
     run({ cmd: ['rm', '-rf', targetDir] })
     const writes: Promise<void>[] = []
-
     for (const gitPath of files) {
       const relPath = gitPath.startsWith('lib/ui/') ? gitPath.slice('lib/ui/'.length) : null
       if (relPath !== null) {
@@ -257,7 +235,6 @@ const lineBreakRegex = /\r?\n/u,
         }
       }
     }
-
     await Promise.all(writes)
   },
   reconcileTypecheckFailures = async ({
@@ -271,7 +248,6 @@ const lineBreakRegex = /\r?\n/u,
   }) => {
     const restorePaths = collectRelatedPaths({ errorPaths, rootDir }),
       actions: Promise<boolean>[] = []
-
     for (const relPath of restorePaths)
       actions.push(
         restoreOrDeleteFromGit({
@@ -293,13 +269,11 @@ const lineBreakRegex = /\r?\n/u,
     uiTmpDir: string
   }): Promise<void> => {
     const typecheck = runCapture({ cmd: ['bun', 'run', 'typecheck'], cwd: uiTmpDir })
-
     if (typecheck.exitCode === 0) return
     if (attempt >= 3)
       throw new Error(
         `ui sync typecheck failed after ${attempt} attempts:\n${decode(typecheck.stdout)}\n${decode(typecheck.stderr)}`
       )
-
     const output = `${decode(typecheck.stdout)}\n${decode(typecheck.stderr)}`,
       errorPaths = parseTypecheckErrorPaths({ output }),
       changed = await reconcileTypecheckFailures({
@@ -307,7 +281,6 @@ const lineBreakRegex = /\r?\n/u,
         rootDir,
         uiTmpDir
       })
-
     if (!changed) throw new Error(`ui sync typecheck failed with no recoverable files:\n${output}`)
     await repairTypecheck({ attempt: attempt + 1, rootDir, uiTmpDir })
   },
@@ -339,7 +312,6 @@ const lineBreakRegex = /\r?\n/u,
       snapshotPackage = readJsonFromGit({ filePath: 'lib/ui/package.json' }) ?? fallbackPackage,
       snapshotTsconfig = readJsonFromGit({ filePath: 'lib/ui/tsconfig.json' }) ?? fallbackTsconfig,
       snapshotTsconfigLint = readJsonFromGit({ filePath: 'lib/ui/tsconfig.lint.json' }) ?? fallbackTsconfigLint
-
     run({ cmd: ['rm', '-rf', tmpDir] })
     run({ cmd: ['mkdir', '-p', tmpDir] })
     run({ cmd: ['mkdir', '-p', tmpBin] })
@@ -353,7 +325,6 @@ const lineBreakRegex = /\r?\n/u,
     })
     run({ cmd: ['bunx', '--bun', 'shadcn@latest', 'add', '-ayo'], cwd: tmpUi, env: shimEnv })
     run({ cmd: ['bunx', '--bun', 'shadcn@latest', 'add', '@ai-elements/all', '-ayo'], cwd: tmpUi, env: shimEnv })
-
     const nextPackage = await readJson(join(tmpUi, 'package.json')),
       nextComponents = await readJson(join(tmpUi, 'components.json')),
       generatedPrefix = stripSuffix({
@@ -364,7 +335,6 @@ const lineBreakRegex = /\r?\n/u,
         suffix: '/components',
         value: getNestedString({ keys: ['aliases', 'components'], source: snapshotComponents })
       })
-
     if (snapshotPackage && nextPackage) {
       const { name } = snapshotPackage,
         { dependencies } = snapshotPackage,
@@ -372,7 +342,6 @@ const lineBreakRegex = /\r?\n/u,
         { exports } = snapshotPackage,
         { scripts } = snapshotPackage,
         { type } = snapshotPackage
-
       if (typeof name === 'string') nextPackage.name = name
       if (isRecord(dependencies)) nextPackage.dependencies = dependencies
       if (isRecord(devDependencies)) nextPackage.devDependencies = devDependencies
@@ -382,22 +351,17 @@ const lineBreakRegex = /\r?\n/u,
       const orderedPackage = mergeWithOrder({ base: snapshotPackage, overlay: nextPackage })
       await writeJson({ filePath: join(tmpUi, 'package.json'), value: orderedPackage })
     }
-
     if (snapshotComponents && nextComponents) {
       const { aliases } = snapshotComponents
       if (isRecord(aliases)) nextComponents.aliases = aliases
       await writeJson({ filePath: join(tmpUi, 'components.json'), value: nextComponents })
     }
-
     if (snapshotTsconfig) await writeJson({ filePath: join(tmpUi, 'tsconfig.json'), value: snapshotTsconfig })
     if (snapshotTsconfigLint) await writeJson({ filePath: join(tmpUi, 'tsconfig.lint.json'), value: snapshotTsconfigLint })
-
     await replaceImportPrefix({ fromPrefix: generatedPrefix, srcDir: join(tmpUi, 'src'), toPrefix: snapshotPrefix })
     await restoreDirFromGitSnapshot({ relDir: 'src/components/ai-elements', rootDir: root, uiTmpDir: tmpUi })
     await ensureTypographyPluginBeforeImports({ cssPath: join(tmpUi, 'src/styles/globals.css') })
-
     run({ cmd: ['rm', '-rf', join(tmpUi, 'node_modules')] })
-
     run({ cmd: ['rm', '-rf', uiDir] })
     run({ cmd: ['mv', tmpUi, uiDir] })
     await pruneGitkeepFiles({ dirPath: uiDir })
@@ -408,7 +372,6 @@ const lineBreakRegex = /\r?\n/u,
     const args = new Set(nodeArgv.slice(2)),
       checkOnly = args.has('--check'),
       updateOnly = args.has('--update')
-
     if (checkOnly && updateOnly) throw new Error('Use either --check or --update, not both')
     if (checkOnly) {
       syncCheck({ rootDir: root, uiRoot: uiDir })
@@ -417,5 +380,4 @@ const lineBreakRegex = /\r?\n/u,
     await syncUpdate()
     if (!updateOnly) syncCheck({ rootDir: root, uiRoot: uiDir })
   }
-
 await main()

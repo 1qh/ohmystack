@@ -5,11 +5,9 @@ appId: dev.noboil.movie
 - assertVisible: "Fetch by ID"
 - assertVisible: "TMDB ID (e.g. 27205)"
 - assertVisible: "Try: 27205 (Inception), 550 (Fight Club), 680 (Pulp Fiction)"
-
 - assertVisible:
     text: "Fetch"
     enabled: false
-
 - tapOn: "TMDB ID (e.g. 27205)"
 - inputText: "27205"
 - tapOn: "Fetch"
@@ -31,14 +29,12 @@ appId: dev.noboil.movie
     direction: DOWN
     timeout: 3000
 - assertVisible: "Runtime:"
-
 - swipe:
     direction: DOWN
     duration: 500
 - swipe:
     direction: DOWN
     duration: 500
-
 - tapOn: "27205"
 - eraseText: 50
 - inputText: "550"
@@ -52,14 +48,12 @@ appId: dev.noboil.movie
     direction: DOWN
     timeout: 5000
 - assertVisible: "Release:"
-
 - swipe:
     direction: DOWN
     duration: 500
 - swipe:
     direction: DOWN
     duration: 500
-
 - tapOn: "550"
 - eraseText: 50
 - inputText: "680"
@@ -68,14 +62,12 @@ appId: dev.noboil.movie
     visible: "Pulp Fiction"
     timeout: 15000
 - assertVisible: "Pulp Fiction"
-
 - swipe:
     direction: DOWN
     duration: 500
 - swipe:
     direction: DOWN
     duration: 500
-
 - tapOn: "680"
 - eraseText: 50
 - inputText: "27205"

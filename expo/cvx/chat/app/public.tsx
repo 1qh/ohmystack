@@ -3,7 +3,6 @@ import { Text } from '@a/rnr/components/text'
 import { useList } from '@noboil/convex/react'
 import { Link } from 'expo-router'
 import { Pressable, ScrollView, View } from 'react-native'
-
 const Page = () => {
   const { items } = useList(api.chat.list, { where: { isPublic: true } })
   return (
@@ -21,5 +20,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

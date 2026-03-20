@@ -8,7 +8,6 @@ import type { DbLike, Mb, OrgRole, OrgUserLike, Qb, Rec } from './types'
 import { idx } from './bridge'
 import { err, time } from './helpers'
 import { getOrgMember, getOrgRole, requireOrgMember, requireOrgRole } from './org-crud'
-
 /** Shape of an org member item returned by the members endpoint, including role and user info. */
 interface OrgMemberItem {
   memberId?: GenericId<'orgMember'>
@@ -16,7 +15,6 @@ interface OrgMemberItem {
   user: null | OrgUserLike
   userId: GenericId<'users'>
 }
-
 const makeMemberHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
   const membership = q({
       args: { orgId: zid('org') },
@@ -138,6 +136,5 @@ const makeMemberHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
     })
   return { leave, members, membership, removeMember, setAdmin, transferOwnership }
 }
-
 export type { OrgMemberItem }
 export { makeMemberHandlers }

@@ -1,9 +1,7 @@
 'use client'
-
 import type { ComponentProps, ComponentType } from 'react'
 
 import { cn } from '@a/ui'
-
 interface MembersPageShellProps<TOrgId extends string> {
   canManageMembers: boolean
   className?: string
@@ -20,7 +18,6 @@ interface MembersPageShellProps<TOrgId extends string> {
   titleProps?: Omit<ComponentProps<'h1'>, 'children'>
   wrapperProps?: Omit<ComponentProps<'div'>, 'children'>
 }
-
 const MembersPageShell = <TOrgId extends string>({
   canManageMembers,
   className,
@@ -51,6 +48,5 @@ const MembersPageShell = <TOrgId extends string>({
     </div>
   </div>
 )
-
 export type { MembersPageShellProps }
 export default MembersPageShell

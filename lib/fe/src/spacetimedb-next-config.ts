@@ -3,7 +3,6 @@ import { env as nodeEnv } from 'node:process'
 import type { CreateNextConfigOptions } from './next-config-core'
 
 import { createNextConfigWithCsp } from './next-config-core'
-
 const isDev = nodeEnv.NODE_ENV === 'development',
   spacetimeDbUri = nodeEnv.NEXT_PUBLIC_SPACETIMEDB_URI,
   createNextConfig = ({ experimental, imageDomains, imgSrc }: CreateNextConfigOptions = {}) =>
@@ -26,5 +25,4 @@ const isDev = nodeEnv.NODE_ENV === 'development',
       imgSrc,
       serverExternalPackages: ['spacetimedb/server']
     })
-
 export { createNextConfig }

@@ -1,50 +1,40 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn: "Wiki"
 - waitForAnimationToEnd
-
 - assertVisible: "No wiki pages yet"
 - assertVisible: "Create Page"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - assertVisible: "New Wiki Page"
 - assertVisible: "Page Title"
 - assertVisible: "Slug (URL-friendly)"
-
 - tapOn: "Page Title"
 - inputText: "Maestro Wiki Page"
 - tapOn: "Slug (URL-friendly)"
 - inputText: "maestro-wiki-page"
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "New Wiki Page"
     timeout: 10000
-
 - tapOn: "Maestro Wiki Page"
 - eraseText: 50
 - inputText: "Maestro Wiki Page"
 - tapOn: "maestro-wiki-page"
 - eraseText: 50
 - inputText: "maestro-wiki-page"
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Maestro Wiki Page"
     timeout: 10000
 - assertVisible: "maestro-wiki-page"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -57,41 +47,31 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Deletable Wiki"
     timeout: 10000
-
 - assertVisible: "Maestro Wiki Page"
 - assertVisible: "Deletable Wiki"
-
 - tapOn: "Deletable Wiki"
 - waitForAnimationToEnd
 - assertVisible: "Edit Wiki"
-
 - scrollUntilVisible:
     element: "Delete Page"
     direction: DOWN
     timeout: 5000
-
 - tapOn: "Delete Page"
 - waitForAnimationToEnd
-
 - back
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Recently Deleted"
     timeout: 10000
     optional: true
-
 - assertVisible:
     text: "Restore"
     optional: true
-
 - tapOn:
     text: "Restore"
     optional: true
 - waitForAnimationToEnd
-
 - assertVisible: "Maestro Wiki Page"
-
 - tapOn: "Maestro Wiki Page"
 - waitForAnimationToEnd
 - assertVisible: "Edit Wiki"
@@ -100,6 +80,5 @@ appId: dev.noboil.org
 - assertVisible: "Slug"
 - assertVisible: "Status"
 - assertVisible: "Content"
-
 - back
 - waitForAnimationToEnd

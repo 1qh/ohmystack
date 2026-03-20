@@ -5,7 +5,6 @@ import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
 import { defineSchema, defineTable } from 'convex/server'
 
 import { messageSchema, owned, taskSchema, threadRunStateSchema, todoSchema, tokenUsageSchema } from '../t'
-
 export default defineSchema({
   ...authTables,
   ...rateLimitTable(),

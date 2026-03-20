@@ -8,13 +8,11 @@ import * as React from 'react'
 import { Platform, type StyleProp, StyleSheet, Text, type TextProps, View, type ViewStyle } from 'react-native'
 import { FadeIn } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 const ContextMenu = ContextMenuPrimitive.Root
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
 const ContextMenuGroup = ContextMenuPrimitive.Group
 const ContextMenuSub = ContextMenuPrimitive.Sub
 const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup
-
 function ContextMenuSubTrigger({
   className,
   inset,
@@ -49,7 +47,6 @@ function ContextMenuSubTrigger({
     </TextClassContext.Provider>
   )
 }
-
 function ContextMenuSubContent({
   className,
   ...props
@@ -69,9 +66,7 @@ function ContextMenuSubContent({
     </NativeOnlyAnimatedView>
   )
 }
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function ContextMenuContent({
   className,
   overlayClassName,
@@ -118,7 +113,6 @@ function ContextMenuContent({
     </ContextMenuPrimitive.Portal>
   )
 }
-
 function ContextMenuItem({
   className,
   inset,
@@ -155,7 +149,6 @@ function ContextMenuItem({
     </TextClassContext.Provider>
   )
 }
-
 function ContextMenuCheckboxItem({
   className,
   children,
@@ -186,7 +179,6 @@ function ContextMenuCheckboxItem({
     </TextClassContext.Provider>
   )
 }
-
 function ContextMenuRadioItem({
   className,
   children,
@@ -217,7 +209,6 @@ function ContextMenuRadioItem({
     </TextClassContext.Provider>
   )
 }
-
 function ContextMenuLabel({
   className,
   inset,
@@ -234,18 +225,15 @@ function ContextMenuLabel({
     />
   )
 }
-
 function ContextMenuSeparator({
   className,
   ...props
 }: ContextMenuPrimitive.SeparatorProps & React.RefAttributes<ContextMenuPrimitive.SeparatorRef>) {
   return <ContextMenuPrimitive.Separator className={cn('bg-border -mx-1 my-1 h-px', className)} {...props} />
 }
-
 function ContextMenuShortcut({ className, ...props }: TextProps & React.RefAttributes<Text>) {
   return <Text className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)} {...props} />
 }
-
 export {
   ContextMenu,
   ContextMenuCheckboxItem,

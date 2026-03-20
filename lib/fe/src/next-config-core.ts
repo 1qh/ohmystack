@@ -1,23 +1,19 @@
 import type { NextConfig } from 'next'
 
 import { env as nodeEnv } from 'node:process'
-
 interface CreateNextConfigOptions {
   experimental?: NextConfig['experimental']
   imageDomains?: string[]
   imgSrc?: string[]
 }
-
 interface CreateNextConfigWithCspOptions extends CreateNextConfigOptions {
   csp: CspOptions
   serverExternalPackages?: string[]
 }
-
 interface CspOptions {
   connectSrc: string[]
   imgSrc: string[]
 }
-
 const isPlaywright = nodeEnv.PLAYWRIGHT === '1',
   createNextConfigWithCsp = ({
     csp,
@@ -56,6 +52,5 @@ const isPlaywright = nodeEnv.PLAYWRIGHT === '1',
     serverExternalPackages,
     transpilePackages: ['@a/ui', '@a/be', '@a/fe']
   })
-
 export { createNextConfigWithCsp }
 export type { CreateNextConfigOptions }

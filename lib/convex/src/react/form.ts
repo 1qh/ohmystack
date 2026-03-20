@@ -27,7 +27,6 @@ import {
   unwrapZod
 } from '../zod'
 import { defaultOnError } from './use-mutate'
-
 /** Discriminated kind of a form field derived from the Zod schema type. */
 type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
 /** Metadata about a single form field including its kind and optional max constraint. */
@@ -37,7 +36,6 @@ interface FieldMeta {
 }
 /** Map of field names to their metadata, built from a Zod object schema. */
 type FieldMetaMap = Record<string, FieldMeta>
-
 const getMax = (schema: undefined | ZodSchema): number | undefined => {
     const checks = schema?.def.checks as (undefined | { _zod: { def: { check: string; maximum?: number } } })[] | undefined
     if (checks)
@@ -67,7 +65,6 @@ const getMax = (schema: undefined | ZodSchema): number | undefined => {
     for (const k in s.shape) if (Object.hasOwn(s.shape, k)) m[k] = getMeta(s.shape[k])
     return m
   }
-
 /** TanStack Form API instance parameterized by the form's value type. */
 type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   T,
@@ -83,14 +80,12 @@ type Api<T extends Record<string, unknown>> = ReactFormExtendedApi<
   undefined,
   unknown
 >
-
 /** Data returned when a mutation conflict (CONFLICT error code) is detected during form submission. */
 interface ConflictData {
   code: string
   current?: unknown
   incoming?: unknown
 }
-
 /** Return type of useForm, providing the form instance, state, conflict handling, and field watching. */
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
   conflict: ConflictData | null
@@ -106,7 +101,6 @@ interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodR
   schema: S
   watch: <K extends keyof T>(name: K) => T[K]
 }
-
 const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause: e }),
   handleConflict = (error: unknown): ConflictData | null => {
     if (getErrorCode(error) !== 'CONFLICT') return null
@@ -157,13 +151,11 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
       [lastSaved, setLastSaved] = useState<null | number>(null),
       vRef = useRef(resolved),
       autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-
     vRef.current = resolved
     if (Object.keys(resolved).some(k => !(k in schema.shape))) throw new Error('Form values include keys not in schema')
     const meta = useMemo(() => buildMeta(schema), [schema]),
       instance = useTanStackForm({
         defaultValues: resolved,
-
         onSubmit: async ({ value }) => {
           setEr(null)
           setFieldErrors({})
@@ -194,7 +186,6 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
         validators: { onSubmit: schema as unknown as StandardSchemaV1<output<S>, unknown> }
       }) as unknown as Api<output<S>>,
       { isDirty, isSubmitting } = useStore(instance.store, s => ({ isDirty: s.isDirty, isSubmitting: s.isSubmitting }))
-
     useEffect(() => {
       if (!(autoSave?.enabled && isDirty)) return
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
@@ -275,6 +266,5 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
       values
     })
   }
-
 export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn }
 export { buildMeta, getMeta, useForm, useFormMutation }

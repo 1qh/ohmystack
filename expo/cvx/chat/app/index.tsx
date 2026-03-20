@@ -9,7 +9,6 @@ import { useMutation } from 'convex/react'
 import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
-
 const Page = () => {
   const router = useRouter(),
     createChat = useMutation(api.chat.create),
@@ -25,7 +24,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='chat-home-page'>
       <Text className='text-2xl font-semibold'>Chat</Text>
@@ -53,5 +51,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

@@ -21,12 +21,10 @@ import { toast } from 'sonner'
 
 import { BYTES_PER_KB, BYTES_PER_MB } from '../constants'
 import useUpload from '../react/use-upload'
-
 interface FileApi {
   info: FunctionReference<'query'>
   upload: FunctionReference<'mutation'>
 }
-
 const FileApiContext = createContext<FileApi | null>(null),
   FileApiProvider = ({ children, value }: { children: ReactNode; value: FileApi }) => (
     <FileApiContext value={value}>{children}</FileApiContext>
@@ -136,7 +134,6 @@ const FileApiContext = createContext<FileApi | null>(null),
         disabled: disabled ?? (isUploading || !canAdd),
         maxSize,
         multiple: Boolean(multiple),
-
         // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/strict-void-return
         onDrop,
         onDropRejected: r => {
@@ -180,7 +177,6 @@ const FileApiContext = createContext<FileApi | null>(null),
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-
                     inputRef.current.click()
                   }
                 }}
@@ -212,7 +208,6 @@ const FileApiContext = createContext<FileApi | null>(null),
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-
                 inputRef.current.click()
               }
             }}
@@ -239,7 +234,6 @@ const FileApiContext = createContext<FileApi | null>(null),
       </Field>
     )
   }
-
 /** Exports FileFieldImpl component and file API context. */
 export default FileFieldImpl
 export { FileApiContext, FileApiProvider }

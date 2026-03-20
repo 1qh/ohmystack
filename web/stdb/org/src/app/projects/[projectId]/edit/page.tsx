@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -19,7 +18,6 @@ import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { project as projectSchema } from '~/schema'
-
 const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCount: number }) => {
     const router = useRouter(),
       [projects] = useOrgTable<Project>(tables.project),
@@ -41,9 +39,7 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
         if (taskCount < 0) return
         removeProject({ id: projectId })
       }
-
     if (!project) return <Skeleton className='h-40' />
-
     return (
       <Form
         className='space-y-4'
@@ -75,14 +71,11 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
       [tasks] = useOrgTable<Task>(tables.task),
       project = projects.find(p => p.id === pid),
       projectTasks = tasks.filter(t => t.projectId === pid)
-
     if (!(project && identity)) return <Skeleton className='h-40' />
-
     const canEditProject =
       isAdmin ||
       sameIdentity(project.userId, identity) ||
       (project.editors ?? []).some(editor => sameIdentity(editor, identity))
-
     return (
       <PermissionGuard
         backHref={`/projects/${projectId}`}
@@ -102,5 +95,4 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
       </PermissionGuard>
     )
   }
-
 export default EditProjectPage

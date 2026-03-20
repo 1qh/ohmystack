@@ -1,5 +1,4 @@
 type AnyApi = Record<string, Record<string, unknown>>
-
 // biome-ignore lint/style/noProcessEnv: env detection
 const GUARD_ACTIVE = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   /** Finds a case-insensitive match for a module name. */
@@ -25,5 +24,4 @@ const GUARD_ACTIVE = typeof process !== 'undefined' && process.env.NODE_ENV !== 
   },
   /** Guards an api object to catch typos in module names at runtime. */
   guardApi = <T extends AnyApi>(api: T, modules: string[]): T => makeGuardedProxy(api, modules)
-
 export { guardApi }

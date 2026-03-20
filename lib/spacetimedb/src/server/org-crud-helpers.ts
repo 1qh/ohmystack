@@ -4,7 +4,6 @@ import type { OrgCrudMemberLike } from './types/org-crud'
 
 import { checkMembership } from './org-crud'
 import { identityEquals, makeError } from './reducer-utils'
-
 const requireOrgMember = <OrgId, Member extends OrgCrudMemberLike<OrgId>>({
     operation,
     orgId,
@@ -31,5 +30,4 @@ const requireOrgMember = <OrgId, Member extends OrgCrudMemberLike<OrgId>>({
     row: { userId: Identity }
     sender: Identity
   }): boolean => member.isAdmin || identityEquals(row.userId, sender)
-
 export { canEdit, requireOrgMember }

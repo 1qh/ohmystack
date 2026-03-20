@@ -7,15 +7,10 @@ import * as React from 'react'
 import { Platform, View, type ViewProps } from 'react-native'
 import { FadeIn, FadeOut } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 const AlertDialog = AlertDialogPrimitive.Root
-
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
-
 const AlertDialogPortal = AlertDialogPrimitive.Portal
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function AlertDialogOverlay({
   className,
   children,
@@ -42,7 +37,6 @@ function AlertDialogOverlay({
     </FullWindowOverlay>
   )
 }
-
 function AlertDialogContent({
   className,
   portalHost,
@@ -68,7 +62,6 @@ function AlertDialogContent({
     </AlertDialogPortal>
   )
 }
-
 function AlertDialogHeader({ className, ...props }: ViewProps) {
   return (
     <TextClassContext.Provider value='text-center sm:text-left'>
@@ -76,25 +69,21 @@ function AlertDialogHeader({ className, ...props }: ViewProps) {
     </TextClassContext.Provider>
   )
 }
-
 function AlertDialogFooter({ className, ...props }: ViewProps) {
   return <View className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />
 }
-
 function AlertDialogTitle({
   className,
   ...props
 }: AlertDialogPrimitive.TitleProps & React.RefAttributes<AlertDialogPrimitive.TitleRef>) {
   return <AlertDialogPrimitive.Title className={cn('text-foreground text-lg font-semibold', className)} {...props} />
 }
-
 function AlertDialogDescription({
   className,
   ...props
 }: AlertDialogPrimitive.DescriptionProps & React.RefAttributes<AlertDialogPrimitive.DescriptionRef>) {
   return <AlertDialogPrimitive.Description className={cn('text-muted-foreground text-sm', className)} {...props} />
 }
-
 function AlertDialogAction({
   className,
   ...props
@@ -105,7 +94,6 @@ function AlertDialogAction({
     </TextClassContext.Provider>
   )
 }
-
 function AlertDialogCancel({
   className,
   ...props
@@ -116,7 +104,6 @@ function AlertDialogCancel({
     </TextClassContext.Provider>
   )
 }
-
 export {
   AlertDialog,
   AlertDialogAction,

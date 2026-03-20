@@ -10,7 +10,6 @@ import {
 } from '@noboil/convex/schema'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
-
 const file = cvFile(),
   files = cvFiles(),
   messagePart = union([
@@ -102,5 +101,4 @@ const file = cvFile(),
     blogProfile: object(profileShape),
     orgProfile: object(profileShape)
   })
-
 export { base, children, org, orgScoped, owned, singleton }

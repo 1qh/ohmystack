@@ -3,15 +3,12 @@ import { cn } from '@a/rnr'
 import type { LucideIcon, LucideProps } from 'lucide-react-native'
 import * as React from 'react'
 import { withUniwind } from 'uniwind'
-
 type IconProps = LucideProps & {
   as: LucideIcon
 }
-
 function IconImpl({ as: IconComponent, ...props }: IconProps) {
   return <IconComponent {...props} />
 }
-
 const StyledIcon = withUniwind(IconImpl, {
   size: {
     fromClassName: 'className',
@@ -22,7 +19,6 @@ const StyledIcon = withUniwind(IconImpl, {
     styleProperty: 'color'
   }
 })
-
 /**
  * A wrapper component for Lucide icons with Uniwind `className` support via `withUniwind`.
  *
@@ -47,5 +43,4 @@ function Icon({ as: IconComponent, className, ...props }: IconProps) {
   const textClass = React.useContext(TextClassContext)
   return <StyledIcon as={IconComponent} className={cn('text-foreground size-5', textClass, className)} {...props} />
 }
-
 export { Icon }

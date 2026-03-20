@@ -6,10 +6,7 @@ Worker execution uses Convex actions and first-party task/message tables. Delega
 
 - OpenAgent references:
   - `oh-my-openagent/src/features/background-agent/`
-  - `oh-my-openagent/src/features/claude-tasks/`
-
-Implementation:
-
+  - `oh-my-openagent/src/features/claude-tasks/` Implementation:
 - `backend/agent/convex/tasks.ts`
 - `backend/agent/convex/agentsNode.ts`
 - `backend/agent/convex/messages.ts`
@@ -33,7 +30,6 @@ stateDiagram-v2
     Running --> Cancelled: archived session guard
     Running --> Pending: scheduleRetry (transient, retry<3)
     Pending --> TimedOut: never-started timeout cron
-
     Completed --> [*]
     Failed --> [*]
     TimedOut --> [*]
@@ -90,9 +86,7 @@ flowchart TD
 
 ## Completion Reminder Chain
 
-Worker completion persists a parent-thread reminder and then conditionally enqueues orchestrator continuation.
-
-Sequence:
+Worker completion persists a parent-thread reminder and then conditionally enqueues orchestrator continuation. Sequence:
 
 1. `completeTask` validates `status === 'running'`.
 2. Save completion/terminal reminder message in parent thread.
@@ -109,7 +103,6 @@ sequenceDiagram
     participant M as messages table
     participant O as orchestrator.enqueueRunIfLatest
     participant RS as threadRunState
-
     W->>T: completeTask(taskId, result)
     T->>M: insert system completion reminder on parent thread
     T->>T: patch completedAt/result/status/completionReminderMessageId
@@ -130,9 +123,7 @@ sequenceDiagram
 - Running timeout: 10 minutes from latest heartbeat/start.
 - Pending timeout: 5 minutes from pending timestamp/create time.
 - Retry backoff: `min(1000 * 2^retryCount, 30000)`.
-- Archived-session guard converts retries to `cancelled`.
-
-Terminal reminders are emitted for `completed`, `failed`, and `timed_out`. `cancelled` does not emit a reminder because cancellation is user/session-driven.
+- Archived-session guard converts retries to `cancelled`. Terminal reminders are emitted for `completed`, `failed`, and `timed_out`. `cancelled` does not emit a reminder because cancellation is user/session-driven.
 
 ## Reliability Notes
 
@@ -146,9 +137,7 @@ Worker retries use transient-error classification with bounded exponential backo
 
 - Backoff delay uses `min(1000 * 2^retryCount, 30000)` milliseconds.
 - Retries are capped at `3`; once the cap is reached, subsequent transient failures resolve to terminal failure instead of another pending cycle.
-- Before requeueing, retry logic checks whether the parent session is archived; archived parents convert the task directly to `cancelled` and skip rescheduling.
-
-This keeps retry behavior fast for short disruptions, bounded under repeated failures, and safe against replaying work after session archival.
+- Before requeueing, retry logic checks whether the parent session is archived; archived parents convert the task directly to `cancelled` and skip rescheduling. This keeps retry behavior fast for short disruptions, bounded under repeated failures, and safe against replaying work after session archival.
 
 ## Terminal State Reminders
 
@@ -157,9 +146,7 @@ Terminal reminder emission is explicit by status.
 - `completed` emits a completion reminder to the parent thread.
 - `failed` emits a failure reminder to the parent thread.
 - `timed_out` emits a timeout reminder to the parent thread.
-- `cancelled` does not emit an automatic reminder because cancellation is session/user-driven, not an unexpected runtime terminal event.
-
-This contract ensures orchestrator follow-up is triggered for meaningful runtime terminal outcomes while avoiding noise for intentional cancellation paths.
+- `cancelled` does not emit an automatic reminder because cancellation is session/user-driven, not an unexpected runtime terminal event. This contract ensures orchestrator follow-up is triggered for meaningful runtime terminal outcomes while avoiding noise for intentional cancellation paths.
 
 ## Tests
 

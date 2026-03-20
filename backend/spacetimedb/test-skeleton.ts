@@ -1,7 +1,6 @@
 // oxlint-disable promise/avoid-new
 /* eslint-disable no-console */
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/server'
-
 interface BlogRow {
   content: string
   id: number
@@ -9,9 +8,7 @@ interface BlogRow {
   updated_at: unknown
   user_id: unknown
 }
-
 type Ctx = Awaited<ReturnType<typeof createTestContext>>
-
 const sleep = async (ms: number) =>
     new Promise<void>(resolve => {
       setTimeout(resolve, ms)
@@ -46,7 +43,6 @@ const sleep = async (ms: number) =>
   testForbidden = async (ctx: Ctx, blogId: number) => {
     console.log('[4/6] Trying update as different user (should fail)...')
     const [, secondUser] = ctx.users
-
     if (!secondUser) return
     let forbidden = false
     try {
@@ -81,7 +77,6 @@ const sleep = async (ms: number) =>
     await cleanup(ctx)
     console.log('\n Walking skeleton PASSED!')
   }
-
 // oxlint-disable-next-line unicorn/prefer-top-level-await, promise/prefer-await-to-then, promise/prefer-await-to-callbacks
 run().catch((error: unknown) => {
   console.error('\n Walking skeleton FAILED:', error)

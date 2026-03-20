@@ -9,13 +9,11 @@ import { BYTES_PER_MB } from '../constants'
 import { idx } from './bridge'
 import { isTestMode } from './env'
 import { log } from './helpers'
-
 interface FileActionCtx {
   runMutation: (...a: unknown[]) => Promise<unknown>
   runQuery: (...a: unknown[]) => Promise<unknown>
   storage: FileStor
 }
-
 interface FileCtx {
   db: DbLike
   storage: FileStor
@@ -27,7 +25,6 @@ interface FileStor {
   getUrl: (id: string) => Promise<null | string>
   store: (blob: Blob) => Promise<string>
 }
-
 interface FileUploadConfig<DM extends GenericDataModel = GenericDataModel> {
   action: ActionBuilder<DM, 'public'>
   allowedTypes?: Set<string>
@@ -39,7 +36,6 @@ interface FileUploadConfig<DM extends GenericDataModel = GenericDataModel> {
   namespace: string
   query: QueryBuilder<DM, 'public'>
 }
-
 const DEFAULT_ALLOWED_TYPES = new Set([
     'application/json',
     'application/msword',
@@ -351,7 +347,6 @@ const DEFAULT_ALLOWED_TYPES = new Set([
       } as never),
       cancelChunkedUpload = mutation({
         args: { uploadId: v.string() },
-
         handler: async (c: FileCtx, { uploadId }: { uploadId: string }) => {
           const userId = await authUserId(c)
           if (!userId) throw cvErr('NOT_AUTHENTICATED')
@@ -403,9 +398,9 @@ const DEFAULT_ALLOWED_TYPES = new Set([
         }
       } as never)
     return {
+      CHUNK_SIZE,
       assembleChunks,
       cancelChunkedUpload,
-      CHUNK_SIZE,
       confirmChunk,
       finalizeAssembly,
       getSessionForAssembly,
@@ -417,5 +412,4 @@ const DEFAULT_ALLOWED_TYPES = new Set([
       validate
     }
   }
-
 export { makeFileUpload }

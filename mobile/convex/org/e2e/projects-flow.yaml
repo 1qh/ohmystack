@@ -1,38 +1,30 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - assertVisible: "Projects"
 - assertVisible: "No projects yet"
 - assertVisible: "Create Project"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - assertVisible: "New Project"
 - assertVisible: "Project Name"
 - assertVisible: "Description (optional)"
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
-
 - tapOn: "Project Name"
 - inputText: "Maestro Test Project"
 - tapOn: "Description (optional)"
 - inputText: "Created by Maestro E2E test"
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Maestro Test Project"
     timeout: 10000
 - assertVisible: "Created by Maestro E2E test"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -43,15 +35,12 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Second Project"
     timeout: 10000
-
 - assertVisible: "Maestro Test Project"
 - assertVisible: "Second Project"
-
 - tapOn: "Maestro Test Project"
 - waitForAnimationToEnd
 - assertVisible: "Tasks"
 - assertVisible: "New task..."
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Projects"

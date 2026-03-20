@@ -10,9 +10,7 @@ import type {
 } from './types/cache'
 
 import { applyPatch, makeError, makeOptionalFields, pickPatch } from './reducer-utils'
-
 type UpdateArgs<F extends CacheFieldBuilders> = Partial<CacheFieldValues<F>>
-
 const DAYS_PER_WEEK = 7,
   HOURS_PER_DAY = 24,
   MINUTES_PER_HOUR = 60,
@@ -39,13 +37,10 @@ const DAYS_PER_WEEK = 7,
       },
       fromValue = typeof timestamp.valueOf === 'function' ? parseTimestampValue(timestamp.valueOf()) : null
     if (fromValue !== null) return fromValue
-
     const fromJson = typeof timestamp.toJSON === 'function' ? parseTimestampValue(timestamp.toJSON()) : null
     if (fromJson !== null) return fromJson
-
     const fromString = typeof timestamp.toString === 'function' ? parseTimestampValue(timestamp.toString()) : null
     if (fromString !== null) return fromString
-
     throw makeError('INVALID_TIMESTAMP', 'cache:timestamp')
   },
   isExpired = (cachedAt: Timestamp, now: Timestamp, ttl: number): boolean =>
@@ -89,17 +84,14 @@ const DAYS_PER_WEEK = 7,
       optionalFields = makeOptionalFields(fields),
       createKeys = Object.keys(fields),
       optionalKeys = Object.keys(optionalFields)
-
     for (const key of createKeys) {
       const field = fields[key]
       if (field) createParams[key] = field
     }
-
     for (const key of optionalKeys) {
       const field = optionalFields[key]
       if (field) updateParams[key] = field
     }
-
     const createReducer = spacetimedb.reducer({ name: createName }, createParams, (ctx, args) => {
         const typedArgs = args as CacheFieldValues<F> & Record<string, unknown>,
           table = tableAccessor(ctx.db),
@@ -123,9 +115,7 @@ const DAYS_PER_WEEK = 7,
           keyValue = argsRecord[keyName] as Key,
           pk = pkAccessor(table),
           row = pk.find(keyValue)
-
         if (!row) throw makeError('NOT_FOUND', `${tableName}:update`)
-
         const patch = pickPatch(typedArgs, fieldNames),
           merged = { ...patch, invalidatedAt: null }
         pk.update(applyPatch(row as unknown as Record<string, unknown>, merged, ctx.timestamp) as unknown as Row)
@@ -137,7 +127,6 @@ const DAYS_PER_WEEK = 7,
           keyValue = argsRecord[keyName] as Key,
           pk = pkAccessor(table),
           row = pk.find(keyValue)
-
         if (!row) throw makeError('NOT_FOUND', `${tableName}:rm`)
         const removed = pk.delete(keyValue)
         if (!removed) throw makeError('NOT_FOUND', `${tableName}:rm`)
@@ -149,22 +138,18 @@ const DAYS_PER_WEEK = 7,
           keyValue = argsRecord[keyName] as Key,
           pk = pkAccessor(table),
           row = pk.find(keyValue)
-
         if (!row) throw makeError('NOT_FOUND', `${tableName}:invalidate`)
-
         const nextRecord = {
           ...(row as unknown as Record<string, unknown>),
           invalidatedAt: ctx.timestamp,
           updatedAt: ctx.timestamp
         } as Row
-
         pk.update(nextRecord)
       }),
       purgeReducer = spacetimedb.reducer({ name: purgeName }, {}, ctx => {
         const table = tableAccessor(ctx.db),
           pk = pkAccessor(table),
           keysToDelete: Key[] = []
-
         for (const row of table) {
           const rowRecord = row as unknown as Record<string, unknown>,
             cachedAt = rowRecord.cachedAt as Timestamp
@@ -173,7 +158,6 @@ const DAYS_PER_WEEK = 7,
             keysToDelete.push(keyValue)
           }
         }
-
         for (const key of keysToDelete) pk.delete(key)
       }),
       exportsRecord = {
@@ -183,10 +167,8 @@ const DAYS_PER_WEEK = 7,
         [rmName]: rmReducer,
         [updateName]: updateReducer
       } as unknown as CacheExports['exports']
-
     return {
       exports: exportsRecord
     }
   }
-
 export { makeCacheCrud }

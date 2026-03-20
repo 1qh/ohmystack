@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -17,7 +16,6 @@ import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { useOrg } from '~/hook/use-org'
 import { useProfileMap } from '~/hook/use-profile-map'
-
 const emptyMembers: never[] = [],
   WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => {
     const { wikiId } = use(params),
@@ -41,9 +39,7 @@ const emptyMembers: never[] = [],
           title: wiki.title
         })
       }
-
     if (!(wiki && identity)) return <Skeleton className='h-40' />
-
     const isDeleted = wiki.deletedAt !== undefined,
       // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
       editorsList = (wiki.editors ?? []).map(e => {
@@ -53,7 +49,6 @@ const emptyMembers: never[] = [],
       }),
       canEditWiki =
         isAdmin || sameIdentity(wiki.userId, identity) || editorsList.some(e => e.userId === identity.toHexString())
-
     return (
       <div className='space-y-6'>
         {isDeleted ? (
@@ -99,12 +94,10 @@ const emptyMembers: never[] = [],
           <Badge variant={wiki.status === 'published' ? 'default' : 'secondary'}>{wiki.status}</Badge>
         </div>
         {wiki.content ? <p className='text-muted-foreground'>{wiki.content}</p> : null}
-
         {isAdmin && !isDeleted ? (
           <EditorsSection editorsList={editorsList} members={emptyMembers} onAdd={noop} onRemove={noop} />
         ) : null}
       </div>
     )
   }
-
 export default WikiDetailPage

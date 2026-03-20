@@ -4,7 +4,6 @@
 import type { UploadOptions, UploadResponse } from '../components'
 
 import { err } from '../server/helpers'
-
 interface CreateSpacetimeClientOptions<
   TBuilder extends SpacetimeConnectionBuilder<TBuilder, TConnection, TIdentity>,
   TConnection = unknown,
@@ -15,30 +14,25 @@ interface CreateSpacetimeClientOptions<
   tokenStore?: TokenStore
   uri: string
 }
-
 interface ParsedPresignPayload {
   headers: Record<string, string>
   method?: string
   storageKey: string
   uploadUrl: string
 }
-
 interface SpacetimeConnectionBuilder<TBuilder, TConnection = unknown, TIdentity = unknown> {
   onConnect: (callback: (connection: TConnection, identity: TIdentity, token: string) => void) => TBuilder
   withDatabaseName: (moduleName: string) => TBuilder
   withToken: (token: string | undefined) => TBuilder
   withUri: (uri: string) => TBuilder
 }
-
 interface SpacetimeConnectionFactory<TBuilder> {
   builder: () => TBuilder
 }
-
 interface TokenStore {
   get: () => string | undefined
   store: (token: string) => void
 }
-
 const HTTP_OK = 200,
   HTTP_REDIRECT = 300,
   OCTET_STREAM = 'application/octet-stream',
@@ -78,7 +72,6 @@ const HTTP_OK = 200,
   },
   hasContentTypeHeader = (headers: Record<string, string>): boolean => {
     for (const key of Object.keys(headers)) if (key.toLowerCase() === 'content-type') return true
-
     return false
   },
   getBuilderCache = <TBuilder>(factory: object): Map<string, TBuilder> => {
@@ -145,7 +138,6 @@ const HTTP_OK = 200,
           .json()
           .catch(() => err('VALIDATION_FAILED', { message: 'Presign endpoint returned non-JSON response' }))) as unknown,
         presigned = parsePresignPayload(payload)
-
       return new Promise<UploadResponse>((resolve, reject) => {
         const xhr = new XMLHttpRequest(),
           { headers } = presigned,
@@ -225,6 +217,5 @@ const HTTP_OK = 200,
     cache.set(key, builder)
     return builder
   }
-
 export type { CreateSpacetimeClientOptions, SpacetimeConnectionBuilder, SpacetimeConnectionFactory, TokenStore }
 export { createFileUploader, createSpacetimeClient, createTokenStore, toWsUri }

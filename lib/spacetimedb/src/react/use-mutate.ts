@@ -1,7 +1,6 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 /* eslint-disable complexity */
 'use client'
-
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { useReducer as useStdbReducer } from 'spacetimedb/react'
@@ -14,7 +13,6 @@ import { withRetry } from '../retry'
 import { extractErrorData, getErrorMessage, getFirstFieldError, handleError } from '../server/helpers'
 import { completeMutation, pushError, trackMutation } from './devtools'
 import { makeTempId, useOptimisticStore } from './optimistic-store'
-
 /** Options for configuring mutation wrappers and optimistic behavior. */
 interface MutateOptions<A extends Record<string, unknown>, R = void> {
   getName?: (args: A) => string
@@ -27,21 +25,16 @@ interface MutateOptions<A extends Record<string, unknown>, R = void> {
   toast?: MutateToast<A, R>
   type?: MutationType
 }
-
 /** Toast shorthand for mutation success/error messages. */
 interface MutateToast<A extends Record<string, unknown>, R = void> {
   error?: ((error: unknown) => string) | string
   fieldErrors?: boolean
   success?: ((result: R, args: A) => string) | string
 }
-
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   /** Default mutation error handler. Toasts NOT_AUTHENTICATED and RATE_LIMITED with user-friendly messages, falls back to error message for other codes. */
   defaultOnError = (error: unknown) => {
     handleError(error, {
-      default: () => {
-        toast.error(getErrorMessage(error))
-      },
       NOT_AUTHENTICATED: () => {
         toast.error('Please log in')
       },
@@ -52,6 +45,9 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
             ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
             : 'Too many requests, try again later'
         )
+      },
+      default: () => {
+        toast.error(getErrorMessage(error))
       }
     })
   },
@@ -113,7 +109,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       isOptimistic = options?.optimistic !== false,
       errorHandler = resolveToastError(options),
       successHandler = resolveToastSuccess(options)
-
     return useCallback(
       async (args: A): Promise<R> => {
         const name = options?.getName?.(args) ?? (mutate.name || 'mutation'),
@@ -124,7 +119,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
             ? async () =>
                 withRetry(async () => mutate(args), typeof retryOpt === 'number' ? { maxAttempts: retryOpt } : retryOpt)
             : async () => mutate(args)
-
         if (!(store && isOptimistic))
           try {
             const result = await exec()
@@ -141,7 +135,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
             options?.onSettled?.(args, catchError)
             throw catchError
           }
-
         const tempId = makeTempId(),
           id = options?.resolveId?.(args) ?? (typeof args.id === 'string' ? args.id : tempId)
         store.add({
@@ -151,7 +144,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
           timestamp: Date.now(),
           type
         })
-
         try {
           const result = await exec()
           if (isDev && devId) completeMutation(devId, 'success')
@@ -196,6 +188,5 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
     options?: MutateOptions<A, R>
   ): ((args: UndefinedToOptional<A>) => Promise<R>) =>
     useMutation(useStdbReducer as unknown as (desc: unknown) => (args: A) => Promise<R>, reducer, options)
-
 export type { MutateOptions, MutateToast }
 export { defaultOnError, useMut, useMutate, useMutation }

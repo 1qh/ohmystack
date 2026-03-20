@@ -1,7 +1,5 @@
 "use client";
-
 import type { ComponentProps } from "react";
-
 import { Button } from "@a/ui/components/button";
 import {
   DropdownMenu,
@@ -18,7 +16,6 @@ import {
   MessageCircleIcon,
 } from "lucide-react";
 import { createContext, useContext } from "react";
-
 const providers = {
   chatgpt: {
     createUrl: (prompt: string) =>
@@ -184,9 +181,7 @@ const providers = {
     title: "Open in v0",
   },
 };
-
 const OpenInContext = createContext<{ query: string } | undefined>(undefined);
-
 const useOpenInContext = () => {
   const context = useContext(OpenInContext);
   if (!context) {
@@ -194,19 +189,15 @@ const useOpenInContext = () => {
   }
   return context;
 };
-
 export type OpenInProps = ComponentProps<typeof DropdownMenu> & {
   query: string;
 };
-
 export const OpenIn = ({ query, ...props }: OpenInProps) => (
   <OpenInContext.Provider value={{ query }}>
     <DropdownMenu {...props} />
   </OpenInContext.Provider>
 );
-
 export type OpenInContentProps = ComponentProps<typeof DropdownMenuContent>;
-
 export const OpenInContent = ({ className, ...props }: OpenInContentProps) => (
   <DropdownMenuContent
     align="start"
@@ -214,27 +205,19 @@ export const OpenInContent = ({ className, ...props }: OpenInContentProps) => (
     {...props}
   />
 );
-
 export type OpenInItemProps = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInItem = (props: OpenInItemProps) => (
   <DropdownMenuItem {...props} />
 );
-
 export type OpenInLabelProps = ComponentProps<typeof DropdownMenuLabel>;
-
 export const OpenInLabel = (props: OpenInLabelProps) => (
   <DropdownMenuLabel {...props} />
 );
-
 export type OpenInSeparatorProps = ComponentProps<typeof DropdownMenuSeparator>;
-
 export const OpenInSeparator = (props: OpenInSeparatorProps) => (
   <DropdownMenuSeparator {...props} />
 );
-
 export type OpenInTriggerProps = ComponentProps<typeof DropdownMenuTrigger>;
-
 export const OpenInTrigger = ({ children, ...props }: OpenInTriggerProps) => (
   <DropdownMenuTrigger {...props} asChild>
     {children ?? (
@@ -245,9 +228,7 @@ export const OpenInTrigger = ({ children, ...props }: OpenInTriggerProps) => (
     )}
   </DropdownMenuTrigger>
 );
-
 export type OpenInChatGPTProps = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInChatGPT = (props: OpenInChatGPTProps) => {
   const { query } = useOpenInContext();
   return (
@@ -265,9 +246,7 @@ export const OpenInChatGPT = (props: OpenInChatGPTProps) => {
     </DropdownMenuItem>
   );
 };
-
 export type OpenInClaudeProps = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInClaude = (props: OpenInClaudeProps) => {
   const { query } = useOpenInContext();
   return (
@@ -285,9 +264,7 @@ export const OpenInClaude = (props: OpenInClaudeProps) => {
     </DropdownMenuItem>
   );
 };
-
 export type OpenInT3Props = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInT3 = (props: OpenInT3Props) => {
   const { query } = useOpenInContext();
   return (
@@ -305,9 +282,7 @@ export const OpenInT3 = (props: OpenInT3Props) => {
     </DropdownMenuItem>
   );
 };
-
 export type OpenInSciraProps = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInScira = (props: OpenInSciraProps) => {
   const { query } = useOpenInContext();
   return (
@@ -325,9 +300,7 @@ export const OpenInScira = (props: OpenInSciraProps) => {
     </DropdownMenuItem>
   );
 };
-
 export type OpenInv0Props = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInv0 = (props: OpenInv0Props) => {
   const { query } = useOpenInContext();
   return (
@@ -345,9 +318,7 @@ export const OpenInv0 = (props: OpenInv0Props) => {
     </DropdownMenuItem>
   );
 };
-
 export type OpenInCursorProps = ComponentProps<typeof DropdownMenuItem>;
-
 export const OpenInCursor = (props: OpenInCursorProps) => {
   const { query } = useOpenInContext();
   return (

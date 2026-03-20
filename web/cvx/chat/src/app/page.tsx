@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import { Conversation, ConversationContent, ConversationEmptyState } from '@a/ui/ai-elements/conversation'
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from '@a/ui/ai-elements/prompt-input'
@@ -9,7 +8,6 @@ import { useMutation } from 'convex/react'
 import { SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createElement, useId, useState, useTransition } from 'react'
-
 const Page = () => {
   const router = useRouter(),
     createChat = useMutation(api.chat.create),
@@ -65,5 +63,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

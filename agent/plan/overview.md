@@ -36,7 +36,6 @@ graph TB
     subgraph Browser
         UI[Next.js Frontend]
     end
-
     subgraph Convex["Convex Backend (backend/agent)"]
         API[Public API Layer]
         ORCH[Orchestrator Engine]
@@ -44,12 +43,10 @@ graph TB
         CRON[Cron Jobs]
         DB[(Convex Tables)]
     end
-
     subgraph External
         GEMINI[Gemini 2.5 Flash]
         MCP_S[MCP Servers]
     end
-
     UI -->|mutations/queries| API
     API -->|enqueue run| ORCH
     ORCH -->|spawn tasks| WORK
@@ -74,7 +71,6 @@ sequenceDiagram
     participant O as Orchestrator Action
     participant AI as Gemini 2.5 Flash
     participant DB as Messages Table
-
     U->>FE: Type message
     FE->>API: submitMessage()
     API->>DB: Insert user message
@@ -119,15 +115,7 @@ Undo, forked conversations, model switching, slash commands, file editing, code 
 
 ## Original Requirements
 
-Now, i want to make a simplified version of you, oh-my-openagent (latest version) but for the web, built on noboil convex. Think of it like an agent harness, but built on the web technologies and for the web infrastructure.
-
-This is a complex app to push the boundary of both convex and our library to maximum. Let’s leverage all the best of both worlds: Our noboil/convex setup and convex itself.
-
-After this app is done and verified working, we will try to make our building blocks to be generic and release @noboil/agent as a solution for anyone to build their own web-based agent harness with maximum customizability.
-
-First, clone the repo and pinpoint the exact commit hash, this is to know the exact version of our reference, so when they have newer releases, we can compare and see their improvements to adopt what we can.
-
-Let create a new app at the repo root as `agent`, this is where this new app lives.
+Now, i want to make a simplified version of you, oh-my-openagent (latest version) but for the web, built on noboil convex. Think of it like an agent harness, but built on the web technologies and for the web infrastructure. This is a complex app to push the boundary of both convex and our library to maximum. Let’s leverage all the best of both worlds: Our noboil/convex setup and convex itself. After this app is done and verified working, we will try to make our building blocks to be generic and release @noboil/agent as a solution for anyone to build their own web-based agent harness with maximum customizability. First, clone the repo and pinpoint the exact commit hash, this is to know the exact version of our reference, so when they have newer releases, we can compare and see their improvements to adopt what we can. Let create a new app at the repo root as `agent`, this is where this new app lives.
 
 ### Capabilities
 

@@ -11,7 +11,6 @@ import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import Sidebar from './sidebar'
-
 const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat' },
   PUBLIC_PATHS = ['/login', '/public'],
   isPublicPath = (pathname: string) => {
@@ -22,13 +21,9 @@ const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat'
   Layout = async ({ children }: { children: ReactNode }) => {
     const pathname = (await headers()).get('x-pathname') ?? '/',
       token = (await cookies()).get('spacetimedb_token')?.value,
-      // eslint-disable-next-line no-restricted-properties
       isPlaywright = process.env.PLAYWRIGHT === '1' || process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
-
     if (!(isPublicPath(pathname) || isPlaywright || (typeof token === 'string' && token.length > 0))) redirect('/login')
-
     const showSidebar = !isPublicPath(pathname)
-
     return (
       <AuthLayout provider={renderSpacetimeProvider}>
         {showSidebar ? (
@@ -43,6 +38,5 @@ const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat'
       </AuthLayout>
     )
   }
-
 export { metadata }
 export default Layout

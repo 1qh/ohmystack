@@ -1,5 +1,4 @@
 'use client'
-
 import type { Org } from '@a/be-spacetimedb/spacetimedb/types'
 import type { output } from 'zod'
 
@@ -14,18 +13,14 @@ import { useRef } from 'react'
 import { useReducer } from 'spacetimedb/react'
 
 import { orgTeam } from '~/schema'
-
 type OrgFormValues = output<typeof orgTeam>
-
 const orgKeys = {
   name: 'name',
   slug: 'slug'
 } as const satisfies Record<'name' | 'slug', keyof OrgFormValues>
-
 interface OrgSettingsFormProps {
   org: Org & { _id: string }
 }
-
 const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
   const router = useRouter(),
     slugRef = useRef(''),
@@ -45,7 +40,6 @@ const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
       values: pickValues(orgTeam, o)
     }),
     slug = form.watch(orgKeys.slug)
-
   return (
     <Card>
       <CardHeader>
@@ -71,5 +65,4 @@ const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
     </Card>
   )
 }
-
 export default OrgSettingsForm

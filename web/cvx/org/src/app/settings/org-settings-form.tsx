@@ -1,5 +1,4 @@
 'use client'
-
 import type { Doc } from '@a/be-convex/model'
 import type { output } from 'zod'
 
@@ -14,18 +13,14 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { orgTeam } from '~/schema'
-
 type OrgFormValues = output<typeof orgTeam>
-
 const orgKeys = {
   name: 'name',
   slug: 'slug'
 } as const satisfies Record<'name' | 'slug', keyof OrgFormValues>
-
 interface OrgSettingsFormProps {
   org: Doc<'org'>
 }
-
 const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
   const router = useRouter(),
     update = useMutation(api.org.update),
@@ -34,7 +29,6 @@ const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
         await update({ data: d, orgId: o._id })
         toast.success('Settings updated')
         if (d.slug !== o.slug) setActiveOrgCookieClient({ orgId: o._id, slug: d.slug })
-
         router.push('/settings')
         return d
       },
@@ -42,7 +36,6 @@ const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
       values: pickValues(orgTeam, o)
     }),
     slug = form.watch(orgKeys.slug)
-
   return (
     <Card>
       <CardHeader>
@@ -68,5 +61,4 @@ const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
     </Card>
   )
 }
-
 export default OrgSettingsForm

@@ -1,5 +1,4 @@
 'use client'
-
 import type { Project } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -17,7 +16,6 @@ import { useReducer } from 'spacetimedb/react'
 
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
-
 const ProjectsPage = () => {
   const { isAdmin, org } = useOrg(),
     [orgProjectRows, isProjectsReady] = useOrgTable<Project>(tables.project),
@@ -37,7 +35,6 @@ const ProjectsPage = () => {
       orgId: org._id,
       rm: async id => rmProject({ id: Number(id) })
     })
-
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
@@ -67,7 +64,6 @@ const ProjectsPage = () => {
           </Link>
         </Button>
       </div>
-
       <div className='relative'>
         <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
         <Input
@@ -79,7 +75,6 @@ const ProjectsPage = () => {
           value={query}
         />
       </div>
-
       {projects.length === 0 ? (
         <Card>
           <CardContent className='flex flex-col items-center py-8 text-center'>
@@ -129,5 +124,4 @@ const ProjectsPage = () => {
     </div>
   )
 }
-
 export default ProjectsPage

@@ -9,7 +9,6 @@ import { useMutation } from 'convex/react'
 import { Link } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
-
 const Page = () => {
   const { items } = useList(api.blog.list, { where: { or: [{ published: true }, { own: true }] } }),
     create = useMutation(api.blog.create),
@@ -31,7 +30,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='crud-dynamic-page'>
       <Text className='text-2xl font-semibold'>Blog</Text>
@@ -71,5 +69,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

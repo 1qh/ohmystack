@@ -3,7 +3,6 @@ import { v } from 'convex/values'
 
 import { q } from '../lazy'
 import { internalMutation } from './_generated/server'
-
 const recordModelUsage = internalMutation({
     args: {
       agentName: v.string(),
@@ -50,7 +49,6 @@ const recordModelUsage = internalMutation({
     handler: async (ctx, { sessionId }) => {
       const session = await ctx.db.get(sessionId)
       if (session?.userId !== ctx.user._id) return { count: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 }
-
       const rows = await ctx.db
         .query('tokenUsage')
         .withIndex('by_session', idx => idx.eq('sessionId', sessionId))
@@ -66,5 +64,4 @@ const recordModelUsage = internalMutation({
       return { count: rows.length, inputTokens, outputTokens, totalTokens }
     }
   })
-
 export { getTokenUsage, recordModelUsage }

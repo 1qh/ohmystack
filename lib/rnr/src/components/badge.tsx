@@ -3,7 +3,6 @@ import { cn } from '@a/rnr'
 import * as Slot from '@rn-primitives/slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { Platform, View, type ViewProps } from 'react-native'
-
 const badgeVariants = cva(
   cn(
     'border-border group shrink-0 flex-row items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5',
@@ -25,7 +24,6 @@ const badgeVariants = cva(
     }
   }
 )
-
 const badgeTextVariants = cva('text-xs font-medium', {
   variants: {
     variant: {
@@ -39,12 +37,10 @@ const badgeTextVariants = cva('text-xs font-medium', {
     variant: 'default'
   }
 })
-
 type BadgeProps = ViewProps &
   React.RefAttributes<View> & {
     asChild?: boolean
   } & VariantProps<typeof badgeVariants>
-
 function Badge({ className, variant, asChild, ...props }: BadgeProps) {
   const Component = asChild ? Slot.View : View
   return (
@@ -53,6 +49,5 @@ function Badge({ className, variant, asChild, ...props }: BadgeProps) {
     </TextClassContext.Provider>
   )
 }
-
 export { Badge, badgeTextVariants, badgeVariants }
 export type { BadgeProps }

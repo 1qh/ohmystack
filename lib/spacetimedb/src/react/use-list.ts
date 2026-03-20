@@ -1,13 +1,11 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { ListSort, ListWhere, Rec, WhereGroup } from './list-utils'
 
 import { matchW } from '../server/helpers'
 import { noop, searchMatches, sortData } from './list-utils'
-
 /** Client-side list options for filtering, sorting, searching, and pagination. */
 interface UseListOptions<T extends Rec = Rec> {
   page?: number
@@ -16,7 +14,6 @@ interface UseListOptions<T extends Rec = Rec> {
   sort?: ListSort<T>
   where?: ListWhere<T>
 }
-
 /** Default page size used by `useList`. */
 const DEFAULT_PAGE_SIZE = 50,
   /** Builds a paginated, filterable, searchable list view from in-memory rows.
@@ -33,7 +30,6 @@ const DEFAULT_PAGE_SIZE = 50,
    * })
    * ```
    */
-
   SKIP_RESULT = {
     data: [] as never[],
     hasMore: false,
@@ -59,7 +55,6 @@ const DEFAULT_PAGE_SIZE = 50,
       [currentPage, setCurrentPage] = useState(opts?.page ?? 1),
       whereRef = useRef(opts?.where),
       searchQueryRef = useRef(rawQuery)
-
     useEffect(() => {
       if (!debounceMs) {
         setDebouncedQuery(rawQuery)
@@ -68,9 +63,7 @@ const DEFAULT_PAGE_SIZE = 50,
       const id = setTimeout(() => setDebouncedQuery(rawQuery), debounceMs)
       return () => clearTimeout(id)
     }, [debounceMs, rawQuery])
-
     const searchQuery = debounceMs ? debouncedQuery : rawQuery
-
     useEffect(() => {
       const whereChanged = whereRef.current !== opts?.where,
         searchChanged = searchQueryRef.current !== searchQuery
@@ -78,7 +71,6 @@ const DEFAULT_PAGE_SIZE = 50,
       searchQueryRef.current = searchQuery
       if (whereChanged || searchChanged) setCurrentPage(1)
     }, [opts?.where, searchQuery])
-
     const filtered = useMemo(() => {
         if (skipped || !opts?.where) return skipped ? [] : data
         const out: T[] = []
@@ -103,19 +95,15 @@ const DEFAULT_PAGE_SIZE = 50,
         if (!hasMore) return
         setCurrentPage(p => p + 1)
       }, [hasMore])
-
     useEffect(() => {
       if (opts?.page === undefined) return
       setCurrentPage(Math.max(1, opts.page))
     }, [opts?.page])
-
     useEffect(() => {
       const maxPage = Math.max(1, Math.ceil(totalCount / cappedPageSize))
       if (currentPage > maxPage) setCurrentPage(maxPage)
     }, [cappedPageSize, currentPage, totalCount])
-
     if (skipped) return SKIP_RESULT
-
     return {
       data: pagedData,
       hasMore,
@@ -143,7 +131,6 @@ const DEFAULT_PAGE_SIZE = 50,
       for (const row of rows) out.push({ ...row, own: isOwn ? isOwn(row) : false })
       return out
     }, [rows, isOwn])
-
 /** Result shape returned when `useList` options is `'skip'`. */
 interface SkipListResult {
   data: never[]
@@ -153,7 +140,6 @@ interface SkipListResult {
   page: 1
   totalCount: 0
 }
-
 /** Result shape returned by `useList` with normal options. */
 interface UseListResult<T extends Rec> {
   data: T[]
@@ -163,6 +149,5 @@ interface UseListResult<T extends Rec> {
   page: number
   totalCount: number
 }
-
 export type { ListWhere, SkipListResult, UseListOptions, UseListResult, WhereGroup }
 export { DEFAULT_PAGE_SIZE, useList, useOwnRows }

@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -10,7 +9,6 @@ import type { FactoryCall } from './check'
 
 import { endpointsForFactory } from './check'
 import { extractChildren, extractWrapperTables } from './viz'
-
 const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -318,9 +316,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\n@noboil/convex docs\n'))
-
     if (flags.has('--full')) {
       const srcDir = join(root, 'src')
       if (!existsSync(srcDir)) {
@@ -330,13 +326,11 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
       console.log(generateFullReference(srcDir))
       return
     }
-
     const convexDir = findConvexDir(root)
     if (!convexDir) {
       console.log(red('\u2717 Could not find convex/ directory with _generated/'))
       process.exit(1)
     }
-
     const schemaFile = findSchemaFile(convexDir)
     if (!schemaFile) {
       console.log(red('\u2717 Could not find schema file with @noboil/convex markers'))
@@ -344,19 +338,16 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     }
     console.log(`${dim('schema:')} ${schemaFile.path}`)
     console.log(`${dim('convex:')} ${convexDir}\n`)
-
     const calls = extractFactoryCalls(convexDir),
       tables = extractWrapperTables(schemaFile.content),
       children = extractChildren(schemaFile.content),
       tableFields = new Map<string, { name: string; type: string }[]>()
     for (const t of tables) tableFields.set(t.name, t.fields)
     for (const c of children) tableFields.set(c.name, c.fields)
-
     if (flags.has('--markdown') || flags.has('--md')) {
       console.log(generateMarkdown(calls, tableFields))
       return
     }
-
     let total = 0
     for (const call of calls) {
       const eps = endpointsForFactory(call),
@@ -365,14 +356,11 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
       console.log(`${bold(call.table)} ${dim(`(${call.factory})`)} ${dim(`\u2014 ${call.file}`)}`)
       if (fields !== undefined && fields.length > 0)
         console.log(`  ${dim('fields:')} ${fields.map(f => `${f.name}: ${f.type}`).join(', ')}`)
-
       console.log(`  ${dim('endpoints:')} ${eps.join(', ')}`)
       console.log('')
     }
     console.log(`${green('\u2713')} ${bold(String(total))} endpoints from ${bold(String(calls.length))} factories`)
     console.log(dim('\nRun with --markdown for full API reference output\n'))
   }
-
 if (import.meta.main) run()
-
 export { extractJSDoc, generateFullReference, generateMarkdown, resolveReExports }

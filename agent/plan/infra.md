@@ -7,15 +7,11 @@ Gemini 2.5 Flash stays fixed for v1, while test environments switch to a determi
 - The model module validates environment configuration on import before any model is constructed.
 - `getModel()` memoizes the selected model instance so repeated calls reuse a single initialized model.
 - In test-mode signals (`PLAYWRIGHT`, `TEST_MODE`, or `CONVEX_TEST_MODE`), `getModel()` returns the mock model.
-- Outside test mode, `getModel()` lazily initializes the Vertex provider and returns the real Gemini model.
-
-Implementation: `backend/agent/ai.ts`
+- Outside test mode, `getModel()` lazily initializes the Vertex provider and returns the real Gemini model. Implementation: `backend/agent/ai.ts`
 
 ## Backend Structure
 
-Backend runs as an independent Convex package under `backend/agent`.
-
-File tree:
+Backend runs as an independent Convex package under `backend/agent`. File tree:
 
 - `backend/agent/`
 - `backend/agent/convex/`
@@ -64,7 +60,6 @@ flowchart TD
   A --> I["check-schema.ts"]
   A --> J["package.json"]
   A --> K["tsconfig.json"]
-
   B --> B1["schema.ts"]
   B --> B2["auth.ts"]
   B --> B3["testauth.ts"]
@@ -127,37 +122,29 @@ File uploads are not included in this product scope. Text input/paste is support
 
 ### Backend env (`backend/agent`, set via `convex env set`)
 
-| Variable                | Dev                               | Test             | Prod                  | Notes                                                 |
-| ----------------------- | --------------------------------- | ---------------- | --------------------- | ----------------------------------------------------- |
-| `CONVEX_DEPLOYMENT`     | local deployment                  | test deployment  | production deployment | Convex target for dev/deploy scripts                  |
-| `AUTH_SECRET`           | required                          | required         | required              | Auth.js signing/encryption secret used by Convex auth |
-| `AUTH_GOOGLE_ID`        | required when Google auth enabled | optional         | required              | OAuth client id for `@convex-dev/auth`                |
-| `AUTH_GOOGLE_SECRET`    | required when Google auth enabled | optional         | required              | OAuth client secret for `@convex-dev/auth`            |
-| `CONVEX_SITE_URL`       | optional                          | optional         | optional              | Domain value for auth provider configuration          |
-| `GOOGLE_VERTEX_API_KEY` | required in non-mock runtime      | mock or test key | required              | Vertex AI Express mode API key                        |
-
-Built-in Convex runtime URLs are platform-provided and not set through normal env var commands.
+| Variable                                                                                        | Dev                               | Test             | Prod                  | Notes                                                 |
+| ----------------------------------------------------------------------------------------------- | --------------------------------- | ---------------- | --------------------- | ----------------------------------------------------- |
+| `CONVEX_DEPLOYMENT`                                                                             | local deployment                  | test deployment  | production deployment | Convex target for dev/deploy scripts                  |
+| `AUTH_SECRET`                                                                                   | required                          | required         | required              | Auth.js signing/encryption secret used by Convex auth |
+| `AUTH_GOOGLE_ID`                                                                                | required when Google auth enabled | optional         | required              | OAuth client id for `@convex-dev/auth`                |
+| `AUTH_GOOGLE_SECRET`                                                                            | required when Google auth enabled | optional         | required              | OAuth client secret for `@convex-dev/auth`            |
+| `CONVEX_SITE_URL`                                                                               | optional                          | optional         | optional              | Domain value for auth provider configuration          |
+| `GOOGLE_VERTEX_API_KEY`                                                                         | required in non-mock runtime      | mock or test key | required              | Vertex AI Express mode API key                        |
+| Built-in Convex runtime URLs are platform-provided and not set through normal env var commands. |                                   |                  |                       |                                                       |
 
 ## Deployment
 
-Backend and frontend deploy independently with separate environments and rollout cadence.
-
-First-time setup:
+Backend and frontend deploy independently with separate environments and rollout cadence. First-time setup:
 
 1. Create or select the dedicated Convex project for `backend/agent`.
 2. Configure backend env vars in that project with `convex env set`.
 3. Push initial schema/functions with `bun --cwd backend/agent with-env convex dev --once`.
 4. Start backend dev with `bun --cwd backend/agent with-env convex dev`.
-5. Start frontend dev with `bun --cwd agent dev`.
-
-Incremental deploys:
-
-1. Run `bun fix` at repo root.
-2. Deploy backend updates using `bun --cwd backend/agent with-env convex deploy`.
-3. Deploy frontend with `NEXT_PUBLIC_CONVEX_URL` targeting the agent backend deployment.
-4. Verify cron schedules and environment settings in the deployed backend project.
-
-Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:convex:deploy`, and `agent:dev`.
+5. Start frontend dev with `bun --cwd agent dev`. Incremental deploys:
+6. Run `bun fix` at repo root.
+7. Deploy backend updates using `bun --cwd backend/agent with-env convex deploy`.
+8. Deploy frontend with `NEXT_PUBLIC_CONVEX_URL` targeting the agent backend deployment.
+9. Verify cron schedules and environment settings in the deployed backend project. Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:convex:deploy`, and `agent:dev`.
 
 ## Deployment Commands
 
@@ -186,9 +173,7 @@ Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:co
 Implementation manifests:
 
 - `backend/agent/package.json`
-- `agent/package.json`
-
-Core dependencies include Convex, AI SDK, Vertex provider, Convex auth, MCP client, and Playwright test stack.
+- `agent/package.json` Core dependencies include Convex, AI SDK, Vertex provider, Convex auth, MCP client, and Playwright test stack.
 
 ## Tests
 

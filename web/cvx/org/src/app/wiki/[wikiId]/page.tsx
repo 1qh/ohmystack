@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import type { Id } from '@a/be-convex/model'
 
 import { api } from '@a/be-convex'
@@ -18,7 +16,6 @@ import { use } from 'react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   WikiDetailPage = ({ params }: { params: Promise<{ wikiId: Id<'wiki'> }> }) => {
     const { wikiId } = use(params),
@@ -30,9 +27,7 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       addEditorMut = useOrgMutation(api.wiki.addEditor),
       removeEditorMut = useOrgMutation(api.wiki.removeEditor),
       restoreMut = useOrgMutation(wikiRestore)
-
     if (!(wiki && me && members && editorsList)) return <Skeleton className='h-40' />
-
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const isDeleted = wiki.deletedAt !== null,
       canEditWiki = canEditResource({ editorsList, isAdmin, resource: wiki, userId: me._id }),
@@ -51,7 +46,6 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
           .then(() => toast.success('Wiki restored'))
           .catch(fail)
       }
-
     return (
       <div className='space-y-6'>
         {isDeleted ? (
@@ -91,7 +85,6 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
           <Badge variant={wiki.status === 'published' ? 'default' : 'secondary'}>{wiki.status}</Badge>
         </div>
         {wiki.content ? <p className='text-muted-foreground'>{wiki.content}</p> : null}
-
         {isAdmin && !isDeleted ? (
           <EditorsSection
             editorsList={editorsList}
@@ -103,5 +96,4 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       </div>
     )
   }
-
 export default WikiDetailPage

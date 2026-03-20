@@ -14,7 +14,6 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
 import { base, children, orgScoped, owned, singleton } from '../t'
-
 export default defineSchema({
   ...authTables,
   ...orgTables(),

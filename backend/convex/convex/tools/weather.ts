@@ -1,11 +1,9 @@
 'use node'
-
 import { fetchWithRetry } from '@noboil/convex/retry'
 import { v } from 'convex/values'
 import { z } from 'zod/v4'
 
 import { internalAction } from '../_generated/server'
-
 const geoApiResponseSchema = z.object({
     results: z.array(z.object({ latitude: z.number(), longitude: z.number(), name: z.string() })).optional()
   }),
@@ -55,5 +53,4 @@ const geoApiResponseSchema = z.object({
     },
     returns: weatherResultSchema
   })
-
 export { getWeather }

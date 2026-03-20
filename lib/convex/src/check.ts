@@ -21,36 +21,30 @@ import {
   SINGLETON_BASE,
   wrapperFactories
 } from './schema-utils'
-
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-
 interface AccessEntry {
   endpoints: string[]
   level: string
 }
-
 interface Issue {
   file?: string
   level: 'error' | 'warn'
   message: string
 }
-
 interface TableIndex {
   fields: string[]
   name: string
   type: 'custom' | 'default' | 'search'
 }
-
 interface WhereField {
   field: string
   source: string
   table: string
 }
-
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
   factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu,
   isSchemaFile = (content: string): boolean => {
@@ -197,10 +191,8 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
     const issues: Issue[] = [],
       schemaTables = extractSchemaTableNames(schemaFile.content),
       { calls, files } = extractFactoryCalls(convexDir)
-
     console.log(`${dim('tables in schema:')} ${[...schemaTables].join(', ') || 'none'}`)
     console.log(`${dim('factory calls:')}    ${calls.length}\n`)
-
     const seen = new Map<string, string>()
     for (const call of calls) {
       if (seen.has(call.table))
@@ -210,7 +202,6 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
           message: `Duplicate factory for table "${call.table}" (also in ${seen.get(call.table)})`
         })
       else seen.set(call.table, call.file)
-
       if (!schemaTables.has(call.table))
         issues.push({
           file: call.file,
@@ -218,7 +209,6 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
           message: `${call.factory}('${call.table}') but no "${call.table}" table found in schema`
         })
     }
-
     const factoryTables = new Set(calls.map(c => c.table))
     for (const table of schemaTables)
       if (!factoryTables.has(table))
@@ -227,7 +217,6 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
           level: 'warn',
           message: `Table "${table}" defined in schema but no factory call found`
         })
-
     const convexFiles = new Set(files.map(f => f.replace('.ts', '')))
     for (const call of calls)
       if (call.table !== basename(call.file, '.ts') && !convexFiles.has(call.table))
@@ -236,23 +225,18 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
           level: 'warn',
           message: `${call.factory}('${call.table}') in ${call.file} — table name doesn't match filename`
         })
-
     if (issues.length === 0) {
       console.log(green('\u2713 All checks passed\n'))
       return
     }
-
     const errors = issues.filter(i => i.level === 'error'),
       warnings = issues.filter(i => i.level === 'warn')
-
     for (const issue of errors) console.log(`${red('\u2717')} ${issue.file ? `${dim(issue.file)} ` : ''}${issue.message}`)
     for (const issue of warnings)
       console.log(`${yellow('\u26A0')} ${issue.file ? `${dim(issue.file)} ` : ''}${issue.message}`)
-
     console.log(
       `\n${errors.length > 0 ? red(`${errors.length} error(s)`) : ''}${errors.length > 0 && warnings.length > 0 ? ', ' : ''}${warnings.length > 0 ? yellow(`${warnings.length} warning(s)`) : ''}\n`
     )
-
     if (errors.length > 0) process.exit(1)
   },
   FACTORY_DEFAULT_INDEXES: Record<string, TableIndex[]> = {
@@ -437,7 +421,6 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
               message: `"${call.table}": where on '${field}' is runtime-filtered. Add .index('by_${field}', ['${field}']) for better performance`
             })
           }
-
       console.log('')
     }
     console.log(`${bold(String(totalIndexes))} indexes across ${bold(String(calls.length))} tables\n`)
@@ -639,9 +622,7 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\n@noboil/convex check\n'))
-
     const convexDir = findConvexDir(root)
     if (!convexDir) {
       console.log(red('\u2717 Could not find convex/ directory with _generated/'))
@@ -649,7 +630,6 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
       process.exit(1)
     }
     console.log(`${dim('convex dir:')} ${convexDir}`)
-
     const schemaFile = findSchemaFile(convexDir)
     if (!schemaFile) {
       console.log(red('\u2717 Could not find schema file with @noboil/convex markers'))
@@ -657,41 +637,33 @@ const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBa
       process.exit(1)
     }
     console.log(`${dim('schema:')}    ${schemaFile.path}\n`)
-
     if (flags.has('--endpoints')) {
       const { calls } = extractFactoryCalls(convexDir)
       printEndpoints(calls)
       return
     }
-
     if (flags.has('--schema')) {
       const { calls } = extractFactoryCalls(convexDir)
       printSchemaPreview(schemaFile.content, calls)
       return
     }
-
     if (flags.has('--health')) {
       printHealthReport(convexDir, schemaFile)
       return
     }
-
     if (flags.has('--access')) {
       const { calls } = extractFactoryCalls(convexDir)
       printAccessReport(calls)
       return
     }
-
     if (flags.has('--indexes')) {
       const { calls } = extractFactoryCalls(convexDir)
       printIndexReport(convexDir, calls)
       return
     }
-
     runCheck(convexDir, schemaFile)
   }
-
 if (import.meta.main) run()
-
 export {
   accessForFactory,
   checkIndexCoverage,

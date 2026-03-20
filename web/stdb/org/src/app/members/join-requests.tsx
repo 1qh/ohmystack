@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { OrgJoinRequest } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -13,16 +12,13 @@ import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { useOrgTable } from '~/hook/use-org-table'
-
 const JoinRequests = () => {
   const [orgRequests] = useOrgTable<OrgJoinRequest>(tables.orgJoinRequest),
     requests = orgRequests.filter(r => r.status === 'pending').map(r => ({ request: r })),
     approveRequest = useMut(reducers.orgApproveJoin, { toast: { success: 'Request approved' } }),
     rejectRequest = useMut(reducers.orgRejectJoin, { toast: { success: 'Request rejected' } }),
     [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
-
   if (requests.length === 0) return null
-
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Join Requests</h3>
@@ -78,5 +74,4 @@ const JoinRequests = () => {
     </div>
   )
 }
-
 export default JoinRequests

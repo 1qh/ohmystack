@@ -12,7 +12,6 @@ import Animated, {
   useDerivedValue,
   withTiming
 } from 'react-native-reanimated'
-
 function Accordion({
   children,
   ...props
@@ -25,7 +24,6 @@ function Accordion({
     </LayoutAnimationConfig>
   )
 }
-
 function AccordionItem({
   children,
   className,
@@ -46,9 +44,7 @@ function AccordionItem({
     </AccordionPrimitive.Item>
   )
 }
-
 const Trigger = Platform.OS === 'web' ? View : Pressable
-
 function AccordionTrigger({
   className,
   children,
@@ -57,7 +53,6 @@ function AccordionTrigger({
   children?: React.ReactNode
 } & React.RefAttributes<AccordionPrimitive.TriggerRef>) {
   const { isExpanded } = AccordionPrimitive.useItemContext()
-
   const progress = useDerivedValue(
     () => (isExpanded ? withTiming(1, { duration: 250 }) : withTiming(0, { duration: 200 })),
     [isExpanded]
@@ -68,7 +63,6 @@ function AccordionTrigger({
     }),
     [progress]
   )
-
   return (
     <TextClassContext.Provider
       value={cn('text-left text-sm font-medium', Platform.select({ web: 'group-hover:underline' }))}>
@@ -101,7 +95,6 @@ function AccordionTrigger({
     </TextClassContext.Provider>
   )
 }
-
 function AccordionContent({
   className,
   children,
@@ -125,5 +118,4 @@ function AccordionContent({
     </TextClassContext.Provider>
   )
 }
-
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger }

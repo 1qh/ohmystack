@@ -1,5 +1,4 @@
 'use client'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { toIdentityKey } from '@a/fe/utils'
 import { Conversation, ConversationContent, ConversationEmptyState } from '@a/ui/ai-elements/conversation'
@@ -11,7 +10,6 @@ import { SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const router = useRouter(),
     publicToggleId = useId(),
@@ -28,7 +26,6 @@ const Page = () => {
     [isPublic, setIsPublic] = useState(false),
     [isPending, startTransition] = useTransition(),
     identityKey = toIdentityKey(identity)
-
   useEffect(() => {
     if (!pendingTitleRef.current) return
     const title = pendingTitleRef.current
@@ -36,14 +33,12 @@ const Page = () => {
     for (const c of allChats)
       if (c.title === title && toIdentityKey(c.userId) === identityKey && (!newestChat || c.id > newestChat.id))
         newestChat = c
-
     if (newestChat) {
       pendingTitleRef.current = null
       const query = encodeURIComponent(title)
       startTransition(() => router.push(`/${newestChat.id}?query=${query}`))
     }
   }, [allChats, identityKey, router])
-
   const handleSubmit = async ({ text }: { text: string }) => {
     if (!text.trim() || isSubmitting) return
     setIsSubmitting(true)
@@ -92,5 +87,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

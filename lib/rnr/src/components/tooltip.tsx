@@ -6,13 +6,9 @@ import * as React from 'react'
 import { Platform, StyleSheet } from 'react-native'
 import { FadeInDown, FadeInUp, FadeOut } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 const Tooltip = TooltipPrimitive.Root
-
 const TooltipTrigger = TooltipPrimitive.Trigger
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function TooltipContent({
   className,
   sideOffset = 4,
@@ -60,5 +56,4 @@ function TooltipContent({
     </TooltipPrimitive.Portal>
   )
 }
-
 export { Tooltip, TooltipContent, TooltipTrigger }

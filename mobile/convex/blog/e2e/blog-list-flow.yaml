@@ -1,10 +1,8 @@
 appId: dev.noboil.blog
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Blog"
 - assertVisible: "Search blogs..."
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -21,11 +19,9 @@ appId: dev.noboil.blog
     timeout: 5000
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "List Test Alpha"
     timeout: 10000
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -42,14 +38,11 @@ appId: dev.noboil.blog
     timeout: 5000
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "List Test Beta"
     timeout: 10000
-
 - assertVisible: "List Test Alpha"
 - assertVisible: "List Test Beta"
-
 - tapOn: "List Test Beta"
 - waitForAnimationToEnd
 - tapOn:
@@ -57,7 +50,6 @@ appId: dev.noboil.blog
 - waitForAnimationToEnd
 - tapOn: "Delete"
 - waitForAnimationToEnd
-
 - tapOn: "List Test Alpha"
 - waitForAnimationToEnd
 - tapOn:

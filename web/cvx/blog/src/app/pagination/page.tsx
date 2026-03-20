@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import { Spinner } from '@a/ui/spinner'
 import { useList } from '@noboil/convex/react'
@@ -8,7 +7,6 @@ import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 
 import { Create, List } from '../common'
-
 const Page = () => {
   const { inView, ref } = useInView(),
     { items, loadMore, status } = useList(api.blog.list, {
@@ -31,5 +29,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

@@ -9,7 +9,6 @@ import type { BaseSchema, OrgSchema, OwnedSchema, SingletonSchema } from './type
 import { elementOf, isArrayType, unwrapZod } from '../zod'
 import { indexFields } from './bridge'
 import { isRecord } from './helpers'
-
 /**
  * Creates a Convex table definition from a base schema with an optional updatedAt field.
  * @param s - Base-branded Zod schema
@@ -165,12 +164,10 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
       .index('by_upload_id', ['uploadId'])
       .index('by_user', ['userId'])
   })
-
 interface CheckSchemaOutput {
   path: string
   zodType: string
 }
-
 const unsupportedTypes = new Set(['pipe', 'transform']),
   scanSchema = (schema: unknown, path: string, out: CheckSchemaOutput[]) => {
     const b = unwrapZod(schema)
@@ -192,7 +189,6 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
       process.exitCode = 1
     }
   }
-
 export {
   baseTable,
   checkSchema,

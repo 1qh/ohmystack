@@ -8,7 +8,6 @@ import { Link } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView } from 'react-native'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const { identity } = useSpacetimeDB(),
     [profiles] = useTable(tables.blogProfile),
@@ -21,7 +20,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='profile-page'>
       <Link asChild href='/'>
@@ -36,5 +34,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

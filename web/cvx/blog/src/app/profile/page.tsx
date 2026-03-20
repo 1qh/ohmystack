@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import { FieldGroup } from '@a/ui/field'
 import { Spinner } from '@a/ui/spinner'
@@ -9,7 +8,6 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 
 import { profileSchema } from '~/schema'
-
 const Page = () => {
   const profile = useQuery(api.blogProfile.get, {}),
     upsert = useMutation(api.blogProfile.upsert),
@@ -35,14 +33,12 @@ const Page = () => {
               }
             : { displayName: '', notifications: true, theme: 'system' as const }
     })
-
   if (profile === undefined)
     return (
       <div className='flex min-h-40 items-center justify-center'>
         <Spinner />
       </div>
     )
-
   return (
     <div className='space-y-4' data-testid='profile-page'>
       <Link className='rounded-lg px-3 py-2 hover:bg-muted' data-testid='profile-back' href='/'>
@@ -71,5 +67,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

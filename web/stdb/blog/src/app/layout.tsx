@@ -9,13 +9,11 @@ import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-
 const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog' },
   renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider fileApi>{inner}</SpacetimeProvider>,
   Layout = async ({ children }: { children: ReactNode }) => {
     const pathname = (await headers()).get('x-pathname') ?? '/',
       isLogin = pathname === '/login' || pathname.startsWith('/login/')
-
     return (
       <AuthLayout provider={renderSpacetimeProvider}>
         {isLogin ? (
@@ -36,6 +34,5 @@ const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog'
       </AuthLayout>
     )
   }
-
 export { metadata }
 export default Layout

@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail, formatDate } from '@a/fe/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
@@ -13,18 +12,14 @@ import { useMutation } from 'convex/react'
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
 const JoinRequests = () => {
   const requests = useOrgQuery(api.org.pendingJoinRequests),
     approveRequest = useMutation(api.org.approveJoinRequest),
     rejectRequest = useMutation(api.org.rejectJoinRequest),
     [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
-
   if (requests === undefined) return <Skeleton className='h-20 w-full' />
   if (requests.length === 0) return null
-
   type ReqId = NonNullable<typeof requests>[number]['request']['_id']
-
   const handleApprove = (requestId: ReqId, isAdmin: boolean) => {
       approveRequest({ isAdmin, requestId })
         .then(() => toast.success('Request approved'))
@@ -35,7 +30,6 @@ const JoinRequests = () => {
         .then(() => toast.success('Request rejected'))
         .catch(fail)
     }
-
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Join Requests</h3>
@@ -82,5 +76,4 @@ const JoinRequests = () => {
     </div>
   )
 }
-
 export default JoinRequests

@@ -1,6 +1,5 @@
 import { child, cvFile, cvFiles, schema } from '@noboil/spacetimedb/schema'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
-
 const file = cvFile(),
   files = cvFiles(),
   messagePart = union([
@@ -90,5 +89,4 @@ const file = cvFile(),
       orgProfile: object(profileShape)
     }
   })
-
 export { messagePart, profileShape, s }

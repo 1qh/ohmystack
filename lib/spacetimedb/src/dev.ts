@@ -3,7 +3,6 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/suspicious/useAwait: async without await
 // oxlint-disable promise/avoid-new
-
 import type { ChildProcess, SpawnSyncReturns } from 'node:child_process'
 import type { FSWatcher } from 'node:fs'
 
@@ -12,14 +11,12 @@ import { existsSync, readFileSync, watch } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { findEnvFile } from './use'
-
 interface DevFlags {
   docker: boolean
   help: boolean
   moduleDir: null | string
   watch: boolean
 }
-
 const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
@@ -74,7 +71,6 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
         const projectPath = extractFlagValue(value, '--project-path')
         if (projectPath) return projectPath
       }
-
     return 'module'
   },
   parseEnvValue = (envPath: string, key: string): null | string => {
@@ -235,27 +231,23 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       printDevHelp()
       return
     }
-
     const cwd = process.cwd(),
       packageJsonPath = findPackageJsonFile(cwd)
     if (!packageJsonPath) {
       console.log(`${red('No package.json found.')} Run this command from a project directory.\n`)
       process.exit(1)
     }
-
     const packageJson = parseJsonFile(packageJsonPath)
     if (!packageJson) {
       console.log(red('Failed to parse package.json.'))
       process.exit(1)
     }
-
     const moduleDir = flags.moduleDir ?? detectModuleDirFromScripts(packageJson),
       moduleDirAbs = resolve(cwd, moduleDir)
     if (!existsSync(moduleDirAbs)) {
       console.log(`${red('Module directory not found:')} ${moduleDir}`)
       process.exit(1)
     }
-
     const envPath = findEnvFile(cwd)
     let moduleName: null | string = null
     if (envPath) moduleName = parseEnvValue(envPath, 'SPACETIMEDB_MODULE_NAME')
@@ -265,17 +257,14 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       console.log(`${red('Module name not found.')} Set SPACETIMEDB_MODULE_NAME in .env or package.json name.`)
       process.exit(1)
     }
-
     const spacetimeBin = `${process.env.HOME ?? ''}/.local/bin/spacetime`
     if (!existsSync(spacetimeBin)) {
       console.log(`${red('Spacetime CLI not found:')} ${spacetimeBin}`)
       process.exit(1)
     }
-
     console.log(`\n${bold('noboil-stdb dev')} ${dim('— starting development environment')}`)
     console.log(`${dim('module dir:')} ${moduleDir}`)
     console.log(`${dim('module name:')} ${moduleName}`)
-
     const composeFile = findComposeFile(cwd)
     if (flags.docker)
       if (composeFile) {
@@ -289,7 +278,6 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
         if (!dockerOk) process.exit(1)
       } else console.log(`${yellow('⚠')} No docker compose file found, skipping Docker startup.`)
     else console.log(dim('Skipping Docker startup (--no-docker).'))
-
     console.log(bold('Waiting for SpacetimeDB health...'))
     const healthy = await waitForSpacetimeHealth()
     if (!healthy) {
@@ -297,15 +285,12 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       process.exit(1)
     }
     console.log(`${green('✓')} SpacetimeDB is healthy`)
-
     const publishAndGenerate = createPublishAndGenerate({ cwd, moduleDirAbs, moduleName, spacetimeBin })
     if (!publishAndGenerate()) process.exit(1)
     console.log(`${green('✓')} Initial publish + generate complete`)
-
     let watcher: FSWatcher | null = null,
       watcherTimer: null | ReturnType<typeof setTimeout> = null,
       shutdownStarted = false
-
     const scheduleRepublish = () => {
         if (!flags.watch) return
         if (watcherTimer) clearTimeout(watcherTimer)
@@ -324,24 +309,19 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
         if (devProcess.exitCode === null && !devProcess.killed) devProcess.kill('SIGTERM')
         process.exit(code)
       }
-
     if (flags.watch) {
       watcher = startWatching(moduleDirAbs, scheduleRepublish)
       console.log(`${green('✓')} Watching ${moduleDir} for .ts changes`)
     } else console.log(dim('Watch disabled (--no-watch).'))
-
     console.log(`${green('✓')} Next.js dev server started\n`)
-
     process.on('SIGINT', () => shutdown(0))
     process.on('SIGTERM', () => shutdown(0))
     devProcess.on('exit', code => shutdown(code ?? 0))
   }
-
 if (process.argv[1]?.endsWith('dev.ts'))
   try {
     await dev(process.argv.slice(2))
   } catch {
     process.exit(1)
   }
-
 export { dev }

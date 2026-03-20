@@ -1,7 +1,6 @@
 /* eslint-disable one-var, max-depth */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-
 interface BaseNode {
   argument?: BaseNode
   async?: boolean
@@ -16,30 +15,25 @@ interface BaseNode {
   type: string
   value?: unknown
 }
-
 interface EslintContext {
   cwd: string
   filename: string
   report: (d: { data?: Record<string, string>; messageId: string; node: BaseNode }) => void
 }
-
 interface JsxNode {
   attributes?: { name?: { name?: string }; type: string; value?: { type: string; value?: string } }[]
   name?: { name?: string; type: string }
 }
-
 let cachedModules: string[] | undefined
 let cachedSchema: Map<string, Map<string, string>> | undefined
 let discoveredSchemaDir: string | undefined
 const discoveryWarnedRoots = new Set<string>()
 const seenCrudTables = new Map<string, string>()
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
-
 const isSchemaFile = (content: string): boolean => {
   for (const marker of schemaMarkers) if (content.includes(marker)) return true
   return false
 }
-
 const hasSchemaMarkers = (dir: string): boolean => {
   if (!existsSync(dir)) return false
   for (const entry of readdirSync(dir))
@@ -49,7 +43,6 @@ const hasSchemaMarkers = (dir: string): boolean => {
     }
   return false
 }
-
 const searchSubdirs = (root: string): string | undefined => {
   if (!existsSync(root)) return
   for (const sub of readdirSync(root, { withFileTypes: true }))
@@ -63,14 +56,12 @@ const searchSubdirs = (root: string): string | undefined => {
         }
     }
 }
-
 const findSchemaDir = (root: string): string | undefined => {
   if (discoveredSchemaDir) return discoveredSchemaDir
   const found = hasSchemaMarkers(root) ? root : searchSubdirs(root)
   if (found) discoveredSchemaDir = found
   return found
 }
-
 const zodFieldKinds: Record<string, string> = {
   array: 'arr',
   boolean: 'toggle',
@@ -81,7 +72,6 @@ const zodFieldKinds: Record<string, string> = {
   string: 'text',
   zenum: 'choose'
 }
-
 const componentToKind: Record<string, string> = {
   Arr: 'arr',
   Choose: 'choose',
@@ -91,7 +81,6 @@ const componentToKind: Record<string, string> = {
   Text: 'text',
   Toggle: 'toggle'
 }
-
 const kindToComponent: Record<string, string> = {
   arr: 'Arr',
   choose: 'Choose',
@@ -101,27 +90,20 @@ const kindToComponent: Record<string, string> = {
   text: 'Text',
   toggle: 'Toggle'
 }
-
 const crudFactories = new Set(['childCrud', 'crud', 'orgCrud', 'singletonCrud'])
 const spacetimeDataHooks = new Set(['useReducer', 'useTable'])
 const routeFilePattern = /\/route\.[jt]sx?$/u
-
 const isIdent = (node: BaseNode, name: string): boolean => node.type === 'Identifier' && node.name === name
-
 const getIdentName = (node: BaseNode): string | undefined => (node.type === 'Identifier' ? node.name : undefined)
-
 const getLiteralString = (node: BaseNode): string | undefined =>
   node.type === 'Literal' && typeof node.value === 'string' ? node.value : undefined
-
 const getPropertyName = (node: BaseNode): string | undefined =>
   node.type === 'MemberExpression' && node.property?.type === 'Identifier' ? node.property.name : undefined
-
 const isSpacetimeExpression = (node: BaseNode): boolean => {
   if (node.type === 'Identifier') return node.name === 'reducers' || node.name === 'tables'
   if (node.type !== 'MemberExpression' || !node.object) return false
   return isSpacetimeExpression(node.object)
 }
-
 const parseFields = (fieldsStr: string): Map<string, string> => {
   const fields = new Map<string, string>()
   const fieldPattern = /(?<fname>\w+):\s*(?<ftype>[\w.]+)\(/gu
@@ -136,12 +118,10 @@ const parseFields = (fieldsStr: string): Map<string, string> => {
   }
   return fields
 }
-
 const addTable = (tables: Map<string, Map<string, string>>, tableName: string, fieldsStr: string): void => {
   const fields = parseFields(fieldsStr)
   if (fields.size > 0) tables.set(tableName, fields)
 }
-
 const extractTables = (content: string): Map<string, Map<string, string>> => {
   const tables = new Map<string, Map<string, string>>()
   if (!content) return tables
@@ -153,7 +133,6 @@ const extractTables = (content: string): Map<string, Map<string, string>> => {
   }
   return tables
 }
-
 const findSchemaContent = (root: string): string => {
   const schemaDir = findSchemaDir(root)
   const searchDir = schemaDir ?? root
@@ -165,13 +144,11 @@ const findSchemaContent = (root: string): string => {
     }
   return ''
 }
-
 const parseSchemaFile = (root: string): Map<string, Map<string, string>> => {
   if (cachedSchema) return cachedSchema
   cachedSchema = extractTables(findSchemaContent(root))
   return cachedSchema
 }
-
 const getContextRoot = (context: EslintContext): string => {
   if (!context.filename.startsWith(context.cwd)) return context.cwd
   let current = dirname(context.filename)
@@ -184,9 +161,7 @@ const getContextRoot = (context: EslintContext): string => {
   }
   return context.cwd
 }
-
 const findSchemaDirFresh = (root: string): string | undefined => (hasSchemaMarkers(root) ? root : searchSubdirs(root))
-
 const findSchemaContentFresh = (root: string): string => {
   const schemaDir = findSchemaDirFresh(root)
   const searchDir = schemaDir ?? root
@@ -198,7 +173,6 @@ const findSchemaContentFresh = (root: string): string => {
     }
   return ''
 }
-
 const hasSpacetimeImportsFresh = (root: string): boolean => {
   if (existsSync(join(root, 'module_bindings'))) return true
   const schemaDir = findSchemaDirFresh(root)
@@ -224,7 +198,6 @@ const hasSpacetimeImportsFresh = (root: string): boolean => {
         }
   return false
 }
-
 const getModules = (root: string): string[] => {
   if (cachedModules) return cachedModules
   const result: string[] = []
@@ -233,27 +206,23 @@ const getModules = (root: string): string[] => {
   cachedModules = result
   return result
 }
-
 const getJsxNameProp = (node: JsxNode): string | undefined => {
   if (!node.attributes) return
   for (const attr of node.attributes)
     if (attr.type === 'JSXAttribute' && attr.name?.name === 'name' && attr.value?.type === 'Literal')
       return attr.value.value
 }
-
 const getAllFieldNames = (tables: Map<string, Map<string, string>>): Set<string> => {
   const names = new Set<string>()
   for (const fields of tables.values()) for (const name of fields.keys()) names.add(name)
   return names
 }
-
 const getFieldKind = (tables: Map<string, Map<string, string>>, fieldName: string): string | undefined => {
   for (const fields of tables.values()) {
     const kind = fields.get(fieldName)
     if (kind) return kind
   }
 }
-
 const checkStandardCrud = (node: BaseNode & { arguments: BaseNode[] }, context: EslintContext): void => {
   if (node.arguments.length < 2) return
   const [first, second] = node.arguments
@@ -268,7 +237,6 @@ const checkStandardCrud = (node: BaseNode & { arguments: BaseNode[] }, context: 
     node: first
   })
 }
-
 const extractCacheCrudProps = (
   obj: BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }
 ): { schemaName?: string; tableName?: string; tableNode?: BaseNode } => {
@@ -284,9 +252,7 @@ const extractCacheCrudProps = (
     }
   return { schemaName, tableName, tableNode }
 }
-
 type CallNode = BaseNode & { arguments: BaseNode[]; callee: BaseNode }
-
 const checkCacheCrud = (node: CallNode, context: EslintContext): void => {
   if (node.arguments.length === 0) return
   const [arg] = node.arguments
@@ -301,7 +267,6 @@ const checkCacheCrud = (node: CallNode, context: EslintContext): void => {
     node: tableNode ?? node
   })
 }
-
 const blockHasConnection = (body: BaseNode[]): boolean => {
   for (const stmt of body)
     if (stmt.type === 'ExpressionStatement' && stmt.expression) {
@@ -313,7 +278,6 @@ const blockHasConnection = (body: BaseNode[]): boolean => {
     }
   return false
 }
-
 const findEnclosingAsyncBody = (ancestors: BaseNode[]): BaseNode[] | undefined => {
   for (let i = ancestors.length - 1; i >= 0; i -= 1) {
     const a = ancestors[i]
@@ -323,7 +287,6 @@ const findEnclosingAsyncBody = (ancestors: BaseNode[]): BaseNode[] | undefined =
     if (isFunc && a.async && a.body?.type === 'BlockStatement' && a.body.body) return a.body.body
   }
 }
-
 const hasOrgIdArg = (node: CallNode): boolean => {
   if (node.arguments.length < 2) return false
   const [, args] = node.arguments
@@ -332,14 +295,12 @@ const hasOrgIdArg = (node: CallNode): boolean => {
   for (const p of obj.properties) if (p.type === 'Property' && isIdent(p.key, 'orgId')) return true
   return false
 }
-
 const getCalleeProperty = (node: CallNode): string | undefined => {
   if (node.arguments.length === 0) return
   const [first] = node.arguments
   if (first?.type !== 'MemberExpression') return
   return getPropertyName(first)
 }
-
 const isInsideTryBlock = (ancestors: BaseNode[]): boolean => {
   for (let i = ancestors.length - 1; i >= 0; i -= 1) {
     const a = ancestors[i]
@@ -350,7 +311,6 @@ const isInsideTryBlock = (ancestors: BaseNode[]): boolean => {
   }
   return false
 }
-
 const getCacheCrudTable = (node: CallNode): string | undefined => {
   if (node.arguments.length === 0) return
   const [arg] = node.arguments
@@ -359,10 +319,8 @@ const getCacheCrudTable = (node: CallNode): string | undefined => {
   for (const p of obj.properties)
     if (p.type === 'Property' && getIdentName(p.key) === 'table') return getLiteralString(p.value)
 }
-
 const getComponentKind = (node: JsxNode): string | undefined =>
   node.name?.type === 'JSXIdentifier' && node.name.name ? componentToKind[node.name.name] : undefined
-
 const checkFieldKindMismatch = (node: JsxNode, tables: Map<string, Map<string, string>>, context: EslintContext): void => {
   const componentKind = getComponentKind(node)
   if (!componentKind) return
@@ -378,9 +336,7 @@ const checkFieldKindMismatch = (node: JsxNode, tables: Map<string, Map<string, s
     node: node as unknown as BaseNode
   })
 }
-
 type MemberNode = BaseNode & { object: BaseNode; property: BaseNode }
-
 /** ESLint rule to detect and suggest corrections for api module name casing errors. */
 const apiCasing = {
   create: (context: EslintContext) => {
@@ -415,7 +371,6 @@ const apiCasing = {
     type: 'problem' as const
   }
 }
-
 /** ESLint rule to ensure CRUD factory table names match their schema property names. */
 const consistentCrudNaming = {
   create: (context: EslintContext) => ({
@@ -433,9 +388,7 @@ const consistentCrudNaming = {
     type: 'problem' as const
   }
 }
-
 const isRouteHandler = (filename: string): boolean => routeFilePattern.test(filename)
-
 const bodyContainsIdent = (nodes: BaseNode[], target: string): boolean => {
   for (const n of nodes) {
     if (n.type === 'Identifier' && n.name === target) return true
@@ -447,7 +400,6 @@ const bodyContainsIdent = (nodes: BaseNode[], target: string): boolean => {
   }
   return false
 }
-
 /** ESLint rule to require useSpacetimeDB() before SpacetimeDB data hooks. */
 const requireConnection = {
   create: (context: EslintContext) => {
@@ -472,7 +424,6 @@ const requireConnection = {
     type: 'problem' as const
   }
 }
-
 /** ESLint rule to prevent unsafe type casts on SpacetimeDB objects. */
 const noUnsafeApiCast = {
   create: (context: EslintContext) => ({
@@ -489,7 +440,6 @@ const noUnsafeApiCast = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to suggest useTable() instead of useReducer() for list endpoints. */
 const preferUseList = {
   create: (context: EslintContext) => ({
@@ -508,7 +458,6 @@ const preferUseList = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to suggest useSpacetimeDB() context instead of manual orgId args. */
 const preferUseOrgQuery = {
   create: (context: EslintContext) => ({
@@ -527,7 +476,6 @@ const preferUseOrgQuery = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to validate form field names exist in the schema. */
 const formFieldExists = {
   create: (context: EslintContext) => {
@@ -557,7 +505,6 @@ const formFieldExists = {
     type: 'problem' as const
   }
 }
-
 /** ESLint rule to validate form field components match their schema field types. */
 const formFieldKind = {
   create: (context: EslintContext) => {
@@ -574,7 +521,6 @@ const formFieldKind = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to warn if SpacetimeDB bindings or schema file cannot be discovered. */
 const discoveryCheck = {
   create: (context: EslintContext) => {
@@ -605,7 +551,6 @@ const discoveryCheck = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to detect duplicate CRUD factory registrations for the same table. */
 const noDuplicateCrud = {
   create: (context: EslintContext) => ({
@@ -632,7 +577,6 @@ const noDuplicateCrud = {
     type: 'problem' as const
   }
 }
-
 /** ESLint rule to require try-catch around SpacetimeDB reducer/table hook calls in server components. */
 const noRawFetchInServerComponent = {
   create: (context: EslintContext) => ({
@@ -652,7 +596,6 @@ const noRawFetchInServerComponent = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to require ErrorBoundary when using SpacetimeDB providers. */
 const requireErrorBoundary = {
   create: (context: EslintContext) => {
@@ -680,9 +623,7 @@ const requireErrorBoundary = {
     type: 'suggestion' as const
   }
 }
-
 const writeCrudFactories = new Set(['crud'])
-
 const getOptionsObject = (
   node: CallNode
 ): (BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }) | undefined => {
@@ -692,12 +633,10 @@ const getOptionsObject = (
   if (arg?.type !== 'ObjectExpression') return
   return arg as BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }
 }
-
 const hasProperty = (obj: BaseNode & { properties: (BaseNode & { key: BaseNode })[] }, name: string): boolean => {
   for (const p of obj.properties) if (p.type === 'Property' && getIdentName(p.key) === name) return true
   return false
 }
-
 /** ESLint rule to require rateLimit option on write CRUD factories. */
 const requireRateLimit = {
   create: (context: EslintContext) => ({
@@ -717,7 +656,6 @@ const requireRateLimit = {
     type: 'suggestion' as const
   }
 }
-
 const getHandlerBody = (node: CallNode): BaseNode[] | undefined => {
   if (node.arguments.length === 0) return
   const [arg] = node.arguments
@@ -729,7 +667,6 @@ const getHandlerBody = (node: CallNode): BaseNode[] | undefined => {
       if (fn.body?.type === 'BlockStatement' && fn.body.body) return fn.body.body
     }
 }
-
 /** ESLint rule to require auth checks in mutation handlers. */
 const noUnprotectedMutation = {
   create: (context: EslintContext) => {
@@ -752,7 +689,6 @@ const noUnprotectedMutation = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to require .max() on cvFile/cvFiles in schema. */
 const noUnlimitedFileSize = {
   create: (context: EslintContext) => {
@@ -787,7 +723,6 @@ const noUnlimitedFileSize = {
     type: 'suggestion' as const
   }
 }
-
 /** ESLint rule to require specific field names in search configuration. */
 const noEmptySearchConfig = {
   create: (context: EslintContext) => ({
@@ -817,7 +752,6 @@ const noEmptySearchConfig = {
     type: 'problem' as const
   }
 }
-
 /** Map of all ESLint rules provided by the noboil-stdb plugin. */
 const rules = {
   'api-casing': apiCasing,
@@ -837,10 +771,8 @@ const rules = {
   'require-error-boundary': requireErrorBoundary,
   'require-rate-limit': requireRateLimit
 }
-
 /** ESLint plugin object containing all noboil-stdb rules. */
 const plugin = { rules }
-
 /** Recommended ESLint configuration for noboil-stdb projects. */
 const recommended = {
   files: ['**/*.ts', '**/*.tsx'],
@@ -866,5 +798,4 @@ const recommended = {
     'noboil-stdb/require-rate-limit': 'warn' as const
   }
 }
-
 export { plugin, recommended, rules }

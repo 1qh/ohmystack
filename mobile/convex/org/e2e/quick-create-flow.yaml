@@ -1,33 +1,27 @@
 appId: dev.noboil.org
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Organizations"
 - assertVisible: "No Organizations"
 - assertVisible: "Get Started"
 - assertVisible: "Quick Create"
-
 - tapOn: "Quick Create"
 - waitForAnimationToEnd
 - assertVisible: "New Organization"
 - assertVisible: "Organization Name"
 - assertVisible: "Slug (URL-friendly)"
-
 - tapOn: "Organization Name"
 - inputText: "Quick Org"
 - tapOn: "Slug (URL-friendly)"
 - inputText: "cancel-slug"
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
 - assertVisible: "No Organizations"
-
 - tapOn: "Quick Create"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "New Organization"
     timeout: 10000
-
 - tapOn: "Quick Org"
 - eraseText: 50
 - inputText: "Quick Org"
@@ -35,10 +29,8 @@ appId: dev.noboil.org
 - eraseText: 50
 - inputRandomNumber:
     length: 8
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Quick Org"
     timeout: 15000

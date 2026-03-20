@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import { orgScoped } from '@a/be-convex/t'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
@@ -9,7 +8,6 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const NewProjectPage = () => {
   const router = useRouter(),
     { org } = useOrg(),
@@ -23,7 +21,6 @@ const NewProjectPage = () => {
       schema: orgScoped.project,
       transform: d => ({ ...d, orgId: org._id })
     })
-
   return (
     <div className='flex justify-center'>
       <Card className='w-full max-w-md'>
@@ -50,5 +47,4 @@ const NewProjectPage = () => {
     </div>
   )
 }
-
 export default NewProjectPage

@@ -1,9 +1,7 @@
 appId: dev.noboil.chat
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -12,7 +10,6 @@ appId: dev.noboil.chat
     index: 0
 - waitForAnimationToEnd
 - assertVisible: "Chat"
-
 - tapOn: "Message..."
 - inputText: "Send receive flow test"
 - tapOn:
@@ -22,7 +19,6 @@ appId: dev.noboil.chat
     visible: "Send receive flow test"
     timeout: 15000
 - assertVisible: "Send receive flow test"
-
 - tapOn: "Message..."
 - inputText: "Second message in flow"
 - tapOn:
@@ -30,10 +26,8 @@ appId: dev.noboil.chat
 - extendedWaitUntil:
     visible: "Second message in flow"
     timeout: 15000
-
 - assertVisible: "Send receive flow test"
 - assertVisible: "Second message in flow"
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Chats"

@@ -44,14 +44,12 @@ import {
   pgOpts,
   warnLargeFilterSet
 } from './helpers'
-
 interface CrudMCtx extends MutCtx {
   create: (t: string, d: Rec) => Promise<string>
   delete: (id: string) => Promise<unknown>
   get: (id: string) => Promise<Rec>
   patch: (id: string, data: Rec, expectedUpdatedAt?: number) => Promise<Rec>
 }
-
 const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string }),
   makeCrud = <S extends ZodRawShape>({
     builders,
@@ -122,7 +120,6 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
               } else and(fb.eq(field, fv))
             }
           }
-
         if (w.own) and(vid ? fb.eq(fb.field('userId'), vid) : fb.eq(true, false))
         return e
       },
@@ -427,5 +424,4 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }
   ): { foreignKey: string; table: string } => config
-
 export { makeCrud, ownedCascade }

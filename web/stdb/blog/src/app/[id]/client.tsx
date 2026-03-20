@@ -2,14 +2,12 @@
 /* oxlint-disable @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
-
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
 
 import Link from 'next/link'
 import { useSpacetimeDB } from 'spacetimedb/react'
 
 import { Author } from '../common'
-
 const Client = ({ blog }: { blog: Blog | null }) => {
   const { identity } = useSpacetimeDB()
   if (!blog)
@@ -58,5 +56,4 @@ const Client = ({ blog }: { blog: Blog | null }) => {
     </div>
   )
 }
-
 export default Client

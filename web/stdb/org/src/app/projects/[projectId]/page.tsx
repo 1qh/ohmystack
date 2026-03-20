@@ -1,8 +1,6 @@
 /* oxlint-disable react-perf/jsx-no-new-array-as-prop */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
-
 'use client'
-
 import type { OrgMember, Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
 import type { SyntheticEvent } from 'react'
 import type { output } from 'zod/v4'
@@ -30,9 +28,7 @@ import { useSpacetimeDB } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
-
 type Priority = NonNullable<output<typeof s.task>['priority']>
-
 const priorityOptions = enumToOptions(s.task.shape.priority.unwrap()),
   asPriority = (value: string | undefined): Priority =>
     value === 'high' || value === 'low' || value === 'medium' ? value : 'medium',
@@ -50,7 +46,6 @@ const priorityOptions = enumToOptions(s.task.shape.priority.unwrap()),
       </SelectContent>
     </Select>
   )
-
 interface TaskRowProps {
   canAssign: boolean
   canEdit: boolean
@@ -61,14 +56,12 @@ interface TaskRowProps {
   onUpdate: (title: string, priority: Priority) => Promise<void>
   task: Task
 }
-
 const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, onUpdate, task: t }: TaskRowProps) => {
     const [editing, setEditing] = useState(false),
       [editTitle, setEditTitle] = useState(() => t.title),
       [editPriority, setEditPriority] = useState<Priority>(() => asPriority(t.priority)),
       handleSave = async () => {
         if (!editTitle.trim()) return
-
         await onUpdate(editTitle, editPriority)
         setEditing(false)
         toast.success('Task updated')
@@ -80,7 +73,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       { assigneeId } = t,
       assignee = assigneeId ? members.find(m => sameIdentity(m.userId, assigneeId)) : null
-
     if (editing)
       return (
         <div className='flex items-center gap-2 py-2'>
@@ -99,7 +91,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           </Button>
         </div>
       )
-
     return (
       <div className='flex items-center gap-3 py-2'>
         <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
@@ -177,9 +168,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           success: count => `${count} task(s) updated`
         }
       })
-
     if (!(project && identity)) return <Skeleton className='h-40' />
-
     const canEditProject =
         isAdmin || sameIdentity(project.userId, identity) || (project.editors ?? []).some(e => sameIdentity(e, identity)),
       editorsList = (project.editors ?? []).map(e => {
@@ -238,7 +227,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
         }
         bulkUpdate.run(items)
       }
-
     return (
       <div className='space-y-6'>
         <div className='flex items-center justify-between'>
@@ -256,7 +244,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           ) : null}
         </div>
         {project.description ? <p className='text-muted-foreground'>{project.description}</p> : null}
-
         <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
             <CardTitle>Tasks</CardTitle>
@@ -290,7 +277,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
                 </Button>
               </form>
             ) : null}
-
             <div className='divide-y'>
               {isAdmin && tasks.length > 0 ? (
                 <div className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
@@ -340,12 +326,10 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
             </div>
           </CardContent>
         </Card>
-
         {isAdmin ? (
           <EditorsSection editorsList={editorsList} members={membersForEditors} onAdd={noop} onRemove={noop} />
         ) : null}
       </div>
     )
   }
-
 export default ProjectDetailPage

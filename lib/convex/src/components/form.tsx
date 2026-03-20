@@ -20,7 +20,6 @@ import { DevtoolsAutoMount } from '../react/devtools-panel'
 import { useForm as useBaseForm, useFormMutation as useBaseFormMutation } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
-
 const ConflictDialog = ({
   className,
   conflict,
@@ -70,13 +69,11 @@ const ConflictDialog = ({
     </DialogContent>
   </Dialog>
 )
-
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> extends BaseFormReturn<T, S> {
   guard: ReturnType<typeof useNavigationGuard>
 }
 type Key<T, V> = string & { [K in keyof T]: T[K] extends V ? K : never }[keyof T]
 type Props<K extends keyof typeof fields> = Parameters<(typeof fields)[K]>[0]
-
 interface TypedFields<T> {
   Arr: (p: WithName<Props<'Arr'>, Key<T, readonly string[] | string[] | undefined>>) => ReactNode
   Choose: (p: WithName<Props<'Choose'>, Key<T, string | undefined>>) => ReactNode
@@ -100,9 +97,7 @@ interface TypedFields<T> {
   Timepick: (p: WithName<Props<'Timepick'>, Key<T, string | undefined>>) => ReactNode
   Toggle: (p: WithName<Props<'Toggle'>, Key<T, boolean | undefined>>) => ReactNode
 }
-
 type WithName<P, K> = Omit<P, 'name'> & { name: K }
-
 const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>(
     base: BaseFormReturn<T, S>
   ): FormReturn<T, S> => {
@@ -208,7 +203,6 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       REFRESH_INTERVAL = 10_000,
       calcAgo = () => (lastSaved ? Math.round((Date.now() - lastSaved) / MS_PER_SECOND) : 0),
       [ago, setAgo] = useState(calcAgo)
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: calcAgo depends on lastSaved
     useEffect(() => {
       if (!lastSaved) return
@@ -217,7 +211,6 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       return () => clearInterval(id)
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastSaved])
-
     if (!lastSaved) return null
     return (
       <span className={cn('text-xs text-muted-foreground', className)} {...props}>
@@ -225,8 +218,6 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       </span>
     )
   }
-
 /** Exports form components and hooks. */
 export type { TypedFields }
-
 export { AutoSaveIndicator, ConflictDialog, Form, useForm, useFormMutation }

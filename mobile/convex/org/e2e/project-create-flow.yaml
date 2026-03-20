@@ -1,35 +1,27 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - assertVisible: "Projects"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "New Project"
     timeout: 10000
-
 - assertVisible: "Project Name"
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
 - assertVisible: "Projects"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "New Project"
     timeout: 10000
-
 - tapOn: "Project Name"
 - inputText: "Created Project Test"
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Created Project Test"
     timeout: 10000

@@ -1,5 +1,4 @@
 'use client'
-
 import type { output } from 'zod'
 
 import { api } from '@a/be-convex'
@@ -13,9 +12,7 @@ import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 
 import { orgTeam } from '~/schema'
-
 type OrgFormValues = output<typeof orgTeam>
-
 const orgKeys = {
     name: 'name',
     slug: 'slug'
@@ -36,11 +33,9 @@ const orgKeys = {
       name = form.watch(orgKeys.name),
       slug = form.watch(orgKeys.slug),
       autoSlugRef = useRef(true)
-
     useEffect(() => {
       if (autoSlugRef.current) form.instance.setFieldValue(orgKeys.slug, slugify(name))
     }, [name, form.instance])
-
     return (
       <div className='container flex justify-center py-8'>
         <Card className='w-full max-w-md'>
@@ -68,5 +63,4 @@ const orgKeys = {
       </div>
     )
   }
-
 export default NewOrgPage

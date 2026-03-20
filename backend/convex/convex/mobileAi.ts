@@ -1,5 +1,4 @@
 'use node'
-
 import { generateText, tool } from 'ai'
 import { v } from 'convex/values'
 import { z } from 'zod/v4'
@@ -7,7 +6,6 @@ import { z } from 'zod/v4'
 import { getModel } from '../ai'
 import { api } from './_generated/api'
 import { action } from './_generated/server'
-
 const geocodeCity = async (city: string): Promise<null | { latitude: number; longitude: number }> => {
     const response = await fetch(
       `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`
@@ -19,7 +17,6 @@ const geocodeCity = async (city: string): Promise<null | { latitude: number; lon
   },
   getWeather = tool({
     description: 'Get the current weather at a location.',
-
     execute: async input => {
       let lat: number, lon: number
       if (input.city) {
@@ -52,13 +49,11 @@ const geocodeCity = async (city: string): Promise<null | { latitude: number; lon
       for (const m of messages) {
         const textParts: string[] = []
         for (const p of m.parts) if (p.type === 'text' && p.text) textParts.push(p.text)
-
         history.push({
           content: textParts.join(''),
           role: m.role as 'assistant' | 'user'
         })
       }
-
       const model = await getModel(),
         { text } = await generateText({
           messages: history,
@@ -66,15 +61,12 @@ const geocodeCity = async (city: string): Promise<null | { latitude: number; lon
           system: 'You are a helpful assistant.',
           tools: { getWeather }
         })
-
       await ctx.runMutation(api.message.create, {
         chatId,
         parts: [{ text, type: 'text' }],
         role: 'assistant'
       })
-
       return { text, type: 'text' as const }
     }
   })
-
 export { chat }

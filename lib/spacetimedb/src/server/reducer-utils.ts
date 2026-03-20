@@ -1,32 +1,26 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, TypeBuilder } from 'spacetimedb/server'
-
 type FieldBuilders = Record<
   string,
   ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>> | TypeBuilder<unknown, AlgebraicTypeType>
 >
-
 interface OptionalBuilder {
   optional: () =>
     | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
     | TypeBuilder<unknown, AlgebraicTypeType>
 }
-
 interface OwnedRow extends Record<string, unknown> {
   updatedAt: Timestamp
   userId: Identity
 }
-
 interface PkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
   update: (row: Row) => Row
 }
-
 interface TableLike<Row> {
   insert: (row: Row) => Row
 }
-
 const makeError = (code: string, message: string): Error => new Error(`${code}: ${message}`),
   identityEquals = (a: Identity, b: Identity): boolean => {
     const left = a as unknown as { isEqual?: (v: unknown) => boolean; toHexString?: () => string }
@@ -92,7 +86,5 @@ const makeError = (code: string, message: string): Error => new Error(`${code}: 
     if (!identityEquals(row.userId, ctxSender)) throw makeError('FORBIDDEN', `${tableName}:${operation}`)
     return { pk, row }
   }
-
 export type { FieldBuilders, OwnedRow, PkLike, TableLike }
-
 export { applyPatch, getOwnedRow, identityEquals, makeError, makeOptionalFields, pickPatch, timestampEquals }

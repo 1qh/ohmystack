@@ -2,16 +2,13 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 
 import type { RateLimitConfig } from './common'
-
 interface CascadeOption {
   foreignKey: string
   table: string
 }
-
 type CrudBuilder =
   | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
   | TypeBuilder<unknown, AlgebraicTypeType>
-
 type CrudBuilders = never
 interface CrudConfig<
   DB,
@@ -32,9 +29,7 @@ interface CrudConfig<
 interface CrudExports {
   exports: Record<string, ReducerExportLike>
 }
-
 type CrudFieldBuilders = Record<string, CrudBuilder>
-
 type CrudFieldValues<F extends CrudFieldBuilders> = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   [K in keyof F]: F[K] extends ColumnBuilder<infer T, infer _S, infer _M>
@@ -43,7 +38,6 @@ type CrudFieldValues<F extends CrudFieldBuilders> = {
       ? T
       : never
 }
-
 interface CrudHooks<
   DB = unknown,
   Row extends Record<string, unknown> = Record<string, unknown>,
@@ -57,7 +51,6 @@ interface CrudHooks<
   beforeDelete?: (ctx: HookCtx<DB>, args: { row: Row }) => Promise<void> | void
   beforeUpdate?: (ctx: HookCtx<DB>, args: { patch: UpdatePatch; prev: Row }) => Promise<UpdatePatch> | UpdatePatch
 }
-
 type CrudMakeFn = <
   DB,
   F extends CrudFieldBuilders,
@@ -75,7 +68,6 @@ type CrudMakeFn = <
   },
   config: CrudConfig<DB, F, Row, Id, Tbl, Pk>
 ) => CrudExports
-
 interface CrudOptions<
   DB = unknown,
   Row extends Record<string, unknown> = Record<string, unknown>,
@@ -87,17 +79,13 @@ interface CrudOptions<
   rateLimit?: RateLimitConfig
   softDelete?: boolean
 }
-
 interface CrudPkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
   update: (row: Row) => Row
 }
-
 type CrudReadApi = never
-
 type CrudResult = CrudExports
-
 interface CrudTableLike<Row> {
   delete: (row: Row) => boolean
   insert: (row: Row) => Row
@@ -110,9 +98,7 @@ interface HookCtx<DB = unknown> {
   sender: Identity
   timestamp: Timestamp
 }
-
 type ReducerExportLike = ReducerExport<never, never>
-
 export type {
   CascadeOption,
   CrudBuilders,

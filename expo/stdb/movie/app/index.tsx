@@ -8,7 +8,6 @@ import { Link } from 'expo-router'
 import { Search } from 'lucide-react-native'
 import { useState, useTransition } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
-
 interface SearchResult {
   id: number
   overview: string
@@ -18,11 +17,9 @@ interface SearchResult {
   tmdb_id: number
   vote_average: number
 }
-
 interface TmdbSearchResponse {
   results: SearchResult[]
 }
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   PLAYWRIGHT_MOVIES: SearchResult[] = [
     {
@@ -104,7 +101,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
           }
         })
       }
-
     return (
       <ScrollView
         className='flex-1 bg-background'
@@ -118,7 +114,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             </Pressable>
           </Link>
         </View>
-
         <View className='gap-2' testID='movie-search-form'>
           <Input
             onChangeText={setQuery}
@@ -132,19 +127,16 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             <Text>{pending ? 'Searching...' : 'Search'}</Text>
           </Button>
         </View>
-
         {isOnline ? null : (
           <Text className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive' testID='offline-banner'>
             You are offline - search requires internet
           </Text>
         )}
-
         {movieError ? (
           <Text className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive' testID='movie-error'>
             {movieError}
           </Text>
         ) : null}
-
         <View className='gap-3' testID='movie-results'>
           {results.map(m => (
             <MovieCard key={m.tmdb_id} movie={m} />
@@ -153,5 +145,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       </ScrollView>
     )
   }
-
 export default Page

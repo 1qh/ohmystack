@@ -1,13 +1,11 @@
 import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '@a/ui'
-
 interface LoginLayoutProps {
   children: ReactNode
   className?: string
   wrapperProps?: Omit<ComponentProps<'div'>, 'children'>
 }
-
 const LoginLayout = ({ children, className, wrapperProps }: LoginLayoutProps) => (
   <div
     {...wrapperProps}
@@ -15,5 +13,4 @@ const LoginLayout = ({ children, className, wrapperProps }: LoginLayoutProps) =>
     {children}
   </div>
 )
-
 export default LoginLayout

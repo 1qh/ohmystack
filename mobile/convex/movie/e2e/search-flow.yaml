@@ -4,7 +4,6 @@ appId: dev.noboil.movie
 - assertVisible: "Movie Search"
 - assertVisible: "Search movies..."
 - assertVisible: "Search for movies by title"
-
 - tapOn: "Search movies..."
 - inputText: "Inception"
 - tapOn:
@@ -13,12 +12,10 @@ appId: dev.noboil.movie
     visible: "Inception"
     timeout: 15000
 - assertVisible: "Inception"
-
 - scrollUntilVisible:
     element: "Inception"
     direction: DOWN
     timeout: 3000
-
 - tapOn:
     text: "Inception"
     index: 0
@@ -42,12 +39,10 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: ".*Release.*|.*Rating.*|.*Runtime.*|.*2010.*"
     timeout: 15000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Movie Search"
 - assertVisible: "Inception"
-
 - tapOn: "Inception"
 - eraseText: 50
 - inputText: "Fight Club"
@@ -57,7 +52,6 @@ appId: dev.noboil.movie
     visible: "Fight Club"
     timeout: 15000
 - assertVisible: "Fight Club"
-
 - tapOn: "Fight Club"
 - eraseText: 50
 - inputText: "Batman"
@@ -66,6 +60,5 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Batman"
     timeout: 15000
-
 - tapOn: "Batman"
 - eraseText: 50

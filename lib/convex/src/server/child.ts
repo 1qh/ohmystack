@@ -22,12 +22,10 @@ import type {
 import { BULK_MAX } from '../constants'
 import { idx, typed } from './bridge'
 import { cleanFiles, dbDelete, dbInsert, dbPatch, detectFiles, err, pickFields, time } from './helpers'
-
 interface ChildCrudOptions<PS extends ZodRawShape = ZodRawShape> {
   hooks?: CrudHooks
   pub?: { parentField: keyof PS & string }
 }
-
 interface ChildMeta<S extends ZodRawShape = ZodRawShape, PS extends ZodRawShape = ZodRawShape> {
   foreignKey: string
   index: string
@@ -35,7 +33,6 @@ interface ChildMeta<S extends ZodRawShape = ZodRawShape, PS extends ZodRawShape 
   parentSchema?: ZodObject<PS>
   schema: ZodObject<S>
 }
-
 const chk = (ctx: UserCtx): HookCtx => ({
     db: ctx.db,
     storage: (ctx as unknown as { storage: unknown }).storage as HookCtx['storage'],
@@ -266,5 +263,4 @@ const chk = (ctx: UserCtx): HookCtx => ({
       update
     } as unknown as ChildCrudResult<S>
   }
-
 export { makeChildCrud }

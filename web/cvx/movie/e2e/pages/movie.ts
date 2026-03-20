@@ -2,7 +2,6 @@
 import type { Locator } from '@playwright/test'
 
 import BasePage from '@a/e2e/base-page'
-
 class MoviePage extends BasePage {
   public async fetchMovie(id: number): Promise<void> {
     await this.getFetchInput().fill(String(id))
@@ -44,25 +43,20 @@ class MoviePage extends BasePage {
   public getSearchInput(): Locator {
     return this.$('movie-search-input')
   }
-
   public getSearchPage(): Locator {
     return this.$('movie-search-page')
   }
-
   public async gotoFetch(): Promise<void> {
     await this.page.goto('/fetch')
     await this.page.waitForLoadState('domcontentloaded')
   }
-
   public async gotoSearch(): Promise<void> {
     await this.page.goto('/')
     await this.page.waitForLoadState('domcontentloaded')
   }
-
   public async searchMovie(query: string): Promise<void> {
     await this.getSearchInput().fill(query)
     await this.getSearchForm().locator('button[type="submit"], input').first().press('Enter')
   }
 }
-
 export default MoviePage

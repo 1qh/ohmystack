@@ -1,9 +1,7 @@
 appId: dev.noboil.chat
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -11,7 +9,6 @@ appId: dev.noboil.chat
     text: "New Chat"
     index: 0
 - waitForAnimationToEnd
-
 - tapOn: "Message..."
 - inputText: "Delete confirm test"
 - tapOn:
@@ -19,7 +16,6 @@ appId: dev.noboil.chat
 - extendedWaitUntil:
     visible: "Delete confirm test"
     timeout: 15000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Chats"

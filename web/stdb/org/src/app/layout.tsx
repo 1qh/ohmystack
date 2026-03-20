@@ -3,7 +3,6 @@
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-
 import type { Org, OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 import type { OrgRole } from '@noboil/spacetimedb'
 import type { ReactNode } from 'react'
@@ -18,7 +17,6 @@ import { useEffect, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import OrgLayoutClient from './layout-client'
-
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
   needsOrgLayout = (pathname: string) => {
     for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
@@ -50,11 +48,9 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
       { identity } = useSpacetimeDB(),
       [orgs, orgsReady] = useTable(tables.org),
       [members, membersReady] = useTable(tables.orgMember),
-      // eslint-disable-next-line no-restricted-properties
       isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
       activeOrgId = readActiveOrgId(),
       [playwrightWaitExpired, setPlaywrightWaitExpired] = useState(false)
-
     /** biome-ignore lint/correctness/useExhaustiveDependencies: retrigger on navigation */
     useEffect(() => {
       if (!isPlaywright) return
@@ -62,15 +58,10 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
       const timer = window.setTimeout(() => setPlaywrightWaitExpired(true), 1500)
       return () => window.clearTimeout(timer)
     }, [activeOrgId, isPlaywright, pathname])
-
     if (!pathname) return children
-
     if (!needsOrgLayout(pathname)) return children
-
     if (!(identity || isPlaywright)) return null
-
     if (!(isPlaywright || (orgsReady && membersReady))) return null
-
     // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
     const myOrgItems = identity
       ? members
@@ -83,22 +74,17 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
           })
           .filter(item => item !== null)
       : orgs.map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
-
     if (myOrgItems.length === 0) {
       if (isPlaywright && !playwrightWaitExpired) return null
       router.replace('/')
       return null
     }
-
     const active = (activeOrgId ? myOrgItems.find(item => item.org._id === activeOrgId) : null) ?? myOrgItems[0]
-
     if (!active) {
       router.replace('/')
       return null
     }
-
     if (activeOrgId !== active.org._id) return <OrgRedirect orgId={active.org._id} slug={active.org.slug} to={pathname} />
-
     return (
       <OrgLayoutClient membership={null} org={active.org} orgs={myOrgItems} role={active.role}>
         {children}
@@ -117,6 +103,5 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
       <LayoutContent>{children}</LayoutContent>
     </AuthLayout>
   )
-
 export { OrgRedirect }
 export default Layout

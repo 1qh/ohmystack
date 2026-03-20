@@ -1,11 +1,9 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
 import { Input } from '@a/ui/input'
 import { Search } from 'lucide-react'
-
 interface SearchInputProps extends Omit<ComponentProps<typeof Input>, 'onChange' | 'type' | 'value'> {
   iconClassName?: string
   iconProps?: ComponentProps<typeof Search>
@@ -14,7 +12,6 @@ interface SearchInputProps extends Omit<ComponentProps<typeof Input>, 'onChange'
   value: string
   wrapperProps?: Omit<ComponentProps<'div'>, 'children'>
 }
-
 const SearchInput = ({
   className,
   iconClassName,
@@ -43,5 +40,4 @@ const SearchInput = ({
     />
   </div>
 )
-
 export default SearchInput

@@ -1,5 +1,4 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
@@ -9,7 +8,6 @@ import { Badge } from '@a/ui/badge'
 import type { OrgRole } from '../server/types'
 
 import useOnlineStatus from '../react/use-online-status'
-
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
     <Avatar {...props}>
       {src ? <AvatarImage src={src} /> : null}
@@ -40,6 +38,5 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
       </p>
     )
   }
-
 /** Exports OrgAvatar, RoleBadge, and OfflineIndicator components. */
 export { OfflineIndicator, OrgAvatar, RoleBadge }

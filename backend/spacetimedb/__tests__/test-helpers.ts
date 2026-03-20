@@ -2,9 +2,7 @@
 import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
 
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/test'
-
 type Row = Record<string, unknown>
-
 const none = { none: [] as [] },
   some = <T>(value: T) => ({ some: value }),
   toIdentityCell = (identity: string) => `0x${identity}`,
@@ -21,7 +19,6 @@ const none = { none: [] as [] },
   hasIdentity = (row: Row, identity: string): boolean => {
     const raw = row.user_id
     if (!Array.isArray(raw) || raw.length === 0) return false
-
     const [first] = raw
     return first === toIdentityCell(identity)
   },
@@ -86,7 +83,6 @@ const none = { none: [] as [] },
     for (const row of rows) if (row && typeof row === 'object') output.push(row as Row)
     return output
   }
-
 export {
   createBlog,
   createChat,

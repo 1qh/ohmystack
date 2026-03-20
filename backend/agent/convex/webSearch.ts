@@ -1,11 +1,9 @@
 /** biome-ignore-all lint/style/noProcessEnv: test mode detection */
 'use node'
-
 import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
 
 import { internalAction } from './_generated/server'
-
 interface GroundedSource {
   snippet: string
   title: string
@@ -15,7 +13,6 @@ interface GroundingResult {
   sources: GroundedSource[]
   summary: string
 }
-
 const recordModelUsageRef = makeFunctionReference<
     'mutation',
     {
@@ -64,5 +61,4 @@ const recordModelUsageRef = makeFunctionReference<
       return mock
     }
   })
-
 export { groundWithGemini, normalizeGrounding }

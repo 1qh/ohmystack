@@ -1,10 +1,8 @@
 'use client'
-
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { Building2, Plus } from 'lucide-react'
 import Link from 'next/link'
-
 const NoOrgPrompt = () => (
   <Card className='mx-auto max-w-md'>
     <CardHeader className='text-center'>
@@ -22,5 +20,4 @@ const NoOrgPrompt = () => (
     </CardContent>
   </Card>
 )
-
 export default NoOrgPrompt

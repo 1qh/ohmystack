@@ -1,6 +1,5 @@
 import { cn } from '@a/rnr'
 import { Platform, TextInput, type TextInputProps } from 'react-native'
-
 function Textarea({
   className,
   multiline = true,
@@ -26,5 +25,4 @@ function Textarea({
     />
   )
 }
-
 export { Textarea }

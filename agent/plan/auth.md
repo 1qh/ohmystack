@@ -5,14 +5,8 @@
 - Production auth uses `@convex-dev/auth` with Google OAuth.
 - Frontend auth state uses `ConvexAuthNextjsProvider`.
 - Test mode uses deterministic backend test identity via `makeTestAuth`.
-- Ownership is always derived server-side from auth context.
-
-References:
-
-- `@convex-dev/auth` docs: https://labs.convex.dev/auth
-
-Implementation:
-
+- Ownership is always derived server-side from auth context. References:
+- `@convex-dev/auth` docs: https://labs.convex.dev/auth Implementation:
 - `backend/agent/convex/auth.ts`
 - `backend/agent/convex/auth.config.ts`
 - `backend/agent/convex/testauth.ts`

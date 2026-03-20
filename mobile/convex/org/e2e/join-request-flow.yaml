@@ -1,36 +1,28 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn: "Members"
 - waitForAnimationToEnd
-
 - assertVisible: "Members"
 - assertVisible: "Owner"
-
 - tapOn:
     id: "inviteMemberButton"
 - waitForAnimationToEnd
 - assertVisible: "Invite Member"
 - assertVisible: "Email address"
 - assertVisible: "Send Invite"
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
 - assertVisible: "Members"
-
 - tapOn:
     id: "inviteMemberButton"
 - waitForAnimationToEnd
-
 - tapOn: "Email address"
 - inputText: "join-request-test@example.com"
-
 - tapOn: "Send Invite"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "join-request-test@example.com"
     timeout: 10000
     optional: true
-
 - assertVisible: "Members"

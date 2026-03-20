@@ -2,7 +2,6 @@
 /** biome-ignore-all lint/performance/noImgElement: external TMDB image URLs */
 /** biome-ignore-all lint/correctness/useImageSize: external TMDB image URLs */
 'use client'
-
 import type { FunctionReturnType } from 'convex/server'
 
 import { api } from '@a/be-convex'
@@ -10,9 +9,7 @@ import { Input } from '@a/ui/input'
 import { useAction } from 'convex/react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-
 type SearchResult = FunctionReturnType<typeof api.movie.search>[number]
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   MovieCard = ({ movie }: { movie: SearchResult }) => (
     <div className='flex gap-3 rounded-lg border p-3' data-testid='movie-card'>
@@ -44,7 +41,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       [query, setQuery] = useState(''),
       [results, setResults] = useState<SearchResult[]>([]),
       [pending, go] = useTransition()
-
     return (
       <div className='mx-auto flex max-w-2xl flex-col gap-4 p-4' data-testid='movie-search-page'>
         <div className='flex items-center justify-between'>
@@ -78,5 +74,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       </div>
     )
   }
-
 export default Page

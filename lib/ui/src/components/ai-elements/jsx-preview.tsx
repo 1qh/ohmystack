@@ -1,8 +1,6 @@
 "use client";
-
 import type { ComponentProps, ReactNode } from "react";
 import type { TProps as JsxParserProps } from "react-jsx-parser";
-
 import { cn } from "@a/ui/lib/utils";
 import { AlertCircle } from "lucide-react";
 import {
@@ -16,7 +14,6 @@ import {
   useState,
 } from "react";
 import JsxParser from "react-jsx-parser";
-
 interface JSXPreviewContextValue {
   jsx: string;
   processedJsx: string;
@@ -26,11 +23,8 @@ interface JSXPreviewContextValue {
   bindings: JsxParserProps["bindings"];
   onErrorProp?: (error: Error) => void;
 }
-
 const JSXPreviewContext = createContext<JSXPreviewContextValue | null>(null);
-
 const TAG_REGEX = /<\/?([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*?)(\/)?>/;
-
 export const useJSXPreview = () => {
   const context = useContext(JSXPreviewContext);
   if (!context) {
@@ -38,20 +32,15 @@ export const useJSXPreview = () => {
   }
   return context;
 };
-
 const matchJsxTag = (code: string) => {
   if (code.trim() === "") {
     return null;
   }
-
   const match = code.match(TAG_REGEX);
-
   if (!match || match.index === undefined) {
     return null;
   }
-
   const [fullMatch, tagName, attributes, selfClosing] = match;
-
   let type: "self-closing" | "closing" | "opening";
   if (selfClosing) {
     type = "self-closing";
@@ -60,7 +49,6 @@ const matchJsxTag = (code: string) => {
   } else {
     type = "opening";
   }
-
   return {
     attributes: attributes.trim(),
     endIndex: match.index + fullMatch.length,
@@ -70,12 +58,10 @@ const matchJsxTag = (code: string) => {
     type,
   };
 };
-
 const completeJsxTag = (code: string) => {
   const stack: string[] = [];
   let result = "";
   let currentPosition = 0;
-
   while (currentPosition < code.length) {
     const match = matchJsxTag(code.slice(currentPosition));
     if (!match) {
@@ -84,19 +70,15 @@ const completeJsxTag = (code: string) => {
       break;
     }
     const { tagName, type, endIndex } = match;
-
     // Include any text content before this tag
     result += code.slice(currentPosition, currentPosition + endIndex);
-
     if (type === "opening") {
       stack.push(tagName);
     } else if (type === "closing") {
       stack.pop();
     }
-
     currentPosition += endIndex;
   }
-
   return (
     result +
     stack
@@ -105,7 +87,6 @@ const completeJsxTag = (code: string) => {
       .join("")
   );
 };
-
 export type JSXPreviewProps = ComponentProps<"div"> & {
   jsx: string;
   isStreaming?: boolean;
@@ -113,7 +94,6 @@ export type JSXPreviewProps = ComponentProps<"div"> & {
   bindings?: JsxParserProps["bindings"];
   onError?: (error: Error) => void;
 };
-
 export const JSXPreview = memo(
   ({
     jsx,
@@ -127,18 +107,15 @@ export const JSXPreview = memo(
   }: JSXPreviewProps) => {
     const [prevJsx, setPrevJsx] = useState(jsx);
     const [error, setError] = useState<Error | null>(null);
-
     // Clear error when jsx changes (derived state pattern)
     if (jsx !== prevJsx) {
       setPrevJsx(jsx);
       setError(null);
     }
-
     const processedJsx = useMemo(
       () => (isStreaming ? completeJsxTag(jsx) : jsx),
       [jsx, isStreaming]
     );
-
     return (
       <JSXPreviewContext.Provider
         value={{
@@ -158,23 +135,18 @@ export const JSXPreview = memo(
     );
   }
 );
-
 JSXPreview.displayName = "JSXPreview";
-
 export type JSXPreviewContentProps = Omit<ComponentProps<"div">, "children">;
-
 export const JSXPreviewContent = memo(
   ({ className, ...props }: JSXPreviewContentProps) => {
     const { processedJsx, components, bindings, setError, onErrorProp } =
       useJSXPreview();
     const errorReportedRef = useRef<string | null>(null);
-
     // Reset error tracking when jsx changes
     // biome-ignore lint/correctness/useExhaustiveDependencies: processedJsx change should reset tracking
     useEffect(() => {
       errorReportedRef.current = null;
     }, [processedJsx]);
-
     const handleError = useCallback(
       (err: Error) => {
         // Prevent duplicate error reports for the same jsx
@@ -187,7 +159,6 @@ export const JSXPreviewContent = memo(
       },
       [processedJsx, onErrorProp, setError]
     );
-
     return (
       <div className={cn("jsx-preview-content", className)} {...props}>
         <JsxParser
@@ -201,13 +172,10 @@ export const JSXPreviewContent = memo(
     );
   }
 );
-
 JSXPreviewContent.displayName = "JSXPreviewContent";
-
 export type JSXPreviewErrorProps = ComponentProps<"div"> & {
   children?: ReactNode | ((error: Error) => ReactNode);
 };
-
 const renderChildren = (
   children: ReactNode | ((error: Error) => ReactNode),
   error: Error
@@ -217,15 +185,12 @@ const renderChildren = (
   }
   return children;
 };
-
 export const JSXPreviewError = memo(
   ({ className, children, ...props }: JSXPreviewErrorProps) => {
     const { error } = useJSXPreview();
-
     if (!error) {
       return null;
     }
-
     return (
       <div
         className={cn(
@@ -246,5 +211,4 @@ export const JSXPreviewError = memo(
     );
   }
 );
-
 JSXPreviewError.displayName = "JSXPreviewError";

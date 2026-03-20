@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
@@ -19,7 +18,6 @@ import {
 import { GlobeIcon, MessageSquareIcon, MessageSquarePlusIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-
 interface ChatSidebarProps<TThread extends ThreadBase, TId extends number | string> {
   basePath: string
   conversationsLabel?: string
@@ -44,11 +42,9 @@ interface ChatSidebarProps<TThread extends ThreadBase, TId extends number | stri
   threads: TThread[]
   untitledThreadLabel?: string
 }
-
 interface ThreadBase {
   title?: string
 }
-
 const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
   basePath,
   conversationsLabel = 'Conversations',
@@ -81,7 +77,6 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
       await onDelete(threadId)
       if (params.id === String(threadId)) router.push(rootPath)
     }
-
   return (
     <Sidebar {...rootProps} side='left'>
       <SidebarHeader className={cn('gap-2', headerClassName)}>
@@ -141,5 +136,4 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
     </Sidebar>
   )
 }
-
 export default ChatSidebar

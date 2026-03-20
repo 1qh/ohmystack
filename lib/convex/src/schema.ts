@@ -6,7 +6,6 @@ import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
 
 import { typed } from './server/bridge'
-
 /** Zod schema for a Convex storage file reference. */
 const cvFile = () => zid('_storage').meta({ cv: 'file' as const }),
   /** Zod schema for an array of Convex storage file references. */
@@ -65,5 +64,4 @@ const cvFile = () => zid('_storage').meta({ cv: 'file' as const }),
     brandSchemas<'singleton', T>(schemas) as {
       [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
     }
-
 export { child, cvFile, cvFiles, makeBase, makeOrgScoped, makeOwned, makeSingleton, orgSchema }

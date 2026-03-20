@@ -1,12 +1,10 @@
 'use client'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Input } from '@a/ui/input'
 import { useList } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const [allChats, isReady] = useTable(tables.chat),
     [query, setQuery] = useState(''),
@@ -38,5 +36,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

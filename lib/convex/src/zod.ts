@@ -1,9 +1,7 @@
 import type { core, output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
-
 type CvMeta = 'file' | 'files'
 type DefType = core.$ZodTypeDef['type']
 type ZodSchema = ZodType
-
 const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
     'catch',
     'default',
@@ -134,7 +132,6 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
       }
     return result as output<S>
   }
-
 export type { CvMeta, DefType, ZodSchema }
 export {
   coerceOptionals,

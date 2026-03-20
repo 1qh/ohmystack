@@ -2,7 +2,6 @@
 /* oxlint-disable react-perf/jsx-no-jsx-as-prop */
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 // oxlint-disable promise/prefer-await-to-then
-
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
@@ -32,7 +31,6 @@ import { toast } from 'sonner'
 import type { Api, FieldKind, FieldMetaMap } from '../react/form'
 
 import { unwrapZod } from '../zod'
-
 const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
   DEFAULT_RATING_MAX = 5,
   CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
@@ -198,7 +196,6 @@ const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
                           toast.error(`Max ${mx}`)
                           return
                         }
-
                         f.handleChange([...new Set([...tags, v])])
                         e.currentTarget.value = ''
                       } else if (e.key === 'Backspace' && tags.length > 0 && !value.trim()) {
@@ -1129,8 +1126,6 @@ const DEFAULT_ASYNC_DEBOUNCE_MS = 300,
       )
     }
   }
-
 /** Exports form fields, context, and server error component. */
 export type { Api }
-
 export { deriveLabel, fields, FormContext, ServerFieldError }

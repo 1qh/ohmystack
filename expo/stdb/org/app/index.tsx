@@ -2,7 +2,6 @@ import { Button } from '@a/rnr/components/button'
 import { Text } from '@a/rnr/components/text'
 import { Link } from 'expo-router'
 import { Pressable, ScrollView, View } from 'react-native'
-
 const links = [
     '/dashboard',
     '/members',
@@ -33,5 +32,4 @@ const links = [
       </Button>
     </ScrollView>
   )
-
 export default Page

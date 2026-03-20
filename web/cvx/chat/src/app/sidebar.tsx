@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import ChatSidebar from '@a/fe/chat-sidebar'
 import { Spinner } from '@a/ui/spinner'
@@ -8,7 +7,6 @@ import { useMutation } from 'convex/react'
 import { Check } from 'lucide-react'
 import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
-
 const Sb = () => {
   const { inView, ref } = useInView(),
     { items, loadMore, status } = useList(api.chat.list, { where: { own: true } }),
@@ -16,11 +14,9 @@ const Sb = () => {
     handleDelete = async (chatId: string) => {
       await deleteChat({ id: chatId })
     }
-
   useEffect(() => {
     if (inView && status === 'CanLoadMore') loadMore()
   }, [inView, loadMore, status])
-
   return (
     <>
       <ChatSidebar basePath='' getThreadId={thread => thread._id} onDelete={handleDelete} threads={items} />
@@ -36,5 +32,4 @@ const Sb = () => {
     </>
   )
 }
-
 export default Sb

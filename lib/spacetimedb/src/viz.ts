@@ -4,25 +4,21 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   schemaMarkers = ['schema(', 'table(', 't.'],
   tablePat = /(?<tname>\w+)\s*:\s*table\([^,]+,\s*\{/gu,
   fieldLinePat = /^\s*(?<fname>\w+)\s*:\s*(?<ftype>.+?)\s*,?$/u
-
 interface ChildInfo extends TableInfo {
   foreignKey: string
   parent: string
 }
-
 interface TableInfo {
   fields: { name: string; type: string }[]
   name: string
   tableType: string
 }
-
 const isSchemaFile = (content: string): boolean => {
     for (const marker of schemaMarkers) if (content.includes(marker)) return true
     return false
@@ -163,41 +159,31 @@ const isSchemaFile = (content: string): boolean => {
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\nnoboil-stdb viz\n'))
-
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
       console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
       process.exit(1)
     }
-
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
       console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}\n`)
-
     const tables = extractWrapperTables(schemaFile.content),
       children = buildRelationships(tables)
-
     if (tables.length === 0) {
       console.log(red('✗ No tables found in schema'))
       process.exit(1)
     }
-
     if (flags.has('--mermaid')) {
       console.log(generateMermaid(tables, children))
       return
     }
-
     printSummary(tables, children)
     console.log(dim('Run with --mermaid for ER diagram output\n'))
   }
-
 if (import.meta.main) run()
-
 const extractChildren = (content: string): ChildInfo[] => buildRelationships(extractWrapperTables(content))
-
 export { extractChildren, extractFieldType, extractWrapperTables, generateMermaid }

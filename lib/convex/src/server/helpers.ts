@@ -27,7 +27,6 @@ import type {
 import { cvFileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { ERROR_MESSAGES } from './types'
-
 const TOKEN_BYTES = 24,
   TOKEN_RADIX = 36,
   TOKEN_LENGTH = 32,
@@ -292,7 +291,6 @@ const TOKEN_BYTES = 24,
     }
     await db.patch(existing._id as string, { count: (existing.count as number) + 1 })
   }
-
 /** Structured error data extracted from a ConvexError, containing the error code and optional context. */
 interface ConvexErrorData {
   code: ErrorCode
@@ -305,27 +303,22 @@ interface ConvexErrorData {
   retryAfter?: number
   table?: string
 }
-
 /** Map of error codes to handler functions, with an optional `default` catch-all. */
 type ErrorHandler = Partial<Record<ErrorCode, (data: ConvexErrorData) => void>> & {
   default?: (error: unknown) => void
 }
-
 /** Represents a failed mutation result containing error data. */
 interface MutationFail {
   error: ConvexErrorData
   ok: false
 }
-
 /** Represents a successful mutation result containing the return value. */
 interface MutationOk<T> {
   ok: true
   value: T
 }
-
 /** Discriminated union of success or failure for mutation return values. */
 type MutationResult<T> = MutationFail | MutationOk<T>
-
 /**
  * Extracts structured error data from a ConvexError, returning undefined for non-Convex errors.
  * @param e - The error to extract data from
@@ -486,7 +479,6 @@ const extractErrorData = (e: unknown): ConvexErrorData | undefined => {
         })
       })
     )
-
 export type { ConvexErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult }
 export {
   addUrls,

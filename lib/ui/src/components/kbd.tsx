@@ -1,5 +1,4 @@
 import { cn } from "@a/ui/lib/utils"
-
 function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
   return (
     <kbd
@@ -12,7 +11,6 @@ function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
     />
   )
 }
-
 function KbdGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <kbd
@@ -22,5 +20,4 @@ function KbdGroup({ className, ...props }: React.ComponentProps<"div">) {
     />
   )
 }
-
 export { Kbd, KbdGroup }

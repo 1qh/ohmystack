@@ -8,9 +8,7 @@ Session lifecycle policy is:
 
 1. `active` -> `idle` after 1 day of inactivity
 2. `idle` -> `archived` after 7 days of inactivity
-3. `archived` -> hard-deleted after 180 days
-
-Additional lifecycle behaviors:
+3. `archived` -> hard-deleted after 180 days Additional lifecycle behaviors:
 
 - Manual archive is an explicit shortcut from `active` or `idle` directly to `archived`.
 - Sending a message to an `idle` session reactivates it to `active`.
@@ -43,11 +41,7 @@ Retention and stale-recovery jobs are wired through Convex cron jobs (`cronJobs(
 
 1. Copy `streamingContent` to `content` (or set `content` to `[Message interrupted]` if empty)
 2. Terminalize any `parts` entries with `status: 'pending'` → set `status: 'error'` and `result: 'Interrupted: agent run terminated before tool completion'`
-3. Set `isComplete: true` and clear `streamingContent`
-
-This prevents permanent ghost streaming messages AND ensures compaction can proceed (compaction requires all tool-call parts to be terminal). Without step 2, a crashed run’s pending tool-call parts would block compaction forever and cause the UI to show permanent ‘running’ tool cards.
-
-Operational ownership map:
+3. Set `isComplete: true` and clear `streamingContent` This prevents permanent ghost streaming messages AND ensures compaction can proceed (compaction requires all tool-call parts to be terminal). Without step 2, a crashed run’s pending tool-call parts would block compaction forever and cause the UI to show permanent ‘running’ tool cards. Operational ownership map:
 
 - `archiveIdleSessions`: transitions session state (`active -> idle`, `idle -> archived`) and clears queued run payloads for newly archived sessions.
 - `timeoutStaleRuns`: recovers stuck orchestrator run state, drains queued payload into a fresh run token when present, or resets to idle.
@@ -79,9 +73,7 @@ timeline
 
 - Claimed run stale window: 15 minutes (`runHeartbeatAt` fallback `claimedAt`)
 - Unclaimed run stale window: 5 minutes (`activatedAt`)
-- Wall-clock cap: 15 minutes max run duration regardless of heartbeat freshness
-
-This cap prevents hung-but-heartbeating runs from monopolizing a thread forever.
+- Wall-clock cap: 15 minutes max run duration regardless of heartbeat freshness This cap prevents hung-but-heartbeating runs from monopolizing a thread forever.
 
 ## Rate limiting
 
@@ -90,26 +82,16 @@ Rate limiting uses `convex-helpers` `defineRateLimits` with token buckets:
 - `submitMessage`: `20/min/user`
 - `delegation`: `10/min/user`
 - `searchCall`: `30/min/user`
-- `mcpCall`: `20/min/user`
-
-Implementation notes:
-
+- `mcpCall`: `20/min/user` Implementation notes:
 - Storage comes from `rateLimitTables` in schema.
 - Enforcement uses `checkRateLimit` at mutation/tool entry points.
-- Internal auto-continue scheduling, worker execution, and worker heartbeats are exempt.
-
-Reference:
-
+- Internal auto-continue scheduling, worker execution, and worker heartbeats are exempt. Reference:
 - Convex cron jobs: <https://docs.convex.dev/scheduling/cron-jobs>
 - convex-helpers rate limiting: <https://github.com/get-convex/convex-helpers>
 
 ## Cleanup scope and cascade
 
-Cleanup is full-stack and deletes all session-owned data.
-
-Deletion cascade for hard-delete:
-
-The hard-delete cascade includes worker-thread artifacts: for each deleted task, all `messages` rows on the task’s `threadId` are also deleted. Since worker threads have no `session` row (they are task-owned), the cleanup resolves through `tasks.threadId` -> `messages.by_threadId`, not through `session`. The deletion order is: `tokenUsage` -> `todos` -> `messages` (both session and worker threads) -> `tasks` -> `threadRunState` -> `session`.
+Cleanup is full-stack and deletes all session-owned data. Deletion cascade for hard-delete: The hard-delete cascade includes worker-thread artifacts: for each deleted task, all `messages` rows on the task’s `threadId` are also deleted. Since worker threads have no `session` row (they are task-owned), the cleanup resolves through `tasks.threadId` -> `messages.by_threadId`, not through `session`. The deletion order is: `tokenUsage` -> `todos` -> `messages` (both session and worker threads) -> `tasks` -> `threadRunState` -> `session`.
 
 1. Session root record
 2. Child rows: `tasks`, `todos`, `tokenUsage`, `threadRunState`

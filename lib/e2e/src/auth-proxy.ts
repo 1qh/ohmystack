@@ -1,18 +1,14 @@
 import { serve } from 'bun'
-
 const BACKEND_API = 'http://127.0.0.1:3212',
   BACKEND_WS = 'ws://127.0.0.1:3212',
   SITE_URL = 'http://127.0.0.1:3211',
   swallow = () => undefined
-
 process.on('uncaughtException', swallow)
 process.on('unhandledRejection', swallow)
-
 serve({
   fetch: async (req, server) => {
     try {
       const url = new URL(req.url)
-
       if (req.headers.get('upgrade')?.toLowerCase() === 'websocket') {
         if (
           server.upgrade(req, {
@@ -20,22 +16,18 @@ serve({
           })
         )
           return
-
         return new Response('WebSocket upgrade failed', { status: 500 })
       }
-
       const target = url.pathname.startsWith('/api/auth') ? SITE_URL : BACKEND_API,
         targetUrl = `${target}${url.pathname}${url.search}`,
         headers = new Headers(req.headers)
       headers.delete('host')
-
       const response = await fetch(targetUrl, {
         body: req.body,
         headers,
         method: req.method,
         redirect: 'manual'
       })
-
       return new Response(response.body, {
         headers: response.headers,
         status: response.status,
@@ -45,9 +37,7 @@ serve({
       return new Response('Proxy error', { status: 502 })
     }
   },
-
   port: 3210,
-
   websocket: {
     close: ws => {
       try {

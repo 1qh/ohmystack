@@ -2,7 +2,6 @@ import { file, spawnSync, write } from 'bun'
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { argv as nodeArgv } from 'node:process'
-
 type JsonRecord = Record<string, unknown>
 const lineBreakRegex = /\r?\n/u,
   isRecord = (value: unknown): value is JsonRecord => typeof value === 'object' && value !== null && !Array.isArray(value),
@@ -53,16 +52,13 @@ const lineBreakRegex = /\r?\n/u,
     const entries = await readdir(dirPath, { withFileTypes: true }),
       files: string[] = [],
       nestedPromises: Promise<string[]>[] = []
-
     for (const entry of entries) {
       const absPath = join(dirPath, entry.name)
       if (entry.isDirectory()) nestedPromises.push(collectSourceFiles({ dirPath: absPath }))
       if (entry.isFile() && (absPath.endsWith('.ts') || absPath.endsWith('.tsx'))) files.push(absPath)
     }
-
     const nestedGroups = await Promise.all(nestedPromises)
     for (const group of nestedGroups) for (const nestedPath of group) files.push(nestedPath)
-
     return files
   },
   replaceImportPrefix = async ({
@@ -77,7 +73,6 @@ const lineBreakRegex = /\r?\n/u,
     if (fromPrefix === toPrefix) return
     const files = await collectSourceFiles({ dirPath: srcDir }),
       writes: Promise<void>[] = []
-
     for (const abs of files)
       writes.push(
         (async () => {
@@ -86,7 +81,6 @@ const lineBreakRegex = /\r?\n/u,
           if (next !== source) await write(file(abs), next)
         })()
       )
-
     await Promise.all(writes)
   },
   listGitTreeFiles = ({ prefix, rootDir }: { prefix: string; rootDir: string }) => {
@@ -112,11 +106,9 @@ const lineBreakRegex = /\r?\n/u,
     const gitPrefix = `lib/rnr/${relDir}`,
       files = listGitTreeFiles({ prefix: gitPrefix, rootDir }),
       targetDir = join(rnrTmpDir, relDir)
-
     if (files.length === 0) return
     run({ cmd: ['rm', '-rf', targetDir] })
     const writes: Promise<void>[] = []
-
     for (const gitPath of files) {
       const relPath = gitPath.startsWith('lib/rnr/') ? gitPath.slice('lib/rnr/'.length) : null
       if (relPath !== null) {
@@ -128,7 +120,6 @@ const lineBreakRegex = /\r?\n/u,
         }
       }
     }
-
     await Promise.all(writes)
   },
   root = process.cwd(),
@@ -150,10 +141,8 @@ const lineBreakRegex = /\r?\n/u,
       snapshotPackage = readJsonFromGit({ filePath: 'lib/rnr/package.json' }) ?? fallbackPackage,
       snapshotComponents = readJsonFromGit({ filePath: 'lib/rnr/components.json' }) ?? fallbackComponents,
       snapshotTsconfig = readJsonFromGit({ filePath: 'lib/rnr/tsconfig.json' }) ?? fallbackTsconfig
-
     run({ cmd: ['rm', '-rf', tmpDir] })
     run({ cmd: ['mkdir', '-p', tmpDir] })
-
     run({ cmd: ['git', 'clone', '--depth', '1', templateRepo, 'templates'], cwd: tmpDir })
     run({ cmd: ['cp', '-R', join(tmpDir, 'templates/minimal-uniwind/.'), tmpRnr] })
     run({ cmd: ['bun', 'i'], cwd: tmpRnr })
@@ -170,7 +159,6 @@ const lineBreakRegex = /\r?\n/u,
       ],
       cwd: tmpRnr
     })
-
     const outComponents = join(tmpRnr, 'src/components'),
       outLib = join(tmpRnr, 'src/lib'),
       outStyles = join(tmpRnr, 'src/styles')
@@ -179,37 +167,29 @@ const lineBreakRegex = /\r?\n/u,
     run({ cmd: ['cp', join(tmpRnr, 'lib/utils.ts'), join(outLib, 'utils.ts')] })
     run({ cmd: ['cp', join(tmpRnr, 'lib/theme.ts'), join(outLib, 'theme.ts')] })
     run({ cmd: ['cp', join(tmpRnr, 'global.css'), join(outStyles, 'globals.css')] })
-
     await replaceImportPrefix({ fromPrefix: '@/lib/utils', srcDir: outComponents, toPrefix: '@a/rnr' })
     await replaceImportPrefix({ fromPrefix: '@/components/ui/', srcDir: outComponents, toPrefix: '@a/rnr/components/' })
-
     if (snapshotPackage) await writeJson({ filePath: join(tmpRnr, 'package.json'), value: snapshotPackage })
     if (snapshotComponents) await writeJson({ filePath: join(tmpRnr, 'components.json'), value: snapshotComponents })
     if (snapshotTsconfig) await writeJson({ filePath: join(tmpRnr, 'tsconfig.json'), value: snapshotTsconfig })
-
     await restoreDirFromGitSnapshot({ relDir: 'src/lib', rnrTmpDir: tmpRnr, rootDir: root })
-
     const finalRnr = join(tmpRnr, 'packages-rnr-output')
     run({ cmd: ['mkdir', '-p', finalRnr] })
     run({ cmd: ['sh', '-c', `cp -R ${outComponents} ${finalRnr}/`] })
     run({ cmd: ['sh', '-c', `cp -R ${outLib} ${finalRnr}/`] })
     run({ cmd: ['sh', '-c', `cp -R ${outStyles} ${finalRnr}/`] })
-
     run({ cmd: ['rm', '-rf', join(rnrDir, 'src')] })
     run({ cmd: ['mkdir', '-p', join(rnrDir, 'src')] })
     run({ cmd: ['sh', '-c', `cp -R ${finalRnr}/* ${join(rnrDir, 'src')}/`] })
-
     if (snapshotPackage) await writeJson({ filePath: join(rnrDir, 'package.json'), value: snapshotPackage })
     if (snapshotComponents) await writeJson({ filePath: join(rnrDir, 'components.json'), value: snapshotComponents })
     if (snapshotTsconfig) await writeJson({ filePath: join(rnrDir, 'tsconfig.json'), value: snapshotTsconfig })
-
     run({ cmd: ['rm', '-rf', tmpDir] })
   },
   main = async () => {
     const args = new Set(nodeArgv.slice(2)),
       checkOnly = args.has('--check'),
       updateOnly = args.has('--update')
-
     if (checkOnly && updateOnly) throw new Error('Use either --check or --update, not both')
     if (checkOnly) {
       syncCheck({ rootDir: root })
@@ -218,5 +198,4 @@ const lineBreakRegex = /\r?\n/u,
     await syncUpdate()
     if (!updateOnly) syncCheck({ rootDir: root })
   }
-
 await main()

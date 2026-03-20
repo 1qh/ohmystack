@@ -4,13 +4,11 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/correctness/useImageSize: dynamic images
 'use client'
-
 import { Input } from '@a/ui/input'
 import { useErrorToast, useOnlineStatus } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-
 interface SearchResult {
   id: number
   overview: string
@@ -20,11 +18,9 @@ interface SearchResult {
   tmdb_id: number
   vote_average: number
 }
-
 interface TmdbSearchResponse {
   results: SearchResult[]
 }
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   PLAYWRIGHT_MOVIES: SearchResult[] = [
     {
@@ -65,10 +61,8 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
     }
   ],
   searchMovies = async (query: string) => {
-    // eslint-disable-next-line no-restricted-properties
     const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
     if (!apiKey) {
-      // eslint-disable-next-line no-restricted-properties
       if (process.env.NEXT_PUBLIC_PLAYWRIGHT === '1') {
         const q = query.toLowerCase(),
           rows: SearchResult[] = []
@@ -131,7 +125,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       [query, setQuery] = useState(''),
       [results, setResults] = useState<SearchResult[]>([]),
       [pending, go] = useTransition()
-
     return (
       <div className='mx-auto flex max-w-2xl flex-col gap-4 p-4' data-testid='movie-search-page'>
         <div className='flex items-center justify-between'>
@@ -177,5 +170,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       </div>
     )
   }
-
 export default Page

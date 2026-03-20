@@ -2,17 +2,16 @@ import type { Id, TableNames } from '@a/be-convex/model'
 
 import { getErrorMessage, handleConvexError } from '@noboil/convex/server'
 import { toast } from 'sonner'
-
 const fail = (error: unknown) => {
     handleConvexError(error, {
-      default: () => {
-        toast.error(getErrorMessage(error))
-      },
       NOT_AUTHENTICATED: () => {
         toast.error('Please log in')
       },
       RATE_LIMITED: () => {
         toast.error('Too many requests, try again later')
+      },
+      default: () => {
+        toast.error(getErrorMessage(error))
       }
     })
   },
@@ -47,5 +46,4 @@ const fail = (error: unknown) => {
     ...item,
     _id: `${item.id}`
   })
-
 export { fail, formatDate, formatExpiry, isId, parseId, sameIdentity, toIdentityKey, withStringId }

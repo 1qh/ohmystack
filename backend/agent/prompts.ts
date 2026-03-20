@@ -13,5 +13,4 @@ const ORCHESTRATOR_SYSTEM_PROMPT = [
     'You have access to web search and MCP tools but cannot delegate further.',
     'Return your results clearly — they will be reported back to the orchestrator.'
   ].join('\n')
-
 export { ORCHESTRATOR_SYSTEM_PROMPT, WORKER_SYSTEM_PROMPT }

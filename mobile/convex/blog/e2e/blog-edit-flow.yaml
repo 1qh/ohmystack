@@ -1,63 +1,49 @@
 appId: dev.noboil.blog
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Blog"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - assertVisible: "New Post"
-
 - tapOn: "My awesome post"
 - inputText: "Edit Test Post"
 - hideKeyboard
-
 - tapOn:
     point: 540,1404
 - inputText: "Original content"
 - hideKeyboard
-
 - scrollUntilVisible:
     element: "Create"
     direction: DOWN
     timeout: 5000
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Edit Test Post"
     timeout: 10000
-
 - tapOn: "Edit Test Post"
 - waitForAnimationToEnd
 - assertVisible: "Detail"
-
 - tapOn:
     text: "pencil"
 - waitForAnimationToEnd
 - assertVisible: "Edit Post"
 - assertVisible: "Edit Test Post"
-
 - tapOn: "Edit Test Post"
 - eraseText: 50
 - inputText: "Edited Post Title"
 - hideKeyboard
-
 - scrollUntilVisible:
     element: "Saved"
     direction: DOWN
     timeout: 10000
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Edited Post Title"
     timeout: 10000
 - assertVisible: "Edited Post Title"
-
 - tapOn:
     text: "trash"
 - waitForAnimationToEnd

@@ -8,7 +8,6 @@ import type { DbLike, FilterLike, Mb, Qb, Rec } from './types'
 import { idx } from './bridge'
 import { err, generateToken, SEVEN_DAYS_MS, time } from './helpers'
 import { getOrgMember, requireOrgRole } from './org-crud'
-
 /** Shape of an org invite document as stored in the orgInvite table. */
 interface InviteDocLike {
   [k: string]: unknown
@@ -20,7 +19,6 @@ interface InviteDocLike {
   orgId: GenericId<'org'>
   token: string
 }
-
 const makeInviteHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
   const invite = m({
       args: { email: z.email(), isAdmin: z.boolean(), orgId: zid('org') },
@@ -105,6 +103,5 @@ const makeInviteHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
     })
   return { acceptInvite, invite, pendingInvites, revokeInvite }
 }
-
 export type { InviteDocLike }
 export { makeInviteHandlers }

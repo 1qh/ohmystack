@@ -1,8 +1,6 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 import { err } from './server/helpers'
-
 type AnyApi = Record<string, Record<string, unknown>>
-
 const GUARD_ACTIVE = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   /** Finds a case-insensitive module name suggestion for guard errors. */
   findSuggestion = (modules: string[], name: string): string | undefined => {
@@ -35,5 +33,4 @@ const GUARD_ACTIVE = typeof process !== 'undefined' && process.env.NODE_ENV !== 
    * @returns Original API in production, guarded proxy otherwise
    */
   guardApi = <T extends AnyApi>(api: T, modules: string[]): T => makeGuardedProxy(api, modules)
-
 export { guardApi }

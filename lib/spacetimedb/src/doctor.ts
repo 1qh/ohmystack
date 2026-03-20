@@ -18,13 +18,11 @@ import {
   HEALTH_MAX,
   HEALTH_WARN_PENALTY
 } from './check'
-
 interface CheckResult {
   details: string[]
   status: 'fail' | 'pass' | 'warn'
   title: string
 }
-
 const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -177,21 +175,18 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   doctor = () => {
     const root = process.cwd()
     console.log(bold('\nnoboil-stdb doctor\n'))
-
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
       console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
       console.log(dim('  Run from project root or a directory containing module/ or src/'))
       process.exit(1)
     }
-
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
       console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
       console.log(dim('  Expected a .ts file using schema()/table().'))
       process.exit(1)
     }
-
     const calls = extractFactoryCalls(moduleDir),
       tables = extractSchemaFields(schemaFile.content),
       results: CheckResult[] = [],
@@ -212,7 +207,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         status: 'pass',
         title: 'Schema Consistency'
       })
-
     let totalEps = 0
     for (const c of calls) totalEps += endpointsForFactory(c).length
     results.push({
@@ -220,7 +214,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       status: 'pass',
       title: 'Reducer Coverage'
     })
-
     const indexIssues = checkIndexCoverage(moduleDir, calls)
     if (indexIssues.length > 0)
       results.push({
@@ -229,7 +222,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         title: 'Index Coverage'
       })
     else results.push({ details: ['All where clauses have matching indexes'], status: 'pass', title: 'Index Coverage' })
-
     const levels = new Set<string>()
     for (const c of calls) for (const e of accessForFactory(c)) levels.add(e.level)
     results.push({
@@ -237,10 +229,8 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       status: 'pass',
       title: 'Access Control'
     })
-
     results.push(checkSpacetimeCli())
     results.push(checkDocker())
-
     let eslintContent: string | undefined
     if (existsSync(root))
       for (const name of readdirSync(root))
@@ -249,18 +239,15 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
           break
         }
     results.push(checkEslintContent(eslintContent))
-
     const pkgPath = join(root, 'package.json'),
       pkg = existsSync(pkgPath) ? (JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>) : undefined
     results.push(checkDeps(pkg))
-
     for (const r of results) {
       const icon = STATUS_ICON[r.status] ?? '?'
       console.log(`[${icon}] ${r.title}`)
       for (const d of r.details) console.log(`    • ${d}`)
       console.log('')
     }
-
     let passed = 0,
       warned = 0,
       failed = 0
@@ -268,14 +255,11 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       if (r.status === 'pass') passed += 1
       else if (r.status === 'warn') warned += 1
       else failed += 1
-
     const score = calcHealthScore(results),
       scoreColor = score >= 90 ? green : score >= 70 ? yellow : red
     console.log(`Summary: ${passed} passed, ${warned} warning(s), ${failed} error(s)`)
     console.log(`Health Score: ${scoreColor(`${score}/${HEALTH_MAX}`)}\n`)
   }
-
 if (import.meta.main) doctor()
-
 export { calcHealthScore, checkDeps, checkDocker, checkEslintContent, checkSpacetimeCli, doctor }
 export type { CheckResult }

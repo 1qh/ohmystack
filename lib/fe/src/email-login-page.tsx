@@ -1,5 +1,4 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { Input } from '@a/ui/input'
@@ -9,7 +8,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import EmailAuthShell from './email-auth-shell'
-
 interface EmailLoginPageProps {
   emailInputProps?: Omit<ComponentProps<typeof Input>, 'name' | 'type'>
   passwordInputProps?: Omit<ComponentProps<typeof Input>, 'name' | 'type'>
@@ -20,7 +18,6 @@ interface EmailLoginPageProps {
   signInLabel?: string
   signUpLabel?: string
 }
-
 const EmailLoginPage = ({
   emailInputProps,
   passwordInputProps,
@@ -66,5 +63,4 @@ const EmailLoginPage = ({
     </EmailAuthShell>
   )
 }
-
 export default EmailLoginPage

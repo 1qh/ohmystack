@@ -2,16 +2,11 @@
 
 ## Scope
 
-Tools are defined with AI SDK `tool()` + Zod schemas and executed from Convex actions with action context.
-
-References:
+Tools are defined with AI SDK `tool()` + Zod schemas and executed from Convex actions with action context. References:
 
 - AI SDK tool API: https://ai-sdk.vercel.ai/docs/reference/ai-sdk-core/tool
 - oh-my-openagent delegate reference: `src/tools/delegate-task/`
-- oh-my-openagent background task reference: `src/tools/background-task/`
-
-Implementation:
-
+- oh-my-openagent background task reference: `src/tools/background-task/` Implementation:
 - `backend/agent/convex/toolFactories.ts`
 - `backend/agent/convex/tasks.ts`
 - `backend/agent/convex/todos.ts`
@@ -57,9 +52,7 @@ flowchart LR
 
 - `webSearch`
 - `mcpCall`
-- `mcpDiscover`
-
-Workers do not re-delegate and do not manage todos.
+- `mcpDiscover` Workers do not re-delegate and do not manage todos.
 
 ## `delegate` Flow
 
@@ -72,7 +65,6 @@ sequenceDiagram
   participant M as tasks.spawnTask mutation
   participant W as Worker action
   participant DB as tasks table
-
   O->>T: delegate(description, prompt, isBackground)
   T->>M: runMutation(...)
   M->>DB: insert pending task + threadId
@@ -106,98 +98,56 @@ flowchart LR
 
 ### `delegate`
 
-Description: delegates independent work to a worker thread and returns task identifiers for follow-up.
-
-Args:
+Description: delegates independent work to a worker thread and returns task identifiers for follow-up. Args:
 
 - `description` (string): concise task label shown in task tracking and reminders.
 - `prompt` (string): worker instruction payload.
-- `isBackground` (boolean): whether delegation should run as background work.
-
-What it does:
-
+- `isBackground` (boolean): whether delegation should run as background work. What it does:
 - Creates a pending task bound to the parent thread/session.
 - Generates a worker thread id and schedules worker execution.
-- Returns normalized task metadata so the model can poll or fetch output later.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Returns normalized task metadata so the model can poll or fetch output later. Implementation: `backend/agent/convex/agents.ts`
 
 ### `taskStatus`
 
-Description: reads current lifecycle status for a delegated task.
+Description: reads current lifecycle status for a delegated task. Args:
 
-Args:
-
-- `taskId` (string): delegated task identifier.
-
-What it does:
-
+- `taskId` (string): delegated task identifier. What it does:
 - Resolves ownership from requester thread/session before exposing task state.
-- Returns status-centric metadata such as retry count, completion timing, and latest error when present.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Returns status-centric metadata such as retry count, completion timing, and latest error when present. Implementation: `backend/agent/convex/agents.ts`
 
 ### `taskOutput`
 
-Description: retrieves terminal worker output for a delegated task.
+Description: retrieves terminal worker output for a delegated task. Args:
 
-Args:
-
-- `taskId` (string): delegated task identifier.
-
-What it does:
-
+- `taskId` (string): delegated task identifier. What it does:
 - Returns final task result for completed tasks.
-- Returns a structured non-terminal payload for pending/running tasks so orchestration can continue without thrown errors.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Returns a structured non-terminal payload for pending/running tasks so orchestration can continue without thrown errors. Implementation: `backend/agent/convex/agents.ts`
 
 ### `todoWrite`
 
-Description: writes or updates todo items for the active session.
+Description: writes or updates todo items for the active session. Args:
 
-Args:
-
-- `todos` (array): todo records with optional `id`, plus `content`, `status`, and `priority`.
-
-What it does:
-
+- `todos` (array): todo records with optional `id`, plus `content`, `status`, and `priority`. What it does:
 - Updates existing todos when `id` is present.
 - Inserts new todos when `id` is omitted.
-- Preserves omitted existing rows unless explicitly updated by id.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Preserves omitted existing rows unless explicitly updated by id. Implementation: `backend/agent/convex/agents.ts`
 
 ### `todoRead`
 
-Description: reads ordered todo state for the active session/thread.
+Description: reads ordered todo state for the active session/thread. Args:
 
-Args:
-
-- no arguments.
-
-What it does:
-
+- no arguments. What it does:
 - Resolves owned session by thread.
-- Returns todos in deterministic session position order.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Returns todos in deterministic session position order. Implementation: `backend/agent/convex/agents.ts`
 
 ### `webSearch`
 
-Description: runs grounded web search and returns model-usable summary plus source references.
+Description: runs grounded web search and returns model-usable summary plus source references. Args:
 
-Args:
-
-- `query` (string): search request.
-
-What it does:
-
+- `query` (string): search request. What it does:
 - Calls the dedicated grounding action.
 - Normalizes provider output into `{ summary, sources }`.
-- Returns structured failures when grounding call errors.
-
-Implementation: `backend/agent/convex/agents.ts`
+- Returns structured failures when grounding call errors. Implementation: `backend/agent/convex/agents.ts`
 
 ## Search Integration
 
@@ -214,9 +164,7 @@ Delegate failures are inspected for known error signatures and transformed into 
 - `missing_run_in_background`: include `run_in_background` in the delegated task payload.
 - `missing_load_skills`: include explicit `load_skills` list.
 - `unknown_category`: use a valid category from the supported delegation categories.
-- `unknown_agent`: use a valid target agent name from configured agents.
-
-This guidance lets the model correct malformed delegate calls on the next turn without requiring manual debugging.
+- `unknown_agent`: use a valid target agent name from configured agents. This guidance lets the model correct malformed delegate calls on the next turn without requiring manual debugging.
 
 ## Tests
 

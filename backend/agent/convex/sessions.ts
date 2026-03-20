@@ -2,7 +2,6 @@ import { zid } from 'convex-helpers/server/zod4'
 import { string } from 'zod/v4'
 
 import { m, q } from '../lazy'
-
 const createSession = m({
     args: { title: string().optional() },
     handler: async (ctx, { title }) => {
@@ -35,7 +34,6 @@ const createSession = m({
           .collect(),
         active: typeof sessions = []
       for (const s of sessions) if (s.status !== 'archived') active.push(s)
-
       return active
     }
   }),
@@ -70,5 +68,4 @@ const createSession = m({
         })
     }
   })
-
 export { archiveSession, createSession, getSession, listSessions }

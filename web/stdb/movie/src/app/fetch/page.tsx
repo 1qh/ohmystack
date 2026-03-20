@@ -15,7 +15,6 @@ import { useMut } from '@noboil/spacetimedb/react'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
   TMDB_BACKDROP = 'https://image.tmdb.org/t/p/w780',
   PLAYWRIGHT_MOVIES = new Map<number, MovieDetailData>([
@@ -109,9 +108,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w300',
     ]
   ]),
   formatMoney = (n: number | undefined) => (n ? `$${(n / 1_000_000).toFixed(1)}M` : 'N/A')
-
 type MovieDetailData = InferCreate<typeof s.movie>
-
 interface TmdbMovieResponse {
   backdrop_path: null | string
   budget: number
@@ -128,12 +125,9 @@ interface TmdbMovieResponse {
   vote_average: number
   vote_count: number
 }
-
 const fetchMovie = async (id: number): Promise<MovieDetailData> => {
-    // eslint-disable-next-line no-restricted-properties
     const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
     if (!apiKey) {
-      // eslint-disable-next-line no-restricted-properties
       if (process.env.NEXT_PUBLIC_PLAYWRIGHT === '1') {
         const local = PLAYWRIGHT_MOVIES.get(id)
         if (local) return local
@@ -192,7 +186,6 @@ const fetchMovie = async (id: number): Promise<MovieDetailData> => {
               return
             }
             setFetchError('')
-
             go(async () => {
               try {
                 const loadedMovie = await fetchMovie(n)

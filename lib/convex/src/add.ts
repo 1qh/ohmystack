@@ -1,11 +1,8 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 interface AddFlags {
   appDir: string
   convexDir: string
@@ -16,15 +13,12 @@ interface AddFlags {
   type: TableType
 }
 type FieldType = 'boolean' | 'number' | 'string'
-
 interface ParsedField {
   name: string
   optional: boolean
   type: FieldType | { enum: string[] }
 }
-
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
-
 const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton']),
   FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string']),
   ENUM_PAT = /^enum\((?<values>[^)]+)\)$/u,
@@ -76,7 +70,6 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
       else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
       else if (arg.startsWith('--parent=')) parent = arg.slice('--parent='.length)
       else if (!(arg.startsWith('-') || name)) name = arg
-
     const fields: ParsedField[] = []
     if (fieldsRaw)
       for (const f of fieldsRaw.split(',')) {
@@ -84,7 +77,6 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
         if (parsed) fields.push(parsed)
         else console.log(`${yellow('warn')} Skipping invalid field: ${f}`)
       }
-
     return { appDir, convexDir, fields, help, name, parent, type }
   },
   printAddHelp = () => {
@@ -170,11 +162,9 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
       else zodImports.add('enum as zenum')
     if (fields.some(f => f.optional)) zodImports.add('optional')
     const sortedImports = [...zodImports].toSorted()
-
     if (type === 'child')
       return `import { child } from '@noboil/convex/schema'
 import { ${sortedImports.join(', ')} } from 'zod/v4'
-
 const ${name}Child = child({
   foreignKey: '${fields[0]?.name ?? 'parentId'}',
   parent: '${name}',
@@ -182,65 +172,51 @@ const ${name}Child = child({
 ${fieldLines}
   })
 })
-
 export { ${name}Child }
 `
-
     const importFn = schemaImport(type)
     return `import { ${importFn} } from '@noboil/convex/schema'
 import { ${sortedImports.join(', ')} } from 'zod/v4'
-
 const ${wrapper} = ${importFn}({
   ${name}: object({
 ${fieldLines}
   })
 })
-
 export { ${wrapper} }
 `
   },
   genEndpointContent = (name: string, type: TableType): string => {
     const factory = factoryFn(type),
       wrapper = schemaWrapper(type)
-
     if (type === 'child')
       return `import { ${factory} } from './lazy'
 import { ${name}Child } from './t'
-
 export const {
   create, get, list, rm, update
 } = ${factory}('${name}', ${name}Child)
 `
-
     if (type === 'singleton')
       return `import { ${factory} } from './lazy'
 import { ${wrapper} } from './t'
-
 export const { get, upsert } = ${factory}('${name}', ${wrapper}.${name})
 `
-
     if (type === 'cache')
       return `import { ${factory} } from './lazy'
 import { ${wrapper} } from './t'
-
 export const {
   create, get, list, rm, update, invalidate, purge, load, refresh
 } = ${factory}({ key: '${name}', schema: ${wrapper}.${name}, table: '${name}' })
 `
-
     if (type === 'org')
       return `import { ${factory} } from './lazy'
 import { ${wrapper} } from './t'
-
 export const {
   addEditor, create, editors, list, read,
   removeEditor, rm, setEditors, update
 } = ${factory}('${name}', ${wrapper}.${name})
 `
-
     return `import { ${factory} } from './lazy'
 import { ${wrapper} } from './t'
-
 export const {
   create,
   pub: { list, read },
@@ -250,19 +226,15 @@ export const {
   },
   genPageContent = (name: string, type: TableType): string => {
     const title = camelToTitle(name)
-
     if (type === 'singleton')
       return `'use client'
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
-
 import { api } from '../../../guarded-api'
-
 const ${title.replaceAll(/\s/gu, '')}Page = () => {
   const data = useQuery(api.${name}.get)
   const upsert = useMutation(api.${name}.upsert)
   const [editing, setEditing] = useState(false)
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
@@ -274,18 +246,13 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
     </main>
   )
 }
-
 export default ${title.replaceAll(/\s/gu, '')}Page
 `
-
     return `'use client'
 import { useList } from '@noboil/convex/react'
-
 import { api } from '../../../guarded-api'
-
 const ${title.replaceAll(/\s/gu, '')}Page = () => {
   const { items, loadMore, status } = useList(api.${name}.list)
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
@@ -305,7 +272,6 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
     </main>
   )
 }
-
 export default ${title.replaceAll(/\s/gu, '')}Page
 `
   },
@@ -335,16 +301,12 @@ export default ${title.replaceAll(/\s/gu, '')}Page
       console.log(`${red('Error:')} --parent is required for child type.\n`)
       process.exit(1)
     }
-
     const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type),
       convexPath = join(process.cwd(), flags.convexDir),
       appPath = join(process.cwd(), flags.appDir)
-
     console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
-
     let created = 0,
       skipped = 0
-
     const schemaFile = join(convexPath, `${flags.name}-schema.ts`)
     if (
       writeIfNotExists(
@@ -355,18 +317,15 @@ export default ${title.replaceAll(/\s/gu, '')}Page
     )
       created += 1
     else skipped += 1
-
     const endpointFile = join(convexPath, `${flags.name}.ts`)
     if (writeIfNotExists(endpointFile, genEndpointContent(flags.name, flags.type), `${flags.convexDir}/${flags.name}.ts`))
       created += 1
     else skipped += 1
-
     const pageDir = join(appPath, flags.name),
       pageFile = join(pageDir, 'page.tsx')
     if (writeIfNotExists(pageFile, genPageContent(flags.name, flags.type), `${flags.appDir}/${flags.name}/page.tsx`))
       created += 1
     else skipped += 1
-
     console.log('')
     if (created > 0) console.log(`${green('✓')} Created ${created} file${created > 1 ? 's' : ''}.`)
     if (skipped > 0) console.log(`${yellow('⚠')} Skipped ${skipped} existing file${skipped > 1 ? 's' : ''}.`)
@@ -376,12 +335,9 @@ export default ${title.replaceAll(/\s/gu, '')}Page
       `  ${dim('2.')} Add ${flags.type === 'child' ? 'childCrud' : factoryFn(flags.type)} import to your lazy.ts`
     )
     console.log(`  ${dim('3.')} Update guarded-api.ts to include '${flags.name}'\n`)
-
     return { created, skipped }
   }
-
 if (process.argv[1]?.endsWith('add.ts')) add(process.argv.slice(2))
-
 export {
   add,
   defaultFields,

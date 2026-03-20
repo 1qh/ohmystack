@@ -1,9 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use node'
-
 /* eslint-disable max-depth */
-
 import type { ModelMessage } from 'ai'
 
 import { streamText } from 'ai'
@@ -17,7 +14,6 @@ import { getModel } from '../ai'
 import { ORCHESTRATOR_SYSTEM_PROMPT } from '../prompts'
 import { internalAction } from './_generated/server'
 import { createOrchestratorTools } from './agents'
-
 const claimRunRef = makeFunctionReference<'mutation', { runToken: string; threadId: string }, { ok: boolean }>(
     'orchestrator:claimRun'
   ),
@@ -109,14 +105,12 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
         const resultText = p.result ? ` result=${p.result}` : ''
         chunks.push(`[tool:${p.toolName} status=${p.status}${resultText}]`)
       } else chunks.push(`[source:${p.title} ${p.url}]`)
-
     const joined = chunks.join('\n')
     return joined.length > 0 ? joined : message.content
   },
   buildModelMessages = (messages: Doc<'messages'>[]) => {
     const modelMessages: ModelMessage[] = []
     for (const m of messages) modelMessages.push({ content: collectMessageText(m), role: m.role })
-
     return modelMessages
   },
   buildTaskReminder = ({ tasks }: { tasks: Doc<'tasks'>[] }) => {
@@ -230,7 +224,6 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
           type: 'tool-call'
         })
       else if (part.type === 'tool-result') updateToolResultParts({ collectedParts, part })
-
     await ctx.runMutation(patchStreamingMessageRef, {
       messageId,
       streamingContent: fullText
@@ -313,5 +306,4 @@ const claimRunRef = makeFunctionReference<'mutation', { runToken: string; thread
       }
     }
   })
-
 export { runOrchestrator }

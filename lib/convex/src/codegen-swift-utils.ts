@@ -69,5 +69,4 @@ const SWIFT_KEYWORDS = new Set([
       ident = DIGIT_START_RE.test(safe) ? `_${safe}` : safe
     return `case ${ident} = "${v}"`
   }
-
 export { isValidSwiftIdent, SWIFT_KEYWORDS, swiftEnumCase }

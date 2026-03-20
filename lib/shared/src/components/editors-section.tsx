@@ -6,20 +6,17 @@ import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@a/ui/select'
 import { UserPlus, X } from 'lucide-react'
-
 interface EditorInfo {
   email: string
   name: string
   userId: string
 }
-
 interface EditorsSectionLabels {
   addEditorPlaceholder?: string
   emptyState?: string
   title?: string
   unknownMember?: string
 }
-
 interface MemberInfo {
   user: null | {
     email?: string
@@ -27,7 +24,6 @@ interface MemberInfo {
   }
   userId: string
 }
-
 const EditorsSection = ({
   contentClassName,
   editorsList,
@@ -58,9 +54,7 @@ const EditorsSection = ({
     addEditorPlaceholder = labels?.addEditorPlaceholder ?? 'Add editor',
     unknownMember = labels?.unknownMember ?? 'Unknown',
     emptyState = labels?.emptyState ?? 'No editors assigned'
-
   for (const m of members) if (!editorIds.has(m.userId)) available.push(m)
-
   return (
     <Card {...props} data-testid='editors-section'>
       <CardHeader className={cn('flex flex-row items-center justify-between', headerClassName)}>
@@ -112,5 +106,4 @@ const EditorsSection = ({
     </Card>
   )
 }
-
 export default EditorsSection

@@ -1,7 +1,5 @@
 "use client";
-
 import type { ComponentProps } from "react";
-
 import { Button } from "@a/ui/components/button";
 import {
   ScrollArea,
@@ -9,9 +7,7 @@ import {
 } from "@a/ui/components/scroll-area";
 import { cn } from "@a/ui/lib/utils";
 import { useCallback } from "react";
-
 export type SuggestionsProps = ComponentProps<typeof ScrollArea>;
-
 export const Suggestions = ({
   className,
   children,
@@ -24,12 +20,10 @@ export const Suggestions = ({
     <ScrollBar className="hidden" orientation="horizontal" />
   </ScrollArea>
 );
-
 export type SuggestionProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
   suggestion: string;
   onClick?: (suggestion: string) => void;
 };
-
 export const Suggestion = ({
   suggestion,
   onClick,
@@ -42,7 +36,6 @@ export const Suggestion = ({
   const handleClick = useCallback(() => {
     onClick?.(suggestion);
   }, [onClick, suggestion]);
-
   return (
     <Button
       className={cn("cursor-pointer rounded-full px-4", className)}

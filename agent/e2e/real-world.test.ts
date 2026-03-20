@@ -7,7 +7,6 @@ import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 
 import { expect, test } from './fixtures'
-
 const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
   CHAT_URL_RE = /\/chat\//u,
   MESSAGE_RE = /message the agent/iu,
@@ -20,7 +19,6 @@ const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
   ADD_RE = /add/iu,
   DELETE_RE = /delete/iu,
   RATE_LIMITED_RE = /rate_limited:submitMessage:(?<waitMs>\d+)/u
-
 test.describe
   .serial('Real-world scenarios', () => {
     test('full conversation flow supports multi-turn chat', async ({ chatPage, page, sessionListPage }) => {
@@ -38,10 +36,8 @@ test.describe
       expect(firstIndex).toBeGreaterThanOrEqual(0)
       expect(secondIndex).toBeGreaterThan(firstIndex)
     })
-
     test('multiple sessions remain isolated while navigating between them', async ({ page, sessionListPage }) => {
       const sessions: { marker: string; sessionId: string }[] = []
-
       for (let i = 0; i < 3; i += 1) {
         await sessionListPage.goto('/')
         await sessionListPage.getNewButton().click()
@@ -53,12 +49,10 @@ test.describe
         await page.waitForTimeout(3000)
         sessions.push({ marker, sessionId })
       }
-
       await sessionListPage.goto('/')
       const cardCount = await sessionListPage.getSessionCards().count()
       if (cardCount > 0) expect(cardCount).toBeGreaterThanOrEqual(1)
       else await expect(sessionListPage.getNewButton()).toBeVisible()
-
       for (const session of sessions) {
         await page.goto(`/chat/${session.sessionId}`)
         await expect(page.locator('.is-user, .is-assistant').first()).toContainText(session.marker)
@@ -66,7 +60,6 @@ test.describe
         await page.waitForURL('/')
       }
     })
-
     test('rapid message sending preserves order without duplicates', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -89,7 +82,6 @@ test.describe
         expect(firstIndex).toBeGreaterThanOrEqual(0)
       }
     })
-
     test('session archival removes session from list', async ({ page, sessionListPage }) => {
       const title = `archive-${Date.now()}`,
         created = (await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, {
@@ -105,7 +97,6 @@ test.describe
       await page.waitForTimeout(1500)
       await expect(page.getByText(title)).toHaveCount(0)
     })
-
     test('settings persist after navigating to chat and back', async ({ page, sessionListPage }) => {
       const name = `persist-${Date.now()}`
       await page.goto('/settings')
@@ -113,7 +104,6 @@ test.describe
       await page.getByPlaceholder(URL_RE).fill('https://example.com/persist')
       await page.getByRole('button', { name: ADD_RE }).click()
       await expect(page.getByText(name)).toBeVisible()
-
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
@@ -121,7 +111,6 @@ test.describe
       await page.waitForURL('/settings')
       await expect(page.getByText(name)).toBeVisible()
     })
-
     test('browser refresh keeps existing conversation visible', async ({ page, sessionListPage }) => {
       const message = `refresh-${Date.now()}`
       await sessionListPage.goto('/')
@@ -134,7 +123,6 @@ test.describe
       await page.reload()
       await expect(page.locator('.is-user, .is-assistant').first()).toContainText(message)
     })
-
     test('empty state transitions to first chat and back to list', async ({ page, sessionListPage }) => {
       const existing = (await convex.query(anyApi.sessions.listSessions as FunctionReference<'query'>, {})) as {
         _id: string
@@ -143,7 +131,6 @@ test.describe
         await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
           sessionId: session._id as never
         })
-
       await sessionListPage.goto('/')
       await expect(sessionListPage.getSessionCards()).toHaveCount(0)
       await expect(sessionListPage.getNewButton()).toBeVisible()
@@ -153,7 +140,6 @@ test.describe
       await page.waitForURL('/')
       await expect(sessionListPage.getSessionCards().first()).toBeVisible()
     })
-
     test('message submit errors are shown to users', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -166,7 +152,6 @@ test.describe
       await page.getByRole('button', { name: SEND_RE }).click()
       await expect(page.getByTestId('submit-error')).toBeVisible()
     })
-
     test('long messages render without layout breakage', async ({ page, sessionListPage }) => {
       const longMessage = `long-${Date.now()}-${'x'.repeat(600)}`
       await sessionListPage.goto('/')
@@ -183,7 +168,6 @@ test.describe
       expect(viewport).not.toBeNull()
       expect(box ? box.width : 0).toBeLessThanOrEqual(viewport ? viewport.width : Number.MAX_SAFE_INTEGER)
     })
-
     test('concurrent tab simulation reflects updates across tabs', async ({ page, sessionListPage }) => {
       const first = `tab-one-${Date.now()}`,
         second = `tab-two-${Date.now()}`
@@ -193,7 +177,6 @@ test.describe
       await page.getByPlaceholder(MESSAGE_RE).fill(first)
       await page.getByRole('button', { name: SEND_RE }).click()
       await page.waitForTimeout(3000)
-
       const secondTab = await page.context().newPage(),
         sessionUrl = page.url()
       await secondTab.goto(sessionUrl)
@@ -205,7 +188,6 @@ test.describe
       await secondTab.close()
     })
   })
-
 test.describe
   .serial('Real-world edge scenarios', () => {
     test('two tabs show same messages', async ({ browser, sessionListPage }) => {
@@ -228,7 +210,6 @@ test.describe
       await context1.close()
       await context2.close()
     })
-
     test('chat with many messages loads and scrolls', async ({ page }) => {
       const created = (await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, {
         title: `many-${Date.now()}`
@@ -248,7 +229,6 @@ test.describe
           const waitMs = Math.max(250, Number(match.groups.waitMs) - Date.now())
           await page.waitForTimeout(waitMs)
         }
-
       await page.goto(`/chat/${created.sessionId}`)
       await page.waitForTimeout(3000)
       const messages = page.locator('.is-user, .is-assistant')
@@ -263,7 +243,6 @@ test.describe
         element.scrollTop = element.scrollHeight
       })
     })
-
     test('browser back returns to session list', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -272,7 +251,6 @@ test.describe
       await page.waitForURL('/')
       await expect(page.getByRole('button', { name: NEW_RE })).toBeVisible()
     })
-
     test('rapid MCP server create and delete stays consistent', async ({ page }) => {
       await page.goto('/settings')
       const name = `rapid-${Date.now()}`
@@ -285,7 +263,6 @@ test.describe
       await page.waitForTimeout(1000)
       await expect(page.getByText(name)).toHaveCount(0)
     })
-
     test('message text is selectable', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -296,7 +273,6 @@ test.describe
         userSelect = await msg.evaluate(el => globalThis.getComputedStyle(el).userSelect)
       expect(userSelect).not.toBe('none')
     })
-
     test('reactive updates work after page idle', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()

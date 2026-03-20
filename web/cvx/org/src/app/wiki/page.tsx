@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
 /* eslint-disable complexity */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Badge } from '@a/ui/badge'
@@ -17,7 +16,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   WikiPage = () => {
     const { isAdmin, org } = useOrg(),
@@ -38,14 +36,11 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
         },
         undoLabel: 'wiki page'
       })
-
     if (showDeleted && !deletedWikis) return <Skeleton className='h-40' />
     if (!(showDeleted || wikis)) return <Skeleton className='h-40' />
-
     const activeItems = showDeleted ? [] : (wikis?.page ?? []),
       deletedItems = deletedWikis ?? [],
       visibleCount = showDeleted ? deletedItems.length : activeItems.length
-
     return (
       <div className='space-y-6'>
         <div className='flex items-center justify-between'>
@@ -93,7 +88,6 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
             )}
           </div>
         </div>
-
         {showDeleted ? (
           deletedItems.length === 0 ? (
             <Card>
@@ -179,5 +173,4 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       </div>
     )
   }
-
 export default WikiPage

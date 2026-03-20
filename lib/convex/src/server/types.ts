@@ -13,7 +13,6 @@ import type {
 } from 'convex/server'
 import type { GenericId } from 'convex/values'
 import type { z as _, ZodNullable, ZodNumber, ZodObject, ZodOptional, ZodRawShape } from 'zod/v4'
-
 interface BaseBuilders {
   m: Mb
   pq?: Qb
@@ -158,12 +157,12 @@ const ERROR_MESSAGES = {
   LIMIT_EXCEEDED: 'Limit exceeded',
   MESSAGE_NOT_SAVED: 'Message not saved',
   MUST_TRANSFER_OWNERSHIP: 'Must transfer ownership before leaving',
-  NO_FETCHER: 'No fetcher configured',
-  NO_PRECEDING_USER_MESSAGE: 'No preceding user message',
   NOT_AUTHENTICATED: 'Please log in',
   NOT_AUTHORIZED: 'Not authorized',
   NOT_FOUND: 'Not found',
   NOT_ORG_MEMBER: 'Not a member of this organization',
+  NO_FETCHER: 'No fetcher configured',
+  NO_PRECEDING_USER_MESSAGE: 'No preceding user message',
   ORG_SLUG_TAKEN: 'Organization slug already taken',
   RATE_LIMITED: 'Too many requests',
   SESSION_NOT_FOUND: 'Session not found',
@@ -441,7 +440,6 @@ interface OrgUserLike {
   name?: string
 }
 type OwnedSchema<T extends ZodRawShape> = SchemaBrand<'owned'> & ZodObject<T>
-
 interface SchemaBrand<K extends string> {
   readonly [__brand]: K
   readonly __hint: SchemaHint<K>

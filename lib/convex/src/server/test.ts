@@ -14,23 +14,19 @@ import type { DbLike, Rec } from './types'
 import { flt, idx } from './bridge'
 import { isTestMode } from './env'
 import { generateToken, SEVEN_DAYS_MS, time } from './helpers'
-
 /** biome-ignore lint/style/noProcessEnv: convex bundler can't resolve node:process */
 const nodeEnv = process.env
-
 /** Configuration for test authentication helpers. */
 interface TestAuthConfig<DM extends GenericDataModel = GenericDataModel> {
   getAuthUserId: (ctx: unknown) => Promise<null | string>
   mutation: MutationBuilder<DM, 'public'>
   query: QueryBuilder<DM, 'public'>
 }
-
 /** A test user with email and display name. */
 interface TestUser {
   email: string
   name: string
 }
-
 /** Default email used for single-user test scenarios. */
 const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
   SECOND_TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL_SECONDARY ?? 'other@example.test',
@@ -202,7 +198,6 @@ const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
                     count += 1
                   }
               }
-
             const requests = await ctx.db
               .query('orgJoinRequest')
               .withIndex(
@@ -412,7 +407,6 @@ const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
                 .collect()
               for (const d of docs) await ctx.db.delete(d._id as string)
             }
-
           const requests = await ctx.db
             .query('orgJoinRequest')
             .withIndex(
@@ -610,6 +604,7 @@ const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
         }
       })
     return {
+      TEST_EMAIL,
       acceptInviteAsUser,
       addTestOrgMember,
       approveJoinRequestAsUser,
@@ -634,12 +629,10 @@ const TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL ?? 'test@example.test',
       removeTestOrgMember,
       requestJoinAsUser,
       setAdminAsUser,
-      TEST_EMAIL,
       transferOwnershipAsUser,
       updateOrgAsUser
     }
   }
-
 /** Configuration for org-scoped test CRUD helpers. */
 interface OrgTestCrudConfig<DM extends GenericDataModel = GenericDataModel> {
   acl?: boolean
@@ -649,7 +642,6 @@ interface OrgTestCrudConfig<DM extends GenericDataModel = GenericDataModel> {
   query: QueryBuilder<DM, 'public'>
   table: keyof DM & string
 }
-
 const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boolean }) => {
     const isCreator = doc.userId === userId,
       editors = (doc.editors ?? []) as string[],
@@ -752,7 +744,6 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
                 .collect()
               for (const c of children) await ctx.db.delete(c._id as string)
             }
-
           await ctx.db.delete(id)
           return { success: true }
         }
@@ -838,6 +829,5 @@ const checkAclPermission = (doc: Rec, userId: string, membership: { isAdmin: boo
     }
     return { asUser, userIds: ids }
   }
-
 export type { OrgTestCrudConfig, TestAuthConfig, TestUser }
 export { createTestContext, getOrgMembership, isTestMode, makeOrgTestCrud, makeTestAuth, TEST_EMAIL }

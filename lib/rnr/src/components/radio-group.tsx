@@ -1,14 +1,12 @@
 import { cn } from '@a/rnr'
 import * as RadioGroupPrimitive from '@rn-primitives/radio-group'
 import { Platform } from 'react-native'
-
 function RadioGroup({
   className,
   ...props
 }: RadioGroupPrimitive.RootProps & React.RefAttributes<RadioGroupPrimitive.RootRef>) {
   return <RadioGroupPrimitive.Root className={cn('gap-3', className)} {...props} />
 }
-
 function RadioGroupItem({
   className,
   ...props
@@ -28,5 +26,4 @@ function RadioGroupItem({
     </RadioGroupPrimitive.Item>
   )
 }
-
 export { RadioGroup, RadioGroupItem }

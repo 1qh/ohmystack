@@ -17,12 +17,10 @@ import { requireOrgMember, requireOrgRole } from './org-crud'
 import { makeInviteHandlers } from './org-invites'
 import { makeJoinHandlers } from './org-join'
 import { makeMemberHandlers } from './org-members'
-
 interface CascadeTableEntry {
   fileFields?: string[]
   table: string
 }
-
 /** Shape of an organization document as returned by org queries. */
 interface OrgDocLike {
   [k: string]: unknown
@@ -34,7 +32,6 @@ interface OrgDocLike {
   updatedAt: number
   userId: GenericId<'users'>
 }
-
 /**
  * Creates the full set of org management endpoints: CRUD, members, invites, and join requests.
  * @param config - Query/mutation builders, auth function, org schema, and optional cascade table config
@@ -296,7 +293,6 @@ const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
     update
   }
 }
-
 export { makeOrg }
 export type { OrgDocLike }
 export type { InviteDocLike } from './org-invites'

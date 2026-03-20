@@ -37,7 +37,6 @@ import { makeOrgCrud } from './org-crud'
 import { RLS_COL, RLS_TBL, rlsChildSql, rlsSql, rlsWhereSender } from './rls'
 import { makeSingletonCrud } from './singleton'
 import { makeSchema, zodToStdbFields } from './stdb-tables'
-
 interface CrudDefaults {
   expectedUpdatedAtField?: TypeBuilder<unknown, AlgebraicTypeType>
   foreignKeyField?: TypeBuilder<unknown, AlgebraicTypeType>
@@ -45,15 +44,12 @@ interface CrudDefaults {
   orgIdField?: TypeBuilder<unknown, AlgebraicTypeType>
   t?: ZodBridgeT
 }
-
 interface OrgTypeBuilders {
   bool: () => TypeBuilder<unknown, AlgebraicTypeType>
   identity: () => TypeBuilder<unknown, AlgebraicTypeType>
   string: () => TypeBuilder<unknown, AlgebraicTypeType>
 }
-
 type ReducerExportRecord = Record<string, ReducerExport<never, never>>
-
 interface RegisterAllSchemas {
   base?: Record<string, ZodLike>
   children?: Record<string, { foreignKey: string; parent: string; schema: ZodLike }>
@@ -62,22 +58,18 @@ interface RegisterAllSchemas {
   owned?: Record<string, ZodLike>
   singleton?: Record<string, ZodLike>
 }
-
 interface SetupConfig {
   hooks?: GlobalHooks
   middleware?: Middleware[]
 }
-
 interface SpacetimeDbLike {
   // eslint-disable-next-line @typescript-eslint/method-signature-style
   reducer(...args: unknown[]): unknown
 }
-
 interface ZodLike {
   shape: Record<string, unknown>
   type: 'object'
 }
-
 const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
     if (!value || typeof value !== 'object') return false
     const { then } = value as { then?: unknown }
@@ -161,7 +153,6 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
     if (!(left || right)) return
     if (!left) return right
     if (!right) return left
-
     const merged: GlobalHooks = {
       afterCreate: mergeGlobalAfterCreate(left, right),
       afterDelete: mergeGlobalAfterDelete(left, right),
@@ -170,7 +161,6 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
       beforeDelete: mergeGlobalBeforeDelete(left, right),
       beforeUpdate: mergeGlobalBeforeUpdate(left, right)
     }
-
     if (!hasGlobalHooks(merged)) return
     return merged
   },
@@ -508,7 +498,6 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         return result
       },
       allExports = (): ReducerExportRecord => ({ ...accumulatedExports })
-
     return {
       allExports,
       cacheCrud,
@@ -520,9 +509,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
       singletonCrud
     }
   }
-
 type TableAccessor = (db: unknown) => unknown
-
 const dbTable: (db: unknown, name: string) => unknown = (db, name) => (db as Record<string, unknown>)[name],
   pkById = (tbl: unknown) => (tbl as Record<string, unknown>).id,
   pkByKey = (name: string) => (tbl: unknown) => (tbl as Record<string, unknown>)[name],
@@ -540,7 +527,6 @@ const dbTable: (db: unknown, name: string) => unknown = (db, name) => (db as Rec
     (v as { shape: unknown }).shape !== null,
   resolveCrudFields = (fields: unknown, tableName: string, defaults: CrudDefaults): unknown =>
     isZodObject(fields) && defaults.t ? zodToStdbFields(fields.shape, defaults.t, tableName) : fields
-
 interface RegCtx {
   defaults: CrudDefaults
   expectedUpdatedAtField: TypeBuilder<unknown, AlgebraicTypeType>
@@ -551,9 +537,7 @@ interface RegCtx {
   s: SetupResult
 }
 type RegTableOpts = Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }> | undefined
-
 type SetupResult = ReturnType<typeof setup>
-
 const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
     const names = Object.keys(schemas)
     for (const name of names) {
@@ -671,10 +655,8 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       fkField = resolvedDefaults.foreignKeyField,
       oIdField = resolvedDefaults.orgIdField,
       stdbT = resolvedDefaults.t
-
     return {
       allExports: s.allExports,
-
       cacheCrud: (
         tableName: string,
         keyName: string,
@@ -694,7 +676,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           tableName
         })
       },
-
       childCrud: (
         tableName: string,
         parent: { foreignKey: string; table: string },
@@ -716,7 +697,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           tableName
         })
       },
-
       crud: (tableName: string, fields: CrudFieldBuilders | ZodLike, options?: CrudOptions) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.crud({
@@ -729,9 +709,7 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           tableName
         })
       },
-
       exports: s.exports,
-
       fileUpload: (
         namespace: string,
         tableName: string = namespace,
@@ -757,7 +735,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         registerExports(s.exports, result.exports)
         return result
       },
-
       m: (
         name: string,
         params: CrudFieldBuilders,
@@ -775,7 +752,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         registerExports(s.exports, { [name]: reducer })
         return reducer
       },
-
       org: (
         orgFields: OrgFieldBuilders | ZodLike,
         orgOpts?: {
@@ -789,7 +765,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
             deleteById: (db: unknown, id: unknown) => boolean
             rowsByOrg: (db: unknown, orgId: unknown) => Iterable<{ id: unknown }>
           }[] = []
-
         if (orgOpts?.cascadeTables)
           for (const tableName of orgOpts.cascadeTables)
             cascadeConfigs.push({
@@ -808,7 +783,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
                   }
                 ).orgId.filter(orgId)
             })
-
         return s.org({
           builders: {
             email: orgTypes.string(),
@@ -831,7 +805,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           } as never)
         } as never)
       },
-
       orgCrud: (
         tableName: string,
         fields: OrgCrudFieldBuilders | ZodLike,
@@ -852,11 +825,9 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           tableName
         })
       },
-
       register: (exports: Record<string, ReducerExport<never, never>>) => {
         registerExports(s.exports, exports)
       },
-
       registerAll: (
         schemas: RegisterAllSchemas,
         tableOptions?: Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }>
@@ -877,7 +848,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         if (schemas.children) regChildren(schemas.children, ctx)
         if (schemas.file) regFile(schemas.file, { ...ctx, spacetimedb, stdbT })
       },
-
       singletonCrud: (tableName: string, fields: SingletonFieldBuilders | ZodLike, options?: SingletonOptions) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.singletonCrud({
@@ -889,7 +859,6 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       }
     }
   }
-
 type BaseBranded = BaseSchema<ZodRawShape>
 interface BsCtx {
   baseZ: Record<string, ZodLike>
@@ -921,11 +890,8 @@ interface ChildLike {
   parent: string
   schema: unknown
 }
-
 type OrgDefBranded = OrgDefSchema<ZodRawShape>
-
 type OrgScopedBranded = OrgSchema<ZodRawShape>
-
 interface OrgScopedOpts<F = unknown> extends OwnedOpts<F> {
   cascade?: boolean
   compoundIndex?: ('orgId' | ZodKeys<F>)[]
@@ -935,15 +901,12 @@ interface OrgScopedOpts<F = unknown> extends OwnedOpts<F> {
     columns: string[]
   }[]
 }
-
 interface OrgTableOpts<F = unknown> {
   extra?: Record<string, FieldBuilder>
   index?: ZodKeys<F>[]
   unique?: ZodKeys<F>[]
 }
-
 type OwnedBranded = OwnedSchema<ZodRawShape>
-
 interface OwnedOpts<F = unknown> {
   extra?: Record<string, FieldBuilder>
   index?: ZodKeys<F>[]
@@ -952,15 +915,10 @@ interface OwnedOpts<F = unknown> {
   softDelete?: boolean
   unique?: ZodKeys<F>[]
 }
-
 type RuntimeSchemaBrand = 'base' | 'org' | 'orgDef' | 'owned' | 'singleton'
-
 type SchemaHelpers = ReturnType<typeof makeSchema>
-
 type SingletonBranded = SingletonSchema<ZodRawShape>
-
 type TableArgInput = BaseBranded | ChildLike | OrgDefBranded | OrgScopedBranded | OwnedBranded | SingletonBranded
-
 type TableArgs<F> = F extends ChildLike
   ? [childDef: F]
   : F extends BaseBranded
@@ -970,12 +928,10 @@ type TableArgs<F> = F extends ChildLike
       : F extends TableArgInput
         ? [fields: F, opts?: TableOpts<F>]
         : never
-
 interface TableFn {
   <F extends TableArgInput>(...args: TableArgs<F>): BsTable
   file: () => BsTable
 }
-
 type TableOpts<F> = F extends OwnedBranded
   ? OwnedOpts<F>
   : F extends OrgScopedBranded
@@ -987,15 +943,10 @@ type TableOpts<F> = F extends OwnedBranded
         : F extends SingletonBranded
           ? undefined
           : never
-
 type TblChild = Parameters<SchemaHelpers['childTable']>[1]
-
 type TblInput = Parameters<SchemaHelpers['ownedTable']>[0]
-
 type TblKey = Parameters<SchemaHelpers['cacheTable']>[0]
-
 type ZodKeys<F> = F extends { shape: infer S extends Record<string, unknown> } ? keyof S & string : string
-
 const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm: 'btree'; columns: string[] } => ({
     accessor: columns.map((c, i) => (i === 0 ? c : c.charAt(0).toUpperCase() + c.slice(1))).join(''),
     algorithm: 'btree',
@@ -1023,7 +974,6 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
     if (typeof pub !== 'string') return index
     if (!index) return [pub]
     for (const i of index) if (i === pub) return index
-
     return [...index, pub]
   },
   applyMod = (field: FieldBuilder, mod: 'index' | 'unique'): FieldBuilder => {
@@ -1207,7 +1157,6 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
         const [fields, optionsRaw] = args,
           options = optionsRaw as TableOpts<F> | undefined
         if (isChildObj(fields)) return childTable(fields)
-
         const brand = readSchemaBrand(fields)
         if (brand === 'owned') return ownedTable(fields as OwnedBranded, options as OwnedOpts<OwnedBranded>)
         if (brand === 'org') return orgScopedTable(fields as OrgScopedBranded, options as OrgScopedOpts<OrgScopedBranded>)
@@ -1228,7 +1177,6 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
         })
       },
       table = Object.assign(tableBase, { file: () => fileTable() }) as TableFn
-
     return {
       cacheTable,
       childTable,
@@ -1268,7 +1216,6 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
       }
     let orgZod: undefined | ZodLike,
       fileNs: boolean | string = false
-
     const names = oKeys(result)
     for (const name of names) {
       const entry = result[name]
@@ -1285,14 +1232,12 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
         if (fn !== undefined) fileNs = fn
       }
     }
-
     const spacetimedb = raw.schema(rawTables as never),
       s = setupCrud(spacetimedb as SpacetimeDbLike),
       schemas = buildBsSchemas(ctx)
     if (fileNs) schemas.file = fileNs
     if (oKeys(schemas).length > 0) s.registerAll(schemas, oKeys(ctx.tblOpts).length > 0 ? ctx.tblOpts : undefined)
     if (orgZod) s.org(orgZod, ctx.cascades.length > 0 ? { cascadeTables: ctx.cascades } : undefined)
-
     const rlsExports: Record<string, unknown> = {}
     let rlsI = 0
     const addRls = (sql: string) => {
@@ -1316,12 +1261,10 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
             parentPub: parentEntry?.__bs.pub
           })
         } else sqls = rlsSql(name, entry.__bs.category, entry.__bs.pub)
-
         for (const sql of sqls) addRls(sql)
       }
     }
     if (orgZod) addRls(rlsWhereSender(RLS_TBL.orgMember, RLS_COL.userId))
-
     const group = spacetimedb.exportGroup({
         ...s.allExports(),
         ...rlsExports
@@ -1333,6 +1276,5 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
     if (regSym && ctxSym) (g[regSym] as (schemaCtx: unknown, n: string) => void)(g[ctxSym], '__bs')
     return spacetimedb as never
   }
-
 export type { CrudDefaults, OrgTypeBuilders }
 export { noboilStdb, setup, setupCrud }

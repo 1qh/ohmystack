@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -18,7 +17,6 @@ import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { useOrg } from '~/hook/use-org'
 import { wiki as wikiSchema } from '~/schema'
-
 const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
     const router = useRouter(),
       { org } = useOrg(),
@@ -42,9 +40,7 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
         }),
         values: wiki ? pickValues(wikiSchema, wiki) : undefined
       })
-
     if (!wiki) return <Skeleton className='h-40' />
-
     return (
       <Form
         className='space-y-4'
@@ -81,13 +77,10 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
       { identity } = useSpacetimeDB(),
       [wikis] = useTable(tables.wiki),
       wiki = wikis.find((w: Wiki) => w.id === id && w.orgId === Number(org._id))
-
     if (!(wiki && identity)) return <Skeleton className='h-40' />
-
     const editorsList = (wiki.editors ?? []).map(e => ({ userId: e.toHexString() })),
       canEditWiki =
         isAdmin || sameIdentity(wiki.userId, identity) || editorsList.some(e => e.userId === identity.toHexString())
-
     return (
       <PermissionGuard backHref={`/wiki/${wikiId}`} backLabel='wiki page' canAccess={canEditWiki} resource='wiki page'>
         <div className='flex justify-center'>
@@ -103,5 +96,4 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
       </PermissionGuard>
     )
   }
-
 export default EditWikiPage

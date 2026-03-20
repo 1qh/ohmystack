@@ -1,23 +1,18 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console,complexity */
-
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
-
 type Db = 'convex' | 'spacetimedb'
-
 interface InitOpts {
   db: Db
   dir: string
   includeDemos: boolean
   includeNative: boolean
 }
-
 interface NoboilManifest {
   db: Db
   includeDemos: boolean
@@ -26,7 +21,6 @@ interface NoboilManifest {
   scaffoldedFrom: string
   version: 1
 }
-
 const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
   REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO_URL,
   REPO_GIT_URL =
@@ -45,7 +39,6 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
   /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
   ask = async (question: string) => {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
-
     // oxlint-disable-next-line promise/avoid-new
     return new Promise<string>(resolve => {
       rl.question(question, answer => {
@@ -65,11 +58,8 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
       toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `expo/${otherTag}`, 'backend/agent', 'tool/cli']
-
     if (!includeDemos) toRemove.push(`web/${dbTag}`, `expo/${dbTag}`)
-
     if (db !== 'convex' || !includeNative) toRemove.push('mobile', 'desktop', 'swiftcore')
-
     for (const p of toRemove) {
       const full = join(dir, p)
       if (existsSync(full)) {
@@ -99,50 +89,40 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
         ((!includeNative || db !== 'convex') &&
           (key.includes('mobile') || key.includes('desktop') || key.includes('swift'))) ||
         val.includes(otherDb)
-
     pkg.name = 'my-app'
     pkg.private = true
-
     const workspaces: string[] = ['lib/*', 'backend/*']
     if (includeDemos)
       if (db === 'convex') workspaces.push('web/cvx/*', 'expo/cvx/*')
       else workspaces.push('web/stdb/*', 'expo/stdb/*')
-
     pkg.workspaces = workspaces
-
     if (pkg.scripts) {
       const keep: Record<string, string> = {
         test: db === 'convex' ? 'bun --cwd lib/convex test' : 'bun --cwd lib/spacetimedb test'
       }
       for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
-
       pkg.scripts = keep
     }
-
     const selectedLib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb',
       nextDependencies: Record<string, string> = {}
     if (pkg.dependencies)
       for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
     nextDependencies[selectedLib] = 'workspace:*'
     pkg.dependencies = nextDependencies
-
     if (pkg.devDependencies) {
       const nextDevDependencies: Record<string, string> = {}
       for (const [key, val] of Object.entries(pkg.devDependencies))
         if (!key.startsWith('@a/')) nextDevDependencies[key] = val
       pkg.devDependencies = nextDevDependencies
     }
-
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   },
   scaffoldProject = ({ args, db, dir, includeDemos, includeNative }: InitOpts & { args: string[] }) => {
     const fullPath = resolvePath(process.cwd(), dir)
-
     if (existsSync(fullPath) && readdirSync(fullPath).length > 0) {
       console.log(`\n${red('Error:')} Directory ${dir} is not empty.\n`)
       process.exit(1)
     }
-
     console.log(`\n${bold('Creating project...')}\n`)
     console.log(`  ${dim('scaffolding')} ${REPO}...`)
     if (REPO_SPEC.startsWith('/') || REPO_SPEC.startsWith('file://')) {
@@ -155,13 +135,10 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       process.exit(1)
     }
     const scaffoldedFrom = (revResult.stdout.split('\n')[0] ?? '').split('\t')[0] ?? ''
-
     console.log(`  ${dim('cleaning up')} unused files...`)
     removeDirs({ db, dir: fullPath, includeDemos, includeNative })
-
     console.log(`  ${dim('patching')} package.json files...`)
     patchRootPackageJson({ db, dir: fullPath, includeDemos, includeNative })
-
     if (!args.includes('--skip-install')) {
       console.log(`  ${dim('installing')} dependencies...`)
       const installResult = spawnSync('bun', ['install'], { cwd: fullPath, stdio: 'inherit' })
@@ -170,7 +147,6 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
           `\n  ${yellow('!')} bun install failed — run ${dim('bun install')} manually after publishing packages.\n`
         )
     }
-
     console.log(`\n${green('Done!')} Project created at ${bold(dir)}\n`)
     const manifest: NoboilManifest = {
       db,
@@ -181,11 +157,9 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       version: 1
     }
     writeFileSync(join(fullPath, '.noboilrc.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-
     console.log(`  ${dim('$')} cd ${dir}`)
     if (db === 'convex') console.log(`  ${dim('$')} bunx convex dev     ${dim('# start Convex backend')}`)
     else console.log(`  ${dim('$')} docker compose up -d ${dim('# start SpacetimeDB')}`)
-
     console.log(`  ${dim('$')} bun dev              ${dim('# start dev server')}`)
     console.log(`\n${dim('Docs:')} ${yellow('https://noboil.dev/docs')}\n`)
   },
@@ -201,21 +175,17 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       console.log(`  --help, -h                 ${dim('Show this help')}\n`)
       return
     }
-
     console.log(`\n${bold('noboil')} ${dim('— schema-first, zero-boilerplate fullstack')}\n`)
-
     let db: Db | undefined,
       includeDemos = true,
       includeNative = false,
       targetDir = ''
-
     for (const arg of args)
       if (arg === '--db=convex') db = 'convex'
       else if (arg === '--db=spacetimedb') db = 'spacetimedb'
       else if (arg === '--no-demos') includeDemos = false
       else if (arg === '--with-native') includeNative = true
       else if (!arg.startsWith('--')) targetDir = arg
-
     if (!db) {
       console.log(bold('Pick your database:\n'))
       console.log(`  ${bold('1.')} Convex       ${dim('— hosted, reactive queries, server functions')}`)
@@ -228,28 +198,22 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
         process.exit(1)
       }
     }
-
     const hasDbFlag = args.some(a => a.startsWith('--db=')),
       hasDemosFlag = args.includes('--no-demos'),
       hasNativeFlag = args.includes('--with-native'),
       isNonInteractive = hasDbFlag && (hasDemosFlag || targetDir)
-
     if (!(hasDemosFlag || isNonInteractive)) {
       const demosAnswer = await ask(`\n${bold('Include demo apps?')} ${dim('(Y/n)')}: `)
       includeDemos = demosAnswer.toLowerCase() !== 'n'
     }
-
     if (db === 'convex' && includeDemos && !hasNativeFlag && !isNonInteractive) {
       const nativeAnswer = await ask(`${bold('Include mobile/desktop?')} ${dim('(y/N)')}: `)
       includeNative = nativeAnswer.toLowerCase() === 'y'
     }
-
     if (!targetDir) {
       targetDir = await ask(`\n${bold('Project directory')} ${dim('(my-app)')}: `)
       if (!targetDir) targetDir = 'my-app'
     }
-
     scaffoldProject({ args, db, dir: targetDir, includeDemos, includeNative })
   }
-
 export { init }

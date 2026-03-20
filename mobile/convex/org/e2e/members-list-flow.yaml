@@ -1,22 +1,17 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn: "Members"
 - waitForAnimationToEnd
-
 - assertVisible: "Members"
 - assertVisible: "Owner"
-
 - extendedWaitUntil:
     visible: "E2E"
     timeout: 10000
     optional: true
-
 - tapOn: "Projects"
 - waitForAnimationToEnd
 - assertVisible: "Projects"
-
 - tapOn: "Members"
 - waitForAnimationToEnd
 - assertVisible: "Members"

@@ -1,7 +1,6 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -9,16 +8,13 @@ appId: dev.noboil.org
 - inputText: "Cascade Delete Project"
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Cascade Delete Project"
     timeout: 10000
 - tapOn: "Cascade Delete Project"
 - waitForAnimationToEnd
-
 - assertVisible: "Tasks"
 - assertVisible: "New task..."
-
 - tapOn: "New task..."
 - inputText: "Cascade task one"
 - tapOn:
@@ -27,7 +23,6 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Cascade task one"
     timeout: 10000
-
 - tapOn: "New task..."
 - inputText: "Cascade task two"
 - tapOn:
@@ -36,32 +31,26 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Cascade task two"
     timeout: 10000
-
 - assertVisible: "Cascade task one"
 - assertVisible: "Cascade task two"
-
 - hideKeyboard
 - back
 - extendedWaitUntil:
     visible: "Projects"
     timeout: 10000
-
 - tapOn:
     text: "Edit"
     index: 0
     optional: true
 - waitForAnimationToEnd
-
 - scrollUntilVisible:
     element: "Delete Project"
     direction: DOWN
     timeout: 5000
-
 - tapOn: "Delete Project"
 - waitForAnimationToEnd
 - tapOn: "Delete"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Projects"
     timeout: 10000

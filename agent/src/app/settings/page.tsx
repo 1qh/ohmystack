@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import type { Id } from '@a/be-agent/model'
 import type { SyntheticEvent } from 'react'
 
@@ -9,7 +7,6 @@ import { api } from '@a/be-agent'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useState } from 'react'
-
 interface McpServerRow {
   _id: Id<'mcpServers'>
   hasAuthHeaders: boolean
@@ -17,7 +14,6 @@ interface McpServerRow {
   name: string
   url: string
 }
-
 const formatCreateError = (error: unknown) => {
     const message = String(error).toLowerCase()
     if (message.includes('name_taken')) return 'Server name is already taken.'
@@ -118,12 +114,9 @@ const formatCreateError = (error: unknown) => {
       onToggle = (server: McpServerRow) => {
         toggleServer(server).catch(() => undefined)
       }
-
     if (!servers) return <main className='p-8'>Loading...</main>
-
     let serverCount = 0
     for (const server of servers) if (server) serverCount += 1
-
     return (
       <main className='mx-auto max-w-2xl space-y-4 p-8'>
         <div className='flex items-center justify-between'>
@@ -201,5 +194,4 @@ const formatCreateError = (error: unknown) => {
       </main>
     )
   }
-
 export default SettingsPage

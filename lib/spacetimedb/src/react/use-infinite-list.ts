@@ -1,13 +1,11 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { ListSort, ListWhere, Rec } from './list-utils'
 
 import { matchW } from '../server/helpers'
 import { noop, searchMatches, sortData } from './list-utils'
-
 /** Client-side infinite-list options for filtering, sorting, and searching. */
 interface InfiniteListOptions<T extends Rec = Rec> {
   batchSize?: number
@@ -15,7 +13,6 @@ interface InfiniteListOptions<T extends Rec = Rec> {
   sort?: ListSort<T>
   where?: ListWhere<T>
 }
-
 /** Default batch size used by `useInfiniteList`. */
 const DEFAULT_BATCH_SIZE = 50,
   /** Builds an infinite-scroll list from in-memory rows.
@@ -52,7 +49,6 @@ const DEFAULT_BATCH_SIZE = 50,
       [visibleCount, setVisibleCount] = useState(batchSize),
       whereRef = useRef(opts?.where),
       searchQueryRef = useRef(rawQuery)
-
     useEffect(() => {
       if (!debounceMs) {
         setDebouncedQuery(rawQuery)
@@ -61,9 +57,7 @@ const DEFAULT_BATCH_SIZE = 50,
       const id = setTimeout(() => setDebouncedQuery(rawQuery), debounceMs)
       return () => clearTimeout(id)
     }, [debounceMs, rawQuery])
-
     const searchQuery = debounceMs ? debouncedQuery : rawQuery
-
     useEffect(() => {
       const whereChanged = whereRef.current !== opts?.where,
         searchChanged = searchQueryRef.current !== searchQuery
@@ -71,7 +65,6 @@ const DEFAULT_BATCH_SIZE = 50,
       searchQueryRef.current = searchQuery
       if (whereChanged || searchChanged) setVisibleCount(batchSize)
     }, [batchSize, opts?.where, searchQuery])
-
     const filtered = useMemo(() => {
         if (skipped || !opts?.where) return skipped ? [] : data
         const out: T[] = []
@@ -93,9 +86,7 @@ const DEFAULT_BATCH_SIZE = 50,
         if (!hasMore) return
         setVisibleCount(v => v + batchSize)
       }, [batchSize, hasMore])
-
     if (skipped) return SKIP_RESULT
-
     return {
       data: sliced,
       hasMore,
@@ -104,7 +95,6 @@ const DEFAULT_BATCH_SIZE = 50,
       totalCount: sorted.length
     }
   }
-
 /** Result shape returned by `useInfiniteList` with normal options. */
 interface InfiniteListResult<T extends Rec> {
   data: T[]
@@ -113,7 +103,6 @@ interface InfiniteListResult<T extends Rec> {
   loadMore: () => void
   totalCount: number
 }
-
 /** Result shape returned when `useInfiniteList` options is `'skip'`. */
 interface SkipInfiniteListResult {
   data: never[]
@@ -122,6 +111,5 @@ interface SkipInfiniteListResult {
   loadMore: () => void
   totalCount: 0
 }
-
 export type { InfiniteListOptions, InfiniteListResult, ListWhere as InfiniteListWhere, SkipInfiniteListResult }
 export { DEFAULT_BATCH_SIZE, useInfiniteList }

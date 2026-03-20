@@ -9,7 +9,6 @@ import { dirname, join } from 'node:path'
 import type { FactoryCall } from './check'
 
 import { endpointsForFactory, extractSchemaFields } from './check'
-
 const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -304,9 +303,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\nnoboil-stdb docs\n'))
-
     if (flags.has('--full')) {
       const srcDir = join(root, 'src')
       if (!existsSync(srcDir)) {
@@ -316,13 +313,11 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
       console.log(generateFullReference(srcDir))
       return
     }
-
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
       console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
       process.exit(1)
     }
-
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
       console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
@@ -330,7 +325,6 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     }
     console.log(`${dim('schema:')} ${schemaFile.path}`)
     console.log(`${dim('module:')} ${moduleDir}\n`)
-
     const calls = extractFactoryCalls(moduleDir),
       schemaTables = extractSchemaFields(schemaFile.content),
       tableFields = new Map<string, { name: string; type: string }[]>()
@@ -339,12 +333,10 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
         t.table,
         t.fields.map(f => ({ name: f.field, type: f.type }))
       )
-
     if (flags.has('--markdown') || flags.has('--md')) {
       console.log(generateMarkdown(calls, tableFields))
       return
     }
-
     let total = 0
     for (const call of calls) {
       const eps = endpointsForFactory(call),
@@ -359,7 +351,5 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     console.log(`${green('✓')} ${bold(String(total))} reducers from ${bold(String(calls.length))} tables`)
     console.log(dim('\nRun with --markdown for full API reference output\n'))
   }
-
 if (import.meta.main) run()
-
 export { extractJSDoc, generateFullReference, generateMarkdown, resolveReExports }

@@ -2,7 +2,6 @@
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { OrgInvite } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -14,7 +13,6 @@ import { useMut, useMutate } from '@noboil/spacetimedb/react'
 import { Copy, Trash } from 'lucide-react'
 
 import { useOrgTable } from '~/hook/use-org-table'
-
 const PendingInvites = () => {
   const [invites] = useOrgTable<OrgInvite>(tables.orgInvite),
     revokeInvite = useMut(reducers.orgRevokeInvite, { toast: { success: 'Invite revoked' } }),
@@ -25,9 +23,7 @@ const PendingInvites = () => {
       },
       { toast: { error: 'Failed to copy', success: 'Invite link copied' } }
     )
-
   if (invites.length === 0) return null
-
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Pending Invites</h3>
@@ -68,5 +64,4 @@ const PendingInvites = () => {
     </div>
   )
 }
-
 export default PendingInvites

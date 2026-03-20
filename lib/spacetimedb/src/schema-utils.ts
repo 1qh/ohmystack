@@ -7,18 +7,15 @@ interface FactoryCall {
   options: string
   table: string
 }
-
 interface SchemaField {
   field: string
   type: string
 }
-
 interface SchemaTable {
   factory: string
   fields: SchemaField[]
   table: string
 }
-
 const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase', 'defineTables'],
   childSchemaPat = /child\(\{[^}]*schema\s*:\s*object\(\{/gu,
   childNamePat = /(?<cname>\w+)\s*:\s*child\(/u,
@@ -152,7 +149,6 @@ const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBa
     if (hasOption(opts, 'softDelete')) eps.push('restore')
     return eps
   }
-
 export {
   CACHE_BASE,
   CHILD_BASE,

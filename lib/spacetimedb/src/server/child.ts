@@ -14,9 +14,7 @@ import type {
 
 import { enforceRateLimit } from './helpers'
 import { applyPatch, getOwnedRow, makeError, makeOptionalFields, pickPatch, timestampEquals } from './reducer-utils'
-
 type UpdateArgs<F extends CrudFieldBuilders, Id> = Partial<CrudFieldValues<F>> & { expectedUpdatedAt?: Timestamp; id: Id }
-
 /** Creates owned child-table CRUD reducers with parent existence checks.
  * @param spacetimedb - SpacetimeDB reducer factory
  * @param config - Child CRUD configuration
@@ -70,19 +68,15 @@ const makeChildCrud = <
     },
     optionalFields = makeOptionalFields(fields),
     optionalKeys = Object.keys(optionalFields)
-
   for (const key of createFieldKeys) {
     const field = fields[key]
     if (field) createParams[key] = field
   }
-
   for (const key of optionalKeys) {
     const field = optionalFields[key]
     if (field) updateParams[key] = field as TypeBuilder<unknown, AlgebraicTypeType>
   }
-
   if (expectedUpdatedAtField) updateParams.expectedUpdatedAt = expectedUpdatedAtField.optional()
-
   const createReducer = spacetimedb.reducer({ name: createName }, createParams, (ctx, args) => {
       if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
       const typedArgs = args as CrudFieldValues<F> & Record<string, unknown>,
@@ -90,9 +84,7 @@ const makeChildCrud = <
         table = tableAccessor(ctx.db),
         parentId = typedArgs[foreignKeyName] as ParentId,
         parent = parentPkAccessor(parentTableAccessor(ctx.db)).find(parentId)
-
       if (!parent) throw makeError('NOT_FOUND', `${tableName}:create`)
-
       let data = typedArgs
       if (hooks?.beforeCreate)
         data = hooks.beforeCreate(hookCtx, { data }) as unknown as CrudFieldValues<F> & Record<string, unknown>
@@ -118,17 +110,14 @@ const makeChildCrud = <
           table: table as unknown as TableLike<OwnedRow>,
           tableName
         })
-
       if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
         throw makeError('CONFLICT', `${tableName}:update`)
-
       let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
       if (hooks?.beforeUpdate)
         patch = hooks.beforeUpdate(hookCtx, {
           patch: patch as unknown as Partial<CrudFieldValues<F>>,
           prev: row as unknown as Row
         }) as unknown as Record<string, unknown>
-
       const prev = row as unknown as Row,
         next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
       if (hooks?.afterUpdate)
@@ -150,9 +139,7 @@ const makeChildCrud = <
           table: table as unknown as TableLike<OwnedRow>,
           tableName
         })
-
       if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
-
       if (options?.softDelete) {
         const nextRecord = {
           ...(row as unknown as Record<string, unknown>),
@@ -164,7 +151,6 @@ const makeChildCrud = <
         const deleted = pk.delete(id)
         if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
       }
-
       if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: row as unknown as Row })
     }),
     exportsRecord = {
@@ -172,10 +158,8 @@ const makeChildCrud = <
       [rmName]: rmReducer,
       [updateName]: updateReducer
     } as unknown as ChildCrudExports['exports']
-
   return {
     exports: exportsRecord
   }
 }
-
 export { makeChildCrud }

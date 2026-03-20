@@ -1,14 +1,11 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - tapOn: "Settings"
 - waitForAnimationToEnd
-
 - assertVisible: "Settings"
 - assertVisible: "Organization Name"
 - assertVisible: "Delete Organization"
-
 - tapOn: "Projects"
 - waitForAnimationToEnd
 - assertVisible: "Projects"

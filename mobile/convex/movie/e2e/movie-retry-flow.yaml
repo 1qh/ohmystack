@@ -3,31 +3,26 @@ appId: dev.noboil.movie
 - launchApp
 - tapOn: "Search"
 - assertVisible: "Movie Search"
-
 - tapOn: "Search movies..."
 - inputText: "Inception"
 - extendedWaitUntil:
     visible: "Inception"
     timeout: 15000
 - assertVisible: "Inception"
-
 - tapOn: "Inception"
 - extendedWaitUntil:
     visible: "Inception"
     timeout: 15000
-
 - swipe:
     direction: DOWN
     duration: 500
 - assertVisible:
     text: ".*Rating.*"
     optional: true
-
 - back
 - extendedWaitUntil:
     visible: "Movie Search"
     timeout: 10000
-
 - eraseText: 50
 - tapOn: "Search movies..."
 - inputText: "Fight Club"

@@ -1,29 +1,23 @@
 "use client"
-
 import * as React from "react"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { Select as SelectPrimitive } from "radix-ui"
-
 import { cn } from "@a/ui"
-
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />
 }
-
 function SelectGroup({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Group>) {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />
 }
-
 function SelectValue({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />
 }
-
 function SelectTrigger({
   className,
   size = "default",
@@ -49,7 +43,6 @@ function SelectTrigger({
     </SelectPrimitive.Trigger>
   )
 }
-
 function SelectContent({
   className,
   children,
@@ -86,7 +79,6 @@ function SelectContent({
     </SelectPrimitive.Portal>
   )
 }
-
 function SelectLabel({
   className,
   ...props
@@ -99,7 +91,6 @@ function SelectLabel({
     />
   )
 }
-
 function SelectItem({
   className,
   children,
@@ -126,7 +117,6 @@ function SelectItem({
     </SelectPrimitive.Item>
   )
 }
-
 function SelectSeparator({
   className,
   ...props
@@ -139,7 +129,6 @@ function SelectSeparator({
     />
   )
 }
-
 function SelectScrollUpButton({
   className,
   ...props
@@ -157,7 +146,6 @@ function SelectScrollUpButton({
     </SelectPrimitive.ScrollUpButton>
   )
 }
-
 function SelectScrollDownButton({
   className,
   ...props
@@ -175,7 +163,6 @@ function SelectScrollDownButton({
     </SelectPrimitive.ScrollDownButton>
   )
 }
-
 export {
   Select,
   SelectContent,

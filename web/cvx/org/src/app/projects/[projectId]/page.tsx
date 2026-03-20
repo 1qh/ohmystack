@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import type { Doc, Id } from '@a/be-convex/model'
 import type { FunctionReturnType } from 'convex/server'
 import type { output } from 'zod/v4'
@@ -27,10 +25,8 @@ import { use, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 type Member = FunctionReturnType<typeof api.org.members>[number]
 type Priority = NonNullable<output<typeof orgScoped.task>['priority']>
-
 const priorityOptions = enumToOptions(orgScoped.task.shape.priority.unwrap()),
   PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
     <Select onValueChange={v => onValueChange(v as Priority)} value={value}>
@@ -46,7 +42,6 @@ const priorityOptions = enumToOptions(orgScoped.task.shape.priority.unwrap()),
       </SelectContent>
     </Select>
   )
-
 interface TaskRowProps {
   canAssign: boolean
   canEdit: boolean
@@ -57,14 +52,12 @@ interface TaskRowProps {
   onUpdate: (title: string, priority: Priority) => Promise<void>
   task: Doc<'task'>
 }
-
 const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, onUpdate, task: t }: TaskRowProps) => {
     const [editing, setEditing] = useState(false),
       [editTitle, setEditTitle] = useState(t.title),
       [editPriority, setEditPriority] = useState<Priority>(t.priority ?? 'medium'),
       handleSave = () => {
         if (!editTitle.trim()) return
-
         onUpdate(editTitle, editPriority)
           .then(() => {
             setEditing(false)
@@ -80,7 +73,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       { assigneeId } = t,
       assignee = assigneeId ? members.find(m => m.userId === assigneeId) : null
-
     if (editing)
       return (
         <div className='flex items-center gap-2 py-2'>
@@ -94,7 +86,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           </Button>
         </div>
       )
-
     return (
       <div className='flex items-center gap-3 py-2'>
         <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
@@ -156,9 +147,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       [title, setTitle] = useState(''),
       [priority, setPriority] = useState<Priority>('medium'),
       [selected, setSelected] = useState<Set<Id<'task'>>>(() => new Set())
-
     if (!(project && tasks && me && members && editorsList)) return <Skeleton className='h-40' />
-
     const canEditProject = canEditResource({ editorsList, isAdmin, resource: project, userId: me._id }),
       doAddTask = async () => {
         if (!title.trim()) return
@@ -226,7 +215,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           .then(() => toast.success('Editor removed'))
           .catch(fail)
       }
-
     return (
       <div className='space-y-6'>
         <div className='flex items-center justify-between'>
@@ -244,7 +232,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           ) : null}
         </div>
         {project.description ? <p className='text-muted-foreground'>{project.description}</p> : null}
-
         <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
             <CardTitle>Tasks</CardTitle>
@@ -278,7 +265,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
                 </Button>
               </form>
             ) : null}
-
             <div className='divide-y'>
               {isAdmin && tasks.length > 0 ? (
                 <div className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
@@ -320,7 +306,6 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
             </div>
           </CardContent>
         </Card>
-
         {isAdmin ? (
           <EditorsSection
             editorsList={editorsList}
@@ -332,5 +317,4 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       </div>
     )
   }
-
 export default ProjectDetailPage

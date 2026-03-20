@@ -1,6 +1,5 @@
 type RlsCategory = 'base' | 'children' | 'file' | 'org' | 'orgScoped' | 'owned' | 'singleton'
 type RlsPub = boolean | string | undefined
-
 const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const,
   RLS_TBL = { orgMember: 'orgMember' } as const,
   q = (tbl: string, col: string): string => `"${tbl}"."${col}"`,
@@ -53,6 +52,5 @@ const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const,
     }
     return []
   }
-
 export type { RlsCategory, RlsPub }
 export { RLS_COL, RLS_TBL, rlsChildSql, rlsJoinWhereSender, rlsSql, rlsWherePub, rlsWhereSender }

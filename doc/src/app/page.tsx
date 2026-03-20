@@ -1,5 +1,4 @@
 import Link from 'next/link'
-
 const Page = () => (
   <main className='flex flex-1 flex-col items-center justify-center gap-4 text-center'>
     <h1 className='text-4xl font-bold'>noboil</h1>
@@ -9,5 +8,4 @@ const Page = () => (
     </Link>
   </main>
 )
-
 export default Page

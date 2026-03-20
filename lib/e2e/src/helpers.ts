@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
 import { api, ensureTestUser, tc } from './org-helpers'
-
 const login = async () => {
     await ensureTestUser()
   },
@@ -11,5 +10,4 @@ const login = async () => {
       /** biome-ignore lint/performance/noAwaitInLoops: sequential cleanup required */
       result = await tc.mutation(api.testauth.cleanupTestData, {})
   }
-
 export { cleanupTestData, login }

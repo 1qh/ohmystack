@@ -4,7 +4,6 @@ import { useList } from '@noboil/spacetimedb/react'
 import { useRouter } from 'expo-router'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const router = useRouter(),
     [rows, ready] = useTable(tables.chat),
@@ -22,5 +21,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

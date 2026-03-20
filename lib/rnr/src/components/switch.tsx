@@ -1,7 +1,6 @@
 import { cn } from '@a/rnr'
 import * as SwitchPrimitives from '@rn-primitives/switch'
 import { Platform } from 'react-native'
-
 function Switch({ className, ...props }: SwitchPrimitives.RootProps & React.RefAttributes<SwitchPrimitives.RootRef>) {
   return (
     <SwitchPrimitives.Root
@@ -27,5 +26,4 @@ function Switch({ className, ...props }: SwitchPrimitives.RootProps & React.RefA
     </SwitchPrimitives.Root>
   )
 }
-
 export { Switch }

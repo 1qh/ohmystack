@@ -3,18 +3,15 @@
 import type { UIMessage } from 'ai'
 
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
-
 interface ApprovalResponse {
   approved: boolean
   id: string
 }
-
 interface ChatRequestBody {
   id?: string
   message?: UIMessage
   messages?: UIMessage[]
 }
-
 interface ToolPart {
   approval?: ApprovalResponse
   input?: Record<string, unknown>
@@ -23,12 +20,10 @@ interface ToolPart {
   toolName?: string
   type?: string
 }
-
 const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
   TRAILING_PUNCT_RE = /[?.!,]+$/u,
   WEATHER_WORD_RE = /\bweather\b/iu,
   withUnavailable = () => Response.json({ error: 'AI not available' }, { status: 503 }),
-  // eslint-disable-next-line no-restricted-properties
   isTestMode = () => process.env.NEXT_PUBLIC_PLAYWRIGHT === '1' || process.env.SPACETIMEDB_TEST_MODE === 'true',
   sleep = async (ms: number) =>
     new Promise<void>(resolve => {
@@ -42,7 +37,6 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
   getTextFromMessage = (message: UIMessage): string => {
     const values: string[] = []
     for (const part of message.parts) if (part.type === 'text') values.push(part.text)
-
     return values.join(' ').trim()
   },
   getLastUserText = (messages: UIMessage[]): string => {
@@ -72,7 +66,6 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
   },
   POST = async (request: Request) => {
     if (!isTestMode()) return withUnavailable()
-
     const body = (await request.json()) as ChatRequestBody,
       messages = getMessages(body),
       lastUserText = getLastUserText(messages),
@@ -86,7 +79,6 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
         execute: async ({ writer }) => {
           await sleep(500)
           writer.write({ type: 'start' })
-
           if (latestApproval?.approval?.approved === false) {
             writer.write({ toolCallId, type: 'tool-output-denied' })
             writer.write({ id: `${chatId}-text-denied`, type: 'text-start' })
@@ -95,7 +87,6 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
             writer.write({ finishReason: 'stop', type: 'finish' })
             return
           }
-
           if (latestApproval?.approval?.approved) {
             writer.write({
               output: { condition: 'Clear', location, temperatureCelsius: 22 },
@@ -112,14 +103,12 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
             writer.write({ finishReason: 'stop', type: 'finish' })
             return
           }
-
           if (weatherIntent) {
             writer.write({ input: { location }, toolCallId, toolName: 'getWeather', type: 'tool-input-available' })
             writer.write({ approvalId, toolCallId, type: 'tool-approval-request' })
             writer.write({ finishReason: 'tool-calls', type: 'finish' })
             return
           }
-
           writer.write({ id: `${chatId}-text-main`, type: 'text-start' })
           writer.write({
             delta: `Mock response: ${lastUserText || 'Hello from Playwright test mode.'}`,
@@ -130,10 +119,8 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
           writer.write({ finishReason: 'stop', type: 'finish' })
         }
       })
-
     return createUIMessageStreamResponse({ stream })
   },
   DELETE = () => withUnavailable(),
   maxDuration = 60
-
 export { DELETE, maxDuration, POST }

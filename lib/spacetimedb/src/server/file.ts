@@ -5,7 +5,6 @@ import type { FileUploadConfig, FileUploadExports, FileUploadPkLike, FileUploadT
 
 import { BYTES_PER_MB } from '../constants'
 import { identityEquals, makeError } from './reducer-utils'
-
 interface FileRowBase<Id> {
   contentType: string
   createdAt: Timestamp
@@ -16,12 +15,10 @@ interface FileRowBase<Id> {
   uploadedAt: Timestamp
   userId: Identity
 }
-
 interface SenderLike {
   toHexString?: () => string
   toString?: () => string
 }
-
 /** Default MIME types accepted by Betterspace file upload reducers. */
 const DEFAULT_ALLOWED_TYPES = new Set([
     'application/json',
@@ -110,7 +107,6 @@ const DEFAULT_ALLOWED_TYPES = new Set([
             throw makeError('INVALID_FILE_TYPE', `File type ${typedArgs.contentType} not allowed`)
           if (typedArgs.size > maxFileSize)
             throw makeError('FILE_TOO_LARGE', `File size ${typedArgs.size} exceeds ${maxFileSize} bytes`)
-
           const table = tableAccessor(ctx.db)
           table.insert({
             contentType: typedArgs.contentType,
@@ -145,11 +141,9 @@ const DEFAULT_ALLOWED_TYPES = new Set([
         [deleteName]: deleteReducer,
         [registerName]: registerReducer
       } as unknown as FileUploadExports['exports']
-
     return {
       exports: exportsRecord
     }
   }
-
 export { createS3DownloadPresignedUrl, createS3UploadPresignedUrl } from '../s3'
 export { CHUNK_SIZE, DEFAULT_ALLOWED_TYPES, DEFAULT_MAX_FILE_SIZE, makeFileUpload }

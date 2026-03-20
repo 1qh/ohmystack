@@ -1,17 +1,14 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   TABLES_TS = `import { t } from 'spacetimedb'
-
 const blogTable = {
   id: t.u32(),
   title: t.string(),
@@ -19,87 +16,63 @@ const blogTable = {
   category: t.string(),
   published: t.bool()
 }
-
 export { blogTable }
 `,
   SCHEMA_TS = `import { schema, table } from 'spacetimedb'
-
 import { blogTable } from './tables'
-
 const db = schema({
   blog: table({ public: true }, blogTable)
 })
-
 export { db }
 `,
   DB_TS = `import { makeCrud } from '@noboil/spacetimedb/server'
-
 import { db } from './schema'
-
 const blog = makeCrud({
   schema: db,
   table: 'blog'
 })
-
 export { blog }
 `,
   BLOG_TS = `import { reducer } from 'spacetimedb'
-
 import { blog } from '../db'
-
 const createBlog = reducer('blog.create', (ctx, input: { category: string; content: string; published: boolean; title: string }) =>
   blog.create(ctx, input)
 )
-
 const updateBlog = reducer(
   'blog.update',
   (ctx, input: { content?: string; id: number; published?: boolean; title?: string }) => blog.update(ctx, input.id, input)
 )
-
 const removeBlog = reducer('blog.rm', (ctx, input: { id: number }) => blog.rm(ctx, input.id))
-
 export { createBlog, removeBlog, updateBlog }
 `,
   CLIENT_TS = `'use client'
-
 import { createContext, useContext } from 'react'
-
 interface SpacetimeClient {
   callReducer: (name: string, input: Record<string, unknown>) => Promise<void>
 }
-
 const clientContext = createContext<null | SpacetimeClient>(null)
-
 const useSpacetime = (): SpacetimeClient => {
   const client = useContext(clientContext)
   if (!client) throw new Error('Spacetime client not configured')
   return client
 }
-
 export { clientContext, useSpacetime }
 `,
   LAYOUT_TSX = `import type { ReactNode } from 'react'
-
 import './globals.css'
-
 const RootLayout = ({ children }: { children: ReactNode }) => (
   <html lang='en'>
     <body>{children}</body>
   </html>
 )
-
 export default RootLayout
 `,
   PAGE_TSX = `'use client'
-
 import { useState } from 'react'
-
 import { useSpacetime } from '../spacetime-client'
-
 const BlogPage = () => {
   const spacetime = useSpacetime()
   const [title, setTitle] = useState('')
-
   const handleCreate = async () => {
     if (!title.trim()) return
     await spacetime.callReducer('blog.create', {
@@ -110,7 +83,6 @@ const BlogPage = () => {
     })
     setTitle('')
   }
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>Blog</h1>
@@ -129,7 +101,6 @@ const BlogPage = () => {
     </main>
   )
 }
-
 export default BlogPage
 `,
   ENV_LOCAL = `SPACETIME_SERVER_URL=http://localhost:3000
@@ -224,7 +195,6 @@ NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:3000
       if (arg === '--help' || arg === '-h') help = true
       else if (arg.startsWith('--module-dir=')) moduleDir = arg.slice('--module-dir='.length)
       else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
-
     return { appDir, help, moduleDir }
   },
   printHelp = () => {
@@ -297,8 +267,6 @@ NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:3000
     const { created, skipped } = scaffold(process.cwd(), moduleDir, appDir)
     printSummary(created, skipped)
   }
-
 if (process.argv[1]?.endsWith('create.ts') || process.argv[1]?.endsWith('create-noboil-stdb-app'))
   init(process.argv.slice(2))
-
 export { init }

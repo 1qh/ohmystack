@@ -4,7 +4,6 @@ appId: dev.noboil.movie
 - assertVisible: "Movie Search"
 - assertVisible: "Search movies..."
 - assertVisible: "Search for movies by title"
-
 - tapOn: "Search movies..."
 - inputText: "zzzznonexistentmovie9999"
 - tapOn:
@@ -13,7 +12,6 @@ appId: dev.noboil.movie
     notVisible:
       text: "Loading..."
     timeout: 15000
-
 - tapOn: "zzzznonexistentmovie9999"
 - eraseText: 50
 - inputText: "Inception"

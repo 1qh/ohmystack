@@ -3,7 +3,6 @@ import * as Slot from '@rn-primitives/slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 import { Platform, Text as RNText, type Role } from 'react-native'
-
 const textVariants = cva(
   cn(
     'text-foreground text-base',
@@ -36,11 +35,8 @@ const textVariants = cva(
     }
   }
 )
-
 type TextVariantProps = VariantProps<typeof textVariants>
-
 type TextVariant = NonNullable<TextVariantProps['variant']>
-
 const ROLE: Partial<Record<TextVariant, Role>> = {
   h1: 'heading',
   h2: 'heading',
@@ -49,16 +45,13 @@ const ROLE: Partial<Record<TextVariant, Role>> = {
   blockquote: Platform.select({ web: 'blockquote' as Role }),
   code: Platform.select({ web: 'code' as Role })
 }
-
 const ARIA_LEVEL: Partial<Record<TextVariant, string>> = {
   h1: '1',
   h2: '2',
   h3: '3',
   h4: '4'
 }
-
 const TextClassContext = React.createContext<string | undefined>(undefined)
-
 function Text({
   className,
   asChild = false,
@@ -80,5 +73,4 @@ function Text({
     />
   )
 }
-
 export { Text, TextClassContext }

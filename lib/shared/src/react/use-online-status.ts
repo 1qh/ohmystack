@@ -1,7 +1,5 @@
 'use client'
-
 import { useSyncExternalStore } from 'react'
-
 const subscribe = (onStoreChange: () => void) => {
     globalThis.addEventListener('online', onStoreChange)
     globalThis.addEventListener('offline', onStoreChange)
@@ -13,5 +11,4 @@ const subscribe = (onStoreChange: () => void) => {
   getSnapshot = () => navigator.onLine,
   getServerSnapshot = () => true,
   useOnlineStatus = () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-
 export default useOnlineStatus

@@ -1,5 +1,4 @@
 'use client'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { RoleBadge } from '@noboil/spacetimedb/components'
@@ -8,13 +7,11 @@ import Link from 'next/link'
 
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
-
 const OrgDashboard = () => {
   const { org, role } = useOrg(),
     [members] = useOrgTable(tables.orgMember),
     [orgProjects] = useOrgTable(tables.project),
     projects = orgProjects.slice(0, 5)
-
   return (
     <div className='space-y-6'>
       <div>
@@ -24,7 +21,6 @@ const OrgDashboard = () => {
           <RoleBadge role={role} />
         </div>
       </div>
-
       <div className='grid gap-4 md:grid-cols-2'>
         <Card>
           <CardHeader className='flex-row items-center gap-2'>
@@ -38,7 +34,6 @@ const OrgDashboard = () => {
             </Link>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className='flex-row items-center gap-2'>
             <FolderOpen className='size-5' />
@@ -55,5 +50,4 @@ const OrgDashboard = () => {
     </div>
   )
 }
-
 export default OrgDashboard

@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
 'use client'
-
 import type { PaginatedQueryArgs, PaginatedQueryReference } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 
@@ -11,20 +10,16 @@ import type { PendingMutation } from './optimistic-store'
 
 import { trackSubscription, untrackSubscription, updateSubscription, updateSubscriptionData } from './devtools'
 import { usePendingMutations } from './optimistic-store'
-
 type ListItems<F extends PaginatedQueryReference> = FunctionReturnType<F>['page']
-
 type ListRest<F extends PaginatedQueryReference> =
   PaginatedQueryArgs<F> extends Record<string, never>
     ? [args?: PaginatedQueryArgs<F>, options?: UseListOptions]
     : [args: PaginatedQueryArgs<F>, options?: UseListOptions]
 type Rec = Record<string, unknown>
-
 interface UseListOptions {
   optimistic?: boolean
   pageSize?: number
 }
-
 const classifyPending = (pending: PendingMutation[]) => {
     const deleteIds = new Set<string>(),
       updates = new Map<string, Rec>(),
@@ -42,7 +37,6 @@ const classifyPending = (pending: PendingMutation[]) => {
           _id: p.tempId,
           updatedAt: p.timestamp
         })
-
     return { creates, deleteIds, updates }
   },
   isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
@@ -76,7 +70,6 @@ const classifyPending = (pending: PendingMutation[]) => {
       { loadMore, results, status } = usePaginatedQuery(query, queryArgs, { initialNumItems: pageSize }),
       pending = usePendingMutations(),
       subIdRef = useRef<number>(0)
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe lifecycle is intentionally one-time
     useEffect(() => {
       if (!isDev) return
@@ -87,7 +80,6 @@ const classifyPending = (pending: PendingMutation[]) => {
       // oxlint-disable-next-line react-hooks/exhaustive-deps
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
     useEffect(() => {
       if (!(isDev && subIdRef.current)) return
       const devStatus =
@@ -98,18 +90,15 @@ const classifyPending = (pending: PendingMutation[]) => {
             : 'loading'
       updateSubscription(subIdRef.current, devStatus)
     }, [status])
-
     useEffect(() => {
       if (!(isDev && subIdRef.current)) return
       const preview = results.length > 0 ? JSON.stringify(results[0]).slice(0, 200) : ''
       updateSubscriptionData(subIdRef.current, results, preview)
     }, [results])
-
     const items = useMemo(
       () => (isOptimistic ? applyOptimistic(results as Rec[], pending) : results),
       [isOptimistic, pending, results]
     )
-
     return {
       isDone: status === 'Exhausted',
       items: items as ListItems<F>,
@@ -126,6 +115,5 @@ const classifyPending = (pending: PendingMutation[]) => {
       for (const row of rows) out.push({ ...row, own: isOwn ? isOwn(row) : false })
       return out
     }, [rows, isOwn])
-
 export type { UseListOptions }
 export { applyOptimistic, DEFAULT_PAGE_SIZE, useList, useOwnRows }

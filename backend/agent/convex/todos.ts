@@ -4,7 +4,6 @@ import { v } from 'convex/values'
 
 import { q } from '../lazy'
 import { internalMutation } from './_generated/server'
-
 const syncOwned = internalMutation({
     args: {
       sessionId: v.id('session'),
@@ -49,7 +48,6 @@ const syncOwned = internalMutation({
             sessionId,
             status: t.status
           })
-
       return { updated: todos.length }
     }
   }),
@@ -64,5 +62,4 @@ const syncOwned = internalMutation({
         .collect()
     }
   })
-
 export { listTodos, syncOwned }

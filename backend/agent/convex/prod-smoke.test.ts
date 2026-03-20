@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
 import { describe, expect, test } from 'bun:test'
-
 describe('production model smoke', () => {
   test('Vertex API generates text with real credentials', async () => {
     const { createVertex } = await import('@ai-sdk/google-vertex'),

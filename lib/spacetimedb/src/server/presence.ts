@@ -2,7 +2,6 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
 
 import { identityEquals, makeError } from './reducer-utils'
-
 interface PresenceConfig<
   DB,
   Id,
@@ -16,12 +15,10 @@ interface PresenceConfig<
   table: (db: DB) => Tbl
   tableName?: string
 }
-
 interface PresencePkLike<Row, Id> {
   delete: (id: Id) => boolean
   update: (row: Row) => Row
 }
-
 interface PresenceRow<Id> {
   data: string
   id: Id
@@ -29,12 +26,10 @@ interface PresenceRow<Id> {
   roomId: string
   userId: Identity
 }
-
 interface PresenceTableLike<Row> {
   insert: (row: Row) => Row
   iter: () => Iterable<Row>
 }
-
 const HEARTBEAT_INTERVAL_MS = 15_000,
   PRESENCE_TTL_MS = 30_000,
   MICROS_PER_MILLISECOND = 1000n,
@@ -142,10 +137,8 @@ const HEARTBEAT_INTERVAL_MS = 15_000,
         [heartbeatName]: heartbeat,
         [leaveName]: leave
       } as Record<string, unknown>
-
     return {
       exports: exportsRecord
     }
   }
-
 export { HEARTBEAT_INTERVAL_MS, makePresence, PRESENCE_TTL_MS, presenceTable }

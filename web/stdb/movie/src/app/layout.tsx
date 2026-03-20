@@ -8,7 +8,6 @@ import { ErrorBoundary } from '@noboil/spacetimedb/components'
 import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
-
 const Layout = ({ children }: { children: ReactNode }) => (
   <html lang='en' suppressHydrationWarning>
     <body className='min-h-screen bg-background font-sans tracking-tight text-foreground antialiased'>
@@ -26,5 +25,4 @@ const Layout = ({ children }: { children: ReactNode }) => (
     </body>
   </html>
 )
-
 export default Layout

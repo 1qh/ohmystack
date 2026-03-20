@@ -1,27 +1,22 @@
 appId: dev.noboil.chat
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "New Chat"
     timeout: 15000
-
 - tapOn:
     text: "New Chat"
     index: 0
 - waitForAnimationToEnd
 - assertVisible: "Chat"
 - assertVisible: "Message..."
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Chats"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -30,7 +25,6 @@ appId: dev.noboil.chat
     index: 0
 - waitForAnimationToEnd
 - assertVisible: "Chat"
-
 - tapOn: "Message..."
 - inputText: "Back nav test"
 - tapOn:
@@ -38,7 +32,6 @@ appId: dev.noboil.chat
 - extendedWaitUntil:
     visible: "Back nav test"
     timeout: 15000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Chats"

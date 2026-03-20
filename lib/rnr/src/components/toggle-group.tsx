@@ -6,9 +6,7 @@ import * as ToggleGroupPrimitive from '@rn-primitives/toggle-group'
 import type { VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 import { Platform } from 'react-native'
-
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants> | null>(null)
-
 function ToggleGroup({
   className,
   variant,
@@ -31,7 +29,6 @@ function ToggleGroup({
     </ToggleGroupPrimitive.Root>
   )
 }
-
 function useToggleGroupContext() {
   const context = React.useContext(ToggleGroupContext)
   if (context === null) {
@@ -39,7 +36,6 @@ function useToggleGroupContext() {
   }
   return context
 }
-
 function ToggleGroupItem({
   className,
   children,
@@ -56,7 +52,6 @@ function ToggleGroupItem({
   }) {
   const context = useToggleGroupContext()
   const { value } = ToggleGroupPrimitive.useRootContext()
-
   return (
     <TextClassContext.Provider
       value={cn(
@@ -89,10 +84,8 @@ function ToggleGroupItem({
     </TextClassContext.Provider>
   )
 }
-
 function ToggleGroupIcon({ className, ...props }: React.ComponentProps<typeof Icon>) {
   const textClass = React.useContext(TextClassContext)
   return <Icon className={cn('size-4 shrink-0', textClass, className)} {...props} />
 }
-
 export { ToggleGroup, ToggleGroupIcon, ToggleGroupItem }

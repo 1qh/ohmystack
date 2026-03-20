@@ -1,25 +1,21 @@
 #!/usr/bin/env bun
-
 /* eslint-disable no-console */
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   cyan = (s: string) => `\u001B[36m${s}\u001B[0m`
-
 interface FieldInfo {
   name: string
   optional: boolean
   type: string
 }
-
 type MigrationAction =
   | { field: string; from: string; table: string; to: string; type: 'field_type_changed' }
   | { field: string; table: string; type: 'field_added_optional' }
@@ -28,17 +24,14 @@ type MigrationAction =
   | { from: string; table: string; to: string; type: 'factory_changed' }
   | { table: string; type: 'table_added' }
   | { table: string; type: 'table_removed' }
-
 interface SchemaSnapshot {
   tables: TableSnapshot[]
 }
-
 interface TableSnapshot {
   factory: string
   fields: FieldInfo[]
   name: string
 }
-
 const findBracketEnd = (text: string, startPos: number): number => {
     let depth = 1,
       pos = startPos
@@ -289,20 +282,15 @@ const findBracketEnd = (text: string, startPos: number): number => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2)),
       args = process.argv.slice(2).filter(a => !a.startsWith('--'))
-
     console.log(bold('\n@noboil/convex migrate\n'))
-
     if (flags.has('--help') || flags.has('-h')) {
       console.log(`Usage: noboil-convex migrate [options]
-
 Compare schema versions and generate migration plans.
-
 Options:
    --from <ref>    Git ref for the "before" schema (default: HEAD)
    --file <path>   Path to schema file (auto-detected if omitted)
    --snapshot      Print current schema snapshot (no diff)
    --help, -h      Show this help
-
 Examples:
    noboil-convex migrate                    Compare HEAD vs working tree
    noboil-convex migrate --from HEAD~3      Compare 3 commits ago vs now
@@ -310,7 +298,6 @@ Examples:
  `)
       return
     }
-
     const schemaFile = findSchemaFile(root)
     if (!schemaFile) {
       console.log(red('\u2717 Could not find schema file with @noboil/convex markers'))
@@ -318,7 +305,6 @@ Examples:
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}\n`)
-
     if (flags.has('--snapshot')) {
       const snapshot = parseSchemaContent(schemaFile.content)
       console.log(bold(`${snapshot.tables.length} table(s):\n`))
@@ -329,7 +315,6 @@ Examples:
       console.log()
       return
     }
-
     let fromRef = 'HEAD'
     for (let i = 0; i < args.length; i += 1) {
       const arg = args[i]
@@ -339,7 +324,6 @@ Examples:
       }
     }
     for (const flag of flags) if (flag.startsWith('--from=')) fromRef = flag.slice(7)
-
     const relativePath = schemaFile.path.startsWith(root) ? schemaFile.path.slice(root.length + 1) : schemaFile.path,
       oldContent = getSchemaFromGit(fromRef, relativePath)
     if (!oldContent) {
@@ -348,16 +332,12 @@ Examples:
       console.log(dim(`  Tried: git show ${fromRef}:${relativePath}\n`))
       return
     }
-
     const before = parseSchemaContent(oldContent),
       after = parseSchemaContent(schemaFile.content),
       actions = diffSnapshots(before, after)
-
     console.log(`${dim('comparing:')} ${fromRef} → working tree\n`)
     printMigrationPlan(actions)
   }
-
 if (import.meta.main) run()
-
 export { diffSnapshots, isOptionalField, parseFieldsFromBlock, parseSchemaContent }
 export type { FieldInfo, MigrationAction, SchemaSnapshot, TableSnapshot }

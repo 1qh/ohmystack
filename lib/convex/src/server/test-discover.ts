@@ -1,6 +1,5 @@
 import { readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-
 /** Scans a Convex directory for all `.ts` files (excluding tests) and returns a module map for `convex-test`. */
 const discoverModules = (
   convexDir: string,
@@ -33,5 +32,4 @@ const discoverModules = (
     }
   return modules
 }
-
 export { discoverModules }

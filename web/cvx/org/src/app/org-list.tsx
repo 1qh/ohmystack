@@ -6,16 +6,13 @@ import OrgListGrid from '@a/fe/org-list-grid'
 import { OrgAvatar, RoleBadge } from '@noboil/convex/components'
 import { setActiveOrgCookieClient } from '@noboil/convex/react'
 import { useRouter } from 'next/navigation'
-
 type OrgItem = OrgListGridItem<OrgRole>
-
 const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
   const router = useRouter(),
     onSelect = (o: OrgItem) => {
       setActiveOrgCookieClient({ orgId: o.id, slug: o.slug })
       router.push('/dashboard')
     }
-
   return (
     <OrgListGrid
       onSelect={onSelect}
@@ -27,5 +24,4 @@ const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
     />
   )
 }
-
 export default OrgList

@@ -1,8 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import { useCallback, useState } from 'react'
-
 interface UseBulkSelectionOpts {
   items: { _id: string }[]
   onError?: (error: unknown) => void
@@ -14,7 +12,6 @@ interface UseBulkSelectionOpts {
   undoLabel?: string
   undoMs: number
 }
-
 const useBulkSelection = ({
   items,
   onError,
@@ -82,9 +79,7 @@ const useBulkSelection = ({
         onError?.(error)
       }
     }, [onError, onSuccess, orgId, restore, rm, selected, t, undoLabel, undoMs])
-
   return { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll }
 }
-
 export type { UseBulkSelectionOpts }
 export { useBulkSelection }

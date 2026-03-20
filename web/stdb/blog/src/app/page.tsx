@@ -1,5 +1,4 @@
 'use client'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
@@ -8,7 +7,6 @@ import { useCallback, useMemo, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { Create, List } from './common'
-
 const Page = () => {
   const [allBlogs, isReady] = useTable(tables.blog),
     { identity } = useSpacetimeDB(),
@@ -44,5 +42,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

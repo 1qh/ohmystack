@@ -4,17 +4,14 @@ import type { BaseSchema, OrgSchema, OwnedSchema, SingletonSchema } from './type
 
 import { elementOf, isArrayType, unwrapZod } from '../zod'
 import { isRecord } from './helpers'
-
 interface IndexDef {
   fields: string[]
   name: string
 }
-
 interface SearchIndexDef {
   name: string
   searchField: string
 }
-
 interface TableDef {
   fields: Record<string, unknown>
   index: (name: string, fields: string[]) => TableDef
@@ -23,7 +20,6 @@ interface TableDef {
   searchIndex: (name: string, config: { searchField: string }) => TableDef
   searchIndexes: SearchIndexDef[]
 }
-
 const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): TableDef => {
     const indexes: IndexDef[] = [],
       searchIndexes: SearchIndexDef[] = [],
@@ -212,12 +208,10 @@ const tableDef = (kind: TableDef['kind'], fields: Record<string, unknown>): Tabl
         .index('by_user', ['userId'])
     )
   })
-
 interface CheckSchemaOutput {
   path: string
   zodType: string
 }
-
 const unsupportedTypes = new Set(['pipe', 'transform']),
   scanSchema = (schema: unknown, path: string, out: CheckSchemaOutput[]) => {
     const b = unwrapZod(schema)
@@ -236,7 +230,6 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
       process.exitCode = 1
     }
   }
-
 export {
   baseTable,
   checkSchema,

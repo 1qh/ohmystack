@@ -1,11 +1,9 @@
 /* eslint-disable complexity */
 import type { core, input, output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
-
 /** Marks Betterspace file metadata on Zod fields. */
 type CvMeta = 'file' | 'files'
 /** Represents a raw Zod definition type tag. */
 type DefType = core.$ZodTypeDef['type']
-
 type NullsToUndefined<T> = { [K in keyof T]-?: Exclude<T[K], null> | undefined }
 type ShapeKey<S extends ZodObject<ZodRawShape>> = keyof S['shape'] & string
 type UndefinedToOptional<T> = { [K in keyof T as undefined extends T[K] ? K : never]?: null | T[K] } & {
@@ -15,7 +13,6 @@ type UndefinedToOptional<T> = { [K in keyof T as undefined extends T[K] ? K : ne
   : never
 /** Alias for runtime Zod schema values. */
 type ZodSchema = ZodType
-
 const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
     'catch',
     'default',
@@ -183,7 +180,6 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
           result[k] = trimmed.length > 0 ? trimmed : undefined
         }
       }
-
     return result as output<S>
   },
   /** Generates create and update schema variants from a base schema.
@@ -207,7 +203,6 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
         ? requiredPartial(schema, requiredOnUpdate as (keyof S['shape'])[])
         : schema.partial()
   })
-
 export type { CvMeta, DefType, UndefinedToOptional, ZodSchema }
 export {
   coerceOptionals,

@@ -7,7 +7,6 @@ import type { FunctionArgs, FunctionReference, FunctionReturnType } from 'convex
 
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
-
 const api = anyApi as unknown as typeof BeApi,
   getClient = () => new ConvexHttpClient(process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL ?? ''),
   ref = (mod: string, fn: string) => {
@@ -126,7 +125,6 @@ const api = anyApi as unknown as typeof BeApi,
       }
     }
   }
-
 export {
   addTestOrgMember,
   api,

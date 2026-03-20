@@ -1,9 +1,7 @@
 appId: dev.noboil.org
 ---
 - runFlow: onboarding-flow.yaml
-
 - assertVisible: "Projects"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -14,19 +12,15 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Editors Test Project"
     timeout: 10000
-
 - tapOn: "Editors Test Project"
 - waitForAnimationToEnd
 - assertVisible: "Tasks"
 - assertVisible: "New task..."
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Projects"
-
 - tapOn: "Wiki"
 - waitForAnimationToEnd
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
@@ -39,17 +33,14 @@ appId: dev.noboil.org
 - extendedWaitUntil:
     visible: "Editors Wiki Page"
     timeout: 10000
-
 - tapOn: "Editors Wiki Page"
 - waitForAnimationToEnd
 - assertVisible: "Edit Wiki"
-
 - scrollUntilVisible:
     element: "Delete Page"
     direction: DOWN
     timeout: 5000
 - assertVisible: "Danger Zone"
 - assertVisible: "Delete Page"
-
 - back
 - waitForAnimationToEnd

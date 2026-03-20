@@ -7,11 +7,9 @@ import { crud, q } from '../lazy'
 import { owned } from '../t'
 import { internalMutation } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
-
 interface IndexEq {
   eq: (field: string, value: unknown) => IndexEq
 }
-
 interface McpHookCtx {
   db: {
     query: (table: 'mcpServers') => {
@@ -23,7 +21,6 @@ interface McpHookCtx {
   }
   userId: string
 }
-
 const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
   MCP_TIMEOUT_MS = 30_000,
   getNameFromUnknown = ({ value }: { value: unknown }) => {
@@ -57,7 +54,6 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
           const name = getNameFromUnknown({ value: t })
           if (name) names.push(name)
         }
-
       return names
     } catch {
       return []
@@ -198,14 +194,12 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       if (!resolvedSessionId) throw new Error('session_not_found')
       const session = await ctx.db.get(resolvedSessionId)
       if (!session) throw new Error('session_not_found')
-
       let parsedToolArgs: Record<string, unknown>
       try {
         parsedToolArgs = parseJsonObject({ raw: toolArgs })
       } catch {
         return { error: 'invalid_tool_args' as const, ok: false as const }
       }
-
       await enforceRateLimit({
         ctx,
         key: String(session.userId),
@@ -218,7 +212,6 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
             .first(),
         server = await loadServer()
       if (!server?.isEnabled) throw new Error('mcp_server_not_found')
-
       validateMcpUrl(server.url)
       if (server.authHeaders)
         try {
@@ -226,7 +219,6 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
         } catch {
           return { error: 'invalid_auth_headers' as const, ok: false as const }
         }
-
       const now = Date.now(),
         toolInCache = ({ allowStale, row }: { allowStale: boolean; row: { cachedAt?: number; cachedTools?: string } }) => {
           const withinTtl = row.cachedAt !== undefined && now - row.cachedAt <= MCP_CACHE_TTL_MS
@@ -249,7 +241,6 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
             retried: true as const
           }
       }
-
       /** biome-ignore lint/style/noProcessEnv: test mode gate */
       if (process.env.CONVEX_TEST_MODE === 'true')
         return {
@@ -257,7 +248,6 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
           ok: true as const,
           toolArgs: parsedToolArgs
         }
-
       await withMcpTimeout({
         operation: 'callTool',
         promise: Promise.reject(new Error('mcp_not_implemented'))
@@ -265,5 +255,4 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       return { content: '', ok: true as const, toolArgs: parsedToolArgs }
     }
   })
-
 export { create, list, mcpCallTool, mcpDiscover, read, rm, update }

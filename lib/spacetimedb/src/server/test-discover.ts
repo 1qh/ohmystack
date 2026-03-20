@@ -2,17 +2,14 @@ interface DiscoverModulesOptions {
   httpUrl?: string
   moduleName?: string
 }
-
 interface DiscoverModulesResult {
   reducers: string[]
   tables: string[]
 }
-
 interface SchemaResponse {
   reducers?: { name?: string }[]
   tables?: { name?: string }[]
 }
-
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
   getEnv = (key: string) => {
     const processRef = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
@@ -51,5 +48,4 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
       tables: pickNames(parsed.tables)
     }
   }
-
 export { discoverModules }

@@ -2,7 +2,6 @@ appId: dev.noboil.movie
 ---
 - launchApp
 - tapOn: "Fetch"
-
 - tapOn: "TMDB ID (e.g. 27205)"
 - inputText: "0"
 - tapOn: "Fetch"
@@ -13,7 +12,6 @@ appId: dev.noboil.movie
     notVisible:
       text: "Loading..."
     timeout: 20000
-
 - tapOn: "0"
 - eraseText: 50
 - inputText: "999999999"
@@ -25,7 +23,6 @@ appId: dev.noboil.movie
     notVisible:
       text: "Loading..."
     timeout: 20000
-
 - tapOn: "999999999"
 - eraseText: 50
 - inputText: "27205"

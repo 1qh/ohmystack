@@ -1,5 +1,4 @@
 import { file } from '../lazy'
-
 export const {
   assembleChunks,
   cancelChunkedUpload,

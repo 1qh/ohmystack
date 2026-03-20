@@ -1,9 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-
 const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -13,7 +11,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     'codegen-swift': { description: 'Generate typed Swift APIs from schema', script: 'codegen-swift.ts' },
     docs: { description: 'Generate API documentation', script: 'docs-gen.ts' },
     doctor: { description: 'Run project diagnostics', script: 'doctor.ts' },
-
     migrate: { description: 'Schema diff and migration plans', script: 'migrate.ts' },
     viz: { description: 'Visualize schema relationships', script: 'viz.ts' }
   },
@@ -26,7 +23,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     console.log(`\nRun ${dim('noboil-convex <command> --help')} for command-specific options.\n`)
   },
   [cmd, ...rest] = process.argv.slice(2)
-
 if (!cmd || cmd === '--help' || cmd === '-h') printHelp()
 else if (!(cmd in COMMANDS)) {
   console.log(`${red('Unknown command:')} ${cmd}\n`)

@@ -1,5 +1,4 @@
 'use client'
-
 import type { Chat } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -9,7 +8,6 @@ import { Spinner } from '@a/ui/spinner'
 import { useMut } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 const Sb = () => {
   const { identity } = useSpacetimeDB(),
     [allChats, isReady] = useTable(tables.chat),
@@ -24,7 +22,6 @@ const Sb = () => {
     handleDelete = async (chatId: number) => {
       await deleteChat({ id: chatId })
     }
-
   return (
     <>
       <ChatSidebar basePath='' getThreadId={thread => thread.id} onDelete={handleDelete} threads={chats} />
@@ -40,5 +37,4 @@ const Sb = () => {
     </>
   )
 }
-
 export default Sb

@@ -1,5 +1,4 @@
 import { cn } from "@a/ui/lib/utils"
-
 function AspectRatio({
   ratio,
   className,
@@ -18,5 +17,4 @@ function AspectRatio({
     />
   )
 }
-
 export { AspectRatio }

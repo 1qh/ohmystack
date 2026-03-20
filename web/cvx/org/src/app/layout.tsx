@@ -17,24 +17,20 @@ import { getTestClient } from '~/utils'
 
 import OrgLayoutClient from './layout-client'
 import OrgRedirect from './org-redirect'
-
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
   needsOrgLayout = (pathname: string) => {
     for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
     return false
   },
   renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>
-
 interface MembershipResult {
   memberId: null | string
   role: OrgRole
 }
-
 interface MyOrgsResult {
   org: { _id: string; avatarId?: string; name: string; slug: string }
   role: OrgRole
 }
-
 const queryOrDirect = async <T,>(
   token: null | string | undefined,
   query: FunctionReference<'query'>,
@@ -43,41 +39,31 @@ const queryOrDirect = async <T,>(
   if (token) return fetchQuery(query, args, { token }) as Promise<T>
   return getTestClient().query(query, args) as Promise<T>
 }
-
 type OrgContext =
   | { kind: 'ok'; membership: MembershipResult; org: Doc<'org'> }
   | { kind: 'redirect'; orgId: string; slug: string; to: string }
-
 const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
     await connection()
     if (!(await isAuthenticated())) redirect('/login')
-
     const token = await getToken(),
       org = (await getActiveOrg({ query: api.org.get, token: token ?? null })) as Doc<'org'> | null
-
     if (!org) {
       const orgs = (await queryOrDirect<MyOrgsResult[]>(token, api.org.myOrgs as FunctionReference<'query'>, {})) ?? []
-
       if (orgs.length === 0) redirect('/')
       const [first] = orgs
       if (first) return { kind: 'redirect', orgId: first.org._id, slug: first.org.slug, to: pathname }
       redirect('/')
     }
-
     const membership = await queryOrDirect<MembershipResult>(token, api.org.membership as FunctionReference<'query'>, {
       orgId: org._id
     })
-
     if (!membership) redirect('/')
-
     return { kind: 'ok', membership, org }
   },
   Layout = async ({ children }: { children: ReactNode }) => {
     const requestHeaders = await headers(),
       pathname = requestHeaders.get('x-pathname') ?? '/'
-
     let content: ReactNode = children
-
     if (needsOrgLayout(pathname)) {
       const ctx = await resolveOrgContext(pathname)
       if (ctx.kind === 'redirect')
@@ -92,8 +78,6 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
         </OrgLayoutClient>
       )
     }
-
     return <AuthLayout convexProvider={renderConvexProvider}>{content}</AuthLayout>
   }
-
 export default Layout

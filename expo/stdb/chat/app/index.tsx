@@ -9,7 +9,6 @@ import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useReducer, useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const router = useRouter(),
     [rows, ready] = useTable(tables.chat),
@@ -24,7 +23,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='chat-home-page'>
       <Text className='text-2xl font-semibold'>Chat</Text>
@@ -50,5 +48,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

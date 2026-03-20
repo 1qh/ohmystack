@@ -1,7 +1,6 @@
 import { Text } from '@a/rnr/components/text'
 import { Link, useLocalSearchParams } from 'expo-router'
 import { Pressable, ScrollView } from 'react-native'
-
 const Page = () => {
   const params = useLocalSearchParams<{ projectId?: string; slug?: string; token?: string; wikiId?: string }>()
   return (
@@ -15,5 +14,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

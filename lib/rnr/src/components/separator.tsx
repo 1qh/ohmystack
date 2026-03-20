@@ -1,6 +1,5 @@
 import { cn } from '@a/rnr'
 import * as SeparatorPrimitive from '@rn-primitives/separator'
-
 function Separator({
   className,
   orientation = 'horizontal',
@@ -16,5 +15,4 @@ function Separator({
     />
   )
 }
-
 export { Separator }

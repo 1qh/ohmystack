@@ -2,54 +2,42 @@
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
 /* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
 'use client'
-
 import type { ErrorInfo, ReactNode } from 'react'
 
 import { cn } from '@a/ui'
 import { Component } from 'react'
 
 import { extractErrorData, getErrorMessage } from '../server/helpers'
-
 interface ConvexErrorBoundaryProps {
   children: ReactNode
   className?: string
   fallback?: (props: { error: Error; resetErrorBoundary: () => void }) => ReactNode
   onError?: (error: Error, errorInfo: ErrorInfo) => void
 }
-
 interface ConvexErrorBoundaryState {
   error: Error | null
 }
-
 class ConvexErrorBoundary extends Component<ConvexErrorBoundaryProps, ConvexErrorBoundaryState> {
   constructor(props: ConvexErrorBoundaryProps) {
     super(props)
     this.state = { error: null }
   }
-
   static getDerivedStateFromError(error: Error): ConvexErrorBoundaryState {
     return { error }
   }
-
   // oxlint-disable-next-line class-methods-use-this
-
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { onError } = this.props
     if (onError) onError(error, errorInfo)
   }
-
   override async render() {
     const { error } = this.state,
       { children, className, fallback } = this.props
-
     if (!error) return children
-
     if (fallback) return fallback({ error, resetErrorBoundary: () => this.setState({ error: null }) })
-
     const data = extractErrorData(error),
       code = data?.code,
       message = getErrorMessage(error)
-
     return (
       <div className={cn('flex min-h-[200px] items-center justify-center p-6', className)}>
         <div className='max-w-md space-y-3 text-center'>
@@ -67,6 +55,5 @@ class ConvexErrorBoundary extends Component<ConvexErrorBoundaryProps, ConvexErro
     )
   }
 }
-
 /** Exports ConvexErrorBoundary component. */
 export default ConvexErrorBoundary

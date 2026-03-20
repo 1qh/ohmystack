@@ -8,7 +8,6 @@ import { useMutation, useQuery } from 'convex/react'
 import { Link } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView } from 'react-native'
-
 const Page = () => {
   const profile = useQuery(api.blogProfile.get, {}),
     upsert = useMutation(api.blogProfile.upsert),
@@ -19,7 +18,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='profile-page'>
       <Link asChild href='/'>
@@ -34,5 +32,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

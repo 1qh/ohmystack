@@ -1,65 +1,50 @@
 appId: dev.noboil.blog
 ---
 - runFlow: login.yaml
-
 - assertVisible: "Blog"
-
 - tapOn:
     text: "plus"
 - waitForAnimationToEnd
-
 - tapOn: "My awesome post"
 - inputText: "Publish Toggle Test"
 - hideKeyboard
-
 - tapOn:
     point: 540,1404
 - inputText: "Test publish toggle"
 - hideKeyboard
-
 - scrollUntilVisible:
     element: "Create"
     direction: DOWN
     timeout: 5000
-
 - tapOn: "Create"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Publish Toggle Test"
     timeout: 10000
-
 - tapOn: "Publish Toggle Test"
 - waitForAnimationToEnd
 - assertVisible: "Draft"
-
 - tapOn:
     text: "pencil"
 - waitForAnimationToEnd
 - assertVisible: "Edit Post"
-
 - scrollUntilVisible:
     element: "Published"
     direction: DOWN
     timeout: 5000
-
 - tapOn:
     id: "publishToggle"
 - waitForAnimationToEnd
-
 - scrollUntilVisible:
     element: "Save"
     direction: UP
     timeout: 5000
-
 - tapOn: "Save"
 - waitForAnimationToEnd
-
 - extendedWaitUntil:
     visible: "Detail"
     timeout: 10000
 - assertVisible: "Published"
-
 - tapOn:
     text: "trash"
 - waitForAnimationToEnd

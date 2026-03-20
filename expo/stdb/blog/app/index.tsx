@@ -9,7 +9,6 @@ import { Link } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useReducer, useTable } from 'spacetimedb/react'
-
 const Page = () => {
   const [rows, ready] = useTable(tables.blog),
     { data: items } = useList(rows, ready, { where: { or: [{ published: true }, { own: true }] } }),
@@ -32,7 +31,6 @@ const Page = () => {
       }
       run().catch(() => undefined)
     }
-
   return (
     <ScrollView className='flex-1 bg-background' contentContainerClassName='gap-3 p-4' testID='crud-dynamic-page'>
       <Text className='text-2xl font-semibold'>Blog</Text>
@@ -72,5 +70,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

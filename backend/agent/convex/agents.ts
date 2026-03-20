@@ -6,7 +6,6 @@ import { z } from 'zod/v4'
 
 import type { Id } from './_generated/dataModel'
 import type { ActionCtx } from './_generated/server'
-
 const spawnTaskRef = makeFunctionReference<
     'mutation',
     {
@@ -292,5 +291,4 @@ const spawnTaskRef = makeFunctionReference<
       webSearch: tools.webSearchTool
     }
   }
-
 export { buildRetryGuidance, createOrchestratorTools, createWorkerTools, detectDelegateError }

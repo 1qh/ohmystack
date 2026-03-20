@@ -1,11 +1,9 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-
 const findBracketEnd = (text: string, startPos: number): number => {
     let depth = 1,
       pos = startPos
@@ -32,18 +30,15 @@ const findBracketEnd = (text: string, startPos: number): number => {
   FK_PAT = /foreignKey\s*:\s*['"](?<fk>\w+)['"]/u,
   PARENT_PAT = /parent\s*:\s*['"](?<pn>\w+)['"]/u,
   SCHEMA_OBJ_PAT = /schema\s*:\s*object\(\{/u
-
 interface ChildInfo extends TableInfo {
   foreignKey: string
   parent: string
 }
-
 interface TableInfo {
   fields: { name: string; type: string }[]
   name: string
   tableType: string
 }
-
 const isSchemaFile = (content: string): boolean => {
     for (const marker of schemaMarkers) if (content.includes(marker)) return true
     return false
@@ -185,7 +180,6 @@ const isSchemaFile = (content: string): boolean => {
             allNames = [...tables.map(x => x.name), ...children.map(x => x.name)]
           if (allNames.includes(target)) lines.push(`    ${target} ||--o{ ${t.name} : "${f.name}"`)
         }
-
     return lines.join('\n')
   },
   printSummary = (tables: TableInfo[], children: ChildInfo[]) => {
@@ -201,39 +195,30 @@ const isSchemaFile = (content: string): boolean => {
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\n@noboil/convex viz\n'))
-
     const convexDir = findConvexDir(root)
     if (!convexDir) {
       console.log(red('\u2717 Could not find convex/ directory with _generated/'))
       process.exit(1)
     }
-
     const schemaFile = findSchemaFile(convexDir)
     if (!schemaFile) {
       console.log(red('\u2717 Could not find schema file with @noboil/convex markers'))
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}\n`)
-
     const tables = extractWrapperTables(schemaFile.content),
       children = extractChildren(schemaFile.content)
-
     if (tables.length === 0 && children.length === 0) {
       console.log(red('\u2717 No tables found in schema'))
       process.exit(1)
     }
-
     if (flags.has('--mermaid')) {
       console.log(generateMermaid(tables, children))
       return
     }
-
     printSummary(tables, children)
     console.log(dim('Run with --mermaid for ER diagram output\n'))
   }
-
 if (import.meta.main) run()
-
 export { extractChildren, extractFieldsFromBlock, extractFieldType, extractWrapperTables, generateMermaid }

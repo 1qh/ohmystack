@@ -15,12 +15,10 @@ import type {
 
 import { enforceRateLimit } from './helpers'
 import { applyPatch, identityEquals, makeError, makeOptionalFields, pickPatch, timestampEquals } from './reducer-utils'
-
 type UpdateArgs<F extends OrgCrudFieldBuilders, Id> = Partial<OrgCrudFieldValues<F>> & {
   expectedUpdatedAt?: Timestamp
   id: Id
 }
-
 const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
     orgMemberTable: Iterable<Member>,
     orgId: OrgId,
@@ -28,7 +26,6 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
   ): Member | null => {
     for (const member of orgMemberTable)
       if (Object.is(member.orgId, orgId) && identityEquals(member.userId, sender)) return member
-
     return null
   },
   requireMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>({
@@ -153,20 +150,16 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
       const field = optionalFields[key]
       if (field) updateParams[key] = field as TypeBuilder<unknown, AlgebraicTypeType>
     }
-
     if (expectedUpdatedAtField) updateParams.expectedUpdatedAt = expectedUpdatedAtField.optional()
-
     const createParams: Record<string, TypeBuilder<unknown, AlgebraicTypeType>> = { orgId: orgIdField },
       fieldKeys = Object.keys(fields)
     for (const key of fieldKeys) createParams[key] = fields[key] as TypeBuilder<unknown, AlgebraicTypeType>
-
     const createReducer = spacetimedb.reducer({ name: createName }, createParams, (ctx, args) => {
         if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
         const typedArgs = args as OrgCrudFieldValues<F> & { orgId: OrgId },
           hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp },
           table = tableAccessor(ctx.db),
           orgMemberTable = orgMemberTableAccessor(ctx.db)
-
         requireMembership({
           operation: 'create',
           orgId: typedArgs.orgId,
@@ -174,11 +167,9 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
           sender: ctx.sender,
           tableName
         })
-
         let data = typedArgs
         if (hooks?.beforeCreate)
           data = hooks.beforeCreate(hookCtx, { data }) as unknown as OrgCrudFieldValues<F> & { orgId: OrgId }
-
         const { orgId, ...payload } = data as unknown as Record<string, unknown> & { orgId: OrgId },
           row = table.insert({
             ...payload,
@@ -208,17 +199,14 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
             table: table as unknown as OrgCrudTableLike<OrgCrudOwnedRow<unknown>>,
             tableName
           })
-
         if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
           throw makeError('CONFLICT', `${tableName}:update`)
-
         let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
         if (hooks?.beforeUpdate)
           patch = hooks.beforeUpdate(hookCtx, {
             patch: patch as unknown as Partial<OrgCrudFieldValues<F>>,
             prev: row as unknown as Row
           }) as unknown as Record<string, unknown>
-
         const prev = row as unknown as Row,
           next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
         if (hooks?.afterUpdate)
@@ -245,11 +233,9 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
             table: table as unknown as OrgCrudTableLike<OrgCrudOwnedRow<unknown>>,
             tableName
           })
-
         if (hooks?.beforeDelete)
           /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
-
         if (options?.softDelete) {
           const nextRecord = {
             ...(row as unknown as Record<string, unknown>),
@@ -261,7 +247,6 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
           const deleted = pk.delete(id)
           if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
         }
-
         if (hooks?.afterDelete)
           /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
           hooks.afterDelete(hookCtx, { row: row as unknown as Row })
@@ -271,7 +256,6 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
         [rmName]: rmReducer,
         [updateName]: updateReducer
       } as unknown as OrgCrudExports['exports']
-
     return {
       exports: exportsRecord
     }
@@ -281,5 +265,4 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }
   ): { foreignKey: string; table: string } => config
-
 export { checkMembership, makeOrgCrud, orgCascade }

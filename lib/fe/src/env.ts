@@ -1,9 +1,7 @@
 // biome-ignore-all lint/style/noProcessEnv: x
-
 import { createEnv } from '@t3-oss/env-nextjs'
 import { vercel } from '@t3-oss/env-nextjs/presets-zod'
 import { literal, string, url, enum as zenum } from 'zod/v4'
-
 export default createEnv({
   client: {
     NEXT_PUBLIC_CONVEX_URL: url().default('http://127.0.0.1:3210'),

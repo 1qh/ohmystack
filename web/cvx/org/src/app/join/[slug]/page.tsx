@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -15,7 +13,6 @@ import { use } from 'react'
 import { toast } from 'sonner'
 
 import { joinRequest } from '~/schema'
-
 const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const { slug } = use(params),
     router = useRouter(),
@@ -43,16 +40,13 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
         fail(error)
       }
     }
-
   if (org === undefined) return <Skeleton className='mx-auto h-64 max-w-md' />
   if (org === null) return <div className='text-center text-muted-foreground'>Organization not found</div>
-
   if (membership && !('code' in membership)) {
     setActiveOrgCookieClient({ orgId: org._id, slug })
     router.push('/dashboard')
     return null
   }
-
   return (
     <div className='mx-auto max-w-md py-12'>
       <Card>
@@ -90,5 +84,4 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
     </div>
   )
 }
-
 export default JoinPage

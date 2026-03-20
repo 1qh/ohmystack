@@ -1,9 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, complexity */
-
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
-
 interface EjectContext {
   cwd: string
   db: 'convex' | 'spacetimedb'
@@ -16,7 +14,6 @@ interface EjectContext {
   sourcePackageJsonPath: string
   sourceRoot: string
 }
-
 interface PackageJson {
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
@@ -28,13 +25,11 @@ interface PackageJson {
   version?: string
   workspaces?: string[] | { packages?: string[] }
 }
-
 interface RewriteResult {
   changed: boolean
   output: string
   replacements: number
 }
-
 const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
@@ -86,19 +81,14 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     if (!existsSync(rootPackagePath)) fail('No package.json found in current directory.')
     const rootPackageJson = readJson(rootPackagePath) as PackageJson,
       merged: Record<string, string> = {}
-
     if (rootPackageJson.dependencies)
       for (const [key, value] of Object.entries(rootPackageJson.dependencies)) merged[key] = value
-
     if (rootPackageJson.devDependencies)
       for (const [key, value] of Object.entries(rootPackageJson.devDependencies)) merged[key] = value
-
     const hasConvex = '@noboil/convex' in merged,
       hasSpacetimedb = '@noboil/spacetimedb' in merged
-
     if (!(hasConvex || hasSpacetimedb)) fail('No @noboil/* package found. Nothing to eject.')
     if (hasConvex && hasSpacetimedb) fail('Both @noboil/convex and @noboil/spacetimedb are installed. Keep one and retry.')
-
     if (hasConvex) return { db: 'convex' as const, installedPackage: '@noboil/convex' as const }
     return { db: 'spacetimedb' as const, installedPackage: '@noboil/spacetimedb' as const }
   },
@@ -150,7 +140,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   buildSharedDependencySet = (sharedRoot: string, sharedSpecifiers: Set<string>) => {
     const queue: string[] = [],
       visited = new Set<string>()
-
     for (const specifier of sharedSpecifiers) {
       const resolved = resolveSharedImportToSourceFile(sharedRoot, specifier)
       if (resolved) {
@@ -160,15 +149,12 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         }
       } else fail(`Unable to resolve ${specifier} from shared source.`)
     }
-
     let index = 0
     while (index < queue.length) {
       const filePath = queue[index]
       if (!filePath) break
-
       const content = readFileSync(filePath, 'utf8'),
         specifiers = extractSpecifiers(content)
-
       for (const specifier of specifiers)
         if (specifier.startsWith('.')) {
           const base = resolvePath(dirname(filePath), specifier),
@@ -184,7 +170,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
             queue.push(resolved)
           } else if (!resolved) fail(`Unable to resolve ${specifier} from shared source.`)
         }
-
       index += 1
     }
     return queue
@@ -254,28 +239,22 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       detected = detectInstalledPackage(rootPackagePath),
       sourceRoot = join(cwd, 'node_modules', '@noboil', detected.db, 'src'),
       sourcePackageJsonPath = join(cwd, 'node_modules', '@noboil', detected.db, 'package.json')
-
     if (!(existsSync(sourceRoot) && existsSync(sourcePackageJsonPath))) fail('Run `bun install` first.')
-
     const sourcePackageJson = readJson(sourcePackageJsonPath) as PackageJson
     if (!sourcePackageJson.exports || typeof sourcePackageJson.exports !== 'object')
       fail('Unable to read exports map from installed @noboil package.')
-
     const sourceFiles = collectFiles(sourceRoot),
       sharedSpecifiers = collectSharedImportsFromFiles(sourceFiles)
     let sharedRoot: string | undefined,
       sharedFiles: string[] = []
-
     if (sharedSpecifiers.size > 0) {
       const nodeModulesShared = join(cwd, 'node_modules', '@a', 'shared', 'src'),
         workspaceShared = join(cwd, 'lib', 'shared', 'src')
       if (existsSync(nodeModulesShared)) sharedRoot = nodeModulesShared
       else if (existsSync(workspaceShared)) sharedRoot = workspaceShared
       else fail('Shared source missing. Install `@a/shared` or include lib/shared.')
-
       if (sharedRoot) sharedFiles = buildSharedDependencySet(sharedRoot, sharedSpecifiers)
     }
-
     return {
       cwd,
       db: detected.db,
@@ -352,13 +331,11 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       console.log(HELP)
       return
     }
-
     const dryRun = args.includes('--dry-run'),
       cwd = process.cwd(),
       context = prepareContext(cwd),
       localPackageDir = join(cwd, 'lib', 'noboil'),
       localSourceDir = join(localPackageDir, 'src')
-
     let copiedSharedFiles = 0,
       rewrittenImportFiles = 0,
       rewrittenImportCount = 0,
@@ -366,14 +343,12 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       rewrittenSharedCount = 0,
       packageJsonFilesUpdated = 0,
       markedEjected = false
-
     const copiedLibraryFiles = copyIntoTarget({
       dryRun,
       files: context.sourceFiles,
       fromRoot: context.sourceRoot,
       toRoot: localSourceDir
     })
-
     if (context.sharedRoot && context.sharedFiles.length > 0)
       copiedSharedFiles = copyIntoTarget({
         dryRun,
@@ -381,7 +356,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         fromRoot: context.sharedRoot,
         toRoot: join(localSourceDir, 'shared')
       })
-
     const localPackageJson: PackageJson = {
       exports: context.sourcePackageJson.exports,
       name: LOCAL_PACKAGE,
@@ -392,7 +366,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       mkdirSync(localPackageDir, { recursive: true })
       writeJson(join(localPackageDir, 'package.json'), localPackageJson)
     }
-
     const tsFiles = collectTsFiles(cwd)
     for (const filePath of tsFiles) {
       const content = readFileSync(filePath, 'utf8'),
@@ -403,7 +376,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         if (!dryRun) writeFileSync(filePath, rewrites.output)
       }
     }
-
     const ejectedTsFiles = collectTsFiles(localSourceDir)
     for (const filePath of ejectedTsFiles) {
       const content = readFileSync(filePath, 'utf8'),
@@ -414,23 +386,19 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         if (!dryRun) writeFileSync(filePath, rewrites.output)
       }
     }
-
     const packageJsonFiles = collectPackageJsonFiles(cwd)
     for (const filePath of packageJsonFiles) {
       const pkg = readJson(filePath) as PackageJson
       let changed = false
-
       if (filePath === context.rootPackagePath && ensureWorkspacePackages(pkg)) changed = true
       if (replaceDependencyInSection(pkg.dependencies, context.installedPackage)) changed = true
       if (replaceDependencyInSection(pkg.devDependencies, context.installedPackage)) changed = true
-
       /** biome-ignore lint/nursery/noUnnecessaryConditions: changed is conditionally set above */
       if (changed) {
         packageJsonFilesUpdated += 1
         if (!dryRun) writeJson(filePath, pkg)
       }
     }
-
     const noboilRcPath = join(cwd, '.noboilrc.json')
     if (existsSync(noboilRcPath)) {
       const rc = readJson(noboilRcPath) as PackageJson
@@ -442,7 +410,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         }
       }
     }
-
     printSummary({
       copiedLibraryFiles,
       copiedSharedFiles,
@@ -455,5 +422,4 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       rewrittenSharedFiles
     })
   }
-
 export { eject }

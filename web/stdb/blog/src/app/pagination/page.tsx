@@ -1,5 +1,4 @@
 'use client'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Spinner } from '@a/ui/spinner'
 import { useInfiniteList, useOwnRows } from '@noboil/spacetimedb/react'
@@ -9,7 +8,6 @@ import { useInView } from 'react-intersection-observer'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { Create, List } from '../common'
-
 const Page = () => {
   const { inView, ref } = useInView(),
     [allBlogs, isReady] = useTable(tables.blog),
@@ -36,5 +34,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

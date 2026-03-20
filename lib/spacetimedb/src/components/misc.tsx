@@ -1,5 +1,4 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
@@ -8,7 +7,6 @@ import { Badge } from '@a/ui/badge'
 import { useSpacetimeDB } from 'spacetimedb/react'
 
 import type { OrgRole } from '../server/types'
-
 /** Renders an organization avatar with fallback initials. */
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
     <Avatar {...props}>
@@ -42,5 +40,4 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
       </p>
     )
   }
-
 export { OfflineIndicator, OrgAvatar, RoleBadge }

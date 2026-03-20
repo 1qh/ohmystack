@@ -12,9 +12,7 @@ import { Link } from 'expo-router'
 import { Search } from 'lucide-react-native'
 import { useState, useTransition } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
-
 type SearchResult = FunctionReturnType<typeof api.movie.search>[number]
-
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   MovieCard = ({ movie }: { movie: SearchResult }) => (
     <Card className='gap-0 py-0' testID='movie-card'>
@@ -58,7 +56,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
           setResults(nextResults)
         })
       }
-
     return (
       <ScrollView
         className='flex-1 bg-background'
@@ -72,7 +69,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             </Pressable>
           </Link>
         </View>
-
         <View className='gap-2' testID='movie-search-form'>
           <Input
             autoCapitalize='none'
@@ -89,7 +85,6 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             <Text>{pending ? 'Searching...' : 'Search'}</Text>
           </Button>
         </View>
-
         {results.length > 0 ? (
           <View className='gap-3' testID='movie-results'>
             <Badge className='self-start' variant='secondary'>
@@ -103,5 +98,4 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       </ScrollView>
     )
   }
-
 export default Page

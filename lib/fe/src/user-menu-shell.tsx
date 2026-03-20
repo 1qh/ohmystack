@@ -19,9 +19,7 @@ import Link from 'next/link'
 import { createElement } from 'react'
 
 import ThemeToggle from './theme-toggle'
-
 /* eslint-disable complexity */
-
 interface UserMenuShellProps {
   alertDialogContentProps?: Omit<ComponentProps<typeof AlertDialogContent>, 'children'>
   alertDialogDescriptionProps?: Omit<ComponentProps<typeof AlertDialogDescription>, 'children'>
@@ -55,7 +53,6 @@ interface UserMenuShellProps {
   triggerImageProps?: Omit<ComponentProps<typeof Image>, 'alt' | 'height' | 'src' | 'width'>
   triggerProps: ComponentProps<typeof PopoverPrimitive.Trigger>
 }
-
 const UserMenuShell = ({
   alertDialogContentProps,
   alertDialogDescriptionProps,
@@ -121,7 +118,6 @@ const UserMenuShell = ({
       type: 'button',
       variant: logoutButtonProps?.variant ?? 'ghost'
     })
-
   return (
     <Popover {...popoverProps}>
       <PopoverTrigger render={trigger} />
@@ -176,5 +172,4 @@ const UserMenuShell = ({
     </Popover>
   )
 }
-
 export default UserMenuShell

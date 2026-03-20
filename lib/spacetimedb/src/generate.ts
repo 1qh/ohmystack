@@ -1,11 +1,8 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 type GenerateTarget = 'docker'
-
 const DOCKER_COMPOSE = `services:
   spacetimedb:
     image: clockworklabs/spacetime:latest
@@ -22,7 +19,6 @@ const DOCKER_COMPOSE = `services:
       timeout: 3s
       retries: 10
       start_period: 10s
-
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
@@ -41,7 +37,6 @@ const DOCKER_COMPOSE = `services:
       timeout: 3s
       retries: 5
       start_period: 5s
-
 volumes:
   spacetimedb_data:
   minio_data:
@@ -78,31 +73,24 @@ volumes:
       printGenerateHelp()
       return
     }
-
     const targetArg = args[0] ?? '',
       force = args.includes('--force'),
       toStdout = args.includes('--stdout')
-
     if (!(targetArg in GENERATORS)) {
       console.log(`${red('Unknown target:')} ${targetArg}`)
       console.log(`Valid targets: ${Object.keys(GENERATORS).join(', ')}\n`)
       process.exit(1)
     }
-
     const gen = GENERATORS[targetArg as GenerateTarget]
-
     if (toStdout) {
       process.stdout.write(gen.content)
       return
     }
-
     const outPath = join(process.cwd(), gen.filename)
-
     if (existsSync(outPath) && !force) {
       console.log(`${yellow('⚠')} ${gen.filename} already exists. Use ${bold('--force')} to overwrite.`)
       return
     }
-
     writeFileSync(outPath, gen.content)
     console.log(`${green('✓')} Generated ${bold(gen.filename)}`)
     console.log(`  ${dim(outPath)}\n`)
@@ -111,8 +99,6 @@ volumes:
     console.log(`  ${dim('2.')} noboil-stdb use local`)
     console.log(`  ${dim('3.')} spacetime publish <your-module> --module-path <path>\n`)
   }
-
 if (process.argv[1]?.endsWith('generate.ts')) generate(process.argv.slice(2))
-
 export { generate }
 export type { GenerateTarget }

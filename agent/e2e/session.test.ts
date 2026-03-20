@@ -4,29 +4,24 @@ import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 
 import { expect, test } from './fixtures'
-
 const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
   CHAT_URL_RE = /\/chat\//u,
   SESSIONS_RE = /sessions/iu,
   GOOGLE_RE = /continue with google/iu
-
 test.describe
   .serial('Session Management', () => {
     test.beforeEach(async ({ sessionListPage }) => {
       await sessionListPage.goto('/')
     })
-
     test('session list loads', async ({ sessionListPage }) => {
       await expect(sessionListPage.getNewButton()).toBeVisible()
     })
-
     test('create session navigates to chat', async ({ page, sessionListPage }) => {
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await expect(page).toHaveURL(CHAT_URL_RE)
     })
   })
-
 test.describe
   .serial('Session Management - remaining coverage', () => {
     test('multiple sessions appear in list', async ({ page, sessionListPage }) => {
@@ -38,7 +33,6 @@ test.describe
       await expect(page.getByRole('button', { name: new RegExp(firstTitle, 'u') })).toBeVisible()
       await expect(page.getByRole('button', { name: new RegExp(secondTitle, 'u') })).toBeVisible()
     })
-
     test('session timestamp is displayed', async ({ page, sessionListPage }) => {
       const title = `Timestamp ${Date.now()}`
       await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, { title })
@@ -50,7 +44,6 @@ test.describe
       await expect(timestamp).toBeVisible()
       await expect(timestamp).not.toHaveText('')
     })
-
     test('session card navigation opens specific chat', async ({ page, sessionListPage }) => {
       const firstTitle = `Nav A ${Date.now()}`,
         secondTitle = `Nav B ${Date.now()}`,
@@ -69,7 +62,6 @@ test.describe
       await page.waitForURL(new RegExp(`/chat/${secondSession.sessionId}$`, 'u'))
       await expect(page).toHaveURL(new RegExp(`/chat/${secondSession.sessionId}$`, 'u'))
     })
-
     test('test-mode login bootstrap enters app without OAuth screen', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await expect(page).toHaveURL('/')

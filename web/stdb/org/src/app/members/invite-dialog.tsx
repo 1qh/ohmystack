@@ -1,5 +1,4 @@
 'use client'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@a/ui/dialog'
@@ -9,11 +8,9 @@ import { useState } from 'react'
 import { useReducer } from 'spacetimedb/react'
 
 import { invite } from '~/schema'
-
 interface InviteDialogProps {
   orgId: string
 }
-
 const InviteDialog = ({ orgId }: InviteDialogProps) => {
   const [open, setOpen] = useState(false),
     form = useFormMutation({
@@ -23,7 +20,6 @@ const InviteDialog = ({ orgId }: InviteDialogProps) => {
       toast: { success: 'Invite sent' },
       transform: d => ({ ...d, orgId: Number(orgId) })
     })
-
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
@@ -58,5 +54,4 @@ const InviteDialog = ({ orgId }: InviteDialogProps) => {
     </Dialog>
   )
 }
-
 export default InviteDialog

@@ -1,5 +1,4 @@
 'use client'
-
 import type { OrgRole } from '@noboil/spacetimedb'
 import type { OrgDoc } from '@noboil/spacetimedb/react'
 import type { ReactNode } from 'react'
@@ -11,7 +10,6 @@ import { usePathname } from 'next/navigation'
 import { useOrg } from '~/hook/use-org'
 
 import OrgSwitcher from './org-switcher'
-
 const OrgNav = () => {
     const { isAdmin } = useOrg(),
       pathname = usePathname(),
@@ -22,7 +20,6 @@ const OrgNav = () => {
         { href: '/members', label: 'Members' },
         ...(isAdmin ? [{ href: '/settings', label: 'Settings' }] : [])
       ]
-
     return (
       <nav className='flex items-center gap-4 border-b px-4 py-2'>
         <OrgSwitcher />
@@ -57,5 +54,4 @@ const OrgNav = () => {
       <main className='p-4'>{children}</main>
     </OrgProvider>
   )
-
 export default OrgLayoutClient

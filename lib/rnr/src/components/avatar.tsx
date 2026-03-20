@@ -1,6 +1,5 @@
 import { cn } from '@a/rnr'
 import * as AvatarPrimitive from '@rn-primitives/avatar'
-
 function Avatar({ className, ...props }: AvatarPrimitive.RootProps & React.RefAttributes<AvatarPrimitive.RootRef>) {
   return (
     <AvatarPrimitive.Root
@@ -9,11 +8,9 @@ function Avatar({ className, ...props }: AvatarPrimitive.RootProps & React.RefAt
     />
   )
 }
-
 function AvatarImage({ className, ...props }: AvatarPrimitive.ImageProps & React.RefAttributes<AvatarPrimitive.ImageRef>) {
   return <AvatarPrimitive.Image className={cn('aspect-square size-full', className)} {...props} />
 }
-
 function AvatarFallback({
   className,
   ...props
@@ -25,5 +22,4 @@ function AvatarFallback({
     />
   )
 }
-
 export { Avatar, AvatarFallback, AvatarImage }

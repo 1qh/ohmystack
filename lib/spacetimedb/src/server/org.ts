@@ -14,13 +14,11 @@ import { makeInviteReducers } from './org-invites'
 import { makeJoinReducers } from './org-join'
 import { makeMemberReducers } from './org-members'
 import { identityEquals, makeError } from './reducer-utils'
-
 /** Cascade deletion adapter for removing org-scoped related rows. */
 interface CascadeTableConfig<DB, OrgId> {
   deleteById: (db: DB, id: unknown) => boolean
   rowsByOrg: (db: DB, orgId: OrgId) => Iterable<{ id: unknown }>
 }
-
 /** Lightweight invite row shape used by org helpers. */
 interface InviteDocLike {
   email: string
@@ -30,20 +28,16 @@ interface InviteDocLike {
   orgId: unknown
   token: string
 }
-
 /** Join request item enriched with optional user profile data. */
 interface JoinRequestItem {
   request: OrgJoinRequestRowLike<unknown, unknown>
   user: null | OrgUserLike
 }
-
 interface OptionalBuilder {
   optional: () => TypeBuilder<unknown, AlgebraicTypeType>
 }
-
 /** Iterable index that groups organizations by user. */
 type OrgByUserIndexLike<Row> = Iterable<Row>
-
 /** Configuration object used by `makeOrg` to generate org reducers. */
 interface OrgConfig<
   DB,
@@ -91,7 +85,6 @@ interface OrgConfig<
   orgSlugIndex: (table: Iterable<OrgRow>) => OrgSlugIndexLike<OrgRow>
   orgTable: (db: DB) => Iterable<OrgRow> & { insert: (row: OrgRow) => OrgRow }
 }
-
 /** Minimal organization document shape used by server helpers. */
 interface OrgDocLike {
   [key: string]: unknown
@@ -100,34 +93,28 @@ interface OrgDocLike {
   slug: string
   userId: Identity
 }
-
 /** Reducer export container returned by org reducer builders. */
 interface OrgExports {
   exports: Record<string, ReducerExport<never, never>>
 }
-
 /** Builder map for organization create/update fields. */
 interface OrgFieldBuilders {
   [key: string]: OptionalBuilder | TypeBuilder<unknown, AlgebraicTypeType>
   name: TypeBuilder<string, AlgebraicTypeType>
   slug: TypeBuilder<string, AlgebraicTypeType>
 }
-
 /** Invite index abstraction scoped by organization id. */
 interface OrgInviteByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
-
 /** Join-request index abstraction scoped by organization id. */
 interface OrgJoinRequestByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
-
 /** Member index abstraction scoped by organization id. */
 interface OrgMemberByOrgIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrg: (orgId: OrgId) => Iterable<Row>
 }
-
 /** Member record enriched with role and user profile data. */
 interface OrgMemberItem {
   memberId?: unknown
@@ -135,12 +122,9 @@ interface OrgMemberItem {
   user: null | OrgUserLike
   userId: Identity
 }
-
 type OrgRole = 'admin' | 'member' | 'owner'
-
 /** Iterable index used to resolve org rows by slug. */
 type OrgSlugIndexLike<Row> = Iterable<Row>
-
 /** Minimal user profile shape used by org flows. */
 interface OrgUserLike {
   [key: string]: unknown
@@ -149,7 +133,6 @@ interface OrgUserLike {
   image?: string
   name?: string
 }
-
 const makeOptionalFields = (fields: OrgFieldBuilders) => {
     const optionalFields: Record<string, TypeBuilder<unknown, AlgebraicTypeType>> = {},
       keys = Object.keys(fields)
@@ -301,12 +284,10 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
         orgId: config.builders.orgId
       },
       optionalKeys = Object.keys(optionalOrgFields)
-
     for (const key of optionalKeys) {
       const field = optionalOrgFields[key]
       if (field) updateParams[key] = field
     }
-
     const createReducer = spacetimedb.reducer(
         { name: 'org_create' },
         orgFields as Record<string, TypeBuilder<unknown, AlgebraicTypeType>>,
@@ -314,11 +295,9 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
           const orgTable = config.orgTable(ctx.db),
             orgSlugIndex = config.orgSlugIndex(orgTable),
             { slug } = args
-
           if (typeof slug !== 'string') throw makeError('VALIDATION_FAILED', 'org:create_slug')
           const existing = findOrgBySlug(orgSlugIndex as Iterable<OrgRow>, slug)
           if (existing) throw makeError('ORG_SLUG_TAKEN', 'org:create')
-
           const payload = {
             ...args,
             createdAt: ctx.timestamp,
@@ -336,7 +315,6 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
           orgMemberTable = config.orgMemberTable(ctx.db),
           orgSlugIndex: OrgSlugIndexLike<OrgRow> = config.orgSlugIndex(orgTable),
           org = orgPk.find(typedArgs.orgId)
-
         if (!org) throw makeError('NOT_FOUND', 'org:update')
         applyOrgUpdate({
           args: typedArgs,
@@ -358,19 +336,15 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
           orgJoinRequestTable = config.orgJoinRequestTable(ctx.db),
           orgJoinRequestPk: OrgJoinRequestPkLike<JoinRequestRow, RequestId> = config.orgJoinRequestPk(orgJoinRequestTable),
           org = orgPk.find(typedArgs.orgId)
-
         if (!org) throw makeError('NOT_FOUND', 'org:remove')
         requireRole({ minRole: 'owner', operation: 'remove', org, orgMemberTable, sender: ctx.sender })
         removeCascadeRows(config.cascadeTables, ctx.db, typedArgs.orgId)
-
         const joinByOrg = config.orgJoinRequestByOrgIndex(orgJoinRequestTable),
           inviteByOrg = config.orgInviteByOrgIndex(orgInviteTable),
           memberByOrg = config.orgMemberByOrgIndex(orgMemberTable)
-
         removeByPk(joinByOrg.filterByOrg(typedArgs.orgId), orgJoinRequestPk, 'org:remove_join_request')
         removeByPk(inviteByOrg.filterByOrg(typedArgs.orgId), orgInvitePk, 'org:remove_invite')
         removeMembersByOrg(memberByOrg, typedArgs.orgId, orgMemberTable)
-
         if (!orgPk.delete(typedArgs.orgId)) throw makeError('NOT_FOUND', 'org:remove')
       }),
       memberReducers = makeMemberReducers(spacetimedb, {
@@ -430,7 +404,6 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
           org_update: updateReducer
         }
       }
-
     return mergeReducerExports(lifecycleReducers, memberReducers, inviteReducers, joinReducers)
   },
   asRec = (x: unknown) => x as Record<string, unknown>,
@@ -539,7 +512,6 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
     orgSlugIndex: tbl => asRec(tbl).slug as Iterable<OrgRow>,
     orgTable: tables.org as (db: DB) => Iterable<OrgRow> & { insert: (row: OrgRow) => OrgRow }
   })
-
 export type {
   CascadeTableConfig,
   InviteDocLike,

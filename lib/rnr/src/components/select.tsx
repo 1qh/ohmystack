@@ -8,13 +8,9 @@ import * as React from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { FadeIn, FadeOut } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 type Option = SelectPrimitive.Option
-
 const Select = SelectPrimitive.Root
-
 const SelectGroup = SelectPrimitive.Group
-
 function SelectValue({
   ref,
   className,
@@ -36,7 +32,6 @@ function SelectValue({
     />
   )
 }
-
 function SelectTrigger({
   ref,
   className,
@@ -66,9 +61,7 @@ function SelectTrigger({
     </SelectPrimitive.Trigger>
   )
 }
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function SelectContent({
   className,
   children,
@@ -128,13 +121,11 @@ function SelectContent({
     </SelectPrimitive.Portal>
   )
 }
-
 function SelectLabel({ className, ...props }: SelectPrimitive.LabelProps & React.RefAttributes<SelectPrimitive.LabelRef>) {
   return (
     <SelectPrimitive.Label className={cn('text-muted-foreground px-2 py-2 text-xs sm:py-1.5', className)} {...props} />
   )
 }
-
 function SelectItem({
   className,
   ...props
@@ -159,7 +150,6 @@ function SelectItem({
     </SelectPrimitive.Item>
   )
 }
-
 function SelectSeparator({
   className,
   ...props
@@ -171,7 +161,6 @@ function SelectSeparator({
     />
   )
 }
-
 /**
  * @platform Web only
  * Returns null on native platforms
@@ -188,7 +177,6 @@ function SelectScrollUpButton({ className, ...props }: React.ComponentProps<type
     </SelectPrimitive.ScrollUpButton>
   )
 }
-
 /**
  * @platform Web only
  * Returns null on native platforms
@@ -205,7 +193,6 @@ function SelectScrollDownButton({ className, ...props }: React.ComponentProps<ty
     </SelectPrimitive.ScrollDownButton>
   )
 }
-
 export {
   Select,
   SelectContent,

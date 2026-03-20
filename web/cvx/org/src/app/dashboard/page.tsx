@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { RoleBadge } from '@noboil/convex/components'
@@ -8,12 +7,10 @@ import { FolderOpen, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import { useOrg } from '~/hook/use-org'
-
 const OrgDashboard = () => {
   const { org, role } = useOrg(),
     members = useOrgQuery(api.org.members),
     projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 5 } })
-
   return (
     <div className='space-y-6'>
       <div>
@@ -23,7 +20,6 @@ const OrgDashboard = () => {
           <RoleBadge role={role} />
         </div>
       </div>
-
       <div className='grid gap-4 md:grid-cols-2'>
         <Card>
           <CardHeader className='flex-row items-center gap-2'>
@@ -37,7 +33,6 @@ const OrgDashboard = () => {
             </Link>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className='flex-row items-center gap-2'>
             <FolderOpen className='size-5' />
@@ -54,5 +49,4 @@ const OrgDashboard = () => {
     </div>
   )
 }
-
 export default OrgDashboard

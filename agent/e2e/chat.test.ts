@@ -2,7 +2,6 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright ops */
 /** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import { expect, test } from './fixtures'
-
 const CHAT_URL_RE = /\/chat\//u,
   SESSIONS_RE = /sessions/iu,
   UNTITLED_RE = /untitled/iu,
@@ -10,7 +9,6 @@ const CHAT_URL_RE = /\/chat\//u,
   COMPLETED_RE = /completed|running|error/iu,
   LETTER_RE = /[a-z]/iu,
   TOOL_CALL_RE = / - /u
-
 test.describe
   .serial('Chat & Streaming', () => {
     test('send message shows user row', async ({ chatPage, page, sessionListPage }) => {
@@ -21,21 +19,18 @@ test.describe
       await page.waitForTimeout(2000)
       await expect(chatPage.getMessages().first()).toContainText('Hello agent', { timeout: 10_000 })
     })
-
     test('chat log has role=log', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await expect(chatPage.getMessageLog()).toHaveAttribute('role', 'log')
     })
-
     test('empty chat shows placeholder', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await expect(page.getByText('No messages yet')).toBeVisible()
     })
-
     test('blank submit is no-op', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -43,7 +38,6 @@ test.describe
       await chatPage.getSendButton().click()
       await expect(page.getByText('No messages yet')).toBeVisible()
     })
-
     test('composer disabled during send', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -52,7 +46,6 @@ test.describe
       await chatPage.getSendButton().click()
       await expect(chatPage.getComposer()).toBeDisabled({ timeout: 1000 })
     })
-
     test('header links navigate correctly', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -62,7 +55,6 @@ test.describe
       await expect(page.getByRole('heading', { name: SESSIONS_RE })).toBeVisible()
     })
   })
-
 test.describe
   .serial('Chat & Streaming - remaining coverage', () => {
     test('message order is chronological', async ({ chatPage, page, sessionListPage }) => {
@@ -79,7 +71,6 @@ test.describe
       const first = await messages.first().textContent()
       expect(first).toContain('First message')
     })
-
     test('session title shows Untitled Session', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -87,7 +78,6 @@ test.describe
       await expect(page.getByRole('heading', { name: UNTITLED_RE })).toBeVisible()
     })
   })
-
 test.describe
   .serial('Chat & Streaming - final remaining coverage', () => {
     test('input clears after successful send', async ({ chatPage, page, sessionListPage }) => {
@@ -98,7 +88,6 @@ test.describe
       await expect(chatPage.getMessages().first()).toContainText('Clear me after send', { timeout: 10_000 })
       await expect(chatPage.getComposer()).toHaveValue('')
     })
-
     test('auto-scrolls to bottom on new message', async ({ chatPage, page, sessionListPage }) => {
       await page.setViewportSize({ height: 420, width: 1280 })
       await sessionListPage.goto('/')
@@ -118,14 +107,12 @@ test.describe
           await chatPage.sendMessage(`scroll-extra-${i}`)
           await page.waitForTimeout(500)
         }
-
       await chatPage.sendMessage('final-scroll-check')
       await page.waitForTimeout(2000)
       const lastMsg = chatPage.getMessages().last()
       await expect(lastMsg).toBeVisible({ timeout: 5000 })
       await expect(lastMsg).toContainText('final-scroll-check')
     })
-
     test('session title shows in chat header', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -137,7 +124,6 @@ test.describe
       await page.waitForURL(CHAT_URL_RE)
       await expect(chatPage.getTitle()).toContainText((cardTitle ?? '').trim())
     })
-
     test('streaming indicator appears during message send', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -149,7 +135,6 @@ test.describe
       expect(count).toBeGreaterThanOrEqual(1)
     })
   })
-
 test.describe
   .serial('Chat & Streaming - matrix additions', () => {
     test('mcp discover is invoked via model tool call not UI button', async ({ page, sessionListPage }) => {
@@ -159,7 +144,6 @@ test.describe
       const discoverButtons = page.getByRole('button', { name: DISCOVER_RE })
       expect(await discoverButtons.count()).toBe(0)
     })
-
     test('tool-call card details show tool name and status label when present', async ({
       chatPage,
       page,
@@ -178,7 +162,6 @@ test.describe
       }
       await expect(chatPage.getMessages().first()).toBeVisible()
     })
-
     test('source card external links open in new tab', async ({ chatPage, page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
@@ -192,7 +175,6 @@ test.describe
       }
       await expect(sourceCardLinks).toHaveCount(0)
     })
-
     test('expand/collapse supports Enter and Space keyboard toggles', async ({ page, sessionListPage }) => {
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()

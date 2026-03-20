@@ -8,7 +8,6 @@ import { createPortal } from 'react-dom'
 import type { DevCacheEntry, DevError, DevMutation, DevSubscription } from './devtools'
 
 import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
-
 /** Props for customizing the LazyConvex DevTools panel. */
 interface DevtoolsProps {
   /** Additional CSS class for the floating trigger button. */
@@ -25,9 +24,7 @@ interface DevtoolsProps {
   position?: Position
 }
 type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
-
 type TabId = 'cache' | 'errors' | 'mutations' | 'subs'
-
 const POSITION_CLASSES: Record<Position, string> = {
     'bottom-left': 'left-4 bottom-4',
     'bottom-right': 'right-4 bottom-4',
@@ -228,10 +225,8 @@ const POSITION_CLASSES: Record<Position, string> = {
       [open, setOpen] = useState(defaultOpen),
       [tab, setTab] = useState<TabId>(defaultTab),
       [showWaterfall, setShowWaterfall] = useState(false)
-
     // biome-ignore lint/style/noProcessEnv: env detection
     if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') return null
-
     const errorCount = errors.length,
       subCount = subscriptions.length,
       mutCount = mutations.length,
@@ -259,7 +254,6 @@ const POSITION_CLASSES: Record<Position, string> = {
           )}
         </button>
       )
-
     return (
       <div
         className={`fixed ${posClass} z-9999 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-2xl ${className ?? ''} ${panelClassName ?? ''}`}>
@@ -369,13 +363,10 @@ const POSITION_CLASSES: Record<Position, string> = {
       </div>
     )
   }
-
 let autoMounted = false
-
 const DevtoolsAutoMount = (props: DevtoolsProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null),
     [mounted, setMounted] = useState(false)
-
   useEffect(() => {
     if (typeof document === 'undefined') return
     // biome-ignore lint/style/noProcessEnv: env detection
@@ -392,11 +383,9 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
       el.remove()
     }
   }, [])
-
   if (!(mounted && containerRef.current)) return null
   return createPortal(<LazyConvexDevtools {...props} />, containerRef.current)
 }
-
 export default LazyConvexDevtools
 export { DevtoolsAutoMount }
 export type { DevtoolsProps }

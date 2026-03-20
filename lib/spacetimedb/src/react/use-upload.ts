@@ -1,27 +1,22 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 'use client'
 // oxlint-disable promise/avoid-new
-
 import { useRef, useState } from 'react'
 
 import { err } from '../server/helpers'
-
 interface PresignedUpload {
   headers?: Record<string, string>
   method?: 'POST' | 'PUT'
   storageKey: string
   uploadUrl: string
 }
-
 interface RegisteredFile {
   storageId?: string
   url?: string
 }
-
 interface UploadCallOptions {
   signal?: AbortSignal
 }
-
 interface UploadConfig {
   apiEndpoint?: string
   getPresignedUrl?: (file: File) => Promise<PresignedUpload>
@@ -32,16 +27,12 @@ interface UploadConfig {
     storageKey: string
   }) => Promise<RegisteredFile>
 }
-
 type UploadErrorCode = Exclude<UploadResult, { ok: true }>['code']
-
 type UploadOptions = UploadConfig
-
 type UploadResult =
   | { code: 'ABORTED' | 'NETWORK' | 'URL'; ok: false }
   | { code: 'HTTP'; ok: false; status: number }
   | { ok: true; storageId: string; url?: string }
-
 const DEFAULT_API_ENDPOINT = '/api/upload/presign',
   HTTP_OK = 200,
   HTTP_REDIRECT = 300,
@@ -256,9 +247,7 @@ const DEFAULT_API_ENDPOINT = '/api/upload/presign',
           endUpload()
         }
       }
-
     return { error, isUploading, progress, upload, url }
   }
-
 export type { UploadCallOptions, UploadOptions, UploadResult }
 export default useUpload

@@ -1,7 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { internalMutation } from './_generated/server'
-
 const DAY_MS = 24 * 60 * 60 * 1000,
   ARCHIVE_AFTER_MS = 7 * DAY_MS,
   IDLE_AFTER_MS = DAY_MS,
@@ -27,7 +26,6 @@ const DAY_MS = 24 * 60 * 60 * 1000,
             status: 'idle',
             updatedAt: now
           })
-
       for (const s of idleSessions)
         if (s.lastActivityAt < archiveBefore) {
           await ctx.db.patch(s._id, {
@@ -100,5 +98,4 @@ const DAY_MS = 24 * 60 * 60 * 1000,
       return { deletedCount }
     }
   })
-
 export { archiveIdleSessions, cleanupArchivedSessions }

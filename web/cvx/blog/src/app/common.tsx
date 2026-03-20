@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
-
 import type { FunctionReturnType } from 'convex/server'
 import type { ComponentProps } from 'react'
 
@@ -36,9 +35,7 @@ import { toast } from 'sonner'
 import { createBlog } from '~/schema'
 
 import { Publish } from './[id]/edit/client'
-
 type Blog = FunctionReturnType<typeof api.blog.list>['page'][number]
-
 const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemove?: () => void }) => {
     const { execute, isPending } = useOptimisticMutation({
         mutation: api.blog.rm,
@@ -250,5 +247,4 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
         No posts yet
       </p>
     )
-
 export { Author, Create, List }

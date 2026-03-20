@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client'
-
 import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
 
@@ -11,9 +10,7 @@ import { createContext, use, useCallback, useMemo, useState } from 'react'
 import type { OrgRole } from '../server/types'
 
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
-
 type InferOrg<F> = F extends { _returnType: infer R } ? (NonNullable<R> extends OrgDoc ? NonNullable<R> : OrgDoc) : OrgDoc
-
 /** Context value exposing the current org, membership, role, and permission flags. */
 interface OrgContextValue<O extends OrgDoc = OrgDoc, M = unknown> {
   canDeleteOrg: boolean
@@ -27,16 +24,13 @@ interface OrgContextValue<O extends OrgDoc = OrgDoc, M = unknown> {
   orgId: string
   role: OrgRole
 }
-
 /** Base shape for an org document, requiring _id and slug. */
 interface OrgDoc {
   [key: string]: unknown
   _id: string
   slug: string
 }
-
 const OrgContext = createContext<null | OrgContextValue>(null)
-
 /** Props for the OrgProvider component. */
 interface OrgProviderProps<O extends OrgDoc, M> {
   children: ReactNode
@@ -44,7 +38,6 @@ interface OrgProviderProps<O extends OrgDoc, M> {
   org: O
   role: OrgRole
 }
-
 /** Provides org context (role, permissions, membership) to the component tree. */
 const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: OrgProviderProps<O, M>) => {
     const value = useMemo<OrgContextValue<O, M>>(() => {
@@ -63,7 +56,6 @@ const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: O
         role
       }
     }, [membership, org, role])
-
     return <OrgContext value={value as OrgContextValue}>{children}</OrgContext>
   },
   /** Returns the current org context; throws if used outside OrgProvider. */
@@ -147,7 +139,6 @@ const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: O
         /* oxlint-enable unicorn/no-document-cookie */
         setActiveOrgId(null)
       }, [])
-
     return {
       activeOrg: activeOrg ?? null,
       activeOrgId,
@@ -165,7 +156,6 @@ const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: O
     useMyOrgs: () => useMyOrgs<O>(orgApi.myOrgs),
     useOrg: () => useOrg<O, M>()
   })
-
 export type { OrgContextValue, OrgDoc, OrgProviderProps }
 export {
   canEditResource,

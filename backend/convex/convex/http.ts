@@ -1,27 +1,21 @@
 /* eslint-disable @typescript-eslint/require-await */
-
 import { httpRouter } from 'convex/server'
 
 import { api } from './_generated/api'
 import { httpAction } from './_generated/server'
 import { auth } from './auth'
-
 const http = httpRouter()
-
 auth.addHttpRoutes(http)
-
 const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Origin': '*'
 }
-
 http.route({
   handler: httpAction(async () => new Response(null, { headers: corsHeaders, status: 204 })),
   method: 'OPTIONS',
   path: '/api/auth/signin'
 })
-
 http.route({
   handler: httpAction(async (ctx, request) => {
     const body = (await request.json()) as {
@@ -50,7 +44,6 @@ http.route({
           status: 200
         }
       )
-
     return Response.json(
       { error: 'Authentication failed' },
       {
@@ -62,5 +55,4 @@ http.route({
   method: 'POST',
   path: '/api/auth/signin'
 })
-
 export default http

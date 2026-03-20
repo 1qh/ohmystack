@@ -2,14 +2,11 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 
 import { identityEquals, makeError } from './reducer-utils'
-
 type OrgInviteByTokenIndexLike<Row> = Iterable<Row>
-
 interface OrgInvitePkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
 }
-
 interface OrgInviteReducersConfig<
   DB,
   OrgId,
@@ -40,11 +37,9 @@ interface OrgInviteReducersConfig<
   orgPk: (table: Iterable<OrgRow>) => OrgPkLike<OrgRow, OrgId>
   orgTable: (db: DB) => Iterable<OrgRow>
 }
-
 interface OrgInviteReducersExports {
   exports: Record<string, ReducerExport<never, never>>
 }
-
 interface OrgInviteRowLike<InviteId, OrgId> {
   createdAt: Timestamp
   email: string
@@ -54,19 +49,15 @@ interface OrgInviteRowLike<InviteId, OrgId> {
   orgId: OrgId
   token: string
 }
-
 interface OrgInviteTableLike<Row> extends Iterable<Row> {
   insert: (row: Row) => Row
 }
-
 interface OrgJoinRequestByOrgStatusIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrgStatus: (orgId: OrgId, status: string) => Iterable<Row>
 }
-
 interface OrgJoinRequestPkLike<Row> {
   update: (row: Row) => Row
 }
-
 interface OrgJoinRequestRowLike<RequestId, OrgId> {
   id: RequestId
   message: string | undefined
@@ -74,9 +65,7 @@ interface OrgJoinRequestRowLike<RequestId, OrgId> {
   status: string
   userId: Identity
 }
-
 type OrgJoinRequestTableLike<Row> = Iterable<Row>
-
 interface OrgMemberRowLike<MemberId, OrgId> {
   createdAt: Timestamp
   id: MemberId
@@ -85,22 +74,17 @@ interface OrgMemberRowLike<MemberId, OrgId> {
   updatedAt: Timestamp
   userId: Identity
 }
-
 interface OrgMemberTableLike<Row> extends Iterable<Row> {
   insert: (row: Row) => Row
 }
-
 interface OrgPkLike<Row, Id> {
   find: (id: Id) => null | Row
 }
-
 type OrgRole = 'admin' | 'member' | 'owner'
-
 interface OrgRowLike<OrgId> {
   id: OrgId
   userId: Identity
 }
-
 const DAY_HOURS = 24,
   DAYS_PER_WEEK = 7,
   MILLIS_PER_SECOND = 1000,
@@ -310,10 +294,8 @@ const DAY_HOURS = 24,
             orgMemberTable = config.orgMemberTable(ctx.db),
             orgInviteTable = config.orgInviteTable(ctx.db),
             org = orgPk.find(args.orgId)
-
           if (!org) throw makeError('NOT_FOUND', 'org:invite')
           requireAdminRole({ operation: 'invite', org, orgMemberTable, sender: ctx.sender })
-
           orgInviteTable.insert({
             createdAt: ctx.timestamp,
             email: args.email,
@@ -356,17 +338,14 @@ const DAY_HOURS = 24,
             orgInviteTable = config.orgInviteTable(ctx.db),
             orgInvitePk = config.orgInvitePk(orgInviteTable),
             invite = orgInvitePk.find(args.inviteId)
-
           if (!invite) throw makeError('NOT_FOUND', 'org:revoke_invite')
           const org = orgPk.find(invite.orgId)
           if (!org) throw makeError('NOT_FOUND', 'org:revoke_invite')
           requireAdminRole({ operation: 'revoke_invite', org, orgMemberTable, sender: ctx.sender })
-
           const removed = orgInvitePk.delete(args.inviteId)
           if (!removed) throw makeError('NOT_FOUND', 'org:revoke_invite')
         }
       )
-
     return {
       exports: {
         org_accept_invite: acceptInviteReducer,
@@ -375,7 +354,6 @@ const DAY_HOURS = 24,
       }
     }
   }
-
 export type {
   OrgInviteByTokenIndexLike,
   OrgInvitePkLike,

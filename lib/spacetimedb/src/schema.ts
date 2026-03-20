@@ -5,13 +5,11 @@ import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgDefSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
 
 import { typed } from './server/bridge'
-
 interface ChildEntry {
   foreignKey: string
   parent: string
   schema: unknown
 }
-
 interface ChildFn {
   <const P extends string, S extends ZodRawShape>(
     parent: P,
@@ -41,7 +39,6 @@ interface ChildFn {
     schema: ZodObject<S>
   }
 }
-
 /** Creates a file-id schema annotated for Betterspace file inputs. */
 const cvFile = () =>
     string()
@@ -57,7 +54,6 @@ const cvFile = () =>
         parent: configOrParent,
         schema: childSchema
       } as never
-
     const config = configOrParent as { index?: string; parent: string }
     return { ...configOrParent, index: config.index ?? `by_${config.parent}` } as never
   },
@@ -119,7 +115,6 @@ const cvFile = () =>
     if (config.children) mergeInto(result, config.children)
     return typed(result)
   }
-
 interface SchemaConfig {
   base?: Record<string, ZodObject<ZodRawShape>>
   children?: Record<string, ChildEntry>
@@ -128,7 +123,6 @@ interface SchemaConfig {
   owned?: Record<string, ZodObject<ZodRawShape>>
   singleton?: Record<string, ZodObject<ZodRawShape>>
 }
-
 type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infer O extends Record<
   string,
   ZodObject<ZodRawShape>
@@ -148,5 +142,4 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
   (NonNullable<T['singleton']> extends infer O extends Record<string, ZodObject<ZodRawShape>>
     ? { [K in keyof O]: O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown)
-
 export { child, cvFile, cvFiles, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }

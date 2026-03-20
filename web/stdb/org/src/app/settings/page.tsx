@@ -2,7 +2,6 @@
 /** biome-ignore-all lint/suspicious/noAlert: demo page uses native confirm */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -19,7 +18,6 @@ import { useOrg, useOrgMutation } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 
 import OrgSettingsForm from './org-settings-form'
-
 const OrgSettingsPage = () => {
   const router = useRouter(),
     clearAndGoHome = async () => {
@@ -53,10 +51,8 @@ const OrgSettingsPage = () => {
     ),
     [members] = useOrgTable<OrgMember>(tables.orgMember),
     [transferTarget, setTransferTarget] = useState<string>('')
-
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
-
   const adminMembers = members.filter(m => m.isAdmin),
     handleLeave = () => {
       if (!confirm('Are you sure you want to leave this organization?')) return
@@ -72,13 +68,10 @@ const OrgSettingsPage = () => {
       if (!confirm('Are you sure? This will delete all data.')) return
       removeOrg({})
     }
-
   return (
     <div className='space-y-6'>
       <h1 className='text-2xl font-bold'>Settings</h1>
-
       <OrgSettingsForm org={org} />
-
       {isOwner && adminMembers.length > 0 ? (
         <Card>
           <CardHeader>
@@ -104,7 +97,6 @@ const OrgSettingsPage = () => {
           </CardContent>
         </Card>
       ) : null}
-
       {isOwner ? null : (
         <Card>
           <CardHeader>
@@ -118,7 +110,6 @@ const OrgSettingsPage = () => {
           </CardContent>
         </Card>
       )}
-
       {canDeleteOrg ? (
         <Card className='border-destructive'>
           <CardHeader>
@@ -135,5 +126,4 @@ const OrgSettingsPage = () => {
     </div>
   )
 }
-
 export default OrgSettingsPage

@@ -2,11 +2,9 @@ import { TextClassContext } from '@a/rnr/components/text'
 import { cn } from '@a/rnr'
 import * as TabsPrimitive from '@rn-primitives/tabs'
 import { Platform } from 'react-native'
-
 function Tabs({ className, ...props }: TabsPrimitive.RootProps & React.RefAttributes<TabsPrimitive.RootRef>) {
   return <TabsPrimitive.Root className={cn('flex flex-col gap-2', className)} {...props} />
 }
-
 function TabsList({ className, ...props }: TabsPrimitive.ListProps & React.RefAttributes<TabsPrimitive.ListRef>) {
   return (
     <TabsPrimitive.List
@@ -19,7 +17,6 @@ function TabsList({ className, ...props }: TabsPrimitive.ListProps & React.RefAt
     />
   )
 }
-
 function TabsTrigger({ className, ...props }: TabsPrimitive.TriggerProps & React.RefAttributes<TabsPrimitive.TriggerRef>) {
   const { value } = TabsPrimitive.useRootContext()
   return (
@@ -43,9 +40,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.TriggerProps & React
     </TextClassContext.Provider>
   )
 }
-
 function TabsContent({ className, ...props }: TabsPrimitive.ContentProps & React.RefAttributes<TabsPrimitive.ContentRef>) {
   return <TabsPrimitive.Content className={cn(Platform.select({ web: 'flex-1 outline-none' }), className)} {...props} />
 }
-
 export { Tabs, TabsContent, TabsList, TabsTrigger }

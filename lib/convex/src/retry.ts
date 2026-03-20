@@ -1,9 +1,7 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/useAwait: x
 /* eslint-disable no-await-in-loop */
-
 import { sleep } from './constants'
-
 interface RetryOptions {
   base?: number
   initialDelayMs?: number
@@ -46,6 +44,5 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
       return response
     }, retry)
   }
-
 export type { RetryOptions }
 export { fetchWithRetry, withRetry }

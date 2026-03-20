@@ -10,7 +10,6 @@ import type {
 import { simulateReadableStream } from 'ai'
 /* eslint-disable @typescript-eslint/require-await */
 import { MockLanguageModelV3 } from 'ai/test'
-
 const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
   CITY_PATTERN_2 = /(?<city>[a-z]+)(?:'s)? weather/iu,
   finishReasonStop: LanguageModelV3FinishReason = { raw: 'stop', unified: 'stop' },
@@ -78,7 +77,6 @@ const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
   createStreamResult = (prompt: LanguageModelV3Prompt): LanguageModelV3StreamResult => {
     const { content, finishReason } = getResponseForPrompt(prompt),
       chunks: LanguageModelV3StreamPart[] = []
-
     for (const part of content)
       if (part.type === 'tool-call')
         chunks.push({
@@ -98,10 +96,8 @@ const CITY_PATTERN_1 = /weather (?:in|for) (?<city>[a-z]+)/iu,
   },
   chatModel = new MockLanguageModelV3({
     doGenerate: async ({ prompt }) => createGenerateResult(prompt),
-
     doStream: async ({ prompt }) => createStreamResult(prompt),
     modelId: 'mock-chat-model',
     provider: 'mock'
   })
-
 export { chatModel }

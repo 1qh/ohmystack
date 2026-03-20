@@ -22,7 +22,6 @@ B[Browser UI] --> N[Next.js app\nagent]
     N --> C[Convex project\nbackend/agent]
     C --> G[Gemini via AI SDK v6]
     C --> M[MCP servers]
-
     C --> T[(Convex tables\nsession tasks todos messages tokenUsage mcpServers threadRunState)]
 ```
 
@@ -36,23 +35,19 @@ flowchart TB
       subgraph Apps
 A1[agent]
       end
-
       subgraph Backends
         B1[backend/convex\nexisting demos]
         B2[backend/agent\nnew agent backend]
       end
     end
-
     A1 -->|NEXT_PUBLIC_CONVEX_URL| B2
     A1 -. no runtime coupling .-> B1
-
     subgraph B2D[backend/agent structure]
       D1[convex/schema.ts]
       D2[convex/actions + mutations + queries]
       D3[convex/crons.ts]
       D4[env/auth/lazy setup]
     end
-
     B2 --> B2D
 ```
 
@@ -83,7 +78,6 @@ sequenceDiagram
     participant A as Convex action (orchestrator/worker)
     participant AI as AI SDK streamText
     participant DB as messages table
-
     A->>DB: insert assistant row (isComplete=false)
     A->>AI: streamText(...)
     loop each delta
@@ -104,11 +98,7 @@ The `parts` field on messages is a JSON array storing structured content beyond 
 - `{ type: 'text', text: string }` — plain text segment
 - `{ type: 'reasoning', text: string }` — model reasoning/thinking
 - `{ type: 'tool-call', toolCallId: string, toolName: string, args: string, status: 'pending' | 'success' | 'error', result?: string }` — tool invocation with lifecycle
-- `{ type: 'source', title: string, url: string, snippet?: string }` — grounding search source
-
-During streaming, the orchestrator action builds parts incrementally. Tool calls start with `status: 'pending'` and are updated to `success`/`error` when the tool returns. The frontend renders each part type with the corresponding component (reasoning-block, tool-call-card, source-card). Worker thread messages use the same format.
-
-There are no separate `role: 'tool'` message rows. Tool invocations and their results are embedded in the assistant message `parts` array. This simplifies compaction (tool pairs cannot be split across messages) and message ordering.
+- `{ type: 'source', title: string, url: string, snippet?: string }` — grounding search source During streaming, the orchestrator action builds parts incrementally. Tool calls start with `status: 'pending'` and are updated to `success`/`error` when the tool returns. The frontend renders each part type with the corresponding component (reasoning-block, tool-call-card, source-card). Worker thread messages use the same format. There are no separate `role: 'tool'` message rows. Tool invocations and their results are embedded in the assistant message `parts` array. This simplifies compaction (tool pairs cannot be split across messages) and message ordering.
 
 ### Parts Streaming Lifecycle
 
@@ -120,9 +110,7 @@ During an orchestrator turn:
 4. **Tool call completes**: Update the matching `parts` entry: set `status: 'success'` + `result`, or `status: 'error'` + error message
 5. **Reasoning**: Append `{ type: 'reasoning', text }` to `parts`
 6. **Sources**: Append `{ type: 'source', title, url, snippet }` to `parts` (from webSearch results)
-7. **Turn ends**: Set `content` from final accumulated text, clear `streamingContent`, set `isComplete: true`
-
-Frontend renders: `streamingContent` for in-progress text, `content` for completed text, `parts` for structured elements (always available, updated incrementally).
+7. **Turn ends**: Set `content` from final accumulated text, clear `streamingContent`, set `isComplete: true` Frontend renders: `streamingContent` for in-progress text, `content` for completed text, `parts` for structured elements (always available, updated incrementally).
 
 ### Canonical Message Serializer (`buildModelMessages`)
 
@@ -135,13 +123,7 @@ All model context assembly (orchestrator turns, worker turns, compaction input) 
   - Tool calls from `parts` entries with `type: 'tool-call'` → mapped to AI SDK tool-call content parts
   - For each assistant message with tool-call parts: emit the assistant `CoreMessage` with text + tool-call content parts (type `tool-call`), then emit a SEPARATE `{ role: 'tool', content: [...] }` CoreMessage containing the tool results for all terminal tool-call parts in that message. AI SDK requires tool results in their own message, not embedded in the assistant message. Storage remains parts-only (single DB row per assistant turn) — the split happens only during serialization.
   - Reasoning from `parts` entries with `type: 'reasoning'` → included as reasoning content
-  - Sources are metadata-only (not sent to the model, only rendered in UI)
-
-Tool results serialization: All terminal tool outcomes (both `success` and `error`) are included in the model context. This ensures the model sees the full history of what was attempted and what failed, enabling intelligent retry decisions or user-facing error reporting in follow-up turns.
-
-This ensures the model sees the full conversation history including prior tool interactions, not just plain text. Without this, follow-up turns after tool-heavy conversations would lose all tool context.
-
-**Multi-step turn handling**: when an assistant turn includes multiple steps (text → tool-call → tool-result → more text), all steps are stored in one message row’s `parts` array in execution order. During serialization, `buildModelMessages` emits: (1) an assistant CoreMessage with text + tool-call parts, then (2) a tool CoreMessage with tool results, preserving the correct assistant→tool ordering. If a turn has multiple sequential tool calls, each call-result pair is serialized in order. Single-row storage is a deliberate simplification that preserves full content and tool outcomes.
+  - Sources are metadata-only (not sent to the model, only rendered in UI) Tool results serialization: All terminal tool outcomes (both `success` and `error`) are included in the model context. This ensures the model sees the full history of what was attempted and what failed, enabling intelligent retry decisions or user-facing error reporting in follow-up turns. This ensures the model sees the full conversation history including prior tool interactions, not just plain text. Without this, follow-up turns after tool-heavy conversations would lose all tool context. **Multi-step turn handling**: when an assistant turn includes multiple steps (text → tool-call → tool-result → more text), all steps are stored in one message row’s `parts` array in execution order. During serialization, `buildModelMessages` emits: (1) an assistant CoreMessage with text + tool-call parts, then (2) a tool CoreMessage with tool results, preserving the correct assistant→tool ordering. If a turn has multiple sequential tool calls, each call-result pair is serialized in order. Single-row storage is a deliberate simplification that preserves full content and tool outcomes.
 
 ## Thread Model
 
@@ -167,12 +149,10 @@ flowchart LR
     A1 --> E1[External I/O\nAI SDK + MCP + web search]
     A1 --> M2[Mutation patches\nmessages/tasks/threadRunState]
     M2 --> Q1[Query\nfrontend useQuery reads]
-
     classDef mut fill:#d9f2ff,stroke:#1f6feb,stroke-width:1px;
     classDef act fill:#ffe8cc,stroke:#b26b00,stroke-width:1px;
     classDef io fill:#ffe3e3,stroke:#c92a2a,stroke-width:1px;
     classDef qry fill:#e6fcf5,stroke:#0b7285,stroke-width:1px;
-
     class M1,M2 mut;
     class A1 act;
     class E1 io;

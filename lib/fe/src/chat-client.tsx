@@ -1,5 +1,4 @@
 'use client'
-
 import type { UIMessage } from 'ai'
 
 import { cn } from '@a/ui'
@@ -20,7 +19,6 @@ import { createElement, useEffect, useMemo, useRef } from 'react'
 import { Streamdown } from 'streamdown'
 
 import ChatInput from './chat-input'
-
 interface ClientProps {
   chatId: string
   conversationClassName?: string
@@ -32,14 +30,11 @@ interface ClientProps {
   rootClassName?: string
   toolDisplayNames?: Readonly<Record<string, string>>
 }
-
 type MessagePart = TextPart | ToolPart | { [key: string]: unknown; type: string }
-
 interface TextPart {
   text: string
   type: 'text'
 }
-
 interface ToolPart {
   approval?: { approved?: boolean; id?: string }
   errorText?: string
@@ -50,7 +45,6 @@ interface ToolPart {
   toolName: string
   type: string
 }
-
 const SparklesAvatar = () => (
     <div className='-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border'>
       <SparklesIcon className='size-4' />
@@ -95,7 +89,6 @@ const SparklesAvatar = () => (
     const approvalId = toolPart.approval?.id ?? toolPart.toolCallId,
       { state, toolName } = toolPart,
       displayName = toolDisplayNames?.[toolName] ?? toolName
-
     if (state === 'output-available' || state === 'output-denied')
       return (
         <Tool className='w-full' defaultOpen key={partKey}>
@@ -106,7 +99,6 @@ const SparklesAvatar = () => (
           </ToolContent>
         </Tool>
       )
-
     if (state === 'approval-requested' && toolPart.input)
       return (
         <div data-testid='tool-approval-card' key={partKey}>
@@ -126,7 +118,6 @@ const SparklesAvatar = () => (
           </Tool>
         </div>
       )
-
     if (state === 'approval-responded' || state === 'input-available' || state === 'input-streaming')
       return (
         <Tool className='w-full' key={partKey}>
@@ -134,7 +125,6 @@ const SparklesAvatar = () => (
           <ToolContent>{toolPart.input ? <ToolInput input={toolPart.input} /> : null}</ToolContent>
         </Tool>
       )
-
     return null
   },
   MessageItem = ({
@@ -155,16 +145,12 @@ const SparklesAvatar = () => (
       parts = message.parts as MessagePart[],
       textParts: TextPart[] = [],
       toolParts: ToolPart[] = []
-
     for (const part of parts)
       if (part.type === 'text') textParts.push(part as TextPart)
       else if (part.type.startsWith('tool-')) toolParts.push(part as ToolPart)
-
     const text = textParts.map(p => p.text).join(''),
       hasToolOutput = toolParts.some(p => p.output !== undefined || p.state === 'output-available')
-
     if (!(isUser || text || hasToolOutput) && toolParts.length === 0) return null
-
     if (isUser)
       return (
         <div className='is-user flex w-full items-start justify-end gap-3' data-role='user' data-testid='message'>
@@ -173,7 +159,6 @@ const SparklesAvatar = () => (
           </div>
         </div>
       )
-
     return (
       <div
         className='is-assistant flex w-full items-start justify-start gap-3'
@@ -263,7 +248,6 @@ const SparklesAvatar = () => (
       handleAbort = () => {
         stop()
       }
-
     useEffect(() => {
       if (query && !hasAppendedQueryRef.current) {
         hasAppendedQueryRef.current = true
@@ -271,9 +255,7 @@ const SparklesAvatar = () => (
         globalThis.history.replaceState({}, '', `/${chatId}`)
       }
     }, [query, sendMessage, chatId])
-
     const emptyStateIcon = createElement(MessageSquareIcon, { className: 'size-8' })
-
     return (
       <div className={cn('flex flex-1 flex-col overflow-hidden', rootClassName)}>
         <Conversation className={cn('flex-1', conversationClassName)}>
@@ -305,6 +287,5 @@ const SparklesAvatar = () => (
       </div>
     )
   }
-
 export type { ClientProps }
 export default ChatClient

@@ -2,9 +2,7 @@ import { TextClassContext } from '@a/rnr/components/text'
 import { cn } from '@a/rnr'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { Platform, Pressable } from 'react-native'
-
 // NOTE: group-* is not supported yet by Uniwind
-
 const buttonVariants = cva(
   cn(
     'group shrink-0 flex-row items-center justify-center gap-2 rounded-md shadow-none',
@@ -54,7 +52,6 @@ const buttonVariants = cva(
     }
   }
 )
-
 const buttonTextVariants = cva(
   cn('text-foreground text-sm font-medium', Platform.select({ web: 'pointer-events-none transition-colors' })),
   {
@@ -83,11 +80,9 @@ const buttonTextVariants = cva(
     }
   }
 )
-
 type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>
-
 function Button({ className, variant, size, ...props }: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
@@ -99,6 +94,5 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
     </TextClassContext.Provider>
   )
 }
-
 export { Button, buttonTextVariants, buttonVariants }
 export type { ButtonProps }

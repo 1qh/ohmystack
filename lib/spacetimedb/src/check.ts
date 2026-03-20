@@ -5,54 +5,45 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-
 interface AccessEntry {
   endpoints: string[]
   level: string
 }
-
 interface FactoryCall {
   factory: string
   file: string
   options: string
   table: string
 }
-
 interface Issue {
   file?: string
   level: 'error' | 'warn'
   message: string
 }
-
 interface SchemaField {
   field: string
   type: string
 }
-
 interface SchemaTable {
   factory: string
   fields: SchemaField[]
   table: string
 }
-
 interface TableIndex {
   fields: string[]
   name: string
   type: 'custom' | 'default' | 'search'
 }
-
 interface WhereField {
   field: string
   source: string
   table: string
 }
-
 const schemaMarkers = ['schema(', 'table(', 't.'],
   reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu,
   helperPat = /make(?<helper>Crud|Org|CacheCrud|ChildCrud)\(/u,
@@ -242,10 +233,8 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
     const issues: Issue[] = [],
       schemaTables = new Set(extractSchemaFields(schemaFile.content).map(t => t.table)),
       { calls, files } = extractFactoryCalls(moduleDir)
-
     console.log(`${dim('tables in schema:')} ${[...schemaTables].join(', ') || 'none'}`)
     console.log(`${dim('table reducer groups:')} ${calls.length}\n`)
-
     const seen = new Map<string, string>()
     for (const call of calls) {
       if (seen.has(call.table))
@@ -264,7 +253,6 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
       if (endpointsForFactory(call).length === 0)
         issues.push({ file: call.file, level: 'warn', message: `No reducer endpoints detected for table "${call.table}"` })
     }
-
     const factoryTables = new Set(calls.map(c => c.table))
     for (const table of schemaTables)
       if (!factoryTables.has(table))
@@ -273,7 +261,6 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
           level: 'warn',
           message: `Table "${table}" defined in schema but no reducers found`
         })
-
     const moduleFiles = new Set(files.map(f => f.replace('.ts', '')))
     for (const call of calls)
       if (call.table !== basename(call.file, '.ts') && !moduleFiles.has(call.table))
@@ -282,12 +269,10 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
           level: 'warn',
           message: `Reducer group for "${call.table}" in ${call.file} — table name does not match filename`
         })
-
     if (issues.length === 0) {
       console.log(green('✓ All checks passed\n'))
       return
     }
-
     const errors = issues.filter(i => i.level === 'error'),
       warnings = issues.filter(i => i.level === 'warn')
     for (const issue of errors) console.log(`${red('✗')} ${issue.file ? `${dim(issue.file)} ` : ''}${issue.message}`)
@@ -579,9 +564,7 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
   run = () => {
     const root = process.cwd(),
       flags = new Set(process.argv.slice(2))
-
     console.log(bold('\nnoboil-stdb check\n'))
-
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
       console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
@@ -589,7 +572,6 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
       process.exit(1)
     }
     console.log(`${dim('module dir:')} ${moduleDir}`)
-
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
       console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
@@ -597,41 +579,33 @@ const schemaMarkers = ['schema(', 'table(', 't.'],
       process.exit(1)
     }
     console.log(`${dim('schema:')}     ${schemaFile.path}\n`)
-
     if (flags.has('--endpoints')) {
       const { calls } = extractFactoryCalls(moduleDir)
       printEndpoints(calls)
       return
     }
-
     if (flags.has('--schema')) {
       const { calls } = extractFactoryCalls(moduleDir)
       printSchemaPreview(schemaFile.content, calls)
       return
     }
-
     if (flags.has('--health')) {
       printHealthReport(moduleDir, schemaFile)
       return
     }
-
     if (flags.has('--access')) {
       const { calls } = extractFactoryCalls(moduleDir)
       printAccessReport(calls)
       return
     }
-
     if (flags.has('--indexes')) {
       const { calls } = extractFactoryCalls(moduleDir)
       printIndexReport(moduleDir, calls)
       return
     }
-
     runCheck(moduleDir, schemaFile)
   }
-
 if (import.meta.main) run()
-
 export {
   accessForFactory,
   checkIndexCoverage,

@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use client'
-
 import type { Id } from '@a/be-agent/model'
 import type { SyntheticEvent } from 'react'
 
@@ -20,7 +18,6 @@ import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useState } from 'react'
-
 interface ChatMessageData {
   _id: string
   content: string
@@ -29,7 +26,6 @@ interface ChatMessageData {
   role: string
   streamingContent?: string
 }
-
 interface MessagePart {
   args?: string
   result?: string
@@ -42,27 +38,23 @@ interface MessagePart {
   type: string
   url?: string
 }
-
 interface SessionTask {
   _id: string
   description: string
   status: string
 }
-
 interface SessionTodo {
   _id: string
   content: string
   priority: string
   status: string
 }
-
 interface SessionTokenUsage {
   count: number
   inputTokens: number
   outputTokens: number
   totalTokens: number
 }
-
 const mapToolState = (status?: string) => {
     if (status === 'success') return 'output-available' as const
     if (status === 'error') return 'output-error' as const
@@ -74,7 +66,6 @@ const mapToolState = (status?: string) => {
       const parsed: unknown = JSON.parse(result)
       if (typeof parsed === 'object' && parsed !== null && 'taskId' in parsed)
         return (parsed as { taskId: string }).taskId as Id<'tasks'>
-
       return null
     } catch {
       return null
@@ -93,15 +84,12 @@ const mapToolState = (status?: string) => {
       if (p.type === 'reasoning') reasoningParts.push(p)
       else if (p.type === 'tool-call') toolParts.push(p)
       else if (p.type === 'source') sourceParts.push(p)
-
     return { reasoningParts, sourceParts, toolParts }
   },
   WorkerStreamPanel = ({ taskId }: { taskId: Id<'tasks'> }) => {
     const task = useQuery(api.tasks.getOwnedTaskStatus, { taskId }),
       workerMessages = useQuery(api.messages.listMessages, task?.threadId ? { threadId: task.threadId } : 'skip')
-
     if (!task) return null
-
     const statusClass =
       task.status === 'completed'
         ? 'text-green-600'
@@ -110,7 +98,6 @@ const mapToolState = (status?: string) => {
           : task.status === 'running'
             ? 'animate-pulse text-chart-1'
             : 'text-muted-foreground'
-
     return (
       <section className='space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3'>
         <div className='flex items-center justify-between text-xs'>
@@ -156,7 +143,6 @@ const mapToolState = (status?: string) => {
               <ReasoningContent>{p.text ?? ''}</ReasoningContent>
             </Reasoning>
           ))}
-
           {textContent ? (
             message.role === 'user' ? (
               <p className='whitespace-pre-wrap'>{textContent}</p>
@@ -164,7 +150,6 @@ const mapToolState = (status?: string) => {
               <MessageResponse>{textContent}</MessageResponse>
             )
           ) : null}
-
           {toolParts.map(p => {
             const delegateTaskId = p.toolName === 'delegate' ? parseDelegateTaskId(p.result) : null
             return (
@@ -187,7 +172,6 @@ const mapToolState = (status?: string) => {
               </div>
             )
           })}
-
           {sourceParts.length > 0 ? (
             <Sources>
               <SourcesTrigger count={sourceParts.length} />
@@ -228,7 +212,6 @@ const mapToolState = (status?: string) => {
           {isTyping ? <span className='animate-pulse text-chart-1'>Agent is typing...</span> : 'Idle'}
         </p>
       </details>
-
       <details className='rounded-lg border p-3' data-testid='task-panel' open>
         <summary className='cursor-pointer text-sm font-medium'>Tasks</summary>
         {tasks === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading tasks...</p> : null}
@@ -244,7 +227,6 @@ const mapToolState = (status?: string) => {
           </div>
         ) : null}
       </details>
-
       <details className='rounded-lg border p-3' data-testid='todo-panel' open>
         <summary className='cursor-pointer text-sm font-medium'>Todos</summary>
         {todos === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading todos...</p> : null}
@@ -262,7 +244,6 @@ const mapToolState = (status?: string) => {
           </ul>
         ) : null}
       </details>
-
       <details className='rounded-lg border p-3' data-testid='token-usage-panel' open>
         <summary className='cursor-pointer text-sm font-medium'>Token usage</summary>
         {tokenUsage === undefined ? <p className='mt-2 text-sm text-muted-foreground'>Loading token usage...</p> : null}
@@ -319,9 +300,7 @@ const mapToolState = (status?: string) => {
         if (!content || sending || !session) return
         runSubmitChatMessage({ content, sessionId: session._id })
       }
-
     if (!session || messages === undefined) return <main className='p-8 text-muted-foreground'>Loading...</main>
-
     return (
       <main className='mx-auto flex h-screen w-full max-w-6xl flex-col gap-4 p-4 md:p-6'>
         <header className='flex shrink-0 items-center justify-between'>
@@ -335,20 +314,17 @@ const mapToolState = (status?: string) => {
             </Link>
           </nav>
         </header>
-
         <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
           <Conversation aria-live='polite' className='rounded-lg border'>
             <ConversationContent className='gap-6'>
               {messages.length === 0 ? (
                 <ConversationEmptyState description='Send a message to start talking to the agent' />
               ) : null}
-
               {submitError ? (
                 <p className='text-sm text-destructive' data-testid='submit-error'>
                   {submitError}
                 </p>
               ) : null}
-
               {messages.map(m => (
                 <ChatMessageRow key={m._id} message={m} />
               ))}
@@ -357,7 +333,6 @@ const mapToolState = (status?: string) => {
           </Conversation>
           <SidePanel isTyping={isTyping} tasks={tasks} todos={todos} tokenUsage={tokenUsage} />
         </div>
-
         <form className='flex shrink-0 gap-2' onSubmit={onSubmit}>
           <input
             className='flex-1 rounded-lg border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none'
@@ -376,5 +351,4 @@ const mapToolState = (status?: string) => {
       </main>
     )
   }
-
 export default ChatPage

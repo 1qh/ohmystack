@@ -2,11 +2,9 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 
 import { identityEquals, makeError } from './reducer-utils'
-
 interface OptionalBuilder {
   optional: () => TypeBuilder<unknown, AlgebraicTypeType>
 }
-
 interface OrgJoinReducersConfig<
   DB,
   OrgId,
@@ -31,21 +29,17 @@ interface OrgJoinReducersConfig<
   orgPk: (table: Iterable<OrgRow>) => OrgPkLike<OrgRow, OrgId>
   orgTable: (db: DB) => Iterable<OrgRow>
 }
-
 interface OrgJoinReducersExports {
   exports: Record<string, ReducerExport<never, never>>
 }
-
 interface OrgJoinRequestByOrgStatusIndexLike<Row, OrgId> extends Iterable<Row> {
   filterByOrgStatus: (orgId: OrgId, status: string) => Iterable<Row>
 }
-
 interface OrgJoinRequestPkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
   update: (row: Row) => Row
 }
-
 interface OrgJoinRequestRowLike<RequestId, OrgId> {
   createdAt: Timestamp
   id: RequestId
@@ -55,11 +49,9 @@ interface OrgJoinRequestRowLike<RequestId, OrgId> {
   updatedAt: Timestamp
   userId: Identity
 }
-
 interface OrgJoinRequestTableLike<Row> extends Iterable<Row> {
   insert: (row: Row) => Row
 }
-
 interface OrgMemberRowLike<MemberId, OrgId> {
   createdAt: Timestamp
   id: MemberId
@@ -68,22 +60,17 @@ interface OrgMemberRowLike<MemberId, OrgId> {
   updatedAt: Timestamp
   userId: Identity
 }
-
 interface OrgMemberTableLike<Row> extends Iterable<Row> {
   insert: (row: Row) => Row
 }
-
 interface OrgPkLike<Row, Id> {
   find: (id: Id) => null | Row
 }
-
 type OrgRole = 'admin' | 'member' | 'owner'
-
 interface OrgRowLike<OrgId> {
   id: OrgId
   userId: Identity
 }
-
 const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<MemberId, OrgId>>(
     orgMemberTable: Iterable<MemberRow>,
     orgId: OrgId,
@@ -160,16 +147,12 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgJoinRequestTable = config.orgJoinRequestTable(ctx.db),
             joinByOrgStatusIndex = config.orgJoinRequestByOrgStatusIndex(orgJoinRequestTable),
             org = orgPk.find(args.orgId)
-
           if (!org) throw makeError('NOT_FOUND', 'org:request_join')
           if (identityEquals(org.userId, ctx.sender)) throw makeError('ALREADY_ORG_MEMBER', 'org:request_join')
-
           const existingMember = findOrgMember(orgMemberTable, args.orgId, ctx.sender)
           if (existingMember) throw makeError('ALREADY_ORG_MEMBER', 'org:request_join')
-
           const existingRequest = findPendingJoinRequestByUser(joinByOrgStatusIndex, args.orgId, ctx.sender)
           if (existingRequest) throw makeError('JOIN_REQUEST_EXISTS', 'org:request_join')
-
           orgJoinRequestTable.insert({
             createdAt: ctx.timestamp,
             id: 0 as RequestId,
@@ -195,14 +178,11 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgJoinRequestTable = config.orgJoinRequestTable(ctx.db),
             orgJoinRequestPk = config.orgJoinRequestPk(orgJoinRequestTable),
             request = orgJoinRequestPk.find(args.requestId)
-
           if (!request) throw makeError('NOT_FOUND', 'org:approve_join')
           if (request.status !== 'pending') throw makeError('NOT_FOUND', 'org:approve_join')
-
           const org = orgPk.find(request.orgId)
           if (!org) throw makeError('NOT_FOUND', 'org:approve_join')
           requireAdminRole({ operation: 'approve_join', org, orgMemberTable, sender: ctx.sender })
-
           orgJoinRequestPk.update({
             ...(request as unknown as Record<string, unknown>),
             status: 'approved',
@@ -229,14 +209,11 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgJoinRequestTable = config.orgJoinRequestTable(ctx.db),
             orgJoinRequestPk = config.orgJoinRequestPk(orgJoinRequestTable),
             request = orgJoinRequestPk.find(args.requestId)
-
           if (!request) throw makeError('NOT_FOUND', 'org:reject_join')
           if (request.status !== 'pending') throw makeError('NOT_FOUND', 'org:reject_join')
-
           const org = orgPk.find(request.orgId)
           if (!org) throw makeError('NOT_FOUND', 'org:reject_join')
           requireAdminRole({ operation: 'reject_join', org, orgMemberTable, sender: ctx.sender })
-
           orgJoinRequestPk.update({
             ...(request as unknown as Record<string, unknown>),
             status: 'rejected',
@@ -252,16 +229,13 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgJoinRequestTable = config.orgJoinRequestTable(ctx.db),
             orgJoinRequestPk = config.orgJoinRequestPk(orgJoinRequestTable),
             request = orgJoinRequestPk.find(args.requestId)
-
           if (!request) throw makeError('NOT_FOUND', 'org:cancel_join')
           if (!identityEquals(request.userId, ctx.sender)) throw makeError('FORBIDDEN', 'org:cancel_join')
           if (request.status !== 'pending') throw makeError('NOT_FOUND', 'org:cancel_join')
-
           const removed = orgJoinRequestPk.delete(args.requestId)
           if (!removed) throw makeError('NOT_FOUND', 'org:cancel_join')
         }
       )
-
     return {
       exports: {
         org_approve_join: approveJoinReducer,
@@ -271,7 +245,6 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
       }
     }
   }
-
 export type {
   OrgJoinReducersConfig,
   OrgJoinReducersExports,

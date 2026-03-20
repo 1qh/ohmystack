@@ -1,5 +1,4 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
-
 import { login } from '@a/e2e/helpers'
 import {
   addTestOrgMember,
@@ -13,50 +12,41 @@ import {
   tc
 } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
-
 const testPrefix = `e2e-org-app-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
   readStringId = (value: unknown): string => {
     if (typeof value === 'string' && value.length > 0) return value
     throw new TypeError('Expected non-empty string id')
   }
-
 test.describe
   .serial('Org Dashboard', () => {
     let testOrgSlug: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       testOrgSlug = generateSlug('dash')
       await createTestOrg(testOrgSlug, 'Dashboard Test Org')
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test.beforeEach(async ({ page }) => {
       await login(page)
     })
-
     test('dashboard loads with org info', async ({ page }) => {
       await page.goto('/dashboard')
       const heading = page.getByRole('heading').first()
       await expect(heading).toBeVisible({ timeout: 10_000 })
     })
-
     test('dashboard shows members card', async ({ page }) => {
       await page.goto('/dashboard')
       const membersCard = page.getByText('Members').first()
       await expect(membersCard).toBeVisible({ timeout: 8000 })
     })
-
     test('dashboard shows projects card', async ({ page }) => {
       await page.goto('/dashboard')
       const projectsCard = page.getByText('Projects').first()
       await expect(projectsCard).toBeVisible({ timeout: 8000 })
     })
-
     test('view all members link navigates to /members', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /view all members/iu })
@@ -64,7 +54,6 @@ test.describe
       await link.click()
       await expect(page).toHaveURL(/\/members/u)
     })
-
     test('view all projects link navigates to /projects', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /view all projects/iu })
@@ -73,7 +62,6 @@ test.describe
       await expect(page).toHaveURL(/\/projects/u)
     })
   })
-
 test.describe
   .serial('Org Navigation', () => {
     test.beforeAll(async () => {
@@ -81,62 +69,51 @@ test.describe
       const slug = generateSlug('nav')
       await createTestOrg(slug, 'Nav Test Org')
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test.beforeEach(async ({ page }) => {
       await login(page)
     })
-
     test('nav has Dashboard link', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /dashboard/iu }).first()
       await expect(link).toBeVisible({ timeout: 8000 })
     })
-
     test('nav has Projects link', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /projects/iu }).first()
       await expect(link).toBeVisible({ timeout: 8000 })
     })
-
     test('nav has Wiki link', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /wiki/iu }).first()
       await expect(link).toBeVisible({ timeout: 8000 })
     })
-
     test('nav has Members link', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /members/iu }).first()
       await expect(link).toBeVisible({ timeout: 8000 })
     })
-
     test('nav has Settings link', async ({ page }) => {
       await page.goto('/dashboard')
       const link = page.getByRole('link', { name: /settings/iu }).first()
       await expect(link).toBeVisible({ timeout: 8000 })
     })
   })
-
 test.describe
   .serial('Org CRUD (API)', () => {
     test.beforeAll(async () => {
       await ensureTestUser()
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
     })
-
     test('create org - success', async () => {
       const slug = generateSlug('create'),
         result = await createTestOrg(slug, 'Test Org')
       expect(result.orgId).toBeDefined()
     })
-
     test('create org - creator becomes owner', async () => {
       const slug = generateSlug('owner'),
         result = await createTestOrg(slug, 'Owner Test Org'),
@@ -144,7 +121,6 @@ test.describe
       expect(org).toBeDefined()
       expect(org?.userId).toBeDefined()
     })
-
     test('create org - duplicate slug fails', async () => {
       const slug = generateSlug('dupe')
       await createTestOrg(slug, 'First Org')
@@ -155,7 +131,6 @@ test.describe
       )
       expect(result).toHaveProperty('code', 'ORG_SLUG_TAKEN')
     })
-
     test('get org - success', async () => {
       const slug = generateSlug('get'),
         created = await createTestOrg(slug, 'Get Test Org'),
@@ -163,7 +138,6 @@ test.describe
       expect(org?.name).toBe('Get Test Org')
       expect(org?.slug).toBe(slug)
     })
-
     test('myOrgs - includes created org', async () => {
       const slug = generateSlug('myorgs'),
         created = await createTestOrg(slug, 'MyOrgs Test'),
@@ -172,7 +146,6 @@ test.describe
       expect(found).toBeDefined()
       expect(found?.role).toBe('owner')
     })
-
     test('update org - owner can update name', async () => {
       const slug = generateSlug('update-name'),
         created = await createTestOrg(slug, 'Original Name')
@@ -183,7 +156,6 @@ test.describe
       const org = await tc.query(api.org.get, { orgId: created.orgId })
       expect(org?.name).toBe('Updated Name')
     })
-
     test('remove org - owner can delete', async () => {
       const slug = generateSlug('remove'),
         created = await createTestOrg(slug, 'Remove Test')
@@ -192,40 +164,33 @@ test.describe
       expect(result).toBeNull()
     })
   })
-
 test.describe
   .serial('Org Membership (API)', () => {
     let testOrgId: string, memberUserId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('membership'),
         created = await createTestOrg(slug, 'Membership Test Org')
       testOrgId = created.orgId
-
       const memberEmail = `${testPrefix}-member@test.local`
       memberUserId = readStringId(await createTestUser(memberEmail, 'Test Member'))
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
       await cleanupTestUsers()
     })
-
     test('membership - owner has owner role', async () => {
       const result = await tc.query(api.org.membership, {
         orgId: testOrgId
       })
       expect(result?.role).toBe('owner')
     })
-
     test('members - shows owner', async () => {
       const members = await tc.query(api.org.members, { orgId: testOrgId })
       expect(members.length).toBeGreaterThanOrEqual(1)
       const owner = members.find(m => m.role === 'owner')
       expect(owner).toBeDefined()
     })
-
     test('add member via test helper - success', async () => {
       const memberId = readStringId(await addTestOrgMember(testOrgId, memberUserId, false))
       expect(memberId).toBeDefined()
@@ -234,7 +199,6 @@ test.describe
       expect(found).toBeDefined()
       expect(found?.role).toBe('member')
     })
-
     test('removeMember - owner can remove member', async () => {
       const tempEmail = `${testPrefix}-temp@test.local`,
         tempUserId = readStringId(await createTestUser(tempEmail, 'Temp Member')),
@@ -244,7 +208,6 @@ test.describe
         found = members.find(m => m.userId === tempUserId)
       expect(found).toBeUndefined()
     })
-
     test('leave - member can leave org', async () => {
       const leaveEmail = `${testPrefix}-leave@test.local`,
         leaveUserId = readStringId(await createTestUser(leaveEmail, 'Leave Member'))
@@ -255,23 +218,19 @@ test.describe
       expect(found).toBeUndefined()
     })
   })
-
 test.describe
   .serial('Org Invite Flow (API)', () => {
     let testOrgId: string
-
     test.beforeAll(async () => {
       await ensureTestUser()
       const slug = generateSlug('invite'),
         created = await createTestOrg(slug, 'Invite Test Org')
       testOrgId = created.orgId
     })
-
     test.afterAll(async () => {
       await cleanupOrgTestData()
       await cleanupTestUsers()
     })
-
     test('invite - owner can create invite', async () => {
       const result = await tc.mutation(api.org.invite, {
         email: 'invited@example.com',
@@ -282,12 +241,10 @@ test.describe
       expect(result.token).toBeDefined()
       expect(result.token.length).toBe(32)
     })
-
     test('pendingInvites - shows created invites', async () => {
       const invites = await tc.query(api.org.pendingInvites, { orgId: testOrgId })
       expect(invites.length).toBeGreaterThanOrEqual(1)
     })
-
     test('revokeInvite - owner can revoke', async () => {
       const invite = await tc.mutation(api.org.invite, {
         email: 'revoke-me@example.com',
@@ -299,7 +256,6 @@ test.describe
         found = invites.find(i => i._id === invite.inviteId)
       expect(found).toBeUndefined()
     })
-
     test('acceptInvite - invalid token fails', async () => {
       const result = await expectError(async () =>
         tc.mutation(api.org.acceptInvite, {

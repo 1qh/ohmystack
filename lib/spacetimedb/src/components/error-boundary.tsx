@@ -2,23 +2,19 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 /* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
 'use client'
-
 import type { ErrorInfo, ReactNode } from 'react'
 
 import { cn } from '@a/ui'
 import { Component } from 'react'
-
 interface ErrorBoundaryProps {
   children: ReactNode
   className?: string
   fallback?: (props: { error: Error; resetErrorBoundary: () => void }) => ReactNode
   onError?: (error: Error, errorInfo: ErrorInfo) => void
 }
-
 interface ErrorBoundaryState {
   error: Error | null
 }
-
 const asRecord = (value: unknown): null | Record<string, unknown> => {
     if (typeof value === 'object' && value !== null) return value as Record<string, unknown>
     return null
@@ -38,34 +34,26 @@ const asRecord = (value: unknown): null | Record<string, unknown> => {
     if (message.length > 0) return message
     return 'Unknown error'
   }
-
 /** React error boundary that catches render errors and shows a fallback UI. */
 class BetterspaceErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { error: null }
   }
-
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { error }
   }
-
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { onError } = this.props
     if (onError) onError(error, errorInfo)
   }
-
   override async render() {
     const { error } = this.state,
       { children, className, fallback } = this.props
-
     if (!error) return children
-
     if (fallback) return fallback({ error, resetErrorBoundary: () => this.setState({ error: null }) })
-
     const code = readErrorCode(error),
       message = readErrorMessage(error)
-
     return (
       <div className={cn('flex min-h-[200px] items-center justify-center p-6', className)}>
         <div className='max-w-md space-y-3 text-center'>
@@ -83,5 +71,4 @@ class BetterspaceErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
     )
   }
 }
-
 export default BetterspaceErrorBoundary

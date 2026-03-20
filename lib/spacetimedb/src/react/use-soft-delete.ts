@@ -1,10 +1,8 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import { useCallback } from 'react'
 
 import { UNDO_MS } from '../constants'
-
 interface SoftDeleteOpts<A extends { id: string }> {
   label?: string
   onError?: (error: unknown) => void
@@ -14,9 +12,7 @@ interface SoftDeleteOpts<A extends { id: string }> {
   toast: ToastFn
   undoMs?: number
 }
-
 type ToastFn = (message: string, opts?: { action?: { label: string; onClick: () => void }; duration?: number }) => void
-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
   /**
    * Wraps a delete mutation with undo toast behavior.
@@ -57,9 +53,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
       },
       [label, onError, onRestore, restore, rm, t, undoMs]
     )
-
     return { remove }
   }
-
 export type { SoftDeleteOpts, ToastFn }
 export { useSoftDelete }

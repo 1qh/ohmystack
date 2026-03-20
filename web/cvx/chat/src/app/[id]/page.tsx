@@ -9,7 +9,6 @@ import { fetchQuery } from 'convex/nextjs'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
-
 const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
     try {
       return await fn()
@@ -26,10 +25,8 @@ const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
       token = await getToken(),
       authed = await isAuthenticated(),
       opts = token ? { token } : {}
-
     if (authed) {
       const chat = await tryFetch(async () => fetchQuery(api.chat.read, { id: chatId }, opts))
-
       if (chat) {
         const messages = await fetchQuery(api.message.list, { chatId }, opts)
         return (
@@ -39,9 +36,7 @@ const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
         )
       }
     }
-
     const pubChat = await tryFetch(async () => fetchQuery(api.chat.pubRead, { id: chatId }))
-
     if (pubChat) {
       const messages = (await fetchQuery(api.message.pubList, { chatId })) as {
         _id: string
@@ -54,8 +49,6 @@ const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
         </Suspense>
       )
     }
-
     redirect('/')
   }
-
 export default Page

@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return */
 /* eslint-disable no-alert */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -16,7 +15,6 @@ import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
 
 import OrgSettingsForm from './org-settings-form'
-
 const OrgSettingsPage = () => {
   const router = useRouter(),
     { canDeleteOrg, isAdmin, isOwner, org } = useOrg(),
@@ -25,10 +23,8 @@ const OrgSettingsPage = () => {
     transferOwnership = useOrgMutation(api.org.transferOwnership),
     members = useOrgQuery(api.org.members),
     [transferTarget, setTransferTarget] = useState<string>('')
-
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
-
   const adminMembers = members?.filter(m => m.role === 'admin') ?? [],
     handleLeave = () => {
       /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
@@ -64,13 +60,10 @@ const OrgSettingsPage = () => {
         })
         .catch(fail)
     }
-
   return (
     <div className='space-y-6'>
       <h1 className='text-2xl font-bold'>Settings</h1>
-
       <OrgSettingsForm org={org} />
-
       {isOwner && adminMembers.length > 0 ? (
         <Card>
           <CardHeader>
@@ -96,7 +89,6 @@ const OrgSettingsPage = () => {
           </CardContent>
         </Card>
       ) : null}
-
       {isOwner ? null : (
         <Card>
           <CardHeader>
@@ -110,7 +102,6 @@ const OrgSettingsPage = () => {
           </CardContent>
         </Card>
       )}
-
       {canDeleteOrg ? (
         <Card className='border-destructive'>
           <CardHeader>
@@ -127,5 +118,4 @@ const OrgSettingsPage = () => {
     </div>
   )
 }
-
 export default OrgSettingsPage

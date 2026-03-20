@@ -1,5 +1,4 @@
 import { expect, test } from './fixtures'
-
 const CHAT_URL_RE = /\/chat\//u,
   NOOPENER_RE = /noopener/iu,
   MESSAGE_RE = /message the agent/iu,
@@ -7,7 +6,6 @@ const CHAT_URL_RE = /\/chat\//u,
   IDLE_TYPING_RE = /idle|typing/iu,
   SESSIONS_RE = /sessions/iu,
   MESSAGE_PLACEHOLDER_RE = /message/iu
-
 test.describe('Accessibility', () => {
   test('chat log has role=log (duplicate coverage)', async ({ chatPage, page, sessionListPage }) => {
     await sessionListPage.goto('/')
@@ -15,12 +13,10 @@ test.describe('Accessibility', () => {
     await page.waitForURL(CHAT_URL_RE)
     await expect(chatPage.getMessageLog()).toHaveAttribute('role', 'log')
   })
-
   test('html has lang=en', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   })
-
   test('source card links have rel=noopener when present', async ({ chatPage, page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
@@ -37,14 +33,12 @@ test.describe('Accessibility', () => {
       expect(extCount).toBeGreaterThanOrEqual(0)
     }
   })
-
   test('chat message log has aria-live', async ({ chatPage, page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
     await page.waitForURL(CHAT_URL_RE)
     await expect(chatPage.getMessageLog()).toHaveAttribute('aria-live', 'polite')
   })
-
   test('expandable details use native summary controls', async ({ page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
@@ -56,7 +50,6 @@ test.describe('Accessibility', () => {
     )
     expect(areSummaryTags).toBe(true)
   })
-
   test('composer input and send button expose accessible roles', async ({ page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
@@ -64,14 +57,12 @@ test.describe('Accessibility', () => {
     await expect(page.getByRole('textbox', { name: MESSAGE_RE })).toBeVisible()
     await expect(page.getByRole('button', { name: SEND_RE })).toBeVisible()
   })
-
   test('typing panel has readable status text', async ({ page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
     await page.waitForURL(CHAT_URL_RE)
     await expect(page.getByTestId('typing-panel')).toContainText(IDLE_TYPING_RE)
   })
-
   test('reasoning and tool expand controls are native summary or button elements', async ({ page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
@@ -90,7 +81,6 @@ test.describe('Accessibility', () => {
     )
     expect(hasOnlyNativeControls).toBe(true)
   })
-
   test('status indicators include readable text, not color only', async ({ chatPage, page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
@@ -102,7 +92,6 @@ test.describe('Accessibility', () => {
     await expect(firstMsg).toBeVisible()
     await expect(page.getByTestId('typing-panel')).toContainText(IDLE_TYPING_RE)
   })
-
   test('interactive cards meet minimum 44x44 hit target', async ({ page, sessionListPage }) => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()

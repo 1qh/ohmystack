@@ -13,7 +13,6 @@ import type { MutationCtx } from './_generated/server'
 import { m } from '../lazy'
 import { internalMutation, internalQuery } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
-
 const reasonPriority = {
     task_completion: 1,
     todo_continuation: 0,
@@ -50,7 +49,6 @@ const reasonPriority = {
   TASK_REMINDER_THRESHOLD = 10,
   UNCLAIMED_STALE_MS = 5 * 60 * 1000,
   WALL_CLOCK_TIMEOUT_MS = 15 * 60 * 1000
-
 type EnqueueContext = Pick<MutationCtx, 'db' | 'scheduler'>
 interface NormalizedTodo {
   content: string
@@ -59,7 +57,6 @@ interface NormalizedTodo {
 }
 type RunReason = 'task_completion' | 'todo_continuation' | 'user_message'
 type RunStateDoc = Doc<'threadRunState'>
-
 const readRunStateByThreadId = async ({
     ctx,
     threadId
@@ -190,7 +187,6 @@ const readRunStateByThreadId = async ({
     for (const t of todos)
       if (!(t.status === 'completed' || t.status === 'cancelled'))
         lines.push(`- [${t.status}] (${t.priority}) ${t.content}`)
-
     lines.push('', 'Continue working on the next pending task.', '</system-reminder>')
     return lines.join('\n')
   },
@@ -202,7 +198,6 @@ const readRunStateByThreadId = async ({
         id: String(t._id),
         status: t.status
       })
-
     normalized.sort((a, b) =>
       a.id === b.id
         ? a.content === b.content
@@ -313,8 +308,8 @@ const readRunStateByThreadId = async ({
         hasActiveTasks,
         now,
         safeFailures,
-        todos,
-        todoSnapshot
+        todoSnapshot,
+        todos
       }
     }
   },
@@ -684,7 +679,6 @@ const readRunStateByThreadId = async ({
           selected.push(row)
           if (selected.length >= 100) break
         }
-
       selected.reverse()
       return selected
     }
@@ -780,7 +774,6 @@ const readRunStateByThreadId = async ({
       return { messageId: String(messageId) }
     }
   })
-
 export {
   appendStepMetadata,
   claimRun,

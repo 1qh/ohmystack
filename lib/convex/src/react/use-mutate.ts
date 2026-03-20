@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
 /* eslint-disable complexity, @typescript-eslint/no-unsafe-return */
 'use client'
-
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'
 
 import { useMutation } from 'convex/react'
@@ -15,7 +14,6 @@ import { withRetry } from '../retry'
 import { extractErrorData, getErrorMessage, handleConvexError } from '../server/helpers'
 import { completeMutation, pushError, trackMutation } from './devtools'
 import { makeTempId, useOptimisticStore } from './optimistic-store'
-
 interface MutateOptions<A = unknown, R = unknown> {
   getName?: (args: A) => string
   onError?: ((error: unknown) => void) | false
@@ -27,23 +25,17 @@ interface MutateOptions<A = unknown, R = unknown> {
   toast?: MutateToast<A, R>
   type?: MutationType
 }
-
 interface MutateToast<A = unknown, R = unknown> {
   error?: ((error: unknown) => string) | string
   fieldErrors?: boolean
   success?: ((result: R, args: A) => string) | string
 }
-
 type MutationRef = FunctionReference<'mutation'>
-
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   getMutationName = (ref: MutationRef): string =>
     typeof ref === 'string' ? ref : ((ref as { _name?: string })._name ?? 'unknown'),
   defaultOnError = (error: unknown) => {
     handleConvexError(error, {
-      default: () => {
-        toast.error(getErrorMessage(error))
-      },
       NOT_AUTHENTICATED: () => {
         toast.error('Please log in')
       },
@@ -54,6 +46,9 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
             ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
             : 'Too many requests, try again later'
         )
+      },
+      default: () => {
+        toast.error(getErrorMessage(error))
       }
     })
   },
@@ -135,7 +130,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       resolveId = options?.resolveId,
       retryOptions = options?.retry,
       type = options?.type
-
     return useCallback(
       async (args: OptionalRestArgs<T>[0]): Promise<FunctionReturnType<T>> => {
         const argsRecord = typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {},
@@ -149,7 +143,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
                   typeof retryOptions === 'number' ? { maxAttempts: retryOptions } : retryOptions
                 )
             : async () => (mutate as (a: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>)(args)
-
         if (!(store && isOptimistic))
           try {
             const result = await exec()
@@ -166,7 +159,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
             onSettled?.(args, error)
             throw error
           }
-
         const tempId = makeTempId(),
           id = resolveId?.(args) ?? (argsRecord.id as string | undefined)
         store.add({
@@ -176,7 +168,6 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
           timestamp: Date.now(),
           type: mutationType
         })
-
         try {
           const result = await exec()
           if (isDev && devId) completeMutation(devId, 'success')
@@ -198,6 +189,5 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       [errorHandler, getName, isOptimistic, mutate, onSettled, ref, resolveId, retryOptions, store, successHandler, type]
     )
   }
-
 export type { MutateOptions, MutateToast }
 export { defaultOnError, useMutate }

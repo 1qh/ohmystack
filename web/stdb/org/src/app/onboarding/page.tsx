@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 'use client'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
@@ -10,7 +9,6 @@ import { toast } from 'sonner'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 
 import { appearanceStep, orgStep, preferencesStep, profileStep } from '~/schema'
-
 const { StepForm, useStepper } = defineSteps(
     { id: 'profile', label: 'Profile', schema: profileStep },
     { id: 'org', label: 'Organization', schema: orgStep },
@@ -64,7 +62,6 @@ const { StepForm, useStepper } = defineSteps(
         },
         values: initialValues
       })
-
     return (
       <div className='container flex justify-center py-8'>
         <Card className='w-full max-w-2xl'>
@@ -130,5 +127,4 @@ const { StepForm, useStepper } = defineSteps(
       </div>
     )
   }
-
 export default OnboardingPage

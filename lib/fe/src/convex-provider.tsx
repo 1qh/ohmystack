@@ -1,5 +1,4 @@
 'use client'
-
 import type { ReactNode } from 'react'
 
 import { api } from '@a/be-convex'
@@ -9,14 +8,12 @@ import { ConvexProvider as BaseProvider, ConvexReactClient as Client } from 'con
 import { NavigationGuardProvider } from 'next-navigation-guard'
 
 import env from './env'
-
 interface ConvexProviderProps {
   children: ReactNode
   convexUrl?: string
   fileApi?: boolean
   noAuth?: boolean
 }
-
 const FILE_API = { info: api.file.info, upload: api.file.upload },
   clients = new Map<string, Client>(),
   FALLBACK_CONVEX_URL = 'http://127.0.0.1:3210',
@@ -39,5 +36,4 @@ const FILE_API = { info: api.file.info, upload: api.file.upload },
       <AuthProvider client={client}>{inner}</AuthProvider>
     )
   }
-
 export default ConvexProvider

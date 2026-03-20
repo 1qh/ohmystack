@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/correctness/useUniqueElementIds: StepForm.Step id is a step identifier, not a DOM id */
 'use client'
-
 import { api } from '@a/be-convex'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
@@ -10,7 +9,6 @@ import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 
 import { appearanceStep, orgStep, preferencesStep, profileStep } from '~/schema'
-
 const { StepForm, useStepper } = defineSteps(
     { id: 'profile', label: 'Profile', schema: profileStep },
     { id: 'org', label: 'Organization', schema: orgStep },
@@ -50,14 +48,12 @@ const { StepForm, useStepper } = defineSteps(
             }
           : undefined
       })
-
     if (profile === undefined)
       return (
         <div className='flex min-h-[60vh] items-center justify-center'>
           <Spinner />
         </div>
       )
-
     return (
       <div className='container flex justify-center py-8'>
         <Card className='w-full max-w-2xl'>
@@ -109,5 +105,4 @@ const { StepForm, useStepper } = defineSteps(
       </div>
     )
   }
-
 export default OnboardingPage

@@ -14,7 +14,6 @@ import { toast } from 'sonner'
 
 import { BYTES_PER_KB, BYTES_PER_MB } from '../constants'
 import { noop } from '../react/list-utils'
-
 interface DropSlotProps {
   accept?: string
   compact?: boolean
@@ -28,42 +27,35 @@ interface DropSlotProps {
   progress: number
   rootProps: ReturnType<ReturnType<typeof useDropzone>['getRootProps']>
 }
-
 interface FileApi {
   upload: (file: File, options?: UploadOptions) => Promise<UploadResponse>
 }
-
 interface MultipleValueProps extends DropSlotProps {
   canAdd: boolean
   f: AnyFieldApi
   vals: string[]
 }
-
 interface SingleValueProps extends DropSlotProps {
   f: AnyFieldApi
   onReset: () => void
   vals: string[]
 }
-
 interface UploadOptions {
   onProgress?: (percent: number) => void
   signal?: AbortSignal
 }
-
 type UploadResponse =
   | string
   | {
       storageId?: string
       url?: string
     }
-
 interface UploadState {
   isUploading: boolean
   progress: number
   reset: () => void
   upload: (file: File) => Promise<null | string>
 }
-
 /** React context for the file upload API configuration. */
 const FileApiContext = createContext<FileApi | null>(null),
   /** Provides file upload API config (presign endpoint, callbacks) to nested components. */
@@ -256,7 +248,6 @@ const FileApiContext = createContext<FileApi | null>(null),
         setIsUploading(false)
         return value
       }
-
     return { isUploading, progress, reset, upload }
   },
   uploadFiles = async ({
@@ -407,7 +398,6 @@ const FileApiContext = createContext<FileApi | null>(null),
       </Field>
     )
   }
-
 export type { FileApi, UploadOptions, UploadResponse }
 export default FileFieldImpl
 export { FileApiContext, FileApiProvider }

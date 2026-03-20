@@ -2,7 +2,6 @@ appId: dev.noboil.movie
 ---
 - launchApp
 - assertVisible: "Movie Search"
-
 - tapOn: "Search movies..."
 - inputText: "Matrix"
 - tapOn:
@@ -11,7 +10,6 @@ appId: dev.noboil.movie
     visible: "Matrix"
     timeout: 15000
 - assertVisible: "Matrix"
-
 - tapOn: "Matrix"
 - eraseText: 50
 - inputText: "Inception"
@@ -21,7 +19,6 @@ appId: dev.noboil.movie
     visible: "Inception"
     timeout: 15000
 - assertVisible: "Inception"
-
 - tapOn: "Inception"
 - eraseText: 50
 - inputText: "Pulp Fiction"
@@ -31,7 +28,6 @@ appId: dev.noboil.movie
     visible: "Pulp Fiction"
     timeout: 15000
 - assertVisible: "Pulp Fiction"
-
 - tapOn: "Pulp Fiction"
 - eraseText: 50
 - inputText: "Dark Knight"

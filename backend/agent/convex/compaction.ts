@@ -4,7 +4,6 @@ import type { Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 
 import { internalMutation, internalQuery } from './_generated/server'
-
 const LOCK_TTL_MS = 10 * 60 * 1000,
   MESSAGE_THRESHOLD = 200,
   CHAR_THRESHOLD = 100_000,
@@ -73,7 +72,6 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
             messageIds: [String(m._id)]
           })
         else break
-
     return groups
   },
   releaseCompactionLockInline = async ({
@@ -120,7 +118,6 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
         priority: t.priority,
         status: t.status
       })
-
     return { snapshot }
   },
   restoreTodosIfMissingInline = async ({
@@ -244,7 +241,6 @@ const LOCK_TTL_MS = 10 * 60 * 1000,
       return { compacted: false, reason: 'placeholder' as const }
     }
   })
-
 export {
   acquireCompactionLock,
   compactIfNeeded,

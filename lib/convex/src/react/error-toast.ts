@@ -4,9 +4,7 @@ import { useCallback } from 'react'
 import type { ConvexErrorData, ErrorHandler } from '../server/helpers'
 
 import { extractErrorData, getErrorMessage, handleConvexError } from '../server/helpers'
-
 type ErrorCode = ConvexErrorData['code']
-
 /** Configuration for the error toast hook. */
 interface ErrorToastOptions {
   handlers?: ErrorHandler
@@ -14,7 +12,6 @@ interface ErrorToastOptions {
 }
 /** A function that displays a toast notification with the given message. */
 type ToastFn = (message: string) => void
-
 /** Hook that returns an error handler callback which routes errors to custom handlers or a toast. */
 const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
     useCallback(
@@ -64,6 +61,5 @@ const useErrorToast = ({ handlers, toast }: ErrorToastOptions) =>
     }
     return false
   }
-
 export type { ErrorToastOptions, ToastFn }
 export { makeErrorHandler, toastFieldError, useErrorToast }

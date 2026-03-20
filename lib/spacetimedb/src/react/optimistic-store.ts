@@ -1,11 +1,8 @@
 'use client'
-
 import { createContext, createElement, use, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import { noop } from './list-utils'
-
 type MutationType = 'create' | 'delete' | 'update'
-
 interface OptimisticStore {
   add: (entry: PendingMutation) => void
   getSnapshot: () => PendingMutation[]
@@ -15,7 +12,6 @@ interface OptimisticStore {
   remove: (tempId: string) => void
   subscribe: (cb: () => void) => () => void
 }
-
 interface PendingMutation {
   args: Record<string, unknown>
   id: string
@@ -23,9 +19,7 @@ interface PendingMutation {
   timestamp: number
   type: MutationType
 }
-
 let counter = 0
-
 /**
  * Generates a temporary id used for optimistic mutation entries.
  * @returns A unique optimistic temp id string.
@@ -52,7 +46,6 @@ const makeTempId = () => {
           _id: p.tempId,
           updatedAt: p.timestamp
         })
-
     return { creates, deleteIds, updates }
   },
   /**
@@ -74,7 +67,6 @@ const makeTempId = () => {
         }
         return out
       }
-
     return {
       add: (entry: PendingMutation) => {
         entries.set(entry.tempId, entry)
@@ -186,7 +178,6 @@ const makeTempId = () => {
     const store = useMemo(() => createOptimisticStore(), [])
     return createElement(OptimisticContext, { value: store }, children)
   }
-
 export type { MutationType, OptimisticStore, PendingMutation }
 export {
   createOptimisticStore,

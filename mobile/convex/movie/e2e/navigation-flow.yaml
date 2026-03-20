@@ -2,19 +2,14 @@ appId: dev.noboil.movie
 ---
 - launchApp
 - assertVisible: "Movie Search"
-
 - tapOn: "Fetch"
 - assertVisible: "Fetch by ID"
-
 - tapOn: "Search"
 - assertVisible: "Movie Search"
-
 - tapOn: "Fetch"
 - assertVisible: "Fetch by ID"
-
 - tapOn: "Search"
 - assertVisible: "Movie Search"
-
 - tapOn: "Search movies..."
 - inputText: "Fight Club"
 - tapOn:
@@ -22,7 +17,6 @@ appId: dev.noboil.movie
 - extendedWaitUntil:
     visible: "Fight Club"
     timeout: 15000
-
 - tapOn:
     text: "Fight Club"
     index: 0
@@ -47,15 +41,12 @@ appId: dev.noboil.movie
     element: ".*Release.*|.*Rating.*|.*Runtime.*|.*overview.*|.*min.*"
     direction: DOWN
     timeout: 15000
-
 - back
 - waitForAnimationToEnd
 - assertVisible: "Movie Search"
 - assertVisible: "Fight Club"
-
 - tapOn: "Fetch"
 - assertVisible: "Fetch by ID"
-
 - tapOn: "Search"
 - assertVisible: "Movie Search"
 - assertVisible: "Fight Club"

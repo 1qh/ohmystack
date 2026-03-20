@@ -1,36 +1,27 @@
 import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, table as stdbTable, TypeBuilder } from 'spacetimedb/server'
 
 import { schema as stdbSchema, t as stdbT, table as stdbTableFn } from 'spacetimedb/server'
-
 type FieldBuilder =
   | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
   | TypeBuilder<unknown, AlgebraicTypeType>
-
 type FieldFromSchemaFn = (schema: unknown, t: ZodBridgeT, path: string) => FieldBuilder
 interface KeyField {
   builder: FieldBuilder
   name: string
 }
-
 type OptionalFieldBuilder = FieldBuilder & {
   index: () => FieldBuilder
   optional: () => FieldBuilder
   unique: () => FieldBuilder
 }
-
 interface StdbDeps {
   t: ZodBridgeT
   table: (...args: Parameters<typeof stdbTable>) => StdbTable
 }
-
 type StdbTable = ReturnType<typeof stdbTable>
-
 type StdbTypeBuilder = TypeBuilder<unknown, AlgebraicTypeType>
-
 type TableFields = Record<string, FieldBuilder>
-
 type TableInput = TableFields | ZodLike
-
 type TableOptions = Record<string, unknown>
 interface ZodBridgeT {
   array: (element: StdbTypeBuilder) => FieldBuilder & { optional: () => FieldBuilder }
@@ -52,7 +43,6 @@ interface ZodLike {
   shape?: Record<string, unknown>
   type?: unknown
 }
-
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null,
   isZodObject = (value: unknown): value is ZodLike =>
     isRecord(value) && value.type === 'object' && 'shape' in value && isRecord(value.shape),
@@ -113,14 +103,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
         const shape = (option as ZodLike).def?.shape
         if (isRecord(shape)) variants.push(shape)
       }
-
     if (variants.length === 0) return t.object(toPascalCase(path), {} as Record<string, StdbTypeBuilder>)
-
     const totalVariants = variants.length,
       fieldCounts: Record<string, number> = {},
       firstSchemaByField: Record<string, unknown> = {},
       fieldNames: string[] = []
-
     for (const variant of variants) {
       const names = Object.keys(variant)
       for (const name of names) {
@@ -132,7 +119,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
         if (!(name in firstSchemaByField)) firstSchemaByField[name] = variant[name]
       }
     }
-
     const merged: Record<string, FieldBuilder> = {}
     fieldNames.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
     for (const name of fieldNames) {
@@ -161,7 +147,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
       type = isRecord(schema) && typeof z.type === 'string' ? z.type : '',
       simple = simpleField(type, t)
     if (simple) return simple
-
     if (type === 'array') return t.array(fieldFromSchema(z.def?.element, t, `${path}.item`) as StdbTypeBuilder)
     if (type === 'object')
       return t.object(
@@ -315,6 +300,5 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
       t
     }
   }
-
 export type { FieldBuilder, StdbDeps, StdbTable, TableFields, ZodBridgeT }
 export { makeSchema, zodToStdbFields }

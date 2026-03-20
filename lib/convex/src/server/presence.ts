@@ -5,7 +5,6 @@ import { any, object, string } from 'zod/v4'
 import type { Mb, MutCtx, Qb, Rec } from './types'
 
 import { idx, indexFields, typed } from './bridge'
-
 /** Interval in milliseconds between heartbeat pings for presence tracking. */
 const HEARTBEAT_INTERVAL_MS = 15_000,
   /** Time-to-live in milliseconds after which a presence entry is considered stale. */
@@ -74,7 +73,6 @@ const HEARTBEAT_INTERVAL_MS = 15_000,
                 lastSeen: d.lastSeen as number,
                 userId: d.userId as string
               })
-
           return result
         })
       }),
@@ -94,5 +92,4 @@ const HEARTBEAT_INTERVAL_MS = 15_000,
       })
     return { heartbeat, leave, list }
   }
-
 export { HEARTBEAT_INTERVAL_MS, makePresence, PRESENCE_TTL_MS, presenceTable }

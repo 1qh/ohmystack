@@ -1,5 +1,4 @@
 'use client'
-
 import type { Id } from '@a/be-convex/model'
 
 import { api } from '@a/be-convex'
@@ -12,11 +11,9 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { invite } from '~/schema'
-
 interface InviteDialogProps {
   orgId: Id<'org'>
 }
-
 const InviteDialog = ({ orgId }: InviteDialogProps) => {
   const [open, setOpen] = useState(false),
     sendInvite = useMutation(api.org.invite),
@@ -32,7 +29,6 @@ const InviteDialog = ({ orgId }: InviteDialogProps) => {
       resetOnSuccess: true,
       schema: invite
     })
-
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
@@ -61,5 +57,4 @@ const InviteDialog = ({ orgId }: InviteDialogProps) => {
     </Dialog>
   )
 }
-
 export default InviteDialog

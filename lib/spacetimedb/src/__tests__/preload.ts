@@ -1,9 +1,7 @@
 import { mock } from 'bun:test'
-
 const noop = () => undefined,
   zero = () => 0,
   zeroBig = () => 0n
-
 mock.module('sonner', () => ({
   toast: Object.assign(noop, {
     dismiss: noop,
@@ -12,7 +10,6 @@ mock.module('sonner', () => ({
     success: noop
   })
 }))
-
 mock.module('spacetime:sys@2.0', () => ({
   console_log: noop,
   console_timer_end: noop,

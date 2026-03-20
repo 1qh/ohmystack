@@ -1,5 +1,4 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
@@ -7,7 +6,6 @@ import { ToggleGroup, ToggleGroupItem } from '@a/ui/toggle-group'
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useMemo } from 'react'
-
 interface ThemeToggleProps {
   className?: string
   darkIconProps?: ComponentProps<typeof Moon>
@@ -18,7 +16,6 @@ interface ThemeToggleProps {
   rootProps?: Omit<ComponentProps<typeof ToggleGroup>, 'children' | 'onValueChange' | 'value'>
   systemIconProps?: ComponentProps<typeof Monitor>
 }
-
 const ThemeToggle = ({
   className,
   darkIconProps,
@@ -50,5 +47,4 @@ const ThemeToggle = ({
     </ToggleGroup>
   )
 }
-
 export default ThemeToggle

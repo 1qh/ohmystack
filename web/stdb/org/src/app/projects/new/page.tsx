@@ -1,5 +1,4 @@
 'use client'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
@@ -9,7 +8,6 @@ import { useReducer } from 'spacetimedb/react'
 
 import { useOrg } from '~/hook/use-org'
 import { project } from '~/schema'
-
 const NewProjectPage = () => {
   const router = useRouter(),
     { org } = useOrg(),
@@ -20,7 +18,6 @@ const NewProjectPage = () => {
       toast: { success: 'Project created' },
       transform: d => ({ ...d, orgId: Number(org._id) })
     })
-
   return (
     <div className='flex justify-center'>
       <Card className='w-full max-w-md'>
@@ -47,5 +44,4 @@ const NewProjectPage = () => {
     </div>
   )
 }
-
 export default NewProjectPage

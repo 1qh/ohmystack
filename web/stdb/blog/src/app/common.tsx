@@ -3,7 +3,6 @@
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
@@ -37,7 +36,6 @@ import { createBlog } from '~/schema'
 
 import { Publish } from './[id]/edit/client'
 
-// eslint-disable-next-line no-restricted-properties
 const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
   Delete = ({ id, onOptimisticRemove }: { id: number; onOptimisticRemove?: () => void }) => {
     const rmBlog = useMut(reducers.rmBlog, {
@@ -271,5 +269,4 @@ const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
         No posts yet
       </p>
     )
-
 export { Author, Create, List }

@@ -6,20 +6,17 @@ import { redirect } from 'next/navigation'
 
 import env from './env'
 import UserMenuShell from './user-menu-shell'
-
 interface UserInfo {
   email?: string
   image?: string
   name?: string
 }
-
 interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
   shellProps?: Omit<
     ComponentProps<typeof UserMenuShell>,
     'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
   >
 }
-
 const toHttpUri = (uri: string) => {
     if (uri.startsWith('wss://')) return uri.replace('wss://', 'https://')
     if (uri.startsWith('ws://')) return uri.replace('ws://', 'http://')
@@ -65,7 +62,6 @@ const toHttpUri = (uri: string) => {
         store.delete('spacetimedb_token')
         redirect('/login')
       }
-
     return (
       <UserMenuShell
         {...shellProps}
@@ -78,5 +74,4 @@ const toHttpUri = (uri: string) => {
       />
     )
   }
-
 export default UserMenu

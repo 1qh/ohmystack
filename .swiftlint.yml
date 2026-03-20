@@ -6,7 +6,6 @@ excluded:
   - "**/Tests"
   - "**/Package.swift"
   - "**/node_modules"
-
 disabled_rules:
   - multiple_closures_with_trailing_closure
   - contrasted_opening_brace
@@ -44,7 +43,6 @@ disabled_rules:
   - redundant_self
   - explicit_enum_raw_value
   - blanket_disable_command
-
 opt_in_rules:
   - accessibility_label_for_image
   - accessibility_trait_for_button
@@ -160,19 +158,16 @@ opt_in_rules:
   - vertical_whitespace_opening_braces
   - weak_delegate
   - yoda_condition
-
 analyzer_rules:
   - capture_variable
   - typesafe_array_init
   - unused_declaration
   - unused_import
-
 file_header:
   forbidden_pattern: ".*"
   excluded:
     - "**/Generated.swift"
     - "**/MobileAPI.swift"
-
 line_length:
   warning: 140
   error: 200
@@ -180,54 +175,40 @@ line_length:
   ignores_urls: true
   ignores_function_declarations: false
   ignores_interpolated_strings: true
-
 type_body_length:
   warning: 300
   error: 500
-
 file_length:
   warning: 500
   error: 1000
-
 function_body_length:
   warning: 60
   error: 100
-
 function_parameter_count:
   warning: 6
   error: 10
-
 cyclomatic_complexity:
   warning: 15
   error: 25
-
 closure_body_length:
   warning: 110
   error: 200
-
 trailing_comma:
   mandatory_comma: true
-
 vertical_whitespace:
   max_empty_lines: 1
-
 force_cast:
   severity: error
-
 force_try:
   severity: error
-
 force_unwrapping:
   severity: error
-
 implicitly_unwrapped_optional:
   severity: error
   mode: all
-
 multiline_arguments:
   first_argument_location: next_line
   only_enforce_after_first_closure_on_first_line: true
-
 identifier_name:
   min_length:
     warning: 1
@@ -236,5 +217,4 @@ identifier_name:
     error: 80
   allowed_symbols:
     - _
-
 reporter: xcode

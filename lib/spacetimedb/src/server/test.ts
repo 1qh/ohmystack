@@ -2,34 +2,28 @@
 // biome-ignore-all lint/suspicious/useAwait: test async
 // oxlint-disable promise/avoid-new
 import { DbConnectionBuilder, DbConnectionImpl } from 'spacetimedb/sdk'
-
 interface CreateTestContextOptions {
   httpUrl?: string
   moduleName?: string
   userCount?: number
   wsUrl?: string
 }
-
 interface SchemaReducer {
   name?: string
   params?: {
     elements?: SchemaReducerParam[]
   }
 }
-
 interface SchemaReducerParam {
   name?: { some?: string }
 }
-
 interface SchemaResponse {
   reducers?: SchemaReducer[]
 }
-
 interface SqlStatementResult {
   rows?: unknown[]
   schema?: unknown
 }
-
 interface TestContext {
   baseHttpUrl: string
   baseWsUrl: string
@@ -38,13 +32,11 @@ interface TestContext {
   reducerParams: Map<string, string[]>
   users: TestUser[]
 }
-
 interface TestUser {
   connection: DbConnectionImpl<typeof REMOTE_MODULE>
   identity: string
   token: string
 }
-
 const DEFAULT_HTTP_URL = 'http://localhost:3000',
   resolveModuleName = (moduleName?: string) =>
     moduleName ?? process.env.SPACETIMEDB_MODULE_NAME ?? process.env.NEXT_PUBLIC_SPACETIMEDB_MODULE_NAME,
@@ -106,7 +98,6 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
         finished = true
         reject(new Error('CONNECT_TIMEOUT: failed to connect to SpacetimeDB'))
       }, CONNECT_TIMEOUT_MS)
-
       builder
         .withUri(ctx.baseWsUrl)
         .withDatabaseName(ctx.moduleName)
@@ -232,9 +223,7 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
         users: [defaultUser]
       },
       schema = await getSchema(ctx)
-
     ctx.reducerParams = getReducerParamMap(schema)
-
     const pendingUsers: Promise<TestUser>[] = []
     for (let i = 1; i < userCount; i += 1) pendingUsers.push(createConnectedUser(ctx))
     const additionalUsers = await Promise.all(pendingUsers)
@@ -281,7 +270,6 @@ const DEFAULT_HTTP_URL = 'http://localhost:3000',
     for (const user of ctx.users) user.connection.disconnect()
     ctx.users.length = 0
   }
-
 export type { ErrorData } from './helpers'
 export {
   extractErrorData,
@@ -289,6 +277,5 @@ export {
   getErrorDetail,
   getErrorMessage
 } from './helpers'
-
 export type { TestContext, TestUser }
 export { asUser, callReducer, cleanup, createTestContext, createTestUser, isTestMode, queryTable }

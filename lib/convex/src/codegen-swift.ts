@@ -8,12 +8,10 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { swiftEnumCase } from './codegen-swift-utils'
-
 interface FieldEntry {
   isOptional: boolean
   swiftType: string
 }
-
 interface SchemaModule {
   base?: Record<string, ZodType>
   children?: Record<string, { foreignKey?: string; schema: ZodType }>
@@ -21,7 +19,6 @@ interface SchemaModule {
   owned?: Record<string, ZodType>
   singleton?: Record<string, ZodType>
 }
-
 interface ZodDef {
   element?: { _zod: { def: ZodDef } }
   entries?: Record<string, string>
@@ -32,7 +29,6 @@ interface ZodDef {
   type: string
   values?: string[]
 }
-
 const parseArgs = (): { convex: string; mobileOutput: string; output: string; schema: string } => {
     const args = process.argv.slice(2),
       r = { convex: '', mobileOutput: '', output: '', schema: '' }
@@ -117,17 +113,14 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
       const inner = resolveType(def.innerType?._zod.def ?? def, modelName, fieldName)
       return { isOptional: true, swiftType: inner.swiftType }
     }
-
     const simple = resolveSimpleType(type)
     if (simple) return simple
-
     if (type === 'enum') {
       const values = def.values ?? (def.entries ? Object.keys(def.entries) : []),
         name = enumName(modelName, fieldName)
       enumRegistry.set(name, values)
       return { isOptional: false, swiftType: name }
     }
-
     if (type === 'array') {
       const elDef = def.element?._zod.def ?? def
       if (elDef.type === 'custom') return { isOptional: false, swiftType: '[String]' }
@@ -135,14 +128,12 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
         inner = resolveType(elDef, modelName, singularField)
       return { isOptional: false, swiftType: `[${inner.swiftType}${inner.isOptional ? '?' : ''}]` }
     }
-
     if (type === 'union' && def.options) {
       const name = enumName(modelName, fieldName)
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       collectUnionStruct(name, def.options)
       return { isOptional: false, swiftType: name }
     }
-
     if (type === 'object' && (def.shape ?? def.properties)) {
       const shape = def.shape ?? def.properties ?? {},
         name = `${capitalize(modelName)}${capitalize(fieldName)}`
@@ -150,7 +141,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
       collectNestedStruct(name, shape)
       return { isOptional: false, swiftType: name }
     }
-
     throw new Error(`codegen-swift: unsupported Zod type '${type}' for ${modelName}.${fieldName}`)
   },
   resolveFields = (block: string[], shape: Record<string, { _zod: { def: ZodDef } }>, ctx: string) => {
@@ -163,7 +153,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
   collectNestedStruct = (name: string, shape: Record<string, { _zod: { def: ZodDef } }>) => {
     if (nestedEmitted.has(name)) return
     nestedEmitted.add(name)
-
     const block = [`public struct ${name}: Codable, Sendable {`]
     resolveFields(block, shape, name.toLowerCase())
     block.push('}', '')
@@ -180,13 +169,11 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
           for (const val of vals) result.push(val)
         }
       }
-
     return result
   },
   collectUnionTypeValues = (options: { _zod: { def: ZodDef } }[]): string[] => {
     const typeValues: string[] = []
     for (const opt of options) for (const val of extractEnumValues(opt._zod.def)) typeValues.push(val)
-
     return typeValues
   },
   collectUnionFieldTypes = (
@@ -235,7 +222,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
   collectUnionStruct = (name: string, options: { _zod: { def: ZodDef } }[]) => {
     if (nestedEmitted.has(name)) return
     nestedEmitted.add(name)
-
     const typeValues = collectUnionTypeValues(options),
       typEnumName = `${name}Type`
     registerUnionEnum(typEnumName, typeValues)
@@ -341,7 +327,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
     const results: string[] = []
     let depth = 0,
       current = ''
-
     for (const ch of block)
       if (ch === '{') {
         if (depth === 0) current = ''
@@ -361,7 +346,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
         if (trimmed) parseName(trimmed, results)
         current = ''
       } else current += ch
-
     const trimmed = current.trim()
     if (trimmed) parseName(trimmed, results)
     return results
@@ -395,9 +379,7 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
         if (block) {
           const afterClose = i + block.length + 2,
             afterBlock = stmt.slice(afterClose).trimStart()
-
           if (afterBlock.startsWith('=')) for (const name of extractNames(block)) results.push(name)
-
           i = afterClose
         } else i += 1
       } else if (ALPHA_RE.test(stmt[i] ?? '')) {
@@ -409,7 +391,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
           i = skipToNextBinding(stmt, i)
         }
       } else i += 1
-
     return results
   },
   extractSimpleNames = (block: string): string[] => {
@@ -455,7 +436,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
   collectModules = (): Record<string, string[]> => {
     const modules: Record<string, string[]> = {},
       files = readdirSync(CONVEX_DIR)
-
     for (const file of files)
       if (file.endsWith('.ts') && !file.includes('.test.')) {
         const modName = file.replace('.ts', '')
@@ -464,7 +444,6 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
           if (fns.length > 0) modules[modName] = fns
         }
       }
-
     return modules
   },
   ownedExtra = new Map<string, FieldEntry>([
@@ -493,12 +472,10 @@ const parseArgs = (): { convex: string; mobileOutput: string; output: string; sc
     ['updatedAt', { isOptional: true, swiftType: 'Double' }],
     ['userId', { isOptional: true, swiftType: 'String' }]
   ])
-
 collectSchemas(owned, ownedExtra, 'owned')
 collectSchemas(orgScoped, orgScopedExtra, 'orgScoped')
 collectSchemas(base, baseExtra, 'base')
 collectSchemas(singleton, singletonExtra, 'singleton')
-
 for (const [childName, childDef] of Object.entries(children)) {
   const def = getDef(childDef.schema),
     shape = def.shape ?? def.properties
@@ -514,21 +491,18 @@ for (const [childName, childDef] of Object.entries(children)) {
     userSchemaFields[childName] = uFields
   }
 }
-
 interface ParsedArg {
   isNullable: boolean
   isOptional: boolean
   name: string
   swiftType: string
 }
-
 interface ParsedCustomFn {
   args: ParsedArg[]
   callKind: 'action' | 'mutation' | 'query'
   kind: 'action' | 'm' | 'mutation' | 'pq' | 'q' | 'query'
   source: string
 }
-
 const splitTopLevel = (input: string, delimiter: string): string[] => {
     const parts: string[] = []
     let cur = '',
@@ -559,7 +533,6 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
           cur = ''
         } else cur += ch
       }
-
     const t = cur.trim()
     if (t) parts.push(t)
     return parts
@@ -587,7 +560,6 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
         isNullable = true
         isOptional = true
       } else break
-
     const convexOptional = unwrapCall(expr, 'v.optional'),
       convexNullable = unwrapCall(expr, 'v.nullable'),
       zodOptional = unwrapCall(expr, 'z.optional'),
@@ -614,7 +586,6 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
         isNullable: true,
         isOptional: true
       }
-
     const convexArray = unwrapCall(expr, 'v.array'),
       zodArray = unwrapCall(expr, 'z.array')
     if (convexArray !== null) {
@@ -625,7 +596,6 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
       const inner = parseValidatorExpr(zodArray, ctx)
       return { isNullable, isOptional, swiftType: `[${inner.swiftType}]` }
     }
-
     if (expr.startsWith('v.id(') || expr.startsWith('zid(')) return { isNullable, isOptional, swiftType: 'String' }
     if (expr.startsWith('v.string(') || expr.includes('z.string(')) return { isNullable, isOptional, swiftType: 'String' }
     if (
@@ -640,7 +610,6 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
     if (expr.startsWith('v.boolean(') || expr.includes('z.boolean(')) return { isNullable, isOptional, swiftType: 'Bool' }
     if (expr.startsWith('v.literal(') || expr.startsWith('v.union(') || expr.includes('z.enum('))
       return { isNullable, isOptional, swiftType: 'String' }
-
     throw new Error(`codegen-swift: unsupported validator '${expr}' at ${ctx.filePath} ${ctx.fnName}.${ctx.paramName}`)
   },
   findTopLevelColon = (entry: string): number => {
@@ -775,33 +744,26 @@ const splitTopLevel = (input: string, delimiter: string): string[] => {
       }
     }
   }
-
 collectWhereFieldsFromSchema(owned)
 collectWhereFieldsFromSchema(orgScoped)
-
 const lines: string[] = [],
   emit = (s: string) => {
     lines.push(s)
   }
-
 emit('// Auto-generated by @noboil/convex-codegen-swift. DO NOT EDIT.')
 emit('// swiftlint:disable file_types_order file_length')
 emit('import Foundation')
 emit('')
-
 for (const block of pendingLines) for (const line of block) emit(line)
-
 for (const [name, values] of enumRegistry) {
   const sorted = [...values].toSorted()
   emit(`public enum ${name}: String, CaseIterable, Codable, Sendable {`)
   for (const v of sorted) emit(`${indent(1)}${swiftEnumCase(v)}`)
-
   emit('')
   emit(`${indent(1)}public var displayName: String { rawValue.capitalized }`)
   emit('}')
   emit('')
 }
-
 const emittedStructs = new Set<string>(),
   emitIdAccessor = (fields: Map<string, FieldEntry>) => {
     const idField = fields.get('_id')
@@ -809,36 +771,29 @@ const emittedStructs = new Set<string>(),
     if (idField?.isOptional) emit(`${indent(1)}public var id: String { _id ?? "" }`)
     else emit(`${indent(1)}public var id: String { _id }`)
   }
-
 for (const [tableName, fields] of Object.entries(factoryFields)) {
   const rawName = pascalCase(tableName),
     structName = safeSwiftName(rawName)
   if (!emittedStructs.has(structName)) {
     emittedStructs.add(structName)
-
     const hasId = fields.has('_id'),
       protocols = hasId ? 'Codable, Identifiable, Sendable' : 'Codable, Sendable'
     emit(`public struct ${structName}: ${protocols} {`)
-
     for (const [fieldName, field] of fields) {
       const swiftType = field.isOptional ? `${field.swiftType}?` : field.swiftType
       emit(`${indent(1)}public let ${fieldName}: ${swiftType}`)
     }
-
     if (hasId) emitIdAccessor(fields)
-
     emit('}')
     emit('')
   }
 }
-
 emit('public struct Author: Codable, Sendable {')
 emit(`${indent(1)}public let name: String?`)
 emit(`${indent(1)}public let email: String?`)
 emit(`${indent(1)}public let imageUrl: String?`)
 emit('}')
 emit('')
-
 emit('#if !SKIP')
 emit('public struct PaginatedResult<T: Codable & Sendable>: Codable, Sendable {')
 emit(`${indent(1)}public let page: [T]`)
@@ -865,7 +820,6 @@ emit(`${indent(1)}}`)
 emit('}')
 emit('#endif')
 emit('')
-
 emit('public struct Org: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let _id: String`)
 emit(`${indent(1)}public let _creationTime: Double`)
@@ -877,7 +831,6 @@ emit('')
 emit(`${indent(1)}public var id: String { _id }`)
 emit('}')
 emit('')
-
 emit('public struct OrgMember: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let _id: String`)
 emit(`${indent(1)}public let orgId: String`)
@@ -889,7 +842,6 @@ emit(`${indent(1)}public var id: String { _id }`)
 emit('}')
 emit('')
 emit('')
-
 emit('public enum OrgRole: String, CaseIterable, Codable, Sendable {')
 emit(`${indent(1)}case admin`)
 emit(`${indent(1)}case member`)
@@ -900,7 +852,6 @@ emit(`${indent(1)}public var isOwner: Bool { self == .owner }`)
 emit(`${indent(1)}public var isAdmin: Bool { self == .owner || self == .admin }`)
 emit('}')
 emit('')
-
 emit('public enum JoinRequestStatus: String, CaseIterable, Codable, Sendable {')
 emit(`${indent(1)}case approved`)
 emit(`${indent(1)}case pending`)
@@ -909,7 +860,6 @@ emit('')
 emit(`${indent(1)}public var displayName: String { rawValue.capitalized }`)
 emit('}')
 emit('')
-
 emit('public struct OrgMemberEntry: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let memberId: String?`)
 emit(`${indent(1)}public let userId: String`)
@@ -921,7 +871,6 @@ emit('')
 emit(`${indent(1)}public var id: String { userId }`)
 emit('}')
 emit('')
-
 emit('public struct OrgWithRole: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let org: Org`)
 emit(`${indent(1)}public let role: OrgRole`)
@@ -929,7 +878,6 @@ emit('')
 emit(`${indent(1)}public var id: String { org._id }`)
 emit('}')
 emit('')
-
 emit('public struct OrgMembership: Codable, Sendable {')
 emit(`${indent(1)}public let _id: String?`)
 emit(`${indent(1)}public let orgId: String?`)
@@ -938,7 +886,6 @@ emit(`${indent(1)}public let isAdmin: Bool?`)
 emit(`${indent(1)}public let role: OrgRole?`)
 emit('}')
 emit('')
-
 emit('public struct OrgInvite: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let _id: String`)
 emit(`${indent(1)}public let _creationTime: Double?`)
@@ -962,13 +909,11 @@ emit('')
 emit(`${indent(1)}public var id: String { _id }`)
 emit('}')
 emit('')
-
 emit('public struct JoinRequestUser: Codable, Sendable {')
 emit(`${indent(1)}public let name: String?`)
 emit(`${indent(1)}public let image: String?`)
 emit('}')
 emit('')
-
 emit('public struct JoinRequestEntry: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let request: OrgJoinRequest`)
 emit(`${indent(1)}public let user: JoinRequestUser?`)
@@ -976,7 +921,6 @@ emit('')
 emit(`${indent(1)}public var id: String { request._id }`)
 emit('}')
 emit('')
-
 emit('public struct EditorEntry: Codable, Identifiable, Sendable {')
 emit(`${indent(1)}public let userId: String`)
 emit(`${indent(1)}public let name: String?`)
@@ -985,18 +929,15 @@ emit('')
 emit(`${indent(1)}public var id: String { userId }`)
 emit('}')
 emit('')
-
 emit('public struct SlugAvailability: Codable, Sendable {')
 emit(`${indent(1)}public let available: Bool`)
 emit('}')
 emit('')
-
 emit('public struct OrgGetOrCreateResult: Codable, Sendable {')
 emit(`${indent(1)}public let created: Bool`)
 emit(`${indent(1)}public let orgId: String`)
 emit('}')
 emit('')
-
 const emitWhereStruct = (tableName: string, fields: Map<string, FieldEntry>, factoryType: string) => {
   const structName = `${pascalCase(tableName)}Where`
   emit(`public struct ${structName}: Sendable {`)
@@ -1033,12 +974,10 @@ const emitWhereStruct = (tableName: string, fields: Map<string, FieldEntry>, fac
   emit('}')
   emit('')
 }
-
 for (const [tableName, fields] of Object.entries(whereFieldsMap)) {
   const factoryType = tableFactoryType[tableName] ?? ''
   emitWhereStruct(tableName, fields, factoryType)
 }
-
 const SAFE_ARG_TYPES = new Set(['[Bool]', '[Double]', '[String]', 'Bool', 'Double', 'String']),
   modules = collectModules(),
   isArgSafe = (field: FieldEntry): boolean => {
@@ -1378,7 +1317,6 @@ const SAFE_ARG_TYPES = new Set(['[Bool]', '[Double]', '[String]', 'Bool', 'Doubl
         e(
           `${indent(2)}return try await ConvexService.shared.action("${modName}:${fnName}", args: ${argStr}, returning: ${ma.notSkipReturnType}.self)`
         )
-
       e(`${indent(2)}#else`)
       if (ma.voidAction)
         e(`${indent(2)}try await ConvexService.shared.action(name: "${modName}:${fnName}", args: ${argStr})`)
@@ -1390,7 +1328,6 @@ const SAFE_ARG_TYPES = new Set(['[Bool]', '[Double]', '[String]', 'Bool', 'Doubl
         e(
           `${indent(2)}return try await ConvexService.shared.${ma.skipMethod}(name: "${modName}:${fnName}", args: ${argStr})`
         )
-
       e(`${indent(2)}#endif`)
     } else {
       const argStr = fn.args.length === 0 ? '[:]' : `[${fn.args.map(a => `"${a.argName}": ${a.value}`).join(', ')}]`,
@@ -1435,13 +1372,11 @@ const SAFE_ARG_TYPES = new Set(['[Bool]', '[Double]', '[String]', 'Bool', 'Doubl
       e(`${indent(2)}onError: @escaping @Sendable @MainActor (Error) -> Void = { _ in _ = () },`)
       e(`${indent(2)}onNull: @escaping @Sendable @MainActor () -> Void = { () }`)
     } else e(`${indent(2)}onError: @escaping @Sendable @MainActor (Error) -> Void = { _ in _ = () }`)
-
     e(`${indent(1)}) -> String {`)
     const argStr = sub.args.length === 0 ? '[:]' : `[${sub.args.map(a => `"${a.argName}": ${a.value}`).join(', ')}]`
     if (sub.usesListArgs)
       if (sub.listArgsParam) e(`${indent(2)}let args = listArgs(${sub.listArgsParam})`)
       else e(`${indent(2)}let args = listArgs(where: filterWhere)`)
-
     e(`${indent(2)}#if !SKIP`)
     const notSkipArgs = sub.usesListArgs ? 'args' : argStr
     e(
@@ -1463,16 +1398,13 @@ const SAFE_ARG_TYPES = new Set(['[Bool]', '[Double]', '[String]', 'Bool', 'Doubl
       e(
         `${indent(2)}return ConvexService.shared.${sub.skipMethod}(to: ${sub.apiRef}, args: ${skipArgs}, onUpdate: ${skipUpdate}, onError: ${skipError})`
       )
-
     e(`${indent(2)}#endif`)
     e(`${indent(1)}}`)
   }
-
 interface CustomFnArg {
   argName: string
   value: string
 }
-
 interface CustomFnDescriptor {
   args: CustomFnArg[]
   callKind?: string
@@ -1485,20 +1417,17 @@ interface CustomFnDescriptor {
   structArraySerialization?: StructArrayDescriptor
   voidDummy?: boolean
 }
-
 interface CustomFnParam {
   default?: string
   name: string
   type: string
 }
-
 interface MobileActionDescriptor {
   notSkipReturnType: string
   skipArrayCast?: boolean
   skipMethod: string
   voidAction?: boolean
 }
-
 interface MobileSubscriptionDescriptor {
   apiRef: string
   args: CustomFnArg[]
@@ -1513,26 +1442,22 @@ interface MobileSubscriptionDescriptor {
   skipNullableViaOnUpdate?: boolean
   usesListArgs?: boolean
 }
-
 interface NestedDataDescriptor {
   optional: string[]
   outerArgs?: string[]
   required: string[]
 }
-
 interface StructArrayDescriptor {
   extraArgs: CustomFnArg[]
   optionalFields: StructArrayField[]
   paramName: string
   requiredFields: StructArrayField[]
 }
-
 interface StructArrayField {
   localBinding?: string
   name: string
   value: string
 }
-
 const parsedSourceFns: Record<string, Record<string, ParsedCustomFn>> = {},
   parsedCacheKeys: Record<string, null | string> = {}
 for (const modName of Object.keys(modules)) {
@@ -1546,7 +1471,6 @@ for (const modName of Object.keys(modules)) {
     parsedCacheKeys[modName] = null
   }
 }
-
 const inferParsedReturnType = (parsed: ParsedCustomFn, fnName: string, tableName: string): string | undefined => {
     const { callKind, source } = parsed,
       structName = safeSwiftName(pascalCase(tableName))
@@ -1615,7 +1539,6 @@ const inferParsedReturnType = (parsed: ParsedCustomFn, fnName: string, tableName
         desc.voidDummy = true
         desc.mobileAction = { notSkipReturnType: '[String: String]', skipMethod: 'action', voidAction: true }
       }
-
     return desc
   },
   buildDesktopAclDescriptors = (tableName: string): Record<string, CustomFnDescriptor> => {
@@ -2402,7 +2325,6 @@ const inferParsedReturnType = (parsed: ParsedCustomFn, fnName: string, tableName
     addParsedQuerySubscriptions({ fnSet, modName, subs, tableName })
     return subs
   }
-
 for (const [modName, fns] of Object.entries(modules)) {
   const apiName = `${pascalCase(modName)}API`,
     tableName = modName.replace(/^(?<ch>[a-z])/u, (_, c: string) => c.toLowerCase()),
@@ -2412,15 +2334,12 @@ for (const [modName, fns] of Object.entries(modules)) {
     fnSet = new Set(fns),
     hasWhereFields = whereFieldsMap[tableName] !== undefined,
     isStandardList = (factoryType === 'owned' || factoryType === 'orgScoped') && fnSet.has('list') && hasWhereFields
-
   emit(`public enum ${apiName} {`)
   for (const fn of fns) emit(`${indent(1)}public static let ${fn} = "${modName}:${fn}"`)
-
   if (isStandardList) {
     emit('')
     emitListArgs(modName, tableName, factoryType)
   }
-
   if (factoryType && fields) {
     const prevDesktopLen = lines.length
     if (factoryType === 'owned' || factoryType === 'orgScoped') {
@@ -2436,11 +2355,9 @@ for (const [modName, fns] of Object.entries(modules)) {
       if (fnSet.has('get')) emitGetWrapper(modName, structName)
     } else if (factoryType === 'child' && fnSet.has('create') && allFieldsArgSafe(fields))
       emitChildCreateWrapper(modName, fields)
-
     const customDesktop = buildDesktopDescriptors(modName, tableName, fnSet)
     for (const [fnName, desc] of Object.entries(customDesktop))
       if (fnSet.has(fnName)) emitCustomDesktopFn(emit, modName, desc, fnName)
-
     if (lines.length > prevDesktopLen) {
       const wrappedLines = lines.splice(prevDesktopLen)
       emit('')
@@ -2449,14 +2366,12 @@ for (const [modName, fns] of Object.entries(modules)) {
       emit(`${indent(1)}#endif`)
     }
   }
-
   if (!(factoryType && fields)) {
     const customDesktopNoFactory = buildDesktopDescriptors(modName, tableName, fnSet)
     if (Object.keys(customDesktopNoFactory).length > 0) {
       const prevLen = lines.length
       for (const [fnName, desc] of Object.entries(customDesktopNoFactory))
         if (fnSet.has(fnName)) emitCustomDesktopFn(emit, modName, desc, fnName)
-
       if (lines.length > prevLen) {
         const wrappedLines = lines.splice(prevLen)
         emit('')
@@ -2466,16 +2381,12 @@ for (const [modName, fns] of Object.entries(modules)) {
       }
     }
   }
-
   emit('}')
   emit('')
 }
-
 emit('// swiftlint:enable file_types_order file_length')
-
 const output = `${lines.join('\n')}\n`
 writeFileSync(OUTPUT_PATH, output)
-
 const structCount = emittedStructs.size + nestedEmitted.size,
   enumCount = enumRegistry.size,
   moduleCount = Object.keys(modules).length,
@@ -2487,11 +2398,9 @@ for (const [modName] of Object.entries(modules)) {
   const tableName = modName.replace(/^(?<ch>[a-z])/u, (_, c: string) => c.toLowerCase())
   if (tableFactoryType[tableName]) wrapperCount += 1
 }
-
 process.stdout.write(
   `Generated ${OUTPUT_PATH}\n  ${String(structCount)} structs, ${String(enumCount)} enums, ${String(moduleCount)} modules, ${String(fnCount)} API constants, ${String(wrapperCount)} typed wrappers, ${String(whereCount)} Where structs\n`
 )
-
 if (MOBILE_OUTPUT_PATH) {
   const mLines: string[] = [],
     me = (s: string) => {
@@ -2611,33 +2520,27 @@ if (MOBILE_OUTPUT_PATH) {
       me(`${indent(2)}try await ConvexService.shared.mutate("${modName}:restore", args: [${argParts.join(', ')}])`)
       me(`${indent(1)}}`)
     }
-
   me('// Auto-generated by @noboil/convex-codegen-swift. DO NOT EDIT.')
   me('// swiftlint:disable file_length')
   me('import Foundation')
   me('')
-
   for (const [modName, fns] of Object.entries(modules)) {
     const tableName = modName.replace(/^(?<ch>[a-z])/u, (_, c: string) => c.toLowerCase()),
       factoryType = tableFactoryType[tableName],
       fields = userSchemaFields[tableName],
       apiName = `${pascalCase(modName)}API`,
       fnSet = new Set(fns)
-
     if (factoryType && fields) {
       const prevLen = mLines.length
-
       if (factoryType === 'owned' || factoryType === 'orgScoped') {
         if (fnSet.has('create')) emitMobileCreateWrapper(modName, fields, factoryType)
         if (fnSet.has('update')) emitMobileUpdateWrapper(modName, fields, factoryType)
         if (fnSet.has('rm')) emitMobileRmWrapper(modName, factoryType)
         if (fnSet.has('restore')) emitMobileRestoreWrapper(modName, factoryType)
       } else if (factoryType === 'singleton' && fnSet.has('upsert')) emitMobileUpsertWrapper(modName, fields)
-
       const customMobile = buildMobileDescriptors(modName, tableName, fnSet)
       for (const [fnName, desc] of Object.entries(customMobile))
         if (fnSet.has(fnName)) emitCustomMobileFn(me, modName, desc, fnName)
-
       if (mLines.length > prevLen) {
         const wrappedLines = mLines.splice(prevLen)
         me('')
@@ -2646,14 +2549,12 @@ if (MOBILE_OUTPUT_PATH) {
         me('}')
       }
     }
-
     if (!(factoryType && fields)) {
       const customMobileNoFactory = buildMobileDescriptors(modName, tableName, fnSet)
       if (Object.keys(customMobileNoFactory).length > 0) {
         const prevLen = mLines.length
         for (const [fnName, desc] of Object.entries(customMobileNoFactory))
           if (fnSet.has(fnName)) emitCustomMobileFn(me, modName, desc, fnName)
-
         if (mLines.length > prevLen) {
           const wrappedLines = mLines.splice(prevLen)
           me('')
@@ -2663,7 +2564,6 @@ if (MOBILE_OUTPUT_PATH) {
         }
       }
     }
-
     const subs = buildMobileSubscriptions({ factoryType, fnSet, modName, tableName })
     if (subs.length > 0) {
       me('')
@@ -2677,7 +2577,6 @@ if (MOBILE_OUTPUT_PATH) {
       me('}')
     }
   }
-
   const mobileOutput = `${mLines.join('\n')}\n`
   writeFileSync(MOBILE_OUTPUT_PATH, mobileOutput)
   process.stdout.write(`Generated ${MOBILE_OUTPUT_PATH}\n`)

@@ -24,7 +24,6 @@ import { cvFileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { identityEquals } from './reducer-utils'
 import { ERROR_MESSAGES } from './types'
-
 class SenderError extends Error {
   /** biome-ignore lint/style/useConsistentMemberAccessibility: biome+eslint conflict */
   public readonly _tag = 'SenderError' as const
@@ -34,7 +33,6 @@ class SenderError extends Error {
     this.name = 'SenderError'
   }
 }
-
 const TOKEN_BYTES = 24,
   TOKEN_RADIX = 36,
   TOKEN_LENGTH = 32,
@@ -308,7 +306,6 @@ const TOKEN_BYTES = 24,
         for (const k of keys) if (k !== 'own' && g[k] !== undefined) hasField = true
         if (hasField) out.push(g)
       }
-
     return out
   },
   matchW = <WG extends Record<string, unknown> & { own?: boolean }>(
@@ -322,7 +319,6 @@ const TOKEN_BYTES = 24,
       const entries = Object.entries(g)
       let ok = true
       for (const [k, vl] of entries) if (!(k === 'own' || vl === undefined || matchField(doc[k], vl))) ok = false
-
       if (ok && (!g.own || vid === (doc as { userId?: string }).userId)) return true
     }
     return false
@@ -425,7 +421,6 @@ const TOKEN_BYTES = 24,
         .query('rateLimit')
         .withIndex(
           'by_table_key',
-
           idx((q: unknown) =>
             (q as { eq: (field: string, value: unknown) => { eq: (field: string, value: unknown) => unknown } })
               .eq('table', table)
@@ -455,7 +450,6 @@ const TOKEN_BYTES = 24,
     }
     await db.patch(existing._id as string, { count: (existing.count as number) + 1 })
   }
-
 /** Structured Betterspace error payload extracted from reducer failures. */
 interface ErrorData {
   code: ErrorCode
@@ -468,30 +462,24 @@ interface ErrorData {
   retryAfter?: number
   table?: string
 }
-
 /** Error handler map keyed by Betterspace error codes. */
 type ErrorHandler = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
   default?: (error: unknown) => void
 }
-
 /** Failed mutation result wrapper. */
 interface MutationFail {
   error: ErrorData
   ok: false
 }
-
 /** Successful mutation result wrapper. */
 interface MutationOk<T> {
   ok: true
   value: T
 }
-
 /** Discriminated union representing mutation success or failure. */
 type MutationResult<T> = MutationFail | MutationOk<T>
-
 /** Typed field errors narrowed to specific schema keys. */
 type TypedFieldErrors<S extends ZodObject<ZodRawShape>> = Partial<Record<keyof ZodOutput<S> & string, string>>
-
 /**
  * Parses serialized reducer error text into Betterspace error data.
  * @param message Error message text from thrown reducer errors.
@@ -521,7 +509,6 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
       } catch {
         return { ...data, debug: 'Error payload was not valid JSON', message: rest }
       }
-
     return { ...data, message: rest }
   },
   /**
@@ -658,12 +645,10 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
               ? q
                   .withIndex(
                     index,
-
                     idx((i: unknown) => (i as { eq: (name: string, v: string) => unknown }).eq(field, value))
                   )
                   .first()
               : q
-
                   .filter(
                     flt((f: unknown) =>
                       (f as { eq: (left: unknown, right: unknown) => unknown; field: (name: string) => unknown }).eq(
@@ -677,7 +662,6 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
         })
       })
     )
-
 export type { ErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult, TypedFieldErrors }
 export {
   addUrls,

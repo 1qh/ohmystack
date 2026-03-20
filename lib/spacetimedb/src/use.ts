@@ -1,13 +1,10 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-
 type Target = 'cloud' | 'local'
-
 const TARGETS: Record<Target, { label: string; server: string; uri: string }> = {
     cloud: { label: '☁️  MainCloud', server: 'maincloud', uri: 'https://maincloud.spacetimedb.com' },
     local: { label: '🐳 Local Docker', server: 'local', uri: 'ws://localhost:3000' }
@@ -47,28 +44,23 @@ const TARGETS: Record<Target, { label: string; server: string; uri: string }> = 
       printUseHelp()
       return
     }
-
     const [targetArg] = args
     if (targetArg !== 'local' && targetArg !== 'cloud') {
       console.log(`${red('Unknown target:')} ${targetArg}`)
       console.log(`Valid targets: ${bold('local')}, ${bold('cloud')}\n`)
       process.exit(1)
     }
-
     const target = TARGETS[targetArg],
       envPath = findEnvFile(process.cwd())
-
     if (!envPath) {
       console.log(`${red('No .env file found.')} Create one first.\n`)
       process.exit(1)
     }
-
     const original = readFileSync(envPath, 'utf8'),
       updated = original.replace(URI_PAT, (line: string) => {
         const key = line.slice(0, line.indexOf('='))
         return `${key}=${target.uri}`
       })
-
     if (updated === original) {
       const lines = original.split('\n')
       let hasPublic = false,
@@ -82,15 +74,11 @@ const TARGETS: Record<Target, { label: string; server: string; uri: string }> = 
       if (!hasServer) additions.push(`SPACETIMEDB_URI=${target.uri}`)
       if (additions.length > 0) writeFileSync(envPath, `${original.trimEnd()}\n${additions.join('\n')}\n`)
     } else writeFileSync(envPath, updated)
-
     const spacetimeBin = `${process.env.HOME ?? ''}/.local/bin/spacetime`
     if (existsSync(spacetimeBin)) spawnSync(spacetimeBin, ['server', 'set-default', target.server], { stdio: 'pipe' })
-
     console.log(`${green('✓')} ${target.label}`)
     console.log(`  ${dim(envPath)} → ${bold(target.uri)}`)
   }
-
 if (process.argv[1]?.endsWith('use.ts')) switchTarget(process.argv.slice(2))
-
 export { findEnvFile, switchTarget }
 export type { Target }

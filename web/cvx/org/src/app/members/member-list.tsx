@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
@@ -15,17 +14,13 @@ import { MoreHorizontal, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const MemberList = () => {
   const { canManageAdmins, canManageMembers, role: myRole } = useOrg(),
     members = useOrgQuery(api.org.members),
     removeMember = useMutation(api.org.removeMember),
     setAdmin = useMutation(api.org.setAdmin)
-
   if (!members) return <Skeleton className='h-40 w-full' />
-
   type MemberId = NonNullable<(typeof members)[number]['memberId']>
-
   const handleRemove = (memberId: MemberId) => {
       removeMember({ memberId })
         .then(() => toast.success('Member removed'))
@@ -36,7 +31,6 @@ const MemberList = () => {
         .then(() => toast.success(isAdmin ? 'Demoted to member' : 'Promoted to admin'))
         .catch(fail)
     }
-
   return (
     <Table>
       <TableHeader>
@@ -95,5 +89,4 @@ const MemberList = () => {
     </Table>
   )
 }
-
 export default MemberList

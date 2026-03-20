@@ -5,7 +5,6 @@ import { useCallback, useMemo, useState } from 'react'
 import type { SchemaField, SchemaTable } from '../schema-utils'
 
 import { endpointsForFactory, extractSchemaFields } from '../schema-utils'
-
 /** Props for customizing the SchemaPlayground component. */
 interface PlaygroundProps {
   /** Additional CSS class for the outer container. */
@@ -25,7 +24,6 @@ interface PlaygroundProps {
   /** Additional CSS class for the table list section. */
   tableClassName?: string
 }
-
 const FACTORY_COLORS: Record<string, string> = {
     cacheCrud: 'text-purple-400',
     childCrud: 'text-cyan-400',
@@ -47,7 +45,6 @@ const FACTORY_COLORS: Record<string, string> = {
     published: boolean(),
   }),
 })
-
 const orgScoped = makeOrgScoped({
   project: object({
     name: string(),
@@ -121,7 +118,6 @@ const orgScoped = makeOrgScoped({
           count += endpointsForFactory({ factory: t.factory, file: '', options: '', table: t.table }).length
         return count
       }, [tables])
-
     return (
       <div className={`flex flex-col gap-4 lg:flex-row ${className ?? ''}`}>
         <div className='flex min-w-0 flex-1 flex-col'>
@@ -183,6 +179,5 @@ const orgScoped = makeOrgScoped({
       </div>
     )
   }
-
 export default SchemaPlayground
 export type { PlaygroundProps }

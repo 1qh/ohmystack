@@ -1,11 +1,9 @@
 import type { NextRequest } from 'next/server'
 
 import { NextResponse } from 'next/server'
-
 interface ImagePostBody {
   url?: string
 }
-
 const allowedProtocol = (value: string) => {
     try {
       const parsed = new URL(value)
@@ -40,5 +38,4 @@ const allowedProtocol = (value: string) => {
     if (!allowedProtocol(url)) return NextResponse.json({ error: 'url must be http or https' }, { status: 400 })
     return fetchRemote(url)
   }
-
 export { GET, POST }

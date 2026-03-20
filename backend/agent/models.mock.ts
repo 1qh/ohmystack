@@ -1,5 +1,4 @@
 import type { LanguageModel } from 'ai'
-
 const mockModel = {
   doGenerate: ({ tools }: { tools?: { name: string }[] }) => {
     if (tools && tools.length > 0) {
@@ -86,5 +85,4 @@ const mockModel = {
   provider: 'mock',
   specificationVersion: 'v3'
 } as unknown as LanguageModel
-
 export { mockModel }

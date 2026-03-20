@@ -8,14 +8,12 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 
 import UserMenuShell from './user-menu-shell'
-
 interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
   shellProps?: Omit<
     ComponentProps<typeof UserMenuShell>,
     'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
   >
 }
-
 const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
   await connection()
   const token = await tok(),
@@ -31,7 +29,6 @@ const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
       await fetchAction(api.auth.signOut, undefined, { token })
       redirect('/login')
     }
-
   return (
     <UserMenuShell
       {...shellProps}
@@ -44,5 +41,4 @@ const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
     />
   )
 }
-
 export default UserMenu

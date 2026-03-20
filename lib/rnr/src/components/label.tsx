@@ -1,7 +1,6 @@
 import { cn } from '@a/rnr'
 import * as LabelPrimitive from '@rn-primitives/label'
 import { Platform } from 'react-native'
-
 function Label({
   className,
   onPress,
@@ -32,5 +31,4 @@ function Label({
     </LabelPrimitive.Root>
   )
 }
-
 export { Label }

@@ -1,7 +1,6 @@
 import { makeOwned } from '@noboil/convex/schema'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
-
 const messagePart = union([
     object({ text: string(), type: zenum(['text']) }),
     object({ text: string(), type: zenum(['reasoning']) }),
@@ -107,5 +106,4 @@ const messagePart = union([
     threadId: string(),
     turnsSinceTaskTool: number().optional()
   })
-
 export { messageSchema, owned, taskSchema, threadRunStateSchema, todoSchema, tokenUsageSchema }

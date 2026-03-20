@@ -27,7 +27,6 @@ import {
   SEVEN_DAYS_MS,
   time
 } from './helpers'
-
 const chk = (c: DbCtx) => ({ db: c.db }),
   makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends GenericDataModel = GenericDataModel>({
     builders: b,
@@ -230,5 +229,4 @@ const chk = (c: DbCtx) => ({ db: c.db }),
       update
     } as unknown as CacheCrudResult<S>
   }
-
 export { makeCacheCrud }

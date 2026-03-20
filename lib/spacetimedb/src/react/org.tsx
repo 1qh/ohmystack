@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/suspicious/noDocumentCookie: org cookie management */
 // oxlint-disable no-document-cookie
 'use client'
-
 import type { ReactNode } from 'react'
 
 import { createContext, use, useCallback, useMemo, useState } from 'react'
@@ -9,7 +8,6 @@ import { createContext, use, useCallback, useMemo, useState } from 'react'
 import type { OrgRole } from '../server/types'
 
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
-
 /** Active organization selection state exposed by `useActiveOrg`. */
 interface ActiveOrgState<O extends OrgDoc = OrgDoc> {
   activeOrg: null | O
@@ -18,7 +16,6 @@ interface ActiveOrgState<O extends OrgDoc = OrgDoc> {
   isLoading: boolean
   setActiveOrg: (org: O) => void
 }
-
 /** Organization context payload exposed by `useOrg`. */
 interface OrgContextValue<O extends OrgDoc = OrgDoc, M = unknown> {
   canDeleteOrg: boolean
@@ -33,20 +30,17 @@ interface OrgContextValue<O extends OrgDoc = OrgDoc, M = unknown> {
   orgs: OrgMembership<O>[]
   role: OrgRole
 }
-
 /** Minimal org document contract used by Betterspace org hooks. */
 interface OrgDoc {
   [key: string]: unknown
   _id: string
   slug: string
 }
-
 /** Membership entry pairing an org document with role information. */
 interface OrgMembership<O extends OrgDoc = OrgDoc> {
   org: O
   role: OrgRole
 }
-
 /** Props accepted by `OrgProvider`. */
 interface OrgProviderProps<O extends OrgDoc, M> {
   children: ReactNode
@@ -55,7 +49,6 @@ interface OrgProviderProps<O extends OrgDoc, M> {
   orgs?: OrgMembership<O>[]
   role: OrgRole
 }
-
 const EMPTY_ORGS: OrgMembership[] = [],
   OrgContext = createContext<null | OrgContextValue>(null),
   ActiveOrgContext = createContext<ActiveOrgState | null>(null),
@@ -85,7 +78,6 @@ const EMPTY_ORGS: OrgMembership[] = [],
     const [activeOrgId, setActiveOrgId] = useState<null | string>(getActiveOrgIdFromCookie),
       activeOrg = useMemo(() => {
         if (activeOrgId) for (const m of orgs) if (m.org._id === activeOrgId) return m.org
-
         return currentOrg
       }, [activeOrgId, currentOrg, orgs]),
       setActiveOrg = useCallback((org: O) => {
@@ -231,7 +223,6 @@ const EMPTY_ORGS: OrgMembership[] = [],
       )
     }
   })
-
 export type { ActiveOrgState, OrgContextValue, OrgDoc, OrgMembership, OrgProviderProps }
 export {
   canEditResource,

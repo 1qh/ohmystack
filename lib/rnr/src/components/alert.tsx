@@ -4,7 +4,6 @@ import { cn } from '@a/rnr'
 import type { LucideIcon } from 'lucide-react-native'
 import * as React from 'react'
 import { View, type ViewProps } from 'react-native'
-
 function Alert({
   className,
   variant,
@@ -33,11 +32,9 @@ function Alert({
     </TextClassContext.Provider>
   )
 }
-
 function AlertTitle({ className, ...props }: React.ComponentProps<typeof Text> & React.RefAttributes<Text>) {
   return <Text className={cn('mb-1 ml-0.5 min-h-4 pl-6 font-medium leading-none tracking-tight', className)} {...props} />
 }
-
 function AlertDescription({ className, ...props }: React.ComponentProps<typeof Text> & React.RefAttributes<Text>) {
   const textClass = React.useContext(TextClassContext)
   return (
@@ -51,5 +48,4 @@ function AlertDescription({ className, ...props }: React.ComponentProps<typeof T
     />
   )
 }
-
 export { Alert, AlertDescription, AlertTitle }

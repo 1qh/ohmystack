@@ -1,6 +1,5 @@
 import { cn } from '@a/rnr'
 import { Platform, TextInput, type TextInputProps } from 'react-native'
-
 function Input({ className, placeholderClassName, ...props }: TextInputProps & React.RefAttributes<TextInput>) {
   return (
     <TextInput
@@ -22,5 +21,4 @@ function Input({ className, placeholderClassName, ...props }: TextInputProps & R
     />
   )
 }
-
 export { Input }

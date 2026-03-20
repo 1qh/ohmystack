@@ -5,11 +5,9 @@ import { Text } from '@a/rnr/components/text'
 import { Monitor, Moon, Sun } from 'lucide-react-native'
 import { View } from 'react-native'
 import { useUniwind } from 'uniwind'
-
 interface ThemeToggleProps {
   className?: string
 }
-
 const ThemeToggle = ({ className }: ThemeToggleProps) => {
   const { setTheme, theme } = useUniwind()
   return (
@@ -47,5 +45,4 @@ const ThemeToggle = ({ className }: ThemeToggleProps) => {
     </View>
   )
 }
-
 export default ThemeToggle

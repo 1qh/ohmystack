@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 'use client'
-
 import type { Id } from '@a/be-convex/model'
 
 import { api } from '@a/be-convex'
@@ -18,7 +17,6 @@ import { use } from 'react'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {
     const router = useRouter(),
@@ -41,9 +39,7 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       handleDelete = () => {
         remove({ id: wikiId }).then(() => router.push('/wiki'))
       }
-
     if (!wiki) return <Skeleton className='h-40' />
-
     return (
       <Form
         className='space-y-4'
@@ -74,11 +70,8 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       me = useQuery(api.user.me, {}),
       wiki = useOrgQuery(api.wiki.read, { id: wikiId }),
       editorsList = useOrgQuery(api.wiki.editors, { wikiId })
-
     if (!(wiki && me && editorsList)) return <Skeleton className='h-40' />
-
     const canEditWiki = canEditResource({ editorsList, isAdmin, resource: wiki, userId: me._id })
-
     return (
       <PermissionGuard backHref={`/wiki/${wikiId}`} backLabel='wiki page' canAccess={canEditWiki} resource='wiki page'>
         <div className='flex justify-center'>
@@ -94,5 +87,4 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       </PermissionGuard>
     )
   }
-
 export default EditWikiPage

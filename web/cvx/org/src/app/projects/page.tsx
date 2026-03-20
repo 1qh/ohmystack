@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -14,7 +13,6 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 
 import { useOrg } from '~/hook/use-org'
-
 const ProjectsPage = () => {
   const { isAdmin, org } = useOrg(),
     projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 100 } }),
@@ -30,9 +28,7 @@ const ProjectsPage = () => {
       orgId: org._id,
       rm
     })
-
   if (!projects) return <Skeleton className='h-40' />
-
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
@@ -62,7 +58,6 @@ const ProjectsPage = () => {
           </Link>
         </Button>
       </div>
-
       {projects.page.length === 0 ? (
         <Card>
           <CardContent className='flex flex-col items-center py-8 text-center'>
@@ -112,5 +107,4 @@ const ProjectsPage = () => {
     </div>
   )
 }
-
 export default ProjectsPage

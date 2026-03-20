@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return */
-
 'use client'
-
 import { api } from '@a/be-convex'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -10,7 +8,6 @@ import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { use, useState } from 'react'
 import { toast } from 'sonner'
-
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = use(params),
     router = useRouter(),
@@ -28,7 +25,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
           setInviteError(acceptError instanceof Error ? acceptError.message : 'Invalid or expired invite')
         })
     }
-
   if (accepted)
     return (
       <div className='container flex justify-center py-16'>
@@ -41,7 +37,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
         </Card>
       </div>
     )
-
   if (inviteError)
     return (
       <div className='container flex justify-center py-16'>
@@ -54,7 +49,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
         </Card>
       </div>
     )
-
   return (
     <div className='container flex justify-center py-16'>
       <Card className='w-full max-w-md'>
@@ -71,5 +65,4 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
     </div>
   )
 }
-
 export default AcceptInvitePage

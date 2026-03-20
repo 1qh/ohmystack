@@ -40,7 +40,6 @@ import {
   pgOpts,
   time
 } from './helpers'
-
 const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
   /**
    * Determines a user's role in an org based on ownership and membership.
@@ -87,14 +86,12 @@ const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
     if (!role) return err('NOT_ORG_MEMBER')
     return { member, org, role }
   }
-
 interface RequireOrgRoleArgs {
   db: unknown
   minRole: OrgRole
   orgId: string
   userId: string
 }
-
 /**
  * Validates that a user has at least the specified minimum role in the org.
  * @param args - Object with db, minRole, orgId, and userId
@@ -116,7 +113,6 @@ const requireOrgRole = async ({ db, minRole, orgId, userId }: RequireOrgRoleArgs
     if (acl && doc.editors?.includes(userId)) return true
     return false
   }
-
 interface OrgCrudOptions<S extends ZodRawShape = ZodRawShape> {
   acl?: boolean
   aclFrom?: { field: keyof S & string; table: string }
@@ -125,7 +121,6 @@ interface OrgCrudOptions<S extends ZodRawShape = ZodRawShape> {
   rateLimit?: RateLimitConfig
   softDelete?: boolean
 }
-
 const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined) ?? [],
   requireOrgDoc = (doc: null | Rec, orgId: string, debug?: string): Rec => {
     if (doc?.orgId !== orgId) return err('NOT_FOUND', debug)
@@ -461,6 +456,5 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
     _schema: ZodObject<S>,
     config: { foreignKey: keyof S & string; table: string }
   ): CascadeOption => config
-
 export type { OrgCrudOptions }
 export { canEdit, getOrgMember, getOrgRole, makeOrgCrud, orgCascade, requireOrgMember, requireOrgRole }

@@ -7,7 +7,6 @@ import type { Sharp } from 'sharp'
 import { ConvexHttpClient } from 'convex/browser'
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'
-
 type Format = 'jpeg' | 'png' | 'webp'
 interface FormatOpts {
   contentType: string
@@ -29,7 +28,6 @@ interface TransformOpts {
   pipeline: Sharp
   thumbnail: boolean
 }
-
 const IMAGE_TYPES = new Set(['image/gif', 'image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']),
   isImageType = (contentType: string): boolean => IMAGE_TYPES.has(contentType),
   formatToMime: Record<Format, string> = {
@@ -134,6 +132,5 @@ const IMAGE_TYPES = new Set(['image/gif', 'image/jpeg', 'image/png', 'image/svg+
       opts = { getClient, queryRef: fileInfoQuery }
     return { GET: makeGet(opts), POST: makePost(opts) }
   }
-
 /** Creates a Next.js route handler for image processing with GET and POST methods. */
 export { makeImageRoute }

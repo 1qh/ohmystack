@@ -17,7 +17,6 @@ import {
 } from 'ai'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
 import { z } from 'zod/v4'
-
 const filterSupportedParts = (parts: Record<string, unknown>[]) =>
     parts
       .map(p => {

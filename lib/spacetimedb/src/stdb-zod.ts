@@ -1,7 +1,6 @@
 import type { ZodObject, ZodRawShape, ZodType } from 'zod/v4'
 
 import { array, boolean, number, object, string, unknown, uuid, enum as zenum } from 'zod/v4'
-
 interface RuntimeBuilder {
   algebraicType?: unknown
   columnMetadata?: unknown
@@ -13,14 +12,12 @@ interface RuntimeBuilder {
   value?: unknown
   variants?: unknown
 }
-
 /** Options for selecting and shaping fields when deriving Zod from table metadata. */
 interface ZodFromTableOptions {
   exclude?: string[]
   include?: string[]
   optional?: string[]
 }
-
 const NUMBER_TAGS = new Set([
     'F32',
     'F64',
@@ -144,7 +141,6 @@ const NUMBER_TAGS = new Set([
     const names = toVariantNames(variants)
     if (names.length === 0) return unknown()
     for (const k of names) if (!isUnitVariant(variants[k])) return unknown()
-
     return object({ tag: zenum(names as [string, ...string[]]) })
   },
   /** Maps scalar SpacetimeDB tags to primitive Zod schemas. */
@@ -227,6 +223,5 @@ const NUMBER_TAGS = new Set([
     }
     return object(shape)
   }
-
 export type { ZodFromTableOptions }
 export { zodFromTable }

@@ -1,7 +1,6 @@
 /* oxlint-disable react-perf/jsx-no-jsx-as-prop, react-perf/jsx-no-new-object-as-prop, react-perf/jsx-no-new-array-as-prop */
 // oxlint-disable promise/prefer-await-to-then
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
@@ -31,7 +30,6 @@ import { toast } from 'sonner'
 import type { Api, FieldKind, FieldMetaMap } from '../react/form'
 
 import { unwrapZod } from '../zod'
-
 const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
   FIRST_CHAR_RE = /^./u,
   Calendar = dynamic(async () => import('@a/ui/calendar').then(m => ({ default: m.Calendar })), {
@@ -167,7 +165,6 @@ const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
                           toast.error(`Max ${mx}`)
                           return
                         }
-
                         f.handleChange([...new Set([...tags, v])])
                         e.currentTarget.value = ''
                       } else if (e.key === 'Backspace' && tags.length > 0 && !value.trim()) {
@@ -934,8 +931,6 @@ const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
       )
     }
   }
-
 /** Exports form fields, context, and server error component. */
 export type { Api }
-
 export { deriveLabel, fields, FormContext, ServerFieldError }

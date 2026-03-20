@@ -1,10 +1,8 @@
 'use client'
-
 import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
-
 interface OrgListGridItem<TRole extends string> {
   avatarId?: null | string
   id: string
@@ -12,7 +10,6 @@ interface OrgListGridItem<TRole extends string> {
   role: TRole
   slug: string
 }
-
 interface OrgListGridProps<TRole extends string> {
   cardClassName?: string
   cardProps?: Omit<ComponentProps<typeof Button>, 'children' | 'onClick' | 'type'>
@@ -23,7 +20,6 @@ interface OrgListGridProps<TRole extends string> {
   renderRole: (role: TRole) => ReactNode
   rootProps?: Omit<ComponentProps<'div'>, 'children'>
 }
-
 const OrgListGrid = <TRole extends string>({
   cardClassName,
   cardProps,
@@ -59,6 +55,5 @@ const OrgListGrid = <TRole extends string>({
     ))}
   </div>
 )
-
 export type { OrgListGridItem, OrgListGridProps }
 export default OrgListGrid

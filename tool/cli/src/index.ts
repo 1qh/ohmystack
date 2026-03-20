@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-
 const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -19,7 +18,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     console.log(`\nRun ${dim('noboil <command> --help')} for command-specific options.\n`)
   },
   [cmd, ...rest] = process.argv.slice(2)
-
 if (!cmd || cmd === '--help' || cmd === '-h') printHelp()
 else if (cmd === 'init') {
   const { init } = await import('./init')

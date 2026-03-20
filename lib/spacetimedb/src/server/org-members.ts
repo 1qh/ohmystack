@@ -2,13 +2,11 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 
 import { identityEquals, makeError } from './reducer-utils'
-
 interface OrgMemberPkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
   update: (row: Row) => Row
 }
-
 interface OrgMemberReducersConfig<
   DB,
   OrgId,
@@ -28,11 +26,9 @@ interface OrgMemberReducersConfig<
   orgPk: (table: Iterable<OrgRow>) => OrgPkLike<OrgRow, OrgId>
   orgTable: (db: DB) => Iterable<OrgRow>
 }
-
 interface OrgMemberReducersExports {
   exports: Record<string, ReducerExport<never, never>>
 }
-
 interface OrgMemberRowLike<MemberId, OrgId> {
   createdAt: Timestamp
   id: MemberId
@@ -41,27 +37,22 @@ interface OrgMemberRowLike<MemberId, OrgId> {
   updatedAt: Timestamp
   userId: Identity
 }
-
 interface OrgMemberTableLike<Row> extends Iterable<Row> {
   delete: (row: Row) => boolean
   insert: (row: Row) => Row
 }
-
 interface OrgPkLike<Row, Id> {
   delete: (id: Id) => boolean
   find: (id: Id) => null | Row
   update: (row: Row) => Row
 }
-
 type OrgRole = 'admin' | 'member' | 'owner'
-
 interface OrgRowLike<OrgId> {
   createdAt: Timestamp
   id: OrgId
   updatedAt: Timestamp
   userId: Identity
 }
-
 const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<MemberId, OrgId>>(
     orgMemberTable: Iterable<MemberRow>,
     orgId: OrgId,
@@ -130,11 +121,9 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgMemberTable = config.orgMemberTable(ctx.db),
             orgMemberPk = config.orgMemberPk(orgMemberTable),
             member = orgMemberPk.find(typedArgs.memberId)
-
           if (!member) throw makeError('NOT_FOUND', 'org:set_admin')
           const org = orgPk.find(member.orgId)
           if (!org) throw makeError('NOT_FOUND', 'org:set_admin')
-
           requireRole({
             minRole: 'owner',
             operation: 'set_admin',
@@ -143,9 +132,7 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             sender: ctx.sender,
             tableName: 'org'
           })
-
           if (identityEquals(member.userId, org.userId)) throw makeError('CANNOT_MODIFY_OWNER', 'org:set_admin')
-
           orgMemberPk.update({
             ...(member as unknown as Record<string, unknown>),
             isAdmin: typedArgs.isAdmin,
@@ -163,12 +150,10 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgMemberTable = config.orgMemberTable(ctx.db),
             orgMemberPk = config.orgMemberPk(orgMemberTable),
             member = orgMemberPk.find(typedArgs.memberId)
-
           if (!member) throw makeError('NOT_FOUND', 'org:remove_member')
           const org = orgPk.find(member.orgId)
           if (!org) throw makeError('NOT_FOUND', 'org:remove_member')
           if (identityEquals(member.userId, org.userId)) throw makeError('CANNOT_MODIFY_OWNER', 'org:remove_member')
-
           const actorRole = requireRole({
             minRole: 'admin',
             operation: 'remove_member',
@@ -177,9 +162,7 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             sender: ctx.sender,
             tableName: 'org'
           })
-
           if (actorRole === 'admin' && member.isAdmin) throw makeError('CANNOT_MODIFY_ADMIN', 'org:remove_member')
-
           const removed = orgMemberPk.delete(typedArgs.memberId)
           if (!removed) throw makeError('NOT_FOUND', 'org:remove_member')
         }
@@ -191,10 +174,8 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
           orgMemberTable = config.orgMemberTable(ctx.db),
           orgMemberPk = config.orgMemberPk(orgMemberTable),
           org = orgPk.find(typedArgs.orgId)
-
         if (!org) throw makeError('NOT_FOUND', 'org:leave')
         if (identityEquals(org.userId, ctx.sender)) throw makeError('MUST_TRANSFER_OWNERSHIP', 'org:leave')
-
         const member = findOrgMember(orgMemberTable, typedArgs.orgId, ctx.sender)
         if (!member) throw makeError('NOT_ORG_MEMBER', 'org:leave')
         const removed = orgMemberPk.delete(member.id)
@@ -213,7 +194,6 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             orgMemberTable = config.orgMemberTable(ctx.db),
             orgMemberPk = config.orgMemberPk(orgMemberTable),
             org = orgPk.find(typedArgs.orgId)
-
           if (!org) throw makeError('NOT_FOUND', 'org:transfer_ownership')
           requireRole({
             minRole: 'owner',
@@ -223,20 +203,16 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
             sender: ctx.sender,
             tableName: 'org'
           })
-
           const targetMember = findOrgMember(orgMemberTable, typedArgs.orgId, typedArgs.newOwnerId as unknown as Identity)
           if (!targetMember) throw makeError('NOT_ORG_MEMBER', 'org:transfer_ownership')
           if (!targetMember.isAdmin) throw makeError('TARGET_MUST_BE_ADMIN', 'org:transfer_ownership')
-
           orgPk.update({
             ...(org as unknown as Record<string, unknown>),
             updatedAt: ctx.timestamp,
             userId: typedArgs.newOwnerId
           } as unknown as OrgRow)
-
           const removed = orgMemberPk.delete(targetMember.id)
           if (!removed) throw makeError('NOT_FOUND', 'org:transfer_ownership')
-
           orgMemberTable.insert({
             createdAt: ctx.timestamp,
             id: 0 as MemberId,
@@ -247,7 +223,6 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
           } as unknown as MemberRow)
         }
       )
-
     return {
       exports: {
         org_leave: leaveReducer,
@@ -257,7 +232,6 @@ const findOrgMember = <OrgId, MemberId, MemberRow extends OrgMemberRowLike<Membe
       }
     }
   }
-
 export type {
   OrgMemberPkLike,
   OrgMemberReducersConfig,

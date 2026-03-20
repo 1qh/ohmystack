@@ -1,7 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
-
 'use client'
-
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -20,7 +18,6 @@ import { useReducer } from 'spacetimedb/react'
 
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
-
 const WikiPage = () => {
   const { isAdmin, org } = useOrg(),
     [showDeleted, setShowDeleted] = useState(false),
@@ -63,7 +60,6 @@ const WikiPage = () => {
     activeItems = showDeleted ? [] : wikis,
     deletedItems = deletedWikis,
     visibleCount = showDeleted ? deletedItems.length : activeItems.length
-
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
@@ -111,7 +107,6 @@ const WikiPage = () => {
           )}
         </div>
       </div>
-
       {showDeleted ? null : (
         <div className='relative'>
           <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
@@ -125,7 +120,6 @@ const WikiPage = () => {
           />
         </div>
       )}
-
       {showDeleted ? (
         deletedItems.length === 0 ? (
           <Card>
@@ -211,5 +205,4 @@ const WikiPage = () => {
     </div>
   )
 }
-
 export default WikiPage

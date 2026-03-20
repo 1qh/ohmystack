@@ -7,17 +7,11 @@ import * as React from 'react'
 import { Platform, Text, View, type ViewProps } from 'react-native'
 import { FadeIn, FadeOut } from 'react-native-reanimated'
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens'
-
 const Dialog = DialogPrimitive.Root
-
 const DialogTrigger = DialogPrimitive.Trigger
-
 const DialogPortal = DialogPrimitive.Portal
-
 const DialogClose = DialogPrimitive.Close
-
 const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment
-
 function DialogOverlay({
   className,
   children,
@@ -85,28 +79,23 @@ function DialogContent({
     </DialogPortal>
   )
 }
-
 function DialogHeader({ className, ...props }: ViewProps) {
   return <View className={cn('flex flex-col gap-2 text-center sm:text-left', className)} {...props} />
 }
-
 function DialogFooter({ className, ...props }: ViewProps) {
   return <View className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />
 }
-
 function DialogTitle({ className, ...props }: DialogPrimitive.TitleProps & React.RefAttributes<DialogPrimitive.TitleRef>) {
   return (
     <DialogPrimitive.Title className={cn('text-foreground text-lg font-semibold leading-none', className)} {...props} />
   )
 }
-
 function DialogDescription({
   className,
   ...props
 }: DialogPrimitive.DescriptionProps & React.RefAttributes<DialogPrimitive.DescriptionRef>) {
   return <DialogPrimitive.Description className={cn('text-muted-foreground text-sm', className)} {...props} />
 }
-
 export {
   Dialog,
   DialogClose,

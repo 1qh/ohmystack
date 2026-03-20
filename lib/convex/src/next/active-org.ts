@@ -9,7 +9,6 @@ import { fetchQuery } from 'convex/nextjs'
 import { cookies } from 'next/headers'
 
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
-
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 const isTestMode = () =>
     Boolean(
@@ -56,7 +55,6 @@ const isTestMode = () =>
     if (!orgId) return null
     try {
       if (token) return await fetchQuery(query, { orgId }, { token })
-
       return await directQuery(query, { orgId })
     } catch {
       cookieStore.delete(ACTIVE_ORG_COOKIE)
@@ -64,18 +62,13 @@ const isTestMode = () =>
       return null
     }
   }
-
 /** Gets the Convex authentication token for the current user. */
 export { getToken }
-
 /** Checks if the user is authenticated with Convex. */
 export { isAuthenticated }
-
 /** Sets the active organization cookies with orgId and slug. */
 export { setActiveOrgCookie }
-
 /** Clears the active organization cookies from the browser. */
 export { clearActiveOrgCookie }
-
 /** Retrieves the active organization from cookies and validates it via query. */
 export { getActiveOrg }

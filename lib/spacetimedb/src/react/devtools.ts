@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useMemo, useState } from 'react'
 import { useSpacetimeDB } from 'spacetimedb/react'
 
@@ -7,7 +6,6 @@ import type { ErrorData } from '../server/helpers'
 import type { ErrorCode } from '../server/types'
 
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
-
 interface DevCacheEntry {
   hitCount: number
   id: number
@@ -17,7 +15,6 @@ interface DevCacheEntry {
   stale: boolean
   table: string
 }
-
 interface DevConnection {
   connectionError: string
   connectionId: string
@@ -26,7 +23,6 @@ interface DevConnection {
   isActive: boolean
   token: string
 }
-
 interface DevError {
   data?: ErrorData
   detail: string
@@ -34,7 +30,6 @@ interface DevError {
   message: string
   timestamp: number
 }
-
 interface DevMutation {
   args: string
   durationMs: number
@@ -44,7 +39,6 @@ interface DevMutation {
   startedAt: number
   status: 'error' | 'pending' | 'success'
 }
-
 interface DevSubscription {
   args: string
   dataPreview: string
@@ -59,7 +53,6 @@ interface DevSubscription {
   status: 'error' | 'loaded' | 'loading'
   updateCount: number
 }
-
 const MAX_ERRORS = 50,
   MAX_MUTATIONS = 100,
   SLOW_THRESHOLD_MS = 5000,
@@ -68,7 +61,6 @@ const MAX_ERRORS = 50,
   mutationStore: DevMutation[] = [],
   cacheStore = new Map<string, DevCacheEntry>(),
   subStore = new Map<number, DevSubscription>()
-
 let nextId = 1
 const listeners: (() => void)[] = [],
   connectionStore: DevConnection = {
@@ -96,7 +88,6 @@ const listeners: (() => void)[] = [],
       } catch {
         return Object.prototype.toString.call(value)
       }
-
     return ''
   },
   setConnectionState = (nextState: Partial<DevConnection>) => {
@@ -282,7 +273,6 @@ const listeners: (() => void)[] = [],
       [errorStore.length, mutationStore.length, subStore.size, cacheStore.size, connectionStore]
     )
   }
-
 export type { DevCacheEntry, DevConnection, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

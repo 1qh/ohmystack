@@ -1,6 +1,5 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -8,7 +7,6 @@ import { useMut } from '@noboil/spacetimedb/react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { use, useState } from 'react'
-
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = use(params),
     router = useRouter(),
@@ -25,7 +23,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
       },
       toast: { success: 'Welcome to the organization!' }
     })
-
   if (accepted)
     return (
       <div className='container flex justify-center py-16'>
@@ -38,7 +35,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
         </Card>
       </div>
     )
-
   if (inviteError)
     return (
       <div className='container flex justify-center py-16'>
@@ -51,7 +47,6 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
         </Card>
       </div>
     )
-
   return (
     <div className='container flex justify-center py-16'>
       <Card className='w-full max-w-md'>
@@ -72,5 +67,4 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
     </div>
   )
 }
-
 export default AcceptInvitePage

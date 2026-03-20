@@ -8,7 +8,6 @@ import Animated, {
   useDerivedValue,
   withSpring
 } from 'react-native-reanimated'
-
 function Progress({
   className,
   value,
@@ -26,25 +25,20 @@ function Progress({
     </ProgressPrimitive.Root>
   )
 }
-
 export { Progress }
-
 const Indicator = Platform.select({
   web: WebIndicator,
   native: NativeIndicator,
   default: NullIndicator
 })
-
 type IndicatorProps = {
   value: number | undefined | null
   className?: string
 }
-
 function WebIndicator({ value, className }: IndicatorProps) {
   if (Platform.OS !== 'web') {
     return null
   }
-
   return (
     <View
       className={cn('bg-primary h-full w-full flex-1 transition-all', className)}
@@ -53,10 +47,8 @@ function WebIndicator({ value, className }: IndicatorProps) {
     </View>
   )
 }
-
 function NativeIndicator({ value, className }: IndicatorProps) {
   const progress = useDerivedValue(() => value ?? 0)
-
   const indicator = useAnimatedStyle(
     () => ({
       width: withSpring(`${interpolate(progress.value, [0, 100], [1, 100], Extrapolation.CLAMP)}%`, {
@@ -65,18 +57,15 @@ function NativeIndicator({ value, className }: IndicatorProps) {
     }),
     [value]
   )
-
   if (Platform.OS === 'web') {
     return null
   }
-
   return (
     <ProgressPrimitive.Indicator asChild>
       <Animated.View style={indicator} className={cn('bg-foreground h-full', className)} />
     </ProgressPrimitive.Indicator>
   )
 }
-
 function NullIndicator(_props: IndicatorProps) {
   return null
 }

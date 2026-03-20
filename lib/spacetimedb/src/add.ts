@@ -3,11 +3,9 @@
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 // oxlint-disable no-await-expression-member
-
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
-
 interface AddFlags {
   appDir: string
   fields: ParsedField[]
@@ -18,15 +16,12 @@ interface AddFlags {
   type: TableType
 }
 type FieldType = 'boolean' | 'number' | 'string'
-
 interface ParsedField {
   name: string
   optional: boolean
   type: FieldType | { enum: string[] }
 }
-
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
-
 const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton']),
   FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string']),
   ENUM_PAT = /^enum\((?<values>[^)]+)\)$/u,
@@ -78,7 +73,6 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
       else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
       else if (arg.startsWith('--parent=')) parent = arg.slice('--parent='.length)
       else if (!(arg.startsWith('-') || name)) name = arg
-
     const fields: ParsedField[] = []
     if (fieldsRaw)
       for (const f of fieldsRaw.split(',')) {
@@ -86,7 +80,6 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
         if (parsed) fields.push(parsed)
         else console.log(`${yellow('warn')} Skipping invalid field: ${f}`)
       }
-
     return { appDir, fields, help, moduleDir, name, parent, type }
   },
   printAddHelp = () => {
@@ -151,11 +144,9 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
     if (type === 'org') lines.unshift('  orgId: t.string(),')
     if (type === 'owned' || type === 'singleton') lines.unshift('  userId: t.string(),')
     return `import { table, t } from 'spacetimedb'
-
 const ${name}Table = table({ ${tableVisibility(type)} }, {
 ${lines.join('\n')}
 })
-
 export { ${name}Table }
 `
   },
@@ -185,7 +176,6 @@ export { ${name}Table }
     const idType = type === 'singleton' ? 'userId: string' : 'id: number',
       parentLabel = type === 'child' ? `, parent: '${parent || name}'` : ''
     return `import { reducer } from 'spacetimedb'
-
 import { make${
       type === 'cache'
         ? 'CacheCrud'
@@ -197,7 +187,6 @@ import { make${
               ? 'Crud'
               : 'Crud'
     } } from '@noboil/spacetimedb/server'
-
 const model = make${
       type === 'cache'
         ? 'CacheCrud'
@@ -209,14 +198,12 @@ const model = make${
               ? 'Crud'
               : 'Crud'
     }({ table: '${name}'${parentLabel} })
-
 const create${camelToTitle(name).replaceAll(/\s/gu, '')} = reducer(
   '${name}.create',
   (ctx, input: {
 ${createFields.join('\n')}
   }) => model.create(ctx, { ${pickFields(fields)} })
 )
-
 const update${camelToTitle(name).replaceAll(/\s/gu, '')} = reducer(
   '${name}.update',
   (ctx, input: {
@@ -224,9 +211,7 @@ const update${camelToTitle(name).replaceAll(/\s/gu, '')} = reducer(
 ${updateFields.join('\n')}
   }) => model.update(ctx, input)
 )
-
 const remove${camelToTitle(name).replaceAll(/\s/gu, '')} = reducer('${name}.rm', (ctx, input: { ${idType} }) => model.rm(ctx, input))
-
 export { create${camelToTitle(name).replaceAll(/\s/gu, '')}, remove${camelToTitle(name).replaceAll(/\s/gu, '')}, update${camelToTitle(
       name
     ).replaceAll(/\s/gu, '')} }
@@ -237,21 +222,16 @@ export { create${camelToTitle(name).replaceAll(/\s/gu, '')}, remove${camelToTitl
       component = title.replaceAll(/\s/gu, '')
     if (type === 'singleton')
       return `'use client'
-
 import { useState } from 'react'
-
 import { useSpacetime } from '../../spacetime-client'
-
 const ${component}Page = () => {
   const spacetime = useSpacetime()
   const [loading, setLoading] = useState(false)
-
   const refresh = async () => {
     setLoading(true)
     await spacetime.callReducer('${name}.get', {})
     setLoading(false)
   }
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
@@ -261,25 +241,19 @@ const ${component}Page = () => {
     </main>
   )
 }
-
 export default ${component}Page
 `
     return `'use client'
-
 import { useState } from 'react'
-
 import { useSpacetime } from '../../spacetime-client'
-
 const ${component}Page = () => {
   const spacetime = useSpacetime()
   const [loading, setLoading] = useState(false)
-
   const refresh = async () => {
     setLoading(true)
     await spacetime.callReducer('${name}.list', {})
     setLoading(false)
   }
-
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
@@ -289,7 +263,6 @@ const ${component}Page = () => {
     </main>
   )
 }
-
 export default ${component}Page
 `
   },
@@ -348,12 +321,9 @@ export default ${component}Page
     const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type),
       modulePath = join(process.cwd(), flags.moduleDir),
       appPath = join(process.cwd(), flags.appDir)
-
     console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
-
     let created = 0,
       skipped = 0
-
     const tableFile = join(modulePath, `tables/${flags.name}.ts`)
     if (
       writeIfNotExists(
@@ -364,7 +334,6 @@ export default ${component}Page
     )
       created += 1
     else skipped += 1
-
     const reducerFile = join(modulePath, `reducers/${flags.name}.ts`)
     if (
       writeIfNotExists(
@@ -375,13 +344,11 @@ export default ${component}Page
     )
       created += 1
     else skipped += 1
-
     const pageDir = join(appPath, flags.name),
       pageFile = join(pageDir, 'page.tsx')
     if (writeIfNotExists(pageFile, genPageContent(flags.name, flags.type), `${flags.appDir}/${flags.name}/page.tsx`))
       created += 1
     else skipped += 1
-
     console.log('')
     if (created > 0) console.log(`${green('✓')} Created ${created} file${created > 1 ? 's' : ''}.`)
     if (skipped > 0) console.log(`${yellow('⚠')} Skipped ${skipped} existing file${skipped > 1 ? 's' : ''}.`)
@@ -389,7 +356,6 @@ export default ${component}Page
     console.log(`  ${dim('1.')} Register table in your module schema()`)
     console.log(`  ${dim('2.')} Export reducer from your module entrypoint`)
     console.log(`  ${dim('3.')} Run spacetime publish and spacetime generate\n`)
-
     return { created, skipped }
   },
   add = async (args: string[] = []) => {
@@ -413,9 +379,7 @@ export default ${component}Page
     }
     return addSync(flags)
   }
-
 if (process.argv[1]?.endsWith('add.ts')) add(process.argv.slice(2))
-
 export {
   add,
   defaultFields,

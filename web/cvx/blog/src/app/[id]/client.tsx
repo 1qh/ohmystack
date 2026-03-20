@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
-
 import type { api } from '@a/be-convex'
 import type { Preloaded } from 'convex/react'
 
@@ -9,7 +8,6 @@ import { usePreloadedQuery } from 'convex/react'
 import Link from 'next/link'
 
 import { Author } from '../common'
-
 const Client = ({ preloaded }: { preloaded: Preloaded<typeof api.blog.read> }) => {
   const b = usePreloadedQuery(preloaded)
   if (!b)
@@ -61,5 +59,4 @@ const Client = ({ preloaded }: { preloaded: Preloaded<typeof api.blog.read> }) =
     </div>
   )
 }
-
 export default Client

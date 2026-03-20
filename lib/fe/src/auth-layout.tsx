@@ -10,7 +10,6 @@ import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
 
 import ErrorBoundary from './error-boundary'
-
 interface AuthLayoutProps {
   bodyClassName?: string
   bodyProps?: Omit<ComponentProps<'body'>, 'children' | 'className'>
@@ -21,7 +20,6 @@ interface AuthLayoutProps {
   themeProviderProps?: Omit<ComponentProps<typeof ThemeProvider>, 'children'>
   toasterProps?: ComponentProps<typeof Toaster>
 }
-
 const AuthLayout = ({
   bodyClassName,
   bodyProps,
@@ -52,5 +50,4 @@ const AuthLayout = ({
     </body>
   </html>
 )
-
 export default AuthLayout

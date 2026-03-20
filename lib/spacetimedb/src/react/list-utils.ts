@@ -1,13 +1,9 @@
 'use client'
-
 import type { ComparisonOp } from '../server/types'
-
 type ListSort<T extends Rec> = SortMap<T> | SortObject<T>
 type ListWhere<T extends Rec> = WhereGroup<T> & { or?: WhereGroup<T>[] }
 type Rec = Record<string, unknown>
-
 type SortDirection = 'asc' | 'desc'
-
 type SortMap<T extends Rec> = Partial<Record<keyof T & string, SortDirection>>
 interface SortObject<T extends Rec> {
   direction?: SortDirection
@@ -15,7 +11,6 @@ interface SortObject<T extends Rec> {
 }
 type WhereFieldValue<V> = ComparisonOp<V> | V
 type WhereGroup<T extends Rec> = { [K in keyof T & string]?: WhereFieldValue<T[K]> } & { own?: boolean }
-
 /**
  * Tests whether a row contains the query string in any of the given fields.
  * @param row Data row to test.
@@ -47,7 +42,6 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
       } catch {
         return Object.prototype.toString.call(value)
       }
-
     return ''
   },
   /**
@@ -98,6 +92,5 @@ const searchMatches = <T extends Rec>(row: T, query: string, fields: (keyof T & 
     return out
   },
   noop = () => undefined
-
 export type { ListSort, ListWhere, Rec, SortDirection, SortMap, SortObject, WhereFieldValue, WhereGroup }
 export { compareValues, getSortConfig, noop, searchMatches, sortData, toSortableString }

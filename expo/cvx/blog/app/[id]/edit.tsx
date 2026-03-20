@@ -3,7 +3,6 @@ import { Input } from '@a/rnr/components/input'
 import { Text } from '@a/rnr/components/text'
 import { useLocalSearchParams } from 'expo-router'
 import { ScrollView } from 'react-native'
-
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>()
   return (
@@ -16,5 +15,4 @@ const Page = () => {
     </ScrollView>
   )
 }
-
 export default Page

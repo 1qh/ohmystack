@@ -2,11 +2,9 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { trackCacheAccess } from './devtools'
-
 interface FireLoadCtx<A extends Record<string, unknown>> {
   args: A
   load: (args: A) => Promise<void>
@@ -14,21 +12,18 @@ interface FireLoadCtx<A extends Record<string, unknown>> {
   setIsLoading: (value: boolean) => void
   table: string
 }
-
 interface UseCacheEntryOptions<A extends Record<string, unknown>, T extends Record<string, unknown>> {
   args: A
   data: null | T | undefined
   load: (args: A) => Promise<void>
   table: string
 }
-
 interface UseCacheEntryResult<T> {
   data: null | T
   isLoading: boolean
   isStale: boolean
   refresh: () => void
 }
-
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
   fireLoad = async <A extends Record<string, unknown>>({
     args,
@@ -61,11 +56,9 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
     const [isLoading, setIsLoading] = useState(false),
       loadingRef = useRef(false),
       argsRef = useRef(args)
-
     useEffect(() => {
       argsRef.current = args
     }, [args])
-
     useEffect(() => {
       if (loadingRef.current) return
       const isStale = data !== undefined && (data === null || data.stale === true)
@@ -74,13 +67,11 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       setIsLoading(true)
       fireLoad({ args: argsRef.current, load, loadingRef, setIsLoading, table })
     }, [data, load, table])
-
     useEffect(() => {
       if (!(isDev && data !== undefined)) return
       const stale = data === null || data.stale === true
       trackCacheAccess({ hit: !stale, key: JSON.stringify(args), stale, table })
     }, [args, data, table])
-
     const refresh = useCallback(() => {
         if (loadingRef.current) return
         loadingRef.current = true
@@ -89,9 +80,7 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
       }, [load, table]),
       cacheData = data === undefined ? null : data,
       isStale = cacheData !== null && cacheData.stale === true
-
     return { data: cacheData, isLoading: isLoading || data === undefined, isStale, refresh }
   }
-
 export type { UseCacheEntryOptions, UseCacheEntryResult }
 export { useCacheEntry }

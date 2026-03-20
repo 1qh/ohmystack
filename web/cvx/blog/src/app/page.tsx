@@ -1,5 +1,4 @@
 'use client'
-
 import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
@@ -7,7 +6,6 @@ import { useList } from '@noboil/convex/react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 
 import { Create, List } from './common'
-
 const Page = () => {
   const { items, loadMore, status } = useList(api.blog.list, { where: { or: [{ published: true }, { own: true }] } }),
     [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set()),
@@ -44,5 +42,4 @@ const Page = () => {
     </div>
   )
 }
-
 export default Page

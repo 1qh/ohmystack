@@ -1,5 +1,4 @@
 'use client'
-
 import type { ReactNode } from 'react'
 
 import { DbConnection } from '@a/be-spacetimedb/spacetimedb'
@@ -10,14 +9,12 @@ import { AuthProvider as OidcProvider } from 'react-oidc-context'
 import { SpacetimeDBProvider as BaseProvider } from 'spacetimedb/react'
 
 import env from './env'
-
 interface SpacetimeDBProviderProps {
   children: ReactNode
   fileApi?: boolean
   noAuth?: boolean
   spacetimeUri?: string
 }
-
 const TOKEN_STORE = createTokenStore(),
   FILE_API = createFileUploader('/api/upload/presign'),
   SpacetimeProvider = ({ children, fileApi, noAuth, spacetimeUri }: SpacetimeDBProviderProps) => {
@@ -40,5 +37,4 @@ const TOKEN_STORE = createTokenStore(),
       )
     return <BaseProvider connectionBuilder={builder}>{withAuth}</BaseProvider>
   }
-
 export default SpacetimeProvider

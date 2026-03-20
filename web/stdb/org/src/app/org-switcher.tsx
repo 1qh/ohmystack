@@ -1,5 +1,4 @@
 'use client'
-
 import { Button } from '@a/ui/button'
 import {
   DropdownMenu,
@@ -15,20 +14,16 @@ import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
-
 const toAvatarSrc = (avatarId: string) => `/api/image?id=${avatarId}`,
   OrgSwitcher = () => {
     const router = useRouter(),
       { activeOrg, isLoading: activeLoading } = useActiveOrg(),
       { isLoading: orgsLoading, orgs } = useMyOrgs()
-
     if (activeLoading || orgsLoading) return <Skeleton className='h-9 w-32' />
-
     const handleSwitch = (org: (typeof orgs)[number]) => {
       setActiveOrgCookieClient({ orgId: org.org._id, slug: org.org.slug })
       router.push('/dashboard')
     }
-
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -69,5 +64,4 @@ const toAvatarSrc = (avatarId: string) => `/api/image?id=${avatarId}`,
       </DropdownMenu>
     )
   }
-
 export default OrgSwitcher

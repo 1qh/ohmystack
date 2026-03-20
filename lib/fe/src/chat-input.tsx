@@ -1,11 +1,9 @@
 'use client'
-
 import type { ComponentProps } from 'react'
 
 import { cn } from '@a/ui'
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from '@a/ui/ai-elements/prompt-input'
 import { useState } from 'react'
-
 interface ChatInputProps {
   containerClassName?: string
   disabled?: boolean
@@ -20,7 +18,6 @@ interface ChatInputProps {
   rootProps?: Omit<ComponentProps<typeof PromptInput>, 'children' | 'onSubmit'>
   submitProps?: Omit<ComponentProps<typeof PromptInputSubmit>, 'onClick' | 'status'>
 }
-
 const ChatInput = ({
   containerClassName,
   disabled = false,
@@ -46,7 +43,6 @@ const ChatInput = ({
       }
     },
     effectiveBusy = isSubmitting || isBusy
-
   return (
     <PromptInput
       {...rootProps}
@@ -71,5 +67,4 @@ const ChatInput = ({
     </PromptInput>
   )
 }
-
 export default ChatInput

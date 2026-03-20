@@ -24,34 +24,26 @@ import type { TypedFields } from './form'
 import { buildMeta } from '../react/form'
 import { coerceOptionals, defaultValues as dv } from '../zod'
 import { fields, FormContext } from './fields'
-
 type ExtractSchema<Defs extends readonly StepDef[], Id extends string> = Extract<Defs[number], { id: Id }>['schema']
-
 interface FormHandle {
   handleSubmit: () => void
   isDirty: boolean
   values: () => Record<string, unknown>
 }
-
 type InternalStep<Id extends string = string> = Step<Id, { label: string; schema: ZodObject<ZodRawShape> }>
-
 type StepDataMap<Defs extends readonly StepDef[]> = {
   [D in Defs[number] as D['id']]: output<D['schema']>
 }
-
 interface StepDef<Id extends string = string, S extends ZodObject<ZodRawShape> = ZodObject<ZodRawShape>> {
   id: Id
   label: string
   schema: S
 }
-
 interface StepFormCtx {
   onDirtyChange: (dirty: boolean) => void
   registerForm: (handle: FormHandle | null) => void
 }
-
 type StepIds<Defs extends readonly StepDef[]> = Defs[number]['id']
-
 interface StepIndicatorClassNames {
   button?: string
   label?: string
@@ -59,9 +51,7 @@ interface StepIndicatorClassNames {
   separator?: string
   step?: string
 }
-
 const StepFormContext = createContext<null | StepFormCtx>(null)
-
 interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentProps<'div'>, 'children'> {
   children: ReactNode
   indicator?: boolean
@@ -71,7 +61,6 @@ interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentP
   stepper: StepperReturn<Defs>
   submitLabel?: string
 }
-
 interface StepperReturn<Defs extends readonly StepDef[]> {
   error: Error | null
   inner: CoreStepper<InternalStep[]>
@@ -82,26 +71,21 @@ interface StepperReturn<Defs extends readonly StepDef[]> {
   submitAll: (data: Record<string, Record<string, unknown>>) => Promise<void>
   values: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
-
 interface StepProps<Defs extends readonly StepDef[], Id extends StepIds<Defs> = StepIds<Defs>> {
   id: Id
   render: (fields: TypedFields<output<ExtractSchema<Defs, Id>>>) => ReactNode
 }
-
 interface UseStepperOpts<Defs extends readonly StepDef[]> {
   onError?: (e: unknown) => void
   onSubmit: (data: StepDataMap<Defs>) => Promise<void> | void
   onSuccess?: () => void
   values?: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
-
 const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...defs: Defs) => {
   const internalSteps = defs.map(d => ({ id: d.id, label: d.label, schema: d.schema })) as unknown as InternalStep[],
     stepperFactory = defineStepper(...internalSteps),
     schemaMap: Record<string, ZodObject<ZodRawShape>> = {}
-
   for (const d of defs) schemaMap[d.id] = d.schema
-
   const useStepperHook = (opts: UseStepperOpts<Defs>): StepperReturn<Defs> => {
       const inner = stepperFactory.useStepper(),
         [error, setError] = useState<Error | null>(null),
@@ -125,7 +109,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
           },
           [opts]
         )
-
       return {
         error,
         inner,
@@ -150,7 +133,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
     }) => {
       const ctx = use(StepFormContext)
       if (!ctx) throw new Error('StepContent must be inside StepForm')
-
       const rawSchema = schemas[id]
       if (!rawSchema) throw new Error(`No schema for step: ${id}`)
       const schema = rawSchema,
@@ -162,11 +144,9 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
           validators: { onSubmit: schema as unknown as StandardSchemaV1<output<typeof schema>, unknown> }
         }) as unknown as Api<Record<string, unknown>>,
         { isDirty } = useStore(instance.store, st => ({ isDirty: st.isDirty }))
-
       useEffect(() => {
         ctx.onDirtyChange(isDirty)
       }, [isDirty, ctx])
-
       useEffect(() => {
         ctx.registerForm({
           handleSubmit: () => {
@@ -179,7 +159,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
           ctx.registerForm(null)
         }
       })
-
       return (
         // eslint-disable-next-line @eslint-react/no-unstable-context-value
         <FormContext value={{ form: instance, meta, schema, serverErrors: {} }}>
@@ -269,7 +248,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
         [hasSaved, setHasSaved] = useState(false),
         dirty = hasSaved || isDirty,
         guard = useNavigationGuard({ enabled: dirty && !s.isPending && !s.isCompleted })
-
       useEffect(() => {
         if (!dirty) return
         const h = (e: BeforeUnloadEvent) => {
@@ -280,7 +258,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
         window.addEventListener('beforeunload', h)
         return () => window.removeEventListener('beforeunload', h)
       }, [dirty])
-
       const currentStep = s.inner.state.current.data,
         currentIdx = s.inner.state.current.index,
         currentIsFirst = s.inner.state.isFirst,
@@ -294,26 +271,21 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
             .props
           if (p.id && p.render) stepRenders[p.id] = p.render
         }
-
       const currentRender = stepRenders[currentId],
         saved = stepDataRef.current[currentId],
         currentValues = saved ? { ...s.values, [currentId]: saved } : s.values,
         handleSubmitForm = useCallback(
           (e: SyntheticEvent) => {
             e.preventDefault()
-
             if (!formHandleRef.current) return
-
             const values = formHandleRef.current.values(),
               schema = s.schemas[currentId]
             if (!schema) return
-
             const result = schema.safeParse(coerceOptionals(schema, values))
             if (!result.success) {
               formHandleRef.current.handleSubmit()
               return
             }
-
             stepDataRef.current[currentId] = coerceOptionals(schema, values)
             setHasSaved(true)
             // oxlint-disable-next-line promise/prefer-await-to-then
@@ -332,7 +304,6 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
           formHandleRef.current = handle
         }, []),
         ctx: StepFormCtx = useMemo(() => ({ onDirtyChange: setIsDirty, registerForm }), [registerForm])
-
       return (
         <StepFormContext value={ctx}>
           <div className={cn('space-y-6', className)} {...props}>
@@ -396,13 +367,11 @@ const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...def
     StepForm = Object.assign(StepFormComponent, { Step: StepComponent }) as typeof StepFormComponent & {
       Step: typeof StepComponent
     }
-
   return {
     StepForm,
     steps: internalSteps,
     useStepper: useStepperHook
   }
 }
-
 /** Exports step form factory and hook for building multi-step forms. */
 export { defineSteps }

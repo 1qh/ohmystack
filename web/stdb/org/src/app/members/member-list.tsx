@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 /* eslint-disable @typescript-eslint/strict-void-return */
 'use client'
-
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -20,7 +19,6 @@ import { useSpacetimeDB } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
-
 const MemberList = () => {
   const { canManageAdmins, canManageMembers, org, role: myRole } = useOrg(),
     { identity } = useSpacetimeDB(),
@@ -51,9 +49,7 @@ const MemberList = () => {
       query.trim() ? { fields: ['name', 'role'], query } : 'skip'
     ),
     displayMembers = query.trim() ? filteredMembers : members
-
   if (!identity) return <Skeleton className='h-40 w-full' />
-
   return (
     <div className='flex flex-col gap-3'>
       <div className='relative'>
@@ -120,5 +116,4 @@ const MemberList = () => {
     </div>
   )
 }
-
 export default MemberList

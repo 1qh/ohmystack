@@ -1,10 +1,7 @@
 "use client"
-
 import * as React from "react"
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
-
 import { cn } from "@a/ui/lib/utils"
-
 function Slider({
   className,
   defaultValue,
@@ -22,7 +19,6 @@ function Slider({
           : [min, max],
     [value, defaultValue, min, max]
   )
-
   return (
     <SliderPrimitive.Root
       className={cn("data-horizontal:w-full data-vertical:h-full", className)}
@@ -55,5 +51,4 @@ function Slider({
     </SliderPrimitive.Root>
   )
 }
-
 export { Slider }
