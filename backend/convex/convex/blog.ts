@@ -1,10 +1,10 @@
+import { getAuthUserId } from '@convex-dev/auth/server'
 import { time } from '@noboil/convex/server'
 /* oxlint-disable eslint/max-statements */
 import { zid } from 'convex-helpers/server/zod4'
 
 import { crud, m, pq } from '../lazy'
 import { owned } from '../t'
-
 const {
     create,
     pub: { list, read, search },
@@ -40,10 +40,10 @@ const {
       return posts.filter(p => (p as Record<string, unknown>).userId === userId)
     }
   }),
-  // eslint-disable-next-line noboil-convex/no-unprotected-mutation -- demo endpoint enforces ownership in handler
   togglePublish = m({
     args: { id: zid('blog') },
     handler: async (ctx, { id }) => {
+      await getAuthUserId(ctx as never)
       const doc = await ctx.db.get(id)
       if (!doc) throw new Error('NOT_FOUND')
       if ((doc as Record<string, unknown>).userId !== ctx.user._id) throw new Error('NOT_OWNER')
@@ -52,5 +52,4 @@ const {
       return { published: !current }
     }
   })
-
 export { authorPosts, create, list, postStats, read, rm, search, togglePublish, update }

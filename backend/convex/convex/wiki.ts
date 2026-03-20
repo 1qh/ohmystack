@@ -3,20 +3,11 @@ import { zid } from 'convex-helpers/server/zod4'
 
 import { orgCrud, q, uniqueCheck } from '../lazy'
 import { orgScoped } from '../t'
-
-export const {
-    addEditor,
-    create,
-    editors,
-    list,
-    read,
-    removeEditor,
-    restore,
-    rm,
-    setEditors,
-    update
-    // eslint-disable-next-line noboil-convex/require-rate-limit -- demo backend keeps default write throughput
-  } = orgCrud('wiki', orgScoped.wiki, { acl: true, softDelete: true }),
+export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = orgCrud(
+    'wiki',
+    orgScoped.wiki,
+    { acl: true, rateLimit: { max: 30, window: 60_000 }, softDelete: true }
+  ),
   listDeleted = q({
     args: { orgId: zid('org') },
     handler: async (c, { orgId }: { orgId: string }) => {

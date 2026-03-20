@@ -7,7 +7,6 @@ import orgJoinRequestTable from '../module_bindings/org_join_request_table'
 import orgMemberTable from '../module_bindings/org_member_table'
 import orgTable from '../module_bindings/org_table'
 import { none, withCtx } from './test-helpers'
-
 describe('org api port', () => {
   test('org data tables remain available in bindings', () => {
     expect(tables.org).toBeDefined()
@@ -19,18 +18,12 @@ describe('org api port', () => {
     expect(orgInviteTable).toBeDefined()
     expect(orgJoinRequestTable).toBeDefined()
   })
-
   test('org management reducers are not exported by current module', () => {
-    // eslint-disable-next-line noboil-stdb/no-unsafe-api-cast
-    expect((reducers as Record<string, unknown>).createOrg).toBeUndefined()
-    // eslint-disable-next-line noboil-stdb/no-unsafe-api-cast
-    expect((reducers as Record<string, unknown>).updateOrg).toBeUndefined()
-    // eslint-disable-next-line noboil-stdb/no-unsafe-api-cast
-    expect((reducers as Record<string, unknown>).getOrg).toBeUndefined()
-    // eslint-disable-next-line noboil-stdb/no-unsafe-api-cast
-    expect((reducers as Record<string, unknown>).inviteOrg).toBeUndefined()
+    expect('createOrg' in reducers).toBe(false)
+    expect('updateOrg' in reducers).toBe(false)
+    expect('getOrg' in reducers).toBe(false)
+    expect('inviteOrg' in reducers).toBe(false)
   })
-
   test('org-scoped CRUD reducers exist for project task and wiki', () => {
     expect(typeof reducers.createProject).toBe('object')
     expect(typeof reducers.updateProject).toBe('object')
@@ -42,7 +35,6 @@ describe('org api port', () => {
     expect(typeof reducers.updateWiki).toBe('object')
     expect(typeof reducers.rmWiki).toBe('object')
   })
-
   test('project reducer call fails without org bootstrap reducers', async () => {
     await withCtx(async ctx => {
       let threw = false
@@ -61,7 +53,6 @@ describe('org api port', () => {
       expect(threw).toBe(true)
     })
   })
-
   test('wiki reducer call fails without org bootstrap reducers', async () => {
     await withCtx(async ctx => {
       let threw = false

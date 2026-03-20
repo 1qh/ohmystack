@@ -1,9 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
-
 'use node'
-
 /* eslint-disable max-depth */
-
 import type { ModelMessage } from 'ai'
 
 import { streamText } from 'ai'
@@ -17,7 +14,6 @@ import { getModel } from '../ai'
 import { WORKER_SYSTEM_PROMPT } from '../prompts'
 import { internalAction } from './_generated/server'
 import { createWorkerTools } from './agents'
-
 const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }, { ok: boolean }>('tasks:markRunning'),
   getByIdRef = makeFunctionReference<'query', { taskId: Id<'tasks'> }, Doc<'tasks'> | null>('tasks:getById'),
   listMessagesForPromptRef = makeFunctionReference<
@@ -87,14 +83,12 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
         const resultText = p.result ? ` result=${p.result}` : ''
         chunks.push(`[tool:${p.toolName} status=${p.status}${resultText}]`)
       } else chunks.push(`[source:${p.title} ${p.url}]`)
-
     const joined = chunks.join('\n')
     return joined.length > 0 ? joined : message.content
   },
   buildModelMessages = (messages: Doc<'messages'>[]) => {
     const modelMessages: ModelMessage[] = []
     for (const m of messages) modelMessages.push({ content: collectMessageText(m), role: m.role })
-
     return modelMessages
   },
   isTransientError = ({ errorMessage }: { errorMessage: string }) => {
@@ -116,7 +110,6 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
         'overloaded'
       ]
     for (const marker of transientMarkers) if (lowered.includes(marker)) return true
-
     return false
   },
   startTaskHeartbeat = ({ ctx, taskId }: { ctx: ActionCtx; taskId: Id<'tasks'> }) =>
@@ -242,12 +235,13 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
     const task = await ctx.runQuery(getByIdRef, { taskId }),
       errorMessage = String(error),
       shouldRetry = task !== null && task.retryCount < 3 && isTransientError({ errorMessage })
-    await (shouldRetry
-      ? ctx.runMutation(scheduleRetryRef, { taskId })
-      : ctx.runMutation(failTaskRef, {
-          lastError: errorMessage,
-          taskId
-        }))
+    // oxlint-disable-next-line unicorn/prefer-ternary
+    if (shouldRetry) await ctx.runMutation(scheduleRetryRef, { taskId })
+    else
+      await ctx.runMutation(failTaskRef, {
+        lastError: errorMessage,
+        taskId
+      })
   },
   runWorker = internalAction({
     args: {
@@ -268,5 +262,4 @@ const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }
       }
     }
   })
-
 export { runWorker }

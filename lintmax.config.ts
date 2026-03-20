@@ -1,68 +1,62 @@
 import { defineConfig } from 'lintmax'
-
 export default defineConfig({
   biome: {
-    ignorePatterns: [
-      'expo/**/babel.config.js',
-      'expo/**/global.css',
-      'expo/**/metro.config.js',
+    ignores: [
       'expo/**/uniwind-env.d.ts',
       'expo/**/uniwind-types.d.ts',
       'web/*/*/next-env.d.ts',
       'doc/next-env.d.ts',
       'doc/.source',
-      'mobile/convex/maestro',
-      'lib/rnr/**',
-      'lib/ui/**'
+      'lib/ui/**',
+      '**/generated/**',
+      '**/_generated/**',
+      '**/module_bindings/**'
     ],
     overrides: [
       {
-        disableLinter: true,
-        includes: ['lib/rnr/**']
-      },
-      {
-        disableLinter: true,
-        includes: ['lib/ui/**']
-      },
-      {
-        disableLinter: true,
-        includes: ['**/generated/**', '**/_generated/**', '**/module_bindings/**']
-      },
-      {
         includes: ['expo/**'],
-        rules: {
-          'style/noProcessEnv': 'off'
-        }
+        off: ['style/noProcessEnv']
       },
       {
         includes: ['**/maestro/**'],
-        rules: {
-          'performance/noAwaitInLoops': 'off'
-        }
+        off: ['performance/noAwaitInLoops']
       }
     ]
   },
+  eslint: {
+    ignores: [
+      'backend/agent/convex/f.test.ts',
+      'backend/convex/convex/edge.test.ts',
+      'backend/convex/convex/f.test.ts',
+      'backend/convex/convex/org-api.test.ts'
+    ]
+  },
+  ignores: [
+    '**/.source/**',
+    '**/_generated/**',
+    '**/generated/**',
+    '**/module_bindings/**',
+    'lib/rnr/**',
+    'lib/ui/**',
+    'web/*/*/next-env.d.ts',
+    'doc/next-env.d.ts',
+    'expo/**/uniwind-env.d.ts',
+    'expo/**/uniwind-types.d.ts'
+  ],
   oxlint: {
-    ignorePatterns: [
+    ignores: [
       '_generated/',
-      'expo/**/babel.config.js',
-      'expo/**/metro.config.js',
       'expo/**/uniwind-env.d.ts',
       'expo/**/uniwind-types.d.ts',
       'generated/',
-      'mobile/convex/maestro/',
       'module_bindings/',
-      'lib/rnr/',
       'lib/ui/',
       '.source/'
     ],
     overrides: [
       {
         files: ['expo/**/*.tsx', 'expo/**/*.ts'],
-        rules: {
-          'react/no-unstable-default-props': 'off',
-          'react-perf/jsx-no-new-object-as-prop': 'off'
-        }
+        off: ['react/no-unstable-default-props', 'react-perf/jsx-no-new-object-as-prop']
       },
       {
         files: [
@@ -76,13 +70,8 @@ export default defineConfig({
           '**/convex/webSearch.ts',
           '**/convex/rateLimit.ts'
         ],
-        rules: {
-          'unicorn/filename-case': 'off'
-        }
+        off: ['unicorn/filename-case']
       }
-    ],
-    rules: {
-      'import/no-unassigned-import': 'off'
-    }
+    ]
   }
 })

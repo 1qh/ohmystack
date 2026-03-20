@@ -1,15 +1,11 @@
 "use client";
-
 import type { ComponentProps } from "react";
-
 import { Button } from "@a/ui/components/button";
 import { cn } from "@a/ui/lib/utils";
 import { ArrowDownIcon, DownloadIcon } from "lucide-react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
-
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
-
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn("relative flex-1 overflow-y-hidden", className)}
@@ -19,11 +15,9 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
     {...props}
   />
 );
-
 export type ConversationContentProps = ComponentProps<
   typeof StickToBottom.Content
 >;
-
 export const ConversationContent = ({
   className,
   ...props
@@ -33,17 +27,15 @@ export const ConversationContent = ({
     {...props}
   />
 );
-
 export type ConversationEmptyStateProps = ComponentProps<"div"> & {
-  title?: string;
   description?: string;
   icon?: React.ReactNode;
+  title?: string;
 };
-
 export const ConversationEmptyState = ({
   className,
-  title = "No messages yet",
-  description = "Start a conversation to see messages here",
+  title,
+  description,
   icon,
   children,
   ...props
@@ -57,30 +49,24 @@ export const ConversationEmptyState = ({
   >
     {children ?? (
       <>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
+        {icon ? <div className="text-muted-foreground">{icon}</div> : null}
         <div className="space-y-1">
           <h3 className="font-medium text-sm">{title}</h3>
-          {description && (
-            <p className="text-muted-foreground text-sm">{description}</p>
-          )}
+          {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
         </div>
       </>
     )}
   </div>
 );
-
 export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
-
 export const ConversationScrollButton = ({
   className,
   ...props
 }: ConversationScrollButtonProps) => {
-  const { isAtBottom, scrollToBottom } = useStickToBottomContext();
-
-  const handleScrollToBottom = useCallback(() => {
+  const { isAtBottom, scrollToBottom } = useStickToBottomContext(),
+   handleScrollToBottom = useCallback(() => {
     scrollToBottom();
   }, [scrollToBottom]);
-
   return (
     !isAtBottom && (
       <Button
@@ -99,27 +85,23 @@ export const ConversationScrollButton = ({
     )
   );
 };
-
-export interface ConversationMessage {
-  role: "user" | "assistant" | "system" | "data" | "tool";
-  content: string;
-}
-
 export type ConversationDownloadProps = Omit<
   ComponentProps<typeof Button>,
   "onClick"
 > & {
-  messages: ConversationMessage[];
   filename?: string;
   formatMessage?: (message: ConversationMessage, index: number) => string;
+  messages: ConversationMessage[];
 };
-
+export interface ConversationMessage {
+  content: string;
+  role: "assistant" | "data" | "system" | "tool" | "user";
+}
 const defaultFormatMessage = (message: ConversationMessage): string => {
   const roleLabel =
     message.role.charAt(0).toUpperCase() + message.role.slice(1);
   return `**${roleLabel}:** ${message.content}`;
 };
-
 export const messagesToMarkdown = (
   messages: ConversationMessage[],
   formatMessage: (
@@ -127,28 +109,26 @@ export const messagesToMarkdown = (
     index: number
   ) => string = defaultFormatMessage
 ): string => messages.map((msg, i) => formatMessage(msg, i)).join("\n\n");
-
 export const ConversationDownload = ({
   messages,
-  filename = "conversation.md",
-  formatMessage = defaultFormatMessage,
+  filename,
+  formatMessage,
   className,
   children,
   ...props
 }: ConversationDownloadProps) => {
   const handleDownload = useCallback(() => {
-    const markdown = messagesToMarkdown(messages, formatMessage);
-    const blob = new Blob([markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const markdown = messagesToMarkdown(messages, formatMessage),
+     blob = new Blob([markdown], { type: "text/markdown" }),
+     url = URL.createObjectURL(blob),
+     link = document.createElement("a");
     link.href = url;
-    link.download = filename;
+    link.download = filename ?? "conversation.md";
     document.body.append(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
   }, [messages, filename, formatMessage]);
-
   return (
     <Button
       className={cn(
