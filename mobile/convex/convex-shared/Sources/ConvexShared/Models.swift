@@ -1,1 +1,1 @@
-../../../../../swift-core/Sources/ConvexCore/Generated.swift
+../../../../../swiftcore/Sources/ConvexCore/Generated.swift

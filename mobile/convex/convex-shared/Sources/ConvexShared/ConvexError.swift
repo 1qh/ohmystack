@@ -1,1 +1,1 @@
-../../../../../swift-core/Sources/ConvexCore/Error.swift
+../../../../../swiftcore/Sources/ConvexCore/Error.swift
