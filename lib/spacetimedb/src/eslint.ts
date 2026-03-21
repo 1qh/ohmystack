@@ -1,6 +1,7 @@
 /* eslint-disable one-var, max-depth */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { createEslintPluginBundle } from '@a/shared/eslint'
 interface BaseNode {
   argument?: BaseNode
   async?: boolean
@@ -771,31 +772,5 @@ const rules = {
   'require-error-boundary': requireErrorBoundary,
   'require-rate-limit': requireRateLimit
 }
-/** ESLint plugin object containing all noboil-stdb rules. */
-const plugin = { rules }
-/** Recommended ESLint configuration for noboil-stdb projects. */
-const recommended = {
-  files: ['**/*.ts', '**/*.tsx'],
-  plugins: {
-    'noboil-stdb': plugin
-  },
-  rules: {
-    'noboil-stdb/api-casing': 'error' as const,
-    'noboil-stdb/consistent-crud-naming': 'error' as const,
-    'noboil-stdb/discovery-check': 'warn' as const,
-    'noboil-stdb/form-field-exists': 'error' as const,
-    'noboil-stdb/form-field-kind': 'warn' as const,
-    'noboil-stdb/no-duplicate-crud': 'error' as const,
-    'noboil-stdb/no-empty-search-config': 'error' as const,
-    'noboil-stdb/no-raw-fetch-in-server-component': 'warn' as const,
-    'noboil-stdb/no-unlimited-file-size': 'warn' as const,
-    'noboil-stdb/no-unprotected-mutation': 'warn' as const,
-    'noboil-stdb/no-unsafe-api-cast': 'warn' as const,
-    'noboil-stdb/prefer-useList': 'warn' as const,
-    'noboil-stdb/prefer-useOrgQuery': 'warn' as const,
-    'noboil-stdb/require-connection': 'error' as const,
-    'noboil-stdb/require-error-boundary': 'warn' as const,
-    'noboil-stdb/require-rate-limit': 'warn' as const
-  }
-}
+const { plugin, recommended } = createEslintPluginBundle({ pluginName: 'noboil-stdb', rules })
 export { plugin, recommended, rules }
