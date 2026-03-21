@@ -5,7 +5,7 @@
   "exports": {
     "./constants": "./src/constants.ts",
     "./components/*": "./src/components/*.tsx",
-    "./react/*": "./src/react/*.ts"
+    "./react/*": "./src/react/*"
   },
   "dependencies": {
     "lucide-react": "latest",
