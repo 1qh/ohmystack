@@ -4,7 +4,12 @@
   "type": "module",
   "exports": {
     "./constants": "./src/constants.ts",
+    "./retry": "./src/retry.ts",
+    "./schema-utils": "./src/schema-utils.ts",
+    "./seed": "./src/seed.ts",
+    "./server/*": "./src/server/*.ts",
     "./components/*": "./src/components/*.tsx",
+    "./react/schema-playground": "./src/react/schema-playground.tsx",
     "./react/*": "./src/react/*.ts"
   },
   "dependencies": {

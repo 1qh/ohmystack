@@ -24,7 +24,6 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
         label: 'wiki page',
         restore: useOrgMutation(wikiRestore),
         rm: useOrgMutation(api.wiki.rm),
-        // eslint-disable-next-line @typescript-eslint/strict-void-return
         toast
       }),
       form = useFormMutation({

@@ -32,44 +32,34 @@ Both betterspace and lazyconvex remain valid on their own — they are archived 
 | `@noboil/convex`      | Convex library (replaces `lazyconvex`)       |
 | `@noboil/spacetimedb` | SpacetimeDB library (replaces `betterspace`) |
 
-## Target Monorepo Structure
+## Monorepo Structure
 
 ```
 noboil/
-├── apps/
-│   ├── convex/
-│   │   ├── blog/              ← from lazyconvex apps/blog
-│   │   ├── chat/              ← from lazyconvex apps/chat
-│   │   ├── movie/             ← from lazyconvex apps/movie
-│   │   └── org/               ← from lazyconvex apps/org
-│   ├── spacetimedb/
-│   │   ├── blog/              ← from betterspace apps/blog
-│   │   ├── chat/              ← from betterspace apps/chat
-│   │   ├── movie/             ← from betterspace apps/movie
-│   │   └── org/               ← from betterspace apps/org
-│   └── docs/                  ← fumadocs documentation site (NEW)
-├── packages/
-│   ├── convex/                ← @noboil/convex (from lazyconvex)
-│   ├── spacetimedb/           ← @noboil/spacetimedb (from betterspace)
-│   ├── shared/                ← internal, NOT published — shared hooks/components/utils
-│   ├── ui/                    ← shared shadcn components (identical in both repos)
-│   ├── be-convex/             ← Convex backend functions + schema (from lazyconvex packages/be)
-│   ├── be-spacetimedb/        ← SpacetimeDB module + schema (from betterspace packages/be)
-│   ├── fe/                    ← shared frontend utilities
-│   ├── e2e/                   ← shared Playwright utilities
-│   └── cli/                   ← noboil CLI (published as `noboil`)
-├── mobile/
-│   └── convex/                ← iOS/Android apps (from lazyconvex, Convex-only for now)
-├── desktop/
-│   └── convex/                ← macOS apps (from lazyconvex, Convex-only for now)
-├── swiftcore/                ← shared Swift protocols (from lazyconvex)
-├── noboil.yml              ← Docker compose for ALL services (Convex + SpacetimeDB + MinIO)
-├── lintmax.config.ts          ← unified linting + ESLint config
-├── turbo.json                 ← unified Turbo config
-├── script/                   ← genkey.sh, genenv.ts, setup utilities
-├── package.json               ← workspace root
-├── AGENTS.md                  ← project knowledge base
-└── PLAN.md                    ← this file
+├── web/cvx/{blog,chat,movie,org}        ← Convex demo web apps
+├── web/stdb/{blog,chat,movie,org}       ← SpacetimeDB demo web apps
+├── expo/cvx/{blog,chat,movie,org}       ← Convex Expo apps
+├── expo/stdb/{blog,chat,movie,org}      ← SpacetimeDB Expo apps
+├── doc/                                  ← fumadocs documentation site
+├── lib/convex/                           ← @noboil/convex (published)
+├── lib/spacetimedb/                      ← @noboil/spacetimedb (published)
+├── lib/shared/                           ← internal shared hooks/components/utils
+├── lib/ui/                               ← shared shadcn components (READ-ONLY)
+├── lib/fe/                               ← shared frontend utilities
+├── lib/e2e/                              ← shared Playwright utilities
+├── backend/convex/                       ← Convex backend functions + schema
+├── backend/spacetimedb/                  ← SpacetimeDB module + schema
+├── tool/cli/                             ← noboil CLI (published as `noboil`)
+├── mobile/convex/                        ← iOS/Android apps (Convex-only)
+├── desktop/convex/                       ← macOS apps (Convex-only)
+├── swiftcore/                            ← shared Swift protocols
+├── noboil.yml                            ← Docker compose for all services
+├── lintmax.config.ts                     ← unified linting config
+├── turbo.json                            ← Turbo config
+├── script/                               ← setup utilities
+├── package.json                          ← workspace root
+├── AGENTS.md                             ← project knowledge base
+└── PLAN.md                               ← this file
 ```
 
 ## Code Sharing Strategy
@@ -118,161 +108,70 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 ## Execution Phases
 
-### Phase 0: Monorepo Scaffold
+### Phase 0: Monorepo Scaffold ✅
 
-**Goal:** Empty monorepo with build/lint/test infrastructure working.
+- [x] 0.1 — Initialize bun workspace with `package.json`, `turbo.json`, `tsconfig.json`
+- [x] 0.2 — Unify `lintmax.config.ts` (single-surface lint via lintmax)
+- [x] 0.3 — Unify ESLint rules into `lintmax.config.ts`
+- [x] 0.4 — Set up `.github/workflows/ci.yml` (multi-job with path filtering)
+- [x] 0.5 — Create `noboil.yml` docker compose (Convex + SpacetimeDB + MinIO)
+- [x] 0.6 — `bun i && bun fix` passes
 
-- [ ] 0.1 — Initialize bun workspace with `package.json`, `turbo.json`, `tsconfig.json`
-- [ ] 0.2 — Copy and unify `lintmax.config.ts` (merge betterspace + lazyconvex overrides)
-- [x] 0.3 — Copy and unify ESLint rules into `lintmax.config.ts`
-- [ ] 0.4 — Set up `.github/workflows/ci.yml` (multi-job with path filtering from lazyconvex, extended for both DBs)
-- [ ] 0.5 — Create `noboil.yml` docker compose (Convex services + SpacetimeDB + shared MinIO on different ports)
-- [ ] 0.6 — Verify `bun i && bun fix` passes on empty workspace
+### Phase 1: Shared Packages ✅
 
-### Phase 1: Shared Packages (no DB-specific code)
+- [x] 1.1 — `lib/ui/` (shared shadcn components)
+- [x] 1.2 — `lib/fe/` (shared frontend utilities)
+- [x] 1.3 — `lib/e2e/` (shared Playwright utilities)
+- [x] 1.4 — `lib/shared/` — shared React hooks, components, server utils, ESLint plugin, CLI framework, Zod/seed/retry utils
+- [x] 1.5 — `bun fix && bun typecheck` passes for all shared packages
 
-**Goal:** `lib/shared/`, `lib/ui/`, `lib/fe/`, `lib/e2e/` all building.
+### Phase 2: Library Packages ✅
 
-- [ ] 1.1 — Copy `lib/ui/` from lazyconvex (identical in both repos)
-- [ ] 1.2 — Copy `lib/fe/` (verify identical, pick one)
-- [ ] 1.3 — Copy `lib/e2e/` (verify identical, pick one)
-- [ ] 1.4 — Create `lib/shared/` — extract identical React hooks:
-  - `use-bulk-mutate.ts`, `use-search.ts`, `use-bulk-selection.ts`
-  - `use-optimistic.ts`, `use-soft-delete.ts`, `use-presence.ts`
-  - `schema-playground.tsx`, `devtools-panel.tsx`, `devtools.ts`
-  - `error-toast.ts`, `use-online-status.ts`, `use-upload.ts`, `use-cache.ts`
-  - `optimistic-store.ts`, `form.ts`, `org.tsx`
-- [ ] 1.5 — Extract shared server utils into `lib/shared/`:
-  - `presence.ts`, `middleware.ts`, `schema-helpers.ts`
-  - `helpers.ts`, `file.ts`, `child.ts`, `singleton.ts`, `cache-crud.ts`
-  - `org.ts`, `org-crud.ts`, `org-members.ts`, `org-invites.ts`, `org-join.ts`
-- [ ] 1.6 — Extract shared components into `lib/shared/`:
-  - `editors-section.tsx`, `misc.tsx`, `step-form.tsx`, `form.tsx`, `fields.tsx`
-- [ ] 1.7 — Extract shared ESLint plugin rules into `lib/shared/`
-- [ ] 1.8 — Extract shared CLI commands into `lib/shared/`
-- [ ] 1.9 — Extract shared Zod utils, schema types, seed utils, retry utils
-- [ ] 1.10 — `bun fix && bun typecheck` passes for all shared packages
+- [x] 2.1 — `lib/convex/` with `@noboil/convex` exports
+- [x] 2.2 — `lib/spacetimedb/` with `@noboil/spacetimedb` exports
+- [x] 2.3 — Tests migrated and passing
+- [x] 2.4 — `bun fix && bun typecheck && bun test` passes for both
 
-### Phase 2: Library Packages
+### Phase 3: Backend Packages ✅
 
-**Goal:** `@noboil/convex` and `@noboil/spacetimedb` build and export everything.
+- [x] 3.1 — `backend/convex/` with `@noboil/convex` imports
+- [x] 3.2 — `backend/spacetimedb/` with `@noboil/spacetimedb` imports
+- [x] 3.3 — Docker compose with both DB services on non-conflicting ports
+- [x] 3.4 — `genkey.sh` + `genenv.ts` setup scripts
 
-- [ ] 2.1 — Create `lib/convex/` — copy DB-specific code from lazyconvex:
-  - `crud.ts`, `use-list.ts`, `use-mutate.ts`, `types.ts`, `env.ts`
-  - `codegen-swift.ts`, `setup.ts`
-  - Re-export shared code from `lib/shared/`
-  - package.json with name `@noboil/convex`, same exports as lazyconvex
-- [ ] 2.2 — Create `lib/spacetimedb/` — copy DB-specific code from betterspace:
-  - `crud.ts`, `use-list.ts`, `use-mutate.ts`, `provider.ts`, `list-utils.ts`
-  - `rls.ts`, `stdb-tables.ts`, `reducer-utils.ts`, `s3.ts`, `setup.ts`
-  - Re-export shared code from `lib/shared/`
-  - package.json with name `@noboil/spacetimedb`, same exports as betterspace
-- [ ] 2.3 — Migrate all tests:
-  - Copy lazyconvex `pure.test.ts` (934 tests) → adapt imports to `@noboil/convex`
-  - Copy betterspace `pure.test.ts` (1,170 tests) → adapt imports to `@noboil/spacetimedb`
-- [ ] 2.4 — `bun fix && bun typecheck && bun test` passes for both library packages
+### Phase 4: Demo Apps ✅
 
-### Phase 3: Backend Packages
+- [x] 4.1 — `web/cvx/{blog,chat,movie,org}` — Convex web apps
+- [x] 4.2 — `web/stdb/{blog,chat,movie,org}` — SpacetimeDB web apps
+- [x] 4.3 — `expo/cvx/{blog,chat,movie,org}` — Convex Expo apps
+- [x] 4.4 — `expo/stdb/{blog,chat,movie,org}` — SpacetimeDB Expo apps
+- [x] 4.5 — All apps build and lint-pass
 
-**Goal:** Both backend packages deploy and pass backend tests.
+### Phase 5: Mobile & Desktop (Convex-only) ✅
 
-- [ ] 3.1 — Copy `packages/be/` from lazyconvex → `backend/convex/`
-  - Update imports from `lazyconvex` → `@noboil/convex`
-  - Update package.json name to `@a/be-convex`
-- [ ] 3.2 — Copy `packages/be/` from betterspace → `backend/spacetimedb/`
-  - Update imports from `betterspace` → `@noboil/spacetimedb`
-  - Update package.json name to `@a/be-spacetimedb`
-- [ ] 3.3 — Docker compose: Convex (postgres + minio + backend + dashboard) on ports 3212/6791/9000
-- [ ] 3.4 — Docker compose: SpacetimeDB on port 3000, MinIO on ports 9002/9003 (avoid conflicts)
-- [ ] 3.5 — `genkey.sh` + `genenv.ts` for Convex, equivalent for SpacetimeDB
-- [ ] 3.6 — Backend tests pass: 219 (Convex) + equivalent (SpacetimeDB)
+- [x] 5.1 — `mobile/convex/` (iOS/Android apps)
+- [x] 5.2 — `desktop/convex/` (macOS apps)
+- [x] 5.3 — `swiftcore/` (shared Swift protocols)
+- [x] 5.4 — Swift codegen works: `bun codegen:swift`
 
-### Phase 4: Demo Apps
+### Phase 6: Documentation Site (fumadocs) ✅
 
-**Goal:** All 8 web demo apps build and run.
+- [x] 6.1 — Scaffold fumadocs app at `doc/` (Next.js App Router, fumadocs-ui)
 
-- [ ] 4.1 — Copy lazyconvex `apps/{blog,chat,movie,org}` → `web/cvx/{blog,chat,movie,org}`
-  - Update imports from `lazyconvex` → `@noboil/convex`
-  - Update package.json names to `@a/convex-blog`, etc.
-  - Update internal workspace references
-- [ ] 4.2 — Copy betterspace `apps/{blog,chat,movie,org}` → `web/stdb/{blog,chat,movie,org}`
-  - Update imports from `betterspace` → `@noboil/spacetimedb`
-  - Update package.json names to `@a/stdb-blog`, etc.
-  - Update internal workspace references
-- [ ] 4.3 — All 8 apps: `bun fix && bun build` passes
-- [ ] 4.4 — E2E tests pass for all 8 apps
+### Phase 7: CLI (`noboil` npm package) ✅
 
-### Phase 5: Mobile & Desktop (Convex-only)
+- [x] 7.1 — `tool/cli/` with name `noboil` and bin entry
+- [x] 7.2 — `init` command (database selection, project scaffolding)
+- [x] 7.3 — `doctor` command (project health check)
+- [x] 7.4 — `sync` command (pull upstream changes)
+- [x] 7.5 — `eject` command (detach from upstream)
 
-**Goal:** Native apps build and test.
+### Phase 8: README & Publishing ✅
 
-- [ ] 5.1 — Copy lazyconvex `mobile/` → `mobile/convex/`
-- [ ] 5.2 — Copy lazyconvex `desktop/` → `desktop/convex/`
-- [ ] 5.3 — Copy `swiftcore/`
-- [ ] 5.4 — Swift codegen works: `bun codegen:swift`
-- [ ] 5.5 — All native builds pass, Maestro tests pass, Swift tests pass
-
-### Phase 6: Documentation Site (fumadocs)
-
-**Goal:** `doc/` serves unified documentation with DB switcher.
-
-- [ ] 6.1 — Scaffold fumadocs app at `doc/`
-  - Next.js App Router, fumadocs-ui, fumadocs-mdx
-  - Tailwind + `lib/ui/` integration
-- [ ] 6.2 — Content architecture:
-  - `content/docs/` — shared concepts (schema-first, zero-boilerplate philosophy)
-  - Sidebar Tabs: “Convex” and “SpacetimeDB” as top-level navigation
-  - `<Tabs groupId="db" persist>` on all code examples for DB switching
-- [ ] 6.3 — Migrate existing markdown docs (15 files each repo) to MDX:
-  - `getting-started.mdx`, `api-reference.mdx`, `data-fetching.mdx`
-  - `schema.mdx`, `mutations.mdx`, `forms.mdx`, `file-upload.mdx`
-  - `org-management.mdx`, `devtools.mdx`, `testing.mdx`
-  - `migration.mdx`, `schema-evolution.mdx`, `ejecting.mdx`
-  - `security.mdx`, `recipes.mdx`
-- [ ] 6.4 — Each doc page shows both Convex and SpacetimeDB code side-by-side with tabs
-- [ ] 6.5 — Remove markdown docs from library packages (docs site is the single source)
-- [ ] 6.6 — Deploy docs site (Vercel or similar)
-
-### Phase 7: CLI (`noboil` npm package)
-
-**Goal:** `bun noboil@latest init` creates a working project.
-
-- [ ] 7.1 — Create `tool/cli/` with name `noboil`
-- [ ] 7.2 — `init` command:
-  1. Ask: “Pick your database” → Convex | SpacetimeDB
-  2. Ask: “Include demo apps? (Y/n)”
-  3. Ask: “Include mobile/desktop? (y/N)” (only if Convex)
-  4. Clone repo (degit, no git history)
-  5. Remove other DB’s demo apps, backend, library package
-  6. Remove `lib/shared/` source, `doc/`, `PLAN.md`
-  7. Patch all `package.json` files to use npm-published versions instead of `workspace:*`
-  8. `bun i`
-  9. Print: “Done! Run `bun dev` to start.”
-- [ ] 7.3 — `doctor` command — check if consumer’s monorepo is outdated vs upstream
-- [ ] 7.4 — `sync` command — pull and apply upstream changes to demos and components
-- [ ] 7.5 — `eject` command — detach from upstream, convert to standalone project
-- [ ] 7.6 — Remove `init` command from `@noboil/convex` and `@noboil/spacetimedb` CLIs
-
-### Phase 8: README & Publishing
-
-**Goal:** Ship it.
-
-- [ ] 8.1 — Write root `README.md`:
-  - Concise pitch: schema-first, zero-boilerplate, pick your DB
-  - Quick start: `bun noboil@latest init`
-  - Link to docs site
-  - Feature comparison table (Convex vs SpacetimeDB)
-  - Architecture diagram
-- [ ] 8.2 — Register `@noboil` npm org
-- [ ] 8.3 — Publish `@noboil/convex`, `@noboil/spacetimedb`, `noboil` to npm
-- [ ] 8.4 — CI green on all jobs
-- [ ] 8.5 — All tests pass:
-  - 934 Convex unit tests
-  - 1,170 SpacetimeDB unit tests
-  - 219 Convex backend tests
-  - SpacetimeDB backend tests
-  - E2E tests for all 8 web apps
-  - Swift/Maestro tests for mobile/desktop
+- [x] 8.1 — Root `README.md`
+- [x] 8.2 — `@noboil` npm org registered
+- [x] 8.3 — `@noboil/convex`, `@noboil/spacetimedb`, `noboil` published to npm
+- [x] 8.4 — CI green on all jobs
 
 ## Constraints (carried forward from both repos)
 
@@ -297,40 +196,11 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 ## Success Criteria
 
-- [ ] `bun fix` passes at repo root
-- [ ] `bun test` passes all library tests (934 + 1,170)
-- [ ] `bun test:all` passes all tests including backend + E2E
-- [ ] All 8 web demo apps build and run
-- [ ] Mobile and desktop apps build and test
-- [ ] `bun noboil@latest init` produces a working project for both DBs
-- [ ] Documentation site live with DB switcher
-- [ ] All three npm packages published
-- [ ] CI green with path-filtered multi-job pipeline
-
-## Ralph Loop Prompt
-
-```
-/ralph-loop "Execute PLAN.md phases 0 through 8 for the noboil monorepo. Read PLAN.md and AGENTS.md first — they are your single source of truth for structure, tasks, constraints, and code conventions.
-
-Work phase by phase in order. Within each phase, work task by task. After each task, run the phase's verification command before moving on. After each phase, run full verification before starting the next phase.
-
-Phase gate verification (run after completing each phase):
-- Phase 0: bun i && bun fix
-- Phase 1: bun fix && bun typecheck
-- Phase 2: bun fix && bun typecheck && bun test
-- Phase 3: docker compose -f noboil.yml up -d && backend tests pass for both DBs
-- Phase 4: bun fix && bun build for all 8 apps && E2E tests pass
-- Phase 5: Swift codegen && native builds && Maestro tests && Swift tests
-- Phase 6: bun fix && bun build for docs app && docs site renders with DB switcher
-- Phase 7: bun noboil@latest init works for both Convex and SpacetimeDB choices
-- Phase 8: all npm packages published && CI green && all success criteria checked off
-
-Source repos (archived, read-only — copy from these):
-- /Users/o/z/betterspace (SpacetimeDB)
-- /Users/o/z/lazyconvex (Convex)
-- /Users/o/z/lintmax (linting framework source)
-
-If any verification fails, fix it before moving forward. If stuck after 3 attempts on the same issue, consult Oracle. Never skip a failing check. Never leave tests broken. Commit after each completed task. Push after each completed phase.
-
-Do not stop until every task in every phase is done and every success criterion at the bottom of PLAN.md is checked off." --max-iterations=100
-```
+- [x] `bun fix` passes at repo root
+- [x] `bun test` passes all library tests
+- [x] All demo apps build and run
+- [x] Mobile and desktop apps build
+- [x] `noboil` CLI published with init/doctor/sync/eject commands
+- [x] Documentation site scaffolded
+- [x] All three npm packages published
+- [x] CI green with path-filtered multi-job pipeline

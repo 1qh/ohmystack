@@ -1,71 +1,19 @@
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
 'use client'
 import type { FunctionReference } from 'convex/server'
 import type { ComponentProps, ReactNode } from 'react'
 import type { infer as zinfer, ZodObject, ZodRawShape } from 'zod/v4'
-import { cn } from '@a/ui'
-import { Button } from '@a/ui/button'
-import { Dialog, DialogContent } from '@a/ui/dialog'
+import { AutoSaveIndicator, ConflictDialog, UnsavedChangesDialog } from '@a/shared/components/form-common'
 import { useNavigationGuard } from 'next-navigation-guard'
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useMemo } from 'react'
 import type { FormReturn as BaseFormReturn, ConflictData } from '../react/form'
 import type { Api } from './fields'
 import { DevtoolsAutoMount } from '../react/devtools-panel'
 import { useForm as useBaseForm, useFormMutation as useBaseFormMutation } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
-const ConflictDialog = ({
-  className,
-  conflict,
-  onResolve,
-  ...props
-}: Omit<ComponentProps<typeof DialogContent>, 'children'> & {
-  conflict: ConflictData | null
-  onResolve: (action: 'cancel' | 'overwrite' | 'reload') => void
-}) => (
-  <Dialog open={Boolean(conflict)}>
-    <DialogContent
-      className={cn('[&>button]:hidden', className)}
-      {...props}
-      onEscapeKeyDown={() => onResolve('cancel')}
-      onInteractOutside={() => onResolve('cancel')}>
-      <h2 className='text-lg font-semibold'>Conflict Detected</h2>
-      <p className='text-sm text-muted-foreground'>
-        This record was modified by someone else. Choose how to resolve the conflict.
-      </p>
-      {conflict?.current || conflict?.incoming ? (
-        <div className='space-y-3'>
-          {conflict.current ? (
-            <div className='rounded-lg bg-muted p-3'>
-              <p className='mb-1 text-xs font-medium text-muted-foreground'>Server version:</p>
-              <pre className='text-xs'>{JSON.stringify(conflict.current, null, 2)}</pre>
-            </div>
-          ) : null}
-          {conflict.incoming ? (
-            <div className='rounded-lg bg-muted p-3'>
-              <p className='mb-1 text-xs font-medium text-muted-foreground'>Your version:</p>
-              <pre className='text-xs'>{JSON.stringify(conflict.incoming, null, 2)}</pre>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      <div className='flex justify-end gap-2'>
-        <Button onClick={() => onResolve('cancel')} variant='outline'>
-          Cancel
-        </Button>
-        <Button onClick={() => onResolve('reload')} variant='outline'>
-          Reload
-        </Button>
-        <Button onClick={() => onResolve('overwrite')} variant='destructive'>
-          Overwrite
-        </Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-)
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> extends BaseFormReturn<T, S> {
   guard: ReturnType<typeof useNavigationGuard>
 }
@@ -160,61 +108,32 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
     form: FormReturn<T, S>
     render: (f: TypedFields<T>) => ReactNode
     showError?: boolean
-  }) => (
-    // eslint-disable-next-line @eslint-react/no-unstable-context-value
-    <FormContext value={{ form: instance as Api<Record<string, unknown>>, meta, schema, serverErrors: fieldErrors }}>
-      <form
-        {...props}
-        onSubmit={e => {
-          e.preventDefault()
-          instance.handleSubmit()
-        }}>
-        {showError && error ? (
-          <p className='mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
-            {error.message}
-          </p>
-        ) : null}
-        {render(fields as TypedFields<T>)}
-      </form>
-      <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
-      <Dialog open={guard.active}>
-        <DialogContent className='[&>button]:hidden' onEscapeKeyDown={guard.reject} onInteractOutside={guard.reject}>
-          <p>You have unsaved changes. Are you sure you want to leave?</p>
-          <div className='flex justify-end gap-2'>
-            <Button onClick={guard.reject} variant='outline'>
-              Cancel
-            </Button>
-            <Button onClick={guard.accept} variant='destructive'>
-              Discard
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <FileFieldWarning meta={meta} />
-      <DevtoolsAutoMount />
-    </FormContext>
-  ),
-  AutoSaveIndicator = ({ className, lastSaved, ...props }: ComponentProps<'span'> & { lastSaved: null | number }) => {
-    const MS_PER_SECOND = 1000,
-      JUST_SAVED_THRESHOLD = 5,
-      REFRESH_INTERVAL = 10_000,
-      calcAgo = () => (lastSaved ? Math.round((Date.now() - lastSaved) / MS_PER_SECOND) : 0),
-      [ago, setAgo] = useState(calcAgo)
-    // biome-ignore lint/correctness/useExhaustiveDependencies: calcAgo depends on lastSaved
-    useEffect(() => {
-      if (!lastSaved) return
-      setAgo(calcAgo())
-      const id = setInterval(() => setAgo(calcAgo()), REFRESH_INTERVAL)
-      return () => clearInterval(id)
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSaved])
-    if (!lastSaved) return null
+  }) => {
+    const contextValue = useMemo(
+      () => ({ form: instance as Api<Record<string, unknown>>, meta, schema, serverErrors: fieldErrors }),
+      [fieldErrors, instance, meta, schema]
+    )
     return (
-      <span className={cn('text-xs text-muted-foreground', className)} {...props}>
-        {ago < JUST_SAVED_THRESHOLD ? 'Saved' : `Saved ${ago}s ago`}
-      </span>
+      <FormContext value={contextValue}>
+        <form
+          {...props}
+          onSubmit={e => {
+            e.preventDefault()
+            instance.handleSubmit()
+          }}>
+          {showError && error ? (
+            <p className='mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
+              {error.message}
+            </p>
+          ) : null}
+          {render(fields as TypedFields<T>)}
+        </form>
+        <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
+        <UnsavedChangesDialog active={guard.active} onAccept={guard.accept} onReject={guard.reject} />
+        <FileFieldWarning meta={meta} />
+        <DevtoolsAutoMount />
+      </FormContext>
     )
   }
-/** Exports form components and hooks. */
 export type { TypedFields }
 export { AutoSaveIndicator, ConflictDialog, Form, useForm, useFormMutation }
