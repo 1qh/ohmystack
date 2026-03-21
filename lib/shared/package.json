@@ -7,6 +7,7 @@
     "./retry": "./src/retry.ts",
     "./schema-utils": "./src/schema-utils.ts",
     "./seed": "./src/seed.ts",
+    "./components/fields": "./src/components/fields.tsx",
     "./server/*": "./src/server/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
