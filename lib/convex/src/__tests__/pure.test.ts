@@ -3,7 +3,6 @@
 /** biome-ignore-all lint/suspicious/useAwait: async test stubs intentionally match Promise-shaped APIs */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-console */
-
 import type { GenericTableInfo, RegisteredQuery } from 'convex/server'
 
 import { describe, expect, test } from 'bun:test'

@@ -35,7 +35,6 @@ import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
 import { createBlog } from '~/schema'
 
 import { Publish } from './[id]/edit/client'
-
 const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
   Delete = ({ id, onOptimisticRemove }: { id: number; onOptimisticRemove?: () => void }) => {
     const rmBlog = useMut(reducers.rmBlog, {
