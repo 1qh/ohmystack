@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./constants": "./src/constants.ts",
+    "./schema-utils": "./src/schema-utils.ts",
     "./seed": "./src/seed.ts",
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
