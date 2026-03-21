@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./constants": "./src/constants.ts",
+    "./seed": "./src/seed.ts",
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
     "./react/schema-playground": "./src/react/schema-playground.tsx"
