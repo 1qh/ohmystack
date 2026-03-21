@@ -3,9 +3,7 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { ZodRawShape } from 'zod/v4'
-
 import { t } from 'spacetimedb/server'
-
 import type { OrgFieldBuilders } from './org'
 import type { FieldBuilder, ZodBridgeT } from './stdb-tables'
 import type {
@@ -25,7 +23,6 @@ import type { CrudFieldBuilders, CrudHooks, CrudOptions } from './types/crud'
 import type { FileUploadFields } from './types/file'
 import type { OrgCrudFieldBuilders, OrgCrudOptions } from './types/org-crud'
 import type { SingletonFieldBuilders, SingletonHooks, SingletonOptions } from './types/singleton'
-
 import { makeCacheCrud } from './cache-crud'
 import { makeChildCrud } from './child'
 import { makeCrud } from './crud'

@@ -1,10 +1,7 @@
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { zid } from 'convex-helpers/server/zod4'
 import { array, object, string } from 'zod/v4'
-
 import type { BaseSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
-
 import { typed } from './server/bridge'
 /** Zod schema for a Convex storage file reference. */
 const cvFile = () => zid('_storage').meta({ cv: 'file' as const }),

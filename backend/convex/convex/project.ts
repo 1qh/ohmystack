@@ -1,5 +1,4 @@
 import { orgCascade } from '@noboil/convex/server'
-
 import { orgCrud } from '../lazy'
 import { orgScoped } from '../t'
 export const { addEditor, create, editors, list, read, removeEditor, rm, setEditors, update } = orgCrud(

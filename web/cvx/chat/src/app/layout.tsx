@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-
 import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { isAuthenticated } from '@noboil/convex/next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-
 import Sidebar from './sidebar'
 const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' },
   PUBLIC_PATHS = ['/login', '/public'],

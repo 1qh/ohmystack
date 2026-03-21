@@ -1,7 +1,6 @@
 'use client'
 import { useCallback, useId, useState } from 'react'
 import { toast } from 'sonner'
-
 import { BULK_MAX } from '../constants'
 import { defaultOnError } from './use-mutate'
 interface BulkMutateToast {

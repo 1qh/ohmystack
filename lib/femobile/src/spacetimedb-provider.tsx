@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-
 import { DbConnection } from '@a/be-spacetimedb/spacetimedb'
 import { createSpacetimeClient, createTokenStore } from '@noboil/spacetimedb/react'
 import { SpacetimeDBProvider as BaseProvider } from 'spacetimedb/react'

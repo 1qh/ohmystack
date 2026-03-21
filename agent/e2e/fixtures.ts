@@ -1,5 +1,4 @@
 import { test as baseTest, expect } from '@a/e2e/base-test'
-
 import ChatPage from './pages/chat'
 import SessionListPage from './pages/session-list'
 interface Fixtures {

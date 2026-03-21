@@ -11,9 +11,7 @@ import { useOrgMutation, useOrgQuery } from '@noboil/convex/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
-
 import OrgSettingsForm from './org-settings-form'
 const OrgSettingsPage = () => {
   const router = useRouter(),

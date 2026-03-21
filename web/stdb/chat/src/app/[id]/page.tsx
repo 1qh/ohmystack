@@ -2,7 +2,6 @@
 'use client'
 import type { Chat, Message } from '@a/be-spacetimedb/spacetimedb/types'
 import type { UIMessage } from 'ai'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import Client from '@a/fe/chat-client'
 import { toUIMessage } from '@a/fe/ui-message'

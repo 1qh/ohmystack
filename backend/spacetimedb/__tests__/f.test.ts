@@ -1,6 +1,5 @@
 import { callReducer } from '@noboil/spacetimedb/test'
 import { describe, expect, test } from 'bun:test'
-
 import { reducers, tables } from '../module_bindings'
 import {
   createBlog,

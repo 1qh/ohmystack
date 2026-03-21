@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { withStringId } from '@a/fe/utils'
 import { Badge } from '@a/ui/badge'
@@ -15,7 +14,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useReducer } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const WikiPage = () => {

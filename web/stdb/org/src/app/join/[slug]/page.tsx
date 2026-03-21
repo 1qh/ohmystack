@@ -9,7 +9,6 @@ import { setActiveOrgCookieClient, useMut } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 import { joinRequest } from '~/schema'
 const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const { slug } = use(params),

@@ -4,7 +4,6 @@
 import type { OrgMember, Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
 import type { SyntheticEvent } from 'react'
 import type { output } from 'zod/v4'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { s } from '@a/be-spacetimedb/t'
 import { sameIdentity } from '@a/fe/utils'
@@ -24,7 +23,6 @@ import Link from 'next/link'
 import { use, useState } from 'react'
 import { toast } from 'sonner'
 import { useSpacetimeDB } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'

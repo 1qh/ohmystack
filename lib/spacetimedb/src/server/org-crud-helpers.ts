@@ -1,7 +1,5 @@
 import type { Identity } from 'spacetimedb'
-
 import type { OrgCrudMemberLike } from './types/org-crud'
-
 import { checkMembership } from './org-crud'
 import { identityEquals, makeError } from './reducer-utils'
 const requireOrgMember = <OrgId, Member extends OrgCrudMemberLike<OrgId>>({

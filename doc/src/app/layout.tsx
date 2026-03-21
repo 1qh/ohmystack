@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
-
 import { RootProvider } from 'fumadocs-ui/provider/next'
-
 // oxlint-disable-next-line import/no-unassigned-import
 import '../app/global.css'
 const Layout = ({ children }: { children: ReactNode }) => (

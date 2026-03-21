@@ -1,12 +1,9 @@
 'use client'
 import type { ComponentProps } from 'react'
-
 import { cn } from '@a/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Badge } from '@a/ui/badge'
-
 import type { OrgRole } from '../server/types'
-
 import useOnlineStatus from '../react/use-online-status'
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
     <Avatar {...props}>

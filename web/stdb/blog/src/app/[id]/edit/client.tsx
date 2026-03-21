@@ -3,7 +3,6 @@
 'use client'
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
 import type { ComponentProps } from 'react'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { cn } from '@a/ui'
 import { FieldGroup } from '@a/ui/field'
@@ -17,7 +16,6 @@ import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useId, useTransition } from 'react'
 import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
-
 import { editBlog } from '~/schema'
 const Publish = ({
     className,

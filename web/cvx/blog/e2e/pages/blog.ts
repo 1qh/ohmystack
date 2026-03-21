@@ -1,7 +1,6 @@
 /* eslint-disable no-await-in-loop */
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 import type { Locator } from '@playwright/test'
-
 import BasePage from '@a/e2e/base-page'
 class BlogPage extends BasePage {
   public async addTags(tags: string[]): Promise<void> {

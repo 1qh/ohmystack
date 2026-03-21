@@ -3,7 +3,6 @@
 /* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
 'use client'
 import type { ErrorInfo, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 import { Component } from 'react'
 interface ErrorBoundaryProps {

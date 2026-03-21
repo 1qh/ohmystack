@@ -1,6 +1,5 @@
 'use client'
 import type { OrgProfile } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { useTable } from 'spacetimedb/react'
 const useProfileMap = () => {

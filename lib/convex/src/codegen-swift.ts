@@ -3,10 +3,8 @@
 /* eslint-disable max-depth */
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 import type { ZodType } from 'zod/v4'
-
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-
 import { swiftEnumCase } from './codegen-swift-utils'
 interface FieldEntry {
   isOptional: boolean

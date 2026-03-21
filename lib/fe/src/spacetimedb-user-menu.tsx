@@ -1,9 +1,7 @@
 import type { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
-
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-
 import env from './env'
 import UserMenuShell from './user-menu-shell'
 interface UserInfo {

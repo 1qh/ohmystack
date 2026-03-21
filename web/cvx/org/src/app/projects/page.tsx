@@ -11,7 +11,6 @@ import { useMutation } from 'convex/react'
 import { FolderOpen, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const ProjectsPage = () => {
   const { isAdmin, org } = useOrg(),

@@ -1,5 +1,4 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-
 import type {
   SingletonConfig,
   SingletonExports,
@@ -7,7 +6,6 @@ import type {
   SingletonFieldValues,
   SingletonTableLike
 } from './types/singleton'
-
 import { applyPatch, identityEquals, makeError, makeOptionalFields, pickPatch } from './reducer-utils'
 interface SingletonRow {
   createdAt: Timestamp

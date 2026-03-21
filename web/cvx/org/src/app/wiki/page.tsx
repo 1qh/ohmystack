@@ -14,7 +14,6 @@ import { FileText, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   WikiPage = () => {

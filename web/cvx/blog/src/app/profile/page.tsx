@@ -6,7 +6,6 @@ import { Form, useForm } from '@noboil/convex/components'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-
 import { profileSchema } from '~/schema'
 const Page = () => {
   const profile = useQuery(api.blogProfile.get, {}),

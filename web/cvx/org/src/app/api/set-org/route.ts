@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server'
-
 import { setActiveOrgCookie } from '@noboil/convex/next'
 import { NextResponse } from 'next/server'
 const GET = async (req: NextRequest) => {

@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'
 import { Badge } from '@a/ui/badge'
@@ -13,7 +12,6 @@ import { Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useProfileMap } from '~/hook/use-profile-map'
 const emptyMembers: never[] = [],

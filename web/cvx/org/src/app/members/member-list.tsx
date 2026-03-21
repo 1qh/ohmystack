@@ -12,7 +12,6 @@ import { useOrgQuery } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
 import { MoreHorizontal, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const MemberList = () => {
   const { canManageAdmins, canManageMembers, role: myRole } = useOrg(),

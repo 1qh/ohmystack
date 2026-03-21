@@ -1,6 +1,5 @@
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 import type { Locator } from '@playwright/test'
-
 import BasePage from '@a/e2e/base-page'
 class MoviePage extends BasePage {
   public async fetchMovie(id: number): Promise<void> {

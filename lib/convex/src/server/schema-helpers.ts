@@ -1,11 +1,8 @@
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
-
 import type { BaseSchema, OrgSchema, OwnedSchema, SingletonSchema } from './types'
-
 import { elementOf, isArrayType, unwrapZod } from '../zod'
 import { indexFields } from './bridge'
 import { isRecord } from './helpers'

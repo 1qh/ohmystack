@@ -4,9 +4,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-
 import type { DevCacheEntry, DevError, DevMutation, DevSubscription } from './devtools'
-
 import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
 /** Props for customizing the LazyConvex DevTools panel. */
 interface DevtoolsProps {

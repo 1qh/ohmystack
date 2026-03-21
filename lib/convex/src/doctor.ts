@@ -4,9 +4,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-
 import type { FactoryCall } from './check'
-
 import {
   accessForFactory,
   checkIndexCoverage,

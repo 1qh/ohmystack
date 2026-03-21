@@ -1,7 +1,6 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import type {
   OrgCrudConfig,
   OrgCrudExports,
@@ -12,7 +11,6 @@ import type {
   OrgCrudPkLike,
   OrgCrudTableLike
 } from './types/org-crud'
-
 import { enforceRateLimit } from './helpers'
 import { applyPatch, identityEquals, makeError, makeOptionalFields, pickPatch, timestampEquals } from './reducer-utils'
 type UpdateArgs<F extends OrgCrudFieldBuilders, Id> = Partial<OrgCrudFieldValues<F>> & {

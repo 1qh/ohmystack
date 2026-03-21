@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { RoleBadge } from '@noboil/spacetimedb/components'
 import { FolderOpen, Users } from 'lucide-react'
 import Link from 'next/link'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const OrgDashboard = () => {

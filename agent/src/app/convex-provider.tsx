@@ -1,9 +1,7 @@
 'use client'
 import type { ReactNode } from 'react'
-
 import { ConvexAuthNextjsProvider } from '@convex-dev/auth/nextjs'
 import { ConvexProvider, ConvexReactClient } from 'convex/react'
-
 import env from '~/env'
 const runtimeEnv = env as Record<'NEXT_PUBLIC_CONVEX_TEST_MODE' | 'NEXT_PUBLIC_CONVEX_URL', string>,
   convex = new ConvexReactClient(runtimeEnv.NEXT_PUBLIC_CONVEX_URL),

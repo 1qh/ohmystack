@@ -1,5 +1,4 @@
 import { defineConfig, eslintImport } from 'lintmax'
-
 const backendLintIgnoreFiles = [
     'backend/agent/convex/f.test.ts',
     'backend/convex/convex/edge.test.ts',
@@ -21,7 +20,6 @@ const backendLintIgnoreFiles = [
     'origin-top-center',
     'toaster'
   ]
-
 export default defineConfig({
   biome: {
     overrides: [

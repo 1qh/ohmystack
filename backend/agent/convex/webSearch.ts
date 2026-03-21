@@ -2,7 +2,6 @@
 'use node'
 import { makeFunctionReference } from 'convex/server'
 import { v } from 'convex/values'
-
 import { internalAction } from './_generated/server'
 interface GroundedSource {
   snippet: string

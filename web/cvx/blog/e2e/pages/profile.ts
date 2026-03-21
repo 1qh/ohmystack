@@ -1,6 +1,5 @@
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 import type { Locator } from '@playwright/test'
-
 import BasePage from '@a/e2e/base-page'
 class ProfilePage extends BasePage {
   public async fillProfile(data: { bio?: string; displayName?: string; theme?: string }): Promise<void> {

@@ -1,12 +1,10 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { ComponentProps } from 'react'
-
 import { Input } from '@a/ui/input'
 import { useId, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { toast } from 'sonner'
-
 import EmailAuthShell from './email-auth-shell'
 interface EmailLoginPageProps {
   emailInputProps?: Omit<ComponentProps<typeof Input>, 'id' | 'name' | 'type'>

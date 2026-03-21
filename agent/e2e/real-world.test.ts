@@ -2,10 +2,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright ops */
 /** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import type { FunctionReference } from 'convex/server'
-
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
-
 import { expect, test } from './fixtures'
 const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
   CHAT_URL_RE = /\/chat\//u,

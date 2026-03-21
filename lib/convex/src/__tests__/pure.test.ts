@@ -4,11 +4,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-console */
 import type { GenericTableInfo, RegisteredQuery } from 'convex/server'
-
 import { describe, expect, test } from 'bun:test'
 import { ConvexError } from 'convex/values'
 import { array, boolean, date, number, object, optional, string, enum as zenum } from 'zod/v4'
-
 import type { AccessEntry, FactoryCall } from '../check'
 import type { CheckResult } from '../doctor'
 import type { DevtoolsProps } from '../react/devtools-panel'
@@ -49,7 +47,6 @@ import type {
   SingletonSchema,
   WhereOf
 } from '../server/types'
-
 import {
   add,
   defaultFields,

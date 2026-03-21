@@ -2,10 +2,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 /* eslint-disable no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { zid } from 'convex-helpers/server/zod4'
 import { array, number } from 'zod/v4'
-
 import type {
   BaseBuilders,
   CanEditOpts,
@@ -23,7 +21,6 @@ import type {
   ReadCtx,
   Rec
 } from './types'
-
 import { BULK_MAX } from '../constants'
 import { flt, idx, typed } from './bridge'
 import { isTestMode } from './env'

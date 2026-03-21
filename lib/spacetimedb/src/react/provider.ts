@@ -2,7 +2,6 @@
 // oxlint-disable promise/avoid-new
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 import type { UploadOptions, UploadResponse } from '../components'
-
 import { err } from '../server/helpers'
 interface CreateSpacetimeClientOptions<
   TBuilder extends SpacetimeConnectionBuilder<TBuilder, TConnection, TIdentity>,

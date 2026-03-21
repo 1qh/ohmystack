@@ -1,5 +1,4 @@
 import type { ZodObject, ZodRawShape, ZodType } from 'zod/v4'
-
 import { array, boolean, number, object, string, unknown, uuid, enum as zenum } from 'zod/v4'
 interface RuntimeBuilder {
   algebraicType?: unknown

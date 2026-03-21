@@ -6,10 +6,8 @@
 import type { ComponentProps } from 'react'
 import type { Identity } from 'spacetimedb'
 import type { z } from 'zod/v4'
-
 import { describe, expect, test } from 'bun:test'
 import { array, boolean, date, globalRegistry, number, object, optional, string, enum as zenum } from 'zod/v4'
-
 import type { AccessEntry, FactoryCall } from '../check'
 import type BetterspaceErrorBoundary from '../components/error-boundary'
 // oxlint-disable-next-line import/no-namespace
@@ -81,7 +79,6 @@ import type {
   RegisteredQuery,
   SchemaPhantoms
 } from '../server/types/common'
-
 import {
   add,
   defaultFields,

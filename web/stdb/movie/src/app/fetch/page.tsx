@@ -6,7 +6,6 @@
 'use client'
 import type { s } from '@a/be-spacetimedb/t'
 import type { InferCreate } from '@noboil/spacetimedb'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Badge } from '@a/ui/badge'
 import { Input } from '@a/ui/input'

@@ -1,7 +1,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 import type { Id } from '@a/be-convex/model'
 import type { UIMessage } from 'ai'
-
 import { api } from '@a/be-convex'
 import { getModel } from '@a/be-convex/ai'
 import { toUIMessage } from '@a/fe/ui-message'

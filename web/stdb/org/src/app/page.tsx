@@ -1,13 +1,11 @@
 'use client'
 import type { Org, OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 import type { OrgRole } from '@noboil/spacetimedb'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 import { OrgRedirect } from './layout'
 import OrgList from './org-list'
 interface MyOrgsItem {

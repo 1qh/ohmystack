@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 'use client'
 import type { ComponentProps, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
 import Link from 'next/link'
-
 import type { OrgRole } from '../server/types'
 /** Conditionally renders children based on org role or edit permission. */
 const PermissionGuard = ({

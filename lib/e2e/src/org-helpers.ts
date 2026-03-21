@@ -4,7 +4,6 @@
 import type { api as BeApi } from '@a/be-convex'
 import type { Id } from '@a/be-convex/model'
 import type { FunctionArgs, FunctionReference, FunctionReturnType } from 'convex/server'
-
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 const api = anyApi as unknown as typeof BeApi,

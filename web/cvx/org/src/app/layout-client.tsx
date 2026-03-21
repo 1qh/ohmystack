@@ -2,13 +2,10 @@
 import type { OrgRole } from '@noboil/convex'
 import type { OrgDocLike } from '@noboil/convex/server'
 import type { ReactNode } from 'react'
-
 import { OrgProvider } from '@noboil/convex/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
 import { useOrg } from '~/hook/use-org'
-
 import OrgSwitcher from './org-switcher'
 const OrgNav = () => {
     const { isAdmin } = useOrg(),

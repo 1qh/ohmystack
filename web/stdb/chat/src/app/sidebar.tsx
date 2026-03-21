@@ -1,6 +1,5 @@
 'use client'
 import type { Chat } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import ChatSidebar from '@a/fe/chat-sidebar'
 import { toIdentityKey } from '@a/fe/utils'

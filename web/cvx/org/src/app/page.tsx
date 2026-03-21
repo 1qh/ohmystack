@@ -1,13 +1,10 @@
 import type { OrgRole } from '@noboil/convex'
-
 import { api } from '@a/be-convex'
 import { getToken, isAuthenticated } from '@noboil/convex/next'
 import { fetchQuery } from 'convex/nextjs'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
-
 import { getTestClient } from '~/utils'
-
 import OrgList from './org-list'
 import OrgRedirect from './org-redirect'
 interface MyOrgsItem {

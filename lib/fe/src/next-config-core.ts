@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next'
-
 import { env as nodeEnv } from 'node:process'
 interface CreateNextConfigOptions {
   experimental?: NextConfig['experimental']

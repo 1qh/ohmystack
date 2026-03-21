@@ -5,7 +5,6 @@ import SearchInput from '@a/fe/search-input'
 import { useList, useOwnRows } from '@noboil/spacetimedb/react'
 import { useCallback, useMemo, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 import { Create, List } from './common'
 const Page = () => {
   const [allBlogs, isReady] = useTable(tables.blog),

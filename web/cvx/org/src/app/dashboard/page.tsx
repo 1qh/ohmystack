@@ -5,7 +5,6 @@ import { RoleBadge } from '@noboil/convex/components'
 import { useOrgQuery } from '@noboil/convex/react'
 import { FolderOpen, Users } from 'lucide-react'
 import Link from 'next/link'
-
 import { useOrg } from '~/hook/use-org'
 const OrgDashboard = () => {
   const { org, role } = useOrg(),

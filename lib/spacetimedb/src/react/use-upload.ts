@@ -2,7 +2,6 @@
 'use client'
 // oxlint-disable promise/avoid-new
 import { useRef, useState } from 'react'
-
 import { err } from '../server/helpers'
 interface PresignedUpload {
   headers?: Record<string, string>

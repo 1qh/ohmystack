@@ -1,6 +1,5 @@
 import { callReducer } from '@noboil/spacetimedb/test'
 import { describe, expect, test } from 'bun:test'
-
 import { reducers, tables } from '../module_bindings'
 import orgInviteTable from '../module_bindings/org_invite_table'
 import orgJoinRequestTable from '../module_bindings/org_join_request_table'

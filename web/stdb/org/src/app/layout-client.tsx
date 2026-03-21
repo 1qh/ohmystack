@@ -2,13 +2,10 @@
 import type { OrgRole } from '@noboil/spacetimedb'
 import type { OrgDoc } from '@noboil/spacetimedb/react'
 import type { ReactNode } from 'react'
-
 import { OrgProvider } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
 import { useOrg } from '~/hook/use-org'
-
 import OrgSwitcher from './org-switcher'
 const OrgNav = () => {
     const { isAdmin } = useOrg(),

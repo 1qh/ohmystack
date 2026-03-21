@@ -1,6 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
-
 import { identityEquals, makeError } from './reducer-utils'
 interface OrgMemberPkLike<Row, Id> {
   delete: (id: Id) => boolean

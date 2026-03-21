@@ -2,7 +2,6 @@
 import { generateText, tool } from 'ai'
 import { v } from 'convex/values'
 import { z } from 'zod/v4'
-
 import { getModel } from '../ai'
 import { api } from './_generated/api'
 import { action } from './_generated/server'

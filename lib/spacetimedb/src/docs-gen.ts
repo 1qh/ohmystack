@@ -5,9 +5,7 @@
 // biome-ignore-all lint/nursery/noUnnecessaryConditions: type narrowing
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-
 import type { FactoryCall } from './check'
-
 import { endpointsForFactory, extractSchemaFields } from './check'
 const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
   bold = (s: string) => `\u001B[1m${s}\u001B[0m`,

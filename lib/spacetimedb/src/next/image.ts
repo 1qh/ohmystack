@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 import type { NextRequest } from 'next/server'
 import type { Sharp } from 'sharp'
-
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'
 type Format = 'jpeg' | 'png' | 'webp'

@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
 import { useCallback } from 'react'
-
 import { UNDO_MS } from '../constants'
 /** Configuration for useSoftDelete: the rm/restore mutations, toast function, and optional callbacks. */
 interface SoftDeleteOpts<A extends { id: string }> {

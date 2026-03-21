@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-
 import { cn } from '@a/rnr'
 import { View } from 'react-native'
 interface LoginLayoutProps {

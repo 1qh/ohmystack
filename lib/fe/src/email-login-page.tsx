@@ -1,12 +1,10 @@
 'use client'
 import type { ComponentProps } from 'react'
-
 import { Input } from '@a/ui/input'
 import { useAuthActions } from '@convex-dev/auth/react'
 import { ConvexError } from 'convex/values'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
 import EmailAuthShell from './email-auth-shell'
 interface EmailLoginPageProps {
   emailInputProps?: Omit<ComponentProps<typeof Input>, 'name' | 'type'>

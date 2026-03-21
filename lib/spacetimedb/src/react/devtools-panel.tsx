@@ -5,10 +5,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-
 import type { ErrorCode } from '../server/types'
 import type { DevCacheEntry, DevConnection, DevError, DevMutation, DevSubscription } from './devtools'
-
 import { ERROR_MESSAGES } from '../server/types'
 import { injectError, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
 interface DevtoolsProps {

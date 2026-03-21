@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgJoinRequest } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Avatar, AvatarFallback } from '@a/ui/avatar'
 import { Button } from '@a/ui/button'
@@ -10,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMut } from '@noboil/spacetimedb/react'
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
-
 import { useOrgTable } from '~/hook/use-org-table'
 const JoinRequests = () => {
   const [orgRequests] = useOrgTable<OrgJoinRequest>(tables.orgJoinRequest),

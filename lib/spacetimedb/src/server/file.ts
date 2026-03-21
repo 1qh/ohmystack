@@ -1,8 +1,6 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
-
 import type { FileUploadConfig, FileUploadExports, FileUploadPkLike, FileUploadTableLike } from './types/file'
-
 import { BYTES_PER_MB } from '../constants'
 import { identityEquals, makeError } from './reducer-utils'
 interface FileRowBase<Id> {

@@ -6,9 +6,7 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
-
 import type { FactoryCall, SchemaField, SchemaTable } from './schema-utils'
-
 import {
   CACHE_BASE,
   CHILD_BASE,

@@ -1,12 +1,10 @@
 import type { Id } from '@a/be-convex/model'
-
 import { api } from '@a/be-convex'
 import { isId } from '@a/fe/utils'
 import { getToken } from '@noboil/convex/next'
 import { preloadQuery } from 'convex/nextjs'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
-
 import Client from './client'
 const Page = async ({ params }: { params: Promise<{ id: Id<'blog'> }> }) => {
   await connection()

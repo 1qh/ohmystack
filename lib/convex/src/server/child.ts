@@ -3,10 +3,8 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable complexity */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { zid } from 'convex-helpers/server/zod4'
 import { array, number } from 'zod/v4'
-
 import type {
   BaseBuilders,
   ChildCrudResult,
@@ -18,7 +16,6 @@ import type {
   Rec,
   UserCtx
 } from './types'
-
 import { BULK_MAX } from '../constants'
 import { idx, typed } from './bridge'
 import { cleanFiles, dbDelete, dbInsert, dbPatch, detectFiles, err, pickFields, time } from './helpers'

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client'
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'
-
 import { useMutation } from 'convex/react'
 import { useCallback, useRef, useState } from 'react'
 type Args<T extends MutationFn> = OptionalRestArgs<T>[0]

@@ -1,5 +1,4 @@
 import { noboilStdb } from '@noboil/spacetimedb/server'
-
 import { s } from '../t'
 export default noboilStdb(({ t, table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 }),

@@ -5,9 +5,7 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
 import type { FactoryCall } from './check'
-
 import {
   accessForFactory,
   checkIndexCoverage,

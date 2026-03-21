@@ -3,7 +3,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-
 import { trackCacheAccess } from './devtools'
 interface FireLoadCtx<A extends Record<string, unknown>> {
   args: A

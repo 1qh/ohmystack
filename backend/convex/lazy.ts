@@ -1,5 +1,4 @@
 import { makeFileUpload, setup } from '@noboil/convex/server'
-
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { org } from './t'

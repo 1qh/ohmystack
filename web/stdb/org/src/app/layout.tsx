@@ -6,7 +6,6 @@
 import type { Org, OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 import type { OrgRole } from '@noboil/spacetimedb'
 import type { ReactNode } from 'react'
-
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
@@ -15,7 +14,6 @@ import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
-
 import OrgLayoutClient from './layout-client'
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
   needsOrgLayout = (pathname: string) => {

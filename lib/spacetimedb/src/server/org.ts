@@ -1,6 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
-
 import type { OrgInviteByTokenIndexLike, OrgInvitePkLike, OrgInviteRowLike, OrgInviteTableLike } from './org-invites'
 import type {
   OrgJoinRequestByOrgStatusIndexLike,
@@ -9,7 +8,6 @@ import type {
   OrgJoinRequestTableLike
 } from './org-join'
 import type { OrgMemberPkLike, OrgMemberRowLike, OrgMemberTableLike, OrgPkLike, OrgRowLike } from './org-members'
-
 import { makeInviteReducers } from './org-invites'
 import { makeJoinReducers } from './org-join'
 import { makeMemberReducers } from './org-members'

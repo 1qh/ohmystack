@@ -1,7 +1,6 @@
 // oxlint-disable no-unassigned-import
 import '@a/ui/globals.css'
 import type { ReactNode } from 'react'
-
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { Toaster } from '@a/ui/sonner'
 import { ErrorBoundary } from '@noboil/spacetimedb/components'

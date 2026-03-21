@@ -3,7 +3,6 @@
 import type { FunctionReference } from 'convex/server'
 import type { NextRequest } from 'next/server'
 import type { Sharp } from 'sharp'
-
 import { ConvexHttpClient } from 'convex/browser'
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'

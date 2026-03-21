@@ -3,7 +3,6 @@ import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { parseId } from '@a/fe/utils'
 import { useParams } from 'next/navigation'
 import { useTable } from 'spacetimedb/react'
-
 import { Client } from './client'
 const Page = () => {
   const { id: raw } = useParams<{ id: string }>(),

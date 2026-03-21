@@ -1,7 +1,6 @@
 // oxlint-disable-next-line import/no-unassigned-import
 import '@a/ui/globals.css'
 import type { ReactNode } from 'react'
-
 import ConvexProvider from '@a/fe/convex-provider'
 import { Toaster } from '@a/ui/sonner'
 import { ConvexErrorBoundary } from '@noboil/convex/components'

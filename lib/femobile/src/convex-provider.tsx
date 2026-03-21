@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-
 import { ConvexProvider as BaseProvider, ConvexReactClient as Client } from 'convex/react'
 interface ConvexProviderProps {
   children: ReactNode

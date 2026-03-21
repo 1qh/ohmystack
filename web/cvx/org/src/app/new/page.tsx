@@ -1,6 +1,5 @@
 'use client'
 import type { output } from 'zod'
-
 import { api } from '@a/be-convex'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
@@ -10,7 +9,6 @@ import { useMutation } from 'convex/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-
 import { orgTeam } from '~/schema'
 type OrgFormValues = output<typeof orgTeam>
 const orgKeys = {

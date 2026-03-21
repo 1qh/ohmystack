@@ -9,7 +9,6 @@
 import type { AnyFieldApi } from '@tanstack/react-form'
 import type { FunctionReference } from 'convex/server'
 import type { ComponentProps, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 import { Field, FieldError, FieldLabel } from '@a/ui/field'
 import imageCompression from 'browser-image-compression'
@@ -18,7 +17,6 @@ import { FileIcon, ImageIcon, Upload, X } from 'lucide-react'
 import { createContext, use, useCallback, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
-
 import { BYTES_PER_KB, BYTES_PER_MB } from '../constants'
 import useUpload from '../react/use-upload'
 interface FileApi {

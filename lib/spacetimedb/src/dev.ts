@@ -5,11 +5,9 @@
 // oxlint-disable promise/avoid-new
 import type { ChildProcess, SpawnSyncReturns } from 'node:child_process'
 import type { FSWatcher } from 'node:fs'
-
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, watch } from 'node:fs'
 import { join, resolve } from 'node:path'
-
 import { findEnvFile } from './use'
 interface DevFlags {
   docker: boolean

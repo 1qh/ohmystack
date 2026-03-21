@@ -6,7 +6,6 @@ import { Form, useFormMutation } from '@noboil/spacetimedb/components'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useReducer } from 'spacetimedb/react'
-
 import { invite } from '~/schema'
 interface InviteDialogProps {
   orgId: string

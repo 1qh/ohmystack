@@ -1,10 +1,8 @@
 /* eslint-disable complexity, @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/max-params */
 import type { GenericDataModel, GenericMutationCtx, GenericQueryCtx } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { customCtx } from 'convex-helpers/server/customFunctions'
 import { zCustomMutation, zCustomQuery } from 'convex-helpers/server/zod4'
-
 import type { OrgCrudOptions } from './org-crud'
 import type {
   BaseSchema,
@@ -24,7 +22,6 @@ import type {
   SingletonOptions,
   SingletonSchema
 } from './types'
-
 import { typed } from './bridge'
 import { makeCacheCrud } from './cache-crud'
 import { makeChildCrud } from './child'

@@ -6,7 +6,6 @@ import { FieldGroup } from '@a/ui/field'
 import { Form, useFormMutation } from '@noboil/convex/components'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const NewProjectPage = () => {
   const router = useRouter(),

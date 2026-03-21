@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-
 import { HEARTBEAT_INTERVAL_MS } from '../server/presence'
 interface PresenceHeartbeatArgs {
   data: Record<string, unknown>

@@ -1,6 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
-
 import { identityEquals, makeError } from './reducer-utils'
 interface PresenceConfig<
   DB,

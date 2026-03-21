@@ -1,10 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { useSpacetimeDB } from 'spacetimedb/react'
-
 import type { ErrorData } from '../server/helpers'
 import type { ErrorCode } from '../server/types'
-
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
 interface DevCacheEntry {
   hitCount: number

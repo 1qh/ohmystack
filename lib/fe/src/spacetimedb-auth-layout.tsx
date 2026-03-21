@@ -1,13 +1,11 @@
 // oxlint-disable no-unassigned-import
 import '@a/ui/globals.css'
 import type { ComponentProps, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 import { Toaster } from '@a/ui/sonner'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
-
 import LoginLayout from './login-layout'
 interface AuthLayoutProps {
   bodyClassName?: string

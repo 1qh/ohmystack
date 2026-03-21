@@ -2,7 +2,6 @@
 'use client'
 import type { Id } from '@a/be-agent/model'
 import type { SyntheticEvent } from 'react'
-
 import { api } from '@a/be-agent'
 import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'

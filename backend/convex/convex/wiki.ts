@@ -1,6 +1,5 @@
 import { requireOrgMember } from '@noboil/convex/server'
 import { zid } from 'convex-helpers/server/zod4'
-
 import { orgCrud, q, uniqueCheck } from '../lazy'
 import { orgScoped } from '../t'
 export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = orgCrud(

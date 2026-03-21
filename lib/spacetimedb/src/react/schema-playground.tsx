@@ -1,9 +1,7 @@
 /* oxlint-disable eslint/complexity */
 'use client'
 import { useCallback, useMemo, useState } from 'react'
-
 import type { SchemaField, SchemaTable } from '../schema-utils'
-
 import { endpointsForFactory, extractSchemaFields } from '../schema-utils'
 /** Props for customizing the SchemaPlayground component. */
 interface PlaygroundProps {

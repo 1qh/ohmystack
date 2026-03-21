@@ -1,5 +1,4 @@
 import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, table as stdbTable, TypeBuilder } from 'spacetimedb/server'
-
 import { schema as stdbSchema, t as stdbT, table as stdbTableFn } from 'spacetimedb/server'
 type FieldBuilder =
   | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>

@@ -1,14 +1,12 @@
 // oxlint-disable-next-line import/no-unassigned-import
 import '@a/ui/globals.css'
 import type { ComponentProps, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 import { Toaster } from '@a/ui/sonner'
 import { ConvexAuthNextjsServerProvider as AuthProvider } from '@convex-dev/auth/nextjs/server'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
-
 import ErrorBoundary from './error-boundary'
 interface AuthLayoutProps {
   bodyClassName?: string

@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { useCallback } from 'react'
-
 import { UNDO_MS } from '../constants'
 interface SoftDeleteOpts<A extends { id: string }> {
   label?: string

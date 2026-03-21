@@ -1,9 +1,7 @@
 'use client'
 import type { FunctionReference } from 'convex/server'
-
 import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useRef } from 'react'
-
 import { HEARTBEAT_INTERVAL_MS } from '../server/presence'
 /** Convex function references required by usePresence: heartbeat mutation, leave mutation, and list query. */
 interface PresenceRefs {

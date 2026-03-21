@@ -1,5 +1,4 @@
 import type { ComponentProps, ReactNode } from 'react'
-
 import { cn } from '@a/ui'
 interface LoginLayoutProps {
   children: ReactNode

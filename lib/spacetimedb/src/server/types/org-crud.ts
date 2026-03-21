@@ -1,6 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
-
 import type { RateLimitConfig } from './common'
 import type { CrudHooks, HookCtx } from './crud'
 interface CanEditOpts {

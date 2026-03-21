@@ -3,7 +3,6 @@
 import type { Doc, Id } from '@a/be-convex/model'
 import type { FunctionReturnType } from 'convex/server'
 import type { output } from 'zod/v4'
-
 import { api } from '@a/be-convex'
 import { orgScoped } from '@a/be-convex/t'
 import { fail } from '@a/fe/utils'
@@ -23,7 +22,6 @@ import { Check, Pencil, Plus, Trash, X } from 'lucide-react'
 import Link from 'next/link'
 import { use, useState } from 'react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 type Member = FunctionReturnType<typeof api.org.members>[number]
 type Priority = NonNullable<output<typeof orgScoped.task>['priority']>

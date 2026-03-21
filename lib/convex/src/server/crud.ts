@@ -6,10 +6,8 @@
 /* eslint-disable max-depth */
 // biome-ignore-all lint/suspicious/useAwait: x
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, string } from 'zod/v4'
-
 import type {
   CrudBuilders,
   CrudOptions,
@@ -24,7 +22,6 @@ import type {
   Rec,
   StorageLike
 } from './types'
-
 import { BULK_MAX } from '../constants'
 import { idx, sch, typed } from './bridge'
 import { isTestMode } from './env'

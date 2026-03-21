@@ -1,6 +1,5 @@
 'use client'
 import type { ComponentProps } from 'react'
-
 import { cn } from '@a/ui'
 import { Input } from '@a/ui/input'
 import { Search } from 'lucide-react'

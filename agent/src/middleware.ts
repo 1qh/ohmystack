@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server'
-
 import { NextResponse } from 'next/server'
 const middleware = (request: NextRequest) => {
   const headers = new Headers(request.headers)

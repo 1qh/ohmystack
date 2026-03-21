@@ -1,6 +1,5 @@
 import type { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
-
 import { cn } from '@a/ui'
 import {
   AlertDialog,
@@ -17,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@a/ui/popover'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createElement } from 'react'
-
 import ThemeToggle from './theme-toggle'
 /* eslint-disable complexity */
 interface UserMenuShellProps {

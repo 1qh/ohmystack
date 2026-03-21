@@ -2,11 +2,8 @@
 // oxlint-disable no-document-cookie
 'use client'
 import type { ReactNode } from 'react'
-
 import { createContext, use, useCallback, useMemo, useState } from 'react'
-
 import type { OrgRole } from '../server/types'
-
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
 /** Active organization selection state exposed by `useActiveOrg`. */
 interface ActiveOrgState<O extends OrgDoc = OrgDoc> {

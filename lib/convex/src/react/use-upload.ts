@@ -4,10 +4,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: retry logic */
 'use client'
 import type { FunctionReference } from 'convex/server'
-
 import { useMutation } from 'convex/react'
 import { useRef, useState } from 'react'
-
 import { sleep } from '../constants'
 /** Options for useUpload: retry count and delay between retries. */
 interface UploadOptions {

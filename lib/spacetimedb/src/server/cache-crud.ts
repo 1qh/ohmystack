@@ -1,5 +1,4 @@
 import type { Timestamp } from 'spacetimedb'
-
 import type {
   CacheConfig,
   CacheExports,
@@ -8,7 +7,6 @@ import type {
   CachePkLike,
   CacheTableLike
 } from './types/cache'
-
 import { applyPatch, makeError, makeOptionalFields, pickPatch } from './reducer-utils'
 type UpdateArgs<F extends CacheFieldBuilders> = Partial<CacheFieldValues<F>>
 const DAYS_PER_WEEK = 7,

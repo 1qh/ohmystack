@@ -1,7 +1,6 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 import { api, ensureTestUser, makeOrgTestUtils, tc } from '@a/e2e/org-helpers'
 import path from 'node:path'
-
 import { expect, test } from './fixtures'
 const testPrefix = `e2e-onboard-${Date.now()}`,
   { cleanupOrgTestData, generateSlug } = makeOrgTestUtils(testPrefix)

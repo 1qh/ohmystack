@@ -3,12 +3,9 @@
 'use client'
 import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
-
 import { useMutation, useQuery } from 'convex/react'
 import { createContext, use, useCallback, useMemo, useState } from 'react'
-
 import type { OrgRole } from '../server/types'
-
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
 type InferOrg<F> = F extends { _returnType: infer R } ? (NonNullable<R> extends OrgDoc ? NonNullable<R> : OrgDoc) : OrgDoc
 /** Context value exposing the current org, membership, role, and permission flags. */

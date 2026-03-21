@@ -1,7 +1,6 @@
 // oxlint-disable no-await-expression-member
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import Logout from '@a/fe/spacetimedb-user-menu'

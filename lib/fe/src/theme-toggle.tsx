@@ -1,6 +1,5 @@
 'use client'
 import type { ComponentProps } from 'react'
-
 import { cn } from '@a/ui'
 import { ToggleGroup, ToggleGroupItem } from '@a/ui/toggle-group'
 import { Monitor, Moon, Sun } from 'lucide-react'

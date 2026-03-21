@@ -7,7 +7,6 @@ import { Spinner } from '@a/ui/spinner'
 import { defineSteps } from '@noboil/convex/components'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
-
 import { appearanceStep, orgStep, preferencesStep, profileStep } from '~/schema'
 const { StepForm, useStepper } = defineSteps(
     { id: 'profile', label: 'Profile', schema: profileStep },

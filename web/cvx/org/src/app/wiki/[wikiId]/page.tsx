@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
 import type { Id } from '@a/be-convex/model'
-
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'
 import { Badge } from '@a/ui/badge'
@@ -14,7 +13,6 @@ import { Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   WikiDetailPage = ({ params }: { params: Promise<{ wikiId: Id<'wiki'> }> }) => {

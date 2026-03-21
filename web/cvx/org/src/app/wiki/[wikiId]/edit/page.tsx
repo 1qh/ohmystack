@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 'use client'
 import type { Id } from '@a/be-convex/model'
-
 import { api } from '@a/be-convex'
 import { orgScoped } from '@a/be-convex/t'
 import { Button } from '@a/ui/button'
@@ -15,7 +14,6 @@ import { useQuery } from 'convex/react'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { toast } from 'sonner'
-
 import { useOrg } from '~/hook/use-org'
 const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {

@@ -3,7 +3,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -13,10 +12,8 @@ import { useMutate } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useReducer } from 'spacetimedb/react'
-
 import { useOrg, useOrgMutation } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
-
 import OrgSettingsForm from './org-settings-form'
 const OrgSettingsPage = () => {
   const router = useRouter(),

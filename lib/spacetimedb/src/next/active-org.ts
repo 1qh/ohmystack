@@ -1,9 +1,7 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use server'
 import { cookies } from 'next/headers'
-
 import type { ActiveOrgQuery } from './active-org-types'
-
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
 /** Detects whether auth helpers are running in test mode. */
 const isTestMode = () =>

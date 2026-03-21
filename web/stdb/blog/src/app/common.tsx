@@ -4,7 +4,6 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { cn } from '@a/ui'
 import {
@@ -31,9 +30,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
-
 import { createBlog } from '~/schema'
-
 import { Publish } from './[id]/edit/client'
 const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
   Delete = ({ id, onOptimisticRemove }: { id: number; onOptimisticRemove?: () => void }) => {

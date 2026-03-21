@@ -1,9 +1,7 @@
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { any, object, string } from 'zod/v4'
-
 import type { Mb, MutCtx, Qb, Rec } from './types'
-
 import { idx, indexFields, typed } from './bridge'
 /** Interval in milliseconds between heartbeat pings for presence tracking. */
 const HEARTBEAT_INTERVAL_MS = 15_000,

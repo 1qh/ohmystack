@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
-
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/layouts/docs/page'
 import { createRelativeLink } from 'fumadocs-ui/mdx'
 import { notFound } from 'next/navigation'
-
 import { source } from '@/lib/source'
 import { getMDXComponents } from '@/mdx-components'
 const Page = async ({ params }: { params: Promise<{ slug?: string[] }> }) => {

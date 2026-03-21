@@ -12,7 +12,6 @@ import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
 import { setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
 const toAvatarSrc = (avatarId: string) => `/api/image?id=${avatarId}`,
   OrgSwitcher = () => {

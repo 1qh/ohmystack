@@ -1,5 +1,4 @@
 import { setup } from '@noboil/convex/server'
-
 import { action, internalAction, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 const s = setup({

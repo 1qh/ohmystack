@@ -1,6 +1,5 @@
 import type { Id } from '@a/be-convex/model'
 import type { UIMessage } from 'ai'
-
 import { api } from '@a/be-convex'
 import Client from '@a/fe/chat-client'
 import { toUIMessage } from '@a/fe/ui-message'

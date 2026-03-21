@@ -5,11 +5,9 @@
 /* eslint-disable max-depth */
 import type { RegisteredQuery } from 'convex/server'
 import type { ZodRawShape } from 'zod/v4'
-
 import { zid } from 'convex-helpers/server/zod4'
 import { ConvexError } from 'convex/values'
 import { nullable, number, object, string } from 'zod/v4'
-
 import type {
   ComparisonOp,
   DbLike,
@@ -23,7 +21,6 @@ import type {
   StorageLike,
   WithUrls
 } from './types'
-
 import { cvFileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { ERROR_MESSAGES } from './types'

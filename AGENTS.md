@@ -53,6 +53,10 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are publishe
 - NEVER ignore written source code from linters — only auto-generated code (`_generated/`, `generated/`, `module_bindings/`, `lib/ui/`)
 - NEVER reduce lintmax strictness — if upstream removes rules, find replacements
 
+### Script output philosophy
+
+- Scripts: silent on success, verbose on failure. Prefer `q ...` for noisy commands and keep script definitions concise.
+
 ---
 
 ## Linters & Lintmax

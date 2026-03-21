@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 'use client'
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Button } from '@a/ui/button'
@@ -15,7 +14,6 @@ import { useMut, useSearch } from '@noboil/spacetimedb/react'
 import { MoreHorizontal, Search, UserMinus } from 'lucide-react'
 import { useState } from 'react'
 import { useSpacetimeDB } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'

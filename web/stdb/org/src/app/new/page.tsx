@@ -1,6 +1,5 @@
 'use client'
 import type { output } from 'zod'
-
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
@@ -9,7 +8,6 @@ import slugify from '@sindresorhus/slugify'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { useReducer } from 'spacetimedb/react'
-
 import { orgTeam } from '~/schema'
 type OrgFormValues = output<typeof orgTeam>
 const orgKeys = {

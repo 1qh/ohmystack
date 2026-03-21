@@ -6,7 +6,6 @@ import type {
   LanguageModelV3StreamPart,
   LanguageModelV3StreamResult
 } from '@ai-sdk/provider'
-
 import { simulateReadableStream } from 'ai'
 /* eslint-disable @typescript-eslint/require-await */
 import { MockLanguageModelV3 } from 'ai/test'

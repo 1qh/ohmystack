@@ -1,7 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -14,7 +13,6 @@ import { pickValues } from '@noboil/spacetimedb/zod'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { project as projectSchema } from '~/schema'

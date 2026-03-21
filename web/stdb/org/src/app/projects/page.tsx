@@ -1,6 +1,5 @@
 'use client'
 import type { Project } from '@a/be-spacetimedb/spacetimedb/types'
-
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { withStringId } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
@@ -13,7 +12,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useReducer } from 'spacetimedb/react'
-
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const ProjectsPage = () => {

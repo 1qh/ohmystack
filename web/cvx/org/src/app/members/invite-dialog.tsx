@@ -1,6 +1,5 @@
 'use client'
 import type { Id } from '@a/be-convex/model'
-
 import { api } from '@a/be-convex'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@a/ui/dialog'
@@ -9,7 +8,6 @@ import { useMutation } from 'convex/react'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
 import { invite } from '~/schema'
 interface InviteDialogProps {
   orgId: Id<'org'>

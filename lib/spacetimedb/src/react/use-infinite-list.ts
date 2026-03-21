@@ -1,9 +1,7 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 import type { ListSort, ListWhere, Rec } from './list-utils'
-
 import { matchW } from '../server/helpers'
 import { noop, searchMatches, sortData } from './list-utils'
 /** Client-side infinite-list options for filtering, sorting, and searching. */
