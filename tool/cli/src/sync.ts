@@ -94,17 +94,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   rmSafe = (path: string) => {
     if (existsSync(path)) rmSync(path, { force: true, recursive: true })
   },
-  patchRootPackageJson = ({
-    db,
-    dir,
-    includeDemos,
-    includeNative
-  }: {
-    db: Db
-    dir: string
-    includeDemos: boolean
-    includeNative: boolean
-  }) => {
+  patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
     const pkgPath = join(dir, 'package.json'),
       raw = readFileSync(pkgPath, 'utf8'),
       pkg = JSON.parse(raw) as {
@@ -122,15 +112,16 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
           (key.includes('swift') || key.includes('desktop') || key.includes('mobile') || key.includes('codegen'))) ||
         (db === 'convex' && key.startsWith('spacetime:')) ||
         (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-        ((!includeNative || db !== 'convex') &&
-          (key.includes('mobile') || key.includes('desktop') || key.includes('swift'))) ||
+        key.includes('mobile') ||
+        key.includes('desktop') ||
+        key.includes('swift') ||
         val.includes(otherDb)
     pkg.name = 'my-app'
     pkg.private = true
     const workspaces: string[] = ['lib/*', 'backend/*']
     if (includeDemos)
-      if (db === 'convex') workspaces.push('web/cvx/*', 'expo/cvx/*')
-      else workspaces.push('web/stdb/*', 'expo/stdb/*')
+      if (db === 'convex') workspaces.push('web/cvx/*')
+      else workspaces.push('web/stdb/*')
     pkg.workspaces = workspaces
     if (pkg.scripts) {
       const keep: Record<string, string> = {
@@ -153,37 +144,25 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     }
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   },
-  removeDirs = ({
-    db,
-    dir,
-    includeDemos,
-    includeNative
-  }: {
-    db: Db
-    dir: string
-    includeDemos: boolean
-    includeNative: boolean
-  }) => {
+  removeDirs = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `expo/${otherTag}`, 'backend/agent', 'tool/cli']
-    if (!includeDemos) toRemove.push(`web/${dbTag}`, `expo/${dbTag}`)
-    if (db !== 'convex' || !includeNative) toRemove.push('mobile', 'desktop', 'swiftcore')
+      toRemove = [
+        ...REMOVE_ALWAYS,
+        `web/${otherTag}`,
+        'expo',
+        'mobile',
+        'desktop',
+        'swiftcore',
+        'backend/agent',
+        'tool/cli'
+      ]
+    if (!includeDemos) toRemove.push(`web/${dbTag}`)
     for (const path of toRemove) rmSafe(join(dir, path))
   },
-  prepareUpstream = ({
-    db,
-    includeDemos,
-    includeNative,
-    root
-  }: {
-    db: Db
-    includeDemos: boolean
-    includeNative: boolean
-    root: string
-  }) => {
-    removeDirs({ db, dir: root, includeDemos, includeNative })
-    patchRootPackageJson({ db, dir: root, includeDemos, includeNative })
+  prepareUpstream = ({ db, includeDemos, root }: { db: Db; includeDemos: boolean; root: string }) => {
+    removeDirs({ db, dir: root, includeDemos })
+    patchRootPackageJson({ db, dir: root, includeDemos })
   },
   hashFile = (filePath: string) => createHash('sha256').update(readFileSync(filePath)).digest('hex'),
   listFiles = ({ rel = '', root }: { rel?: string; root: string }) => {
@@ -264,7 +243,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       prepareUpstream({
         db: manifest.db,
         includeDemos: manifest.includeDemos,
-        includeNative: manifest.includeNative,
         root: tmpDir
       })
       const upstreamFiles = listFiles({ root: tmpDir }),

@@ -24,8 +24,6 @@ jobs:
       pull-requests: read
     outputs:
       ts: ${{ steps.filter.outputs.ts }}
-      swift: ${{ steps.filter.outputs.swift }}
-      desktop: ${{ steps.filter.outputs.desktop }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -37,7 +35,6 @@ jobs:
               - 'backend/**'
               - 'tool/**'
               - 'web/**'
-              - 'expo/**'
               - 'doc/**'
               - 'agent/**'
               - 'package.json'
@@ -45,16 +42,6 @@ jobs:
               - 'tsconfig*.json'
               - 'turbo.json'
               - 'lintmax.config.ts'
-            swift:
-              - 'mobile/**'
-              - 'swiftcore/**'
-              - '.swiftlint.yml'
-              - '.swiftformat'
-            desktop:
-              - 'desktop/**'
-              - 'swiftcore/**'
-              - '.swiftlint.yml'
-              - '.swiftformat'
   lint:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
@@ -131,43 +118,3 @@ jobs:
           bun-version: 'latest'
       - run: bun i
       - run: bun rnr:sync:check
-  lint-swift:
-    needs: changes
-    if: needs.changes.outputs.swift == 'true' || needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6
-      - run: brew install swiftformat swiftlint yamllint
-      - run: swiftformat --lint . && swiftlint lint --strict && yamllint .
-  build-desktop:
-    needs: [changes, lint-swift]
-    if: needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: macos-latest
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        app: [blog, chat, movie, org]
-    steps:
-      - uses: actions/checkout@v6
-      - run: rm -rf ~/Library/Caches/org.swift.swiftpm/repositories
-      - run: swift build --package-path desktop/convex/${{ matrix.app }}
-  test-desktop:
-    needs: [changes, build-desktop]
-    if: needs.changes.outputs.desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6
-      - run: swift test --package-path swiftcore
-      - run: swift test --package-path desktop/convex/shared
-  build-mobile:
-    needs: [changes, lint-swift]
-    if: needs.changes.outputs.swift == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: macos-latest
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        app: [blog, chat, movie, org]
-    steps:
-      - uses: actions/checkout@v6
-      - run: brew install skiptools/skip/skip
-      - run: swift build --package-path mobile/convex/${{ matrix.app }}

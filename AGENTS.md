@@ -17,9 +17,6 @@ backend/spacetimedb/  — SpacetimeDB module + schema
 lib/fe/              — shared frontend utilities
 lib/e2e/             — shared Playwright utilities
 tool/cli/             — noboil CLI (published as `noboil`)
-mobile/convex/            — iOS/Android apps (Convex-only)
-desktop/convex/           — macOS apps (Convex-only)
-swiftcore/               — shared Swift protocols
 ```
 
 Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
@@ -56,6 +53,7 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are publishe
 ### Script output philosophy
 
 - Scripts: silent on success, verbose on failure. Prefer `q ...` for noisy commands and keep script definitions concise.
+- NEVER use `git clean` in scripts — it deletes `.env`, untracked source files, and anything not committed. Use explicit `rm -rf` of known build dirs instead.
 
 ---
 
@@ -122,8 +120,6 @@ biome fix → oxlint fix → eslint fix → biome fix (again)
 | SpacetimeDB library | bun:test    |
 | Convex backend      | convex-test |
 | Web E2E             | Playwright  |
-| Swift desktop       | Swift Test  |
-| Mobile              | Maestro     |
 
 ### E2E (Playwright)
 
@@ -234,10 +230,6 @@ const Page = async () => {
 
 Generates TS bindings from Rust module. Regenerate after schema changes: `bun spacetime:generate`. Table/reducer names must match exactly. Columns: snake_case in Rust → camelCase in TS. Import from `@a/be-spacetimedb/spacetimedb`.
 
-## codegen-swift (Convex-only)
-
-Must derive ALL output from inputs (schema, convex dir, flags). Never hardcode project-specific data. Factory patterns are known: `crud()` → list/read/create/update/rm, `orgCrud(acl:true)` → addEditor/removeEditor/setEditors/editors, `pub` → pub.list/pub.read, `softDelete` → restore, `singletonCrud()` → get/upsert, `cacheCrud()` → get/all/list/create/update/rm/invalidate/purge/load/refresh.
-
 ## lib/shared/
 
 Internal, never published. Shared across both libraries: React hooks, server utils, components, ESLint plugin (16 rules), CLI framework, Zod/seed/retry utils. Each published package re-exports from shared.
@@ -250,7 +242,3 @@ Internal, never published. Shared across both libraries: React hooks, server uti
 ## Git
 
 Commit frequently, push logical groups. Never mention AI tooling. Format: `type: description` (fix, feat, docs, chore, refactor, test).
-
-## Swift Mobile API
-
-Subscription cleanup: `cancelSubscription(&subscriptionID)` (free function from `ConvexShared/SharedUI.swift`), NOT `ConvexService.shared.unsubscribe()`. Use `Sub<T>` pattern or manual subscriptionID.

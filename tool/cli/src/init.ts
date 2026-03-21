@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console,complexity */
+/* eslint-disable no-console */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
@@ -11,7 +11,6 @@ interface InitOpts {
   db: Db
   dir: string
   includeDemos: boolean
-  includeNative: boolean
 }
 interface NoboilManifest {
   db: Db
@@ -54,12 +53,20 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       process.exit(1)
     }
   },
-  removeDirs = ({ db, dir, includeDemos, includeNative }: InitOpts) => {
+  removeDirs = ({ db, dir, includeDemos }: InitOpts) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `expo/${otherTag}`, 'backend/agent', 'tool/cli']
-    if (!includeDemos) toRemove.push(`web/${dbTag}`, `expo/${dbTag}`)
-    if (db !== 'convex' || !includeNative) toRemove.push('mobile', 'desktop', 'swiftcore')
+      toRemove = [
+        ...REMOVE_ALWAYS,
+        `web/${otherTag}`,
+        'expo',
+        'mobile',
+        'desktop',
+        'swiftcore',
+        'backend/agent',
+        'tool/cli'
+      ]
+    if (!includeDemos) toRemove.push(`web/${dbTag}`)
     for (const p of toRemove) {
       const full = join(dir, p)
       if (existsSync(full)) {
@@ -68,7 +75,7 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       }
     }
   },
-  patchRootPackageJson = ({ db, dir, includeDemos, includeNative }: InitOpts) => {
+  patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
     const pkgPath = join(dir, 'package.json'),
       raw = readFileSync(pkgPath, 'utf8'),
       pkg = JSON.parse(raw) as {
@@ -86,15 +93,16 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
           (key.includes('swift') || key.includes('desktop') || key.includes('mobile') || key.includes('codegen'))) ||
         (db === 'convex' && key.startsWith('spacetime:')) ||
         (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-        ((!includeNative || db !== 'convex') &&
-          (key.includes('mobile') || key.includes('desktop') || key.includes('swift'))) ||
+        key.includes('mobile') ||
+        key.includes('desktop') ||
+        key.includes('swift') ||
         val.includes(otherDb)
     pkg.name = 'my-app'
     pkg.private = true
     const workspaces: string[] = ['lib/*', 'backend/*']
     if (includeDemos)
-      if (db === 'convex') workspaces.push('web/cvx/*', 'expo/cvx/*')
-      else workspaces.push('web/stdb/*', 'expo/stdb/*')
+      if (db === 'convex') workspaces.push('web/cvx/*')
+      else workspaces.push('web/stdb/*')
     pkg.workspaces = workspaces
     if (pkg.scripts) {
       const keep: Record<string, string> = {
@@ -117,7 +125,7 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     }
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   },
-  scaffoldProject = ({ args, db, dir, includeDemos, includeNative }: InitOpts & { args: string[] }) => {
+  scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: string[] }) => {
     const fullPath = resolvePath(process.cwd(), dir)
     if (existsSync(fullPath) && readdirSync(fullPath).length > 0) {
       console.log(`\n${red('Error:')} Directory ${dir} is not empty.\n`)
@@ -136,9 +144,9 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     }
     const scaffoldedFrom = (revResult.stdout.split('\n')[0] ?? '').split('\t')[0] ?? ''
     console.log(`  ${dim('cleaning up')} unused files...`)
-    removeDirs({ db, dir: fullPath, includeDemos, includeNative })
+    removeDirs({ db, dir: fullPath, includeDemos })
     console.log(`  ${dim('patching')} package.json files...`)
-    patchRootPackageJson({ db, dir: fullPath, includeDemos, includeNative })
+    patchRootPackageJson({ db, dir: fullPath, includeDemos })
     if (!args.includes('--skip-install')) {
       console.log(`  ${dim('installing')} dependencies...`)
       const installResult = spawnSync('bun', ['install'], { cwd: fullPath, stdio: 'inherit' })
@@ -151,7 +159,7 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     const manifest: NoboilManifest = {
       db,
       includeDemos,
-      includeNative,
+      includeNative: false,
       scaffoldedAt: new Date().toISOString(),
       scaffoldedFrom,
       version: 1
@@ -171,20 +179,17 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       console.log(bold('Options:'))
       console.log(`  --db=convex|spacetimedb    ${dim('Skip database prompt')}`)
       console.log(`  --no-demos                 ${dim('Skip demo apps')}`)
-      console.log(`  --with-native              ${dim('Include mobile/desktop (Convex only)')}`)
       console.log(`  --help, -h                 ${dim('Show this help')}\n`)
       return
     }
     console.log(`\n${bold('noboil')} ${dim('— schema-first, zero-boilerplate fullstack')}\n`)
     let db: Db | undefined,
       includeDemos = true,
-      includeNative = false,
       targetDir = ''
     for (const arg of args)
       if (arg === '--db=convex') db = 'convex'
       else if (arg === '--db=spacetimedb') db = 'spacetimedb'
       else if (arg === '--no-demos') includeDemos = false
-      else if (arg === '--with-native') includeNative = true
       else if (!arg.startsWith('--')) targetDir = arg
     if (!db) {
       console.log(bold('Pick your database:\n'))
@@ -200,20 +205,15 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     }
     const hasDbFlag = args.some(a => a.startsWith('--db=')),
       hasDemosFlag = args.includes('--no-demos'),
-      hasNativeFlag = args.includes('--with-native'),
       isNonInteractive = hasDbFlag && (hasDemosFlag || targetDir)
     if (!(hasDemosFlag || isNonInteractive)) {
       const demosAnswer = await ask(`\n${bold('Include demo apps?')} ${dim('(Y/n)')}: `)
       includeDemos = demosAnswer.toLowerCase() !== 'n'
     }
-    if (db === 'convex' && includeDemos && !hasNativeFlag && !isNonInteractive) {
-      const nativeAnswer = await ask(`${bold('Include mobile/desktop?')} ${dim('(y/N)')}: `)
-      includeNative = nativeAnswer.toLowerCase() === 'y'
-    }
     if (!targetDir) {
       targetDir = await ask(`\n${bold('Project directory')} ${dim('(my-app)')}: `)
       if (!targetDir) targetDir = 'my-app'
     }
-    scaffoldProject({ args, db, dir: targetDir, includeDemos, includeNative })
+    scaffoldProject({ args, db, dir: targetDir, includeDemos })
   }
 export { init }

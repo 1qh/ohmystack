@@ -1,26 +1,53 @@
-import { createComposeMiddleware, sanitizeRec, sanitizeString } from '@a/shared/server/middleware'
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential middleware chain */
+/* eslint-disable no-await-in-loop */
 import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from './types'
 import { log } from './helpers'
 const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareCtx => ({ ...ctx, operation: op }),
-  composeMiddleware = (...middlewares: Middleware[]): GlobalHooks =>
-    createComposeMiddleware<
-      GlobalHookCtx,
-      MiddlewareCtx,
-      Rec,
-      { data: Rec },
-      { data: Rec; id: string },
-      { id: string; patch: Rec; prev: Rec },
-      { id: string; patch: Rec; prev: Rec },
-      { doc: Rec; id: string },
-      { doc: Rec; id: string }
-    >({
-      applyBeforeUpdateArgs: (args, patch) => ({ ...args, patch }),
-      getBeforeCreateData: args => args.data,
-      getBeforeUpdatePatch: args => args.patch,
-      middlewares,
-      setBeforeCreateData: (_args, data) => ({ data }),
-      withOp
-    }),
+  // oxlint-disable-next-line max-statements
+  composeMiddleware = (...middlewares: Middleware[]): GlobalHooks => {
+    const hooks: GlobalHooks = {},
+      hasBeforeCreate = middlewares.some(mw => mw.beforeCreate),
+      hasAfterCreate = middlewares.some(mw => mw.afterCreate),
+      hasBeforeUpdate = middlewares.some(mw => mw.beforeUpdate),
+      hasAfterUpdate = middlewares.some(mw => mw.afterUpdate),
+      hasBeforeDelete = middlewares.some(mw => mw.beforeDelete),
+      hasAfterDelete = middlewares.some(mw => mw.afterDelete)
+    if (hasBeforeCreate)
+      hooks.beforeCreate = async (ctx: GlobalHookCtx, args: { data: Rec }) => {
+        let { data } = args
+        const mCtx = withOp(ctx, 'create')
+        for (const mw of middlewares) if (mw.beforeCreate) data = await mw.beforeCreate(mCtx, { data })
+        return data
+      }
+    if (hasAfterCreate)
+      hooks.afterCreate = async (ctx: GlobalHookCtx, args: { data: Rec; id: string }) => {
+        const mCtx = withOp(ctx, 'create')
+        for (const mw of middlewares) if (mw.afterCreate) await mw.afterCreate(mCtx, args)
+      }
+    if (hasBeforeUpdate)
+      hooks.beforeUpdate = async (ctx: GlobalHookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
+        let { patch } = args
+        const mCtx = withOp(ctx, 'update')
+        for (const mw of middlewares) if (mw.beforeUpdate) patch = await mw.beforeUpdate(mCtx, { ...args, patch })
+        return patch
+      }
+    if (hasAfterUpdate)
+      hooks.afterUpdate = async (ctx: GlobalHookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
+        const mCtx = withOp(ctx, 'update')
+        for (const mw of middlewares) if (mw.afterUpdate) await mw.afterUpdate(mCtx, args)
+      }
+    if (hasBeforeDelete)
+      hooks.beforeDelete = async (ctx: GlobalHookCtx, args: { doc: Rec; id: string }) => {
+        const mCtx = withOp(ctx, 'delete')
+        for (const mw of middlewares) if (mw.beforeDelete) await mw.beforeDelete(mCtx, args)
+      }
+    if (hasAfterDelete)
+      hooks.afterDelete = async (ctx: GlobalHookCtx, args: { doc: Rec; id: string }) => {
+        const mCtx = withOp(ctx, 'delete')
+        for (const mw of middlewares) if (mw.afterDelete) await mw.afterDelete(mCtx, args)
+      }
+    return hooks
+  },
   auditLog = (opts?: { logLevel?: 'debug' | 'info'; verbose?: boolean }): Middleware => {
     const level = opts?.logLevel ?? 'info',
       verbose = opts?.verbose ?? false
@@ -43,38 +70,55 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
   },
   DEFAULT_SLOW_THRESHOLD_MS = 500,
   slowQueryWarn = (opts?: { threshold?: number }): Middleware => {
-    const threshold = opts?.threshold ?? DEFAULT_SLOW_THRESHOLD_MS,
-      starts = new WeakMap<object, number>(),
-      getStart = (ctx: object) => starts.get(ctx) ?? Date.now(),
-      mark = (ctx: object) => {
-        starts.set(ctx, Date.now())
-      }
+    const threshold = opts?.threshold ?? DEFAULT_SLOW_THRESHOLD_MS
     return {
       afterCreate: (ctx, { id }) => {
-        const dur = Date.now() - getStart(ctx)
+        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
         if (dur > threshold) log('warn', 'slow:create', { durationMs: dur, id, table: ctx.table, threshold })
       },
       afterDelete: (ctx, { id }) => {
-        const dur = Date.now() - getStart(ctx)
+        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
         if (dur > threshold) log('warn', 'slow:delete', { durationMs: dur, id, table: ctx.table, threshold })
       },
       afterUpdate: (ctx, { id }) => {
-        const dur = Date.now() - getStart(ctx)
+        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
         if (dur > threshold) log('warn', 'slow:update', { durationMs: dur, id, table: ctx.table, threshold })
       },
       beforeCreate: (ctx, { data }) => {
-        mark(ctx)
+        ;(ctx as unknown as Rec)._mwStart = Date.now()
         return data
       },
       beforeDelete: ctx => {
-        mark(ctx)
+        ;(ctx as unknown as Rec)._mwStart = Date.now()
       },
       beforeUpdate: (ctx, { patch }) => {
-        mark(ctx)
+        ;(ctx as unknown as Rec)._mwStart = Date.now()
         return patch
       },
       name: 'slowQueryWarn'
     }
+  },
+  SCRIPT_TAG_PATTERN = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/giu,
+  EVENT_HANDLER_PATTERN = /\bon\w+\s*=/giu,
+  JAVASCRIPT_PROTO_PATTERN = /javascript\s*:/giu,
+  DATA_URI_SCRIPT_PATTERN = /data\s*:\s*text\/html/giu,
+  DANGEROUS_TAG_PATTERN = /<\s*\/?\s*(?:iframe|object|embed|applet|form|base|meta)\b[^>]*>/giu,
+  HTML_ENCODED_SCRIPT_PATTERN = /&#(?:x0*(?:3c|3e)|0*(?:60|62));/giu,
+  sanitizeString = (val: string): string =>
+    val
+      .replace(SCRIPT_TAG_PATTERN, '')
+      .replace(EVENT_HANDLER_PATTERN, '')
+      .replace(JAVASCRIPT_PROTO_PATTERN, '')
+      .replace(DATA_URI_SCRIPT_PATTERN, '')
+      .replace(DANGEROUS_TAG_PATTERN, '')
+      .replace(HTML_ENCODED_SCRIPT_PATTERN, ''),
+  sanitizeRec = (data: Rec): Rec => {
+    const result: Rec = {}
+    for (const key of Object.keys(data)) {
+      const v = data[key]
+      result[key] = typeof v === 'string' ? sanitizeString(v) : v
+    }
+    return result
   },
   inputSanitize = (opts?: { fields?: string[] }): Middleware => {
     const targetFields = opts?.fields ? new Set(opts.fields) : undefined
@@ -85,7 +129,7 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
           for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f])
           return result
         }
-        return sanitizeRec(data) as Rec
+        return sanitizeRec(data)
       },
       beforeUpdate: (_ctx, { patch }) => {
         if (targetFields) {
@@ -93,7 +137,7 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
           for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f])
           return result
         }
-        return sanitizeRec(patch) as Rec
+        return sanitizeRec(patch)
       },
       name: 'inputSanitize'
     }

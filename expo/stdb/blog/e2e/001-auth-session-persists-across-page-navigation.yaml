@@ -1,5 +1,0 @@
-appId: dev.noboil.mobile.stdb.blog
----
-- launchApp
-- assertVisible:
-    id: "crud-dynamic-page"

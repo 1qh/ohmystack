@@ -211,10 +211,6 @@ noboil/
     convex/           Convex backend (schema + functions)
     spacetimedb/      SpacetimeDB backend (module + bindings)
   tool/cli/           CLI — bun noboil@latest init
-  expo/               iOS/Android apps (Expo)
-  mobile/convex/      iOS/Android apps (Swift + Skip)
-  desktop/convex/     macOS apps (SwiftUI)
-  swiftcore/         Shared Swift protocols
 ```
 
 ## Packages

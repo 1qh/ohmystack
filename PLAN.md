@@ -38,8 +38,6 @@ Both betterspace and lazyconvex remain valid on their own — they are archived 
 noboil/
 ├── web/cvx/{blog,chat,movie,org}        ← Convex demo web apps
 ├── web/stdb/{blog,chat,movie,org}       ← SpacetimeDB demo web apps
-├── expo/cvx/{blog,chat,movie,org}       ← Convex Expo apps
-├── expo/stdb/{blog,chat,movie,org}      ← SpacetimeDB Expo apps
 ├── doc/                                  ← fumadocs documentation site
 ├── lib/convex/                           ← @noboil/convex (published)
 ├── lib/spacetimedb/                      ← @noboil/spacetimedb (published)
@@ -50,9 +48,6 @@ noboil/
 ├── backend/convex/                       ← Convex backend functions + schema
 ├── backend/spacetimedb/                  ← SpacetimeDB module + schema
 ├── tool/cli/                             ← noboil CLI (published as `noboil`)
-├── mobile/convex/                        ← iOS/Android apps (Convex-only)
-├── desktop/convex/                       ← macOS apps (Convex-only)
-├── swiftcore/                            ← shared Swift protocols
 ├── noboil.yml                            ← Docker compose for all services
 ├── lintmax.config.ts                     ← unified linting config
 ├── turbo.json                            ← Turbo config
@@ -143,16 +138,11 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 - [x] 4.1 — `web/cvx/{blog,chat,movie,org}` — Convex web apps
 - [x] 4.2 — `web/stdb/{blog,chat,movie,org}` — SpacetimeDB web apps
-- [x] 4.3 — `expo/cvx/{blog,chat,movie,org}` — Convex Expo apps
-- [x] 4.4 — `expo/stdb/{blog,chat,movie,org}` — SpacetimeDB Expo apps
-- [x] 4.5 — All apps build and lint-pass
+- [x] 4.3 — All web apps build and lint-pass
 
-### Phase 5: Mobile & Desktop (Convex-only) ✅
+### Phase 5: Mobile & Desktop (Convex-only) — Dropped
 
-- [x] 5.1 — `mobile/convex/` (iOS/Android apps)
-- [x] 5.2 — `desktop/convex/` (macOS apps)
-- [x] 5.3 — `swiftcore/` (shared Swift protocols)
-- [x] 5.4 — Swift codegen works: `bun codegen:swift`
+- [ ] 5.1 — Removed from scope to keep noboil web-only
 
 ### Phase 6: Documentation Site (fumadocs) ✅
 
@@ -192,15 +182,14 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 | Shared package extraction breaks types       | Extract one file at a time, typecheck after each                        |
 | Fumadocs learning curve                      | Phase 6 is independent — can ship Phases 0-5 first                      |
 | npm org `@noboil` unavailable                | Already registered `noboil` on npm — register org early                 |
-| CI too slow with 8 apps + native builds      | Path filtering (only run what changed) + turbo remote caching           |
+| CI too slow with many app targets            | Path filtering (only run what changed) + turbo remote caching           |
 
 ## Success Criteria
 
 - [x] `bun fix` passes at repo root
 - [x] `bun test` passes all library tests
-- [x] All demo apps build and run
-- [x] Mobile and desktop apps build
+- [x] All web demo apps build and run
 - [x] `noboil` CLI published with init/doctor/sync/eject commands
 - [x] Documentation site scaffolded
 - [x] All three npm packages published
-- [x] CI green with path-filtered multi-job pipeline
+- [x] CI green with web/backend path-filtered pipeline

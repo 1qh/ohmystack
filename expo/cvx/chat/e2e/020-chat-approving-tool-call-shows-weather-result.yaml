@@ -1,5 +1,0 @@
-appId: dev.noboil.mobile.convex.chat
----
-- launchApp
-- assertVisible:
-    id: "chat-home-page"

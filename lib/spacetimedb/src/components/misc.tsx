@@ -1,10 +1,41 @@
 'use client'
-import { createMiscComponents } from '@a/shared/components/misc'
+import type { ComponentProps } from 'react'
+import { cn } from '@a/ui'
+import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
+import { Badge } from '@a/ui/badge'
 import { useSpacetimeDB } from 'spacetimedb/react'
-const { OfflineIndicator, OrgAvatar, RoleBadge } = createMiscComponents({
-  useOnlineStatus: () => {
+import type { OrgRole } from '../server/types'
+/** Renders an organization avatar with fallback initials. */
+const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
+    <Avatar {...props}>
+      {src ? <AvatarImage src={src} /> : null}
+      <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+    </Avatar>
+  ),
+  variants: Record<OrgRole, 'default' | 'outline' | 'secondary'> = {
+    admin: 'secondary',
+    member: 'outline',
+    owner: 'default'
+  },
+  /** Displays a styled badge for a user's org role (owner, admin, member). */
+  RoleBadge = ({ role, ...props }: ComponentProps<typeof Badge> & { role: OrgRole }) => (
+    <Badge variant={variants[role]} {...props}>
+      {role}
+    </Badge>
+  ),
+  /** Displays a banner when the browser is offline. */
+  OfflineIndicator = ({ className, ...props }: ComponentProps<'p'>) => {
     const { isActive } = useSpacetimeDB()
-    return isActive
+    if (isActive) return null
+    return (
+      <p
+        className={cn(
+          'fixed bottom-4 left-4 z-50 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-foreground shadow-lg',
+          className
+        )}
+        {...props}>
+        You are offline
+      </p>
+    )
   }
-})
 export { OfflineIndicator, OrgAvatar, RoleBadge }

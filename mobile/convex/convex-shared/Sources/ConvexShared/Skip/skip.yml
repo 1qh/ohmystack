@@ -1,8 +1,0 @@
-skip:
-  mode: 'transpiled'
-build:
-  contents:
-    - block: 'dependencies'
-      contents:
-        - 'implementation("dev.convex:android-convexmobile:0.4.1@aar") { isTransitive = true }'
-        - 'implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")'

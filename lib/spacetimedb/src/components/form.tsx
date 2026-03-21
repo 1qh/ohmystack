@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable react/jsx-handler-names */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
@@ -5,9 +6,11 @@
 'use client'
 import type { ComponentProps, ReactNode } from 'react'
 import type { infer as zinfer, ZodObject, ZodRawShape } from 'zod/v4'
-import { AutoSaveIndicator, ConflictDialog, UnsavedChangesDialog } from '@a/shared/components/form-common'
+import { cn } from '@a/ui'
+import { Button } from '@a/ui/button'
+import { Dialog, DialogContent } from '@a/ui/dialog'
 import { useNavigationGuard } from 'next-navigation-guard'
-import { use, useEffect, useMemo } from 'react'
+import { use, useEffect, useMemo, useState } from 'react'
 import type { FormReturn as BaseFormReturn, ConflictData, FormToastOption } from '../react/form'
 import type { UndefinedToOptional } from '../zod'
 import type { Api } from './fields'
@@ -15,6 +18,56 @@ import { DevtoolsAutoMount } from '../react/devtools-panel'
 import { resolveFormToast, useForm as useBaseForm } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
+/** Modal that shows concurrent edit conflicts with diff and resolution options. */
+const ConflictDialog = ({
+  className,
+  conflict,
+  onResolve,
+  ...props
+}: Omit<ComponentProps<typeof DialogContent>, 'children'> & {
+  conflict: ConflictData | null
+  onResolve: (action: 'cancel' | 'overwrite' | 'reload') => void
+}) => (
+  <Dialog open={Boolean(conflict)}>
+    <DialogContent
+      className={cn('[&>button]:hidden', className)}
+      {...props}
+      onEscapeKeyDown={() => onResolve('cancel')}
+      onInteractOutside={() => onResolve('cancel')}>
+      <h2 className='text-lg font-semibold'>Conflict Detected</h2>
+      <p className='text-sm text-muted-foreground'>
+        This record was modified by someone else. Choose how to resolve the conflict.
+      </p>
+      {conflict?.current || conflict?.incoming ? (
+        <div className='space-y-3'>
+          {conflict.current ? (
+            <div className='rounded-lg bg-muted p-3'>
+              <p className='mb-1 text-xs font-medium text-muted-foreground'>Server version:</p>
+              <pre className='text-xs'>{JSON.stringify(conflict.current, null, 2)}</pre>
+            </div>
+          ) : null}
+          {conflict.incoming ? (
+            <div className='rounded-lg bg-muted p-3'>
+              <p className='mb-1 text-xs font-medium text-muted-foreground'>Your version:</p>
+              <pre className='text-xs'>{JSON.stringify(conflict.incoming, null, 2)}</pre>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      <div className='flex justify-end gap-2'>
+        <Button onClick={() => onResolve('cancel')} variant='outline'>
+          Cancel
+        </Button>
+        <Button onClick={() => onResolve('reload')} variant='outline'>
+          Reload
+        </Button>
+        <Button onClick={() => onResolve('overwrite')} variant='destructive'>
+          Overwrite
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+)
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> extends BaseFormReturn<T, S> {
   guard: ReturnType<typeof useNavigationGuard>
 }
@@ -106,6 +159,7 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
         onError: resolvedError,
         onSubmit: async d => {
           const args = (opts.transform ? opts.transform(d) : d) as unknown as M
+          /** biome-ignore lint/nursery/useAwaitThenable: mutate may be async */
           await opts.mutate(args)
           return d
         },
@@ -133,6 +187,7 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       )
     return null
   },
+  /** Typed form component that renders fields via a render callback with typed accessors. */
   Form = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>({
     form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
     render,
@@ -163,10 +218,44 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
           {render(fields as TypedFields<T>)}
         </form>
         <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
-        <UnsavedChangesDialog active={guard.active} onAccept={guard.accept} onReject={guard.reject} />
+        <Dialog open={guard.active}>
+          <DialogContent className='[&>button]:hidden' onEscapeKeyDown={guard.reject} onInteractOutside={guard.reject}>
+            <p>You have unsaved changes. Are you sure you want to leave?</p>
+            <div className='flex justify-end gap-2'>
+              <Button onClick={guard.reject} variant='outline'>
+                Cancel
+              </Button>
+              <Button onClick={guard.accept} variant='destructive'>
+                Discard
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         <FileFieldWarning meta={meta} />
         <DevtoolsAutoMount />
       </FormContext>
+    )
+  },
+  /** Displays form auto-save status (saving, saved, error). */
+  AutoSaveIndicator = ({ className, lastSaved, ...props }: ComponentProps<'span'> & { lastSaved: null | number }) => {
+    const MS_PER_SECOND = 1000,
+      JUST_SAVED_THRESHOLD = 5,
+      REFRESH_INTERVAL = 10_000,
+      calcAgo = () => (lastSaved ? Math.round((Date.now() - lastSaved) / MS_PER_SECOND) : 0),
+      [ago, setAgo] = useState(calcAgo)
+    /** biome-ignore lint/correctness/useExhaustiveDependencies: calcAgo recreated each render */
+    useEffect(() => {
+      if (!lastSaved) return
+      setAgo(calcAgo())
+      const id = setInterval(() => setAgo(calcAgo()), REFRESH_INTERVAL)
+      return () => clearInterval(id)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lastSaved])
+    if (!lastSaved) return null
+    return (
+      <span className={cn('text-xs text-muted-foreground', className)} {...props}>
+        {ago < JUST_SAVED_THRESHOLD ? 'Saved' : `Saved ${ago}s ago`}
+      </span>
     )
   }
 export type { TypedFields }

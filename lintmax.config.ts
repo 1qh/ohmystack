@@ -24,10 +24,6 @@ export default defineConfig({
   biome: {
     overrides: [
       {
-        includes: ['expo/**'],
-        off: ['style/noProcessEnv']
-      },
-      {
         includes: ['**/maestro/**'],
         off: ['performance/noAwaitInLoops']
       }
@@ -100,10 +96,6 @@ export default defineConfig({
   ignores: ['**/.source/**', 'lib/rnr/**', 'lib/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
   oxlint: {
     overrides: [
-      {
-        files: ['expo/**/*.tsx', 'expo/**/*.ts'],
-        off: ['react/no-unstable-default-props', 'react-perf/jsx-no-new-object-as-prop']
-      },
       {
         files: [
           '**/convex/blogProfile.ts',
