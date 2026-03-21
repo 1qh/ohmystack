@@ -64,8 +64,7 @@ noboil/
 │   └── convex/                ← macOS apps (from lazyconvex, Convex-only for now)
 ├── swiftcore/                ← shared Swift protocols (from lazyconvex)
 ├── noboil.yml              ← Docker compose for ALL services (Convex + SpacetimeDB + MinIO)
-├── lintmax.config.ts          ← unified linting config
-├── eslint.config.ts           ← unified ESLint config
+├── lintmax.config.ts          ← unified linting + ESLint config
 ├── turbo.json                 ← unified Turbo config
 ├── script/                   ← genkey.sh, genenv.ts, setup utilities
 ├── package.json               ← workspace root
@@ -125,7 +124,7 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 - [ ] 0.1 — Initialize bun workspace with `package.json`, `turbo.json`, `tsconfig.json`
 - [ ] 0.2 — Copy and unify `lintmax.config.ts` (merge betterspace + lazyconvex overrides)
-- [ ] 0.3 — Copy and unify `eslint.config.ts`
+- [x] 0.3 — Copy and unify ESLint rules into `lintmax.config.ts`
 - [ ] 0.4 — Set up `.github/workflows/ci.yml` (multi-job with path filtering from lazyconvex, extended for both DBs)
 - [ ] 0.5 — Create `noboil.yml` docker compose (Convex services + SpacetimeDB + shared MinIO on different ports)
 - [ ] 0.6 — Verify `bun i && bun fix` passes on empty workspace

@@ -45,7 +45,6 @@ jobs:
               - 'tsconfig*.json'
               - 'turbo.json'
               - 'lintmax.config.ts'
-              - 'eslint.config.ts'
             swift:
               - 'mobile/**'
               - 'swiftcore/**'

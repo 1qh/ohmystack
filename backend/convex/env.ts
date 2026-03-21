@@ -4,6 +4,7 @@ import { string } from 'zod/v4'
 export default createEnv({
   runtimeEnv: process.env,
   server: {
+    CONVEX_SITE_URL: string().optional(),
     TMDB_KEY: string()
   },
   skipValidation:

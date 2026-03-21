@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, max-depth, complexity */
+/* eslint-disable no-console, max-depth */
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { spawnSync } from 'node:child_process'
@@ -136,7 +136,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   },
   checkEslintContent = (content?: string): CheckResult => {
     if (content === undefined)
-      return { details: ['No eslint.config.* file found'], status: 'warn', title: 'ESLint Configuration' }
+      return { details: ['No lintmax.config.ts file found'], status: 'warn', title: 'ESLint Configuration' }
     if (content.includes('@noboil/spacetimedb/eslint'))
       return {
         details: ['@noboil/spacetimedb/eslint plugin configured'],
@@ -144,7 +144,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         title: 'ESLint Configuration'
       }
     return {
-      details: ['eslint.config found but @noboil/spacetimedb/eslint not imported'],
+      details: ['lintmax.config.ts found but @noboil/spacetimedb/eslint not referenced'],
       status: 'warn',
       title: 'ESLint Configuration'
     }
@@ -231,13 +231,8 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     })
     results.push(checkSpacetimeCli())
     results.push(checkDocker())
-    let eslintContent: string | undefined
-    if (existsSync(root))
-      for (const name of readdirSync(root))
-        if (name.startsWith('eslint.config.')) {
-          eslintContent = readFileSync(join(root, name), 'utf8')
-          break
-        }
+    const lintmaxConfigPath = join(root, 'lintmax.config.ts'),
+      eslintContent = existsSync(lintmaxConfigPath) ? readFileSync(lintmaxConfigPath, 'utf8') : undefined
     results.push(checkEslintContent(eslintContent))
     const pkgPath = join(root, 'package.json'),
       pkg = existsSync(pkgPath) ? (JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>) : undefined
