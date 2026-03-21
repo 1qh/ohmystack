@@ -15,7 +15,6 @@
     "check:schema": "bun ./check-schema.ts",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "bun with-env convex dev",
-    "lint": "eslint",
     "prod": "bun with-env convex deploy",
     "test": "CONVEX_TEST_MODE=true bun with-env bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
     "typecheck": "bun check:schema && tsc --noEmit",

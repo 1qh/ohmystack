@@ -1,4 +1,7 @@
 import { defineConfig } from 'lintmax'
+
+import { backendLintIgnoreFiles, tailwindUnknownClassIgnore } from './lint.shared'
+
 export default defineConfig({
   biome: {
     ignores: [
@@ -31,32 +34,13 @@ export default defineConfig({
           'better-tailwindcss/no-unknown-classes': [
             'error',
             {
-              ignore: [
-                'group',
-                'peer',
-                'nodrag',
-                'nopan',
-                'nowheel',
-                'not-prose',
-                'is-user',
-                'is-assistant',
-                'is-user:dark',
-                'animated',
-                'node-container',
-                'origin-top-center',
-                'toaster'
-              ]
+              ignore: [...tailwindUnknownClassIgnore]
             }
           ]
         }
       }
     ],
-    ignores: [
-      'backend/agent/convex/f.test.ts',
-      'backend/convex/convex/edge.test.ts',
-      'backend/convex/convex/f.test.ts',
-      'backend/convex/convex/org-api.test.ts'
-    ]
+    ignores: [...backendLintIgnoreFiles]
   },
   ignores: [
     '**/.source/**',

@@ -1,6 +1,9 @@
 import { recommended as convexRecommended } from '@noboil/convex/eslint'
 import { recommended as spacetimeRecommended } from '@noboil/spacetimedb/eslint'
 import { eslint } from 'lintmax/eslint'
+
+import { backendLintIgnoreFiles } from './lint.shared'
+
 export default eslint({
   append: [
     {
@@ -18,31 +21,6 @@ export default eslint({
             }
           }
         }
-      }
-    },
-    {
-      files: ['**/*.ts', '**/*.tsx'],
-      rules: {
-        'better-tailwindcss/no-unknown-classes': [
-          'error',
-          {
-            ignore: [
-              'group',
-              'peer',
-              'nodrag',
-              'nopan',
-              'nowheel',
-              'not-prose',
-              'is-user',
-              'is-assistant',
-              'is-user:dark',
-              'animated',
-              'node-container',
-              'origin-top-center',
-              'toaster'
-            ]
-          }
-        ]
       }
     },
     {
@@ -99,10 +77,7 @@ export default eslint({
   ignores: [
     '**/*.config.ts',
     '**/*.config.mjs',
-    'backend/agent/convex/f.test.ts',
-    'backend/convex/convex/edge.test.ts',
-    'backend/convex/convex/f.test.ts',
-    'backend/convex/convex/org-api.test.ts',
+    ...backendLintIgnoreFiles,
     'expo/**/babel.config.js',
     'expo/**/metro.config.js',
     'expo/**/uniwind-env.d.ts',
