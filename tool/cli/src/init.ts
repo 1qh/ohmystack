@@ -15,7 +15,6 @@ interface InitOpts {
 interface NoboilManifest {
   db: Db
   includeDemos: boolean
-  includeNative: boolean
   scaffoldedAt: string
   scaffoldedFrom: string
   version: 1
@@ -37,7 +36,10 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
   REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', 'lib/shared', '.github'],
   /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
   ask = async (question: string) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout })
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout
+    })
     // oxlint-disable-next-line promise/avoid-new
     return new Promise<string>(resolve => {
       rl.question(question, answer => {
@@ -56,16 +58,7 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
   removeDirs = ({ db, dir, includeDemos }: InitOpts) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      toRemove = [
-        ...REMOVE_ALWAYS,
-        `web/${otherTag}`,
-        'expo',
-        'mobile',
-        'desktop',
-        'swiftcore',
-        'backend/agent',
-        'tool/cli'
-      ]
+      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, 'backend/agent', 'tool/cli']
     if (!includeDemos) toRemove.push(`web/${dbTag}`)
     for (const p of toRemove) {
       const full = join(dir, p)
@@ -89,13 +82,9 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       otherDb = db === 'convex' ? 'spacetimedb' : 'convex',
       shouldRemove = (key: string, val: string) =>
         key === 'test' ||
-        (db === 'spacetimedb' &&
-          (key.includes('swift') || key.includes('desktop') || key.includes('mobile') || key.includes('codegen'))) ||
+        (db === 'spacetimedb' && key.includes('codegen')) ||
         (db === 'convex' && key.startsWith('spacetime:')) ||
         (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-        key.includes('mobile') ||
-        key.includes('desktop') ||
-        key.includes('swift') ||
         val.includes(otherDb)
     pkg.name = 'my-app'
     pkg.private = true
@@ -137,7 +126,9 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
       run('git', ['clone', '--depth', '1', REPO_GIT_URL, fullPath], process.cwd())
       rmSync(join(fullPath, '.git'), { force: true, recursive: true })
     } else run('bunx', ['-y', 'gitpick', REPO_SPEC, fullPath, '--overwrite'], process.cwd())
-    const revResult = spawnSync('git', ['ls-remote', REPO_GIT_URL, 'HEAD'], { encoding: 'utf8' })
+    const revResult = spawnSync('git', ['ls-remote', REPO_GIT_URL, 'HEAD'], {
+      encoding: 'utf8'
+    })
     if (revResult.status !== 0 || !revResult.stdout.trim()) {
       console.error(`${red('Error:')} failed to read scaffold commit hash`)
       process.exit(1)
@@ -149,7 +140,10 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     patchRootPackageJson({ db, dir: fullPath, includeDemos })
     if (!args.includes('--skip-install')) {
       console.log(`  ${dim('installing')} dependencies...`)
-      const installResult = spawnSync('bun', ['install'], { cwd: fullPath, stdio: 'inherit' })
+      const installResult = spawnSync('bun', ['install'], {
+        cwd: fullPath,
+        stdio: 'inherit'
+      })
       if (installResult.status !== 0)
         console.log(
           `\n  ${yellow('!')} bun install failed — run ${dim('bun install')} manually after publishing packages.\n`
@@ -159,7 +153,6 @@ const DEFAULT_REPO_URL = 'https://github.com/1qh/noboil',
     const manifest: NoboilManifest = {
       db,
       includeDemos,
-      includeNative: false,
       scaffoldedAt: new Date().toISOString(),
       scaffoldedFrom,
       version: 1

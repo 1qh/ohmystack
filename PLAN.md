@@ -86,7 +86,7 @@ noboil/
 - `use-mutate.ts` — different mutation APIs
 - `provider.ts` — SpacetimeDB-only (WebSocket client setup)
 - `rls.ts`, `stdb-tables.ts` — SpacetimeDB-only
-- `types.ts`, `env.ts`, `codegen-swift.ts` — Convex-only
+- `types.ts`, `env.ts` — Convex-only
 - `s3.ts` — SpacetimeDB-only (S3 file storage)
 
 ### How sharing works
@@ -140,7 +140,7 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 - [x] 4.2 — `web/stdb/{blog,chat,movie,org}` — SpacetimeDB web apps
 - [x] 4.3 — All web apps build and lint-pass
 
-### Phase 5: Mobile & Desktop (Convex-only) — Dropped
+### Phase 5: Dropped — web-only focus
 
 - [ ] 5.1 — Removed from scope to keep noboil web-only
 

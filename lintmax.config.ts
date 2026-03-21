@@ -21,14 +21,6 @@ const backendLintIgnoreFiles = [
     'toaster'
   ]
 export default defineConfig({
-  biome: {
-    overrides: [
-      {
-        includes: ['**/maestro/**'],
-        off: ['performance/noAwaitInLoops']
-      }
-    ]
-  },
   eslint: {
     append: [
       {
@@ -93,13 +85,12 @@ export default defineConfig({
     ],
     ignores: [...backendLintIgnoreFiles]
   },
-  ignores: ['**/.source/**', 'lib/rnr/**', 'lib/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
+  ignores: ['**/.source/**', 'lib/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
   oxlint: {
     overrides: [
       {
         files: [
           '**/convex/blogProfile.ts',
-          '**/convex/mobileAi.ts',
           '**/convex/orgProfile.ts',
           '**/convex/tokenUsage.ts',
           '**/convex/orchestratorNode.ts',

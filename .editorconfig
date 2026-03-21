@@ -26,9 +26,3 @@ ktlint_property_naming_constant_naming = screaming_snake_case
 
 ktlint_standard_no-wildcard-imports = disabled
 ktlint_standard_package-name = disabled
-
-[mobile/convex/**/Android/**/*.kt]
-ktlint = disabled
-
-[mobile/convex/**/.build/**/*.kt]
-ktlint = disabled

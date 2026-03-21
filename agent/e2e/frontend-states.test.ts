@@ -138,18 +138,18 @@ test.describe('Frontend States - final remaining coverage', () => {
     await chatPage.getSendButton().click()
     await expect(chatPage.getComposer()).toBeDisabled({ timeout: 1000 })
   })
-  test('chat remains usable at 375px mobile viewport', async ({ page, sessionListPage }) => {
+  test('chat remains usable at 375px narrow viewport', async ({ page, sessionListPage }) => {
     await page.setViewportSize({ height: 812, width: 375 })
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
     await page.waitForURL(CHAT_URL_RE)
     await expect(page.getByPlaceholder(MESSAGE_RE)).toBeVisible()
     await expect(page.getByRole('button', { name: SEND_RE })).toBeVisible()
-    await page.getByPlaceholder(MESSAGE_RE).fill('Mobile usable')
+    await page.getByPlaceholder(MESSAGE_RE).fill('Narrow viewport usable')
     await page.getByRole('button', { name: SEND_RE }).click()
     /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: wait for Convex reactive update */
     await page.waitForTimeout(3000)
-    await expect(page.locator('.is-user, .is-assistant').first()).toContainText('Mobile usable')
+    await expect(page.locator('.is-user, .is-assistant').first()).toContainText('Narrow viewport usable')
   })
   test('chat remains usable at 768px tablet viewport', async ({ page, sessionListPage }) => {
     await page.setViewportSize({ height: 1024, width: 768 })

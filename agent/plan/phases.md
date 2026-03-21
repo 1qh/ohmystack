@@ -68,7 +68,7 @@ Scope:
 
 Outcome:
 
-- Core product flows are functional across desktop and mobile breakpoints.
+- Core product flows are functional across narrow and wide breakpoints.
 
 ## Phase 6: Polish
 

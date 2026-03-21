@@ -20,7 +20,6 @@ Three CLIs ship with noboil. `noboil` handles project creation. `noboil-convex` 
 | `noboil-convex` | `doctor` | Project diagnostics with health score |
 | `noboil-convex` | `migrate` | Schema diff and migration plans |
 | `noboil-convex` | `viz` | Visualize schema relationships |
-| `noboil-convex` | `codegen-swift` | Generate typed Swift APIs |
 | `noboil-convex` | `docs` | Generate API documentation |
 | `noboil-stdb` | `add` | Generate a new table with reducers |
 | `noboil-stdb` | `check` | Validate schema/factory consistency |
@@ -49,7 +48,6 @@ noboil init [directory]
 | ---- | ---- | ------- | ----------- |
 | `--db` | `convex` \| `spacetimedb` | prompt | Skip the database selection prompt |
 | `--no-demos` | boolean | `false` | Skip demo apps |
-| `--with-native` | boolean | `false` | Include mobile and desktop apps (Convex only) |
 | `--skip-install` | boolean | `false` | Skip `bun install` after scaffolding |
 
 **Examples**
@@ -58,11 +56,6 @@ noboil init [directory]
 bunx noboil@latest init my-app
 ```
 
-```bash
-bunx noboil@latest init my-app --db=convex --with-native
-```
-
-```bash
 bunx noboil@latest init my-app --db=spacetimedb --no-demos --skip-install
 ```
 
@@ -258,23 +251,6 @@ noboil-convex viz [flags]
 | Flag | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
 | `--mermaid` | boolean | `false` | Output as Mermaid diagram syntax |
-
----
-
-### codegen-swift
-
-Generate typed Swift APIs from your Convex schema.
-
-```bash
-noboil-convex codegen-swift --schema PATH --convex PATH --output PATH [flags]
-```
-
-| Flag | Type | Default | Description |
-| ---- | ---- | ------- | ----------- |
-| `--schema` | string | — | Path to schema file (required) |
-| `--convex` | string | — | Path to convex directory (required) |
-| `--output` | string | — | Output path for generated Swift (required) |
-| `--mobile-output` | string | — | Separate output path for mobile-specific Swift |
 
 ---
 

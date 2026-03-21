@@ -50,7 +50,6 @@ resource_bundle_accessor*
 .vercel
 .wxt
 DerivedData/
-desktop/*/*.xcodeproj/
 Package.resolved
 __pycache__
 build

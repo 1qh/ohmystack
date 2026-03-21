@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 'use client'
 import type { Id } from '@a/be-convex/model'
@@ -33,8 +34,9 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
         transform: d => ({ ...d, expectedUpdatedAt: wiki?.updatedAt, id: wikiId, orgId: org._id }),
         values: wiki ? pickValues(orgScoped.wiki, wiki) : undefined
       }),
-      handleDelete = () => {
-        remove({ id: wikiId }).then(() => router.push('/wiki'))
+      handleDelete = async () => {
+        await remove({ id: wikiId })
+        router.push('/wiki')
       }
     if (!wiki) return <Skeleton className='h-40' />
     return (

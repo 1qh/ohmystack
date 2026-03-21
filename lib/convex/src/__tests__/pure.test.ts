@@ -72,7 +72,6 @@ import {
   parseObjectFields,
   printSchemaPreview
 } from '../check'
-import { isValidSwiftIdent, SWIFT_KEYWORDS, swiftEnumCase } from '../codegen-swift-utils'
 import { defineSteps } from '../components/step-form'
 import {
   ACTIVE_ORG_COOKIE,
@@ -3103,104 +3102,6 @@ describe('ERROR_MESSAGES completeness', () => {
     expect(ERROR_MESSAGES.VALIDATION_FAILED).not.toBe(ERROR_MESSAGES.INVALID_WHERE)
     expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe('Validation failed')
     expect(ERROR_MESSAGES.INVALID_WHERE).toBe('Invalid filters')
-  })
-})
-describe('codegen-swift-utils', () => {
-  describe('SWIFT_KEYWORDS', () => {
-    test('contains all Swift declaration keywords', () => {
-      for (const kw of ['class', 'struct', 'enum', 'protocol', 'func', 'var', 'let', 'import', 'return', 'init'])
-        expect(SWIFT_KEYWORDS.has(kw)).toBe(true)
-    })
-    test('contains control flow keywords', () => {
-      for (const kw of [
-        'if',
-        'else',
-        'for',
-        'while',
-        'do',
-        'switch',
-        'case',
-        'break',
-        'continue',
-        'default',
-        'guard',
-        'defer',
-        'repeat',
-        'fallthrough'
-      ])
-        expect(SWIFT_KEYWORDS.has(kw)).toBe(true)
-    })
-    test('contains type keywords', () => {
-      for (const kw of ['Any', 'Self', 'Type', 'Protocol']) expect(SWIFT_KEYWORDS.has(kw)).toBe(true)
-    })
-    test('contains value keywords', () => {
-      for (const kw of ['true', 'false', 'nil', 'self', 'super']) expect(SWIFT_KEYWORDS.has(kw)).toBe(true)
-    })
-    test('does not contain normal identifiers', () => {
-      for (const id of ['tech', 'life', 'tutorial', 'admin', 'owner', 'member', 'assistant', 'user'])
-        expect(SWIFT_KEYWORDS.has(id)).toBe(false)
-    })
-  })
-  describe('isValidSwiftIdent', () => {
-    test('accepts normal identifiers', () => {
-      for (const id of ['tech', 'life', 'tutorial', 'admin', 'owner', '_private', 'camelCase', 'UPPER'])
-        expect(isValidSwiftIdent(id)).toBe(true)
-    })
-    test('rejects Swift keywords', () => {
-      for (const kw of [
-        'class',
-        'func',
-        'var',
-        'let',
-        'default',
-        'return',
-        'import',
-        'init',
-        'self',
-        'true',
-        'false',
-        'nil'
-      ])
-        expect(isValidSwiftIdent(kw)).toBe(false)
-    })
-    test('rejects identifiers starting with digits', () => {
-      expect(isValidSwiftIdent('123abc')).toBe(false)
-      expect(isValidSwiftIdent('0start')).toBe(false)
-    })
-    test('rejects identifiers with special characters', () => {
-      expect(isValidSwiftIdent('my-value')).toBe(false)
-      expect(isValidSwiftIdent('has space')).toBe(false)
-      expect(isValidSwiftIdent('dot.name')).toBe(false)
-    })
-  })
-  describe('swiftEnumCase', () => {
-    test('normal identifiers emit plain case', () => {
-      expect(swiftEnumCase('tech')).toBe('case tech')
-      expect(swiftEnumCase('admin')).toBe('case admin')
-      expect(swiftEnumCase('camelCase')).toBe('case camelCase')
-    })
-    test('Swift keywords emit backtick-escaped case', () => {
-      expect(swiftEnumCase('default')).toBe('case `default`')
-      expect(swiftEnumCase('class')).toBe('case `class`')
-      expect(swiftEnumCase('return')).toBe('case `return`')
-      expect(swiftEnumCase('import')).toBe('case `import`')
-      expect(swiftEnumCase('init')).toBe('case `init`')
-      expect(swiftEnumCase('self')).toBe('case `self`')
-      expect(swiftEnumCase('true')).toBe('case `true`')
-      expect(swiftEnumCase('false')).toBe('case `false`')
-    })
-    test('special characters get sanitized with raw value', () => {
-      expect(swiftEnumCase('my-value')).toBe('case my_value = "my-value"')
-      expect(swiftEnumCase('has space')).toBe('case has_space = "has space"')
-      expect(swiftEnumCase('dot.name')).toBe('case dot_name = "dot.name"')
-    })
-    test('leading digit gets underscore prefix', () => {
-      expect(swiftEnumCase('123abc')).toBe('case _123abc = "123abc"')
-      expect(swiftEnumCase('0start')).toBe('case _0start = "0start"')
-    })
-    test('mixed special + digit edge case', () => {
-      expect(swiftEnumCase('3d-render')).toBe('case _3d_render = "3d-render"')
-    })
   })
 })
 describe('guardApi', () => {

@@ -9,7 +9,6 @@ type Db = 'convex' | 'spacetimedb'
 interface Manifest {
   db: Db
   includeDemos: boolean
-  includeNative: boolean
   scaffoldedAt: string
   scaffoldedFrom: string
   version: number
@@ -72,7 +71,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       typeof parsed.version !== 'number' ||
       (parsed.db !== 'convex' && parsed.db !== 'spacetimedb') ||
       typeof parsed.includeDemos !== 'boolean' ||
-      typeof parsed.includeNative !== 'boolean' ||
       typeof parsed.scaffoldedFrom !== 'string' ||
       typeof parsed.scaffoldedAt !== 'string'
     ) {
@@ -108,13 +106,9 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
       otherDb = db === 'convex' ? 'spacetimedb' : 'convex',
       shouldRemove = (key: string, val: string) =>
         key === 'test' ||
-        (db === 'spacetimedb' &&
-          (key.includes('swift') || key.includes('desktop') || key.includes('mobile') || key.includes('codegen'))) ||
+        (db === 'spacetimedb' && key.includes('codegen')) ||
         (db === 'convex' && key.startsWith('spacetime:')) ||
         (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-        key.includes('mobile') ||
-        key.includes('desktop') ||
-        key.includes('swift') ||
         val.includes(otherDb)
     pkg.name = 'my-app'
     pkg.private = true
@@ -147,16 +141,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   removeDirs = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
     const dbTag = db === 'convex' ? 'cvx' : 'stdb',
       otherTag = db === 'convex' ? 'stdb' : 'cvx',
-      toRemove = [
-        ...REMOVE_ALWAYS,
-        `web/${otherTag}`,
-        'expo',
-        'mobile',
-        'desktop',
-        'swiftcore',
-        'backend/agent',
-        'tool/cli'
-      ]
+      toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, 'backend/agent', 'tool/cli']
     if (!includeDemos) toRemove.push(`web/${dbTag}`)
     for (const path of toRemove) rmSafe(join(dir, path))
   },
@@ -217,8 +202,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
     if (force || relPath.startsWith('lib/') || relPath.startsWith('backend/') || relPath.startsWith('tool/')) {
       updates.push(relPath)
       if (!dryRun) writeLocalFile({ content: upstreamContent, path: localPath })
-    } else if (relPath.startsWith('web/') || relPath.startsWith('expo/'))
-      skipped.push(`${relPath} ${dim('(skipped (modified locally))')}`)
+    } else if (relPath.startsWith('web/')) skipped.push(`${relPath} ${dim('(skipped (modified locally))')}`)
     else if (isRootConfig(relPath)) rootReview.push(`${relPath} ${dim('(review manually)')}`)
     else skipped.push(`${relPath} ${dim('(skipped (modified locally))')}`)
   },
@@ -235,7 +219,11 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         cwd,
         err: 'git clone failed during sync'
       })
-      const nextHash = runGit({ args: ['rev-parse', 'HEAD'], cwd: tmpDir, err: 'failed to read upstream commit hash' })
+      const nextHash = runGit({
+        args: ['rev-parse', 'HEAD'],
+        cwd: tmpDir,
+        err: 'failed to read upstream commit hash'
+      })
       if (nextHash === manifest.scaffoldedFrom) {
         console.log(`\n${green('Already up to date.')}\n`)
         return
@@ -267,7 +255,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
         const nextManifest: Manifest = {
           db: manifest.db,
           includeDemos: manifest.includeDemos,
-          includeNative: manifest.includeNative,
           scaffoldedAt: new Date().toISOString(),
           scaffoldedFrom: nextHash,
           version: manifest.version

@@ -160,7 +160,7 @@ PW[Playwright] --> NX[Next.js agent]
 | 74  | E2E: Accessibility      | Log/live-region semantics          | Chat transcript and streaming announcements are screen-reader compatible               |
 | 75  | E2E: Accessibility      | Keyboard and focus behavior        | Expand controls and composer focus behavior remain keyboard accessible                 |
 | 76  | E2E: Frontend States    | Loading/empty/error state coverage | Session/chat/settings show explicit non-happy-path UI states                           |
-| 77  | E2E: Frontend States    | Responsive behavior                | Core flows remain usable across mobile and desktop breakpoints                         |
+| 77  | E2E: Frontend States    | Responsive behavior                | Core flows remain usable across narrow and wide breakpoints                            |
 | 78  | E2E: Real-World Flows   | End-to-end user workflow           | Session create, chat, delegate, task completion, and settings all work together        |
 
 Coverage note: this matrix is the flat reference checklist for the full 934-test suite, grouped by category while preserving one-table navigation.

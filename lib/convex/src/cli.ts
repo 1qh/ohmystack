@@ -8,7 +8,6 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   COMMANDS: Record<string, { description: string; script: string }> = {
     add: { description: 'Add a new table/endpoint to your project', script: 'add.ts' },
     check: { description: 'Validate schema/factory consistency', script: 'check.ts' },
-    'codegen-swift': { description: 'Generate typed Swift APIs from schema', script: 'codegen-swift.ts' },
     docs: { description: 'Generate API documentation', script: 'docs-gen.ts' },
     doctor: { description: 'Run project diagnostics', script: 'doctor.ts' },
     migrate: { description: 'Schema diff and migration plans', script: 'migrate.ts' },

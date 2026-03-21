@@ -165,7 +165,7 @@ flowchart TD
 - Reasoning/tool expandable controls are native `button` elements with keyboard support and visible focus states.
 - Focus returns to composer after submit and after modal/drawer close.
 - Status is never color-only; include text labels (`Running`, `Completed`, `Error`, etc.).
-- Interactive cards and controls must meet minimum hit-target and contrast requirements across mobile and desktop breakpoints.
+- Interactive cards and controls must meet minimum hit-target and contrast requirements across narrow and wide breakpoints.
 
 ## Tests
 

@@ -14,7 +14,6 @@ import type * as chat from "../chat.js";
 import type * as file from "../file.js";
 import type * as http from "../http.js";
 import type * as message from "../message.js";
-import type * as mobileAi from "../mobileAi.js";
 import type * as movie from "../movie.js";
 import type * as org from "../org.js";
 import type * as orgProfile from "../orgProfile.js";
@@ -37,7 +36,6 @@ declare const fullApi: ApiFromModules<{
   file: typeof file;
   http: typeof http;
   message: typeof message;
-  mobileAi: typeof mobileAi;
   movie: typeof movie;
   org: typeof org;
   orgProfile: typeof orgProfile;
