@@ -6,7 +6,10 @@ The orchestrator runs directly in Convex actions with AI SDK `streamText()`. Mes
 
 - AI SDK `streamText`: <https://ai-sdk.vercel.ai/docs/reference/ai-sdk-core/stream-text>
 - Convex actions: <https://docs.convex.dev/functions/actions>
-- OpenAgent loop reference: `oh-my-openagent/src/index.ts` Implementation:
+- OpenAgent loop reference: `oh-my-openagent/src/index.ts`
+
+Implementation:
+
 - `backend/agent/convex/orchestrator.ts`
 - `backend/agent/convex/orchestratorNode.ts`
 - `backend/agent/convex/messages.ts`
@@ -16,7 +19,9 @@ The orchestrator runs directly in Convex actions with AI SDK `streamText()`. Mes
 
 ### Core table: `threadRunState`
 
-One row per `threadId`, created lazily by `ensureRunState` and treated as a singleton. Key fields:
+One row per `threadId`, created lazily by `ensureRunState` and treated as a singleton.
+
+Key fields:
 
 - `status`: `idle | active`
 - `activeRunToken`
@@ -39,10 +44,12 @@ One row per `threadId`, created lazily by `ensureRunState` and treated as a sing
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
+
     state Idle {
       [*] --> NoQueue
       NoQueue: status=idle\nactiveRunToken=null\nqueuedPromptMessageId=null
     }
+
     state Active {
       [*] --> RunningNoQueue
       RunningNoQueue: status=active\nactiveRunToken=set\nqueuedPromptMessageId=null
@@ -51,6 +58,7 @@ stateDiagram-v2
       RunningWithQueue --> RunningWithQueue: higher/equal priority replace
       RunningWithQueue --> RunningNoQueue: finishRun schedules next token
     }
+
     Idle --> Active: enqueueRun (status=idle)\ncreate runToken + schedule action
     Active --> Idle: finishRun and no queued payload
 ```
@@ -64,8 +72,10 @@ flowchart TD
     E[enqueueRun] -->|state=idle| A[set activeRunToken\nrunClaimed=false\nstatus=active\nschedule runOrchestrator]
     E -->|state=active + priority wins| Q[patch queuedPromptMessageId\nqueuedReason\nqueuedPriority]
     E -->|state=active + lower priority| N[no-op reject]
+
     C[claimRun] -->|token matches + runClaimed!=true| C1[set runClaimed=true\nclaimedAt=now\nrunHeartbeatAt=now]
     C -->|mismatch/claimed| C0[claim failed]
+
     F[finishRun] -->|token mismatch| F0[no-op]
     F -->|queuedPromptMessageId exists| F1[schedule next runToken\nclear queue\nkeep status=active]
     F -->|no queue| F2[clear active token/timers\nstatus=idle]
@@ -105,7 +115,9 @@ The orchestrator writes stream output directly to Convex message rows instead of
 - The turn starts with `streamText()` in the Node action.
 - Each text delta appends to an in-memory buffer and patches the assistant row’s `streamingContent` so the client can render partial output immediately.
 - The frontend subscribes via `useQuery` to the thread messages list, so each patch re-renders in real time without a separate stream channel.
-- On stream completion, the row is finalized by moving the full text into `content`, marking `isComplete: true`, and clearing transient streaming state. Implementation: `backend/agent/convex/orchestratorNode.ts`
+- On stream completion, the row is finalized by moving the full text into `content`, marking `isComplete: true`, and clearing transient streaming state.
+
+Implementation: `backend/agent/convex/orchestratorNode.ts`
 
 ## Post-Turn Auto-Continue Audit
 
@@ -139,7 +151,10 @@ flowchart TD
 - `claimRun` initializes `runHeartbeatAt` when a token is consumed.
 - While the action is alive, it updates `runHeartbeatAt` on a regular interval (about every two minutes).
 - `timeoutStaleRuns` treats claimed runs as stale when heartbeat age exceeds 15 minutes (falling back to `claimedAt`), and unclaimed active runs as stale after 5 minutes from `activatedAt`.
-- A hard wall-clock cap of 15 minutes from `activatedAt` is enforced even if heartbeats continue. Recovery behavior:
+- A hard wall-clock cap of 15 minutes from `activatedAt` is enforced even if heartbeats continue.
+
+Recovery behavior:
+
 - if queued payload exists, mint fresh token and reschedule,
 - if no queued payload, reset run state to idle.
 
@@ -149,6 +164,7 @@ sequenceDiagram
     participant ORCH as runOrchestrator
     participant STATE as threadRunState
     participant CRON as timeoutStaleRuns
+
     ENQ->>STATE: status=active, activatedAt, activeRunToken
     ORCH->>STATE: claimRun (runClaimed=true, claimedAt)
     loop every 2m
@@ -177,7 +193,9 @@ To avoid infinite continuation loops when todos are not changing, the runtime tr
 - The snapshot stores stable todo identity and status fields in a deterministic order.
 - If two consecutive continuation checks see the same snapshot, `stagnationCount` increments.
 - When the counter reaches the configured threshold, continuation stops and streak state resets.
-- Any real progress (status transitions, completed-count increase, or reduced incomplete set) resets stagnation tracking. Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/stagnation-detection.ts`
+- Any real progress (status transitions, completed-count increase, or reduced incomplete set) resets stagnation tracking.
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/stagnation-detection.ts`
 
 ## Continuation Cooldown
 
@@ -186,7 +204,9 @@ Continuation failures are rate-limited with exponential backoff so repeated fail
 - The runtime tracks consecutive continuation failures and timestamp of the latest attempt.
 - Cooldown duration grows as `5000ms * 2^min(consecutiveFailures, 5)`.
 - After repeated failures at the cap, continuation is paused until the reset window elapses.
-- A successful continuation resets the failure counter. Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/idle-event.ts`
+- A successful continuation resets the failure counter.
+
+Reference: `oh-my-openagent/src/hooks/todo-continuation-enforcer/idle-event.ts`
 
 ## Lifecycle Summary
 
@@ -194,7 +214,9 @@ The orchestrator run lifecycle is built from three compare-and-set mutations tha
 
 - `enqueueRun` is the entry mutation for user turns and internal reminders; it either activates an idle thread by minting a run token and scheduling `runOrchestrator`, or updates the single queued slot using persisted priority rules.
 - `claimRun` is the consumption mutation for scheduled work; only the action instance that presents the matching active token and sees `runClaimed` unset can flip the claim bit and proceed.
-- `finishRun` is the terminal mutation; it closes the active token, schedules the next token if queued work exists, or returns the thread to `idle` when the queue is empty. Together these mutations create a deterministic lifecycle: enqueue establishes intent, claim establishes a single executor, and finish resolves the run while safely draining queued follow-up work.
+- `finishRun` is the terminal mutation; it closes the active token, schedules the next token if queued work exists, or returns the thread to `idle` when the queue is empty.
+
+Together these mutations create a deterministic lifecycle: enqueue establishes intent, claim establishes a single executor, and finish resolves the run while safely draining queued follow-up work.
 
 ## Task Reminder Injection
 
@@ -202,7 +224,9 @@ The runtime tracks task-follow-up drift with a `turnsSinceTaskTool` counter in t
 
 - The counter increments when turns complete without using task tools.
 - It resets immediately when the model uses task-related tools (`delegate`, `taskStatus`, or `taskOutput`).
-- At a threshold of `10`, the orchestrator injects a system reminder listing pending tasks so the model explicitly checks task progress or outputs. This mechanism prevents long conversational runs from forgetting delegated background work while keeping reminder behavior deterministic and bounded.
+- At a threshold of `10`, the orchestrator injects a system reminder listing pending tasks so the model explicitly checks task progress or outputs.
+
+This mechanism prevents long conversational runs from forgetting delegated background work while keeping reminder behavior deterministic and bounded.
 
 ## Tests
 

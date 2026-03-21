@@ -42,7 +42,9 @@ The oh-my-openagent repo contains rich Mermaid-based architecture visualizations
 - Orchestration system guide with 3-layer architecture diagram: `docs/guide/orchestration.md`
 - Planning state machine (Prometheus interview flow): `docs/guide/orchestration.md` (stateDiagram-v2)
 - Atlas execution flow: `docs/guide/orchestration.md` (flowchart LR)
-- Feature AGENTS.md files with per-module context: `src/features/AGENTS.md`, `src/hooks/AGENTS.md` Our plan’s Mermaid diagrams are inspired by these but adapted for the web architecture (Convex + Next.js instead of CLI).
+- Feature AGENTS.md files with per-module context: `src/features/AGENTS.md`, `src/hooks/AGENTS.md`
+
+Our plan’s Mermaid diagrams are inspired by these but adapted for the web architecture (Convex + Next.js instead of CLI).
 
 ## noboil internal references
 

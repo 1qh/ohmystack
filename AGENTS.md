@@ -1,4 +1,6 @@
-If `README.md` or `PLAN.md` exists at the repo root, read it first. **Pre-push (mandatory):** `bun clean:all && bun i && bun fix && bun test:all`
+If `README.md` or `PLAN.md` exists at the repo root, read it first.
+
+**Pre-push (mandatory):** `bun clean:all && bun i && bun fix && bun test:all`
 
 ## Monorepo
 
@@ -20,7 +22,9 @@ desktop/convex/           — macOS apps (Convex-only)
 swiftcore/               — shared Swift protocols
 ```
 
-## Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
+Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
+
+---
 
 ## Standards
 
@@ -61,7 +65,9 @@ swiftcore/               — shared Swift protocols
 biome fix → oxlint fix → eslint fix → biome fix (again)
 ```
 
-**Why biome runs twice**: oxlint/eslint auto-fixes can introduce formatting drift. The 2nd biome pass re-normalizes. **Cross-linter conflicts**: One linter’s auto-fix can violate another. Fix in lintmax config, not project code.
+**Why biome runs twice**: oxlint/eslint auto-fixes can introduce formatting drift. The 2nd biome pass re-normalizes.
+
+**Cross-linter conflicts**: One linter’s auto-fix can violate another. Fix in lintmax config, not project code.
 
 ### Ignore syntax
 
@@ -91,7 +97,11 @@ biome fix → oxlint fix → eslint fix → biome fix (again)
 
 ### Safe-to-ignore rules
 
-**oxlint:** `promise/prefer-await-to-then` (Promise.race, ky chaining) **eslint:** `no-await-in-loop`, `max-statements`, `max-depth`, `complexity` (sequential ops) · `@typescript-eslint/no-unnecessary-condition` (type narrowing) · `@typescript-eslint/promise-function-async` (thenable returns) · `@typescript-eslint/max-params` · `@next/next/no-img-element` (external images) · `react-hooks/refs` **biome:** `style/noProcessEnv` (env files) · `performance/noAwaitInLoops` (sequential ops) · `nursery/noForIn` · `performance/noImgElement` · `suspicious/noExplicitAny` (generic boundaries)
+**oxlint:** `promise/prefer-await-to-then` (Promise.race, ky chaining)
+
+**eslint:** `no-await-in-loop`, `max-statements`, `max-depth`, `complexity` (sequential ops) · `@typescript-eslint/no-unnecessary-condition` (type narrowing) · `@typescript-eslint/promise-function-async` (thenable returns) · `@typescript-eslint/max-params` · `@next/next/no-img-element` (external images) · `react-hooks/refs`
+
+**biome:** `style/noProcessEnv` (env files) · `performance/noAwaitInLoops` (sequential ops) · `nursery/noForIn` · `performance/noImgElement` · `suspicious/noExplicitAny` (generic boundaries)
 
 ## Playbook Maintenance
 
@@ -121,34 +131,44 @@ timeout 30 bun with-env playwright test path/to/file.test.ts           # single 
 bun test:e2e -- --workers=1 --timeout=10000 --reporter=dot             # full (user asks only)
 ```
 
-| Scope                                                                                                                                                                                                                                                                                                                               | Timeout                           | Kill |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ---- |
-| Single test                                                                                                                                                                                                                                                                                                                         | 5s                                | 10s  |
-| Single file                                                                                                                                                                                                                                                                                                                         | 8s/test                           | 30s  |
-| Full suite                                                                                                                                                                                                                                                                                                                          | 10s/test                          | 180s |
-| **AI agents**: Run only failing tests, verify 2-3x, stop. Full suite only when user asks. **Pre-test**: `bun fix` passes · `pkill -9 -f "next"` · `rm -rf test-results` **Convex**: `cd backend/convex && CONVEX_TEST_MODE=true bun with-env convex dev --once` **SpacetimeDB**: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish` |                                   |      |
-| Symptom                                                                                                                                                                                                                                                                                                                             | Fix                               |      |
-| ---------------------------                                                                                                                                                                                                                                                                                                         | --------------------------------- |      |
-| Hangs on `fill()`/`click()`                                                                                                                                                                                                                                                                                                         | Check element visible/enabled     |      |
-| `networkidle` hangs                                                                                                                                                                                                                                                                                                                 | Use `waitForSelector()` instead   |      |
-| Element not found                                                                                                                                                                                                                                                                                                                   | Check testid on element vs parent |      |
-| Flaky counts                                                                                                                                                                                                                                                                                                                        | `--workers=1`                     |      |
+| Scope       | Timeout  | Kill |
+| ----------- | -------- | ---- |
+| Single test | 5s       | 10s  |
+| Single file | 8s/test  | 30s  |
+| Full suite  | 10s/test | 180s |
+
+**AI agents**: Run only failing tests, verify 2-3x, stop. Full suite only when user asks. **Pre-test**: `bun fix` passes · `pkill -9 -f "next"` · `rm -rf test-results` **Convex**: `cd backend/convex && CONVEX_TEST_MODE=true bun with-env convex dev --once` **SpacetimeDB**: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish`
+
+| Symptom                     | Fix                               |
+| --------------------------- | --------------------------------- |
+| Hangs on `fill()`/`click()` | Check element visible/enabled     |
+| `networkidle` hangs         | Use `waitForSelector()` instead   |
+| Element not found           | Check testid on element vs parent |
+| Flaky counts                | `--workers=1`                     |
 
 ---
 
 ## Minimal DOM (React + Tailwind)
 
-Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn’t exist. **A node is allowed only if it provides:**
+Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn’t exist.
+
+**A node is allowed only if it provides:**
 
 - **Semantics/a11y** — correct elements (`ul/li`, `button`, `label`, `form`, `nav`, `section`), ARIA patterns, focus behavior
 - **Layout constraint** — needs its own containing block / positioning / clipping / scroll / stacking context (`relative`, `overflow-*`, `sticky`, `z-*`, `min-w-0`)
 - **Behavior** — measurement refs, observers, portals, event boundary, virtualization
-- **Component API** — can’t pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding) **Before adding wrappers:**
+- **Component API** — can’t pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding)
+
+**Before adding wrappers:**
+
 - Spacing → parent `gap-*` (flex/grid) or `space-x/y-*`
 - Separators → parent `divide-y / divide-x`
 - Alignment → `flex`/`grid` on existing parent
 - Visual (padding/bg/border/shadow/radius) → on the element that owns the box
-- JSX grouping → `<>...</>` (Fragment), not `<div>` **Styling children — props first, selectors second:**
+- JSX grouping → `<>...</>` (Fragment), not `<div>`
+
+**Styling children — props first, selectors second:**
+
 - Mapped component → pass `className` to the item
 - Uniform direct children → `*:` or `[&>tag]:` to avoid repeating classes
 
@@ -170,16 +190,21 @@ Same UI, fewest DOM nodes. Every element must earn its place. If you can delete 
 - `*:` direct children · `[&>li]:py-2` targeted · `[&_a]:underline` descendant (sparingly)
 - `group`/`peer` on existing nodes → `group-hover:*`, `peer-focus:*`
 - `data-[state=open]:*`, `aria-expanded:*`, `disabled:*`
-- `first:` `last:` `odd:` `even:` `only:` — structural variants **Review checklist:** Can I delete this node? → delete. Can `gap/space/divide` replace it? → do it. Can I pass `className`? → do it. Can `[&>...]:` remove repetition? → do it.
+- `first:` `last:` `odd:` `even:` `only:` — structural variants
+
+**Review checklist:** Can I delete this node? → delete. Can `gap/space/divide` replace it? → do it. Can I pass `className`? → do it. Can `[&>...]:` remove repetition? → do it.
 
 ---
 
 ## react-doctor
 
-## Run `bunx -y react-doctor@latest . --verbose` after adding components or before releases.
+Run `bunx -y react-doctor@latest . --verbose` after adding components or before releases.
 
 **False positives**: Unused Next.js entry files, cross-package exports, `<img>` for storage URLs, SPA form `preventDefault()`, intersection observer `useEffect`, `useSearchParams` with Suspense at call site, `dangerouslySetInnerHTML` in org-redirect, missing demo app metadata.
+
 **Always enforce**: `use*` hook naming · stable array keys (never indices) · `<Suspense>` around `useSearchParams()` · no `Date.now()`/`Math.random()` in render
+
+---
 
 ## Next.js
 
@@ -197,7 +222,9 @@ const Page = async () => {
 
 ## Convex
 
-**`anyApi` trap**: Runtime is a Proxy accepting any property name — `api.blogprofile.get` (wrong casing) won’t type-error. Always match `api.<module>` to exact filenames. Rely on E2E tests. **Setup**: `docker compose -f noboil.yml up -d && bash genkey.sh && bun genenv.ts` → `convex env set` (JWT key needs `--` separator)
+**`anyApi` trap**: Runtime is a Proxy accepting any property name — `api.blogprofile.get` (wrong casing) won’t type-error. Always match `api.<module>` to exact filenames. Rely on E2E tests.
+
+**Setup**: `docker compose -f noboil.yml up -d && bash genkey.sh && bun genenv.ts` → `convex env set` (JWT key needs `--` separator)
 
 ## SpacetimeDB
 

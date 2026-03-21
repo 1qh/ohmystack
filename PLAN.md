@@ -6,7 +6,17 @@ Schema-first, zero-boilerplate fullstack. Pick your database, forget about the b
 
 ## Motivation
 
-betterspace (SpacetimeDB) and lazyconvex (Convex) share everything — philosophy, code, linting, dependencies, demo apps, monorepo structure. Maintaining two repos with ~70% identical code is wasteful. Consolidating into one monorepo unlocks massive reuse. But this is not just a merge. noboil is a new home with a long-term vision. Every solution it offers is easy to use, easy to adopt, easy to configure, while covering all concerns about scalability and security. The goal: any dev picks a database and ships a fullstack app in minutes, not weeks, forgetting about backend configuration entirely. Convex and SpacetimeDB are the first two supported backends. More will follow — drizzle + oRPC for SQL databases is on the roadmap (to be discussed after noboil ships, multi-db support needs careful consideration). The architecture is built to grow. The repo IS the template. No separate template repos to maintain per library. The per-library `init` CLIs are removed — `bun noboil@latest init` handles everything. Clone the repo, strip library source and docs, keep the monorepo structure, GitHub Actions, shadcn components, strict linting, and demo apps to reference or clone. Consumers get the same DX we have — a `doctor` command checks if their project is outdated vs upstream, and a `sync` command pulls upstream changes. Documentation lives in a fumadocs site, not scattered markdown files. The root README is a concise pitch that drives people straight to the docs site. Devs can switch between databases in a global toggle and see the difference in consumer code — same UX as SDKs that show multiple language clients side by side, but for different databases. Both betterspace and lazyconvex remain valid on their own — they are archived as read-only references, not deprecated. noboil is where they grow from here.
+betterspace (SpacetimeDB) and lazyconvex (Convex) share everything — philosophy, code, linting, dependencies, demo apps, monorepo structure. Maintaining two repos with ~70% identical code is wasteful. Consolidating into one monorepo unlocks massive reuse.
+
+But this is not just a merge. noboil is a new home with a long-term vision. Every solution it offers is easy to use, easy to adopt, easy to configure, while covering all concerns about scalability and security. The goal: any dev picks a database and ships a fullstack app in minutes, not weeks, forgetting about backend configuration entirely.
+
+Convex and SpacetimeDB are the first two supported backends. More will follow — drizzle + oRPC for SQL databases is on the roadmap (to be discussed after noboil ships, multi-db support needs careful consideration). The architecture is built to grow.
+
+The repo IS the template. No separate template repos to maintain per library. The per-library `init` CLIs are removed — `bun noboil@latest init` handles everything. Clone the repo, strip library source and docs, keep the monorepo structure, GitHub Actions, shadcn components, strict linting, and demo apps to reference or clone. Consumers get the same DX we have — a `doctor` command checks if their project is outdated vs upstream, and a `sync` command pulls upstream changes.
+
+Documentation lives in a fumadocs site, not scattered markdown files. The root README is a concise pitch that drives people straight to the docs site. Devs can switch between databases in a global toggle and see the difference in consumer code — same UX as SDKs that show multiple language clients side by side, but for different databases.
+
+Both betterspace and lazyconvex remain valid on their own — they are archived as read-only references, not deprecated. noboil is where they grow from here.
 
 ## Source Repos (now archived, read-only)
 
@@ -67,18 +77,26 @@ noboil/
 
 ### lib/shared/ (internal, never published)
 
-~8,000 lines of code that is identical or near-identical across both libraries: **100% identical (copy directly):**
+~8,000 lines of code that is identical or near-identical across both libraries:
+
+**100% identical (copy directly):**
 
 - `use-bulk-mutate.ts` (127 lines)
 - `use-search.ts` (65 lines)
 - `editors-section.tsx` (90 lines)
-- `presence.ts` (151 lines) **90%+ similar (extract shared, inject DB-specific via args):**
+- `presence.ts` (151 lines)
+
+**90%+ similar (extract shared, inject DB-specific via args):**
+
 - `use-bulk-selection.ts`, `use-optimistic.ts`, `use-soft-delete.ts`
 - `schema-playground.tsx`, `devtools-panel.tsx`
 - `middleware.ts`, `schema-helpers.ts`
 - `fields.tsx`, `misc.tsx`, `step-form.tsx`
 - ESLint plugin core (16 rules)
-- CLI framework (create, add, check, doctor commands) **DB-specific (stays in each library package):**
+- CLI framework (create, add, check, doctor commands)
+
+**DB-specific (stays in each library package):**
+
 - `crud.ts` — fundamentally different (Convex mutations vs SpacetimeDB reducers)
 - `use-list.ts` — different pagination (usePaginatedQuery vs manual state)
 - `use-mutate.ts` — different mutation APIs
@@ -294,7 +312,9 @@ Users see one clean import: `import { useList } from '@noboil/convex/react'`
 
 ```
 /ralph-loop "Execute PLAN.md phases 0 through 8 for the noboil monorepo. Read PLAN.md and AGENTS.md first — they are your single source of truth for structure, tasks, constraints, and code conventions.
+
 Work phase by phase in order. Within each phase, work task by task. After each task, run the phase's verification command before moving on. After each phase, run full verification before starting the next phase.
+
 Phase gate verification (run after completing each phase):
 - Phase 0: bun i && bun fix
 - Phase 1: bun fix && bun typecheck
@@ -305,10 +325,13 @@ Phase gate verification (run after completing each phase):
 - Phase 6: bun fix && bun build for docs app && docs site renders with DB switcher
 - Phase 7: bun noboil@latest init works for both Convex and SpacetimeDB choices
 - Phase 8: all npm packages published && CI green && all success criteria checked off
+
 Source repos (archived, read-only — copy from these):
 - /Users/o/z/betterspace (SpacetimeDB)
 - /Users/o/z/lazyconvex (Convex)
 - /Users/o/z/lintmax (linting framework source)
+
 If any verification fails, fix it before moving forward. If stuck after 3 attempts on the same issue, consult Oracle. Never skip a failing check. Never leave tests broken. Commit after each completed task. Push after each completed phase.
+
 Do not stop until every task in every phase is done and every success criterion at the bottom of PLAN.md is checked off." --max-iterations=100
 ```

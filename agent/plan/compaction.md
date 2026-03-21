@@ -2,7 +2,9 @@
 
 ## Scope
 
-This document extracts and rewrites the compaction plan for context management in the agent harness. Reference test coverage:
+This document extracts and rewrites the compaction plan for context management in the agent harness.
+
+Reference test coverage:
 
 - oh-my-openagent compaction behavior test: `src/index.compaction-model-agnostic.static.test.ts`
 
@@ -12,17 +14,26 @@ Bounded live context keeps orchestrator runs stable:
 
 - Live window keeps the most recent 100 messages in active model context.
 - Older closed conversation segments are summarized into `compactionSummary`.
-- The summary is injected as a system prefix so key decisions remain available. Goal:
+- The summary is injected as a system prefix so key decisions remain available.
+
+Goal:
+
 - Preserve long-term context quality while preventing unbounded prompt growth.
 
 ## Compaction Trigger
 
-Compaction runs before generation starts. Trigger source:
+Compaction runs before generation starts.
+
+Trigger source:
 
 - `getContextSize` over thread messages + existing summary size.
 - Trigger if either threshold is exceeded:
   - `messageCount > 200`
-  - `charCount > 100_000` Threshold checks run before every orchestrator turn via `getContextSize`. Values are tunable backend config constants. Canonical flow:
+  - `charCount > 100_000`
+
+Threshold checks run before every orchestrator turn via `getContextSize`. Values are tunable backend config constants.
+
+Canonical flow:
 
 1. `compactIfNeeded`
 2. `getContextSize`
@@ -33,7 +44,9 @@ Compaction runs before generation starts. Trigger source:
 
 ### Cumulative Summary Requirement
 
-Compaction MUST be cumulative: each new summary is built from `previous compactionSummary + newly compacted message groups`. The `summarizeGroups` call receives the existing `compactionSummary` (if any) as a preamble, and the model generates a combined summary covering all previously compacted history plus the new groups. `setCompactionSummary` validates that `args.lastCompactedMessageId > state.lastCompactedMessageId` by `_creationTime` comparison before writing (monotonic guard); regressive or equal-boundary writes return `{ ok: false }`. This prevents context loss across multiple compaction rounds: without cumulative carry-forward, the second compaction would overwrite the first summary and lose the earlier compacted history from future model context.
+Compaction MUST be cumulative: each new summary is built from `previous compactionSummary + newly compacted message groups`. The `summarizeGroups` call receives the existing `compactionSummary` (if any) as a preamble, and the model generates a combined summary covering all previously compacted history plus the new groups. `setCompactionSummary` validates that `args.lastCompactedMessageId > state.lastCompactedMessageId` by `_creationTime` comparison before writing (monotonic guard); regressive or equal-boundary writes return `{ ok: false }`.
+
+This prevents context loss across multiple compaction rounds: without cumulative carry-forward, the second compaction would overwrite the first summary and lose the earlier compacted history from future model context.
 
 ```mermaid
 flowchart LR
@@ -58,7 +71,12 @@ Safety rule:
 
 - Compaction only summarizes closed prefixes.
 - Tool-call/result pairs must remain intact within grouping boundaries.
-- No partial in-flight segment is compacted. Since tools live inside assistant `parts` (not separate rows), a message is eligible for compaction only if: (1) `isComplete === true` AND (2) all `tool-call` parts (if any) have reached terminal status (`success` or `error`). Both conditions are required — a crashed partial assistant message with no tool calls but `isComplete === false` must NOT be compacted, even if it has no pending tool parts. The stale-message janitor (`cleanupStaleMessages`) repairs orphaned messages by setting `isComplete: true` and terminalizing tool parts, making them compaction-eligible. Grouping behavior:
+- No partial in-flight segment is compacted.
+
+Since tools live inside assistant `parts` (not separate rows), a message is eligible for compaction only if: (1) `isComplete === true` AND (2) all `tool-call` parts (if any) have reached terminal status (`success` or `error`). Both conditions are required — a crashed partial assistant message with no tool calls but `isComplete === false` must NOT be compacted, even if it has no pending tool parts. The stale-message janitor (`cleanupStaleMessages`) repairs orphaned messages by setting `isComplete: true` and terminalizing tool parts, making them compaction-eligible.
+
+Grouping behavior:
+
 - Start from oldest uncompacted message boundary.
 - Build contiguous ranges that are fully resolved.
 - Exclude unresolved tool-call regions and active tail.
@@ -72,6 +90,7 @@ flowchart TB
     M4[Assistant follow-up]
     M5[Recent live messages]
   end
+
   M1 --> G1[Closed Group A]
   M2 --> G2[Closed Group B]
   M3 --> G2
@@ -86,7 +105,9 @@ Compaction lock model:
 - Lock token is generated per attempt.
 - Lock state is stored on thread run state.
 - Lease expiry allows stale-lock recovery.
-- Save operation validates token ownership before write. Lifecycle:
+- Save operation validates token ownership before write.
+
+Lifecycle:
 
 1. Acquire token lock.
 2. Summarize eligible groups.
@@ -98,6 +119,7 @@ sequenceDiagram
   participant O as Orchestrator
   participant R as threadRunState
   participant C as Compaction
+
   O->>R: acquireCompactionLock(lockToken)
   R-->>O: ok / denied
   O->>C: summarizeGroups(...)
@@ -134,7 +156,9 @@ Ensures todos survive message compaction.
 - Before compaction: `snapshotTodos` captures current session todos
 - After compaction: `restoreTodosIfMissing` checks if todos still exist
 - If todos disappeared: restore from snapshot
-- If todos present: discard snapshot Reference: `oh-my-openagent/src/hooks/compaction-todo-preserver/hook.ts`
+- If todos present: discard snapshot
+
+Reference: `oh-my-openagent/src/hooks/compaction-todo-preserver/hook.ts`
 
 ## Tests
 

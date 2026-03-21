@@ -10,7 +10,9 @@ Scope:
 2. Backend configuration scaffolding and env validation
 3. Ownership-safe query/mutation wrappers
 4. Model selection abstraction with deterministic test fallback
-5. Session creation and thread mapping Outcome:
+5. Session creation and thread mapping
+
+Outcome:
 
 - Backend package is deployable, schema/type checks pass, and ownership boundaries are enforced.
 
@@ -22,7 +24,9 @@ Scope:
 2. CAS transitions for claim/enqueue/finish
 3. Streaming execution path and prompt chaining
 4. Message persistence and non-blocking queue behavior
-5. Worker lifecycle primitives Outcome:
+5. Worker lifecycle primitives
+
+Outcome:
 
 - Active-run isolation, deterministic queue behavior, and resilient runtime guards are in place.
 
@@ -33,7 +37,9 @@ Scope:
 1. Tool wiring (`delegate`, `todoRead`, `todoWrite`, `taskStatus`, `taskOutput`, `webSearch`, `mcpCall`, `mcpDiscover`)
 2. Background worker execution chain
 3. MCP discovery, invocation, cache refresh retry path
-4. Structured tool-error payloads with ownership-safe execution Outcome:
+4. Structured tool-error payloads with ownership-safe execution
+
+Outcome:
 
 - Delegation and tool workflows execute end-to-end with stable result contracts.
 
@@ -45,7 +51,9 @@ Scope:
 2. Stale task/run recovery
 3. Compaction lock and summary flow
 4. Token usage recording and aggregation
-5. Per-user rate limiting Outcome:
+5. Per-user rate limiting
+
+Outcome:
 
 - Retention, recovery, compaction, and limit enforcement run on schedule and preserve runtime invariants.
 
@@ -56,7 +64,9 @@ Scope:
 1. Session list, chat view, and settings page
 2. Streaming UI for text, reasoning, tools, and sources
 3. Task/todo/token side panels with responsive behavior
-4. Auth and test-mode wiring Outcome:
+4. Auth and test-mode wiring
+
+Outcome:
 
 - Core product flows are functional across desktop and mobile breakpoints.
 
@@ -67,7 +77,9 @@ Scope:
 1. Loading/error/empty states
 2. Accessibility constraints
 3. UX hardening across session/chat/settings flows
-4. Failure-path and performance hardening Outcome:
+4. Failure-path and performance hardening
+
+Outcome:
 
 - UX states are consistent and resilient under degraded conditions.
 
@@ -78,7 +90,9 @@ Scope:
 1. Backend convex-test coverage across runtime, ownership, and cron paths
 2. E2E infrastructure and Playwright suites
 3. Pre-E2E deployment workflow
-4. Final quality gates Outcome:
+4. Final quality gates
+
+Outcome:
 
 - Backend and E2E suites pass with documented totals in `testing.md`.
 

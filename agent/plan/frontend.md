@@ -5,7 +5,10 @@
 - Build a standalone Next.js App Router frontend at `agent/` with its own Convex client and `NEXT_PUBLIC_CONVEX_URL`.
 - Do not reuse demo-app Convex provider wiring from `web/cvx/*`; this app targets `backend/agent` only.
 - `oh-my-openagent` is CLI-first; this web UI is original product surface and must define its own rendering/model-state contract.
-- `@convex-dev/agent` UI hooks are removed from frontend usage. Use standard Convex React hooks (`useQuery`, `useMutation`). References:
+- `@convex-dev/agent` UI hooks are removed from frontend usage. Use standard Convex React hooks (`useQuery`, `useMutation`).
+
+References:
+
 - Next.js App Router: https://nextjs.org/docs/app
 - Convex React Client: https://docs.convex.dev/client/react
 
