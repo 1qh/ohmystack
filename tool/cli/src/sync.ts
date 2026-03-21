@@ -30,9 +30,10 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
   REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', 'lib/shared', '.github'],
   ROOT_CONFIG_FILES = new Set([
     'biome.jsonc',
+    'convex.yml',
     'lintmax.config.ts',
-    'noboil.yml',
     'package.json',
+    'spacetimedb.yml',
     'tsconfig.json',
     'turbo.json'
   ]),

@@ -8,25 +8,23 @@ import type {
 import { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@a/shared/react/devtools'
 import type { ConvexErrorData } from '../server/helpers'
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
-
 type DevCacheEntry = SharedDevCacheEntry
 interface DevError extends SharedDevError {
   data?: ConvexErrorData
 }
 type DevMutation = SharedDevMutation
 type DevSubscription = SharedDevSubscription
-
 const core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage }),
-  clearErrors = core.clearErrors,
-  clearMutations = core.clearMutations,
-  completeMutation = core.completeMutation,
-  pushError = core.pushError,
-  trackCacheAccess = core.trackCacheAccess,
-  trackMutation = core.trackMutation,
-  trackSubscription = core.trackSubscription,
-  untrackSubscription = core.untrackSubscription,
-  updateSubscription = core.updateSubscription,
-  updateSubscriptionData = core.updateSubscriptionData,
+  { clearErrors } = core,
+  { clearMutations } = core,
+  { completeMutation } = core,
+  { pushError } = core,
+  { trackCacheAccess } = core,
+  { trackMutation } = core,
+  { trackSubscription } = core,
+  { untrackSubscription } = core,
+  { updateSubscription } = core,
+  { updateSubscriptionData } = core,
   useDevErrors = () =>
     core.useDevStore({ deps: [], extra: () => ({}) }) as {
       cache: DevCacheEntry[]
@@ -37,7 +35,6 @@ const core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMess
       push: (e: unknown) => void
       subscriptions: DevSubscription[]
     }
-
 export type { DevCacheEntry, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

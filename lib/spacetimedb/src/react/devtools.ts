@@ -10,7 +10,7 @@ import { useSpacetimeDB } from 'spacetimedb/react'
 import type { ErrorData } from '../server/helpers'
 import type { ErrorCode } from '../server/types'
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
-
+type DevCacheEntry = SharedDevCacheEntry
 interface DevConnection {
   connectionError: string
   connectionId: string
@@ -19,14 +19,11 @@ interface DevConnection {
   isActive: boolean
   token: string
 }
-
-type DevCacheEntry = SharedDevCacheEntry
 interface DevError extends SharedDevError {
   data?: ErrorData
 }
 type DevMutation = SharedDevMutation
 type DevSubscription = SharedDevSubscription
-
 const toDisplay = (value: unknown): string => {
     if (value === null || value === undefined) return ''
     if (typeof value === 'string') return value
@@ -44,35 +41,41 @@ const toDisplay = (value: unknown): string => {
     return ''
   },
   core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage }),
-  clearErrors = core.clearErrors,
-  clearMutations = core.clearMutations,
-  completeMutation = core.completeMutation,
+  { clearErrors } = core,
+  { clearMutations } = core,
+  { completeMutation } = core,
   completeReducerCall = core.completeMutation,
-  pushError = core.pushError,
-  trackCacheAccess = core.trackCacheAccess,
-  trackMutation = core.trackMutation,
+  { pushError } = core,
+  { trackCacheAccess } = core,
+  { trackMutation } = core,
   trackReducerCall = core.trackMutation,
-  trackSubscription = core.trackSubscription,
-  untrackSubscription = core.untrackSubscription,
-  updateSubscription = core.updateSubscription,
-  updateSubscriptionData = core.updateSubscriptionData,
+  { trackSubscription } = core,
+  { untrackSubscription } = core,
+  { updateSubscription } = core,
+  { updateSubscriptionData } = core,
   injectError = (code: ErrorCode, opts?: { detail?: string; message?: string; op?: string; table?: string }) => {
     const data: ErrorData = { code, ...opts }
     pushError({ data, detail: opts?.detail ?? `Injected error: ${code}`, message: opts?.message ?? code })
   },
   useDevErrors = () => {
     const spacetime = useSpacetimeDB(),
-      { connectionError, connectionId, identity, isActive, token } = spacetime
-    const connection: DevConnection = {
-      connectionError: connectionError ? getErrorMessage(connectionError) : '',
-      connectionId: toDisplay(connectionId),
-      hasConnection: Boolean(spacetime.getConnection()),
-      identity: toDisplay(identity),
-      isActive,
-      token: token ?? ''
-    }
+      { connectionError, connectionId, identity, isActive, token } = spacetime,
+      connection: DevConnection = {
+        connectionError: connectionError ? getErrorMessage(connectionError) : '',
+        connectionId: toDisplay(connectionId),
+        hasConnection: Boolean(spacetime.getConnection()),
+        identity: toDisplay(identity),
+        isActive,
+        token: token ?? ''
+      }
     return core.useDevStore({
-      deps: [connection.connectionError, connection.connectionId, connection.identity, connection.isActive, connection.token],
+      deps: [
+        connection.connectionError,
+        connection.connectionId,
+        connection.identity,
+        connection.isActive,
+        connection.token
+      ],
       extra: () => ({ connection })
     }) as {
       cache: DevCacheEntry[]
@@ -85,7 +88,6 @@ const toDisplay = (value: unknown): string => {
       subscriptions: DevSubscription[]
     }
   }
-
 export type { DevCacheEntry, DevConnection, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

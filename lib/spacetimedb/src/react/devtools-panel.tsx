@@ -3,9 +3,9 @@
 /* oxlint-disable eslint/complexity */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
+import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import type { ErrorCode } from '../server/types'
 import type { DevConnection, DevError, DevMutation, DevSubscription } from './devtools'
 import { ERROR_MESSAGES } from '../server/types'
@@ -135,7 +135,6 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
       </li>
     )
   },
-  
   BetterspaceDevtools = ({
     buttonClassName,
     className,

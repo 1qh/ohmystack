@@ -1,25 +1,8 @@
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop */
 'use client'
 import { useEffect, useState } from 'react'
-
+import type { DevCacheEntry, DevSubscription } from './devtools'
 type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
-
-interface DevCacheEntry {
-  hitCount: number
-  id: string
-  key: string
-  missCount: number
-  stale: boolean
-  table: string
-}
-
-interface DevSubscription {
-  id: string
-  latencyMs: number
-  query: string
-  startedAt: number
-  status: 'error' | 'loaded' | 'pending'
-}
-
 const POSITION_CLASSES: Record<Position, string> = {
     'bottom-left': 'left-4 bottom-4',
     'bottom-right': 'right-4 bottom-4',
@@ -93,7 +76,10 @@ const POSITION_CLASSES: Record<Position, string> = {
       <li className='flex items-center gap-2 border-b border-zinc-800 px-2 py-1.5 text-xs last:border-b-0'>
         <span className='w-28 shrink-0 truncate font-mono text-zinc-400'>{sub.query}</span>
         <span className='relative h-3 min-w-0 flex-1 rounded-sm bg-zinc-800/50'>
-          <span className={`absolute top-0 h-full rounded-sm ${barColor}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+          <span
+            className={`absolute top-0 h-full rounded-sm ${barColor}`}
+            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+          />
         </span>
         <span className='w-12 shrink-0 text-right font-mono text-zinc-500 tabular-nums'>
           {sub.latencyMs > 0 ? `${sub.latencyMs}ms` : '...'}
@@ -101,6 +87,5 @@ const POSITION_CLASSES: Record<Position, string> = {
       </li>
     )
   }
-
-export { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar, WATERFALL_MAX_MS }
+export { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WATERFALL_MAX_MS, WaterfallBar }
 export type { DevCacheEntry, DevSubscription, Position }

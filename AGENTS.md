@@ -224,7 +224,7 @@ const Page = async () => {
 
 **`anyApi` trap**: Runtime is a Proxy accepting any property name — `api.blogprofile.get` (wrong casing) won’t type-error. Always match `api.<module>` to exact filenames. Rely on E2E tests.
 
-**Setup**: `docker compose -f noboil.yml up -d && bash genkey.sh && bun genenv.ts` → `convex env set` (JWT key needs `--` separator)
+**Setup**: `bun convex:up && bash genkey.sh && bun genenv.ts` → `convex env set` (JWT key needs `--` separator)
 
 ## SpacetimeDB
 
@@ -237,7 +237,7 @@ Internal, never published. Shared across both libraries: React hooks, server uti
 ## Known Gotchas
 
 - `next-env.d.ts` format mismatch — Next.js generates double quotes + semicolons, biome wants single + none. Add to biome ignore.
-- Docker port conflicts — Convex MinIO 9000/9001 vs SpacetimeDB MinIO. Use different ports in `noboil.yml`.
+- Docker port conflicts — Convex uses `convex.yml`, SpacetimeDB uses `spacetimedb.yml`. Run separately.
 
 ## Git
 

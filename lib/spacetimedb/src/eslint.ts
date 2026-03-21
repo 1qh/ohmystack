@@ -1,7 +1,7 @@
 /* eslint-disable one-var, max-depth */
+import { createEslintPluginBundle } from '@a/shared/eslint'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { createEslintPluginBundle } from '@a/shared/eslint'
 interface BaseNode {
   argument?: BaseNode
   async?: boolean

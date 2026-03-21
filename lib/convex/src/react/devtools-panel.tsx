@@ -2,9 +2,9 @@
 /* eslint-disable complexity, react-hooks/refs, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable eslint/complexity */
 'use client'
+import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import type { DevError, DevMutation, DevSubscription } from './devtools'
 import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
 /** Props for customizing the LazyConvex DevTools panel. */
@@ -134,7 +134,6 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
       </li>
     )
   },
-  
   /** Development-only floating panel that displays errors, subscriptions, mutations, and cache stats. */
   LazyConvexDevtools = ({
     buttonClassName,

@@ -1,43 +1,35 @@
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
-/* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
+/* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp, @typescript-eslint/promise-function-async */
 'use client'
 import type { ErrorInfo, ReactNode } from 'react'
 import { cn } from '@a/ui'
 import { Component } from 'react'
-
+interface CreateErrorBoundaryOptions {
+  readErrorCode: (error: Error) => string | undefined
+  readErrorMessage: (error: Error) => string
+}
 interface ErrorBoundaryProps {
   children: ReactNode
   className?: string
   fallback?: (props: { error: Error; resetErrorBoundary: () => void }) => ReactNode
   onError?: (error: Error, errorInfo: ErrorInfo) => void
 }
-
 interface ErrorBoundaryState {
   error: Error | null
 }
-
-interface CreateErrorBoundaryOptions {
-  displayName: string
-  readErrorCode: (error: Error) => string | undefined
-  readErrorMessage: (error: Error) => string
-}
-
-const createErrorBoundary = ({ displayName, readErrorCode, readErrorMessage }: CreateErrorBoundaryOptions) => {
+const createErrorBoundary = ({ readErrorCode, readErrorMessage }: CreateErrorBoundaryOptions) => {
   class SharedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {
       super(props)
       this.state = { error: null }
     }
-
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
       return { error }
     }
-
     override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
       const { onError } = this.props
       if (onError) onError(error, errorInfo)
     }
-
     override render() {
       const { error } = this.state,
         { children, className, fallback } = this.props
@@ -62,9 +54,7 @@ const createErrorBoundary = ({ displayName, readErrorCode, readErrorMessage }: C
       )
     }
   }
-
   return SharedErrorBoundary
 }
-
 export { createErrorBoundary }
-export type { ErrorBoundaryProps }
+export type { ErrorBoundaryProps, ErrorBoundaryState }

@@ -1,6 +1,10 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
-
+import { useEffect, useReducer } from 'react'
+interface CreateDevtoolsCoreOptions {
+  extractErrorData: (error: unknown) => unknown
+  getErrorDetail: (error: unknown) => string
+  getErrorMessage: (error: unknown) => string
+}
 interface DevCacheEntry {
   hitCount: number
   id: number
@@ -10,7 +14,6 @@ interface DevCacheEntry {
   stale: boolean
   table: string
 }
-
 interface DevError {
   data?: unknown
   detail: string
@@ -18,7 +21,6 @@ interface DevError {
   message: string
   timestamp: number
 }
-
 interface DevMutation {
   args: string
   durationMs: number
@@ -28,7 +30,6 @@ interface DevMutation {
   startedAt: number
   status: 'error' | 'pending' | 'success'
 }
-
 interface DevSubscription {
   args: string
   dataPreview: string
@@ -43,13 +44,6 @@ interface DevSubscription {
   status: 'error' | 'loaded' | 'loading'
   updateCount: number
 }
-
-interface CreateDevtoolsCoreOptions {
-  extractErrorData: (error: unknown) => unknown
-  getErrorDetail: (error: unknown) => string
-  getErrorMessage: (error: unknown) => string
-}
-
 const MAX_ERRORS = 50,
   MAX_MUTATIONS = 100,
   SLOW_THRESHOLD_MS = 5000,
@@ -61,7 +55,6 @@ const MAX_ERRORS = 50,
       subStore = new Map<number, DevSubscription>(),
       listeners: (() => void)[] = []
     let nextId = 1
-
     const notify = () => {
         for (const fn of listeners) fn()
       },
@@ -174,31 +167,27 @@ const MAX_ERRORS = 50,
         mutationStore.length = 0
         notify()
       },
-      useDevStore = <TExtra extends object>({ deps, extra }: { deps: unknown[]; extra: () => TExtra }) => {
-        const [, setTick] = useState(0)
+      useDevStore = <TExtra extends object>({ extra }: { deps: unknown[]; extra: () => TExtra }) => {
+        const [, bump] = useReducer((n: number) => n + 1, 0)
         useEffect(() => {
-          const fn = () => setTick(t => t + 1)
+          const fn = () => bump()
           listeners.push(fn)
           return () => {
             const idx = listeners.indexOf(fn)
             if (idx !== -1) listeners.splice(idx, 1)
           }
         }, [])
-        return useMemo(
-          () => ({
-            cache: [...cacheStore.values()],
-            clear: clearErrors,
-            clearMutations,
-            errors: [...errorStore],
-            mutations: [...mutationStore],
-            push: pushError,
-            subscriptions: [...subStore.values()],
-            ...extra()
-          }),
-          deps
-        )
+        return {
+          cache: [...cacheStore.values()],
+          clear: clearErrors,
+          clearMutations,
+          errors: [...errorStore],
+          mutations: [...mutationStore],
+          push: pushError,
+          subscriptions: [...subStore.values()],
+          ...extra()
+        }
       }
-
     return {
       clearErrors,
       clearMutations,
@@ -213,6 +202,5 @@ const MAX_ERRORS = 50,
       useDevStore
     }
   }
-
 export { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS }
 export type { DevCacheEntry, DevError, DevMutation, DevSubscription }

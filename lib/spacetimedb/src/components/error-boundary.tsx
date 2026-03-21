@@ -1,11 +1,9 @@
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
 // biome-ignore-all lint/suspicious/useAwait: async without await
-/* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp */
 'use client'
 import { createErrorBoundary } from '@a/shared/components/error-boundary'
-
-const asRecord = (value: unknown): null | { [key: string]: unknown } => {
-    if (typeof value === 'object' && value !== null) return value as { [key: string]: unknown }
+const asRecord = (value: unknown): null | Record<string, unknown> => {
+    if (typeof value === 'object' && value !== null) return value as Record<string, unknown>
     return null
   },
   readErrorCode = (error: Error): string | undefined => {
@@ -24,9 +22,7 @@ const asRecord = (value: unknown): null | { [key: string]: unknown } => {
     return 'Unknown error'
   },
   BetterspaceErrorBoundary = createErrorBoundary({
-    displayName: 'BetterspaceErrorBoundary',
     readErrorCode,
     readErrorMessage
   })
-
 export default BetterspaceErrorBoundary
