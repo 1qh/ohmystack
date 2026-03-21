@@ -12,6 +12,7 @@
     "./server/*": "./src/server/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
+    "./react/devtools-panel": "./src/react/devtools-panel.tsx",
     "./react/schema-playground": "./src/react/schema-playground.tsx"
   },
   "dependencies": {
