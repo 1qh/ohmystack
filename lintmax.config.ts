@@ -24,17 +24,6 @@ const backendLintIgnoreFiles = [
 
 export default defineConfig({
   biome: {
-    ignores: [
-      'expo/**/uniwind-env.d.ts',
-      'expo/**/uniwind-types.d.ts',
-      'web/*/*/next-env.d.ts',
-      'doc/next-env.d.ts',
-      'doc/.source',
-      'lib/ui/**',
-      '**/generated/**',
-      '**/_generated/**',
-      '**/module_bindings/**'
-    ],
     overrides: [
       {
         includes: ['expo/**'],
@@ -110,28 +99,8 @@ export default defineConfig({
     ],
     ignores: [...backendLintIgnoreFiles]
   },
-  ignores: [
-    '**/.source/**',
-    '**/_generated/**',
-    '**/generated/**',
-    '**/module_bindings/**',
-    'lib/rnr/**',
-    'lib/ui/**',
-    'web/*/*/next-env.d.ts',
-    'doc/next-env.d.ts',
-    'expo/**/uniwind-env.d.ts',
-    'expo/**/uniwind-types.d.ts'
-  ],
+  ignores: ['**/.source/**', 'lib/rnr/**', 'lib/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
   oxlint: {
-    ignores: [
-      '_generated/',
-      'expo/**/uniwind-env.d.ts',
-      'expo/**/uniwind-types.d.ts',
-      'generated/',
-      'module_bindings/',
-      'lib/ui/',
-      '.source/'
-    ],
     overrides: [
       {
         files: ['expo/**/*.tsx', 'expo/**/*.ts'],
