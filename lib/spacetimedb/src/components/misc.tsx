@@ -1,9 +1,8 @@
 'use client'
 import type { ComponentProps } from 'react'
-import { OrgAvatar, RoleBadge as SharedRoleBadge, createOfflineIndicator } from '@a/shared/components/misc'
+import { createOfflineIndicator, OrgAvatar, RoleBadge as SharedRoleBadge } from '@a/shared/components/misc'
 import { useSpacetimeDB } from 'spacetimedb/react'
 import type { OrgRole } from '../server/types'
-
 const useSpacetimeOnline = () => {
     const { isActive } = useSpacetimeDB()
     return isActive
@@ -12,5 +11,4 @@ const useSpacetimeOnline = () => {
     <SharedRoleBadge role={role} {...props} />
   ),
   OfflineIndicator = createOfflineIndicator(useSpacetimeOnline)
-
 export { OfflineIndicator, OrgAvatar, RoleBadge }

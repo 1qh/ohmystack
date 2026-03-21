@@ -1,30 +1,25 @@
 /* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
-/* eslint-disable max-depth */
-
+/* eslint-disable complexity, max-depth */
+interface CreateSchemaUtilsOptions {
+  baseTables?: (content: string) => SchemaTable[]
+  schemaFactoryMap?: Record<string, string>
+  wrapperFactories: string[]
+}
 interface FactoryCall {
   factory: string
   file: string
   options: string
   table: string
 }
-
 interface SchemaField {
   field: string
   type: string
 }
-
 interface SchemaTable {
   factory: string
   fields: SchemaField[]
   table: string
 }
-
-interface CreateSchemaUtilsOptions {
-  baseTables?: (content: string) => SchemaTable[]
-  schemaFactoryMap?: Record<string, string>
-  wrapperFactories: string[]
-}
-
 const childSchemaPat = /child\(\{[^}]*schema\s*:\s*object\(\{/gu,
   childNamePat = /(?<cname>\w+)\s*:\s*child\(/u,
   childValidPat = /child\(\{[^}]*foreignKey[^}]*parent[^}]*schema/u,
@@ -79,13 +74,14 @@ const childSchemaPat = /child\(\{[^}]*schema\s*:\s*object\(\{/gu,
     return fields
   },
   createSchemaUtils = ({ baseTables, schemaFactoryMap, wrapperFactories }: CreateSchemaUtilsOptions) => {
-    const mergedFactoryMap = { ...schemaFactoryMapBase, ...(schemaFactoryMap ?? {}) },
+    const mergedFactoryMap = { ...schemaFactoryMapBase, ...schemaFactoryMap },
       extractSchemaFields = (content: string): SchemaTable[] => {
         const tables = baseTables ? baseTables(content) : []
         for (const factory of [...wrapperFactories, 'child']) {
           const pat = factory === 'child' ? new RegExp(childSchemaPat.source, 'gu') : new RegExp(`${factory}\\(\\{`, 'gu')
-          let fm = pat.exec(content)
-          while (fm) {
+          for (;;) {
+            const fm = pat.exec(content)
+            if (!fm) break
             const startBlock = fm.index + fm[0].length
             if (factory === 'child') {
               const lookback = Math.max(0, fm.index - 50)
@@ -105,16 +101,15 @@ const childSchemaPat = /child\(\{[^}]*schema\s*:\s*object\(\{/gu,
               }
               const block = content.slice(startBlock, pos - 1),
                 pp = new RegExp(objPropPat.source, 'gu')
-              let pm = pp.exec(block)
-              while (pm) {
+              for (;;) {
+                const pm = pp.exec(block)
+                if (!pm) break
                 const tableName = pm.groups?.pname ?? 'unknown',
                   objStart = block.indexOf('{', pm.index + pm[0].length - 1) + 1,
                   fields = parseObjectFields(block, objStart)
                 tables.push({ factory: mergedFactoryMap[factory] ?? factory, fields, table: tableName })
-                pm = pp.exec(block)
               }
             }
-            fm = pat.exec(content)
           }
         }
         return tables
@@ -145,7 +140,6 @@ const childSchemaPat = /child\(\{[^}]*schema\s*:\s*object\(\{/gu,
       }
     return { endpointsForFactory, extractSchemaFields }
   }
-
 export type { CreateSchemaUtilsOptions, FactoryCall, SchemaField, SchemaTable }
 export {
   CACHE_BASE,

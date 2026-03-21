@@ -1,16 +1,13 @@
-/* eslint-disable no-await-in-loop */
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/useAwait: x
-import { DEFAULT_OPTIONS, createRetryUtils } from '@a/shared/retry'
+import { createRetryUtils, DEFAULT_OPTIONS } from '@a/shared/retry'
 import { sleep } from './constants'
-
 interface RetryOptions {
   base?: number
   initialDelayMs?: number
   maxAttempts?: number
   maxDelayMs?: number
 }
-
 const validateRetryOptions = (opts: Required<RetryOptions>) => {
     if (opts.maxAttempts < 1)
       throw new Error(
@@ -35,6 +32,5 @@ const validateRetryOptions = (opts: Required<RetryOptions>) => {
     wrapFinalError: (error: Error, opts: Required<RetryOptions>) =>
       new Error(`${error.message} (after ${opts.maxAttempts} attempts)`, { cause: error })
   })
-
 export type { RetryOptions }
 export { fetchWithRetry, withRetry }

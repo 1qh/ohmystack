@@ -1,10 +1,13 @@
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
 /* eslint-disable complexity, react-hooks/refs */
+/* eslint-disable @typescript-eslint/no-deprecated */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
+// biome-ignore-all lint/nursery/noFloatingPromises: event handler
+// biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 'use client'
 import type { Stepper as CoreStepper, Step } from '@stepperize/core'
 import type { StandardSchemaV1 } from '@tanstack/form-core'
-import type { ComponentProps, ReactNode, SyntheticEvent } from 'react'
+import type { ComponentProps, JSX, ReactNode, SyntheticEvent } from 'react'
 import type { output, ZodObject, ZodRawShape } from 'zod/v4'
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
@@ -16,42 +19,47 @@ import { useStore } from '@tanstack/react-store'
 import { Check } from 'lucide-react'
 import { useNavigationGuard } from 'next-navigation-guard'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-type ExtractSchema<Defs extends readonly StepDef[], Id extends string> = Extract<Defs[number], { id: Id }>['schema']
-
+interface DefineStepsAdapters<TFields> {
+  buildMeta: (schema: ZodObject<ZodRawShape>) => unknown
+  coerceOptionals: (schema: ZodObject<ZodRawShape>, values: Record<string, unknown>) => Record<string, unknown>
+  defaultValues: (schema: ZodObject<ZodRawShape>) => Record<string, unknown>
+  fields: TFields
+  onFinalSubmitError?: (error: unknown) => void
+  renderFormContext: (args: { children: ReactNode; value: FormContextValue }) => JSX.Element
+}
+interface FormApiLike {
+  handleSubmit: () => void
+  state: {
+    values: Record<string, unknown>
+  }
+  store: {
+    subscribe: (listener: () => void) => () => void
+  }
+}
+interface FormContextValue {
+  form: FormApiLike
+  meta: unknown
+  schema: ZodObject<ZodRawShape>
+  serverErrors: Record<string, unknown>
+}
 interface FormHandle {
   handleSubmit: () => void
   isDirty: boolean
   values: () => Record<string, unknown>
 }
-
 type InternalStep<Id extends string = string> = Step<Id, { label: string; schema: ZodObject<ZodRawShape> }>
-
 type StepDataMap<Defs extends readonly StepDef[]> = {
   [D in Defs[number] as D['id']]: output<D['schema']>
 }
-
 interface StepDef<Id extends string = string, S extends ZodObject<ZodRawShape> = ZodObject<ZodRawShape>> {
   id: Id
   label: string
   schema: S
 }
-
 interface StepFormCtx {
   onDirtyChange: (dirty: boolean) => void
   registerForm: (handle: FormHandle | null) => void
 }
-
-type StepIds<Defs extends readonly StepDef[]> = Defs[number]['id']
-
-interface StepIndicatorClassNames {
-  button?: string
-  label?: string
-  nav?: string
-  separator?: string
-  step?: string
-}
-
 interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentProps<'div'>, 'children'> {
   children: ReactNode
   indicator?: boolean
@@ -61,7 +69,14 @@ interface StepFormProps<Defs extends readonly StepDef[]> extends Omit<ComponentP
   stepper: StepperReturn<Defs>
   submitLabel?: string
 }
-
+type StepIds<Defs extends readonly StepDef[]> = Defs[number]['id']
+interface StepIndicatorClassNames {
+  button?: string
+  label?: string
+  nav?: string
+  separator?: string
+  step?: string
+}
 interface StepperReturn<Defs extends readonly StepDef[]> {
   error: Error | null
   inner: CoreStepper<InternalStep[]>
@@ -72,45 +87,16 @@ interface StepperReturn<Defs extends readonly StepDef[]> {
   submitAll: (data: Record<string, Record<string, unknown>>) => Promise<void>
   values: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
-
 interface StepProps<Defs extends readonly StepDef[], TFields, Id extends StepIds<Defs> = StepIds<Defs>> {
   id: Id
   render: (fields: TFields) => ReactNode
 }
-
 interface UseStepperOpts<Defs extends readonly StepDef[]> {
   onError?: (e: unknown) => void
   onSubmit: (data: StepDataMap<Defs>) => Promise<void> | void
   onSuccess?: () => void
   values?: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
-
-interface FormContextValue {
-  form: FormApiLike
-  meta: unknown
-  schema: ZodObject<ZodRawShape>
-  serverErrors: Record<string, unknown>
-}
-
-interface FormApiLike {
-  handleSubmit: () => void
-  state: {
-    values: Record<string, unknown>
-  }
-  store: {
-    subscribe: (listener: () => void) => () => void
-  }
-}
-
-interface DefineStepsAdapters<TFields> {
-  buildMeta: (schema: ZodObject<ZodRawShape>) => unknown
-  coerceOptionals: (schema: ZodObject<ZodRawShape>, values: Record<string, unknown>) => Record<string, unknown>
-  defaultValues: (schema: ZodObject<ZodRawShape>) => Record<string, unknown>
-  fields: TFields
-  onFinalSubmitError?: (error: unknown) => void
-  renderFormContext: (args: { children: ReactNode; value: FormContextValue }) => ReactNode
-}
-
 const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => {
   const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...defs: Defs) => {
     const internalSteps = defs.map(d => ({ id: d.id, label: d.label, schema: d.schema })) as unknown as InternalStep[],
@@ -151,7 +137,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
           values: opts.values ?? {}
         }
       },
-      StepContent = <Id extends StepIds<Defs>>({
+      StepContent = ({
         id,
         render,
         schemas,
@@ -159,7 +145,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         ctx
       }: {
         ctx: StepFormCtx
-        id: Id
+        id: StepIds<Defs>
         render: (f: TFields) => ReactNode
         schemas: Record<string, ZodObject<ZodRawShape>>
         values: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
@@ -174,7 +160,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
             defaultValues: resolved,
             validators: { onSubmit: schema as unknown as StandardSchemaV1<output<typeof schema>, unknown> }
           }) as unknown as FormApiLike,
-          { isDirty } = useStore(instance.store, st => ({ isDirty: (st as { isDirty: boolean }).isDirty }))
+          { isDirty } = useStore(instance.store as never, st => ({ isDirty: (st as { isDirty: boolean }).isDirty }))
         useEffect(() => {
           ctx.onDirtyChange(isDirty)
         }, [ctx, isDirty])
@@ -315,11 +301,15 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
               }
               stepDataRef.current[currentId] = normalized
               setHasSaved(true)
-              if (currentIsLast)
-                s.submitAll(stepDataRef.current).catch((error: unknown) => {
-                  adapters.onFinalSubmitError?.(error)
-                })
-              else s.inner.navigation.next()
+              if (currentIsLast) {
+                ;(async () => {
+                  try {
+                    await s.submitAll(stepDataRef.current)
+                  } catch (error) {
+                    adapters.onFinalSubmitError?.(error)
+                  }
+                })()
+              } else s.inner.navigation.next()
             },
             [currentId, currentIsLast, s]
           ),
@@ -334,7 +324,12 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         return (
           <div className={cn('space-y-6', className)} {...props}>
             {indicator ? (
-              <StepIndicator classNames={stepIndicatorClassNames} currentIndex={currentIdx} inner={s.inner} steps={s.steps} />
+              <StepIndicator
+                classNames={stepIndicatorClassNames}
+                currentIndex={currentIdx}
+                inner={s.inner}
+                steps={s.steps}
+              />
             ) : null}
             {s.error ? (
               <p className='rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
@@ -382,7 +377,10 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
           </div>
         )
       },
-      StepComponent = <Id extends StepIds<Defs>>({ id, render }: StepProps<Defs, TFields, Id>): null | ReturnType<typeof render> =>
+      StepComponent = <Id extends StepIds<Defs>>({
+        id,
+        render
+      }: StepProps<Defs, TFields, Id>): null | ReturnType<typeof render> =>
         schemaMap[id] ? null : render(adapters.fields),
       StepForm = Object.assign(StepFormComponent, { Step: StepComponent }) as typeof StepFormComponent & {
         Step: typeof StepComponent
@@ -395,6 +393,5 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
   }
   return defineSteps
 }
-
 export type { DefineStepsAdapters }
 export { createDefineSteps }

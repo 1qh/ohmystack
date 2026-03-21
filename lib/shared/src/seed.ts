@@ -1,21 +1,18 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import type { output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
-
-interface SeedHelpers {
-  cvFileKindOf: (field: ZodType) => 'file' | 'files' | null
-  isArrayType: (type: string) => boolean
-  isBooleanType: (type: string) => boolean
-  isNumberType: (type: string) => boolean
-  isOptionalField: (field: ZodType) => boolean
-  isStringType: (type: string) => boolean
-  unwrapZod: (field: ZodType) => { schema: undefined | ZodType; type: string }
+interface SeedHelpers<TFieldType, TSchemaInput> {
+  cvFileKindOf: (field: TSchemaInput) => unknown
+  isArrayType: (type: TFieldType) => boolean
+  isBooleanType: (type: TFieldType) => boolean
+  isNumberType: (type: TFieldType) => boolean
+  isOptionalField: (field: TSchemaInput) => boolean
+  isStringType: (type: TFieldType) => boolean
+  unwrapZod: (field: TSchemaInput) => { schema: undefined | ZodType; type: TFieldType }
 }
-
 interface SeedOptions {
   randomFileRef: () => string
   randomTableId: (tableName: string) => number | string
 }
-
 const WORDS = [
     'alpha',
     'bravo',
@@ -64,7 +61,7 @@ const WORDS = [
     const opts = (schema as { options?: readonly string[] }).options
     return opts && opts.length > 0 ? opts : undefined
   },
-  createSeedUtils = (helpers: SeedHelpers, options: SeedOptions) => {
+  createSeedUtils = <TFieldType, TSchemaInput>(helpers: SeedHelpers<TFieldType, TSchemaInput>, options: SeedOptions) => {
     const generateStringValue = (base: undefined | ZodType): string => {
         const opts = base ? getEnumOptions(base) : undefined
         if (opts) return randomPick(opts)
@@ -80,10 +77,10 @@ const WORDS = [
         return items
       },
       generateFieldValue = (field: ZodType): unknown => {
-        const cv = helpers.cvFileKindOf(field)
+        const cv = helpers.cvFileKindOf(field as unknown as TSchemaInput)
         if (cv === 'file') return options.randomFileRef()
         if (cv === 'files') return [options.randomFileRef(), options.randomFileRef()]
-        const { schema: base, type } = helpers.unwrapZod(field)
+        const { schema: base, type } = helpers.unwrapZod(field as unknown as TSchemaInput)
         if (helpers.isBooleanType(type)) return Math.random() > 0.5
         if (helpers.isNumberType(type)) return randomInt(1, 1000)
         if (helpers.isStringType(type)) return generateStringValue(base)
@@ -101,7 +98,8 @@ const WORDS = [
         const result: Record<string, unknown> = {}
         for (const k of Object.keys(schema.shape)) {
           const field = schema.shape[k] as ZodType
-          if (helpers.isOptionalField(field)) result[k] = Math.random() > 0.3 ? generateFieldValue(field) : undefined
+          if (helpers.isOptionalField(field as unknown as TSchemaInput))
+            result[k] = Math.random() > 0.3 ? generateFieldValue(field) : undefined
           else result[k] = generateFieldValue(field)
         }
         return result as output<ZodObject<S>>
@@ -113,6 +111,5 @@ const WORDS = [
       }
     return { generateFieldValue, generateOne, generateSeed }
   }
-
 export type { SeedHelpers, SeedOptions }
 export { createSeedUtils }

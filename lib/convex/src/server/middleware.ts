@@ -1,9 +1,7 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential middleware chain */
-/* eslint-disable no-await-in-loop */
 import { createComposeMiddleware, createInputSanitize, sanitizeRec, sanitizeString } from '@a/shared/server/middleware'
 import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from './types'
 import { log } from './helpers'
-
 const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareCtx => ({ ...ctx, operation: op }),
   composeMiddleware = (...middlewares: Middleware[]): GlobalHooks =>
     createComposeMiddleware({ middlewares, toMiddlewareCtx: withOp }) as GlobalHooks,
@@ -58,5 +56,4 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
     }
   },
   inputSanitize = (opts?: { fields?: string[] }): Middleware => createInputSanitize(opts) as Middleware
-
 export { auditLog, composeMiddleware, inputSanitize, sanitizeRec, sanitizeString, slowQueryWarn }

@@ -1,26 +1,22 @@
 'use client'
 import { useCallback, useId, useState } from 'react'
 import { toast } from 'sonner'
-
 interface BulkMutateToast {
   error?: ((error: unknown) => string) | string
   loading?: ((progress: BulkProgress) => string) | string
   success?: ((count: number) => string) | string
 }
-
 interface BulkProgress {
   failed: number
   pending: number
   succeeded: number
   total: number
 }
-
 interface BulkResult<R> {
   errors: unknown[]
   results: R[]
   settled: PromiseSettledResult<R>[]
 }
-
 interface UseBulkMutateOptions {
   onError?: ((error: unknown) => void) | false
   onProgress?: (progress: BulkProgress) => void
@@ -28,7 +24,6 @@ interface UseBulkMutateOptions {
   onSuccess?: (count: number) => void
   toast?: BulkMutateToast
 }
-
 const collectSettled = <R>(settled: PromiseSettledResult<R>[]): { errors: unknown[]; results: R[] } => {
     const results: R[] = [],
       errors: unknown[] = []
@@ -129,10 +124,9 @@ const collectSettled = <R>(settled: PromiseSettledResult<R>[]): { errors: unknow
             setProgress(null)
           }
         },
-        [bulkMax, defaultOnError, errorHandler, mutate, options, packageName, toastCfg, toastId]
+        [bulkMax, errorHandler, mutate, options, packageName, toastCfg, toastId]
       )
     return { isPending, progress, run }
   }
-
 export type { BulkMutateToast, BulkProgress, BulkResult, UseBulkMutateOptions }
 export { collectSettled, resolveBulkError, useBulkMutate }

@@ -1,20 +1,17 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/useAwait: x
 /* eslint-disable no-await-in-loop */
-
+interface RetryFactoryOptions {
+  sleep: (ms: number) => Promise<void>
+  validateOptions?: (opts: Required<RetryOptions>) => void
+  wrapFinalError?: (error: Error, opts: Required<RetryOptions>) => Error
+}
 interface RetryOptions {
   base?: number
   initialDelayMs?: number
   maxAttempts?: number
   maxDelayMs?: number
 }
-
-interface RetryFactoryOptions {
-  sleep: (ms: number) => Promise<void>
-  validateOptions?: (opts: Required<RetryOptions>) => void
-  wrapFinalError?: (error: Error, opts: Required<RetryOptions>) => Error
-}
-
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
     base: 2,
     initialDelayMs: 500,
@@ -54,6 +51,5 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
       }
     return { fetchWithRetry, withRetry }
   }
-
 export type { RetryFactoryOptions, RetryOptions }
 export { calculateDelay, createRetryUtils, DEFAULT_OPTIONS }

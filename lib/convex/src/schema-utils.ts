@@ -1,5 +1,5 @@
 /* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
-/* eslint-disable max-depth */
+import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
 import {
   CACHE_BASE,
   CHILD_BASE,
@@ -12,11 +12,8 @@ import {
   parseObjectFields,
   SINGLETON_BASE
 } from '@a/shared/schema-utils'
-import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
-
 const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'],
   { endpointsForFactory, extractSchemaFields } = createSchemaUtils({ wrapperFactories })
-
 export {
   CACHE_BASE,
   CHILD_BASE,

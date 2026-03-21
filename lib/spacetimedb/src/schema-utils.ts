@@ -1,5 +1,5 @@
 // biome-ignore-all lint/nursery/noUnnecessaryConditions: type narrowing
-/* eslint-disable max-depth */
+import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 import {
   CACHE_BASE,
@@ -13,8 +13,6 @@ import {
   parseObjectFields,
   SINGLETON_BASE
 } from '@a/shared/schema-utils'
-import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
-
 const tableCallPat = /(?<pname>\w+)\s*:\s*t\.table\(\{/gu,
   wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase', 'defineTables'],
   extractSpacetimeTables = (content: string): SchemaTable[] => {
@@ -35,7 +33,6 @@ const tableCallPat = /(?<pname>\w+)\s*:\s*t\.table\(\{/gu,
     schemaFactoryMap: { defineTables: 'spacetimeCrud' },
     wrapperFactories
   })
-
 export {
   CACHE_BASE,
   CHILD_BASE,

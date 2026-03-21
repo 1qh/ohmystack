@@ -1,39 +1,25 @@
 /* oxlint-disable eslint/complexity */
 'use client'
 import { useCallback, useMemo, useState } from 'react'
-
 interface FactoryCall {
   factory: string
   file: string
   options: string
   table: string
 }
-
-interface SchemaField {
-  field: string
-  type: string
-}
-
-interface SchemaTable {
-  factory: string
-  fields: SchemaField[]
-  table: string
-}
-
 interface PlaygroundLabels {
   generatedCountNoun: string
-  generatedEmptyWithSchema: string
   generatedEmptyWithoutSchema: string
+  generatedEmptyWithSchema: string
   generatedTitle: string
   tableItemsLabel: string
 }
-
 interface PlaygroundProps {
   className?: string
   defaultValue?: string
   endpointClassName?: string
-  extractSchemaFields: (content: string) => SchemaTable[]
   endpointsForFactory: (call: FactoryCall) => string[]
+  extractSchemaFields: (content: string) => SchemaTable[]
   inputClassName?: string
   labels: PlaygroundLabels
   onChange?: (value: string) => void
@@ -41,7 +27,15 @@ interface PlaygroundProps {
   readOnly?: boolean
   tableClassName?: string
 }
-
+interface SchemaField {
+  field: string
+  type: string
+}
+interface SchemaTable {
+  factory: string
+  fields: SchemaField[]
+  table: string
+}
 const FACTORY_COLORS: Record<string, string> = {
     cacheCrud: 'text-purple-400',
     childCrud: 'text-cyan-400',
@@ -143,7 +137,8 @@ const orgScoped = makeOrgScoped({
       }, [tables]),
       totalItems = useMemo(() => {
         let count = 0
-        for (const t of tables) count += endpointsForFactory({ factory: t.factory, file: '', options: '', table: t.table }).length
+        for (const t of tables)
+          count += endpointsForFactory({ factory: t.factory, file: '', options: '', table: t.table }).length
         return count
       }, [endpointsForFactory, tables])
     return (
@@ -181,7 +176,12 @@ const orgScoped = makeOrgScoped({
           ) : (
             <div className='space-y-3'>
               {tables.map(t => (
-                <TableCard endpointsForFactory={endpointsForFactory} key={`${t.factory}-${t.table}`} labels={labels} table={t} />
+                <TableCard
+                  endpointsForFactory={endpointsForFactory}
+                  key={`${t.factory}-${t.table}`}
+                  labels={labels}
+                  table={t}
+                />
               ))}
               <div className='rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-3'>
                 <p className='text-xs text-zinc-500'>
@@ -206,6 +206,5 @@ const orgScoped = makeOrgScoped({
       </div>
     )
   }
-
 export default SchemaPlayground
 export type { FactoryCall, PlaygroundLabels, PlaygroundProps, SchemaField, SchemaTable }

@@ -1,19 +1,14 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential middleware chain */
 /* eslint-disable no-await-in-loop */
-
-type Operation = 'create' | 'delete' | 'update'
-type Rec = Record<string, unknown>
-
-interface MiddlewareLike<MCtx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArgs, DeleteBeforeArgs, UpdateAfterArgs, UpdateBeforeArgs> {
-  afterCreate?: (ctx: MCtx, args: CreateAfterArgs) => Promise<void> | void
-  afterDelete?: (ctx: MCtx, args: DeleteAfterArgs) => Promise<void> | void
-  afterUpdate?: (ctx: MCtx, args: UpdateAfterArgs) => Promise<void> | void
-  beforeCreate?: (ctx: MCtx, args: CreateBeforeArgs) => Promise<Rec> | Rec
-  beforeDelete?: (ctx: MCtx, args: DeleteBeforeArgs) => Promise<void> | void
-  beforeUpdate?: (ctx: MCtx, args: UpdateBeforeArgs) => Promise<Rec> | Rec
-}
-
-interface GlobalHooksLike<Ctx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArgs, DeleteBeforeArgs, UpdateAfterArgs, UpdateBeforeArgs> {
+interface GlobalHooksLike<
+  Ctx,
+  CreateAfterArgs,
+  CreateBeforeArgs,
+  DeleteAfterArgs,
+  DeleteBeforeArgs,
+  UpdateAfterArgs,
+  UpdateBeforeArgs
+> {
   afterCreate?: (ctx: Ctx, args: CreateAfterArgs) => Promise<void>
   afterDelete?: (ctx: Ctx, args: DeleteAfterArgs) => Promise<void>
   afterUpdate?: (ctx: Ctx, args: UpdateAfterArgs) => Promise<void>
@@ -21,7 +16,24 @@ interface GlobalHooksLike<Ctx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArg
   beforeDelete?: (ctx: Ctx, args: DeleteBeforeArgs) => Promise<void>
   beforeUpdate?: (ctx: Ctx, args: UpdateBeforeArgs) => Promise<Rec>
 }
-
+interface MiddlewareLike<
+  MCtx,
+  CreateAfterArgs,
+  CreateBeforeArgs,
+  DeleteAfterArgs,
+  DeleteBeforeArgs,
+  UpdateAfterArgs,
+  UpdateBeforeArgs
+> {
+  afterCreate?: (ctx: MCtx, args: CreateAfterArgs) => Promise<void> | void
+  afterDelete?: (ctx: MCtx, args: DeleteAfterArgs) => Promise<void> | void
+  afterUpdate?: (ctx: MCtx, args: UpdateAfterArgs) => Promise<void> | void
+  beforeCreate?: (ctx: MCtx, args: CreateBeforeArgs) => Promise<Rec> | Rec
+  beforeDelete?: (ctx: MCtx, args: DeleteBeforeArgs) => Promise<void> | void
+  beforeUpdate?: (ctx: MCtx, args: UpdateBeforeArgs) => Promise<Rec> | Rec
+}
+type Operation = 'create' | 'delete' | 'update'
+type Rec = Record<string, unknown>
 const createComposeMiddleware = <
     Ctx,
     MCtx,
@@ -35,10 +47,34 @@ const createComposeMiddleware = <
     middlewares,
     toMiddlewareCtx
   }: {
-    middlewares: MiddlewareLike<MCtx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArgs, DeleteBeforeArgs, UpdateAfterArgs, UpdateBeforeArgs>[]
+    middlewares: MiddlewareLike<
+      MCtx,
+      CreateAfterArgs,
+      CreateBeforeArgs,
+      DeleteAfterArgs,
+      DeleteBeforeArgs,
+      UpdateAfterArgs,
+      UpdateBeforeArgs
+    >[]
     toMiddlewareCtx: (ctx: Ctx, op: Operation) => MCtx
-  }): GlobalHooksLike<Ctx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArgs, DeleteBeforeArgs, UpdateAfterArgs, UpdateBeforeArgs> => {
-    const hooks: GlobalHooksLike<Ctx, CreateAfterArgs, CreateBeforeArgs, DeleteAfterArgs, DeleteBeforeArgs, UpdateAfterArgs, UpdateBeforeArgs> = {},
+  }): GlobalHooksLike<
+    Ctx,
+    CreateAfterArgs,
+    CreateBeforeArgs,
+    DeleteAfterArgs,
+    DeleteBeforeArgs,
+    UpdateAfterArgs,
+    UpdateBeforeArgs
+  > => {
+    const hooks: GlobalHooksLike<
+        Ctx,
+        CreateAfterArgs,
+        CreateBeforeArgs,
+        DeleteAfterArgs,
+        DeleteBeforeArgs,
+        UpdateAfterArgs,
+        UpdateBeforeArgs
+      > = {},
       hasBeforeCreate = middlewares.some(mw => mw.beforeCreate),
       hasAfterCreate = middlewares.some(mw => mw.afterCreate),
       hasBeforeUpdate = middlewares.some(mw => mw.beforeUpdate),
@@ -114,7 +150,7 @@ const createComposeMiddleware = <
       beforeCreate: (_ctx, args) => {
         if (targetFields) {
           const result: Rec = { ...args.data }
-          for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f] as string)
+          for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f])
           return result
         }
         return sanitizeRec(args.data)
@@ -122,7 +158,7 @@ const createComposeMiddleware = <
       beforeUpdate: (_ctx, args) => {
         if (targetFields) {
           const result: Rec = { ...args.patch }
-          for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f] as string)
+          for (const f of targetFields) if (typeof result[f] === 'string') result[f] = sanitizeString(result[f])
           return result
         }
         return sanitizeRec(args.patch)
@@ -130,6 +166,5 @@ const createComposeMiddleware = <
       name: 'inputSanitize'
     }
   }
-
 export type { GlobalHooksLike, MiddlewareLike, Operation }
 export { createComposeMiddleware, createInputSanitize, sanitizeRec, sanitizeString }

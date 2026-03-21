@@ -3,7 +3,6 @@ import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Badge } from '@a/ui/badge'
-
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
     <Avatar {...props}>
       {src ? <AvatarImage src={src} /> : null}
@@ -20,8 +19,8 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
       {role}
     </Badge>
   ),
-  createOfflineIndicator = (useOnlineStatus: () => boolean) =>
-    ({ className, ...props }: ComponentProps<'p'>) => {
+  createOfflineIndicator = (useOnlineStatus: () => boolean) => {
+    const OfflineIndicator = ({ className, ...props }: ComponentProps<'p'>) => {
       const online = useOnlineStatus()
       if (online) return null
       return (
@@ -35,5 +34,7 @@ const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { na
         </p>
       )
     }
-
+    OfflineIndicator.displayName = 'OfflineIndicator'
+    return OfflineIndicator
+  }
 export { createOfflineIndicator, OrgAvatar, RoleBadge }

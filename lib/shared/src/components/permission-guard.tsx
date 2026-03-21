@@ -5,7 +5,6 @@ import { cn } from '@a/ui'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
 import Link from 'next/link'
-
 const PermissionGuard = ({
   backHref,
   backLabel,
@@ -33,5 +32,4 @@ const PermissionGuard = ({
     )
   return children
 }
-
 export default PermissionGuard

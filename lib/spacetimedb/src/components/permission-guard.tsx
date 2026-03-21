@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/promise-function-async */
 'use client'
 import type { ComponentProps, ReactNode } from 'react'
 import SharedPermissionGuard from '@a/shared/components/permission-guard'
 import type { OrgRole } from '../server/types'
-
 const PermissionGuard = ({
   allowedRoles,
   canAccess,
@@ -22,5 +20,4 @@ const PermissionGuard = ({
     resolvedAccess = canAccess ?? roleAllowed ?? true
   return <SharedPermissionGuard canAccess={resolvedAccess} {...props} />
 }
-
 export default PermissionGuard

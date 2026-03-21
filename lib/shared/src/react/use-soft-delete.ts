@@ -1,7 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
 import { useCallback } from 'react'
-
 interface SoftDeleteOpts<A extends { id: string }> {
   label?: string
   onError?: (error: unknown) => void
@@ -11,9 +10,7 @@ interface SoftDeleteOpts<A extends { id: string }> {
   toast: ToastFn
   undoMs: number
 }
-
 type ToastFn = (message: string, opts?: { action?: { label: string; onClick: () => void }; duration?: number }) => void
-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
   useSoftDelete = <A extends { id: string }>({
     label = 'Item',
@@ -47,6 +44,5 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
     )
     return { remove }
   }
-
 export type { SoftDeleteOpts, ToastFn }
 export { useSoftDelete }
