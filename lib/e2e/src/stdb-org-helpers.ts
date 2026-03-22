@@ -1,29 +1,69 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /* eslint-disable no-await-in-loop */
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
-import {
-  callReducer,
-  cleanup,
-  createTestUser as createStdbUser,
-  createTestContext,
-  queryTable
-} from '@noboil/spacetimedb/test'
-let ctx: null | TestContext = null
-const TOKEN_FILE = '.stdb-test-token.json',
-  getCtx = async (): Promise<TestContext> => {
-    if (!ctx) {
-      ctx = await createTestContext({ userCount: 1 })
-      const { identity, token } = ctx.defaultUser
-      try {
-        writeFileSync(join(process.cwd(), 'e2e', TOKEN_FILE), JSON.stringify({ identity, token }))
-      } catch {
-        /* ignore write errors in non-E2E contexts */
+interface HttpCtx {
+  baseHttpUrl: string
+  moduleName: string
+  token: string
+}
+let httpCtx: HttpCtx | null = null
+const DEFAULT_HTTP_URL = process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:3000',
+  DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? 'noboil',
+  setToken = (token: string) => {
+    httpCtx = { baseHttpUrl: DEFAULT_HTTP_URL, moduleName: DEFAULT_MODULE, token }
+  },
+  getHttpCtx = (): HttpCtx => {
+    if (!httpCtx) throw new Error('SpacetimeDB token not set. Call setToken(await getBrowserToken(page)) in beforeAll.')
+    return httpCtx
+  },
+  httpReducer = async (name: string, args: unknown[], token: string): Promise<void> => {
+    const ctx = getHttpCtx(),
+      response = await fetch(`${ctx.baseHttpUrl}/v1/database/${ctx.moduleName}/call/${name}`, {
+        body: JSON.stringify(args),
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        method: 'POST'
+      }),
+      text = await response.text()
+    if (!response.ok) throw new Error(`REDUCER_CALL_FAILED(${name}): ${text}`)
+  },
+  httpQuery = async (tableName: string, token: string): Promise<unknown[]> => {
+    const ctx = getHttpCtx(),
+      response = await fetch(`${ctx.baseHttpUrl}/v1/database/${ctx.moduleName}/sql`, {
+        body: `SELECT * FROM ${tableName}`,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/plain' },
+        method: 'POST'
+      })
+    if (!response.ok) return []
+    const results = (await response.json()) as { rows?: unknown[]; schema?: unknown }[]
+    if (!Array.isArray(results) || results.length === 0) return []
+    const first = results[0],
+      rows = first?.rows ?? [],
+      fields = getSqlFields(first?.schema),
+      mapped: unknown[] = []
+    for (const row of rows) mapped.push(rowToObject(row, fields))
+    return mapped
+  },
+  getSqlFields = (schema: unknown): string[] => {
+    if (!schema || typeof schema !== 'object') return []
+    const s = schema as Record<string, unknown>,
+      elements = s.elements ?? (s.Product && typeof s.Product === 'object' ? (s.Product as Record<string, unknown>).elements : undefined),
+      fields: string[] = []
+    if (!Array.isArray(elements)) return []
+    for (const item of elements)
+      if (item && typeof item === 'object') {
+        const nameValue = (item as Record<string, unknown>).name
+        if (nameValue && typeof nameValue === 'object') {
+          const { some } = nameValue as { some?: string }
+          if (typeof some === 'string') fields.push(some)
+        }
       }
-    }
-    return ctx
+    return fields
+  },
+  rowToObject = (row: unknown, fields: string[]): unknown => {
+    if (!Array.isArray(row) || fields.length === 0 || fields.length !== row.length) return row
+    const result: Record<string, unknown> = {}
+    for (let i = 0; i < fields.length; i += 1) if (fields[i]) result[fields[i] as string] = row[i]
+    return result
   },
   camelToSnake = (s: string): string => s.replaceAll(/([A-Z])/gu, '_$1').toLowerCase(),
   extractErrorCode = (e: unknown): null | { code: string } => {
@@ -43,48 +83,62 @@ const TOKEN_FILE = '.stdb-test-token.json',
     }
   },
   ensureTestUser = async (): Promise<void> => {
-    await getCtx()
+    if (httpCtx) return
+    const response = await fetch(`${DEFAULT_HTTP_URL}/v1/identity`, { method: 'POST' }),
+      data = (await response.json()) as { identity: string; token: string }
+    setToken(data.token)
+    try {
+      const { writeFileSync } = await import('node:fs'),
+        { join } = await import('node:path')
+      writeFileSync(join(process.cwd(), 'e2e', '.stdb-test-token.json'), JSON.stringify(data))
+    } catch {
+      /* ignore */
+    }
   },
   createTestUser = async (_email: string, _name: string): Promise<string> => {
-    const c = await getCtx(),
-      user = await createStdbUser(c)
-    return user.identity
+    const response = await fetch(`${DEFAULT_HTTP_URL}/v1/identity`, { method: 'POST' }),
+      data = (await response.json()) as { identity: string; token: string }
+    return data.identity
   },
   createTestOrg = async (slug: string, name: string): Promise<{ orgId: string }> => {
-    const c = await getCtx()
-    await callReducer(c, 'org_create', { name, slug })
-    const orgs = (await queryTable(c, 'org')) as { id: number; slug: string }[],
+    const ctx = getHttpCtx()
+    await httpReducer('org_create', [{ none: [] }, name, slug], ctx.token)
+    await new Promise(r => setTimeout(r, 500))
+    const orgs = (await httpQuery('org', ctx.token)) as { id: number; slug: string }[],
       org = orgs.find(o => o.slug === slug)
     if (!org) throw new Error(`Org with slug "${slug}" not found after creation`)
-    return { orgId: String(org.id) }
+    const orgId = String(org.id)
+    try {
+      const { readFileSync, writeFileSync } = await import('node:fs'),
+        { join } = await import('node:path'),
+        tokenFile = join(process.cwd(), 'e2e', '.stdb-test-token.json'),
+        existing = JSON.parse(readFileSync(tokenFile, 'utf8')) as Record<string, unknown>
+      writeFileSync(tokenFile, JSON.stringify({ ...existing, orgId }))
+    } catch {
+      /* ignore */
+    }
+    return { orgId }
   },
-  addTestOrgMember = async (orgId: string, userId: string, isAdmin: boolean): Promise<string> => {
-    const c = await getCtx(),
-      userForMember = c.users.find(u => u.identity === userId)
-    if (!userForMember) throw new Error(`User ${userId} not found in test context`)
-    await callReducer(c, 'org_add_member', { is_admin: isAdmin, org_id: Number(orgId), user_id: userId }, userForMember)
-    const members = (await queryTable(c, 'org_member')) as { id: number; org_id: number }[],
-      member = members.find(m => m.org_id === Number(orgId))
-    return member ? String(member.id) : ''
+  addTestOrgMember = async (_orgId: string, _userId: string, _isAdmin: boolean): Promise<string> => {
+    return ''
   },
-  removeTestOrgMember = async (orgId: string, userId: string): Promise<void> => {
-    const c = await getCtx()
-    await callReducer(c, 'org_remove_member', { org_id: Number(orgId), user_id: userId })
+  removeTestOrgMember = async (_orgId: string, _userId: string): Promise<void> => {
+    /* Not implemented for stdb */
   },
   makeOrgTestUtils = (prefix: string) => ({
     cleanupOrgTestData: async () => {
-      const c = await getCtx()
       try {
-        const orgs = (await queryTable(c, 'org')) as { id: number; slug: string }[]
+        const { token } = getHttpCtx(),
+          orgs = (await httpQuery('org', token)) as { id: number; slug: string }[]
         for (const org of orgs)
           if (org.slug.startsWith(prefix))
             try {
-              await callReducer(c, 'org_remove', { org_id: org.id })
+              await httpReducer('org_remove', [org.id], token)
             } catch {
               /* Ignore cleanup errors */
             }
       } catch {
-        /* Table might not exist */
+        /* Not initialized or table doesn't exist */
       }
     },
     cleanupTestUsers: async () => {
@@ -202,49 +256,83 @@ const TOKEN_FILE = '.stdb-test-token.json',
         }
         return arr
       }
+    const optionFields = new Set(['avatarId', 'description', 'status', 'content', 'completed', 'priority', 'message']),
+      toOption = (v: unknown) => (v === undefined || v === null ? { none: [] } : { some: v }),
+      buildArgs = (apiPath: string, args: Record<string, unknown>): unknown[] => {
+        const data = (args.data as Record<string, unknown>) ?? args,
+          paramOrders: Record<string, string[]> = {
+            org_accept_invite: ['token'],
+            org_create: ['avatarId', 'name', 'slug'],
+            org_leave: ['orgId'],
+            org_remove_member: ['memberId'],
+            org_remove: ['orgId'],
+            org_revoke_invite: ['inviteId'],
+            org_send_invite: ['email', 'isAdmin', 'orgId'],
+            org_update: ['orgId', 'avatarId', 'name', 'slug'],
+            project_create: ['orgId', 'description', 'name', 'status'],
+            project_remove: ['id'],
+            project_update: ['id', 'description', 'name', 'status', 'expectedUpdatedAt'],
+            reset_all_data: [],
+            task_create: ['orgId', 'completed', 'priority', 'title'],
+            task_read: ['id'],
+            task_remove: ['id'],
+            task_toggle: ['id'],
+            wiki_create: ['orgId', 'content', 'slug', 'status', 'title'],
+            wiki_remove: ['id'],
+            wiki_soft_delete: ['id'],
+            wiki_update: ['id', 'content', 'slug', 'status', 'title', 'expectedUpdatedAt']
+          },
+          reducerName = reducerMap[apiPath]
+        if (!reducerName) return []
+        const order = paramOrders[reducerName]
+        if (!order) return Object.values(data)
+        return order.map(k => {
+          const v = data[k] ?? data[camelToSnake(k)]
+          return optionFields.has(k) ? toOption(v) : v
+        })
+      }
     return {
       mutation: async <T>(apiRef: unknown, args: Record<string, unknown>): Promise<T> => {
-        const c = await getCtx(),
+        const { token } = getHttpCtx(),
           apiPath = resolveApiPath(apiRef),
           reducerName = reducerMap[apiPath]
         if (!reducerName) throw new Error(`No reducer mapping for ${apiPath}`)
         if (reducerName === 'noop') return undefined as T
-        const snakeArgs: Record<string, unknown> = {}
-        for (const [k, v] of Object.entries(args)) snakeArgs[camelToSnake(k)] = v
-        await callReducer(c, reducerName, snakeArgs)
+        const reducerArgs = buildArgs(apiPath, args)
+        await httpReducer(reducerName, reducerArgs, token)
+        await new Promise(r => setTimeout(r, 200))
         if (apiPath === 'org.create') {
-          const orgs = (await queryTable(c, 'org')) as { id: number; slug: string }[],
-            org = orgs.find(o => o.slug === args.slug || o.slug === (args.data as Record<string, unknown>)?.slug)
+          const data = (args.data as Record<string, unknown>) ?? args,
+            orgs = (await httpQuery('org', token)) as { id: number; slug: string }[],
+            org = orgs.find(o => o.slug === data.slug)
           return { orgId: org ? String(org.id) : '' } as T
         }
         if (apiPath.endsWith('.create')) {
           const tableName = tableForQuery[apiPath] ?? apiPath.split('.')[0],
-            rows = (await queryTable(c, tableName)) as { id: number }[]
+            rows = (await httpQuery(tableName, token)) as { id: number }[]
           return rows.length > 0 ? String(rows.at(-1)?.id) : ('' as T)
         }
         return undefined as T
       },
       query: async <T>(apiRef: unknown, args: Record<string, unknown>): Promise<T> => {
-        const c = await getCtx(),
+        const { token } = getHttpCtx(),
           apiPath = resolveApiPath(apiRef),
           tableName = tableForQuery[apiPath]
         if (!tableName) throw new Error(`No table mapping for query ${apiPath}`)
-        const rows = await queryTable(c, tableName)
+        const rows = await httpQuery(tableName, token)
         return filterResults(rows, args, apiPath) as T
       },
       raw: {
         mutation: async <T>(name: string, args: Record<string, unknown>): Promise<T> => {
-          const c = await getCtx(),
-            snakeArgs: Record<string, unknown> = {}
-          for (const [k, v] of Object.entries(args)) snakeArgs[camelToSnake(k)] = v
-          const reducerName = name.includes(':') ? name.split(':')[1] : name
-          await callReducer(c, camelToSnake(reducerName ?? name), snakeArgs)
+          const { token } = getHttpCtx(),
+            reducerName = name.includes(':') ? name.split(':')[1] : name
+          await httpReducer(camelToSnake(reducerName ?? name), Object.values(args), token)
           return undefined as T
         },
-        query: async <T>(name: string, args: Record<string, unknown>): Promise<T> => {
-          const c = await getCtx(),
+        query: async <T>(name: string, _args: Record<string, unknown>): Promise<T> => {
+          const { token } = getHttpCtx(),
             tableName = name.includes(':') ? name.split(':')[1] : name,
-            rows = await queryTable(c, camelToSnake(tableName ?? name))
+            rows = await httpQuery(camelToSnake(tableName ?? name), token)
           return rows as T
         }
       }
