@@ -252,12 +252,13 @@ Internal, never published. Workspace alias `@a/shared`. Both libraries import fr
 - LSP errors in `tool/cli/src/*.ts` and `lib/*/src/doctor.ts` are false positives — `bun run tsc` passes fine.
 - Base UI Switch renders as `<span>` not `<button>` — use `[role="switch"]` selector in E2E tests, never `button[role="switch"]`.
 - SpacetimeDB CLI must match SDK version — after `bun i`, check `spacetime version list` vs `node_modules/spacetimedb/package.json`. Mismatched CLI generates bindings missing `accessor` field on indexes, causing silent client-side connection failure. Fix: `spacetime version upgrade && spacetime publish ... && spacetime generate ...`.
-- SpacetimeDB v2.0 index accessors (`table.slug`, `table.id`) are NOT iterable. Don't pass them to `for..of` — iterate the table directly.
-- SpacetimeDB E2E: republish module before running tests (`bun spacetime:publish`). Stale module state causes "fatal error" on reducers.
+- SpacetimeDB v2.0 index accessors (`table.slug`, `table.id`) are NOT iterable. Don’t pass them to `for..of` — iterate the table directly.
+- SpacetimeDB E2E: republish module before running tests (`bun spacetime:publish`). Stale module state causes “fatal error” on reducers.
 - SpacetimeDB E2E: stdb blog avatar upload test requires working MinIO presign endpoint. Check MinIO container health.
 - Shimmer component (`@a/ui/ai-elements/shimmer`) requires `as` prop (e.g. `as="p"`). Without it, `motion.create(undefined)` crashes.
-- SpacetimeDB org E2E: UI tests (`org.test.ts`, `org-members.test.ts`, etc.) use Convex `createTestOrg`/`tc.query` to set up and verify data. These create data in Convex, not SpacetimeDB. The stdb browser reads from SpacetimeDB, so UI tests that depend on `beforeAll` data setup fail. Only onboarding tests (create via UI) and API tests (Convex CRUD) pass.
-- SpacetimeDB blog avatar E2E: requires MinIO presign endpoint at `/api/upload/presign`. Check MinIO container + bucket setup.
+- SpacetimeDB org E2E UI: data created via HTTP API in `beforeAll` may not appear in browser WebSocket subscriptions. The SpacetimeDB SDK subscription initial snapshot sometimes misses HTTP-created rows. Affected tests: "projects/wiki/settings list shows created X". API tests pass because they query via HTTP.
+- SpacetimeDB org E2E: test helpers (`lib/e2e/src/stdb-org-helpers.ts`) share identity with browser via `addInitScript` + `activeOrgId` cookie. Run `spacetime publish --delete-data` before test runs.
+- SpacetimeDB blog avatar E2E: requires MinIO with public-read bucket. Setup: `docker exec noboil-stdb-minio-1 mc mb --ignore-existing local/mybucket && docker exec noboil-stdb-minio-1 mc anonymous set download local/mybucket`. Set `.env`: `S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_ENDPOINT=http://localhost:9002 S3_BUCKET=mybucket`.
 
 ## Git
 
