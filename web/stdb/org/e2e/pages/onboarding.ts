@@ -65,7 +65,7 @@ class OnboardingPage extends BasePage {
     return this.page.locator('[data-testid="orgAvatar"] input[type="file"]')
   }
   public getOrgNameInput(): Locator {
-    return this.page.getByLabel('Name', { exact: true })
+    return this.page.getByRole('textbox', { name: 'Name' })
   }
   public getOrgSlugInput(): Locator {
     return this.page.getByLabel('URL Slug')

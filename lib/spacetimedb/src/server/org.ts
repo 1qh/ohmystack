@@ -507,7 +507,7 @@ const makeOptionalFields = (fields: OrgFieldBuilders) => {
     orgMemberPk: tbl => asRec(tbl).id as OrgMemberPkLike<MemberRow, MemberId>,
     orgMemberTable: tables.orgMember as (db: DB) => OrgMemberTableLike<MemberRow>,
     orgPk: tbl => asRec(tbl).id as OrgPkLike<OrgRow, OrgId>,
-    orgSlugIndex: tbl => asRec(tbl).slug as Iterable<OrgRow>,
+    orgSlugIndex: tbl => tbl,
     orgTable: tables.org as (db: DB) => Iterable<OrgRow> & { insert: (row: OrgRow) => OrgRow }
   })
 export type {
