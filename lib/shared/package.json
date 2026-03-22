@@ -9,6 +9,7 @@
     "./schema-utils": "./src/schema-utils.ts",
     "./seed": "./src/seed.ts",
     "./eslint": "./src/eslint.ts",
+    "./guard": "./src/guard.ts",
     "./components/fields": "./src/components/fields.tsx",
     "./server/*": "./src/server/*.ts",
     "./components/*": "./src/components/*.tsx",
