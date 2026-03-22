@@ -61,7 +61,7 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
       <Spinner className='size-8' data-testid='delete-spinner' />
     ) : (
       <AlertDialog>
-        <AlertDialogTrigger render={deleteTrigger} />
+        <AlertDialogTrigger data-testid='delete-blog-trigger' render={deleteTrigger} />
         <AlertDialogContent data-testid='delete-dialog'>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>Delete blog?</AlertDialogTitle>

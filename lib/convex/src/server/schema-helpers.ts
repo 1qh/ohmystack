@@ -80,7 +80,7 @@ const baseTable = <T extends ZodRawShape>(s: BaseSchema<T>) =>
    */
   orgTables = () => ({
     org: defineTable({
-      avatarId: v.optional(v.id('_storage')),
+      avatarId: v.optional(v.union(v.null(), v.id('_storage'))),
       name: v.string(),
       slug: v.string(),
       updatedAt: v.number(),

@@ -23,7 +23,7 @@ interface OrgDocLike {
   [k: string]: unknown
   _creationTime: number
   _id: GenericId<'org'>
-  avatarId?: GenericId<'_storage'>
+  avatarId?: GenericId<'_storage'> | null
   name: string
   slug: string
   updatedAt: number

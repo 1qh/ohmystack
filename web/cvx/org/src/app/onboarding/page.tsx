@@ -23,7 +23,7 @@ const { StepForm, useStepper } = defineSteps(
           await upsert({ ...d.profile, ...d.preferences })
           await create({
             data: {
-              avatarId: d.appearance.orgAvatar,
+              ...(d.appearance.orgAvatar ? { avatarId: d.appearance.orgAvatar } : {}),
               name: d.org.name,
               slug: d.org.slug
             }

@@ -109,7 +109,7 @@ test.describe
       await page.locator('[href*="/edit"]').first().click()
       await page.getByTestId('settings-trigger').first().click()
       await expect(page.getByTestId('settings-popover')).toBeVisible()
-      const publishSwitch = page.locator('[data-testid="settings-popover"]').locator('button[role="switch"]')
+      const publishSwitch = page.locator('[data-testid="settings-popover"]').locator('[role="switch"]')
       await publishSwitch.click()
       await page.getByTestId('settings-popover').locator('button[type="submit"]').click()
       await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 })
