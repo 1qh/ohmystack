@@ -36,14 +36,5 @@ const readTokenData = (): { identity: string; orgId?: string; token: string } | 
       },
       { t: data.token }
     )
-    await page.goto('/')
-    await page.evaluate(
-      ({ t }) => {
-        window.localStorage.setItem('spacetimedb.token', t)
-      },
-      { t: data.token }
-    )
-    await page.reload()
-    await page.waitForTimeout(500)
   }
 export { login }
