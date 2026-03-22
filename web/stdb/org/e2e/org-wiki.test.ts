@@ -3,9 +3,9 @@
 // oxlint-disable no-await-in-loop
 /* eslint-disable no-await-in-loop */
 import type { Page } from '@playwright/test'
-import { login } from '@a/e2e/helpers'
-import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
+import { login } from './helpers'
+import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from './helpers'
 const testPrefix = `e2e-org-wiki-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
 let activeOrgId = ''

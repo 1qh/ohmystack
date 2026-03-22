@@ -1,9 +1,9 @@
-// biome-ignore-all lint/performance/useTopLevelRegex: test file
-// biome-ignore-all lint/nursery/useGlobalThis: browser API
-import { login } from '@a/e2e/helpers'
-import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from '@a/e2e/org-helpers'
 import path from 'node:path'
 import { expect, test } from './fixtures'
+// biome-ignore-all lint/performance/useTopLevelRegex: test file
+// biome-ignore-all lint/nursery/useGlobalThis: browser API
+import { login } from './helpers'
+import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from './helpers'
 const testPrefix = `e2e-onboard-${Date.now()}`,
   { cleanupOrgTestData, generateSlug } = makeOrgTestUtils(testPrefix)
 test.describe

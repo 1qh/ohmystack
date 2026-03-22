@@ -1,7 +1,7 @@
-// biome-ignore-all lint/performance/useTopLevelRegex: test file
-import { login } from '@a/e2e/helpers'
-import { addTestOrgMember, createTestOrg, createTestUser, ensureTestUser, makeOrgTestUtils } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
+// biome-ignore-all lint/performance/useTopLevelRegex: test file
+import { login } from './helpers'
+import { addTestOrgMember, createTestOrg, createTestUser, ensureTestUser, makeOrgTestUtils } from './helpers'
 const testPrefix = `e2e-org-settings-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
   readStringId = (value: unknown): string => {

@@ -9,6 +9,7 @@
     "./global-teardown": "./src/global-teardown.ts",
     "./helpers": "./src/helpers.ts",
     "./org-helpers": "./src/org-helpers.ts",
+    "./stdb-org-helpers": "./src/stdb-org-helpers.ts",
     "./auth-proxy": "./src/auth-proxy.ts",
     "./playwright-config": "./src/playwright-config.ts"
   },
