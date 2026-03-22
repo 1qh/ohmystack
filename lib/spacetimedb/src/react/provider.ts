@@ -205,14 +205,20 @@ const HTTP_OK = 200,
       key = `${resolvedUri}::${moduleName}`,
       cache = getBuilderCache<TBuilder>(DbConnection),
       existing = cache.get(key)
-    if (existing) return existing
+    const currentToken = tokenStore?.get()
+    if (existing) {
+      const cachedToken = (existing as unknown as { _cachedToken?: string })._cachedToken
+      if (cachedToken === currentToken) return existing
+      cache.delete(key)
+    }
     const builder = DbConnection.builder()
       .withUri(resolvedUri)
       .withDatabaseName(moduleName)
-      .withToken(tokenStore?.get())
+      .withToken(currentToken)
       .onConnect((_connection, _identity, token) => {
         if (tokenStore) tokenStore.store(token)
       })
+    ;(builder as unknown as { _cachedToken?: string })._cachedToken = currentToken
     cache.set(key, builder)
     return builder
   }

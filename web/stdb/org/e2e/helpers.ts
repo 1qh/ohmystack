@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 export {
   addTestOrgMember,
@@ -14,12 +14,26 @@ export {
   setupOrg,
   tc
 } from '@a/e2e/stdb-org-helpers'
-const readTokenData = (): { identity: string; orgId?: string; token: string } | null => {
+interface PendingAction {
+  args: unknown[]
+  reducer: string
+}
+const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
+  PENDING_FILE = join(import.meta.dirname, '.stdb-pending-actions.json'),
+  readTokenData = (): { identity: string; orgId?: string; token: string } | null => {
     try {
-      const raw = readFileSync(join(import.meta.dirname, '.stdb-test-token.json'), 'utf8')
-      return JSON.parse(raw) as { identity: string; orgId?: string; token: string }
+      return JSON.parse(readFileSync(TOKEN_FILE, 'utf8')) as { identity: string; orgId?: string; token: string }
     } catch {
       return null
+    }
+  },
+  readPendingActions = (): PendingAction[] => {
+    try {
+      const raw = readFileSync(PENDING_FILE, 'utf8')
+      writeFileSync(PENDING_FILE, '[]')
+      return JSON.parse(raw) as PendingAction[]
+    } catch {
+      return []
     }
   },
   login = async (page?: Page): Promise<void> => {
@@ -36,5 +50,21 @@ const readTokenData = (): { identity: string; orgId?: string; token: string } | 
       },
       { t: data.token }
     )
+    const pending = readPendingActions()
+    if (pending.length > 0) {
+      await page.goto('/')
+      await page.waitForTimeout(2000)
+      for (const action of pending)
+        await page.evaluate(
+          async ({ args, reducer }) => {
+            const stdb = (globalThis as Record<string, unknown>).__SPACETIMEDB_CONNECTION__ as
+              | { reducers: Record<string, (...a: unknown[]) => Promise<void>> }
+              | undefined
+            if (stdb?.reducers?.[reducer]) await stdb.reducers[reducer](...args)
+          },
+          action
+        )
+      await page.waitForTimeout(1000)
+    }
   }
 export { login }
