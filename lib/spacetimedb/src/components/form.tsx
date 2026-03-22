@@ -1,16 +1,15 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable react/jsx-handler-names */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
+import type { useNavigationGuard } from 'next-navigation-guard'
 import type { ComponentProps, ReactNode } from 'react'
 import type { infer as zinfer, ZodObject, ZodRawShape } from 'zod/v4'
-import { cn } from '@a/ui'
+import { AutoSaveIndicator, ConflictDialog, createFileFieldWarning, useWithGuard } from '@a/shared/components/form'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent } from '@a/ui/dialog'
-import { useNavigationGuard } from 'next-navigation-guard'
-import { use, useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { FormReturn as BaseFormReturn, ConflictData, FormToastOption } from '../react/form'
 import type { UndefinedToOptional } from '../zod'
 import type { Api } from './fields'
@@ -18,56 +17,6 @@ import { DevtoolsAutoMount } from '../react/devtools-panel'
 import { resolveFormToast, useForm as useBaseForm } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
-/** Modal that shows concurrent edit conflicts with diff and resolution options. */
-const ConflictDialog = ({
-  className,
-  conflict,
-  onResolve,
-  ...props
-}: Omit<ComponentProps<typeof DialogContent>, 'children'> & {
-  conflict: ConflictData | null
-  onResolve: (action: 'cancel' | 'overwrite' | 'reload') => void
-}) => (
-  <Dialog open={Boolean(conflict)}>
-    <DialogContent
-      className={cn('[&>button]:hidden', className)}
-      {...props}
-      onEscapeKeyDown={() => onResolve('cancel')}
-      onInteractOutside={() => onResolve('cancel')}>
-      <h2 className='text-lg font-semibold'>Conflict Detected</h2>
-      <p className='text-sm text-muted-foreground'>
-        This record was modified by someone else. Choose how to resolve the conflict.
-      </p>
-      {conflict?.current || conflict?.incoming ? (
-        <div className='space-y-3'>
-          {conflict.current ? (
-            <div className='rounded-lg bg-muted p-3'>
-              <p className='mb-1 text-xs font-medium text-muted-foreground'>Server version:</p>
-              <pre className='text-xs'>{JSON.stringify(conflict.current, null, 2)}</pre>
-            </div>
-          ) : null}
-          {conflict.incoming ? (
-            <div className='rounded-lg bg-muted p-3'>
-              <p className='mb-1 text-xs font-medium text-muted-foreground'>Your version:</p>
-              <pre className='text-xs'>{JSON.stringify(conflict.incoming, null, 2)}</pre>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      <div className='flex justify-end gap-2'>
-        <Button onClick={() => onResolve('cancel')} variant='outline'>
-          Cancel
-        </Button>
-        <Button onClick={() => onResolve('reload')} variant='outline'>
-          Reload
-        </Button>
-        <Button onClick={() => onResolve('overwrite')} variant='destructive'>
-          Overwrite
-        </Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-)
 interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> extends BaseFormReturn<T, S> {
   guard: ReturnType<typeof useNavigationGuard>
 }
@@ -108,23 +57,10 @@ type Widen<T> = T extends string
           ? { [K in keyof T]: Widen<T[K]> }
           : T
 type WithName<P, K> = Omit<P, 'name'> & { name: K }
-const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>(
-    base: BaseFormReturn<T, S>
-  ): FormReturn<T, S> => {
-    const dirty = base.isDirty || base.isPending,
-      guard = useNavigationGuard({ enabled: dirty })
-    useEffect(() => {
-      if (!dirty) return
-      const h = (e: BeforeUnloadEvent) => {
-        e.preventDefault()
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        e.returnValue = ''
-      }
-      window.addEventListener('beforeunload', h)
-      return () => window.removeEventListener('beforeunload', h)
-    }, [dirty])
-    return { ...base, guard }
-  },
+const FileFieldWarning = createFileFieldWarning({
+    fileApiContext: FileApiContext,
+    messagePrefix: '[@noboil/spacetimedb]'
+  }),
   useForm = <S extends ZodObject<ZodRawShape>>(opts: {
     autoSave?: { debounceMs: number; enabled: boolean }
     onConflict?: (data: ConflictData) => void
@@ -170,24 +106,6 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
       })
     )
   },
-  hasFileFields = (meta: Record<string, { kind: string }>): boolean => {
-    for (const k of Object.keys(meta)) {
-      const entry = meta[k]
-      if (entry && (entry.kind === 'file' || entry.kind === 'files')) return true
-    }
-    return false
-  },
-  isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
-  FileFieldWarning = ({ meta }: { meta: Record<string, { kind: string }> }) => {
-    const fileCtx = use(FileApiContext)
-    if (isDev && hasFileFields(meta) && !fileCtx)
-      // eslint-disable-next-line no-console
-      console.error(
-        '[@noboil/spacetimedb] Form schema has file fields but no FileApiProvider found. Wrap your app in <FileApiProvider> for file uploads to work.'
-      )
-    return null
-  },
-  /** Typed form component that renders fields via a render callback with typed accessors. */
   Form = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>({
     form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
     render,
@@ -234,28 +152,6 @@ const useWithGuard = <T extends Record<string, unknown>, S extends ZodObject<Zod
         <FileFieldWarning meta={meta} />
         <DevtoolsAutoMount />
       </FormContext>
-    )
-  },
-  /** Displays form auto-save status (saving, saved, error). */
-  AutoSaveIndicator = ({ className, lastSaved, ...props }: ComponentProps<'span'> & { lastSaved: null | number }) => {
-    const MS_PER_SECOND = 1000,
-      JUST_SAVED_THRESHOLD = 5,
-      REFRESH_INTERVAL = 10_000,
-      calcAgo = () => (lastSaved ? Math.round((Date.now() - lastSaved) / MS_PER_SECOND) : 0),
-      [ago, setAgo] = useState(calcAgo)
-    /** biome-ignore lint/correctness/useExhaustiveDependencies: calcAgo recreated each render */
-    useEffect(() => {
-      if (!lastSaved) return
-      setAgo(calcAgo())
-      const id = setInterval(() => setAgo(calcAgo()), REFRESH_INTERVAL)
-      return () => clearInterval(id)
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSaved])
-    if (!lastSaved) return null
-    return (
-      <span className={cn('text-xs text-muted-foreground', className)} {...props}>
-        {ago < JUST_SAVED_THRESHOLD ? 'Saved' : `Saved ${ago}s ago`}
-      </span>
     )
   }
 export type { TypedFields }

@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '@a/shared/cli'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 // oxlint-disable no-await-expression-member
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 interface AddFlags {
@@ -24,44 +24,18 @@ interface ParsedField {
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
 const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton']),
   FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string']),
-  ENUM_PAT = /^enum\((?<values>[^)]+)\)$/u,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  CAMEL_PAT = /(?<upper>[A-Z])/gu,
-  FIRST_CHAR_PAT = /^./u,
-  camelToTitle = (s: string) => s.replace(CAMEL_PAT, ' $1').replace(FIRST_CHAR_PAT, c => c.toUpperCase()),
-  parseFieldDef = (raw: string): null | ParsedField => {
-    const parts = raw.split(':')
-    if (parts.length !== 2) return null
-    const name = (parts[0] ?? '').trim()
-    let typePart = (parts[1] ?? '').trim(),
-      optional = false
-    if (typePart.endsWith('?')) {
-      optional = true
-      typePart = typePart.slice(0, -1)
-    }
-    const enumMatch = ENUM_PAT.exec(typePart)
-    if (enumMatch?.groups?.values) {
-      const values = enumMatch.groups.values.split(',').map(v => v.trim())
-      return { name, optional, type: { enum: values } }
-    }
-    if (!FIELD_TYPES.has(typePart as FieldType)) return null
-    return { name, optional, type: typePart as FieldType }
-  },
+  { bold, dim, green, red, yellow } = createCliTheme(),
+  parseFieldDef = (raw: string): null | ParsedField => parseEnumFieldDef(raw, FIELD_TYPES),
   parseAddFlags = (args: string[]): AddFlags => {
     let type: TableType = 'owned',
       moduleDir = 'module',
       appDir = 'src/app',
-      help = false,
       name = '',
       parent = '',
       fieldsRaw = ''
+    const help = hasFlag(args, '--help', '-h')
     for (const arg of args)
-      if (arg === '--help' || arg === '-h') help = true
-      else if (arg.startsWith('--type=')) {
+      if (arg.startsWith('--type=')) {
         const val = arg.slice('--type='.length)
         if (TABLE_TYPES.has(val as TableType)) type = val as TableType
         else {
@@ -69,10 +43,10 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
           process.exit(1)
         }
       } else if (arg.startsWith('--fields=')) fieldsRaw = arg.slice('--fields='.length)
-      else if (arg.startsWith('--module-dir=')) moduleDir = arg.slice('--module-dir='.length)
-      else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
-      else if (arg.startsWith('--parent=')) parent = arg.slice('--parent='.length)
       else if (!(arg.startsWith('-') || name)) name = arg
+    moduleDir = readEqFlag(args, 'module-dir', moduleDir)
+    appDir = readEqFlag(args, 'app-dir', appDir)
+    parent = readEqFlag(args, 'parent', parent)
     const fields: ParsedField[] = []
     if (fieldsRaw)
       for (const f of fieldsRaw.split(',')) {
@@ -266,17 +240,6 @@ const ${component}Page = () => {
 export default ${component}Page
 `
   },
-  writeIfNotExists = (path: string, content: string, label: string): boolean => {
-    if (existsSync(path)) {
-      console.log(`  ${yellow('skip')} ${label} ${dim('(exists)')}`)
-      return false
-    }
-    const dir = path.slice(0, path.lastIndexOf('/'))
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-    writeFileSync(path, content)
-    console.log(`  ${green('✓')} ${label}`)
-    return true
-  },
   isInteractive = () => typeof process.stdin.isTTY === 'boolean' && process.stdin.isTTY,
   promptInteractive = async (): Promise<AddFlags> => {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
@@ -326,27 +289,36 @@ export default ${component}Page
       skipped = 0
     const tableFile = join(modulePath, `tables/${flags.name}.ts`)
     if (
-      writeIfNotExists(
-        tableFile,
-        genTableContent(flags.name, flags.type, fields),
-        `${flags.moduleDir}/tables/${flags.name}.ts`
-      )
+      writeIfNotExists({
+        content: genTableContent(flags.name, flags.type, fields),
+        label: `${flags.moduleDir}/tables/${flags.name}.ts`,
+        path: tableFile,
+        theme: { dim, green, yellow }
+      })
     )
       created += 1
     else skipped += 1
     const reducerFile = join(modulePath, `reducers/${flags.name}.ts`)
     if (
-      writeIfNotExists(
-        reducerFile,
-        genReducerContent({ fields, name: flags.name, parent: flags.parent, type: flags.type }),
-        `${flags.moduleDir}/reducers/${flags.name}.ts`
-      )
+      writeIfNotExists({
+        content: genReducerContent({ fields, name: flags.name, parent: flags.parent, type: flags.type }),
+        label: `${flags.moduleDir}/reducers/${flags.name}.ts`,
+        path: reducerFile,
+        theme: { dim, green, yellow }
+      })
     )
       created += 1
     else skipped += 1
     const pageDir = join(appPath, flags.name),
       pageFile = join(pageDir, 'page.tsx')
-    if (writeIfNotExists(pageFile, genPageContent(flags.name, flags.type), `${flags.appDir}/${flags.name}/page.tsx`))
+    if (
+      writeIfNotExists({
+        content: genPageContent(flags.name, flags.type),
+        label: `${flags.appDir}/${flags.name}/page.tsx`,
+        path: pageFile,
+        theme: { dim, green, yellow }
+      })
+    )
       created += 1
     else skipped += 1
     console.log('')
@@ -379,7 +351,7 @@ export default ${component}Page
     }
     return addSync(flags)
   }
-if (process.argv[1]?.endsWith('add.ts')) add(process.argv.slice(2))
+if (process.argv[1]?.endsWith('add.ts')) await add(process.argv.slice(2))
 export {
   add,
   defaultFields,

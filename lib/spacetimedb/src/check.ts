@@ -1,15 +1,12 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, max-depth, complexity */
+import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`
+const { bold, dim, green, red, yellow } = createCliTheme()
 interface AccessEntry {
   endpoints: string[]
   level: string

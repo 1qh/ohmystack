@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '@a/shared/cli'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 interface AddFlags {
   appDir: string
@@ -21,44 +21,18 @@ interface ParsedField {
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
 const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton']),
   FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string']),
-  ENUM_PAT = /^enum\((?<values>[^)]+)\)$/u,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  CAMEL_PAT = /(?<upper>[A-Z])/gu,
-  FIRST_CHAR_PAT = /^./u,
-  camelToTitle = (s: string) => s.replace(CAMEL_PAT, ' $1').replace(FIRST_CHAR_PAT, c => c.toUpperCase()),
-  parseFieldDef = (raw: string): null | ParsedField => {
-    const parts = raw.split(':')
-    if (parts.length !== 2) return null
-    const name = (parts[0] ?? '').trim()
-    let typePart = (parts[1] ?? '').trim(),
-      optional = false
-    if (typePart.endsWith('?')) {
-      optional = true
-      typePart = typePart.slice(0, -1)
-    }
-    const enumMatch = ENUM_PAT.exec(typePart)
-    if (enumMatch?.groups?.values) {
-      const values = enumMatch.groups.values.split(',').map(v => v.trim())
-      return { name, optional, type: { enum: values } }
-    }
-    if (!FIELD_TYPES.has(typePart as FieldType)) return null
-    return { name, optional, type: typePart as FieldType }
-  },
+  { bold, dim, green, red, yellow } = createCliTheme(),
+  parseFieldDef = (raw: string): null | ParsedField => parseEnumFieldDef(raw, FIELD_TYPES),
   parseAddFlags = (args: string[]): AddFlags => {
     let type: TableType = 'owned',
       convexDir = 'convex',
       appDir = 'src/app',
-      help = false,
       name = '',
       parent = '',
       fieldsRaw = ''
+    const help = hasFlag(args, '--help', '-h')
     for (const arg of args)
-      if (arg === '--help' || arg === '-h') help = true
-      else if (arg.startsWith('--type=')) {
+      if (arg.startsWith('--type=')) {
         const val = arg.slice('--type='.length)
         if (TABLE_TYPES.has(val as TableType)) type = val as TableType
         else {
@@ -66,10 +40,10 @@ const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singl
           process.exit(1)
         }
       } else if (arg.startsWith('--fields=')) fieldsRaw = arg.slice('--fields='.length)
-      else if (arg.startsWith('--convex-dir=')) convexDir = arg.slice('--convex-dir='.length)
-      else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
-      else if (arg.startsWith('--parent=')) parent = arg.slice('--parent='.length)
       else if (!(arg.startsWith('-') || name)) name = arg
+    convexDir = readEqFlag(args, 'convex-dir', convexDir)
+    appDir = readEqFlag(args, 'app-dir', appDir)
+    parent = readEqFlag(args, 'parent', parent)
     const fields: ParsedField[] = []
     if (fieldsRaw)
       for (const f of fieldsRaw.split(',')) {
@@ -275,17 +249,6 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
 export default ${title.replaceAll(/\s/gu, '')}Page
 `
   },
-  writeIfNotExists = (path: string, content: string, label: string): boolean => {
-    if (existsSync(path)) {
-      console.log(`  ${yellow('skip')} ${label} ${dim('(exists)')}`)
-      return false
-    }
-    const dir = path.slice(0, path.lastIndexOf('/'))
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-    writeFileSync(path, content)
-    console.log(`  ${green('✓')} ${label}`)
-    return true
-  },
   add = (args: string[] = []) => {
     const flags = parseAddFlags(args)
     if (flags.help) {
@@ -309,21 +272,36 @@ export default ${title.replaceAll(/\s/gu, '')}Page
       skipped = 0
     const schemaFile = join(convexPath, `${flags.name}-schema.ts`)
     if (
-      writeIfNotExists(
-        schemaFile,
-        genSchemaContent(flags.name, flags.type, fields),
-        `${flags.convexDir}/${flags.name}-schema.ts`
-      )
+      writeIfNotExists({
+        content: genSchemaContent(flags.name, flags.type, fields),
+        label: `${flags.convexDir}/${flags.name}-schema.ts`,
+        path: schemaFile,
+        theme: { dim, green, yellow }
+      })
     )
       created += 1
     else skipped += 1
     const endpointFile = join(convexPath, `${flags.name}.ts`)
-    if (writeIfNotExists(endpointFile, genEndpointContent(flags.name, flags.type), `${flags.convexDir}/${flags.name}.ts`))
+    if (
+      writeIfNotExists({
+        content: genEndpointContent(flags.name, flags.type),
+        label: `${flags.convexDir}/${flags.name}.ts`,
+        path: endpointFile,
+        theme: { dim, green, yellow }
+      })
+    )
       created += 1
     else skipped += 1
     const pageDir = join(appPath, flags.name),
       pageFile = join(pageDir, 'page.tsx')
-    if (writeIfNotExists(pageFile, genPageContent(flags.name, flags.type), `${flags.appDir}/${flags.name}/page.tsx`))
+    if (
+      writeIfNotExists({
+        content: genPageContent(flags.name, flags.type),
+        label: `${flags.appDir}/${flags.name}/page.tsx`,
+        path: pageFile,
+        theme: { dim, green, yellow }
+      })
+    )
       created += 1
     else skipped += 1
     console.log('')

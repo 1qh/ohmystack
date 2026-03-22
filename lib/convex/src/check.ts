@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable complexity */
 /* eslint-disable no-console */
+import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
@@ -19,11 +20,7 @@ import {
   SINGLETON_BASE,
   wrapperFactories
 } from './schema-utils'
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`
+const { bold, dim, green, red, yellow } = createCliTheme()
 interface AccessEntry {
   endpoints: string[]
   level: string

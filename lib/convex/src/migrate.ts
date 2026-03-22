@@ -1,16 +1,12 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { createCliTheme, hasFlag, readArgOrEqFlag } from '@a/shared/cli'
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  cyan = (s: string) => `\u001B[36m${s}\u001B[0m`
+const { bold, cyan, dim, green, red, yellow } = createCliTheme()
 interface FieldInfo {
   name: string
   optional: boolean
@@ -280,10 +276,10 @@ const findBracketEnd = (text: string, startPos: number): number => {
   },
   run = () => {
     const root = process.cwd(),
-      flags = new Set(process.argv.slice(2)),
-      args = process.argv.slice(2).filter(a => !a.startsWith('--'))
+      argv = process.argv.slice(2),
+      flags = new Set(argv)
     console.log(bold('\n@noboil/convex migrate\n'))
-    if (flags.has('--help') || flags.has('-h')) {
+    if (hasFlag(argv, '--help', '-h')) {
       console.log(`Usage: noboil-convex migrate [options]
 Compare schema versions and generate migration plans.
 Options:
@@ -315,16 +311,8 @@ Examples:
       console.log()
       return
     }
-    let fromRef = 'HEAD'
-    for (let i = 0; i < args.length; i += 1) {
-      const arg = args[i]
-      if (arg === '--from' && i + 1 < args.length) {
-        const nextArg = args[i + 1]
-        if (nextArg) fromRef = nextArg
-      }
-    }
-    for (const flag of flags) if (flag.startsWith('--from=')) fromRef = flag.slice(7)
-    const relativePath = schemaFile.path.startsWith(root) ? schemaFile.path.slice(root.length + 1) : schemaFile.path,
+    const fromRef = readArgOrEqFlag(argv, 'from', 'HEAD'),
+      relativePath = schemaFile.path.startsWith(root) ? schemaFile.path.slice(root.length + 1) : schemaFile.path,
       oldContent = getSchemaFromGit(fromRef, relativePath)
     if (!oldContent) {
       console.log(yellow(`\u26A0 Could not read schema from ${fromRef}`))

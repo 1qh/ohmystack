@@ -1,13 +1,11 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '@a/shared/cli'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
+const { bold, dim, green, yellow } = createCliTheme(),
   TABLES_TS = `import { t } from 'spacetimedb'
 const blogTable = {
   id: t.u32(),
@@ -156,45 +154,12 @@ NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:3000
     ['layout.tsx', LAYOUT_TSX],
     ['page.tsx', PAGE_TSX]
   ],
-  writeOneFile = ({
-    absDir,
-    content,
-    label,
-    name
-  }: {
-    absDir: string
-    content: string
-    label: string
-    name: string
-  }): boolean => {
-    const path = join(absDir, name)
-    if (existsSync(path)) {
-      console.log(`  ${yellow('skip')} ${label}/${name} ${dim('(exists)')}`)
-      return false
-    }
-    const parent = path.slice(0, path.lastIndexOf('/'))
-    if (!existsSync(parent)) mkdirSync(parent, { recursive: true })
-    writeFileSync(path, content)
-    console.log(`  ${green('✓')} ${label}/${name}`)
-    return true
-  },
-  writeFilesToDir = (absDir: string, label: string, files: [string, string][]) => {
-    if (!existsSync(absDir)) mkdirSync(absDir, { recursive: true })
-    let created = 0,
-      skipped = 0
-    for (const [name, content] of files)
-      if (writeOneFile({ absDir, content, label, name })) created += 1
-      else skipped += 1
-    return { created, skipped }
-  },
   parseFlags = (args: string[]) => {
     let moduleDir = 'module',
-      appDir = 'src/app',
-      help = false
-    for (const arg of args)
-      if (arg === '--help' || arg === '-h') help = true
-      else if (arg.startsWith('--module-dir=')) moduleDir = arg.slice('--module-dir='.length)
-      else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
+      appDir = 'src/app'
+    const help = hasFlag(args, '--help', '-h')
+    moduleDir = readEqFlag(args, 'module-dir', moduleDir)
+    appDir = readEqFlag(args, 'app-dir', appDir)
     return { appDir, help, moduleDir }
   },
   printHelp = () => {
@@ -221,8 +186,18 @@ NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:3000
     }
   },
   scaffold = (cwd: string, moduleDir: string, appDir: string) => {
-    const b = writeFilesToDir(join(cwd, moduleDir), moduleDir, BACKEND_FILES),
-      f = writeFilesToDir(join(cwd, appDir), appDir, FRONTEND_FILES)
+    const b = writeFilesToDir({
+        baseDir: join(cwd, moduleDir),
+        files: BACKEND_FILES,
+        label: moduleDir,
+        theme: { dim, green, yellow }
+      }),
+      f = writeFilesToDir({
+        baseDir: join(cwd, appDir),
+        files: FRONTEND_FILES,
+        label: appDir,
+        theme: { dim, green, yellow }
+      })
     writeConfigFile(join(cwd, '.env.local'), '.env.local', ENV_LOCAL)
     writeConfigFile(join(cwd, 'tsconfig.json'), 'tsconfig.json', TSCONFIG)
     if (existsSync(join(cwd, 'package.json'))) installDeps(cwd)

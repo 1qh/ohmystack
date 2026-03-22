@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -20,11 +21,7 @@ interface CheckResult {
   status: 'fail' | 'pass' | 'warn'
   title: string
 }
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
+const { bold, dim, green, red, yellow } = createCliTheme(),
   STATUS_ICON: Record<string, string> = { fail: red('\u2717'), pass: green('\u2713'), warn: yellow('!') },
   schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
   factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu,

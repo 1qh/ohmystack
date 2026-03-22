@@ -1,12 +1,10 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '@a/shared/cli'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
+const { bold, dim, green, yellow } = createCliTheme(),
   SCHEMA_TS = `import { authTables } from '@convex-dev/auth/server'
 import { defineSchema } from 'convex/server'
 import { ownedTable, rateLimitTable, uploadTables } from '@noboil/convex/server'
@@ -167,43 +165,12 @@ NEXT_PUBLIC_CONVEX_URL=
     ['layout.tsx', LAYOUT_TSX],
     ['page.tsx', PAGE_TSX]
   ],
-  writeOneFile = ({
-    absDir,
-    content,
-    label,
-    name
-  }: {
-    absDir: string
-    content: string
-    label: string
-    name: string
-  }): boolean => {
-    const path = join(absDir, name)
-    if (existsSync(path)) {
-      console.log(`  ${yellow('skip')} ${label}/${name} ${dim('(exists)')}`)
-      return false
-    }
-    writeFileSync(path, content)
-    console.log(`  ${green('✓')} ${label}/${name}`)
-    return true
-  },
-  writeFilesToDir = (absDir: string, label: string, files: [string, string][]) => {
-    if (!existsSync(absDir)) mkdirSync(absDir, { recursive: true })
-    let created = 0,
-      skipped = 0
-    for (const [name, content] of files)
-      if (writeOneFile({ absDir, content, label, name })) created += 1
-      else skipped += 1
-    return { created, skipped }
-  },
   parseFlags = (args: string[]) => {
     let convexDir = 'convex',
-      appDir = 'src/app',
-      help = false
-    for (const arg of args)
-      if (arg === '--help' || arg === '-h') help = true
-      else if (arg.startsWith('--convex-dir=')) convexDir = arg.slice('--convex-dir='.length)
-      else if (arg.startsWith('--app-dir=')) appDir = arg.slice('--app-dir='.length)
+      appDir = 'src/app'
+    const help = hasFlag(args, '--help', '-h')
+    convexDir = readEqFlag(args, 'convex-dir', convexDir)
+    appDir = readEqFlag(args, 'app-dir', appDir)
     return { appDir, convexDir, help }
   },
   printHelp = () => {
@@ -230,8 +197,18 @@ NEXT_PUBLIC_CONVEX_URL=
       return
     }
     console.log(`\n${bold('Scaffolding @noboil/convex project...')}\n`)
-    const b = writeFilesToDir(join(process.cwd(), convexDir), convexDir, BACKEND_FILES),
-      f = writeFilesToDir(join(process.cwd(), appDir), appDir, FRONTEND_FILES),
+    const b = writeFilesToDir({
+        baseDir: join(process.cwd(), convexDir),
+        files: BACKEND_FILES,
+        label: convexDir,
+        theme: { dim, green, yellow }
+      }),
+      f = writeFilesToDir({
+        baseDir: join(process.cwd(), appDir),
+        files: FRONTEND_FILES,
+        label: appDir,
+        theme: { dim, green, yellow }
+      }),
       envPath = join(process.cwd(), '.env.local')
     if (existsSync(envPath)) console.log(`  ${yellow('skip')} .env.local ${dim('(exists)')}`)
     else {

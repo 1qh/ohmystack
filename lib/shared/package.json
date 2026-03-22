@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./cli": "./src/cli.ts",
     "./constants": "./src/constants.ts",
     "./retry": "./src/retry.ts",
     "./schema-utils": "./src/schema-utils.ts",

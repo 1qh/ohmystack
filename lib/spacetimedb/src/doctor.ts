@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, max-depth */
+import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/max-statements, eslint/complexity */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { spawnSync } from 'node:child_process'
@@ -21,11 +22,7 @@ interface CheckResult {
   status: 'fail' | 'pass' | 'warn'
   title: string
 }
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  yellow = (s: string) => `\u001B[33m${s}\u001B[0m`,
+const { bold, dim, green, red, yellow } = createCliTheme(),
   STATUS_ICON: Record<string, string> = { fail: red('✗'), pass: green('✓'), warn: yellow('!') },
   schemaMarkers = ['schema(', 'table(', 't.'],
   reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu,
