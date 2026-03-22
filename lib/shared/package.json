@@ -11,6 +11,8 @@
     "./eslint": "./src/eslint.ts",
     "./docs-gen": "./src/docs-gen.ts",
     "./guard": "./src/guard.ts",
+    "./strict-api": "./src/strict-api.ts",
+    "./next/image": "./src/next/image.ts",
     "./viz": "./src/viz.ts",
     "./zod": "./src/zod.ts",
     "./components/fields": "./src/components/fields.tsx",
@@ -22,7 +24,9 @@
   },
   "dependencies": {
     "lucide-react": "latest",
+    "next": "latest",
     "react": "latest",
+    "sharp": "latest",
     "zod": "latest"
   }
 }
