@@ -256,6 +256,8 @@ Internal, never published. Workspace alias `@a/shared`. Both libraries import fr
 - SpacetimeDB E2E: republish module before running tests (`bun spacetime:publish`). Stale module state causes "fatal error" on reducers.
 - SpacetimeDB E2E: stdb blog avatar upload test requires working MinIO presign endpoint. Check MinIO container health.
 - Shimmer component (`@a/ui/ai-elements/shimmer`) requires `as` prop (e.g. `as="p"`). Without it, `motion.create(undefined)` crashes.
+- SpacetimeDB org E2E: UI tests (`org.test.ts`, `org-members.test.ts`, etc.) use Convex `createTestOrg`/`tc.query` to set up and verify data. These create data in Convex, not SpacetimeDB. The stdb browser reads from SpacetimeDB, so UI tests that depend on `beforeAll` data setup fail. Only onboarding tests (create via UI) and API tests (Convex CRUD) pass.
+- SpacetimeDB blog avatar E2E: requires MinIO presign endpoint at `/api/upload/presign`. Check MinIO container + bucket setup.
 
 ## Git
 
