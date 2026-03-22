@@ -50,7 +50,7 @@ const { StepForm, useStepper } = defineSteps(
             theme: d.preferences.theme
           })
           await create({
-            avatarId: d.appearance.orgAvatar,
+            ...(d.appearance.orgAvatar ? { avatarId: d.appearance.orgAvatar } : {}),
             name: d.org.name,
             slug: d.org.slug
           })

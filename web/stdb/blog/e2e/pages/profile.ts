@@ -41,7 +41,7 @@ class ProfilePage extends BasePage {
     return this.$('profile-displayName', 'input')
   }
   public getNotificationsToggle(): Locator {
-    return this.$('profile-notifications', 'button[role="switch"]')
+    return this.$('profile-notifications', '[role="switch"]')
   }
   public getProfileForm(): Locator {
     return this.$('profile-form')
