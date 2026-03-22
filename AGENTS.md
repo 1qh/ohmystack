@@ -249,8 +249,13 @@ Internal, never published. Workspace alias `@a/shared`. Both libraries import fr
 ## Known Gotchas
 
 - `next-env.d.ts` format mismatch — Next.js generates double quotes + semicolons, biome wants single + none. Add to biome ignore.
-- SpacetimeDB SDK upstream bug: `RangeError: Tried to read N byte(s)` in chat/movie E2E. Tests pass on retry.
 - LSP errors in `tool/cli/src/*.ts` and `lib/*/src/doctor.ts` are false positives — `bun run tsc` passes fine.
+- Base UI Switch renders as `<span>` not `<button>` — use `[role="switch"]` selector in E2E tests, never `button[role="switch"]`.
+- SpacetimeDB CLI must match SDK version — after `bun i`, check `spacetime version list` vs `node_modules/spacetimedb/package.json`. Mismatched CLI generates bindings missing `accessor` field on indexes, causing silent client-side connection failure. Fix: `spacetime version upgrade && spacetime publish ... && spacetime generate ...`.
+- SpacetimeDB v2.0 index accessors (`table.slug`, `table.id`) are NOT iterable. Don't pass them to `for..of` — iterate the table directly.
+- SpacetimeDB E2E: republish module before running tests (`bun spacetime:publish`). Stale module state causes "fatal error" on reducers.
+- SpacetimeDB E2E: stdb blog avatar upload test requires working MinIO presign endpoint. Check MinIO container health.
+- Shimmer component (`@a/ui/ai-elements/shimmer`) requires `as` prop (e.g. `as="p"`). Without it, `motion.create(undefined)` crashes.
 
 ## Git
 
