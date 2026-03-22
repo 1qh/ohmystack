@@ -9,14 +9,14 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 import {
-  MovieGenreInput,
+  MovieGenresItem,
 } from "./types";
 export default {
   tmdbId: __t.f64(),
   backdropPath: __t.option(__t.string()),
   budget: __t.option(__t.f64()),
   get genres() {
-    return __t.array(MovieGenreInput);
+    return __t.array(MovieGenresItem);
   },
   originalTitle: __t.string(),
   overview: __t.string(),

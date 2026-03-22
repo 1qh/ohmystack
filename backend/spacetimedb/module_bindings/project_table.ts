@@ -9,13 +9,13 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 export default __t.row({
-  createdAt: __t.timestamp().name("created_at"),
   description: __t.option(__t.string()),
-  editors: __t.option(__t.array(__t.identity())),
-  id: __t.u32().primaryKey(),
   name: __t.string(),
-  orgId: __t.u32().name("org_id"),
   status: __t.option(__t.string()),
+  editors: __t.option(__t.array(__t.identity())),
+  createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
+  orgId: __t.u32().name("org_id"),
   updatedAt: __t.timestamp().name("updated_at"),
   userId: __t.identity().name("user_id"),
 });

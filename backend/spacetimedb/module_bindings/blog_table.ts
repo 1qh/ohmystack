@@ -13,11 +13,11 @@ export default __t.row({
   category: __t.string(),
   content: __t.string(),
   coverImage: __t.option(__t.string()).name("cover_image"),
-  createdAt: __t.timestamp().name("created_at"),
-  id: __t.u32().primaryKey(),
   published: __t.bool(),
   tags: __t.option(__t.array(__t.string())),
   title: __t.string(),
+  createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
   updatedAt: __t.timestamp().name("updated_at"),
   userId: __t.identity().name("user_id"),
 });

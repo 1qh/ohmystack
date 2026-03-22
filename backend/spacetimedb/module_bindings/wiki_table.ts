@@ -10,14 +10,14 @@ import {
 } from "spacetimedb";
 export default __t.row({
   content: __t.option(__t.string()),
-  createdAt: __t.timestamp().name("created_at"),
-  deletedAt: __t.option(__t.timestamp()).name("deleted_at"),
-  editors: __t.option(__t.array(__t.identity())),
-  id: __t.u32().primaryKey(),
-  orgId: __t.u32().name("org_id"),
   slug: __t.string(),
   status: __t.string(),
   title: __t.string(),
+  editors: __t.option(__t.array(__t.identity())),
+  deletedAt: __t.option(__t.timestamp()).name("deleted_at"),
+  createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
+  orgId: __t.u32().name("org_id"),
   updatedAt: __t.timestamp().name("updated_at"),
   userId: __t.identity().name("user_id"),
 });

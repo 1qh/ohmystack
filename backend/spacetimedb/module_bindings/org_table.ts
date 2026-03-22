@@ -10,10 +10,10 @@ import {
 } from "spacetimedb";
 export default __t.row({
   avatarId: __t.option(__t.string()).name("avatar_id"),
-  createdAt: __t.timestamp().name("created_at"),
-  id: __t.u32().primaryKey(),
   name: __t.string(),
   slug: __t.string(),
+  createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
   updatedAt: __t.timestamp().name("updated_at"),
   userId: __t.identity().name("user_id"),
 });

@@ -11,7 +11,6 @@ import {
 export default {
   orgId: __t.u32(),
   description: __t.option(__t.string()),
-  editors: __t.option(__t.array(__t.identity())),
   name: __t.string(),
   status: __t.option(__t.string()),
 };

@@ -13,11 +13,11 @@ export const Blog = __t.object("Blog", {
   category: __t.string(),
   content: __t.string(),
   coverImage: __t.option(__t.string()),
-  createdAt: __t.timestamp(),
-  id: __t.u32(),
   published: __t.bool(),
   tags: __t.option(__t.array(__t.string())),
   title: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
@@ -25,23 +25,36 @@ export type Blog = __Infer<typeof Blog>;
 export const BlogProfile = __t.object("BlogProfile", {
   avatar: __t.option(__t.string()),
   bio: __t.option(__t.string()),
-  createdAt: __t.timestamp(),
   displayName: __t.string(),
   notifications: __t.bool(),
   theme: __t.string(),
+  createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type BlogProfile = __Infer<typeof BlogProfile>;
+export const CacheGenresItem = __t.object("CacheGenresItem", {
+  id: __t.f64(),
+  name: __t.string(),
+});
+export type CacheGenresItem = __Infer<typeof CacheGenresItem>;
 export const Chat = __t.object("Chat", {
-  createdAt: __t.timestamp(),
-  id: __t.u32(),
   isPublic: __t.bool(),
   title: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type Chat = __Infer<typeof Chat>;
+export const ChildPartsItem = __t.object("ChildPartsItem", {
+  file: __t.option(__t.string()),
+  image: __t.option(__t.string()),
+  name: __t.option(__t.string()),
+  text: __t.option(__t.string()),
+  type: __t.string(),
+});
+export type ChildPartsItem = __Infer<typeof ChildPartsItem>;
 export const File = __t.object("File", {
   contentType: __t.string(),
   createdAt: __t.timestamp(),
@@ -54,35 +67,31 @@ export const File = __t.object("File", {
 });
 export type File = __Infer<typeof File>;
 export const Message = __t.object("Message", {
-  chatId: __t.u32(),
-  createdAt: __t.timestamp(),
-  id: __t.u32(),
   get parts() {
-    return __t.array(MessagePart);
+    return __t.array(ChildPartsItem);
   },
   role: __t.string(),
+  createdAt: __t.timestamp(),
+  chatId: __t.u32(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type Message = __Infer<typeof Message>;
-export const MessagePart = __t.object("MessagePart", {
+export const MessagePartsItem = __t.object("MessagePartsItem", {
   file: __t.option(__t.string()),
   image: __t.option(__t.string()),
   name: __t.option(__t.string()),
   text: __t.option(__t.string()),
   type: __t.string(),
 });
-export type MessagePart = __Infer<typeof MessagePart>;
+export type MessagePartsItem = __Infer<typeof MessagePartsItem>;
 export const Movie = __t.object("Movie", {
   backdropPath: __t.option(__t.string()),
   budget: __t.option(__t.f64()),
-  cachedAt: __t.timestamp(),
-  createdAt: __t.timestamp(),
   get genres() {
-    return __t.array(MovieGenre);
+    return __t.array(CacheGenresItem);
   },
-  id: __t.u32(),
-  invalidatedAt: __t.option(__t.timestamp()),
   originalTitle: __t.string(),
   overview: __t.string(),
   posterPath: __t.option(__t.string()),
@@ -92,27 +101,26 @@ export const Movie = __t.object("Movie", {
   tagline: __t.option(__t.string()),
   title: __t.string(),
   tmdbId: __t.u32(),
-  updatedAt: __t.timestamp(),
   voteAverage: __t.f64(),
   voteCount: __t.f64(),
-});
-export type Movie = __Infer<typeof Movie>;
-export const MovieGenre = __t.object("MovieGenre", {
-  id: __t.f64(),
-  name: __t.string(),
-});
-export type MovieGenre = __Infer<typeof MovieGenre>;
-export const MovieGenreInput = __t.object("MovieGenreInput", {
-  id: __t.f64(),
-  name: __t.string(),
-});
-export type MovieGenreInput = __Infer<typeof MovieGenreInput>;
-export const Org = __t.object("Org", {
-  avatarId: __t.option(__t.string()),
+  cachedAt: __t.timestamp(),
   createdAt: __t.timestamp(),
   id: __t.u32(),
+  invalidatedAt: __t.option(__t.timestamp()),
+  updatedAt: __t.timestamp(),
+});
+export type Movie = __Infer<typeof Movie>;
+export const MovieGenresItem = __t.object("MovieGenresItem", {
+  id: __t.f64(),
+  name: __t.string(),
+});
+export type MovieGenresItem = __Infer<typeof MovieGenresItem>;
+export const Org = __t.object("Org", {
+  avatarId: __t.option(__t.string()),
   name: __t.string(),
   slug: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
@@ -149,49 +157,49 @@ export type OrgMember = __Infer<typeof OrgMember>;
 export const OrgProfile = __t.object("OrgProfile", {
   avatar: __t.option(__t.string()),
   bio: __t.option(__t.string()),
-  createdAt: __t.timestamp(),
   displayName: __t.string(),
   notifications: __t.bool(),
   theme: __t.string(),
+  createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type OrgProfile = __Infer<typeof OrgProfile>;
 export const Project = __t.object("Project", {
-  createdAt: __t.timestamp(),
   description: __t.option(__t.string()),
-  editors: __t.option(__t.array(__t.identity())),
-  id: __t.u32(),
   name: __t.string(),
-  orgId: __t.u32(),
   status: __t.option(__t.string()),
+  editors: __t.option(__t.array(__t.identity())),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  orgId: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type Project = __Infer<typeof Project>;
 export const Task = __t.object("Task", {
-  assigneeId: __t.option(__t.identity()),
   completed: __t.option(__t.bool()),
+  priority: __t.option(__t.string()),
+  title: __t.string(),
+  assigneeId: __t.option(__t.identity()),
+  projectId: __t.u32(),
   createdAt: __t.timestamp(),
   id: __t.u32(),
   orgId: __t.u32(),
-  priority: __t.option(__t.string()),
-  projectId: __t.u32(),
-  title: __t.string(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
 export type Task = __Infer<typeof Task>;
 export const Wiki = __t.object("Wiki", {
   content: __t.option(__t.string()),
-  createdAt: __t.timestamp(),
-  deletedAt: __t.option(__t.timestamp()),
-  editors: __t.option(__t.array(__t.identity())),
-  id: __t.u32(),
-  orgId: __t.u32(),
   slug: __t.string(),
   status: __t.string(),
   title: __t.string(),
+  editors: __t.option(__t.array(__t.identity())),
+  deletedAt: __t.option(__t.timestamp()),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  orgId: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });

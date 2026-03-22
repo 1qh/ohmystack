@@ -2,7 +2,12 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 /* eslint-disable */
 /* tslint:disable */
-import { t as __t } from 'spacetimedb'
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
 export default {
   attachments: __t.option(__t.array(__t.string())),
   category: __t.string(),
@@ -10,5 +15,5 @@ export default {
   coverImage: __t.option(__t.string()),
   published: __t.bool(),
   tags: __t.option(__t.array(__t.string())),
-  title: __t.string()
-}
+  title: __t.string(),
+};

@@ -10,10 +10,8 @@ import {
 } from "spacetimedb";
 export default {
   id: __t.u32(),
-  assigneeId: __t.option(__t.option(__t.identity())),
   completed: __t.option(__t.option(__t.bool())),
   priority: __t.option(__t.option(__t.string())),
-  projectId: __t.option(__t.u32()),
   title: __t.option(__t.string()),
   expectedUpdatedAt: __t.option(__t.timestamp()),
 };

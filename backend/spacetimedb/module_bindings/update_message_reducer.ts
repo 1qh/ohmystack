@@ -9,11 +9,11 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 import {
-  MessagePart,
+  MessagePartsItem,
 } from "./types";
 export default {
   id: __t.u32(),
-  parts: __t.option(__t.array(MessagePart)),
+  parts: __t.option(__t.array(MessagePartsItem)),
   role: __t.option(__t.string()),
   expectedUpdatedAt: __t.option(__t.timestamp()),
 };

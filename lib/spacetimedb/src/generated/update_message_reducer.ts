@@ -2,11 +2,18 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 /* eslint-disable */
 /* tslint:disable */
-import { t as __t } from 'spacetimedb'
-import { MessagePartsItem } from './types'
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
+import {
+  MessagePartsItem,
+} from "./types";
 export default {
   id: __t.u32(),
   parts: __t.option(__t.array(MessagePartsItem)),
   role: __t.option(__t.string()),
-  expectedUpdatedAt: __t.option(__t.timestamp())
-}
+  expectedUpdatedAt: __t.option(__t.timestamp()),
+};

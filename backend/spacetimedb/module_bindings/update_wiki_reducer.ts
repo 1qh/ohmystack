@@ -11,8 +11,6 @@ import {
 export default {
   id: __t.u32(),
   content: __t.option(__t.option(__t.string())),
-  deletedAt: __t.option(__t.option(__t.timestamp())),
-  editors: __t.option(__t.option(__t.array(__t.identity()))),
   slug: __t.option(__t.string()),
   status: __t.option(__t.string()),
   title: __t.option(__t.string()),

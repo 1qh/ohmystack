@@ -9,18 +9,14 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 import {
-  MovieGenre,
+  CacheGenresItem,
 } from "./types";
 export default __t.row({
   backdropPath: __t.option(__t.string()).name("backdrop_path"),
   budget: __t.option(__t.f64()),
-  cachedAt: __t.timestamp().name("cached_at"),
-  createdAt: __t.timestamp().name("created_at"),
   get genres() {
-    return __t.array(MovieGenre);
+    return __t.array(CacheGenresItem);
   },
-  id: __t.u32().primaryKey(),
-  invalidatedAt: __t.option(__t.timestamp()).name("invalidated_at"),
   originalTitle: __t.string().name("original_title"),
   overview: __t.string(),
   posterPath: __t.option(__t.string()).name("poster_path"),
@@ -30,7 +26,11 @@ export default __t.row({
   tagline: __t.option(__t.string()),
   title: __t.string(),
   tmdbId: __t.u32().name("tmdb_id"),
-  updatedAt: __t.timestamp().name("updated_at"),
   voteAverage: __t.f64().name("vote_average"),
   voteCount: __t.f64().name("vote_count"),
+  cachedAt: __t.timestamp().name("cached_at"),
+  createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
+  invalidatedAt: __t.option(__t.timestamp()).name("invalidated_at"),
+  updatedAt: __t.timestamp().name("updated_at"),
 });

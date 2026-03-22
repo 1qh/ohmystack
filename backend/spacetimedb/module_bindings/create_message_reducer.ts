@@ -9,12 +9,12 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 import {
-  MessagePart,
+  MessagePartsItem,
 } from "./types";
 export default {
   chatId: __t.u32(),
   get parts() {
-    return __t.array(MessagePart);
+    return __t.array(MessagePartsItem);
   },
   role: __t.string(),
 };

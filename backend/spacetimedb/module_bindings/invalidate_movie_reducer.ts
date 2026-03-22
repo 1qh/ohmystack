@@ -9,5 +9,5 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 export default {
-  tmdbId: __t.f64(),
+  tmdbId: __t.u32(),
 };

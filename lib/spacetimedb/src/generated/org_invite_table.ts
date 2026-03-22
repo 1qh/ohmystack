@@ -2,13 +2,18 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 /* eslint-disable */
 /* tslint:disable */
-import { t as __t } from 'spacetimedb'
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
 export default __t.row({
-  createdAt: __t.timestamp().name('created_at'),
+  createdAt: __t.timestamp().name("created_at"),
   email: __t.string(),
-  expiresAt: __t.f64().name('expires_at'),
+  expiresAt: __t.f64().name("expires_at"),
   id: __t.u32().primaryKey(),
-  isAdmin: __t.bool().name('is_admin'),
-  orgId: __t.u32().name('org_id'),
-  token: __t.string()
-})
+  isAdmin: __t.bool().name("is_admin"),
+  orgId: __t.u32().name("org_id"),
+  token: __t.string(),
+});
