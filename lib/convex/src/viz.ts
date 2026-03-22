@@ -1,23 +1,12 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import type { ChildInfo, TableInfo } from '@a/shared/viz'
+import { bold, dim, findBracketEnd, isSchemaFile, printSummary, red } from '@a/shared/viz'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-const findBracketEnd = (text: string, startPos: number): number => {
-    let depth = 1,
-      pos = startPos
-    while (pos < text.length && depth > 0) {
-      if (text[pos] === '{') depth += 1
-      else if (text[pos] === '}') depth -= 1
-      pos += 1
-    }
-    return pos - 1
-  },
-  dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
+const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
   wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'] as const,
   TYPE_LABELS: Record<string, string> = {
     makeBase: 'cache',
@@ -29,20 +18,7 @@ const findBracketEnd = (text: string, startPos: number): number => {
   FIELD_PAT = /^\s*(?<fname>\w+)\s*:/u,
   FK_PAT = /foreignKey\s*:\s*['"](?<fk>\w+)['"]/u,
   PARENT_PAT = /parent\s*:\s*['"](?<pn>\w+)['"]/u,
-  SCHEMA_OBJ_PAT = /schema\s*:\s*object\(\{/u
-interface ChildInfo extends TableInfo {
-  foreignKey: string
-  parent: string
-}
-interface TableInfo {
-  fields: { name: string; type: string }[]
-  name: string
-  tableType: string
-}
-const isSchemaFile = (content: string): boolean => {
-    for (const marker of schemaMarkers) if (content.includes(marker)) return true
-    return false
-  },
+  SCHEMA_OBJ_PAT = /schema\s*:\s*object\(\{/u,
   hasGenerated = (dir: string): boolean => existsSync(join(dir, '_generated')),
   findConvexDir = (root: string): string | undefined => {
     const direct = join(root, 'convex')
@@ -61,7 +37,7 @@ const isSchemaFile = (content: string): boolean => {
       if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
         const full = join(searchDir, entry),
           content = readFileSync(full, 'utf8')
-        if (isSchemaFile(content)) return { content, path: full }
+        if (isSchemaFile(content, schemaMarkers)) return { content, path: full }
       }
   },
   extractFieldType = (raw: string): string => {
@@ -181,16 +157,6 @@ const isSchemaFile = (content: string): boolean => {
           if (allNames.includes(target)) lines.push(`    ${target} ||--o{ ${t.name} : "${f.name}"`)
         }
     return lines.join('\n')
-  },
-  printSummary = (tables: TableInfo[], children: ChildInfo[]) => {
-    const all = [...tables, ...children]
-    console.log(bold('\nSchema Summary\n'))
-    for (const t of all) {
-      const badge = dim(`[${t.tableType}]`)
-      console.log(`  ${bold(t.name)} ${badge}`)
-      for (const f of t.fields) console.log(`    ${dim('\u2502')} ${f.name}: ${dim(f.type)}`)
-      console.log('')
-    }
   },
   run = () => {
     const root = process.cwd(),

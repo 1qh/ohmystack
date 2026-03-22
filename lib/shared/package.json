@@ -9,7 +9,10 @@
     "./schema-utils": "./src/schema-utils.ts",
     "./seed": "./src/seed.ts",
     "./eslint": "./src/eslint.ts",
+    "./docs-gen": "./src/docs-gen.ts",
     "./guard": "./src/guard.ts",
+    "./viz": "./src/viz.ts",
+    "./zod": "./src/zod.ts",
     "./components/fields": "./src/components/fields.tsx",
     "./server/*": "./src/server/*.ts",
     "./components/*": "./src/components/*.tsx",
@@ -19,6 +22,7 @@
   },
   "dependencies": {
     "lucide-react": "latest",
-    "react": "latest"
+    "react": "latest",
+    "zod": "latest"
   }
 }

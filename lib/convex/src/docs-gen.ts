@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { extractJSDoc, green, processEntryPoint, resolveReExports } from '@a/shared/docs-gen'
+import { bold, dim, isSchemaFile, red } from '@a/shared/viz'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -7,16 +9,8 @@ import { dirname, join } from 'node:path'
 import type { FactoryCall } from './check'
 import { endpointsForFactory } from './check'
 import { extractChildren, extractWrapperTables } from './viz'
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
+const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child('],
   factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu,
-  isSchemaFile = (content: string): boolean => {
-    for (const marker of schemaMarkers) if (content.includes(marker)) return true
-    return false
-  },
   hasGenerated = (dir: string): boolean => existsSync(join(dir, '_generated')),
   findConvexDir = (root: string): string | undefined => {
     const direct = join(root, 'convex')
@@ -35,7 +29,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
       if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
         const full = join(searchDir, entry),
           content = readFileSync(full, 'utf8')
-        if (isSchemaFile(content)) return { content, path: full }
+        if (isSchemaFile(content, schemaMarkers)) return { content, path: full }
       }
   },
   extractRemainingOptions = (content: string, startPos: number): string => {
@@ -192,72 +186,6 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     }
     return lines.join('\n')
   },
-  reExportPat = /export\s+(?<typeKw>type\s+)?\{\s*(?<sym>(?:default\s+as\s+)?\w+)\s*\}\s*from\s*['"](?<src>[^'"]+)['"]/gu,
-  tsExtPat = /\.ts$/u,
-  leadingWsPat = /^\s+/u,
-  trailingWsPat = /\s+$/u,
-  jsdocStarPat = /^\s*\*\s?/gmu,
-  resolveReExports = (
-    indexContent: string
-  ): { isDefault: boolean; isType: boolean; sourcePath: string; symbol: string }[] => {
-    const results: { isDefault: boolean; isType: boolean; sourcePath: string; symbol: string }[] = []
-    let m = reExportPat.exec(indexContent)
-    while (m) {
-      const raw = m.groups?.sym ?? '',
-        src = m.groups?.src ?? '',
-        isType = (m.groups?.typeKw ?? '').trim() === 'type',
-        isDefault = raw.startsWith('default as'),
-        symbol = isDefault ? raw.replace('default as ', '').trim() : raw.trim()
-      if (symbol && src) results.push({ isDefault, isType, sourcePath: src, symbol })
-      m = reExportPat.exec(indexContent)
-    }
-    reExportPat.lastIndex = 0
-    return results
-  },
-  extractJSDoc = (fileContent: string, symbolName: string): string => {
-    const escaped = symbolName.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`),
-      patterns = [
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?const\\s+${escaped}\\b`, 'u'),
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?interface\\s+${escaped}\\b`, 'u'),
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?type\\s+${escaped}\\b`, 'u')
-      ]
-    for (const pat of patterns) {
-      const match = pat.exec(fileContent)
-      if (match?.[1]) {
-        const raw = match[1].replace(jsdocStarPat, '').replace(leadingWsPat, '').replace(trailingWsPat, '')
-        if (raw) return raw
-      }
-    }
-    return ''
-  },
-  extractSignature = (fileContent: string, symbolName: string): string => {
-    const escaped = symbolName.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`),
-      constPat = new RegExp(`const\\s+${escaped}\\s*(?::\\s*([^=]+))?=\\s*(.+)`, 'u'),
-      constMatch = constPat.exec(fileContent)
-    if (constMatch !== null) {
-      const annotation = constMatch[1]?.trim()
-      if (annotation) return annotation
-      const rhs = constMatch[2]?.trim() ?? '',
-        arrowIdx = rhs.indexOf('=>')
-      if (arrowIdx > 0) {
-        const params = rhs.slice(0, arrowIdx).trim()
-        if (params.startsWith('(')) return `${params} => ...`
-      }
-    }
-    const ifacePat = new RegExp(`interface\\s+${escaped}\\s*\\{([^}]*)\\}`, 'u'),
-      ifaceMatch = ifacePat.exec(fileContent)
-    if (ifaceMatch?.[1]) {
-      const keys: string[] = [],
-        fieldPat = /^\s*(?<field>\w+)\s*[:(]/gmu
-      let fm = fieldPat.exec(ifaceMatch[1])
-      while (fm) {
-        if (fm.groups?.field) keys.push(fm.groups.field)
-        fm = fieldPat.exec(ifaceMatch[1])
-      }
-      if (keys.length > 0) return `{ ${keys.join(', ')} }`
-    }
-    return ''
-  },
   ENTRY_POINTS: { label: string; path: string }[] = [
     { label: '@noboil/convex', path: 'index.ts' },
     { label: '@noboil/convex/schema', path: 'schema.ts' },
@@ -271,34 +199,6 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     { label: '@noboil/convex/eslint', path: 'eslint.ts' },
     { label: '@noboil/convex/test', path: 'server/test.ts' }
   ],
-  processEntryPoint = (ep: { label: string; path: string }, srcDir: string, lines: string[]): number => {
-    const indexPath = join(srcDir, ep.path)
-    if (!existsSync(indexPath)) return 0
-    const indexContent = readFileSync(indexPath, 'utf8'),
-      reExports = resolveReExports(indexContent)
-    if (reExports.length === 0) return 0
-    lines.push(`## ${ep.label}`, '')
-    lines.push('| Export | Kind | Description | Signature |')
-    lines.push('|--------|------|-------------|-----------|')
-    let count = 0
-    for (const re of reExports) {
-      const sourceFile = join(dirname(indexPath), `${re.sourcePath.replace(tsExtPat, '')}.ts`)
-      let doc = '',
-        sig = ''
-      if (existsSync(sourceFile)) {
-        const src = readFileSync(sourceFile, 'utf8')
-        doc = extractJSDoc(src, re.symbol)
-        sig = extractSignature(src, re.symbol)
-      }
-      if (!doc) doc = extractJSDoc(indexContent, re.symbol)
-      if (!sig) sig = extractSignature(indexContent, re.symbol)
-      const kind = re.isType ? 'type' : re.isDefault ? 'default' : 'named'
-      lines.push(`| \`${re.symbol}\` | ${kind} | ${doc} | ${sig ? `\`${sig}\`` : ''} |`)
-      count += 1
-    }
-    lines.push('')
-    return count
-  },
   generateFullReference = (srcDir: string): string => {
     const lines: string[] = [
       '# @noboil/convex \u2014 Full API Reference',

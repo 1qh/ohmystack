@@ -1,22 +1,16 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, max-depth */
+import { extractJSDoc, green, processEntryPoint, resolveReExports } from '@a/shared/docs-gen'
+import { bold, dim, isSchemaFile, red } from '@a/shared/viz'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 // biome-ignore-all lint/nursery/noUnnecessaryConditions: type narrowing
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import type { FactoryCall } from './check'
 import { endpointsForFactory, extractSchemaFields } from './check'
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  green = (s: string) => `\u001B[32m${s}\u001B[0m`,
-  schemaMarkers = ['schema(', 'table(', 't.'],
+const schemaMarkers = ['schema(', 'table(', 't.'],
   reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu,
-  isSchemaFile = (content: string): boolean => {
-    for (const marker of schemaMarkers) if (content.includes(marker)) return true
-    return false
-  },
   listTypeScriptFiles = (root: string): string[] => {
     const out: string[] = [],
       skip = new Set(['.git', '.next', '.turbo', 'build', 'dist', 'node_modules']),
@@ -46,7 +40,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
         const files = listTypeScriptFiles(candidate)
         for (const file of files) {
           const content = readFileSync(file, 'utf8')
-          if (isSchemaFile(content)) return candidate
+          if (isSchemaFile(content, schemaMarkers)) return candidate
         }
       }
     if (!existsSync(root)) return
@@ -57,7 +51,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
           const files = listTypeScriptFiles(nested)
           for (const file of files) {
             const content = readFileSync(file, 'utf8')
-            if (isSchemaFile(content)) return nested
+            if (isSchemaFile(content, schemaMarkers)) return nested
           }
         }
       }
@@ -66,7 +60,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     const files = listTypeScriptFiles(moduleDir)
     for (const full of files) {
       const content = readFileSync(full, 'utf8')
-      if (isSchemaFile(content) && content.includes('schema(') && content.includes('table('))
+      if (isSchemaFile(content, schemaMarkers) && content.includes('schema(') && content.includes('table('))
         return { content, path: full }
     }
   },
@@ -179,72 +173,6 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     }
     return lines.join('\n')
   },
-  reExportPat = /export\s+(?<typeKw>type\s+)?\{\s*(?<sym>(?:default\s+as\s+)?\w+)\s*\}\s*from\s*['"](?<src>[^'"]+)['"]/gu,
-  tsExtPat = /\.ts$/u,
-  leadingWsPat = /^\s+/u,
-  trailingWsPat = /\s+$/u,
-  jsdocStarPat = /^\s*\*\s?/gmu,
-  resolveReExports = (
-    indexContent: string
-  ): { isDefault: boolean; isType: boolean; sourcePath: string; symbol: string }[] => {
-    const results: { isDefault: boolean; isType: boolean; sourcePath: string; symbol: string }[] = []
-    let m = reExportPat.exec(indexContent)
-    while (m) {
-      const raw = m.groups?.sym ?? '',
-        src = m.groups?.src ?? '',
-        isType = (m.groups?.typeKw ?? '').trim() === 'type',
-        isDefault = raw.startsWith('default as'),
-        symbol = isDefault ? raw.replace('default as ', '').trim() : raw.trim()
-      if (symbol && src) results.push({ isDefault, isType, sourcePath: src, symbol })
-      m = reExportPat.exec(indexContent)
-    }
-    reExportPat.lastIndex = 0
-    return results
-  },
-  extractJSDoc = (fileContent: string, symbolName: string): string => {
-    const escaped = symbolName.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`),
-      patterns = [
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?const\\s+${escaped}\\b`, 'u'),
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?interface\\s+${escaped}\\b`, 'u'),
-        new RegExp(`/\\*\\*([\\s\\S]*?)\\*/\\s*(?:export\\s+)?type\\s+${escaped}\\b`, 'u')
-      ]
-    for (const pat of patterns) {
-      const match = pat.exec(fileContent)
-      if (match?.[1]) {
-        const raw = match[1].replace(jsdocStarPat, '').replace(leadingWsPat, '').replace(trailingWsPat, '')
-        if (raw) return raw
-      }
-    }
-    return ''
-  },
-  extractSignature = (fileContent: string, symbolName: string): string => {
-    const escaped = symbolName.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`),
-      constPat = new RegExp(`const\\s+${escaped}\\s*(?::\\s*([^=]+))?=\\s*(.+)`, 'u'),
-      constMatch = constPat.exec(fileContent)
-    if (constMatch) {
-      const annotation = constMatch[1]?.trim()
-      if (annotation) return annotation
-      const rhs = constMatch[2]?.trim() ?? '',
-        arrowIdx = rhs.indexOf('=>')
-      if (arrowIdx > 0) {
-        const params = rhs.slice(0, arrowIdx).trim()
-        if (params.startsWith('(')) return `${params} => ...`
-      }
-    }
-    const ifacePat = new RegExp(`interface\\s+${escaped}\\s*\\{([^}]*)\\}`, 'u'),
-      ifaceMatch = ifacePat.exec(fileContent)
-    if (ifaceMatch?.[1]) {
-      const keys: string[] = [],
-        fieldPat = /^\s*(?<field>\w+)\s*[:(]/gmu
-      let fm = fieldPat.exec(ifaceMatch[1])
-      while (fm) {
-        if (fm.groups?.field) keys.push(fm.groups.field)
-        fm = fieldPat.exec(ifaceMatch[1])
-      }
-      if (keys.length > 0) return `{ ${keys.join(', ')} }`
-    }
-    return ''
-  },
   ENTRY_POINTS: { label: string; path: string }[] = [
     { label: '@noboil/spacetimedb', path: 'index.ts' },
     { label: '@noboil/spacetimedb/schema', path: 'schema.ts' },
@@ -258,37 +186,9 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     { label: '@noboil/spacetimedb/eslint', path: 'eslint.ts' },
     { label: '@noboil/spacetimedb/test', path: 'server/test.ts' }
   ],
-  processEntryPoint = (ep: { label: string; path: string }, srcDir: string, lines: string[]): number => {
-    const indexPath = join(srcDir, ep.path)
-    if (!existsSync(indexPath)) return 0
-    const indexContent = readFileSync(indexPath, 'utf8'),
-      reExports = resolveReExports(indexContent)
-    if (reExports.length === 0) return 0
-    lines.push(`## ${ep.label}`, '')
-    lines.push('| Export | Kind | Description | Signature |')
-    lines.push('|--------|------|-------------|-----------|')
-    let count = 0
-    for (const re of reExports) {
-      const sourceFile = join(dirname(indexPath), `${re.sourcePath.replace(tsExtPat, '')}.ts`)
-      let doc = '',
-        sig = ''
-      if (existsSync(sourceFile)) {
-        const src = readFileSync(sourceFile, 'utf8')
-        doc = extractJSDoc(src, re.symbol)
-        sig = extractSignature(src, re.symbol)
-      }
-      if (!doc) doc = extractJSDoc(indexContent, re.symbol)
-      if (!sig) sig = extractSignature(indexContent, re.symbol)
-      const kind = re.isType ? 'type' : re.isDefault ? 'default' : 'named'
-      lines.push(`| \`${re.symbol}\` | ${kind} | ${doc} | ${sig ? `\`${sig}\`` : ''} |`)
-      count += 1
-    }
-    lines.push('')
-    return count
-  },
   generateFullReference = (srcDir: string): string => {
     const lines: string[] = [
-      '# @noboil/spacetimedb — Full API Reference',
+      '# @noboil/spacetimedb \u2014 Full API Reference',
       '',
       '*Auto-generated by `noboil-stdb docs --full`*',
       ''
@@ -305,7 +205,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     if (flags.has('--full')) {
       const srcDir = join(root, 'src')
       if (!existsSync(srcDir)) {
-        console.log(red('✗ Could not find src/ directory'))
+        console.log(red('\u2717 Could not find src/ directory'))
         process.exit(1)
       }
       console.log(generateFullReference(srcDir))
@@ -313,12 +213,12 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
     }
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
-      console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
+      console.log(red('\u2717 Could not find SpacetimeDB schema directory (module/ or src/)'))
       process.exit(1)
     }
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
-      console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
+      console.log(red('\u2717 Could not find schema file with SpacetimeDB markers'))
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}`)
@@ -340,13 +240,13 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
       const eps = endpointsForFactory(call),
         fields = tableFields.get(call.table)
       total += eps.length
-      console.log(`${bold(call.table)} ${dim(`(${call.factory})`)} ${dim(`— ${call.file}`)}`)
+      console.log(`${bold(call.table)} ${dim(`(${call.factory})`)} ${dim(`\u2014 ${call.file}`)}`)
       if (fields && fields.length > 0)
         console.log(`  ${dim('fields:')} ${fields.map(f => `${f.name}: ${f.type}`).join(', ')}`)
       console.log(`  ${dim('reducers:')} ${eps.join(', ')}`)
       console.log('')
     }
-    console.log(`${green('✓')} ${bold(String(total))} reducers from ${bold(String(calls.length))} tables`)
+    console.log(`${green('\u2713')} ${bold(String(total))} reducers from ${bold(String(calls.length))} tables`)
     console.log(dim('\nRun with --markdown for full API reference output\n'))
   }
 if (import.meta.main) run()

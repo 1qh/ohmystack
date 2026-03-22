@@ -1,28 +1,14 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, max-depth */
+import type { ChildInfo, TableInfo } from '@a/shared/viz'
+import { bold, dim, isSchemaFile, red } from '@a/shared/viz'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`,
-  bold = (s: string) => `\u001B[1m${s}\u001B[0m`,
-  red = (s: string) => `\u001B[31m${s}\u001B[0m`,
-  schemaMarkers = ['schema(', 'table(', 't.'],
+const schemaMarkers = ['schema(', 'table(', 't.'],
   tablePat = /(?<tname>\w+)\s*:\s*table\([^,]+,\s*\{/gu,
-  fieldLinePat = /^\s*(?<fname>\w+)\s*:\s*(?<ftype>.+?)\s*,?$/u
-interface ChildInfo extends TableInfo {
-  foreignKey: string
-  parent: string
-}
-interface TableInfo {
-  fields: { name: string; type: string }[]
-  name: string
-  tableType: string
-}
-const isSchemaFile = (content: string): boolean => {
-    for (const marker of schemaMarkers) if (content.includes(marker)) return true
-    return false
-  },
+  fieldLinePat = /^\s*(?<fname>\w+)\s*:\s*(?<ftype>.+?)\s*,?$/u,
   listTypeScriptFiles = (root: string): string[] => {
     const out: string[] = [],
       skip = new Set(['.git', '.next', '.turbo', 'build', 'dist', 'node_modules']),
@@ -52,7 +38,7 @@ const isSchemaFile = (content: string): boolean => {
         const files = listTypeScriptFiles(candidate)
         for (const file of files) {
           const content = readFileSync(file, 'utf8')
-          if (isSchemaFile(content)) return candidate
+          if (isSchemaFile(content, schemaMarkers)) return candidate
         }
       }
     if (!existsSync(root)) return
@@ -63,7 +49,7 @@ const isSchemaFile = (content: string): boolean => {
           const files = listTypeScriptFiles(nested)
           for (const file of files) {
             const content = readFileSync(file, 'utf8')
-            if (isSchemaFile(content)) return nested
+            if (isSchemaFile(content, schemaMarkers)) return nested
           }
         }
       }
@@ -72,7 +58,7 @@ const isSchemaFile = (content: string): boolean => {
     const files = listTypeScriptFiles(moduleDir)
     for (const full of files) {
       const content = readFileSync(full, 'utf8')
-      if (isSchemaFile(content) && content.includes('schema(') && content.includes('table('))
+      if (isSchemaFile(content, schemaMarkers) && content.includes('schema(') && content.includes('table('))
         return { content, path: full }
     }
   },
@@ -130,12 +116,11 @@ const isSchemaFile = (content: string): boolean => {
         }
     return children
   },
-  escapeField = (name: string) => name,
   generateMermaid = (tables: TableInfo[], children: ChildInfo[]): string => {
     const lines: string[] = ['erDiagram']
     for (const t of tables) {
       lines.push(`    ${t.name} {`)
-      for (const f of t.fields) lines.push(`        ${f.type} ${escapeField(f.name)}`)
+      for (const f of t.fields) lines.push(`        ${f.type} ${f.name}`)
       lines.push('    }')
     }
     for (const c of children) if (c.parent) lines.push(`    ${c.parent} ||--o{ ${c.name} : "${c.foreignKey}"`)
@@ -144,8 +129,7 @@ const isSchemaFile = (content: string): boolean => {
   printSummary = (tables: TableInfo[], children: ChildInfo[]) => {
     console.log(bold('\nSchema Summary\n'))
     for (const t of tables) {
-      const badge = dim(`[${t.tableType}]`)
-      console.log(`  ${bold(t.name)} ${badge}`)
+      console.log(`  ${bold(t.name)} ${dim(`[${t.tableType}]`)}`)
       for (const f of t.fields) console.log(`    ${dim('│')} ${f.name}: ${dim(f.type)}`)
       console.log('')
     }
@@ -162,19 +146,19 @@ const isSchemaFile = (content: string): boolean => {
     console.log(bold('\nnoboil-stdb viz\n'))
     const moduleDir = findModuleDir(root)
     if (!moduleDir) {
-      console.log(red('✗ Could not find SpacetimeDB schema directory (module/ or src/)'))
+      console.log(red('\u2717 Could not find SpacetimeDB schema directory (module/ or src/)'))
       process.exit(1)
     }
     const schemaFile = findSchemaFile(moduleDir)
     if (!schemaFile) {
-      console.log(red('✗ Could not find schema file with SpacetimeDB markers'))
+      console.log(red('\u2717 Could not find schema file with SpacetimeDB markers'))
       process.exit(1)
     }
     console.log(`${dim('schema:')} ${schemaFile.path}\n`)
     const tables = extractWrapperTables(schemaFile.content),
       children = buildRelationships(tables)
     if (tables.length === 0) {
-      console.log(red('✗ No tables found in schema'))
+      console.log(red('\u2717 No tables found in schema'))
       process.exit(1)
     }
     if (flags.has('--mermaid')) {
