@@ -53,25 +53,32 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
     useEffect(() => {
       if (!isPlaywright) return
       setPlaywrightWaitExpired(false)
-      const timer = window.setTimeout(() => setPlaywrightWaitExpired(true), 1500)
+      const timer = window.setTimeout(() => setPlaywrightWaitExpired(true), 5000)
       return () => window.clearTimeout(timer)
     }, [activeOrgId, isPlaywright, pathname])
     if (!pathname) return children
     if (!needsOrgLayout(pathname)) return children
     if (!(identity || isPlaywright)) return null
-    if (!(isPlaywright || (orgsReady && membersReady))) return null
+    if (!(orgsReady && membersReady)) return null
     // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
-    const myOrgItems = identity
-      ? members
-          .filter((m: OrgMember) => m.userId.toHexString() === identity.toHexString())
-          .map((m: OrgMember) => {
-            const org = orgs.find((o: Org) => o.id === m.orgId)
-            if (!org) return null
-            const role: OrgRole = sameIdentity(org.userId, identity) ? 'owner' : m.isAdmin ? 'admin' : 'member'
-            return { org: toLegacyOrg(org), role }
-          })
-          .filter(item => item !== null)
-      : orgs.map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
+    const ownedOrgs = identity
+        ? orgs.filter((o: Org) => sameIdentity(o.userId, identity))
+        : [],
+      memberOrgs = identity
+        ? members
+            .filter((m: OrgMember) => m.userId.toHexString() === identity.toHexString())
+            .map((m: OrgMember) => {
+              const org = orgs.find((o: Org) => o.id === m.orgId)
+              if (!org) return null
+              const role: OrgRole = m.isAdmin ? 'admin' : 'member'
+              return { org: toLegacyOrg(org), role }
+            })
+            .filter(item => item !== null)
+        : [],
+      ownedItems = ownedOrgs
+        .filter((o: Org) => !memberOrgs.some(m => m.org._id === String(o.id)))
+        .map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole })),
+      myOrgItems = identity ? [...ownedItems, ...memberOrgs] : orgs.map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
     if (myOrgItems.length === 0) {
       if (isPlaywright && !playwrightWaitExpired) return null
       router.replace('/')

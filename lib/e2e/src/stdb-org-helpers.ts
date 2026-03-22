@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /* eslint-disable no-await-in-loop */
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
 import {
   callReducer,
@@ -10,8 +12,17 @@ import {
   queryTable
 } from '@noboil/spacetimedb/test'
 let ctx: null | TestContext = null
-const getCtx = async (): Promise<TestContext> => {
-    if (!ctx) ctx = await createTestContext({ userCount: 1 })
+const TOKEN_FILE = '.stdb-test-token.json',
+  getCtx = async (): Promise<TestContext> => {
+    if (!ctx) {
+      ctx = await createTestContext({ userCount: 1 })
+      const { identity, token } = ctx.defaultUser
+      try {
+        writeFileSync(join(process.cwd(), 'e2e', TOKEN_FILE), JSON.stringify({ identity, token }))
+      } catch {
+        /* ignore write errors in non-E2E contexts */
+      }
+    }
     return ctx
   },
   camelToSnake = (s: string): string => s.replaceAll(/([A-Z])/gu, '_$1').toLowerCase(),
