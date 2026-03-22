@@ -27,7 +27,7 @@ export interface TextShimmerProps {
 }
 const ShimmerComponent = ({
   children,
-  as: Component,
+  as: Component = "p",
   className,
   duration,
   spread,

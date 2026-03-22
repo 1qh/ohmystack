@@ -53,7 +53,7 @@ const SparklesAvatar = () => (
       <div className='-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border'>
         <SparklesIcon className='size-4 animate-pulse' />
       </div>
-      <Shimmer>Thinking</Shimmer>
+      <Shimmer as='p'>Thinking</Shimmer>
     </div>
   ),
   ToolApprovalButtons = ({ onApprove, onDeny }: { onApprove: () => void; onDeny: () => void }) => (
