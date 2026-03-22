@@ -256,18 +256,13 @@ const userTokens = new Map<string, string>(),
 				org_id: number;
 				token: string;
 			}[],
-			invite = invites.find((i) => i.org_id === toU32(orgId));
+			invite = invites.filter((i) => i.org_id === toU32(orgId)).at(-1);
 		if (!invite) return "";
 		const inviteToken =
 				typeof invite.token === "string" ? invite.token : String(invite.token),
-			memberResponse = await fetch(`${DEFAULT_HTTP_URL}/v1/identity`, {
-				method: "POST",
-			}),
-			memberData = (await memberResponse.json()) as {
-				identity: string;
-				token: string;
-			};
-		await httpReducer("org_accept_invite", [inviteToken], memberData.token);
+			memberToken = userTokens.get(_userId);
+		if (!memberToken) return "";
+		await httpReducer("org_accept_invite", [inviteToken], memberToken);
 		await delay(300);
 		const members = (await httpQuery("org_member", ctx.token)) as {
 				id: number;
@@ -662,9 +657,9 @@ const userTokens = new Map<string, string>(),
 					const filtered = projects.filter(
 						(p) => p.org_id === toU32(args.orgId),
 					);
-					return filtered.length > 0
-						? (String(filtered.at(-1)?.id) as T)
-						: ("" as T);
+					let maxId = 0;
+					for (const p of filtered) if (p.id > maxId) maxId = p.id;
+					return maxId > 0 ? (String(maxId) as T) : ("" as T);
 				}
 				if (apiPath === "project.update") {
 					const projects = (await httpQuery("project", token)) as Record<
@@ -681,9 +676,9 @@ const userTokens = new Map<string, string>(),
 						org_id: number;
 					}[];
 					const filtered = tasks.filter((t) => t.org_id === toU32(args.orgId));
-					return filtered.length > 0
-						? (String(filtered.at(-1)?.id) as T)
-						: ("" as T);
+					let maxId = 0;
+					for (const t of filtered) if (t.id > maxId) maxId = t.id;
+					return maxId > 0 ? (String(maxId) as T) : ("" as T);
 				}
 				if (apiPath === "task.toggle") {
 					const tasks = (await httpQuery("task", token)) as Record<
@@ -700,9 +695,9 @@ const userTokens = new Map<string, string>(),
 						org_id: number;
 					}[];
 					const filtered = wikis.filter((w) => w.org_id === toU32(args.orgId));
-					return filtered.length > 0
-						? (String(filtered.at(-1)?.id) as T)
-						: ("" as T);
+					let maxId = 0;
+					for (const w of filtered) if (w.id > maxId) maxId = w.id;
+					return maxId > 0 ? (String(maxId) as T) : ("" as T);
 				}
 				return undefined as T;
 			},
