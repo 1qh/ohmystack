@@ -19,7 +19,7 @@ lib/e2e/             — shared Playwright utilities
 tool/cli/             — noboil CLI (published as `noboil`)
 ```
 
-Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are published to npm. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
+Library packages (`lib/convex/`, `lib/spacetimedb/`) are published to npm. `lib/shared/` is internal-only (never published) — both libraries import from it via workspace alias `@a/shared`. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.
 
 ---
 
@@ -53,7 +53,18 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`, `lib/shared/`) are publishe
 ### Script output philosophy
 
 - Scripts: silent on success, verbose on failure. Prefer `q ...` for noisy commands and keep script definitions concise.
+- `q` is a bash helper generated at `node_modules/.bin/q` by `postinstall` → `q:install`. It captures stdout/stderr, suppresses on exit 0, prints on failure. It is NOT a tracked file — it's recreated on every `bun install`.
 - NEVER use `git clean` in scripts — it deletes `.env`, untracked source files, and anything not committed. Use explicit `rm -rf` of known build dirs instead.
+
+### Shared extraction rules
+
+- COMMIT IMMEDIATELY after creating any new file in `lib/shared/` — never leave shared files untracked. `git clean` or `bun clean` will delete them permanently.
+- Use factory pattern for shared components (e.g. `createFieldsModule`, `createErrorBoundary`) with DB-specific config injected as parameters.
+- NEVER make React components async — hooks cannot be called in async functions.
+- NEVER change prop optionality (required → optional or vice versa) during extraction.
+- ALWAYS preserve original `e.returnValue = ''` in beforeunload handlers.
+- ALWAYS preserve original error logging in catch blocks.
+- ALWAYS export types used in public API from shared (e.g. `ErrorBoundaryState`) — DTS generation fails if internal types leak through re-exports.
 
 ---
 
@@ -138,6 +149,14 @@ bun test:e2e -- --workers=1 --timeout=10000 --reporter=dot             # full (u
 | Full suite  | 10s/test | 180s |
 
 **AI agents**: Run only failing tests, verify 2-3x, stop. Full suite only when user asks. **Pre-test**: `bun fix` passes · `pkill -9 -f "next"` · `rm -rf test-results` **Convex**: `cd backend/convex && CONVEX_TEST_MODE=true bun with-env convex dev --once` **SpacetimeDB**: `SPACETIMEDB_TEST_MODE=true bun spacetime:publish`
+
+### E2E with real services
+
+Convex E2E (per app): `cd web/cvx/{app} && SKIP_CONVEX_ENV_TOGGLE=1 CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot`
+
+SpacetimeDB E2E (per app): `cd web/stdb/{app} && SKIP_CONVEX_ENV_TOGGLE=1 SPACETIMEDB_TEST_MODE=true bun with-env playwright test --reporter=dot`
+
+`SKIP_CONVEX_ENV_TOGGLE=1` bypasses the global-setup.ts `execSync` call that tries to set CONVEX_TEST_MODE via CLI (fails with ENOENT in some environments). Set CONVEX_TEST_MODE manually on the server before running E2E instead.
 
 | Symptom                     | Fix                               |
 | --------------------------- | --------------------------------- |
@@ -224,7 +243,7 @@ const Page = async () => {
 
 **`anyApi` trap**: Runtime is a Proxy accepting any property name — `api.blogprofile.get` (wrong casing) won’t type-error. Always match `api.<module>` to exact filenames. Rely on E2E tests.
 
-**Setup**: `bun convex:up && bash genkey.sh && bun genenv.ts` → `convex env set` (JWT key needs `--` separator)
+**Setup**: `bun convex:up && bash script/genkey.sh && bun script/genenv.ts` → `convex env set` (JWT key needs `--` separator). Also set required env vars: `npx convex env set TMDB_KEY <key> --admin-key <key> --url http://127.0.0.1:3212` and `npx convex env set CI true ...`
 
 ## SpacetimeDB
 
@@ -232,12 +251,15 @@ Generates TS bindings from Rust module. Regenerate after schema changes: `bun sp
 
 ## lib/shared/
 
-Internal, never published. Shared across both libraries: React hooks, server utils, components, ESLint plugin (16 rules), CLI framework, Zod/seed/retry utils. Each published package re-exports from shared.
+Internal, never published. Workspace alias `@a/shared`. Shared across both libraries via factory pattern: React hooks, server utils, components, ESLint config builder, retry/seed/schema utils. Each published package imports from `@a/shared` and re-exports with DB-specific config. See "Shared extraction rules" above for safety rules.
 
 ## Known Gotchas
 
 - `next-env.d.ts` format mismatch — Next.js generates double quotes + semicolons, biome wants single + none. Add to biome ignore.
-- Docker port conflicts — Convex uses `convex.yml`, SpacetimeDB uses `spacetimedb.yml`. Run separately.
+- Docker: Convex uses `convex.yml`, SpacetimeDB uses `spacetimedb.yml`. Run separately (`bun convex:up` / `bun spacetime:up`).
+- SpacetimeDB SDK bug: `RangeError: Tried to read N byte(s)` and `InternalError: The instance encountered a fatal error` appear in chat/movie E2E tests. Tests pass on retry (Playwright retries: 2). This is an upstream deserialization bug in `@clockworklabs/spacetimedb-sdk`.
+- LSP errors in `tool/cli/src/*.ts` and `lib/*/src/doctor.ts` are false positives from tsconfig lib targeting — builds fine with `bun run tsc`.
+- lintmax (current: 0.0.17): no eslint cache (removed to prevent stale cache hiding errors), tailwind auto-detects `ui/src/styles/globals.css` as priority entry, import sort enforces zero blank lines between groups.
 
 ## Git
 
