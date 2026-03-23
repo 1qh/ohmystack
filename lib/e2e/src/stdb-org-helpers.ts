@@ -224,12 +224,14 @@ const userTokens = new Map<string, string>(),
       /* */
     }
   },
-  createTestUser = async (_ : string, __: string): Promise<string> => {
+  createTestUser = async (email: string, name: string): Promise<string> => {
     const response = await fetch(`${DEFAULT_HTTP_URL}/v1/identity`, {
         method: 'POST'
       }),
-      data = (await response.json()) as IdentityResponse
+      data = (await response.json()) as IdentityResponse,
+      key = `${data.identity}:${email}:${name}`
     userTokens.set(data.identity, data.token)
+    userTokens.set(key, data.token)
     return data.identity
   },
   createTestOrg = async (slug: string, name: string): Promise<OrgCreateResult> => {
@@ -277,7 +279,7 @@ const userTokens = new Map<string, string>(),
     if (target) await httpReducer('org_remove_member', [target.id], ctx.token)
   },
   resolveApiPath = (apiRef: unknown): string => {
-    const raw = typeof apiRef === "string" ? apiRef : `${apiRef as string}`,
+    const raw = typeof apiRef === 'string' ? apiRef : (apiRef as string),
       match = API_PATH_RE.exec(raw)
     if (match?.groups) return `${match.groups.mod}.${match.groups.fn}`
     return raw
@@ -315,7 +317,7 @@ const userTokens = new Map<string, string>(),
         await ensureTestUser()
         orgSlug = utils.generateSlug(orgSlugSuffix)
         const result = await createTestOrg(orgSlug, orgName)
-        orgId = result.orgId
+        ;({ orgId } = result)
         return { orgId, orgSlug }
       },
       get orgId() {
@@ -432,11 +434,11 @@ const userTokens = new Map<string, string>(),
       const filtered = rows.filter(r => String(r.orgId) === String(args.orgId)),
         orgRows = await httpQuery('org', getHttpCtx().token),
         normalizedOrg = orgRows.map(r => normalizeRow(r)).find(o => String(o.id) === String(args.orgId)),
-        ownerUserId = normalizedOrg?.userId ? String(normalizedOrg.userId) : ''
+        ownerUserId = normalizedOrg?.userId ? str(normalizedOrg.userId) : ''
       return filtered.map(m =>
         Object.assign(m, {
-          role: String(m.userId) === ownerUserId ? 'owner' : m.isAdmin ? 'admin' : 'member',
-          userId: m.userId ? String(m.userId) : undefined
+          role: str(m.userId) === ownerUserId ? 'owner' : m.isAdmin ? 'admin' : 'member',
+          userId: m.userId ? str(m.userId) : undefined
         })
       )
     }
@@ -448,7 +450,7 @@ const userTokens = new Map<string, string>(),
       if (org) {
         const result: MembershipResult = {
           role: 'owner',
-          userId: org.userId ? String(org.userId) : undefined
+          userId: org.userId ? str(org.userId) : undefined
         }
         return result
       }
@@ -457,7 +459,7 @@ const userTokens = new Map<string, string>(),
         if (m) {
           const result: MembershipResult = {
             role: m.isAdmin ? 'admin' : 'member',
-            userId: m.userId ? String(m.userId) : undefined
+            userId: m.userId ? str(m.userId) : undefined
           }
           return result
         }
@@ -500,7 +502,7 @@ const userTokens = new Map<string, string>(),
     }
     if (apiPath === 'wiki.list') {
       const filtered = rows.filter(r => {
-          const matchOrg = args.orgId ? String(r.orgId) === String(args.orgId) : true,
+          const matchOrg = args.orgId ? str(r.orgId) === str(args.orgId) : true,
             notDeleted = r.deletedAt === undefined || r.deletedAt === null
           return matchOrg && notDeleted
         }),
@@ -642,10 +644,11 @@ const userTokens = new Map<string, string>(),
         await httpReducer(camelToSnake(cleanName), Object.values(args), token)
         return undefined as T
       },
-      query: async <T>(name: string, _args: Record<string, unknown>): Promise<T> => {
+      query: async <T>(name: string, args: Record<string, unknown>): Promise<T> => {
         const { token } = getHttpCtx(),
-          tableName = name.includes(':') ? (name.split(':')[1] ?? name) : name,
-          rows = await httpQuery(camelToSnake(tableName), token)
+          cleanName = name.includes(':') ? (name.split(':')[1] ?? name) : name,
+          tableName = typeof args.table === 'string' ? args.table : camelToSnake(cleanName),
+          rows = await httpQuery(tableName, token)
         return rows as T
       }
     }
@@ -662,7 +665,33 @@ const userTokens = new Map<string, string>(),
           }
         )
     }
-  ) as Record<string, Record<string, unknown>>,
+  ) as {
+    org: {
+      acceptInvite: string
+      approveJoin: string
+      create: string
+      get: string
+      getBySlug: string
+      invite: string
+      leave: string
+      members: string
+      membership: string
+      myOrgs: string
+      pendingInvites: string
+      rejectJoin: string
+      remove: string
+      removeMember: string
+      revokeInvite: string
+      setAdmin: string
+      transferOwnership: string
+      update: string
+    }
+    orgProfile: { get: string; upsert: string }
+    project: { create: string; list: string; read: string; rm: string; update: string }
+    task: { create: string; read: string; rm: string; toggle: string }
+    testauth: { cleanupOrgTestData: string; cleanupTestData: string; ensureTestUser: string; requestJoinAsUser: string }
+    wiki: { create: string; list: string; read: string; rm: string; update: string }
+  },
   cleanupAll = async () => {
     await Promise.resolve()
   }

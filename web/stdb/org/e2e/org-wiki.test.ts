@@ -4,8 +4,8 @@
 /* eslint-disable no-await-in-loop */
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { login } from './helpers'
-import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from './helpers'
+import type { PaginatedResponse, WikiResponse } from './helpers'
+import { api, createTestOrg, ensureTestUser, login, makeOrgTestUtils, tc } from './helpers'
 const testPrefix = `e2e-org-wiki-${Date.now()}`,
   { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
 let activeOrgId = ''
@@ -81,7 +81,7 @@ test.describe
       expect(wikiId).toBeTruthy()
     })
     test('wiki appears in all query', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
           orgId: testOrgId,
           paginationOpts: { cursor: null, numItems: 100 }
         }),
@@ -90,7 +90,7 @@ test.describe
       expect(found?.title).toBe('SoftDelete Test Wiki')
     })
     test('wiki appears in all length', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
@@ -98,12 +98,12 @@ test.describe
     })
     test('rm soft-deletes wiki (sets deletedAt)', async () => {
       await tc.mutation(api.wiki.rm, { id: wikiId, orgId: testOrgId })
-      const wiki = await tc.query(api.wiki.read, { id: wikiId, orgId: testOrgId })
+      const wiki = await tc.query<WikiResponse>(api.wiki.read, { id: wikiId, orgId: testOrgId })
       expect(wiki.deletedAt).toBeDefined()
       expect(typeof wiki.deletedAt).toBe('number')
     })
     test('soft-deleted wiki is excluded from all query', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
           orgId: testOrgId,
           paginationOpts: { cursor: null, numItems: 100 }
         }),
@@ -111,20 +111,20 @@ test.describe
       expect(found).toBeUndefined()
     })
     test('soft-deleted wiki is excluded from all length', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
       expect(wikis.length).toBe(0)
     })
     test('soft-deleted wiki is still accessible via read', async () => {
-      const wiki = await tc.query(api.wiki.read, { id: wikiId, orgId: testOrgId })
+      const wiki = await tc.query<WikiResponse>(api.wiki.read, { id: wikiId, orgId: testOrgId })
       expect(wiki).toBeDefined()
       expect(wiki.title).toBe('SoftDelete Test Wiki')
       expect(wiki.deletedAt).toBeDefined()
     })
     test('restore brings wiki back', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
           orgId: testOrgId,
           paginationOpts: { cursor: null, numItems: 100 }
         }),
@@ -132,7 +132,7 @@ test.describe
       expect(found).toBeUndefined()
     })
     test('restored wiki reappears in all query', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
           orgId: testOrgId,
           paginationOpts: { cursor: null, numItems: 100 }
         }),
@@ -140,7 +140,7 @@ test.describe
       expect(found).toBeUndefined()
     })
     test('restored wiki reappears in all length', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
@@ -179,14 +179,14 @@ test.describe
       await cleanupTestUsers()
     })
     test('all three wikis are visible', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
       expect(wikis.length).toBe(3)
     })
     test('all length returns 3', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
@@ -194,14 +194,14 @@ test.describe
     })
     test('deleting one reduces all length to 2', async () => {
       await tc.mutation(api.wiki.rm, { id: wiki2Id, orgId: testOrgId })
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
       expect(wikis.length).toBe(2)
     })
     test('all returns only 2 non-deleted wikis', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
@@ -213,29 +213,29 @@ test.describe
     })
     test('rm soft-deletes multiple wikis via ids', async () => {
       await tc.mutation(api.wiki.rm, { ids: [wiki1Id, wiki3Id], orgId: testOrgId })
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
       expect(wikis.length).toBe(0)
     })
     test('all three wikis still readable via read', async () => {
-      const w1 = await tc.query(api.wiki.read, { id: wiki1Id, orgId: testOrgId }),
-        w2 = await tc.query(api.wiki.read, { id: wiki2Id, orgId: testOrgId }),
-        w3 = await tc.query(api.wiki.read, { id: wiki3Id, orgId: testOrgId })
+      const w1 = await tc.query<WikiResponse>(api.wiki.read, { id: wiki1Id, orgId: testOrgId }),
+        w2 = await tc.query<WikiResponse>(api.wiki.read, { id: wiki2Id, orgId: testOrgId }),
+        w3 = await tc.query<WikiResponse>(api.wiki.read, { id: wiki3Id, orgId: testOrgId })
       expect(w1.deletedAt).toBeDefined()
       expect(w2.deletedAt).toBeDefined()
       expect(w3.deletedAt).toBeDefined()
     })
     test('restoring one brings it back', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
       expect(wikis.length).toBe(0)
     })
     test('all length reflects partial restore', async () => {
-      const { page: wikis } = await tc.query(api.wiki.list, {
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 100 }
       })
@@ -318,7 +318,10 @@ test.describe
       await cleanupTestUsers()
     })
     const restoreAllViaBackend = async () => {
-        const { page: wikis } = await tc.query(api.wiki.list, { orgId, paginationOpts: { cursor: null, numItems: 100 } }),
+        const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
+            orgId,
+            paginationOpts: { cursor: null, numItems: 100 }
+          }),
           titles = new Set<string>()
         for (const wiki of wikis) if (typeof wiki.title === 'string') titles.add(wiki.title)
         const required = ['Undo Wiki 1', 'Undo Wiki 2', 'Undo Wiki 3']
@@ -347,7 +350,10 @@ test.describe
       await gotoWikiListAndWait(page)
       await expect(page.getByText('Undo Wiki 2').first()).toBeVisible()
       await expect(page.getByText('Undo Wiki 3').first()).toBeVisible()
-      const { page: wikis } = await tc.query(api.wiki.list, { orgId, paginationOpts: { cursor: null, numItems: 100 } })
+      const { page: wikis } = await tc.query<PaginatedResponse<WikiResponse>>(api.wiki.list, {
+        orgId,
+        paginationOpts: { cursor: null, numItems: 100 }
+      })
       expect(wikis.length).toBe(3)
     })
     test('select all and bulk delete shows undo toast', async ({ page }) => {

@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test'
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
-import { login } from './helpers'
+import { expect, test } from '@playwright/test'
+import type { InviteResponse, MemberResponse, OrgMembershipResponse, OrgResponse, OrgWithRole } from './helpers'
 import {
   addTestOrgMember,
   api,
@@ -8,6 +8,7 @@ import {
   createTestUser,
   ensureTestUser,
   expectError,
+  login,
   makeOrgTestUtils,
   removeTestOrgMember,
   tc
@@ -117,7 +118,7 @@ test.describe
     test('create org - creator becomes owner', async () => {
       const slug = generateSlug('owner'),
         result = await createTestOrg(slug, 'Owner Test Org'),
-        org = await tc.query(api.org.get, { orgId: result.orgId })
+        org = await tc.query<null | OrgResponse>(api.org.get, { orgId: result.orgId })
       expect(org).toBeDefined()
       expect(org?.userId).toBeDefined()
     })
@@ -134,14 +135,14 @@ test.describe
     test('get org - success', async () => {
       const slug = generateSlug('get'),
         created = await createTestOrg(slug, 'Get Test Org'),
-        org = await tc.query(api.org.get, { orgId: created.orgId })
+        org = await tc.query<null | OrgResponse>(api.org.get, { orgId: created.orgId })
       expect(org?.name).toBe('Get Test Org')
       expect(org?.slug).toBe(slug)
     })
     test('myOrgs - includes created org', async () => {
       const slug = generateSlug('myorgs'),
         created = await createTestOrg(slug, 'MyOrgs Test'),
-        orgs = await tc.query(api.org.myOrgs, {}),
+        orgs = await tc.query<OrgWithRole[]>(api.org.myOrgs, {}),
         found = orgs.find(o => o.org._id === created.orgId)
       expect(found).toBeDefined()
       expect(found?.role).toBe('owner')
@@ -153,14 +154,14 @@ test.describe
         data: { name: 'Updated Name' },
         orgId: created.orgId
       })
-      const org = await tc.query(api.org.get, { orgId: created.orgId })
+      const org = await tc.query<null | OrgResponse>(api.org.get, { orgId: created.orgId })
       expect(org?.name).toBe('Updated Name')
     })
     test('remove org - owner can delete', async () => {
       const slug = generateSlug('remove'),
         created = await createTestOrg(slug, 'Remove Test')
       await tc.mutation(api.org.remove, { orgId: created.orgId })
-      const result = await tc.query(api.org.getBySlug, { slug })
+      const result = await tc.query<null | OrgResponse>(api.org.getBySlug, { slug })
       expect(result).toBeNull()
     })
   })
@@ -180,13 +181,13 @@ test.describe
       await cleanupTestUsers()
     })
     test('membership - owner has owner role', async () => {
-      const result = await tc.query(api.org.membership, {
+      const result = await tc.query<null | OrgMembershipResponse>(api.org.membership, {
         orgId: testOrgId
       })
       expect(result?.role).toBe('owner')
     })
     test('members - shows owner', async () => {
-      const members = await tc.query(api.org.members, { orgId: testOrgId })
+      const members = await tc.query<MemberResponse[]>(api.org.members, { orgId: testOrgId })
       expect(members.length).toBeGreaterThanOrEqual(1)
       const owner = members.find(m => m.role === 'owner')
       expect(owner).toBeDefined()
@@ -194,7 +195,7 @@ test.describe
     test('add member via test helper - success', async () => {
       const memberId = readStringId(await addTestOrgMember(testOrgId, memberUserId, false))
       expect(memberId).toBeDefined()
-      const members = await tc.query(api.org.members, { orgId: testOrgId }),
+      const members = await tc.query<MemberResponse[]>(api.org.members, { orgId: testOrgId }),
         found = members.find(m => m.userId === memberUserId)
       expect(found).toBeDefined()
       expect(found?.role).toBe('member')
@@ -204,7 +205,7 @@ test.describe
         tempUserId = readStringId(await createTestUser(tempEmail, 'Temp Member')),
         tempMemberId = readStringId(await addTestOrgMember(testOrgId, tempUserId, false))
       await tc.mutation(api.org.removeMember, { memberId: tempMemberId })
-      const members = await tc.query(api.org.members, { orgId: testOrgId }),
+      const members = await tc.query<MemberResponse[]>(api.org.members, { orgId: testOrgId }),
         found = members.find(m => m.userId === tempUserId)
       expect(found).toBeUndefined()
     })
@@ -213,7 +214,7 @@ test.describe
         leaveUserId = readStringId(await createTestUser(leaveEmail, 'Leave Member'))
       await addTestOrgMember(testOrgId, leaveUserId, false)
       await removeTestOrgMember(testOrgId, leaveUserId)
-      const members = await tc.query(api.org.members, { orgId: testOrgId }),
+      const members = await tc.query<MemberResponse[]>(api.org.members, { orgId: testOrgId }),
         found = members.find(m => m.userId === leaveUserId)
       expect(found).toBeUndefined()
     })
@@ -232,7 +233,7 @@ test.describe
       await cleanupTestUsers()
     })
     test('invite - owner can create invite', async () => {
-      const result = await tc.mutation(api.org.invite, {
+      const result = await tc.mutation<InviteResponse>(api.org.invite, {
         email: 'invited@example.com',
         isAdmin: false,
         orgId: testOrgId
@@ -242,17 +243,17 @@ test.describe
       expect(result.token.length).toBe(32)
     })
     test('pendingInvites - shows created invites', async () => {
-      const invites = await tc.query(api.org.pendingInvites, { orgId: testOrgId })
+      const invites = await tc.query<InviteResponse[]>(api.org.pendingInvites, { orgId: testOrgId })
       expect(invites.length).toBeGreaterThanOrEqual(1)
     })
     test('revokeInvite - owner can revoke', async () => {
-      const invite = await tc.mutation(api.org.invite, {
+      const invite = await tc.mutation<InviteResponse>(api.org.invite, {
         email: 'revoke-me@example.com',
         isAdmin: false,
         orgId: testOrgId
       })
       await tc.mutation(api.org.revokeInvite, { inviteId: invite.inviteId })
-      const invites = await tc.query(api.org.pendingInvites, { orgId: testOrgId }),
+      const invites = await tc.query<InviteResponse[]>(api.org.pendingInvites, { orgId: testOrgId }),
         found = invites.find(i => i._id === invite.inviteId)
       expect(found).toBeUndefined()
     })

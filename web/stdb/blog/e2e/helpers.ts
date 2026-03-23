@@ -72,7 +72,8 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
       if (idIdx === -1) continue
       for (const row of rows) {
         if (!Array.isArray(row)) continue
-        const id = row[idIdx]
+        const typedRow = row as unknown[],
+          id = typedRow[idIdx]
         if (typeof id !== 'number') continue
         try {
           const reducerName = table === 'blog_profile' ? 'upsert_blogProfile' : `rm_${table}`

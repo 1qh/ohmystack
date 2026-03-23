@@ -1,22 +1,65 @@
+/* eslint-disable no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */
 import type { Page } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-export {
-  addTestOrgMember,
-  api,
-  createTestOrg,
-  createTestUser,
-  ensureTestUser,
-  expectError,
-  extractErrorCode,
-  makeOrgTestUtils,
-  removeTestOrgMember,
-  setupOrg,
-  tc
-} from '@a/e2e/stdb-org-helpers'
+interface InviteResponse {
+  _id?: string
+  inviteId: string
+  token: string
+}
+interface MemberResponse {
+  _id?: string
+  isAdmin?: boolean
+  role?: string
+  userId?: string
+}
+interface OrgMembershipResponse {
+  role?: string
+  userId?: string
+}
+interface OrgResponse {
+  _id?: string
+  name?: string
+  slug?: string
+  userId?: string
+}
+interface OrgWithRole {
+  org: { _id: string; name?: string; slug?: string }
+  role: string
+}
+interface PaginatedResponse<T> {
+  isDone: boolean
+  page: T[]
+}
 interface PendingAction {
   args: unknown[]
   reducer: string
+}
+interface ProjectResponse {
+  _id?: string
+  description?: string
+  name?: string
+  orgId?: string
+  status?: string
+}
+interface TaskResponse {
+  _id?: string
+  completed?: boolean
+  id?: number
+  orgId?: string
+  priority?: string
+  title?: string
+}
+interface WikiResponse {
+  _id?: string
+  content?: string
+  deletedAt?: unknown
+  id?: number
+  orgId?: string
+  slug?: string
+  status?: string
+  title?: string
 }
 const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
   PENDING_FILE = join(import.meta.dirname, '.stdb-pending-actions.json'),
@@ -48,7 +91,7 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
       ])
     await page.addInitScript(
       ({ t }) => {
-        window.localStorage.setItem('spacetimedb.token', t)
+        globalThis.localStorage.setItem('spacetimedb.token', t)
       },
       { t: data.token }
     )
@@ -59,9 +102,34 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
           const stdb = (globalThis as Record<string, unknown>).__SPACETIMEDB_CONNECTION__ as
             | undefined
             | { reducers: Record<string, (...a: unknown[]) => Promise<void>> }
-          if (stdb?.reducers?.[reducer]) await stdb.reducers[reducer](...args)
+          if (stdb?.reducers[reducer]) await stdb.reducers[reducer](...args)
         }, action)
+      /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: needed for SpacetimeDB subscription sync */
       await page.waitForTimeout(1000)
     }
   }
+export {
+  addTestOrgMember,
+  api,
+  createTestOrg,
+  createTestUser,
+  ensureTestUser,
+  expectError,
+  extractErrorCode,
+  makeOrgTestUtils,
+  removeTestOrgMember,
+  setupOrg,
+  tc
+} from '@a/e2e/stdb-org-helpers'
+export type {
+  InviteResponse,
+  MemberResponse,
+  OrgMembershipResponse,
+  OrgResponse,
+  OrgWithRole,
+  PaginatedResponse,
+  ProjectResponse,
+  TaskResponse,
+  WikiResponse
+}
 export { login }

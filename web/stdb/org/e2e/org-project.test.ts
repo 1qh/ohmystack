@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test'
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
-import { login } from './helpers'
+import { expect, test } from '@playwright/test'
+import type { PaginatedResponse, ProjectResponse, TaskResponse } from './helpers'
 import {
   addTestOrgMember,
   api,
@@ -8,6 +8,7 @@ import {
   createTestUser,
   ensureTestUser,
   expectError,
+  login,
   makeOrgTestUtils,
   tc
 } from './helpers'
@@ -93,7 +94,7 @@ test.describe
           name: 'Read Test Project',
           orgId: testOrgId
         }),
-        project = await tc.query(api.project.read, {
+        project = await tc.query<ProjectResponse>(api.project.read, {
           id: projectId,
           orgId: testOrgId
         })
@@ -101,7 +102,7 @@ test.describe
       expect(project.orgId).toBe(testOrgId)
     })
     test('list projects - returns paginated results', async () => {
-      const result = await tc.query(api.project.list, {
+      const result = await tc.query<PaginatedResponse<ProjectResponse>>(api.project.list, {
         orgId: testOrgId,
         paginationOpts: { cursor: null, numItems: 10 }
       })
@@ -185,7 +186,7 @@ test.describe
           projectId: testProjectId,
           title: 'Read Test Task'
         }),
-        task = await tc.query(api.task.read, {
+        task = await tc.query<TaskResponse>(api.task.read, {
           id: taskId,
           orgId: testOrgId
         })
@@ -198,7 +199,7 @@ test.describe
           projectId: testProjectId,
           title: 'Toggle Test Task'
         }),
-        toggled = await tc.mutation(api.task.toggle, {
+        toggled = await tc.mutation<TaskResponse | undefined>(api.task.toggle, {
           id: taskId,
           orgId: testOrgId
         })

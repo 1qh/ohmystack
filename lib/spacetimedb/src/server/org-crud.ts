@@ -26,23 +26,6 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
       if (Object.is(member.orgId, orgId) && identityEquals(member.userId, sender)) return member
     return null
   },
-  requireMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>({
-    operation,
-    orgId,
-    orgMemberTable,
-    sender,
-    tableName
-  }: {
-    operation: string
-    orgId: OrgId
-    orgMemberTable: Iterable<Member>
-    sender: Identity
-    tableName: string
-  }): Member => {
-    const member = checkMembership(orgMemberTable, orgId, sender)
-    if (!member) throw makeError('NOT_ORG_MEMBER', `${tableName}:${operation}`)
-    return member
-  },
   canEdit = ({
     member,
     row,
@@ -106,6 +89,18 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
     if (!member) throw makeError('NOT_ORG_MEMBER', `${tableName}:${operation}`)
     requireCanMutate({ member, operation, row, sender, tableName })
     return { member, pk, row }
+  },
+  deleteCascadeChildren = (db: Record<string, unknown>, cascade: { foreignKey: string; table: string }, id: unknown) => {
+    const childTableObj = db[cascade.table],
+      fk = cascade.foreignKey
+    if (!childTableObj) return
+    const childRows: Record<string, unknown>[] = [],
+      tbl = childTableObj as Iterable<Record<string, unknown>> & {
+        iter?: () => Iterable<Record<string, unknown>>
+      },
+      iter = typeof tbl.iter === 'function' ? tbl.iter() : tbl
+    for (const child of iter) if (Object.is(child[fk], id)) childRows.push(child)
+    for (const child of childRows) (childTableObj as { id: { delete: (v: unknown) => boolean } }).id.delete(child.id)
   },
   /** Creates org-scoped CRUD reducers with membership and ACL checks.
    * @param spacetimedb - SpacetimeDB reducer factory
@@ -286,20 +281,7 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
           }
           pk.update(nextRecord as unknown as Row)
         } else {
-          if (options?.cascade) {
-            const childTableObj = (ctx.db as Record<string, unknown>)[options.cascade.table],
-              fk = options.cascade.foreignKey
-            if (childTableObj) {
-              const childRows: Record<string, unknown>[] = [],
-                tbl = childTableObj as Iterable<Record<string, unknown>> & {
-                  iter?: () => Iterable<Record<string, unknown>>
-                },
-                iter = typeof tbl.iter === 'function' ? tbl.iter() : tbl
-              for (const child of iter) if (Object.is(child[fk], id)) childRows.push(child)
-              for (const child of childRows)
-                (childTableObj as { id: { delete: (v: unknown) => boolean } }).id.delete(child.id)
-            }
-          }
+          if (options?.cascade) deleteCascadeChildren(ctx.db as Record<string, unknown>, options.cascade, id)
           const deleted = pk.delete(id)
           if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
         }

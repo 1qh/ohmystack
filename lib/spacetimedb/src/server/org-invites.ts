@@ -91,7 +91,6 @@ const DAY_HOURS = 24,
   SECONDS_PER_MINUTE = 60,
   SEVEN_DAYS_MS = DAYS_PER_WEEK * DAY_HOURS * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND,
   TOKEN_BASE = 36,
-  TOKEN_BYTES = 24,
   TOKEN_LENGTH = 32,
   tokenCounter = { value: 0 },
   makeInviteToken = (): string => {

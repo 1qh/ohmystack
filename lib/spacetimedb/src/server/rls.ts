@@ -12,29 +12,7 @@ const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const,
   rlsJoinWhereSender = (tbl: string, joinTbl: string, onCol: string): string =>
     `${rlsSelectJoin(tbl, joinTbl, onCol)} WHERE ${q(joinTbl, RLS_COL.userId)} = :sender`,
   rlsWherePub = (tbl: string, pubCol: string): string => `${rlsSelect(tbl)} WHERE ${q(tbl, pubCol)} = true`,
-  rlsChildJoinPubOrSender = ({
-    child,
-    fk,
-    parent,
-    pubCol
-  }: {
-    child: string
-    fk: string
-    parent: string
-    pubCol: string
-  }): string =>
-    `SELECT "${child}".* FROM "${child}" JOIN "${parent}" ON ${q(child, fk)} = ${q(parent, 'id')} WHERE ${q(parent, pubCol)} = true OR ${q(child, RLS_COL.userId)} = :sender`,
-  rlsChildSql = ({
-    fk,
-    name,
-    parent,
-    parentPub
-  }: {
-    fk: string
-    name: string
-    parent: string
-    parentPub?: RlsPub
-  }): string[] => {
+  rlsChildSql = ({ name, parentPub }: { fk: string; name: string; parent: string; parentPub?: RlsPub }): string[] => {
     if (parentPub === true) return []
     return [rlsWhereSender(name, RLS_COL.userId)]
   },

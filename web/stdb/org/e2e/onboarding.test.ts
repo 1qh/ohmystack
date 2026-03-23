@@ -1,9 +1,8 @@
+// biome-ignore-all lint/performance/useTopLevelRegex: test file
+// biome-ignore-all lint/nursery/useGlobalThis: browser API in page.evaluate
 import path from 'node:path'
 import { expect, test } from './fixtures'
-// biome-ignore-all lint/performance/useTopLevelRegex: test file
-// biome-ignore-all lint/nursery/useGlobalThis: browser API
-import { login } from './helpers'
-import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from './helpers'
+import { api, createTestOrg, ensureTestUser, login, makeOrgTestUtils, tc } from './helpers'
 const testPrefix = `e2e-onboard-${Date.now()}`,
   { cleanupOrgTestData, generateSlug } = makeOrgTestUtils(testPrefix)
 test.describe
@@ -234,7 +233,7 @@ test.describe
       const profile = await tc.query(api.orgProfile.get, {})
       expect(profile).toBeDefined()
       expect(typeof profile?.displayName).toBe('string')
-      const orgs = await tc.query(api.org.myOrgs, {})
+      const orgs = await tc.query<{ org: { _id: string } }[]>(api.org.myOrgs, {})
       expect(orgs.length).toBeGreaterThan(0)
     })
     test('dashboard shows org after onboarding', async ({ page }) => {

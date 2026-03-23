@@ -32,7 +32,7 @@ import { composeMiddleware } from './middleware'
 import { makeOrg, makeOrgTables } from './org'
 import { makeOrgCrud } from './org-crud'
 import { identityEquals } from './reducer-utils'
-import { RLS_COL, RLS_TBL, rlsChildSql, rlsSql, rlsWhereSender } from './rls'
+import { rlsChildSql, rlsSql } from './rls'
 import { makeSingletonCrud } from './singleton'
 import { makeSchema, zodToStdbFields } from './stdb-tables'
 interface CrudDefaults {

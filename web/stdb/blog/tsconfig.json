@@ -4,7 +4,7 @@
       "~/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "e2e"],
+  "exclude": ["node_modules"],
   "extends": "lintmax/tsconfig",
   "include": [".", ".next/types/**/*.ts"]
 }

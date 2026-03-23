@@ -1,4 +1,12 @@
 {
-  "exclude": ["node_modules"],
-  "extends": "lintmax/tsconfig"
+  "compilerOptions": {
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "~/*": ["../src/*"]
+    },
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "extends": "lintmax/tsconfig",
+  "include": ["."]
 }
