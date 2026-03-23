@@ -264,25 +264,7 @@ const userTokens = new Map<string, string>(),
     const inviteToken = typeof invite.token === 'string' ? invite.token : String(invite.token),
       memberToken = userTokens.get(_userId)
     if (!memberToken) return ''
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        await httpReducer('org_accept_invite', [inviteToken], memberToken)
-        break
-      } catch {
-        await delay(500)
-        const retryInvites = await httpQuery('org_invite', ctx.token),
-          retryFiltered = retryInvites.filter(i => Number(i.org_id) === toU32(orgId)),
-          retryInvite = retryFiltered.at(-1)
-        if (retryInvite && typeof retryInvite.token === 'string') {
-          try {
-            await httpReducer('org_accept_invite', [retryInvite.token], memberToken)
-            break
-          } catch {
-            /* retry */
-          }
-        }
-      }
-    }
+    await httpReducer('org_accept_invite', [inviteToken], memberToken)
     await delay(300)
     const members = await httpQuery('org_member', ctx.token),
       orgMembers = members.filter(m => Number(m.org_id) === toU32(orgId)),
@@ -306,7 +288,14 @@ const userTokens = new Map<string, string>(),
     cleanupOrgTestData: async () => {
       try {
         const { token } = getHttpCtx(),
-          orgs = await httpQuery('org', token)
+          invites = await httpQuery('org_invite', token)
+        for (const inv of invites)
+          try {
+            await httpReducer('org_revoke_invite', [inv.id], token)
+          } catch {
+            /* */
+          }
+        const orgs = await httpQuery('org', token)
         for (const org of orgs)
           try {
             await httpReducer('org_remove', [org.id], token)
