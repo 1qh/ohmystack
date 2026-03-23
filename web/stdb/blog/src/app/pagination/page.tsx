@@ -28,7 +28,7 @@ const Page = () => {
       ) : hasMore ? (
         <p className='h-8' data-testid='load-more-trigger' ref={ref} />
       ) : (
-        <Check className='m-auto animate-[fadeOut_2s_forwards] text-green-500' data-testid='pagination-exhausted' />
+        <Check className='m-auto animate-[fadeOut_10s_forwards] text-green-500' data-testid='pagination-exhausted' />
       )}
     </div>
   )
