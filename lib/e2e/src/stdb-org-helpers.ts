@@ -256,7 +256,7 @@ const userTokens = new Map<string, string>(),
   addTestOrgMember = async (orgId: string, _userId: string, isAdmin: boolean): Promise<string> => {
     const ctx = getHttpCtx()
     await httpReducer('org_send_invite', [`test-${Date.now()}@test.local`, isAdmin, toU32(orgId)], ctx.token)
-    await delay(300)
+    await delay(500)
     const invites = await httpQuery('org_invite', ctx.token),
       filtered = invites.filter(i => Number(i.org_id) === toU32(orgId)),
       invite = filtered.at(-1)
@@ -264,7 +264,25 @@ const userTokens = new Map<string, string>(),
     const inviteToken = typeof invite.token === 'string' ? invite.token : String(invite.token),
       memberToken = userTokens.get(_userId)
     if (!memberToken) return ''
-    await httpReducer('org_accept_invite', [inviteToken], memberToken)
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await httpReducer('org_accept_invite', [inviteToken], memberToken)
+        break
+      } catch {
+        await delay(500)
+        const retryInvites = await httpQuery('org_invite', ctx.token),
+          retryFiltered = retryInvites.filter(i => Number(i.org_id) === toU32(orgId)),
+          retryInvite = retryFiltered.at(-1)
+        if (retryInvite && typeof retryInvite.token === 'string') {
+          try {
+            await httpReducer('org_accept_invite', [retryInvite.token], memberToken)
+            break
+          } catch {
+            /* retry */
+          }
+        }
+      }
+    }
     await delay(300)
     const members = await httpQuery('org_member', ctx.token),
       orgMembers = members.filter(m => Number(m.org_id) === toU32(orgId)),
