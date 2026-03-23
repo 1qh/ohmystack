@@ -43,6 +43,7 @@ const WikiPage = () => {
 			if (!wiki) return;
 			await updateWiki({
 				content: wiki.content,
+				expectedUpdatedAt: undefined,
 				id: wiki.id,
 				slug: wiki.slug,
 				status: wiki.status,
