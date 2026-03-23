@@ -286,6 +286,20 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
           }
           pk.update(nextRecord as unknown as Row)
         } else {
+          if (options?.cascade) {
+            const childTableObj = (ctx.db as Record<string, unknown>)[options.cascade.table],
+              fk = options.cascade.foreignKey
+            if (childTableObj) {
+              const childRows: Record<string, unknown>[] = [],
+                tbl = childTableObj as Iterable<Record<string, unknown>> & {
+                  iter?: () => Iterable<Record<string, unknown>>
+                },
+                iter = typeof tbl.iter === 'function' ? tbl.iter() : tbl
+              for (const child of iter) if (Object.is(child[fk], id)) childRows.push(child)
+              for (const child of childRows)
+                (childTableObj as { id: { delete: (v: unknown) => boolean } }).id.delete(child.id)
+            }
+          }
           const deleted = pk.delete(id)
           if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
         }

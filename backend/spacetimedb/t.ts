@@ -58,6 +58,7 @@ const file = cvFile(),
       task: object({
         completed: boolean().optional(),
         priority: zenum(['low', 'medium', 'high']).optional(),
+        projectId: number(),
         title: string().min(1)
       }),
       wiki: object({

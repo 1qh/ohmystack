@@ -77,6 +77,7 @@ interface OrgCrudOptions<
   UpdatePatch extends Record<string, unknown> = Record<string, unknown>
 > {
   acl?: boolean
+  cascade?: { foreignKey: string; table: string }
   hooks?: CrudHooks<DB, Row, CreateArgs, UpdatePatch>
   rateLimit?: RateLimitConfig
   softDelete?: boolean

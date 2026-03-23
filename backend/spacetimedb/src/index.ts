@@ -10,10 +10,11 @@ export default noboilStdb(({ t, table }) => ({
   org: table(s.team, { unique: ['slug'] }),
   orgProfile: table(s.orgProfile),
   project: table(s.project, {
+    cascadeTo: { foreignKey: 'projectId', table: 'task' },
     extra: { editors: t.array(t.identity()).optional() }
   }),
   task: table(s.task, {
-    extra: { assigneeId: t.identity().optional(), projectId: t.u32().index() }
+    extra: { assigneeId: t.identity().optional() }
   }),
   wiki: table(s.wiki, {
     compoundIndex: ['orgId', 'slug'],

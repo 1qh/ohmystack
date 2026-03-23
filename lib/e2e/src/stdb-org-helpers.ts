@@ -243,12 +243,11 @@ const userTokens = new Map<string, string>(),
             slug: string
           }[]
         for (const org of orgs)
-          if (org.slug.startsWith(prefix))
-            try {
-              await httpReducer('org_remove', [org.id], token)
-            } catch {
-              /* Ignore cleanup errors */
-            }
+          try {
+            await httpReducer('org_remove', [org.id], token)
+          } catch {
+            /* Ignore cleanup errors */
+          }
       } catch {
         /* Not initialized or table doesn't exist */
       }
@@ -369,7 +368,13 @@ const userTokens = new Map<string, string>(),
               toOption(args.expectedUpdatedAt)
             ]
           case 'task.create':
-            return [toU32(args.orgId), toOption(args.completed), toOption(args.priority), String(args.title ?? '')]
+            return [
+              toU32(args.orgId),
+              toOption(args.completed),
+              toOption(args.priority),
+              toU32(args.projectId ?? 0),
+              String(args.title ?? '')
+            ]
           case 'task.rm':
             return [toU32(args.id)]
           case 'task.toggle':

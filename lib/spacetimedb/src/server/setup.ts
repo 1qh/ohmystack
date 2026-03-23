@@ -904,6 +904,7 @@ type OrgDefBranded = OrgDefSchema<ZodRawShape>
 type OrgScopedBranded = OrgSchema<ZodRawShape>
 interface OrgScopedOpts<F = unknown> extends OwnedOpts<F> {
   cascade?: boolean
+  cascadeTo?: { foreignKey: string; table: string }
   compoundIndex?: ('orgId' | ZodKeys<F>)[]
   indexes?: {
     accessor: string
@@ -1044,6 +1045,7 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
     const o: Record<string, unknown> = {}
     if (m.rateLimit) o.rateLimit = m.rateLimit
     if (m.softDelete) o.softDelete = m.softDelete
+    if ('cascadeTo' in m) o.cascade = (m as OrgScopedOpts).cascadeTo
     if (m.ttl !== undefined) o.ttl = m.ttl
     if (m.keyName) o.key = m.keyName
     if (oKeys(o).length > 0) ctx.tblOpts[name] = o as never
@@ -1108,6 +1110,7 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
       orgScopedTable = <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>): BsTable => {
         const {
             cascade = true,
+            cascadeTo,
             compoundIndex,
             extra,
             index,
@@ -1129,12 +1132,13 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
         return bsOf(
           {
             cascade,
+            cascadeTo,
             category: 'orgScoped',
             pub,
             rateLimit,
             softDelete,
             zod: bsZod(fields)
-          },
+          } as BsTag,
           raw.orgScopedTable(fields, mergedExtra, stdbOpts)
         )
       },
