@@ -51,8 +51,8 @@ interface SqlSchema {
 interface SqlSchemaElement {
   name?: { some?: string }
 }
-const SNAKE_TO_CAMEL_RE = /_([a-z])/gu,
-  CAMEL_TO_SNAKE_RE = /([A-Z])/gu,
+const SNAKE_TO_CAMEL_RE = /_(?<ch>[a-z])/gu,
+  CAMEL_TO_SNAKE_RE = /(?<ch>[A-Z])/gu,
   ERROR_CODE_RE = /REDUCER_CALL_FAILED\([^)]*\):\s*(?!The\s)(?<code>[A-Z_]+)/u,
   ERROR_CODE_FALLBACK_RE = /(?:code[":]+\s*)(?<code>[A-Z_]+)/u,
   FATAL_ERROR_RE = /fatal error/iu,
@@ -132,8 +132,12 @@ const userTokens = new Map<string, string>(),
   },
   httpQuery = async (tableName: string, token: string): Promise<Record<string, unknown>[]> =>
     httpSql(`SELECT * FROM ${tableName}`, token),
-  snakeToCamel = (s: string): string => s.replaceAll(SNAKE_TO_CAMEL_RE, (_, c: string) => c.toUpperCase()),
-  camelToSnake = (s: string): string => s.replaceAll(CAMEL_TO_SNAKE_RE, '_$1').toLowerCase(),
+  snakeToCamel = (s: string): string =>
+    s.replaceAll(SNAKE_TO_CAMEL_RE, (...args: unknown[]) => {
+      const groups = args.at(-1) as { ch: string }
+      return groups.ch.toUpperCase()
+    }),
+  camelToSnake = (s: string): string => s.replaceAll(CAMEL_TO_SNAKE_RE, '_$<ch>').toLowerCase(),
   unwrapOption = (v: unknown): unknown => {
     if (Array.isArray(v) && v.length === 2) {
       if (v[0] === 0) return unwrapOption(v[1])
