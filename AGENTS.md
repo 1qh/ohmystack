@@ -256,7 +256,7 @@ Internal, never published. Workspace alias `@a/shared`. Both libraries import fr
 - SpacetimeDB E2E: republish module before running tests (`bun spacetime:publish`). Stale module state causes “fatal error” on reducers.
 - SpacetimeDB E2E: stdb blog avatar upload test requires working MinIO presign endpoint. Check MinIO container health.
 - Shimmer component (`@a/ui/ai-elements/shimmer`) requires `as` prop (e.g. `as="p"`). Without it, `motion.create(undefined)` crashes.
-- SpacetimeDB org E2E UI: data created via HTTP API in `beforeAll` may not appear in browser WebSocket subscriptions. The SpacetimeDB SDK subscription initial snapshot sometimes misses HTTP-created rows. Affected tests: "projects/wiki/settings list shows created X". API tests pass because they query via HTTP.
+- SpacetimeDB org E2E UI: data created via HTTP API in `beforeAll` may not appear in browser WebSocket subscriptions. The SpacetimeDB SDK subscription initial snapshot sometimes misses HTTP-created rows. Affected tests: “projects/wiki/settings list shows created X”. API tests pass because they query via HTTP.
 - SpacetimeDB org E2E: test helpers (`lib/e2e/src/stdb-org-helpers.ts`) share identity with browser via `addInitScript` + `activeOrgId` cookie. Run `spacetime publish --delete-data` before test runs.
 - SpacetimeDB blog avatar E2E: requires MinIO with public-read bucket. Setup: `docker exec noboil-stdb-minio-1 mc mb --ignore-existing local/mybucket && docker exec noboil-stdb-minio-1 mc anonymous set download local/mybucket`. Set `.env`: `S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_ENDPOINT=http://localhost:9002 S3_BUCKET=mybucket`.
 
