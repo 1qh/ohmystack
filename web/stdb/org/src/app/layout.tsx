@@ -61,9 +61,7 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
     if (!(identity || isPlaywright)) return null
     if (!(orgsReady && membersReady)) return null
     // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
-    const ownedOrgs = identity
-        ? orgs.filter((o: Org) => sameIdentity(o.userId, identity))
-        : [],
+    const ownedOrgs = identity ? orgs.filter((o: Org) => sameIdentity(o.userId, identity)) : [],
       memberOrgs = identity
         ? members
             .filter((m: OrgMember) => m.userId.toHexString() === identity.toHexString())
@@ -78,7 +76,9 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
       ownedItems = ownedOrgs
         .filter((o: Org) => !memberOrgs.some(m => m.org._id === String(o.id)))
         .map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole })),
-      myOrgItems = identity ? [...ownedItems, ...memberOrgs] : orgs.map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
+      myOrgItems = identity
+        ? [...ownedItems, ...memberOrgs]
+        : orgs.map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
     if (myOrgItems.length === 0) {
       if (isPlaywright && !playwrightWaitExpired) return null
       router.replace('/')
