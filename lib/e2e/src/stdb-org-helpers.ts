@@ -288,12 +288,11 @@ const userTokens = new Map<string, string>(),
 			members = (await httpQuery("org_member", ctx.token)) as {
 				id: number;
 				org_id: number;
+				user_id: unknown;
 			}[],
-			filtered = members.filter((m) => m.org_id === toU32(orgId));
-		if (filtered.length > 1) {
-			const last = filtered.at(-1);
-			if (last) await httpReducer("org_remove_member", [last.id], ctx.token);
-		}
+			filtered = members.filter((m) => m.org_id === toU32(orgId)),
+			target = filtered.find((m) => String(m.user_id).includes(_userId.slice(0, 20)));
+		if (target) await httpReducer("org_remove_member", [target.id], ctx.token);
 	},
 	makeOrgTestUtils = (prefix: string) => ({
 		cleanupOrgTestData: async () => {
