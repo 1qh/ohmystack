@@ -36,7 +36,6 @@ const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const,
     parentPub?: RlsPub
   }): string[] => {
     if (parentPub === true) return []
-    if (typeof parentPub === 'string') return [rlsChildJoinPubOrSender({ child: name, fk, parent, pubCol: parentPub })]
     return [rlsWhereSender(name, RLS_COL.userId)]
   },
   rlsSql = (name: string, category: RlsCategory, pub?: RlsPub): string[] => {
@@ -45,11 +44,7 @@ const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const,
       if (typeof pub === 'string') return [rlsWherePubOrSender(name, pub, RLS_COL.userId)]
       return [rlsWhereSender(name, RLS_COL.userId)]
     }
-    if (category === 'orgScoped') {
-      const rules = [rlsJoinWhereSender(name, RLS_TBL.orgMember, RLS_COL.orgId)]
-      if (typeof pub === 'string') rules.push(rlsWherePub(name, pub))
-      return rules
-    }
+    if (category === 'orgScoped') return []
     return []
   }
 export type { RlsCategory, RlsPub }

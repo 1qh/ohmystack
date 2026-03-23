@@ -204,8 +204,8 @@ const HTTP_OK = 200,
       resolvedUri = toWsUri(uri),
       key = `${resolvedUri}::${moduleName}`,
       cache = getBuilderCache<TBuilder>(DbConnection),
-      existing = cache.get(key)
-    const currentToken = tokenStore?.get()
+      existing = cache.get(key),
+      currentToken = tokenStore?.get()
     if (existing) {
       const cachedToken = (existing as unknown as { _cachedToken?: string })._cachedToken
       if (cachedToken === currentToken) return existing

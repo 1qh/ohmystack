@@ -44,9 +44,9 @@ const normalizeQuery = (query: string): string => query.trim().toLowerCase(),
       return () => clearTimeout(id)
     }, [debounceMs, opts.query, skipped])
     const results = useMemo(() => {
-        if (skipped || !isReady) return []
+        if (skipped) return []
         return filterSearchData(data, opts.fields, normalizeQuery(debouncedQuery))
-      }, [data, debouncedQuery, isReady, opts.fields, skipped]),
+      }, [data, debouncedQuery, opts.fields, skipped]),
       isSearching = skipped || opts.query !== debouncedQuery || !isReady
     if (skipped) return SKIP_SEARCH as UseSearchResult<T>
     return { isSearching, results }

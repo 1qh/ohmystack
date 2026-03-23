@@ -122,7 +122,7 @@ describe('blog reducer flow', () => {
   })
 })
 describe('chat and message reducers', () => {
-  test('message rows hidden after chat remove due to children RLS JOIN', async () => {
+  test('message rows still visible after chat remove with sender-only RLS', async () => {
     await withCtx(async ctx => {
       const [user] = ctx.users
       if (!user) throw new Error('Missing test user')
@@ -141,7 +141,7 @@ describe('chat and message reducers', () => {
       await callReducer(ctx, 'rm_chat', { id: chatId }, user)
       const messagesAfter = await listTable(ctx, 'message', user),
         forChatAfter = messagesAfter.filter(row => getNumber(row, 'chat_id') === chatId)
-      expect(forChatAfter).toHaveLength(0)
+      expect(forChatAfter.length).toBeGreaterThanOrEqual(2)
     })
   })
 })

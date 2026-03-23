@@ -9436,19 +9436,13 @@ describe('RLS SQL generation from pub metadata', () => {
     const sqls = rlsSql('movie', 'owned', true)
     expect(sqls).toHaveLength(0)
   })
-  test('orgScoped table without pub generates join filter', () => {
+  test('orgScoped table without pub generates no RLS', () => {
     const sqls = rlsSql('task', 'orgScoped')
-    expect(sqls).toHaveLength(1)
-    expect(sqls[0]).toContain('JOIN "orgMember"')
-    expect(sqls[0]).toContain('"task"."orgId" = "orgMember"."orgId"')
-    expect(sqls[0]).toContain('"orgMember"."userId" = :sender')
+    expect(sqls).toHaveLength(0)
   })
-  test('orgScoped table with pub field generates join + pub filters', () => {
+  test('orgScoped table with pub field generates no RLS', () => {
     const sqls = rlsSql('project', 'orgScoped', 'isPublic')
-    expect(sqls).toHaveLength(2)
-    expect(sqls[0]).toContain('JOIN "orgMember"')
-    expect(sqls[0]).toContain('"orgMember"."userId" = :sender')
-    expect(sqls[1]).toContain('"project"."isPublic" = true')
+    expect(sqls).toHaveLength(0)
   })
   test('children table generates sender-only filter', () => {
     const sqls = rlsSql('message', 'children')
@@ -9477,13 +9471,13 @@ describe('RLS SQL generation from pub metadata', () => {
     const sqls = rlsSql('blog', 'owned', 'published')
     expect(sqls[0]?.startsWith('SELECT * FROM "blog" WHERE "blog"."published"')).toBe(true)
   })
-  test('generated SQL for orgScoped uses SELECT table.* with JOIN', () => {
+  test('orgScoped generates empty RLS array', () => {
     const sqls = rlsSql('task', 'orgScoped')
-    expect(sqls[0]?.startsWith('SELECT "task".* FROM "task" JOIN')).toBe(true)
+    expect(sqls).toHaveLength(0)
   })
 })
 describe('Children RLS parent inheritance', () => {
-  test('child inherits parent pub field — generates JOIN filter with pub OR sender', () => {
+  test('child with parent pub field generates sender-only filter', () => {
     const sqls = rlsChildSql({
       fk: 'chatId',
       name: 'message',
@@ -9491,11 +9485,8 @@ describe('Children RLS parent inheritance', () => {
       parentPub: 'isPublic'
     })
     expect(sqls).toHaveLength(1)
-    expect(sqls[0]).toContain('JOIN "chat"')
-    expect(sqls[0]).toContain('"message"."chatId" = "chat"."id"')
-    expect(sqls[0]).toContain('"chat"."isPublic" = true')
     expect(sqls[0]).toContain('"message"."userId" = :sender')
-    expect(sqls[0]).toContain('OR')
+    expect(sqls[0]).not.toContain('JOIN')
   })
   test('child with fully-public parent (pub=true) generates no RLS', () => {
     const sqls = rlsChildSql({
@@ -9521,24 +9512,24 @@ describe('Children RLS parent inheritance', () => {
     expect(sqls).toHaveLength(1)
     expect(sqls[0]).toContain('"attachment"."userId" = :sender')
   })
-  test('child JOIN SQL uses SELECT child.* format', () => {
+  test('child with parent pub uses sender-only SQL format', () => {
     const sqls = rlsChildSql({
       fk: 'chatId',
       name: 'message',
       parent: 'chat',
       parentPub: 'isPublic'
     })
-    expect(sqls[0]?.startsWith('SELECT "message".* FROM "message" JOIN')).toBe(true)
+    expect(sqls[0]?.startsWith('SELECT * FROM "message" WHERE')).toBe(true)
   })
-  test('child JOIN references parent id column', () => {
+  test('child with parent pub uses sender filter not JOIN', () => {
     const sqls = rlsChildSql({
       fk: 'commentId',
       name: 'reply',
       parent: 'comment',
       parentPub: 'visible'
     })
-    expect(sqls[0]).toContain('"reply"."commentId" = "comment"."id"')
-    expect(sqls[0]).toContain('"comment"."visible" = true')
+    expect(sqls[0]).toContain('"reply"."userId" = :sender')
+    expect(sqls[0]).not.toContain('JOIN')
   })
 })
 describe('Sprint 8 polish: parseSenderMessage adds debug on JSON parse failure', () => {

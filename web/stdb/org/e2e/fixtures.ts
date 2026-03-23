@@ -1,5 +1,5 @@
 import { test as baseTest, expect } from '@a/e2e/base-test'
-import { login } from '@a/e2e/helpers'
+import { login } from './helpers'
 import OnboardingPage from './pages/onboarding'
 interface Fixtures {
   onboardingPage: OnboardingPage
