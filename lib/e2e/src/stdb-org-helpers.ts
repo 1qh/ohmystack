@@ -152,6 +152,7 @@ const userTokens = new Map<string, string>(),
     if (typeof v === 'string' && v.startsWith('0x')) return v.slice(2)
     return v
   },
+  str = (v: unknown): string => (typeof v === 'string' ? v : typeof v === 'number' ? `${v}` : ''),
   normalizeRow = (row: Record<string, unknown>): NormalizedRow => {
     const out: NormalizedRow = {}
     for (const key of Object.keys(row)) {
@@ -161,9 +162,9 @@ const userTokens = new Map<string, string>(),
       out[camel] = val
       if (camel !== key) out[key] = val
     }
-    if (out.id !== undefined) out._id = String(out.id)
-    if (out.orgId !== undefined) out.orgId = String(out.orgId)
-    if (out.org_id !== undefined) out.org_id = String(out.org_id)
+    if (out.id !== undefined) out._id = str(out.id)
+    if (out.orgId !== undefined) out.orgId = str(out.orgId)
+    if (out.org_id !== undefined) out.org_id = str(out.org_id)
     return out
   },
   toOption = (v: unknown): { none: [] } | { some: unknown } =>
@@ -223,7 +224,7 @@ const userTokens = new Map<string, string>(),
       /* */
     }
   },
-  createTestUser = async (_email: string, _name: string): Promise<string> => {
+  createTestUser = async (_ : string, __: string): Promise<string> => {
     const response = await fetch(`${DEFAULT_HTTP_URL}/v1/identity`, {
         method: 'POST'
       }),
@@ -265,21 +266,21 @@ const userTokens = new Map<string, string>(),
     await delay(300)
     const members = await httpQuery('org_member', ctx.token),
       orgMembers = members.filter(m => Number(m.org_id) === toU32(orgId)),
-      member = orgMembers.find(m => String(m.user_id).includes(_userId.slice(0, 20))) ?? orgMembers.at(-1)
-    return member ? String(member.id) : ''
+      member = orgMembers.find(m => str(m.user_id).includes(_userId.slice(0, 20))) ?? orgMembers.at(-1)
+    return member ? str(member.id) : ''
   },
   removeTestOrgMember = async (orgId: string, _userId: string): Promise<void> => {
     const ctx = getHttpCtx(),
       members = await httpQuery('org_member', ctx.token),
       filtered = members.filter(m => Number(m.org_id) === toU32(orgId)),
-      target = filtered.find(m => String(m.user_id).includes(_userId.slice(0, 20)))
+      target = filtered.find(m => str(m.user_id).includes(_userId.slice(0, 20)))
     if (target) await httpReducer('org_remove_member', [target.id], ctx.token)
   },
   resolveApiPath = (apiRef: unknown): string => {
-    const str = String(apiRef),
-      match = API_PATH_RE.exec(str)
+    const raw = typeof apiRef === "string" ? apiRef : `${apiRef as string}`,
+      match = API_PATH_RE.exec(raw)
     if (match?.groups) return `${match.groups.mod}.${match.groups.fn}`
-    return str
+    return raw
   },
   makeOrgTestUtils = (prefix: string) => ({
     cleanupOrgTestData: async () => {
@@ -329,11 +330,11 @@ const userTokens = new Map<string, string>(),
     const data = (args.data ?? args) as Record<string, unknown>
     switch (apiPath) {
       case 'org.acceptInvite':
-        return [String(args.token ?? '')]
+        return [str(args.token)]
       case 'org.create':
-        return [toOption(data.avatarId), String(data.name ?? ''), String(data.slug ?? '')]
+        return [toOption(data.avatarId), str(data.name), str(data.slug)]
       case 'org.invite':
-        return [String(args.email ?? ''), Boolean(args.isAdmin), toU32(args.orgId)]
+        return [str(args.email), Boolean(args.isAdmin), toU32(args.orgId)]
       case 'org.leave':
         return [toU32(args.orgId)]
       case 'org.remove':
@@ -357,7 +358,7 @@ const userTokens = new Map<string, string>(),
           toOption(data.theme)
         ]
       case 'project.create':
-        return [toU32(args.orgId), toOption(args.description), String(args.name ?? ''), toOption(args.status)]
+        return [toU32(args.orgId), toOption(args.description), str(args.name), toOption(args.status)]
       case 'project.rm':
         return [toU32(args.id)]
       case 'project.update':
@@ -374,20 +375,14 @@ const userTokens = new Map<string, string>(),
           toOption(args.completed),
           toOption(args.priority),
           toU32(args.projectId ?? 0),
-          String(args.title ?? '')
+          str(args.title)
         ]
       case 'task.rm':
         return [toU32(args.id)]
       case 'task.toggle':
         return [toU32(args.id), { some: { some: true } }, { none: [] }, { none: [] }, { none: [] }, { none: [] }]
       case 'wiki.create':
-        return [
-          toU32(args.orgId),
-          toOption(args.content),
-          String(args.slug ?? ''),
-          String(args.status ?? 'draft'),
-          String(args.title ?? '')
-        ]
+        return [toU32(args.orgId), toOption(args.content), str(args.slug), str(args.status) || 'draft', str(args.title)]
       case 'wiki.rm':
         return [toU32(args.id)]
       case 'wiki.update':
@@ -635,13 +630,13 @@ const userTokens = new Map<string, string>(),
         const { token } = getHttpCtx(),
           cleanName = name.includes(':') ? (name.split(':')[1] ?? name) : name
         if (cleanName === 'requestJoinAsUser') {
-          const userToken = userTokens.get(String(args.userId)) ?? token
+          const userToken = userTokens.get(str(args.userId)) ?? token
           await httpReducer('org_request_join', [toOption(args.message), toU32(args.orgId)], userToken)
           return undefined as T
         }
         if (cleanName === 'create') {
           const data = (args.data ?? args) as Record<string, unknown>
-          await httpReducer('org_create', [{ none: [] }, String(data.name ?? ''), String(data.slug ?? '')], token)
+          await httpReducer('org_create', [{ none: [] }, str(data.name), str(data.slug)], token)
           return undefined as T
         }
         await httpReducer(camelToSnake(cleanName), Object.values(args), token)
