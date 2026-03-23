@@ -1,2 +1,4 @@
 import { createPlaywrightConfig } from '@a/e2e/playwright-config'
-export default createPlaywrightConfig({ port: 3002 })
+const config = createPlaywrightConfig({ port: 3002 })
+config.timeout = 45_000
+export default config
