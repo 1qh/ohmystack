@@ -140,7 +140,8 @@ const DAY_HOURS = 24,
     inviteByTokenIndex: Iterable<InviteRow>,
     token: string
   ): InviteRow | null => {
-    for (const invite of inviteByTokenIndex) if (invite.token === token) return invite
+    for (const invite of inviteByTokenIndex)
+      if (invite.token === token) return invite
     return null
   },
   findPendingJoinRequest = <RequestId, OrgId, JoinRequestRow extends OrgJoinRequestRowLike<RequestId, OrgId>>(
@@ -375,7 +376,6 @@ const DAY_HOURS = 24,
         org_revoke_invite: revokeInviteReducer,
         org_send_invite: inviteReducer
       }
-    }
   }
 export type {
   OrgInviteByTokenIndexLike,
