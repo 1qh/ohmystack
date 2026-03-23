@@ -274,7 +274,10 @@ const userTokens = new Map<string, string>(),
 				org_id: number;
 				user_id: unknown;
 			}[],
-			member = members.filter((m) => m.org_id === toU32(orgId)).at(-1);
+			orgMembers = members.filter((m) => m.org_id === toU32(orgId)),
+			member = orgMembers.find(
+				(m) => typeof m.user_id === 'string' && m.user_id.includes(_userId.slice(0, 20))
+			) ?? orgMembers.at(-1);
 		return member ? String(member.id) : "";
 	},
 	removeTestOrgMember = async (
