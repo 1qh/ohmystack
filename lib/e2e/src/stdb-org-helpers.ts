@@ -276,7 +276,7 @@ const userTokens = new Map<string, string>(),
 			}[],
 			orgMembers = members.filter((m) => m.org_id === toU32(orgId)),
 			member = orgMembers.find(
-				(m) => typeof m.user_id === 'string' && m.user_id.includes(_userId.slice(0, 20))
+				(m) => String(m.user_id).includes(_userId.slice(0, 20))
 			) ?? orgMembers.at(-1);
 		return member ? String(member.id) : "";
 	},

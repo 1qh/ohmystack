@@ -80,8 +80,10 @@ const TOKEN_FILE = join(import.meta.dirname, ".stdb-test-token.json"),
 				const id = row[idIdx];
 				if (typeof id !== "number") continue;
 				try {
+					const reducerName = table === "blog_profile" ? "upsert_blogProfile" : `rm_${table}`
+					if (table === "blog_profile") continue
 					await fetch(
-						`${DEFAULT_HTTP_URL}/v1/database/${DEFAULT_MODULE}/call/rm_${table.replace("_profile", "Profile")}`,
+						`${DEFAULT_HTTP_URL}/v1/database/${DEFAULT_MODULE}/call/${reducerName}`,
 						{
 							body: JSON.stringify([id]),
 							headers: {
