@@ -48,10 +48,7 @@ const makeError = (code: string, message: string): Error => new Error(`${code}: 
   },
   pickPatch = (args: Record<string, unknown>, fieldNames: string[]): Record<string, unknown> => {
     const patchRecord: Record<string, unknown> = {}
-    for (const key of fieldNames) {
-      const value = args[key]
-      if (value !== undefined) patchRecord[key] = value
-    }
+    for (const key of fieldNames) if (key in args) patchRecord[key] = args[key]
     return patchRecord
   },
   applyPatch = <Row extends Record<string, unknown>>(
