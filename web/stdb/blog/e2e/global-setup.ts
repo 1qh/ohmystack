@@ -1,1 +1,5 @@
-export { default } from '@a/e2e/global-setup'
+import { cleanupTestData } from './helpers'
+const globalSetup = async () => {
+  await cleanupTestData()
+}
+export default globalSetup
