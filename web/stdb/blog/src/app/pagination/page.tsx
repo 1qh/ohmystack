@@ -21,7 +21,7 @@ const Page = () => {
     }),
     showLoading = isLoading,
     showLoadMore = !isLoading && hasMore,
-    showExhausted = !isLoading && !hasMore && data.length > 0
+    showExhausted = !(isLoading || hasMore) && data.length > 0
   useEffect(() => {
     if (inView && hasMore && !isLoading) loadMore()
   }, [hasMore, inView, isLoading, loadMore])
@@ -31,8 +31,16 @@ const Page = () => {
       <List blogs={data} />
       <Spinner className={showLoading ? 'm-auto' : 'sr-only'} data-testid='loading-more' />
       {/* oxlint-disable-next-line react-perf/jsx-no-new-object-as-prop */}
-      <p className={showLoadMore ? 'h-8' : 'sr-only'} data-testid='load-more-trigger' ref={ref} style={showLoadMore ? undefined : { position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />
-      <Check className={showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only'} data-testid='pagination-exhausted' />
+      <p
+        className={showLoadMore ? 'h-8' : 'sr-only'}
+        data-testid='load-more-trigger'
+        ref={ref}
+        style={showLoadMore ? undefined : { height: 0, overflow: 'hidden', position: 'absolute', width: 0 }}
+      />
+      <Check
+        className={showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only'}
+        data-testid='pagination-exhausted'
+      />
     </div>
   )
 }

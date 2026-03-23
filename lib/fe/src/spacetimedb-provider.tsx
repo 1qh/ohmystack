@@ -18,7 +18,7 @@ const TOKEN_STORE = createTokenStore(),
   SpacetimeProvider = ({ children, fileApi, noAuth, spacetimeUri }: SpacetimeDBProviderProps) => {
     const moduleName = env.SPACETIMEDB_MODULE_NAME,
       uri = spacetimeUri ?? env.NEXT_PUBLIC_SPACETIMEDB_URI,
-      builder = createSpacetimeClient({ DbConnection, moduleName, tokenStore: TOKEN_STORE, uri }),
+      builder = createSpacetimeClient({ DbConnection, moduleName, tokenStore: TOKEN_STORE, uri })
       guarded = <NavigationGuardProvider>{children}</NavigationGuardProvider>,
       withFiles = fileApi ? <FileApiProvider value={FILE_API}>{guarded}</FileApiProvider> : guarded,
       withAuth = noAuth ? (
