@@ -30,7 +30,6 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
     writeFileSync(TOKEN_FILE, JSON.stringify(data))
     return data
   },
-  initPages = new WeakSet<Page>(),
   login = async (page?: Page): Promise<void> => {
     if (!page) return
     const data = await ensureToken()
@@ -42,15 +41,12 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
         value: encodeURIComponent(data.token)
       }
     ])
-    if (!initPages.has(page)) {
-      initPages.add(page)
-      await page.addInitScript(
-        ({ t }) => {
-          globalThis.localStorage.setItem('spacetimedb.token', t)
-        },
-        { t: data.token }
-      )
-    }
+    await page.addInitScript(
+      ({ t }) => {
+        globalThis.localStorage.setItem('spacetimedb.token', t)
+      },
+      { t: data.token }
+    )
   },
   cleanupTestData = async () => {
     const data = await ensureToken(),
