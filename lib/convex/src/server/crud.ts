@@ -99,8 +99,7 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
         const and = (x: unknown) => {
           e = e ? fb.and(e, x) : x
         }
-        // biome-ignore lint/nursery/noForIn: x
-        for (const k in w)
+        for (const k of Object.keys(w))
           if (k !== 'own') {
             const fv = w[k]
             if (fv !== undefined) {
