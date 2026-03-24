@@ -1,5 +1,6 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
 import { identityEquals, makeError } from './reducer-utils'
 interface PresenceConfig<
   DB,
@@ -29,7 +30,6 @@ interface PresenceTableLike<Row> {
   insert: (row: Row) => Row
   iter: () => Iterable<Row>
 }
-import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
 const MICROS_PER_MILLISECOND = 1000n,
   ZERO_PREFIX_REGEX = /^0x/u,
   isAuthenticated = (sender: Identity): boolean => {

@@ -1,9 +1,9 @@
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { any, object, string } from 'zod/v4'
 import type { Mb, MutCtx, Qb, Rec } from './types'
 import { idx, indexFields, typed } from './bridge'
-import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
 const presenceTable = () => ({
     presence: defineTable({
       data: v.optional(v.any()),
