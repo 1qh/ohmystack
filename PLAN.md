@@ -61,7 +61,7 @@ noboil/
 
 ### lib/shared/ (internal, never published)
 
-~8,000 lines of code that is identical or near-identical across both libraries:
+~4,500 lines of shared code across 31 files (remaining differences are DB-specific implementations that can't be meaningfully shared):
 
 **100% identical (copy directly):**
 
