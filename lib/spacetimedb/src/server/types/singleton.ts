@@ -15,6 +15,12 @@ interface SingletonConfig<
   table: (db: DB) => Tbl
   tableName: string
 }
+interface SingletonConfigLoose {
+  fields: SingletonFieldBuilders
+  options?: SingletonOptions
+  table: (db: unknown) => unknown
+  tableName: string
+}
 interface SingletonExports {
   exports: Record<string, ReducerExportLike>
 }
@@ -55,6 +61,7 @@ interface SingletonTableLike<Row> extends Iterable<Row> {
 export type {
   SingletonBuilder,
   SingletonConfig,
+  SingletonConfigLoose,
   SingletonExports,
   SingletonFieldBuilders,
   SingletonFieldValues,

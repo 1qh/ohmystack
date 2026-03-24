@@ -83,6 +83,7 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
     if (!page) return
     const data = readTokenData()
     if (!data) return
+    await page.context().clearCookies()
     await page
       .context()
       .addCookies([
@@ -91,6 +92,9 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
       ])
     await page.addInitScript(
       ({ t }) => {
+        const g = globalThis as Record<string, unknown>
+        g.PLAYWRIGHT = '1'
+        globalThis.localStorage.clear()
         globalThis.localStorage.setItem('spacetimedb.token', t)
       },
       { t: data.token }

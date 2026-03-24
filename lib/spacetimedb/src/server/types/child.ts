@@ -1,6 +1,14 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
-import type { CrudConfig, CrudExports, CrudFieldBuilders, CrudFieldValues, CrudPkLike, CrudTableLike } from './crud'
+import type {
+  CrudConfig,
+  CrudExports,
+  CrudFieldBuilders,
+  CrudFieldValues,
+  CrudOptions,
+  CrudPkLike,
+  CrudTableLike
+} from './crud'
 type ChildConfig<
   DB,
   F extends CrudFieldBuilders,
@@ -30,6 +38,19 @@ interface ChildCrudConfig<
   parentPk: (table: ParentTbl) => ParentPk
   parentTable: (db: DB) => ParentTbl
 }
+interface ChildCrudConfigLoose {
+  expectedUpdatedAtField?: TypeBuilder<unknown, AlgebraicTypeType>
+  fields: CrudFieldBuilders
+  foreignKeyField: TypeBuilder<unknown, AlgebraicTypeType>
+  foreignKeyName: string
+  idField: TypeBuilder<unknown, AlgebraicTypeType>
+  options?: CrudOptions
+  parentPk: (table: unknown) => unknown
+  parentTable: (db: unknown) => unknown
+  pk: (table: unknown) => unknown
+  table: (db: unknown) => unknown
+  tableName: string
+}
 type ChildCrudExports = CrudExports
 type ChildCrudResult = ChildCrudExports
 interface ChildParentPkLike<Row, Id> {
@@ -38,6 +59,7 @@ interface ChildParentPkLike<Row, Id> {
 export type {
   ChildConfig,
   ChildCrudConfig,
+  ChildCrudConfigLoose,
   ChildCrudExports,
   ChildCrudResult,
   ChildParentPkLike,

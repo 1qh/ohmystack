@@ -208,7 +208,7 @@ const HTTP_OK = 200,
       currentToken = tokenStore?.get()
     if (existing) {
       const cachedToken = (existing as unknown as { _cachedToken?: string })._cachedToken
-      if (cachedToken === currentToken) return existing
+      if (cachedToken && cachedToken === currentToken) return existing
       cache.delete(key)
     }
     const builder = DbConnection.builder()

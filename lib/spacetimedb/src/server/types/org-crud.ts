@@ -31,6 +31,18 @@ interface OrgCrudConfig<
   table: (db: DB) => Tbl
   tableName: string
 }
+interface OrgCrudConfigLoose {
+  expectedUpdatedAtField?: TypeBuilder<unknown, AlgebraicTypeType>
+  fields: OrgCrudFieldBuilders
+  idField: TypeBuilder<unknown, AlgebraicTypeType>
+  isOrgOwner?: (db: unknown, orgId: unknown, sender: Identity) => boolean
+  options?: OrgCrudOptions
+  orgIdField: TypeBuilder<unknown, AlgebraicTypeType>
+  orgMemberTable: (db: unknown) => unknown
+  pk: (table: unknown) => unknown
+  table: (db: unknown) => unknown
+  tableName: string
+}
 interface OrgCrudExports {
   exports: Record<string, ReducerExportLike>
 }
@@ -99,6 +111,7 @@ export type {
   CanEditOpts,
   OrgCascadeTableConfig,
   OrgCrudConfig,
+  OrgCrudConfigLoose,
   OrgCrudExports,
   OrgCrudFieldBuilders,
   OrgCrudFieldValues,

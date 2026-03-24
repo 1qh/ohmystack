@@ -25,6 +25,15 @@ interface FileUploadConfig<
   pk: (table: Tbl) => Pk
   table: (db: DB) => Tbl
 }
+interface FileUploadConfigLoose {
+  allowedTypes?: Set<string>
+  fields: FileUploadFields
+  idField: TypeBuilder<unknown, AlgebraicTypeType>
+  maxFileSize?: number
+  namespace: string
+  pk: (table: unknown) => unknown
+  table: (db: unknown) => unknown
+}
 interface FileUploadExports {
   exports: Record<string, ReducerExportLike>
 }
@@ -47,6 +56,7 @@ export type {
   FileRowShape,
   FileUploadBuilder,
   FileUploadConfig,
+  FileUploadConfigLoose,
   FileUploadExports,
   FileUploadFields,
   FileUploadPkLike,

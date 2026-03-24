@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "ESNext"]
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "types": ["bun-types"]
   },
   "exclude": ["node_modules"],
   "extends": "lintmax/tsconfig",

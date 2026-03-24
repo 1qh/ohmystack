@@ -33,6 +33,7 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
   login = async (page?: Page): Promise<void> => {
     if (!page) return
     const data = await ensureToken()
+    await page.context().clearCookies()
     await page.context().addCookies([
       {
         domain: 'localhost',
@@ -45,6 +46,7 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
       ({ t }) => {
         const g = globalThis as Record<string, unknown>
         g.PLAYWRIGHT = '1'
+        globalThis.localStorage.clear()
         globalThis.localStorage.setItem('spacetimedb.token', t)
       },
       { t: data.token }
@@ -53,6 +55,7 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
     if (currentUrl !== 'about:blank' && !currentUrl.startsWith('chrome'))
       await page.evaluate(
         ({ t }) => {
+          globalThis.localStorage.clear()
           globalThis.localStorage.setItem('spacetimedb.token', t)
         },
         { t: data.token }

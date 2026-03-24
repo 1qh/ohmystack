@@ -23,6 +23,15 @@ interface CrudConfig<
   table: (db: DB) => Tbl
   tableName: string
 }
+interface CrudConfigLoose {
+  expectedUpdatedAtField?: TypeBuilder<unknown, AlgebraicTypeType>
+  fields: CrudFieldBuilders
+  idField: TypeBuilder<unknown, AlgebraicTypeType>
+  options?: CrudOptions
+  pk: (table: unknown) => unknown
+  table: (db: unknown) => unknown
+  tableName: string
+}
 interface CrudExports {
   exports: Record<string, ReducerExportLike>
 }
@@ -100,6 +109,7 @@ export type {
   CascadeOption,
   CrudBuilders,
   CrudConfig,
+  CrudConfigLoose,
   CrudExports,
   CrudFieldBuilders,
   CrudFieldValues,

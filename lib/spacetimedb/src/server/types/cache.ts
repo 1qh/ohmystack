@@ -18,6 +18,15 @@ interface CacheConfig<
   table: (db: DB) => Tbl
   tableName: string
 }
+interface CacheConfigLoose {
+  fields: CacheFieldBuilders
+  keyField: TypeBuilder<unknown, AlgebraicTypeType>
+  keyName: string
+  options?: CacheOptions
+  pk: (table: unknown) => unknown
+  table: (db: unknown) => unknown
+  tableName: string
+}
 type CacheCrudResult = CacheExports
 interface CacheExports {
   exports: Record<string, ReducerExportLike>
@@ -57,6 +66,7 @@ export type {
   CacheBuilder,
   CacheBuilders,
   CacheConfig,
+  CacheConfigLoose,
   CacheCrudResult,
   CacheExports,
   CacheFieldBuilders,

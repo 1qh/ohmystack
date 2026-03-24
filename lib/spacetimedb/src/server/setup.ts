@@ -18,11 +18,12 @@ import type {
   Rec,
   SingletonSchema
 } from './types'
-import type { CacheFieldBuilders, CacheOptions } from './types/cache'
-import type { CrudFieldBuilders, CrudHooks, CrudOptions } from './types/crud'
-import type { FileUploadFields } from './types/file'
-import type { OrgCrudFieldBuilders, OrgCrudOptions } from './types/org-crud'
-import type { SingletonFieldBuilders, SingletonHooks, SingletonOptions } from './types/singleton'
+import type { CacheConfigLoose, CacheFieldBuilders, CacheOptions } from './types/cache'
+import type { ChildCrudConfigLoose } from './types/child'
+import type { CrudConfigLoose, CrudFieldBuilders, CrudHooks, CrudOptions } from './types/crud'
+import type { FileUploadConfigLoose, FileUploadFields } from './types/file'
+import type { OrgCrudConfigLoose, OrgCrudFieldBuilders, OrgCrudOptions } from './types/org-crud'
+import type { SingletonConfigLoose, SingletonFieldBuilders, SingletonHooks, SingletonOptions } from './types/singleton'
 import { makeCacheCrud } from './cache-crud'
 import { makeChildCrud } from './child'
 import { makeCrud } from './crud'
@@ -409,12 +410,8 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         config.middleware && config.middleware.length > 0 ? composeMiddleware(...config.middleware) : undefined,
       globalHooks = mergeGlobalHooks(config.hooks, middlewareHooks),
       accumulatedExports: ReducerExportRecord = {},
-      crud = (factoryConfig: Parameters<typeof makeCrud>[1]) => {
-        const mergedHooks = mergeCrudHooks(
-            factoryConfig.tableName,
-            globalHooks,
-            factoryConfig.options?.hooks as CrudHooks | undefined
-          ),
+      crud = (factoryConfig: CrudConfigLoose) => {
+        const mergedHooks = mergeCrudHooks(factoryConfig.tableName, globalHooks, factoryConfig.options?.hooks),
           nextConfig = mergedHooks
             ? {
                 ...factoryConfig,
@@ -428,12 +425,8 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         registerExports(accumulatedExports, result.exports)
         return result
       },
-      orgCrud = (factoryConfig: Parameters<typeof makeOrgCrud>[1]) => {
-        const mergedHooks = mergeCrudHooks(
-            factoryConfig.tableName,
-            globalHooks,
-            factoryConfig.options?.hooks as CrudHooks | undefined
-          ),
+      orgCrud = (factoryConfig: OrgCrudConfigLoose) => {
+        const mergedHooks = mergeCrudHooks(factoryConfig.tableName, globalHooks, factoryConfig.options?.hooks),
           nextConfig = mergedHooks
             ? {
                 ...factoryConfig,
@@ -447,12 +440,8 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         registerExports(accumulatedExports, result.exports)
         return result
       },
-      childCrud = (factoryConfig: Parameters<typeof makeChildCrud>[1]) => {
-        const mergedHooks = mergeCrudHooks(
-            factoryConfig.tableName,
-            globalHooks,
-            factoryConfig.options?.hooks as CrudHooks | undefined
-          ),
+      childCrud = (factoryConfig: ChildCrudConfigLoose) => {
+        const mergedHooks = mergeCrudHooks(factoryConfig.tableName, globalHooks, factoryConfig.options?.hooks),
           nextConfig = mergedHooks
             ? {
                 ...factoryConfig,
@@ -466,12 +455,8 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         registerExports(accumulatedExports, result.exports)
         return result
       },
-      singletonCrud = (factoryConfig: Parameters<typeof makeSingletonCrud>[1]) => {
-        const mergedHooks = mergeSingletonHooks(
-            factoryConfig.tableName,
-            globalHooks,
-            factoryConfig.options?.hooks as SingletonHooks | undefined
-          ),
+      singletonCrud = (factoryConfig: SingletonConfigLoose) => {
+        const mergedHooks = mergeSingletonHooks(factoryConfig.tableName, globalHooks, factoryConfig.options?.hooks),
           nextConfig = mergedHooks
             ? {
                 ...factoryConfig,
@@ -485,8 +470,8 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         registerExports(accumulatedExports, result.exports)
         return result
       },
-      cacheCrud = (factoryConfig: Parameters<typeof makeCacheCrud>[1]) => {
-        const result = makeCacheCrud(spacetimedb, factoryConfig)
+      cacheCrud = (factoryConfig: CacheConfigLoose) => {
+        const result = makeCacheCrud(spacetimedb, factoryConfig as Parameters<typeof makeCacheCrud>[1])
         registerExports(accumulatedExports, result.exports)
         return result
       },
@@ -552,12 +537,12 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       const fields = schemas[name]
       if (fields)
         ctx.s.crud({
-          expectedUpdatedAtField: ctx.expectedUpdatedAtField as never,
+          expectedUpdatedAtField: ctx.expectedUpdatedAtField,
           fields: resolveCrudFields(fields, name, ctx.defaults) as CrudFieldBuilders,
-          idField: ctx.idField as never,
-          options: (ctx.opts?.[name] ?? undefined) as never,
-          pk: pkById as never,
-          table: tblOf(name) as never,
+          idField: ctx.idField,
+          options: (ctx.opts?.[name] ?? undefined) as CrudOptions | undefined,
+          pk: pkById,
+          table: tblOf(name),
           tableName: name
         })
     }
@@ -568,15 +553,15 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       const fields = schemas[name]
       if (fields)
         ctx.s.orgCrud({
-          expectedUpdatedAtField: ctx.expectedUpdatedAtField as never,
+          expectedUpdatedAtField: ctx.expectedUpdatedAtField,
           fields: resolveCrudFields(fields, name, ctx.defaults) as OrgCrudFieldBuilders,
-          idField: ctx.idField as never,
-          isOrgOwner: makeIsOrgOwner(tblOf('org')) as never,
-          options: (ctx.opts?.[name] ?? undefined) as never,
-          orgIdField: ctx.orgIdField as never,
-          orgMemberTable: tblOf('orgMember') as never,
-          pk: pkById as never,
-          table: tblOf(name) as never,
+          idField: ctx.idField,
+          isOrgOwner: makeIsOrgOwner(tblOf('org')),
+          options: (ctx.opts?.[name] ?? undefined) as OrgCrudOptions | undefined,
+          orgIdField: ctx.orgIdField,
+          orgMemberTable: tblOf('orgMember'),
+          pk: pkById,
+          table: tblOf(name),
           tableName: name
         })
     }
@@ -588,8 +573,8 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       if (fields)
         ctx.s.singletonCrud({
           fields: resolveCrudFields(fields, name, ctx.defaults) as SingletonFieldBuilders,
-          options: (ctx.opts?.[name] ?? undefined) as never,
-          table: tblOf(name) as never,
+          options: (ctx.opts?.[name] ?? undefined) as SingletonOptions | undefined,
+          table: tblOf(name),
           tableName: name
         })
     }
@@ -603,11 +588,11 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           keyName = tableOpts?.key ?? 'id'
         ctx.s.cacheCrud({
           fields: resolveCrudFields(fields, name, ctx.defaults) as CacheFieldBuilders,
-          keyField: ctx.idField as never,
+          keyField: ctx.idField,
           keyName,
           options: tableOpts?.ttl === undefined ? undefined : { ttl: tableOpts.ttl },
-          pk: pkByKey(keyName) as never,
-          table: tblOf(name) as never,
+          pk: pkByKey(keyName),
+          table: tblOf(name),
           tableName: name
         })
       }
@@ -619,16 +604,16 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       const entry = schemas[name]
       if (entry)
         ctx.s.childCrud({
-          expectedUpdatedAtField: ctx.expectedUpdatedAtField as never,
+          expectedUpdatedAtField: ctx.expectedUpdatedAtField,
           fields: resolveCrudFields(entry.schema, name, ctx.defaults) as CrudFieldBuilders,
-          foreignKeyField: ctx.fkField as never,
+          foreignKeyField: ctx.fkField,
           foreignKeyName: entry.foreignKey,
-          idField: ctx.idField as never,
-          options: (ctx.opts?.[name] ?? undefined) as never,
-          parentPk: pkById as never,
-          parentTable: tblOf(entry.parent) as never,
-          pk: pkById as never,
-          table: tblOf(name) as never,
+          idField: ctx.idField,
+          options: (ctx.opts?.[name] ?? undefined) as CrudOptions | undefined,
+          parentPk: pkById,
+          parentTable: tblOf(entry.parent),
+          pk: pkById,
+          table: tblOf(name),
           tableName: name
         })
     }
@@ -641,13 +626,17 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         size: ctx.stdbT.number(),
         storageKey: ctx.stdbT.string()
       } as FileUploadFields,
-      result = makeFileUpload(ctx.spacetimedb as Parameters<typeof makeFileUpload>[0], {
+      looseConfig: FileUploadConfigLoose = {
         fields: resolvedFields,
-        idField: ctx.idField as never,
+        idField: ctx.idField,
         namespace,
-        pk: pkById as never,
-        table: tblOf(namespace) as never
-      })
+        pk: pkById,
+        table: tblOf(namespace)
+      },
+      result = makeFileUpload(
+        ctx.spacetimedb as Parameters<typeof makeFileUpload>[0],
+        looseConfig as Parameters<typeof makeFileUpload>[1]
+      )
     registerExports(ctx.s.exports, result.exports)
   },
   /** Convenience wrapper around setup with shared field defaults. */
@@ -677,11 +666,11 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.cacheCrud({
           fields: resolvedFields as CacheFieldBuilders,
-          keyField: (options?.keyField ?? idField) as never,
+          keyField: options?.keyField ?? idField,
           keyName,
           options: options?.ttl === undefined ? undefined : { ttl: options.ttl },
-          pk: pkByKey(keyName) as never,
-          table: tblOf(tableName) as never,
+          pk: pkByKey(keyName),
+          table: tblOf(tableName),
           tableName
         })
       },
@@ -693,28 +682,28 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       ) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.childCrud({
-          expectedUpdatedAtField: expectedUpdatedAtField as never,
+          expectedUpdatedAtField,
           fields: resolvedFields as CrudFieldBuilders,
-          foreignKeyField: fkField as never,
+          foreignKeyField: fkField,
           foreignKeyName: parent.foreignKey,
-          idField: idField as never,
-          options: options as never,
-          parentPk: pkById as never,
-          parentTable: tblOf(parent.table) as never,
-          pk: pkById as never,
-          table: tblOf(tableName) as never,
+          idField,
+          options,
+          parentPk: pkById,
+          parentTable: tblOf(parent.table),
+          pk: pkById,
+          table: tblOf(tableName),
           tableName
         })
       },
       crud: (tableName: string, fields: CrudFieldBuilders | ZodLike, options?: CrudOptions) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.crud({
-          expectedUpdatedAtField: expectedUpdatedAtField as never,
+          expectedUpdatedAtField,
           fields: resolvedFields as CrudFieldBuilders,
-          idField: idField as never,
-          options: options as never,
-          pk: pkById as never,
-          table: tblOf(tableName) as never,
+          idField,
+          options,
+          pk: pkById,
+          table: tblOf(tableName),
           tableName
         })
       },
@@ -733,14 +722,18 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
               size: stdbT.number(),
               storageKey: stdbT.string()
             } as FileUploadFields),
-          result = makeFileUpload(spacetimedb as Parameters<typeof makeFileUpload>[0], {
+          looseConfig: FileUploadConfigLoose = {
             ...options,
             fields: resolvedFields,
-            idField: idField as never,
+            idField,
             namespace,
-            pk: pkById as never,
-            table: tblOf(tableName) as never
-          })
+            pk: pkById,
+            table: tblOf(tableName)
+          },
+          result = makeFileUpload(
+            spacetimedb as Parameters<typeof makeFileUpload>[0],
+            looseConfig as Parameters<typeof makeFileUpload>[1]
+          )
         registerExports(s.exports, result.exports)
         return result
       },
@@ -823,15 +816,15 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       ) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.orgCrud({
-          expectedUpdatedAtField: expectedUpdatedAtField as never,
+          expectedUpdatedAtField,
           fields: resolvedFields as OrgCrudFieldBuilders,
-          idField: idField as never,
-          isOrgOwner: makeIsOrgOwner(tblOf('org')) as never,
-          options: options as never,
-          orgIdField: oIdField as never,
-          orgMemberTable: (options?.orgMemberTable ?? tblOf('orgMember')) as never,
-          pk: pkById as never,
-          table: tblOf(tableName) as never,
+          idField,
+          isOrgOwner: makeIsOrgOwner(tblOf('org')),
+          options,
+          orgIdField: oIdField,
+          orgMemberTable: options?.orgMemberTable ?? tblOf('orgMember'),
+          pk: pkById,
+          table: tblOf(tableName),
           tableName
         })
       },
@@ -862,8 +855,8 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         const resolvedFields = resolveCrudFields(fields, tableName, resolvedDefaults)
         return s.singletonCrud({
           fields: resolvedFields as SingletonFieldBuilders,
-          options: options as never,
-          table: tblOf(tableName) as never,
+          options,
+          table: tblOf(tableName),
           tableName
         })
       }
