@@ -35,7 +35,7 @@ interface TokenStore {
 const HTTP_OK = 200,
   HTTP_REDIRECT = 300,
   OCTET_STREAM = 'application/octet-stream',
-  DEFAULT_SPACETIME_URI = 'ws://localhost:3000',
+  DEFAULT_SPACETIME_URI = 'ws://localhost:4000',
   DEFAULT_TOKEN_KEY = 'spacetimedb.token',
   TOKEN_COOKIE_KEY = 'spacetimedb_token',
   clientCache = new WeakMap<object, Map<string, unknown>>(),

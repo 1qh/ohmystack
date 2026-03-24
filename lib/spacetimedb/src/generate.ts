@@ -8,7 +8,7 @@ const DOCKER_COMPOSE = `services:
     image: clockworklabs/spacetime:latest
     command: start --listen-addr 0.0.0.0:3000
     ports:
-      - "3000:3000"
+      - "4000:3000"
       - "5432:5432"
     volumes:
       - spacetimedb_data:/stdb
@@ -23,8 +23,8 @@ const DOCKER_COMPOSE = `services:
     image: minio/minio
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "4600:9000"
+      - "4601:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin

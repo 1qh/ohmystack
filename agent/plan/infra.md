@@ -122,7 +122,7 @@ File uploads are not included in this product scope. Text input/paste is support
 
 | Variable                       | Dev                                              | Test     | Prod     | Notes                                              |
 | ------------------------------ | ------------------------------------------------ | -------- | -------- | -------------------------------------------------- |
-| `NEXT_PUBLIC_CONVEX_URL`       | optional (falls back to `http://127.0.0.1:3210`) | required | required | Agent app Convex URL, separate from demo apps      |
+| `NEXT_PUBLIC_CONVEX_URL`       | optional (falls back to `http://127.0.0.1:4001`) | required | required | Agent app Convex URL, separate from demo apps      |
 | `NEXT_PUBLIC_CONVEX_TEST_MODE` | omit                                             | `true`   | omit     | Enables `TestLoginProvider` bypass of Google OAuth |
 
 ### Backend env (`backend/agent`, set via `convex env set`)

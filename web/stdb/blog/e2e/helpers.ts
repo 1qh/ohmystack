@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
   DEFAULT_HTTP_URL =
-    process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:3000',
+    process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:4000',
   DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? 'noboil',
   readTokenData = (): null | { identity: string; token: string } => {
     try {

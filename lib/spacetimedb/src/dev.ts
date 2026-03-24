@@ -134,7 +134,7 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
       setTimeout(_resolve, ms)
     }),
   pingSpacetime = async (): Promise<boolean> => {
-    const urls = ['http://localhost:3000/v1/ping', 'http://localhost:3000/database/ping'],
+    const urls = ['http://localhost:4000/v1/ping', 'http://localhost:4000/database/ping'],
       checks = urls.map(async url => {
         try {
           const response = await fetch(url)

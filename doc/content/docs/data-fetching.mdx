@@ -434,7 +434,7 @@ const PostsPage = async () => {
 SpacetimeDB exposes an HTTP endpoint for SQL queries. This is ideal for Next.js Server Components where you can't use WebSockets:
 
 ```typescript
-const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:3000'
+const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:4000'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
 
 type SqlRow = [number, string, string, boolean]

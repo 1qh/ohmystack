@@ -17,7 +17,7 @@ const readEnvUrl = ({ fallback, key }: { fallback: string; key: 'NEXT_PUBLIC_CON
     } catch (error) {
       globalThis.console.debug(String(error))
     }
-    const convexUrl = readEnvUrl({ fallback: 'http://127.0.0.1:3212', key: 'NEXT_PUBLIC_CONVEX_URL' }),
+    const convexUrl = readEnvUrl({ fallback: 'http://127.0.0.1:4001', key: 'NEXT_PUBLIC_CONVEX_URL' }),
       client = new ConvexHttpClient(convexUrl)
     await client.mutation(anyApi.testauth?.ensureTestUser as FunctionReference<'mutation'>, {})
   }

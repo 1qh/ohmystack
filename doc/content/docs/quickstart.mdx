@@ -226,7 +226,7 @@ bunx convex dev &
 bun dev
 ```
 
-Open `http://localhost:3000`. Your backend is live.
+Open `http://localhost:4000`. Your backend is live.
 
 </Tab>
 <Tab value="SpacetimeDB">
@@ -286,7 +286,7 @@ import { SpacetimeDBProvider } from 'spacetimedb/react'
 import { createSpacetimeClient, createTokenStore } from '@noboil/spacetimedb/react'
 import { DbConnection } from '@/generated/module_bindings'
 
-const SPACETIMEDB_URL = process.env.NEXT_PUBLIC_SPACETIMEDB_URL ?? 'ws://localhost:3000'
+const SPACETIMEDB_URL = process.env.NEXT_PUBLIC_SPACETIMEDB_URL ?? 'ws://localhost:4000'
 const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME ?? 'my-app'
 const tokenStore = createTokenStore()
 

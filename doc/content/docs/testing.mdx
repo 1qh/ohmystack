@@ -213,7 +213,7 @@ export const connectAsTestUser = async (
 
   return new Promise((resolve, reject) => {
     const builder = DbConnection.builder()
-      .withUri('ws://localhost:3000')
+      .withUri('ws://localhost:4000')
       .withModuleName(process.env.SPACETIMEDB_MODULE_NAME ?? 'my-app-test')
 
     if (savedToken) {
@@ -797,11 +797,11 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 10_000,
   use: {
-    baseURL: 'http://localhost:3000'
+    baseURL: 'http://localhost:4000'
   },
   webServer: {
     command: 'bun dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:4000',
     reuseExistingServer: !process.env.CI
   }
 })
@@ -823,11 +823,11 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 10_000,
   use: {
-    baseURL: 'http://localhost:3001'
+    baseURL: 'http://localhost:4200'
   },
   webServer: {
     command: 'bun dev',
-    url: 'http://localhost:3001',
+    url: 'http://localhost:4200',
     reuseExistingServer: !process.env.CI
   }
 })

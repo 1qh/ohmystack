@@ -1,7 +1,7 @@
 import { serve } from 'bun'
-const BACKEND_API = 'http://127.0.0.1:3212',
-  BACKEND_WS = 'ws://127.0.0.1:3212',
-  SITE_URL = 'http://127.0.0.1:3211',
+const BACKEND_API = 'http://127.0.0.1:4001',
+  BACKEND_WS = 'ws://127.0.0.1:4001',
+  SITE_URL = 'http://127.0.0.1:4002',
   swallow = () => undefined
 process.on('uncaughtException', swallow)
 process.on('unhandledRejection', swallow)
@@ -37,7 +37,7 @@ serve({
       return new Response('Proxy error', { status: 502 })
     }
   },
-  port: 3210,
+  port: 4001,
   websocket: {
     close: ws => {
       try {

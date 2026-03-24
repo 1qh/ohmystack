@@ -25,8 +25,8 @@ docker compose up -d
 
 This starts:
 
-- SpacetimeDB at `ws://localhost:3000` (WebSocket) and `http://localhost:3000` (HTTP SQL API)
-- MinIO at `http://localhost:9000` (S3 API) and `http://localhost:9001` (console)
+- SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP SQL API)
+- MinIO at `http://localhost:4600` (S3 API) and `http://localhost:4601` (console)
 
 Publish your module (replace `my-app` with your SpacetimeDB module name):
 
@@ -52,12 +52,12 @@ bun dev
 ### Environment variables (local)
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:3000
+NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:4000
 NEXT_PUBLIC_MODULE_NAME=my-app
-SPACETIMEDB_URL=http://localhost:3000
+SPACETIMEDB_URL=http://localhost:4000
 MODULE_NAME=my-app
 
-S3_ENDPOINT=http://localhost:9000
+S3_ENDPOINT=http://localhost:4600
 S3_ACCESS_KEY_ID=minioadmin
 S3_SECRET_ACCESS_KEY=minioadmin
 S3_BUCKET=my-bucket
@@ -75,7 +75,7 @@ brew install minio/stable/mc
 For Linux, download the mc binary from https://min.io/docs/minio/linux/reference/minio-mc.html
 
 ```bash
-mc alias set local http://localhost:9000 minioadmin minioadmin
+mc alias set local http://localhost:4600 minioadmin minioadmin
 
 mc mb local/my-bucket
 
@@ -343,8 +343,8 @@ run: spacetime publish my-app --server maincloud --module-path backend/spacetime
 SpacetimeDB exposes ping endpoints for health checks:
 
 ```bash
-curl http://localhost:3000/v1/ping
-curl http://localhost:3000/database/ping
+curl http://localhost:4000/v1/ping
+curl http://localhost:4000/database/ping
 ```
 
 Both endpoints are valid; use either in Docker health checks and load balancer probes.

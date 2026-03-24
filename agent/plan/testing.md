@@ -189,7 +189,7 @@ cd backend/agent && bun with-env convex dev --once
 
 # Run E2E
 cd agent
-NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3212 bun with-env npx playwright test
+NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:4001 bun with-env npx playwright test
 ```
 
 ### Adding a New Test

@@ -5,7 +5,7 @@ import type { FunctionReference } from 'convex/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { expect, test } from './fixtures'
-const convex = new ConvexHttpClient('http://127.0.0.1:3212'),
+const convex = new ConvexHttpClient('http://127.0.0.1:4001'),
   CHAT_URL_RE = /\/chat\//u,
   MESSAGE_RE = /message the agent/iu,
   SEND_RE = /send/iu,

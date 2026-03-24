@@ -14,7 +14,7 @@ interface ConvexProviderProps {
 }
 const FILE_API = { info: api.file.info, upload: api.file.upload },
   clients = new Map<string, Client>(),
-  FALLBACK_CONVEX_URL = 'http://127.0.0.1:3210',
+  FALLBACK_CONVEX_URL = 'http://127.0.0.1:4001',
   getClient = (url: string) => {
     let c = clients.get(url)
     if (!c) {

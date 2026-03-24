@@ -7,6 +7,31 @@ If `README.md` exists at the repo root, read it first.
 - **All deps use `"latest"`** — intentional. The workspace always tests against newest versions. Consumers pin via `noboil init` which snapshots exact versions. This keeps us ahead of breaking changes instead of discovering them months later.
 - **`sharp` is a hard dependency** — intentional. Users get optimized images out of the box. It’s only imported in the `/next` export path (server-side image route), so client bundles never include it.
 
+## Port Allocation
+
+All services and apps use the 4xxx range so they don’t conflict with common dev ports (3000-3999). All 8 demo apps can run simultaneously.
+
+| Port | Service            |
+| ---- | ------------------ |
+| 4000 | SpacetimeDB server |
+| 4001 | Convex backend API |
+| 4002 | Convex site        |
+| 4100 | cvx/blog           |
+| 4101 | cvx/chat           |
+| 4102 | cvx/movie          |
+| 4103 | cvx/org            |
+| 4200 | stdb/blog          |
+| 4201 | stdb/chat          |
+| 4202 | stdb/movie         |
+| 4203 | stdb/org           |
+| 4300 | doc site           |
+| 4400 | agent              |
+| 4500 | Convex dashboard   |
+| 4600 | stdb MinIO API     |
+| 4601 | stdb MinIO console |
+
+**Do NOT change these ports** — they are referenced in docker compose files, env files, playwright configs, E2E helpers, library defaults, and documentation. Changing one port requires updating all of them.
+
 ## Monorepo
 
 ```
@@ -259,7 +284,7 @@ Internal, never published. Workspace alias `@a/shared`. Both libraries import fr
 - SpacetimeDB singleton tables (blogProfile, orgProfile) have auto-incremented primary keys. The `upsert_*` reducer uses `table.id.update()` for existing records.
 - SpacetimeDB org E2E: test helpers (`lib/e2e/src/stdb-org-helpers.ts`) share identity with browser via `addInitScript` + `activeOrgId` cookie. Run `spacetime publish --delete-data` before test runs. The `cleanupOrgTestData` deletes ALL orgs (not prefix-filtered) to handle browser-created orgs.
 - SpacetimeDB org E2E: `removeTestOrgMember` finds the member by identity substring match (`String(m.user_id).includes(userId.slice(0, 20))`). SpacetimeDB serializes Identity as `[[“0xHEX”]]` in SQL responses.
-- SpacetimeDB blog avatar E2E: requires MinIO with public-read bucket. Setup: `docker exec noboil-stdb-minio-1 mc mb --ignore-existing local/mybucket && docker exec noboil-stdb-minio-1 mc anonymous set download local/mybucket`. Set `.env`: `S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_ENDPOINT=http://localhost:9002 S3_BUCKET=mybucket`.
+- SpacetimeDB blog avatar E2E: requires MinIO with public-read bucket. Setup: `docker exec noboil-stdb-minio-1 mc mb --ignore-existing local/mybucket && docker exec noboil-stdb-minio-1 mc anonymous set download local/mybucket`. Set `.env`: `S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_ENDPOINT=http://localhost:4600 S3_BUCKET=mybucket`.
 - SpacetimeDB RLS: v2.0 subscriptions cannot evaluate JOIN-based SQL. Org-scoped table subscriptions use sender-only filters, not JOINs. The `org_member` table has no RLS (all members visible to all users) so org owners can see all members.
 - SpacetimeDB E2E remaining flaky tests (4 of 440): `blog.test.ts:75` (edit form subscription stale in long suites), `blog-pagination.test.ts:17` (pagination status flip-flop), `org.test.ts:203` (removeMember invite token flow). These pass individually but occasionally fail in full suite due to SpacetimeDB connection caching.
 

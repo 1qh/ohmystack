@@ -420,7 +420,7 @@ Views update automatically when the underlying tables change. Delta updates are 
 The HTTP SQL API supports arbitrary SQL queries. Use it for complex joins, aggregations, SSR data fetching in Next.js Server Components, or one-off data exploration.
 
 ```typescript
-const STDB_URL = 'http://localhost:3000'
+const STDB_URL = 'http://localhost:4000'
 const MODULE = 'my-app'
 
 const query = async (sql: string) => {
@@ -454,7 +454,7 @@ const postsWithAuthors = await query(`
 ### Typed SQL helper
 
 ```typescript
-const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:3000'
+const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:4000'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
 
 interface SqlResult<T> {

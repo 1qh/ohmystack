@@ -61,7 +61,7 @@ const SNAKE_TO_CAMEL_RE = /_(?<ch>[a-z])/gu,
 let httpCtx: HttpCtx | null = null
 const userTokens = new Map<string, string>(),
   DEFAULT_HTTP_URL =
-    process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:3000',
+    process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:4000',
   DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? 'noboil',
   setToken = (token: string) => {
     httpCtx = {

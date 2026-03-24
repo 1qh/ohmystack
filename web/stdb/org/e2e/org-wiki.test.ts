@@ -16,7 +16,7 @@ const gotoWikiEdit = async (page: Page, id: string) => {
 test.beforeEach(async ({ page }) => {
   await login(page)
   if (activeOrgId.length > 0)
-    await page.context().addCookies([{ name: 'activeOrgId', url: 'http://localhost:3004', value: activeOrgId }])
+    await page.context().addCookies([{ name: 'activeOrgId', url: 'http://localhost:4203', value: activeOrgId }])
 })
 test.describe
   .serial('Wiki Page UI', () => {

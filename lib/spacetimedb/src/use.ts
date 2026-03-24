@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 type Target = 'cloud' | 'local'
 const TARGETS: Record<Target, { label: string; server: string; uri: string }> = {
     cloud: { label: '☁️  MainCloud', server: 'maincloud', uri: 'https://maincloud.spacetimedb.com' },
-    local: { label: '🐳 Local Docker', server: 'local', uri: 'ws://localhost:3000' }
+    local: { label: '🐳 Local Docker', server: 'local', uri: 'ws://localhost:4000' }
   },
   green = (s: string) => `\u001B[32m${s}\u001B[0m`,
   red = (s: string) => `\u001B[31m${s}\u001B[0m`,
@@ -30,7 +30,7 @@ const TARGETS: Record<Target, { label: string; server: string; uri: string }> = 
     console.log(bold('Usage:'))
     console.log('  noboil-stdb use <target>\n')
     console.log(bold('Targets:'))
-    console.log(`  local    ${dim('ws://localhost:3000 (Docker)')}`)
+    console.log(`  local    ${dim('ws://localhost:4000 (Docker)')}`)
     console.log(`  cloud    ${dim('https://maincloud.spacetimedb.com')}\n`)
     console.log(bold('What it does:'))
     console.log(`  ${dim('1.')} Updates NEXT_PUBLIC_SPACETIMEDB_URI and SPACETIMEDB_URI in .env`)

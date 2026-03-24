@@ -101,8 +101,8 @@ const BlogPage = () => {
 }
 export default BlogPage
 `,
-  ENV_LOCAL = `SPACETIME_SERVER_URL=http://localhost:3000
-NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:3000
+  ENV_LOCAL = `SPACETIME_SERVER_URL=http://localhost:4000
+NEXT_PUBLIC_SPACETIME_SERVER_URL=http://localhost:4000
 `,
   TSCONFIG = JSON.stringify(
     {
