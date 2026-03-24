@@ -47,7 +47,7 @@ const OrgSettingsPage = () => {
       }
     ),
     [members] = useOrgTable<OrgMember>(tables.orgMember),
-    [transferTarget, setTransferTarget] = useState<string>('')
+    [transferTarget, setTransferTarget] = useState('')
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
   const adminMembers = members.filter(m => m.isAdmin),

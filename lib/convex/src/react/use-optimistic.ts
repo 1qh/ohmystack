@@ -19,7 +19,7 @@ const useOptimisticMutation = <T extends MutationFn>({
   onSuccess
 }: OptimisticOptions<T>) => {
   const mutate = useMutation(mutation)
-  return useOptimisticMutationBase<Args<T>, FunctionReturnType<T>>({
+  return useOptimisticMutationBase<Args<T>>({
     mutate: mutate as (a: Args<T>) => Promise<FunctionReturnType<T>>,
     onOptimistic,
     onRollback,

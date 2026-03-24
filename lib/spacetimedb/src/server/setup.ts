@@ -413,7 +413,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         const mergedHooks = mergeCrudHooks(
             factoryConfig.tableName,
             globalHooks,
-            factoryConfig.options?.hooks as CrudHooks<unknown, Rec, Rec, Rec> | undefined
+            factoryConfig.options?.hooks as CrudHooks | undefined
           ),
           nextConfig = mergedHooks
             ? {
@@ -432,7 +432,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         const mergedHooks = mergeCrudHooks(
             factoryConfig.tableName,
             globalHooks,
-            factoryConfig.options?.hooks as CrudHooks<unknown, Rec, Rec, Rec> | undefined
+            factoryConfig.options?.hooks as CrudHooks | undefined
           ),
           nextConfig = mergedHooks
             ? {
@@ -451,7 +451,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         const mergedHooks = mergeCrudHooks(
             factoryConfig.tableName,
             globalHooks,
-            factoryConfig.options?.hooks as CrudHooks<unknown, Rec, Rec, Rec> | undefined
+            factoryConfig.options?.hooks as CrudHooks | undefined
           ),
           nextConfig = mergedHooks
             ? {
@@ -470,7 +470,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
         const mergedHooks = mergeSingletonHooks(
             factoryConfig.tableName,
             globalHooks,
-            factoryConfig.options?.hooks as SingletonHooks<unknown, Rec, Rec> | undefined
+            factoryConfig.options?.hooks as SingletonHooks | undefined
           ),
           nextConfig = mergedHooks
             ? {

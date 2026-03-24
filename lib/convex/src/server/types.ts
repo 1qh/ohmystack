@@ -56,8 +56,8 @@ interface ChildConfig {
   foreignKey: string
   index?: string
   parent: string
-  parentSchema?: ZodObject<ZodRawShape>
-  schema: ZodObject<ZodRawShape>
+  parentSchema?: ZodObject
+  schema: ZodObject
 }
 interface ComparisonOp<V> {
   $between?: [V, V]
@@ -388,7 +388,7 @@ interface SetupConfig<DM extends GenericDataModel = GenericDataModel> {
   middleware?: Middleware[]
   mutation: MutationBuilder<DM, 'public'>
   orgCascadeTables?: OrgCascadeTableConfig<DM>[]
-  orgSchema?: ZodObject<ZodRawShape>
+  orgSchema?: ZodObject
   query: QueryBuilder<DM, 'public'>
   strictFilter?: boolean
 }

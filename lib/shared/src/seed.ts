@@ -86,8 +86,8 @@ const WORDS = [
         if (helpers.isStringType(type)) return generateStringValue(base)
         if (helpers.isArrayType(type)) return generateArrayValue(base)
         if (type === 'object') {
-          const shape = (base as undefined | ZodObject<ZodRawShape>)?.shape
-          if (shape) return generateOne(base as ZodObject<ZodRawShape>)
+          const shape = (base as undefined | ZodObject)?.shape
+          if (shape) return generateOne(base as ZodObject)
           return {}
         }
         const zidTable = (base?.def as undefined | { schema?: { description?: string } })?.schema?.description

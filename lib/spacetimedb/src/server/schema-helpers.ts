@@ -220,7 +220,7 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
         scanSchema(vl, path ? `${path}.${k}` : k, out)
   },
   /** Validates that a SpacetimeDB schema has the expected tables. */
-  checkSchema = (schemas: Record<string, ZodObject<ZodRawShape>>) => {
+  checkSchema = (schemas: Record<string, ZodObject>) => {
     const res: CheckSchemaOutput[] = []
     for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)
     if (res.length > 0) {

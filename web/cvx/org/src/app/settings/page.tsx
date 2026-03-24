@@ -20,7 +20,7 @@ const OrgSettingsPage = () => {
     leaveOrg = useOrgMutation(api.org.leave),
     transferOwnership = useOrgMutation(api.org.transferOwnership),
     members = useOrgQuery(api.org.members),
-    [transferTarget, setTransferTarget] = useState<string>('')
+    [transferTarget, setTransferTarget] = useState('')
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
   const adminMembers = members?.filter(m => m.role === 'admin') ?? [],

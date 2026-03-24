@@ -38,27 +38,27 @@ const cvFile = () => zid('_storage').meta({ cv: 'file' as const }),
       .regex(/^[a-z0-9-]+$/u)
   }),
   /** Brands schemas with a type marker for compile-time safety. */
-  brandSchemas = <B extends string, T extends Record<string, ZodObject<ZodRawShape>>>(
+  brandSchemas = <B extends string, T extends Record<string, ZodObject>>(
     schemas: T
   ): { [K in keyof T]: SchemaBrand<B> & T[K] } => typed(schemas),
   /** Creates owned schemas branded for use with crud(). */
-  makeOwned = <T extends Record<string, ZodObject<ZodRawShape>>>(schemas: T) =>
-    brandSchemas<'owned', T>(schemas) as {
+  makeOwned = <T extends Record<string, ZodObject>>(schemas: T) =>
+    brandSchemas(schemas) as {
       [K in keyof T]: OwnedSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
     },
   /** Creates org-scoped schemas branded for use with orgCrud(). */
-  makeOrgScoped = <T extends Record<string, ZodObject<ZodRawShape>>>(schemas: T) =>
-    brandSchemas<'org', T>(schemas) as {
+  makeOrgScoped = <T extends Record<string, ZodObject>>(schemas: T) =>
+    brandSchemas(schemas) as {
       [K in keyof T]: OrgSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
     },
   /** Creates base schemas branded for use with cacheCrud(). */
-  makeBase = <T extends Record<string, ZodObject<ZodRawShape>>>(schemas: T) =>
-    brandSchemas<'base', T>(schemas) as {
+  makeBase = <T extends Record<string, ZodObject>>(schemas: T) =>
+    brandSchemas(schemas) as {
       [K in keyof T]: BaseSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
     },
   /** Creates singleton schemas branded for use with singletonCrud(). */
-  makeSingleton = <T extends Record<string, ZodObject<ZodRawShape>>>(schemas: T) =>
-    brandSchemas<'singleton', T>(schemas) as {
+  makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
+    brandSchemas(schemas) as {
       [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
     }
 export { child, cvFile, cvFiles, makeBase, makeOrgScoped, makeOwned, makeSingleton, orgSchema }

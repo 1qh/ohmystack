@@ -66,7 +66,7 @@ const classifyPending = (pending: PendingMutation[]) => {
       isOptimistic = rest[1]?.optimistic !== false,
       { loadMore, results, status } = usePaginatedQuery(query, queryArgs, { initialNumItems: pageSize }),
       pending = usePendingMutations(),
-      subIdRef = useRef<number>(0)
+      subIdRef = useRef(0)
     // biome-ignore lint/correctness/useExhaustiveDependencies: subscribe lifecycle is intentionally one-time
     useEffect(() => {
       if (!isDev) return

@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
-/* eslint-disable complexity, @typescript-eslint/no-unsafe-return */
+/* eslint-disable complexity */
 'use client'
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'
 import { useMutation } from 'convex/react'
@@ -115,7 +115,7 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
    */
   useMutate = <T extends MutationRef>(
     ref: T,
-    options?: MutateOptions<OptionalRestArgs<T>[0], FunctionReturnType<T>>
+    options?: MutateOptions
   ): ((args: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>) => {
     const mutate = useMutation(ref),
       store = useOptimisticStore(),

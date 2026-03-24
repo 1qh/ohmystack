@@ -476,7 +476,7 @@ interface MutationOk<T> {
 /** Discriminated union representing mutation success or failure. */
 type MutationResult<T> = MutationFail | MutationOk<T>
 /** Typed field errors narrowed to specific schema keys. */
-type TypedFieldErrors<S extends ZodObject<ZodRawShape>> = Partial<Record<keyof ZodOutput<S> & string, string>>
+type TypedFieldErrors<S extends ZodObject> = Partial<Record<keyof ZodOutput<S> & string, string>>
 /**
  * Parses serialized reducer error text into Betterspace error data.
  * @param message Error message text from thrown reducer errors.
@@ -604,7 +604,7 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
     return handlers._?.(e)
   },
   /** Extracts typed field-level validation errors from an error, narrowed to schema keys. */
-  getFieldErrors = <S extends ZodObject<ZodRawShape>>(e: unknown): TypedFieldErrors<S> | undefined => {
+  getFieldErrors = <S extends ZodObject>(e: unknown): TypedFieldErrors<S> | undefined => {
     const d = extractErrorData(e)
     return d?.fieldErrors as TypedFieldErrors<S> | undefined
   },

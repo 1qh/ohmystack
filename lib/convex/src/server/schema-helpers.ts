@@ -178,7 +178,7 @@ const unsupportedTypes = new Set(['pipe', 'transform']),
    * Scans Zod schemas for unsupported types (pipe, transform) and exits with error if found.
    * @param schemas - Map of table names to Zod schemas to validate
    */
-  checkSchema = (schemas: Record<string, ZodObject<ZodRawShape>>) => {
+  checkSchema = (schemas: Record<string, ZodObject>) => {
     const res: CheckSchemaOutput[] = []
     for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)
     if (res.length > 0) {

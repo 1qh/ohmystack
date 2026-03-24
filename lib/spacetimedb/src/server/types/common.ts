@@ -206,7 +206,7 @@ interface SetupConfig<DM = unknown> {
   middleware?: Middleware[]
   mutation: Mb
   orgCascadeTables?: ((keyof DM & string) | { fileFields?: string[]; table: keyof DM & string })[]
-  orgSchema?: ZodObject<ZodRawShape>
+  orgSchema?: ZodObject
   query: Qb
   strictFilter?: boolean
 }
