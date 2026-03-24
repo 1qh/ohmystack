@@ -42,7 +42,7 @@ jobs:
               - 'tsconfig*.json'
               - 'turbo.json'
               - 'lintmax.config.ts'
-  test:
+  ci:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
@@ -54,25 +54,5 @@ jobs:
       - run: bun i
       - run: bun --cwd lib/convex test
       - run: bun --cwd lib/spacetimedb test
-  lint:
-    needs: [changes, test]
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 'latest'
-      - run: bun i
       - run: bun run check
-  typecheck-build:
-    needs: [changes, lint]
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 'latest'
-      - run: bun i
       - run: bun turbo typecheck build --output-logs=errors-only
