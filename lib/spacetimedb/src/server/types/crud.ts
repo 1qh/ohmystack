@@ -1,13 +1,11 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { RateLimitConfig } from './common'
 interface CascadeOption {
   foreignKey: string
   table: string
 }
-type CrudBuilder =
-  | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-  | TypeBuilder<unknown, AlgebraicTypeType>
+type CrudBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 type CrudBuilders = never
 interface CrudConfig<
   DB,

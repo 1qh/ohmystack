@@ -1,8 +1,6 @@
 import type { Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
-type CacheBuilder =
-  | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-  | TypeBuilder<unknown, AlgebraicTypeType>
+import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+type CacheBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 type CacheBuilders = never
 interface CacheConfig<
   DB,

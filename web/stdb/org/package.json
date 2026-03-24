@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@a/e2e": "workspace:*",
-    "@playwright/test": "latest"
+    "@playwright/test": "latest",
+    "@types/bun": "^1.3.11"
   }
 }

@@ -1,8 +1,6 @@
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, table as stdbTable, TypeBuilder } from 'spacetimedb/server'
+import type { AlgebraicTypeType, ColumnBuilder, table as stdbTable, TypeBuilder } from 'spacetimedb/server'
 import { schema as stdbSchema, t as stdbT, table as stdbTableFn } from 'spacetimedb/server'
-type FieldBuilder =
-  | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-  | TypeBuilder<unknown, AlgebraicTypeType>
+type FieldBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 type FieldFromSchemaFn = (schema: unknown, t: ZodBridgeT, path: string) => FieldBuilder
 interface KeyField {
   builder: FieldBuilder

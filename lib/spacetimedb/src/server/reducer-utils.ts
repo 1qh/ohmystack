@@ -1,13 +1,8 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, TypeBuilder } from 'spacetimedb/server'
-type FieldBuilders = Record<
-  string,
-  ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>> | TypeBuilder<unknown, AlgebraicTypeType>
->
+import type { AlgebraicTypeType, ColumnBuilder, TypeBuilder } from 'spacetimedb/server'
+type FieldBuilders = Record<string, ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>>
 interface OptionalBuilder {
-  optional: () =>
-    | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-    | TypeBuilder<unknown, AlgebraicTypeType>
+  optional: () => ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 }
 interface OwnedRow extends Record<string, unknown> {
   updatedAt: Timestamp

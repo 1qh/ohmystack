@@ -8,7 +8,7 @@
 import type { Stepper as CoreStepper, Step } from '@stepperize/core'
 import type { StandardSchemaV1 } from '@tanstack/form-core'
 import type { ComponentProps, JSX, ReactNode, SyntheticEvent } from 'react'
-import type { output, ZodObject, ZodRawShape } from 'zod/v4'
+import type { output, ZodObject } from 'zod/v4'
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent } from '@a/ui/dialog'
@@ -20,9 +20,9 @@ import { Check } from 'lucide-react'
 import { useNavigationGuard } from 'next-navigation-guard'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 interface DefineStepsAdapters<TFields> {
-  buildMeta: (schema: ZodObject<ZodRawShape>) => unknown
-  coerceOptionals: (schema: ZodObject<ZodRawShape>, values: Record<string, unknown>) => Record<string, unknown>
-  defaultValues: (schema: ZodObject<ZodRawShape>) => Record<string, unknown>
+  buildMeta: (schema: ZodObject) => unknown
+  coerceOptionals: (schema: ZodObject, values: Record<string, unknown>) => Record<string, unknown>
+  defaultValues: (schema: ZodObject) => Record<string, unknown>
   fields: TFields
   onFinalSubmitError?: (error: unknown) => void
   renderFormContext: (args: { children: ReactNode; value: FormContextValue }) => JSX.Element
@@ -39,7 +39,7 @@ interface FormApiLike {
 interface FormContextValue {
   form: FormApiLike
   meta: unknown
-  schema: ZodObject<ZodRawShape>
+  schema: ZodObject
   serverErrors: Record<string, unknown>
 }
 interface FormHandle {
@@ -47,11 +47,11 @@ interface FormHandle {
   isDirty: boolean
   values: () => Record<string, unknown>
 }
-type InternalStep<Id extends string = string> = Step<Id, { label: string; schema: ZodObject<ZodRawShape> }>
+type InternalStep<Id extends string = string> = Step<Id, { label: string; schema: ZodObject }>
 type StepDataMap<Defs extends readonly StepDef[]> = {
   [D in Defs[number] as D['id']]: output<D['schema']>
 }
-interface StepDef<Id extends string = string, S extends ZodObject<ZodRawShape> = ZodObject<ZodRawShape>> {
+interface StepDef<Id extends string = string, S extends ZodObject = ZodObject> {
   id: Id
   label: string
   schema: S
@@ -82,7 +82,7 @@ interface StepperReturn<Defs extends readonly StepDef[]> {
   inner: CoreStepper<InternalStep[]>
   isCompleted: boolean
   isPending: boolean
-  schemas: Record<string, ZodObject<ZodRawShape>>
+  schemas: Record<string, ZodObject>
   steps: InternalStep[]
   submitAll: (data: Record<string, Record<string, unknown>>) => Promise<void>
   values: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
@@ -101,7 +101,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
   const defineSteps = <const Defs extends readonly [StepDef, ...StepDef[]]>(...defs: Defs) => {
     const internalSteps = defs.map(d => ({ id: d.id, label: d.label, schema: d.schema })) as unknown as InternalStep[],
       stepperFactory = defineStepper(...internalSteps),
-      schemaMap: Record<string, ZodObject<ZodRawShape>> = {}
+      schemaMap: Record<string, ZodObject> = {}
     for (const d of defs) schemaMap[d.id] = d.schema
     const useStepperHook = (opts: UseStepperOpts<Defs>): StepperReturn<Defs> => {
         const inner = stepperFactory.useStepper(),
@@ -147,7 +147,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         ctx: StepFormCtx
         id: StepIds<Defs>
         render: (f: TFields) => ReactNode
-        schemas: Record<string, ZodObject<ZodRawShape>>
+        schemas: Record<string, ZodObject>
         values: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
       }) => {
         const rawSchema = schemas[id]
@@ -248,7 +248,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         ...props
       }: StepFormProps<D>) => {
         const formHandleRef = useRef<FormHandle | null>(null),
-          stepDataRef = useRef<Record<string, Record<string, unknown>>>(
+          stepDataRef = useRef(
             (() => {
               const initial: Record<string, Record<string, unknown>> = {}
               for (const d of defs) {

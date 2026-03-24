@@ -36,7 +36,7 @@ interface FormToastOption {
   error?: string
   success?: string
 }
-type ShapeKey<S extends ZodObject<ZodRawShape>> = keyof S['shape'] & string
+type ShapeKey<S extends ZodObject> = keyof S['shape'] & string
 type Widen<T> = T extends string
   ? string
   : T extends number
@@ -120,14 +120,14 @@ const resolveFormToast = ({
    * @param schema - Form schema
    * @returns Field metadata map keyed by schema field names
    */
-  buildMeta = <S extends ZodObject<ZodRawShape>>(schema: S): { [K in keyof S['shape']]: FieldMeta } => {
+  buildMeta = <S extends ZodObject>(schema: S): { [K in keyof S['shape']]: FieldMeta } => {
     const meta: FieldMetaMap = {},
       keys = Object.keys(schema.shape) as ShapeKey<S>[]
     for (const key of keys) meta[key] = getMeta(schema.shape[key])
     return meta as { [K in keyof S['shape']]: FieldMeta }
   },
   hasShapeKey = (shape: ZodRawShape, key: string): boolean => key in shape,
-  ensureKnownValueKeys = <S extends ZodObject<ZodRawShape>>(resolved: output<S> | Widen<output<S>>, schema: S) => {
+  ensureKnownValueKeys = <S extends ZodObject>(resolved: output<S> | Widen<output<S>>, schema: S) => {
     for (const key of Object.keys(resolved))
       if (!hasShapeKey(schema.shape, key)) throw new Error(`Form values include unknown key: ${key}`)
   }
@@ -152,7 +152,7 @@ interface ConflictData<T = unknown> {
   incoming?: T
 }
 /** Return shape produced by Betterspace `useForm`. */
-interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
+interface FormReturn<T extends Record<string, unknown>, S extends ZodObject> {
   conflict: ConflictData<T> | null
   error: Error | null
   fieldErrors: Record<string, string>
@@ -185,7 +185,7 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
    * const form = useForm({ schema, onSubmit: data => save(data) })
    * ```
    */
-  useForm = <S extends ZodObject<ZodRawShape>>({
+  useForm = <S extends ZodObject>({
     autoSave,
     onConflict,
     onError,
@@ -304,7 +304,7 @@ const submitError = (error: unknown): Error => new Error(getErrorMessage(error),
    * const form = useFormMutation({ schema, mutate: api.posts.create })
    * ```
    */
-  useFormMutation = <S extends ZodObject<ZodRawShape>, M = output<S>>({
+  useFormMutation = <S extends ZodObject, M = output<S>>({
     autoSave,
     mutate,
     onConflict,

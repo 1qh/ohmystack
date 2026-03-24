@@ -8801,7 +8801,7 @@ describe('Sprint 6 Tier 2.2 requiredPartial and schemaVariants shape preservatio
       }),
       update = requiredPartial(schema, ['slug'])
     expect(Object.keys(update.shape)).toEqual(['slug', 'title', 'views'])
-    expect(update.shape.slug.safeParse('x').success).toBe(true)
+    expect(update.safeParse({ slug: 'x', title: 't', views: 1 }).success).toBe(true)
   })
   test('schemaVariants requiredOnUpdate keeps update as shape-accessible object', () => {
     const schema = object({
@@ -8810,7 +8810,7 @@ describe('Sprint 6 Tier 2.2 requiredPartial and schemaVariants shape preservatio
       }),
       variants = schemaVariants(schema, ['slug'])
     expect(Object.keys(variants.update.shape)).toEqual(['slug', 'title'])
-    expect(variants.update.shape.slug.safeParse('a').success).toBe(true)
+    expect(variants.update.safeParse({ slug: 'a', title: 't' }).success).toBe(true)
   })
   test('schemaVariants without requiredOnUpdate matches create and partial update return type', () => {
     const schema = object({

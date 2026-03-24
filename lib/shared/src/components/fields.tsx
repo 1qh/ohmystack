@@ -9,7 +9,7 @@
 import type { AnyFieldApi, FormValidateOrFn, ReactFormExtendedApi } from '@tanstack/react-form'
 import type { LucideIcon } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
-import type { ZodObject, ZodRawShape } from 'zod/v4'
+import type { ZodObject } from 'zod/v4'
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@a/ui/command'
@@ -87,7 +87,7 @@ const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
       FormContext = createContext<null | {
         form: Api<Record<string, unknown>>
         meta: FieldMetaMap
-        schema: ZodObject<ZodRawShape>
+        schema: ZodObject
         serverErrors: Record<string, string>
       }>(null),
       useFCtx = () => {
@@ -119,7 +119,7 @@ const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
       },
       /** Derives a human-readable label from a camelCase field name. */
       deriveLabel = (name: string): string => name.replace(CAMEL_RE, '$1 $2').replace(FIRST_CHAR_RE, c => c.toUpperCase()),
-      defaultEnumOptions = (schema: ZodObject<ZodRawShape>, name: string): { label: string; value: string }[] => {
+      defaultEnumOptions = (schema: ZodObject, name: string): { label: string; value: string }[] => {
         const { schema: inner } = unwrapZod(schema.shape[name])
         if (typeof inner === 'object' && inner !== null && 'options' in inner) {
           const opts = (inner as { options: readonly string[] }).options

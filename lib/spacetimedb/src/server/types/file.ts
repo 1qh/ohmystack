@@ -1,5 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 interface FileRowShape {
   contentType: string
   filename: string
@@ -9,9 +9,7 @@ interface FileRowShape {
   uploadedAt: Timestamp
   userId: Identity
 }
-type FileUploadBuilder =
-  | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-  | TypeBuilder<unknown, AlgebraicTypeType>
+type FileUploadBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 interface FileUploadConfig<
   DB,
   Row extends { contentType: string; filename: string; size: number; storageKey: string; userId: Identity },

@@ -1,5 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { RateLimitConfig } from './common'
 import type { CrudHooks, HookCtx } from './crud'
 interface CanEditOpts {
@@ -8,9 +8,7 @@ interface CanEditOpts {
   userId: Identity
 }
 type OrgCascadeTableConfig = string | { fileFields?: string[]; table: string }
-type OrgCrudBuilder =
-  | ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>>
-  | TypeBuilder<unknown, AlgebraicTypeType>
+type OrgCrudBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 interface OrgCrudConfig<
   DB,
   F extends OrgCrudFieldBuilders,

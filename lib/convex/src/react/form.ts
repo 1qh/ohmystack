@@ -4,7 +4,7 @@
 import type { StandardSchemaV1 } from '@tanstack/form-core'
 import type { FormValidateOrFn, ReactFormExtendedApi } from '@tanstack/react-form'
 import type { FunctionReference } from 'convex/server'
-import type { output, ZodObject, ZodRawShape } from 'zod/v4'
+import type { output, ZodObject } from 'zod/v4'
 import { useForm as useTanStackForm } from '@tanstack/react-form'
 import { useStore } from '@tanstack/react-store'
 import { useMutation } from 'convex/react'
@@ -56,7 +56,7 @@ const getMax = (schema: undefined | ZodSchema): number | undefined => {
     return { kind: 'unknown' }
   },
   /** Builds a field metadata map from a Zod object schema, inspecting each property's type. */
-  buildMeta = (s: ZodObject<ZodRawShape>): FieldMetaMap => {
+  buildMeta = (s: ZodObject): FieldMetaMap => {
     const m: FieldMetaMap = {}
     // biome-ignore lint/nursery/noForIn: x
     for (const k in s.shape) if (Object.hasOwn(s.shape, k)) m[k] = getMeta(s.shape[k])
@@ -84,7 +84,7 @@ interface ConflictData {
   incoming?: unknown
 }
 /** Return type of useForm, providing the form instance, state, conflict handling, and field watching. */
-interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> {
+interface FormReturn<T extends Record<string, unknown>, S extends ZodObject> {
   conflict: ConflictData | null
   error: Error | null
   fieldErrors: Record<string, string>
@@ -121,7 +121,7 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
    * })
    * ```
    */
-  useForm = <S extends ZodObject<ZodRawShape>>({
+  useForm = <S extends ZodObject>({
     autoSave,
     onConflict,
     onError,
@@ -226,7 +226,7 @@ const submitError = (e: unknown): Error => new Error(getErrorMessage(e), { cause
     } satisfies FormReturn<output<S>, S>
   },
   /** Convenience wrapper around useForm that wires a Convex mutation as the submit handler. */
-  useFormMutation = <S extends ZodObject<ZodRawShape>>({
+  useFormMutation = <S extends ZodObject>({
     autoSave,
     mutation: mutationRef,
     onConflict,

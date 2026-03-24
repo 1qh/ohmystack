@@ -364,6 +364,7 @@ const lineBreakRegex = /\r?\n/u,
     run({ cmd: ['rm', '-rf', join(tmpUi, 'node_modules')] })
     run({ cmd: ['rm', '-rf', uiDir] })
     run({ cmd: ['mv', tmpUi, uiDir] })
+    await write(join(uiDir, 'global.d.ts'), "declare module '*.css' {}\n")
     await pruneGitkeepFiles({ dirPath: uiDir })
     await repairTypecheck({ attempt: 1, rootDir: root, uiTmpDir: uiDir })
     run({ cmd: ['rm', '-rf', tmpDir] })

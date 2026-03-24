@@ -5,7 +5,7 @@
 import type { FunctionReference } from 'convex/server'
 import type { useNavigationGuard } from 'next-navigation-guard'
 import type { ComponentProps, ReactNode } from 'react'
-import type { infer as zinfer, ZodObject, ZodRawShape } from 'zod/v4'
+import type { infer as zinfer, ZodObject } from 'zod/v4'
 import { AutoSaveIndicator, ConflictDialog, createFileFieldWarning, useWithGuard } from '@a/shared/components/form'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent } from '@a/ui/dialog'
@@ -16,7 +16,7 @@ import { DevtoolsAutoMount } from '../react/devtools-panel'
 import { useForm as useBaseForm, useFormMutation as useBaseFormMutation } from '../react/form'
 import { fields, FormContext } from './fields'
 import { FileApiContext } from './file-field'
-interface FormReturn<T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>> extends BaseFormReturn<T, S> {
+interface FormReturn<T extends Record<string, unknown>, S extends ZodObject> extends BaseFormReturn<T, S> {
   guard: ReturnType<typeof useNavigationGuard>
 }
 type Key<T, V> = string & { [K in keyof T]: T[K] extends V ? K : never }[keyof T]
@@ -49,7 +49,7 @@ const FileFieldWarning = createFileFieldWarning({
     fileApiContext: FileApiContext,
     messagePrefix: '[@noboil/convex]'
   }),
-  useForm = <S extends ZodObject<ZodRawShape>>(opts: {
+  useForm = <S extends ZodObject>(opts: {
     autoSave?: { debounceMs: number; enabled: boolean }
     onConflict?: (data: ConflictData) => void
     onError?: ((e: unknown) => void) | false
@@ -59,7 +59,7 @@ const FileFieldWarning = createFileFieldWarning({
     schema: S
     values?: zinfer<S>
   }) => useWithGuard(useBaseForm(opts)),
-  useFormMutation = <S extends ZodObject<ZodRawShape>>(opts: {
+  useFormMutation = <S extends ZodObject>(opts: {
     autoSave?: { debounceMs: number; enabled: boolean }
     mutation: FunctionReference<'mutation'>
     onConflict?: (data: ConflictData) => void
@@ -70,7 +70,7 @@ const FileFieldWarning = createFileFieldWarning({
     transform?: (d: zinfer<S>) => Record<string, unknown>
     values?: zinfer<S>
   }) => useWithGuard(useBaseFormMutation(opts)),
-  Form = <T extends Record<string, unknown>, S extends ZodObject<ZodRawShape>>({
+  Form = <T extends Record<string, unknown>, S extends ZodObject>({
     form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
     render,
     showError = true,

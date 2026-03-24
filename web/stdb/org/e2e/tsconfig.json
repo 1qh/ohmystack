@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "noPropertyAccessFromIndexSignature": false,
+    "types": ["bun-types"],
     "paths": {
       "~/*": ["../src/*"]
     },

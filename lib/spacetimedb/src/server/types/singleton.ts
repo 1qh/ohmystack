@@ -1,5 +1,5 @@
 import type { Identity, Timestamp } from 'spacetimedb'
-import type { AlgebraicTypeType, ColumnBuilder, ColumnMetadata, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 type ReducerExportLike = ReducerExport<never, never>
 interface SingletonBuilder {
   optional: () => TypeBuilder<unknown, AlgebraicTypeType>
@@ -20,7 +20,7 @@ interface SingletonExports {
 }
 type SingletonFieldBuilders = Record<
   string,
-  ColumnBuilder<unknown, AlgebraicTypeType, ColumnMetadata<unknown>> | TypeBuilder<unknown, AlgebraicTypeType>
+  ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 >
 type SingletonFieldValues<F extends SingletonFieldBuilders> = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -1,4 +1,4 @@
-import type { ZodObject, ZodRawShape, ZodType } from 'zod/v4'
+import type { ZodObject, ZodType } from 'zod/v4'
 import { array, boolean, number, object, string, unknown, uuid, enum as zenum } from 'zod/v4'
 interface RuntimeBuilder {
   algebraicType?: unknown
@@ -200,7 +200,7 @@ const NUMBER_TAGS = new Set([
    * const schema = zodFromTable(module.table.columns, { optional: ['bio'] })
    * ```
    */
-  zodFromTable = (columns: Record<string, unknown>, options: ZodFromTableOptions = {}): ZodObject<ZodRawShape> => {
+  zodFromTable = (columns: Record<string, unknown>, options: ZodFromTableOptions = {}): ZodObject => {
     const includeSet = new Set(options.include),
       excludeSet = new Set(options.exclude),
       optionalSet = new Set(options.optional),
