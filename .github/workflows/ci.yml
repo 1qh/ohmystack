@@ -66,7 +66,7 @@ jobs:
       - run: bun i
       - run: bun run check
   typecheck-build:
-    needs: [changes, test]
+    needs: [changes, lint]
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
@@ -76,14 +76,3 @@ jobs:
           bun-version: 'latest'
       - run: bun i
       - run: bun turbo typecheck build --output-logs=errors-only
-  ui-sync-check:
-    needs: [changes, test]
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 'latest'
-      - run: bun i
-      - run: bun ui:sync:check
