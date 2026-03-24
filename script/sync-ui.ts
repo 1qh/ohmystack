@@ -1,4 +1,4 @@
-import { file, spawnSync, write } from 'bun'
+import { file, spawnSync, which, write } from 'bun'
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { argv as nodeArgv, env as nodeEnv } from 'node:process'
@@ -28,14 +28,21 @@ const lineBreakRegex = /\r?\n/u,
       return null
     }
   },
+  expandBunx = (cmd: string[]): string[] => {
+    if (cmd[0] === 'bunx') return ['bun', 'x', ...cmd.slice(1)]
+    return cmd
+  },
+  resolveBin = (name: string): string => which(name) ?? name,
   run = ({ cmd, cwd, env }: { cmd: string[]; cwd?: string; env?: NodeJS.ProcessEnv }) => {
-    const result = spawnSync({
-      cmd,
-      cwd: cwd ?? process.cwd(),
-      env,
-      stderr: 'inherit',
-      stdout: 'inherit'
-    })
+    const expanded = expandBunx(cmd),
+      resolved = [resolveBin(expanded[0] ?? ''), ...expanded.slice(1)],
+      result = spawnSync({
+        cmd: resolved,
+        cwd: cwd ?? process.cwd(),
+        env,
+        stderr: 'inherit',
+        stdout: 'inherit'
+      })
     if (result.exitCode !== 0) throw new Error(`Command failed (${result.exitCode}): ${cmd.join(' ')}`)
   },
   runCapture = ({ cmd, cwd, env }: { cmd: string[]; cwd: string; env?: NodeJS.ProcessEnv }) =>
@@ -287,7 +294,7 @@ const lineBreakRegex = /\r?\n/u,
   root = process.cwd(),
   uiDir = join(root, 'lib/ui'),
   tmpDir = '/tmp/shadcn-sync',
-  tmpUi = join(tmpDir, 'a/lib/ui'),
+  tmpUi = join(tmpDir, 'a/packages/ui'),
   tmpBin = join(tmpDir, 'bin'),
   withShimPath = ({ env, shimDir }: { env?: NodeJS.ProcessEnv; shimDir: string }) => {
     const base = env ?? nodeEnv,
