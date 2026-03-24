@@ -51,8 +51,4 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 'latest'
-      - run: bun i
-      - run: bun --cwd lib/convex test
-      - run: bun --cwd lib/spacetimedb test
-      - run: bun run check
-      - run: bun turbo typecheck build --output-logs=errors-only
+      - run: bun i && bun --cwd lib/convex test && bun --cwd lib/spacetimedb test && bun run check && bun turbo typecheck build --output-logs=errors-only
