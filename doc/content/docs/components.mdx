@@ -683,7 +683,7 @@ Paginated data fetching with cursor-based or offset-based pagination.
 ```tsx
 import { useList } from '@noboil/convex/react'
 
-const { items, loadMore, isLoading, hasMore } = useList(api.blog.list, {
+const { data, loadMore, isLoading, hasMore } = useList(api.blog.list, {
   pageSize: 20,
   filter: { category: 'news' }
 })
@@ -697,7 +697,7 @@ const { items, loadMore, isLoading, hasMore } = useList(api.blog.list, {
 
 | Return | Type | Description |
 |--------|------|-------------|
-| `items` | `T[]` | Current page of items |
+| `data` | `T[]` | Current page of items |
 | `loadMore` | `() => void` | Load the next page |
 | `isLoading` | `boolean` | Whether a page is loading |
 | `hasMore` | `boolean` | Whether more pages exist |
@@ -709,13 +709,13 @@ Infinite scroll with automatic intersection observer. Loads the next page when t
 ```tsx
 import { useInfiniteList } from '@noboil/convex/react'
 
-const { items, sentinelRef, isLoading } = useInfiniteList(api.blog.list, {
+const { data, sentinelRef, isLoading } = useInfiniteList(api.blog.list, {
   pageSize: 20
 })
 
 return (
   <ul>
-    {items.map(i => <li key={i._id}>{i.title}</li>)}
+    {data.map(i => <li key={i._id}>{i.title}</li>)}
     <li ref={sentinelRef} />
     {isLoading && <li>Loading...</li>}
   </ul>
@@ -724,7 +724,7 @@ return (
 
 | Return | Type | Description |
 |--------|------|-------------|
-| `items` | `T[]` | All loaded items |
+| `data` | `T[]` | All loaded items |
 | `sentinelRef` | `RefObject` | Attach to the last element to trigger loading |
 | `isLoading` | `boolean` | Whether the next page is loading |
 | `hasMore` | `boolean` | Whether more pages exist |
