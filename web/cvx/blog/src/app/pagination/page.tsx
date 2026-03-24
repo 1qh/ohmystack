@@ -8,7 +8,7 @@ import { useInView } from 'react-intersection-observer'
 import { Create, List } from '../common'
 const Page = () => {
   const { inView, ref } = useInView(),
-    { items, loadMore, status } = useList(api.blog.list, {
+    { data, loadMore, status } = useList(api.blog.list, {
       where: { or: [{ published: true }, { own: true }] }
     })
   useEffect(() => {
@@ -17,7 +17,7 @@ const Page = () => {
   return (
     <div data-testid='crud-pagination-page'>
       <Create />
-      <List blogs={items} />
+      <List blogs={data} />
       {status === 'LoadingMore' ? (
         <Spinner className='m-auto' data-testid='loading-more' />
       ) : status === 'CanLoadMore' ? (

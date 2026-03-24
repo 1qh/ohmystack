@@ -9,7 +9,7 @@ import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 const Sb = () => {
   const { inView, ref } = useInView(),
-    { items, loadMore, status } = useList(api.chat.list, { where: { own: true } }),
+    { data, loadMore, status } = useList(api.chat.list, { where: { own: true } }),
     deleteChat = useMutation(api.chat.rm),
     handleDelete = async (chatId: string) => {
       await deleteChat({ id: chatId })
@@ -19,13 +19,13 @@ const Sb = () => {
   }, [inView, loadMore, status])
   return (
     <>
-      <ChatSidebar basePath='' getThreadId={thread => thread._id} onDelete={handleDelete} threads={items} />
+      <ChatSidebar basePath='' getThreadId={thread => thread._id} onDelete={handleDelete} threads={data} />
       <div className='flex justify-center p-2'>
         {status === 'LoadingMore' ? (
           <Spinner />
         ) : status === 'CanLoadMore' ? (
           <p className='h-4' ref={ref} />
-        ) : status === 'Exhausted' && items.length > 20 ? (
+        ) : status === 'Exhausted' && data.length > 20 ? (
           <Check className='animate-[fadeOut_2s_forwards] text-green-500' />
         ) : null}
       </div>

@@ -1,6 +1,11 @@
-If `README.md` or `PLAN.md` exists at the repo root, read it first.
+If `README.md` exists at the repo root, read it first.
 
 **Pre-push (mandatory):** `bun clean:all && bun i && bun fix && bun test:all`
+
+## Design Decisions
+
+- **All deps use `"latest"`** — intentional. The workspace always tests against newest versions. Consumers pin via `noboil init` which snapshots exact versions. This keeps us ahead of breaking changes instead of discovering them months later.
+- **`sharp` is a hard dependency** — intentional. Users get optimized images out of the box. It’s only imported in the `/next` export path (server-side image route), so client bundles never include it.
 
 ## Monorepo
 

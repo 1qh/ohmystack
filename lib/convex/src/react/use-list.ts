@@ -97,7 +97,10 @@ const classifyPending = (pending: PendingMutation[]) => {
       [isOptimistic, pending, results]
     )
     return {
+      data: items as ListItems<F>,
+      hasMore: status === 'CanLoadMore' || status === 'LoadingMore',
       isDone: status === 'Exhausted',
+      isLoading: status === 'LoadingFirstPage' || status === 'LoadingMore',
       items: items as ListItems<F>,
       loadMore: (n?: number) => loadMore(n ?? pageSize),
       status
