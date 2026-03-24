@@ -50,11 +50,13 @@ const TOKEN_FILE = join(import.meta.dirname, '.stdb-test-token.json'),
       { t: data.token }
     )
     const currentUrl = page.url()
-    if (currentUrl !== 'about:blank' && !currentUrl.startsWith('chrome')) {
-      await page.evaluate(({ t }) => {
-        globalThis.localStorage.setItem('spacetimedb.token', t)
-      }, { t: data.token })
-    }
+    if (currentUrl !== 'about:blank' && !currentUrl.startsWith('chrome'))
+      await page.evaluate(
+        ({ t }) => {
+          globalThis.localStorage.setItem('spacetimedb.token', t)
+        },
+        { t: data.token }
+      )
   },
   cleanupTestData = async () => {
     const data = await ensureToken(),
