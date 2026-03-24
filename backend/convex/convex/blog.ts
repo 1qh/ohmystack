@@ -13,7 +13,10 @@ const {
   postStats = pq({
     args: {},
     handler: async ctx => {
-      const posts = await ctx.db.query('blog').collect(),
+      const posts = await ctx.db
+          .query('blog')
+          .withIndex('by_published', q => q.eq('published', true))
+          .collect(),
         counts: Record<string, { count: number; latestTitle: string }> = {}
       for (const p of posts) {
         const cat = p.category as string,
@@ -34,9 +37,9 @@ const {
     handler: async (ctx, { userId }) => {
       const posts = await ctx.db
         .query('blog')
-        .withIndex('by_published', q => q.eq('published', true))
+        .withIndex('by_user', q => q.eq('userId', userId))
         .collect()
-      return posts.filter(p => (p as Record<string, unknown>).userId === userId)
+      return posts.filter(p => (p as Record<string, unknown>).published === true)
     }
   }),
   togglePublish = m({
