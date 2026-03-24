@@ -28,8 +28,5 @@
     "convex": "latest",
     "convex-helpers": "latest",
     "convex-test": "latest"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.11"
   }
 }
