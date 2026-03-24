@@ -1,10 +1,23 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 /* eslint-disable max-depth */
+import type { ErrorData as SharedErrorData, ErrorHandler as SharedErrorHandler } from '@a/shared/server/helpers'
 import type { ZodObject, output as ZodOutput, ZodRawShape } from 'zod/v4'
+import {
+  createErrorUtils,
+  generateToken,
+  groupList,
+  isComparisonOp,
+  isRecord,
+  log,
+  matchW,
+  pickFields,
+  RUNTIME_FILTER_WARN_THRESHOLD,
+  SEVEN_DAYS_MS,
+  time
+} from '@a/shared/server/helpers'
 import { Identity } from 'spacetimedb'
 import { number, object, string } from 'zod/v4'
 import type {
-  ComparisonOp,
   DbLike,
   ErrorCode,
   FID,
@@ -21,6 +34,22 @@ import { cvFileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { identityEquals } from './reducer-utils'
 import { ERROR_MESSAGES } from './types'
+interface ErrorData extends SharedErrorData {
+  code: ErrorCode
+}
+type ErrorHandler = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
+  default?: (error: unknown) => void
+}
+interface MutationFail {
+  error: ErrorData
+  ok: false
+}
+interface MutationOk<T> {
+  ok: true
+  value: T
+}
+type MutationResult<T> = MutationFail | MutationOk<T>
+type TypedFieldErrors<S extends ZodObject> = Partial<Record<keyof ZodOutput<S> & string, string>>
 class SenderError extends Error {
   /** biome-ignore lint/style/useConsistentMemberAccessibility: biome+eslint conflict */
   public readonly _tag = 'SenderError' as const
@@ -30,31 +59,103 @@ class SenderError extends Error {
     this.name = 'SenderError'
   }
 }
-const TOKEN_BYTES = 24,
-  TOKEN_RADIX = 36,
-  TOKEN_LENGTH = 32,
-  SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000,
+const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
   RATE_LIMIT_DEFAULT_WINDOW = 60_000,
-  RUNTIME_FILTER_WARN_THRESHOLD = 1000,
   normalizeRateLimit = (input: RateLimitInput): RateLimitConfig =>
     typeof input === 'number' ? { max: input, window: RATE_LIMIT_DEFAULT_WINDOW } : input,
-  generateToken = () => {
-    const bytes = new Uint8Array(TOKEN_BYTES)
-    crypto.getRandomValues(bytes)
-    let token = ''
-    for (const b of bytes) token += b.toString(TOKEN_RADIX).padStart(2, '0').slice(0, 2)
-    return token.slice(0, TOKEN_LENGTH)
+  serializeError = (data: ErrorData) => `${data.code}:${JSON.stringify(data)}`,
+  throwSenderError = (code: string, opts?: Record<string, unknown> | string | { message: string }): never => {
+    if (!opts) throw new SenderError(serializeError({ code } as ErrorData))
+    if (typeof opts !== 'string') throw new SenderError(serializeError({ code, ...opts } as ErrorData))
+    const sep = opts.indexOf(':'),
+      data =
+        sep > 0
+          ? ({ code, debug: opts, op: opts.slice(sep + 1), table: opts.slice(0, sep) } as ErrorData)
+          : ({ code, debug: opts } as ErrorData)
+    throw new SenderError(serializeError(data))
   },
-  /**
-   * Writes a structured JSON log entry to the console.
-   * @param level Log level name.
-   * @param msg Log message identifier.
-   * @param data Optional structured metadata.
-   * @returns Nothing.
-   */
-  log = (level: 'debug' | 'error' | 'info' | 'warn', msg: string, data?: Record<string, unknown>) => {
-    // eslint-disable-next-line no-console
-    console[level](JSON.stringify({ level, msg, ts: Date.now(), ...data }))
+  parseSenderMessage = (message: string): ErrorData | undefined => {
+    const sep = message.indexOf(':')
+    if (sep <= 0) return
+    const code = message.slice(0, sep)
+    if (!(code in ERROR_MESSAGES)) return
+    const rest = message.slice(sep + 1).trim(),
+      data: ErrorData = { code: code as ErrorCode }
+    if (rest.startsWith('{') && rest.endsWith('}'))
+      try {
+        const parsed = JSON.parse(rest) as Record<string, unknown>
+        return {
+          code: code as ErrorCode,
+          debug: typeof parsed.debug === 'string' ? parsed.debug : undefined,
+          fieldErrors: isRecord(parsed.fieldErrors) ? (parsed.fieldErrors as Record<string, string>) : undefined,
+          fields: Array.isArray(parsed.fields) ? (parsed.fields as string[]) : undefined,
+          limit: isRecord(parsed.limit) ? (parsed.limit as ErrorData['limit']) : undefined,
+          message: typeof parsed.message === 'string' ? parsed.message : undefined,
+          op: typeof parsed.op === 'string' ? parsed.op : undefined,
+          retryAfter: typeof parsed.retryAfter === 'number' ? parsed.retryAfter : undefined,
+          table: typeof parsed.table === 'string' ? parsed.table : undefined
+        }
+      } catch {
+        return { ...data, debug: 'Error payload was not valid JSON', message: rest }
+      }
+    return { ...data, message: rest }
+  },
+  extractErrorData = (e: unknown): ErrorData | undefined => {
+    if (isRecord(e)) {
+      const { data } = e as { data?: unknown }
+      if (isRecord(data)) {
+        const { code } = data
+        if (typeof code === 'string' && code in ERROR_MESSAGES)
+          return {
+            code: code as ErrorCode,
+            debug: typeof data.debug === 'string' ? data.debug : undefined,
+            fieldErrors: isRecord(data.fieldErrors) ? (data.fieldErrors as Record<string, string>) : undefined,
+            fields: Array.isArray(data.fields) ? (data.fields as string[]) : undefined,
+            limit: isRecord(data.limit) ? (data.limit as ErrorData['limit']) : undefined,
+            message: typeof data.message === 'string' ? data.message : undefined,
+            op: typeof data.op === 'string' ? data.op : undefined,
+            retryAfter: typeof data.retryAfter === 'number' ? data.retryAfter : undefined,
+            table: typeof data.table === 'string' ? data.table : undefined
+          }
+      }
+    }
+    if (e instanceof Error) return parseSenderMessage(e.message)
+  },
+  errorUtils = createErrorUtils({
+    errorMessages: ERROR_MESSAGES,
+    extractErrorData: extractErrorData as (e: unknown) => SharedErrorData | undefined,
+    throwError: throwSenderError
+  }),
+  err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never =>
+    throwSenderError(code, opts),
+  { noFetcher } = errorUtils,
+  errValidation = (
+    code: ErrorCode,
+    zodError: { flatten: () => { fieldErrors: Record<string, string[] | undefined> } }
+  ): never => errorUtils.errValidation(code, zodError),
+  getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?.code,
+  getErrorMessage = (e: unknown): string => errorUtils.getErrorMessage(e),
+  getErrorDetail = (e: unknown): string => errorUtils.getErrorDetail(e),
+  handleError = (e: unknown, handlers: ErrorHandler): void => {
+    errorUtils.handleError(e, handlers as SharedErrorHandler)
+  },
+  fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> =>
+    errorUtils.fail(code, detail) as MutationResult<never>,
+  isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined,
+  isErrorCode = (e: unknown, code: ErrorCode): boolean => {
+    const d = extractErrorData(e)
+    return d?.code === code
+  },
+  matchError = <R>(
+    e: unknown,
+    handlers: Partial<Record<ErrorCode, (data: ErrorData) => R>> & { _?: (error: unknown) => R }
+  ): R | undefined => {
+    const d = extractErrorData(e)
+    if (d) {
+      const handler = handlers[d.code]
+      if (handler) return handler(d)
+    }
+    return handlers._?.(e)
   },
   warnLargeFilterSet = ({
     context,
@@ -78,12 +179,6 @@ const TOKEN_BYTES = 24,
       })
     }
   },
-  /** Type guard that checks if a value is a non-null object. */
-  isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object',
-  isComparisonOp = (val: unknown): val is ComparisonOp<unknown> =>
-    typeof val === 'object' &&
-    val !== null &&
-    ('$gt' in val || '$gte' in val || '$lt' in val || '$lte' in val || '$between' in val),
   pgOpts = object({
     limit: number().optional(),
     numItems: number().optional(),
@@ -95,41 +190,9 @@ const TOKEN_BYTES = 24,
     for (const k of keys) if (cvFileKindOf(s[k])) out.push(k)
     return out
   },
-  serializeError = (data: ErrorData) => `${data.code}:${JSON.stringify(data)}`,
-  /** Throws a SenderError with a typed error code and optional debug context. */
-  err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never => {
-    if (!opts) throw new SenderError(serializeError({ code }))
-    if (typeof opts !== 'string') throw new SenderError(serializeError({ code, ...opts }))
-    const sep = opts.indexOf(':'),
-      data = sep > 0 ? { code, debug: opts, op: opts.slice(sep + 1), table: opts.slice(0, sep) } : { code, debug: opts }
-    throw new SenderError(serializeError(data))
-  },
-  noFetcher = (): never => err('NO_FETCHER'),
-  /** Returns an object with updatedAt set to Date.now(). */
-  time = (timestamp?: number) => ({ updatedAt: timestamp ?? Date.now() }),
-  /**
-   * Converts a Spacetime identity into its hex string form.
-   * @param identity Identity value from SpacetimeDB.
-   * @returns Hex string identity.
-   */
   identityToHex = (identity: Identity): string => identity.toHexString(),
-  /**
-   * Parses a hex identity string into a Spacetime identity object.
-   * @param hex Hex string identity.
-   * @returns Parsed Spacetime identity.
-   */
   identityFromHex = (hex: string): Identity => Identity.fromString(hex),
-  /**
-   * Converts numeric ids to wire-safe string values.
-   * @param id Numeric id.
-   * @returns String id for transport.
-   */
   idToWire = String as unknown as (id: number) => string,
-  /**
-   * Parses a wire id string into a number.
-   * @param str Wire id string.
-   * @returns Parsed numeric id.
-   */
   idFromWire = (str: string): number => {
     if (!str.trim()) err('VALIDATION_FAILED', { message: 'Wire id must not be empty' })
     const id = Number(str)
@@ -276,79 +339,6 @@ const TOKEN_BYTES = 24,
     await Promise.all(tasks)
     return o as WithUrls<D>
   },
-  matchField = (docVal: unknown, filterVal: unknown): boolean => {
-    if (isComparisonOp(filterVal)) {
-      const dv = docVal as number
-      if (filterVal.$gt !== undefined && !(dv > (filterVal.$gt as number))) return false
-      if (filterVal.$gte !== undefined && !(dv >= (filterVal.$gte as number))) return false
-      if (filterVal.$lt !== undefined && !(dv < (filterVal.$lt as number))) return false
-      if (filterVal.$lte !== undefined && !(dv <= (filterVal.$lte as number))) return false
-      if (filterVal.$between !== undefined) {
-        const [min, max] = filterVal.$between as [number, number]
-        if (!(dv >= min && dv <= max)) return false
-      }
-      return true
-    }
-    return Object.is(docVal, filterVal)
-  },
-  groupList = <WG extends Record<string, unknown> & { own?: boolean }>(w?: WG & { or?: WG[] }): WG[] => {
-    if (!w) return []
-    const groups: WG[] = [{ ...w, or: undefined } as WG, ...(w.or ?? [])],
-      out: WG[] = []
-    for (const g of groups)
-      if (g.own) out.push(g)
-      else {
-        const keys = Object.keys(g)
-        let hasField = false
-        for (const k of keys) if (k !== 'own' && g[k] !== undefined) hasField = true
-        if (hasField) out.push(g)
-      }
-    return out
-  },
-  matchW = <WG extends Record<string, unknown> & { own?: boolean }>(
-    doc: Record<string, unknown>,
-    w: undefined | (WG & { or?: WG[] }),
-    vid?: null | string
-  ) => {
-    const gs = groupList(w)
-    if (gs.length === 0) return true
-    for (const g of gs) {
-      const entries = Object.entries(g)
-      let ok = true
-      for (const [k, vl] of entries) if (!(k === 'own' || vl === undefined || matchField(doc[k], vl))) ok = false
-      if (ok && (!g.own || vid === (doc as { userId?: string }).userId)) return true
-    }
-    return false
-  },
-  pickFields = (data: Record<string, unknown>, keys: string[]): Record<string, unknown> => {
-    const result: Record<string, unknown> = {}
-    for (const k of keys) if (k in data) result[k] = data[k]
-    return result
-  },
-  /** Throws a SenderError with VALIDATION_FAILED code and per-field errors. */
-  errValidation = (
-    code: ErrorCode,
-    zodError: { flatten: () => { fieldErrors: Record<string, string[] | undefined> } }
-  ): never => {
-    const { fieldErrors: raw } = zodError.flatten(),
-      fields: string[] = [],
-      fieldErrors: Record<string, string> = {}
-    for (const k of Object.keys(raw)) {
-      const first = raw[k]?.[0]
-      if (first) {
-        fields.push(k)
-        fieldErrors[k] = first
-      }
-    }
-    throw new SenderError(
-      serializeError({
-        code,
-        fieldErrors,
-        fields,
-        message: fields.length > 0 ? `Invalid: ${fields.join(', ')}` : ERROR_MESSAGES.VALIDATION_FAILED
-      })
-    )
-  },
   rlState = new Map<string, { count: number; windowStart: number }>(),
   resetRateLimitState = () => {
     rlState.clear()
@@ -406,7 +396,6 @@ const TOKEN_BYTES = 24,
   dbDelete = async (db: DbLike, id: string) => {
     await db.delete(id)
   },
-  /** Enforces a per-caller rate limit, throwing RATE_LIMITED on excess. */
   checkRateLimit = async (
     db: DbLike,
     opts: { config: RateLimitConfig; key: string; table: string; timestamp?: number }
@@ -446,177 +435,11 @@ const TOKEN_BYTES = 24,
       })
     }
     await db.patch(existing._id as string, { count: (existing.count as number) + 1 })
-  }
-/** Structured Betterspace error payload extracted from reducer failures. */
-interface ErrorData {
-  code: ErrorCode
-  debug?: string
-  fieldErrors?: Record<string, string>
-  fields?: string[]
-  limit?: { max: number; remaining: number; window: number }
-  message?: string
-  op?: string
-  retryAfter?: number
-  table?: string
-}
-/** Error handler map keyed by Betterspace error codes. */
-type ErrorHandler = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
-  default?: (error: unknown) => void
-}
-/** Failed mutation result wrapper. */
-interface MutationFail {
-  error: ErrorData
-  ok: false
-}
-/** Successful mutation result wrapper. */
-interface MutationOk<T> {
-  ok: true
-  value: T
-}
-/** Discriminated union representing mutation success or failure. */
-type MutationResult<T> = MutationFail | MutationOk<T>
-/** Typed field errors narrowed to specific schema keys. */
-type TypedFieldErrors<S extends ZodObject> = Partial<Record<keyof ZodOutput<S> & string, string>>
-/**
- * Parses serialized reducer error text into Betterspace error data.
- * @param message Error message text from thrown reducer errors.
- * @returns Parsed Betterspace error payload when recognized.
- */
-const parseSenderMessage = (message: string): ErrorData | undefined => {
-    const sep = message.indexOf(':')
-    if (sep <= 0) return
-    const code = message.slice(0, sep)
-    if (!(code in ERROR_MESSAGES)) return
-    const rest = message.slice(sep + 1).trim(),
-      data: ErrorData = { code: code as ErrorCode }
-    if (rest.startsWith('{') && rest.endsWith('}'))
-      try {
-        const parsed = JSON.parse(rest) as Record<string, unknown>
-        return {
-          code: code as ErrorCode,
-          debug: typeof parsed.debug === 'string' ? parsed.debug : undefined,
-          fieldErrors: isRecord(parsed.fieldErrors) ? (parsed.fieldErrors as Record<string, string>) : undefined,
-          fields: Array.isArray(parsed.fields) ? (parsed.fields as string[]) : undefined,
-          limit: isRecord(parsed.limit) ? (parsed.limit as ErrorData['limit']) : undefined,
-          message: typeof parsed.message === 'string' ? parsed.message : undefined,
-          op: typeof parsed.op === 'string' ? parsed.op : undefined,
-          retryAfter: typeof parsed.retryAfter === 'number' ? parsed.retryAfter : undefined,
-          table: typeof parsed.table === 'string' ? parsed.table : undefined
-        }
-      } catch {
-        return { ...data, debug: 'Error payload was not valid JSON', message: rest }
-      }
-    return { ...data, message: rest }
   },
-  /**
-   * Extracts typed Betterspace error metadata from unknown error values.
-   * @param e Unknown error input.
-   * @returns Parsed Betterspace error payload when available.
-   */
-  extractErrorData = (e: unknown): ErrorData | undefined => {
-    if (isRecord(e)) {
-      const { data } = e as { data?: unknown }
-      if (isRecord(data)) {
-        const { code } = data
-        if (typeof code === 'string' && code in ERROR_MESSAGES)
-          return {
-            code: code as ErrorCode,
-            debug: typeof data.debug === 'string' ? data.debug : undefined,
-            fieldErrors: isRecord(data.fieldErrors) ? (data.fieldErrors as Record<string, string>) : undefined,
-            fields: Array.isArray(data.fields) ? (data.fields as string[]) : undefined,
-            limit: isRecord(data.limit) ? (data.limit as ErrorData['limit']) : undefined,
-            message: typeof data.message === 'string' ? data.message : undefined,
-            op: typeof data.op === 'string' ? data.op : undefined,
-            retryAfter: typeof data.retryAfter === 'number' ? data.retryAfter : undefined,
-            table: typeof data.table === 'string' ? data.table : undefined
-          }
-      }
-    }
-    if (e instanceof Error) return parseSenderMessage(e.message)
-  },
-  /**
-   * Returns an error code when the input is a Betterspace error payload.
-   * @param e Unknown error input.
-   * @returns Betterspace error code when present.
-   */
-  getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?.code,
-  /**
-   * Returns a user-friendly error message for unknown error input.
-   * @param e Unknown error input.
-   * @returns User-facing error message.
-   */
-  getErrorMessage = (e: unknown): string => {
-    const d = extractErrorData(e)
-    if (d) return d.message ?? ERROR_MESSAGES[d.code]
-    if (e instanceof Error) return e.message
-    return 'Unknown error'
-  },
-  /** Extracts the debug detail string from a SenderError. */
-  getErrorDetail = (e: unknown): string => {
-    const d = extractErrorData(e)
-    if (!d) return e instanceof Error ? e.message : 'Unknown error'
-    const base = d.message ?? ERROR_MESSAGES[d.code]
-    let detail = d.table ? `${base} [${d.table}${d.op ? `:${d.op}` : ''}]` : base
-    if (d.retryAfter !== undefined) detail += ` (retry after ${d.retryAfter}ms)`
-    return detail
-  },
-  /**
-   * Dispatches an error to code-specific handlers with default fallback.
-   * @param e Unknown error input.
-   * @param handlers Error handlers keyed by Betterspace code.
-   * @returns Nothing.
-   */
-  handleError = (e: unknown, handlers: ErrorHandler): void => {
-    const d = extractErrorData(e)
-    if (d) {
-      const handler = handlers[d.code]
-      if (handler) {
-        handler(d)
-        return
-      }
-    }
-    handlers.default?.(e)
-  },
-  /** Wraps a value in a successful MutationResult. */
-  ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
-  /** Wraps an error in a failed MutationResult. */
-  fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> => ({
-    error: { code, message: ERROR_MESSAGES[code], ...detail },
-    ok: false
-  }),
-  /** Type guard that checks if an error is a SenderError from a mutation. */
-  isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined,
-  /** Type guard that checks if a string is a valid ErrorCode. */
-  isErrorCode = (e: unknown, code: ErrorCode): boolean => {
-    const d = extractErrorData(e)
-    return d?.code === code
-  },
-  /** Matches an error against a record of error code handlers. */
-  matchError = <R>(
-    e: unknown,
-    handlers: Partial<Record<ErrorCode, (data: ErrorData) => R>> & { _?: (error: unknown) => R }
-  ): R | undefined => {
-    const d = extractErrorData(e)
-    if (d) {
-      const handler = handlers[d.code]
-      if (handler) return handler(d)
-    }
-    return handlers._?.(e)
-  },
-  /** Extracts typed field-level validation errors from an error, narrowed to schema keys. */
   getFieldErrors = <S extends ZodObject>(e: unknown): TypedFieldErrors<S> | undefined => {
     const d = extractErrorData(e)
     return d?.fieldErrors as TypedFieldErrors<S> | undefined
   },
-  /** Returns the first field error message from a Betterspace error, or `undefined` if none.
-   * @param e Unknown error value.
-   * @returns First field error string, or `undefined`.
-   * @example
-   * ```ts
-   * const msg = getFirstFieldError(error)
-   * if (msg) toast.error(msg)
-   * ```
-   */
   getFirstFieldError = (e?: unknown): string | undefined => {
     const d = extractErrorData(e)
     if (!d?.fieldErrors) return
@@ -626,11 +449,6 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
       if (v) return v
     }
   },
-  /**
-   * Creates a query helper that checks uniqueness for a given field value.
-   * @param options Table, field, optional index, and query builder wrapper.
-   * @returns A typed query procedure that reports whether the value is unique.
-   */
   makeUnique = ({ field, index, pq, table }: { field: string; index?: string; pq: Qb; table: string }) =>
     typed(
       pq({

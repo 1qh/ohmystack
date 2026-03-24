@@ -29,9 +29,8 @@ interface PresenceTableLike<Row> {
   insert: (row: Row) => Row
   iter: () => Iterable<Row>
 }
-const HEARTBEAT_INTERVAL_MS = 15_000,
-  PRESENCE_TTL_MS = 30_000,
-  MICROS_PER_MILLISECOND = 1000n,
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
+const MICROS_PER_MILLISECOND = 1000n,
   ZERO_PREFIX_REGEX = /^0x/u,
   isAuthenticated = (sender: Identity): boolean => {
     const senderLike = sender as unknown as { toHexString?: () => string; toString?: () => string },

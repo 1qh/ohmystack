@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 import type { core, input, output, ZodObject, ZodType } from 'zod/v4'
+import { isRecord } from './server/helpers'
 type CvMeta = 'file' | 'files'
 type DefType = core.$ZodTypeDef['type']
 type NullsToUndefined<T> = { [K in keyof T]-?: Exclude<T[K], null> | undefined }
@@ -165,8 +166,30 @@ const WRAPPERS: ReadonlySet<DefType> = new Set<DefType>([
         ? requiredPartial(schema, requiredOnUpdate as (keyof S['shape'])[])
         : schema.partial()
   })
-export type { CvMeta, DefType, NullsToUndefined, ShapeKey, UndefinedToOptional, ZodSchema }
+interface CheckSchemaOutput {
+  path: string
+  zodType: string
+}
+const unsupportedTypes = new Set(['pipe', 'transform']),
+  scanSchema = (schema: unknown, path: string, out: CheckSchemaOutput[]) => {
+    const b = unwrapZod(schema)
+    if (b.type && unsupportedTypes.has(b.type)) out.push({ path, zodType: b.type })
+    if (isArrayType(b.type)) return scanSchema(elementOf(b.schema), `${path}[]`, out)
+    if (b.type === 'object' && b.schema && isRecord((b.schema as unknown as { shape?: unknown }).shape))
+      for (const [k, vl] of Object.entries((b.schema as unknown as { shape: Record<string, unknown> }).shape))
+        scanSchema(vl, path ? `${path}.${k}` : k, out)
+  },
+  checkSchema = (schemas: Record<string, ZodObject>) => {
+    const res: CheckSchemaOutput[] = []
+    for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)
+    if (res.length > 0) {
+      for (const f of res) process.stderr.write(`${f.path}: unsupported zod type "${f.zodType}"\n`)
+      process.exitCode = 1
+    }
+  }
+export type { CheckSchemaOutput, CvMeta, DefType, NullsToUndefined, ShapeKey, UndefinedToOptional, ZodSchema }
 export {
+  checkSchema,
   coerceOptionals,
   cvFileKindOf,
   cvMetaOf,

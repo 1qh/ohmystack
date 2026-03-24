@@ -3,15 +3,8 @@ import { v } from 'convex/values'
 import { any, object, string } from 'zod/v4'
 import type { Mb, MutCtx, Qb, Rec } from './types'
 import { idx, indexFields, typed } from './bridge'
-/** Interval in milliseconds between heartbeat pings for presence tracking. */
-const HEARTBEAT_INTERVAL_MS = 15_000,
-  /** Time-to-live in milliseconds after which a presence entry is considered stale. */
-  PRESENCE_TTL_MS = 30_000,
-  /**
-   * Returns a Convex table definition for the presence table with room and user indexes.
-   * @returns Object with a `presence` table definition
-   */
-  presenceTable = () => ({
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
+const presenceTable = () => ({
     presence: defineTable({
       data: v.optional(v.any()),
       lastSeen: v.number(),
