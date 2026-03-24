@@ -3,19 +3,20 @@ import { tables } from '@a/be-spacetimedb/spacetimedb'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
 import { useList, useOwnRows } from '@noboil/spacetimedb/react'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { Create, List } from './common'
 const Page = () => {
   const [allBlogs, isReady] = useTable(tables.blog),
     { identity } = useSpacetimeDB(),
     blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null),
-    wasReadyRef = useRef(false),
+    [stableReady, markReady] = useReducer(() => true, false),
     [removedIds, setRemovedIds] = useState<Set<number>>(() => new Set()),
     [query, setQuery] = useState('')
-  if (isReady || allBlogs.length > 0) wasReadyRef.current = true
-  const stableReady = wasReadyRef.current,
-    { data, hasMore, isLoading, loadMore } = useList(blogs, stableReady, {
+  useEffect(() => {
+    if (isReady || allBlogs.length > 0) markReady()
+  }, [allBlogs.length, isReady])
+  const { data, hasMore, isLoading, loadMore } = useList(blogs, stableReady, {
       search: { debounceMs: 200, fields: ['title', 'content', 'tags'], query },
       sort: { direction: 'desc', field: 'id' },
       where: { or: [{ published: true }, { own: true }] }
@@ -30,6 +31,7 @@ const Page = () => {
       setRemovedIds(prev => new Set(prev).add(id))
     }, [])
   return (
+    <div>
       <Create />
       <SearchInput
         className='mb-4'

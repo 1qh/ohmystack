@@ -65,17 +65,7 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`) are published to npm. `lib/
 
 ## Linters & Lintmax
 
-### Pipeline
-
-**lintmax** is our own lint/format orchestrator. We own it — publish new versions to improve strictness, better defaults, or eliminate cross-linter conflicts.
-
-```
-biome fix → oxlint fix → eslint fix → biome fix (again)
-```
-
-**Why biome runs twice**: oxlint/eslint auto-fixes can introduce formatting drift. The 2nd biome pass re-normalizes.
-
-**Cross-linter conflicts**: One linter’s auto-fix can violate another. Fix in lintmax config, not project code.
+**lintmax** is our own max-strict lint/format orchestrator. Source at `~/z/lintmax`. We own it — read the source code to understand the pipeline, and feel free to suggest improvements that bring better strictness or better defaults.
 
 ### Ignore syntax
 

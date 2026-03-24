@@ -3,7 +3,7 @@ import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Spinner } from '@a/ui/spinner'
 import { useInfiniteList, useOwnRows } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useReducer } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { Create, List } from '../common'
@@ -12,10 +12,11 @@ const Page = () => {
     [allBlogs, isReady] = useTable(tables.blog),
     { identity } = useSpacetimeDB(),
     blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null),
-    wasReadyRef = useRef(false)
-  if (isReady || allBlogs.length > 0) wasReadyRef.current = true
-  const stableReady = wasReadyRef.current,
-    { data, hasMore, isLoading, loadMore } = useInfiniteList(blogs, stableReady, {
+    [stableReady, markReady] = useReducer(() => true, false)
+  useEffect(() => {
+    if (isReady || allBlogs.length > 0) markReady()
+  }, [allBlogs.length, isReady])
+  const { data, hasMore, isLoading, loadMore } = useInfiniteList(blogs, stableReady, {
       sort: { direction: 'desc', field: 'id' },
       where: { or: [{ published: true }, { own: true }] }
     }),
@@ -30,13 +31,7 @@ const Page = () => {
       <Create />
       <List blogs={data} />
       <Spinner className={showLoading ? 'm-auto' : 'sr-only'} data-testid='loading-more' />
-      {/* oxlint-disable-next-line react-perf/jsx-no-new-object-as-prop */}
-      <p
-        className={showLoadMore ? 'h-8' : 'sr-only'}
-        data-testid='load-more-trigger'
-        ref={ref}
-        style={showLoadMore ? undefined : { height: 0, overflow: 'hidden', position: 'absolute', width: 0 }}
-      />
+      <p className={showLoadMore ? 'h-8' : 'absolute size-0 overflow-hidden'} data-testid='load-more-trigger' ref={ref} />
       <Check
         className={showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only'}
         data-testid='pagination-exhausted'

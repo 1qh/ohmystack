@@ -1,4 +1,4 @@
-/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names, react-hooks/refs */
 /* eslint-disable complexity, react-hooks/refs */
 /* eslint-disable @typescript-eslint/no-deprecated */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
