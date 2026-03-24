@@ -42,63 +42,47 @@ jobs:
               - 'tsconfig*.json'
               - 'turbo.json'
               - 'lintmax.config.ts'
-  lint:
-    needs: changes
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-        with:
-          bun-version: 'latest'
-      - run: bun i
-      - run: bun run check
-  typecheck-build:
-    needs: [changes, lint]
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-        with:
-          bun-version: 'latest'
-      - run: bun i
-      - run: bun turbo typecheck build --output-logs=errors-only
   test:
     needs: changes
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
       - run: bun --cwd lib/convex test
       - run: bun --cwd lib/spacetimedb test
-  ui-sync-check:
-    needs: changes
+  lint:
+    needs: [changes, test]
     if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+        with:
+          bun-version: 'latest'
+      - run: bun i
+      - run: bun run check
+  typecheck-build:
+    needs: [changes, test]
+    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 'latest'
+      - run: bun i
+      - run: bun turbo typecheck build --output-logs=errors-only
+  ui-sync-check:
+    needs: [changes, test]
+    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 'latest'
       - run: bun i

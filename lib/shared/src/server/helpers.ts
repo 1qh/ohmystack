@@ -126,7 +126,7 @@ const TOKEN_BYTES = 24,
         return throwError(code, {
           fieldErrors,
           fields,
-          message: fields.length > 0 ? `Invalid: ${fields.join(', ')}` : 'Validation failed'
+          message: fields.length > 0 ? `Invalid: ${fields.join(', ')}` : (errorMessages[code] ?? 'Validation failed')
         })
       },
       getErrorCode = (e: unknown): string | undefined => extractErrorData(e)?.code,
