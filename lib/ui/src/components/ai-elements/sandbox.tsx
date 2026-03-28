@@ -1,6 +1,4 @@
 "use client";
-import type { ToolUIPart } from "ai";
-import type { ComponentProps } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -13,7 +11,9 @@ import {
   TabsTrigger,
 } from "@a/ui/components/tabs";
 import { cn } from "@a/ui/lib/utils";
+import type { ToolUIPart } from "ai";
 import { ChevronDownIcon, Code } from "lucide-react";
+import type { ComponentProps } from "react";
 import { getStatusBadge } from "./tool";
 export type SandboxRootProps = ComponentProps<typeof Collapsible>;
 export const Sandbox = ({ className, ...props }: SandboxRootProps) => (

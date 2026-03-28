@@ -1,6 +1,4 @@
 "use client";
-import type { LucideIcon } from "lucide-react";
-import type { ComponentProps, HTMLAttributes } from "react";
 import { Button } from "@a/ui/components/button";
 import {
   Tooltip,
@@ -9,7 +7,9 @@ import {
   TooltipTrigger,
 } from "@a/ui/components/tooltip";
 import { cn } from "@a/ui/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import { XIcon } from "lucide-react";
+import type { ComponentProps, HTMLAttributes } from "react";
 export type ArtifactProps = HTMLAttributes<HTMLDivElement>;
 export const Artifact = ({ className, ...props }: ArtifactProps) => (
   <div

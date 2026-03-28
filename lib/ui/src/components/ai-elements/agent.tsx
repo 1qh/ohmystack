@@ -1,6 +1,4 @@
 "use client";
-import type { Tool } from "ai";
-import type { ComponentProps } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -9,7 +7,9 @@ import {
 } from "@a/ui/components/accordion";
 import { Badge } from "@a/ui/components/badge";
 import { cn } from "@a/ui/lib/utils";
+import type { Tool } from "ai";
 import { BotIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 import { memo } from "react";
 import { CodeBlock } from "./code-block";
 export type AgentProps = ComponentProps<"div">;

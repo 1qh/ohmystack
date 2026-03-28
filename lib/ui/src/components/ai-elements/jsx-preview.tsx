@@ -1,8 +1,7 @@
 "use client";
-import type { ComponentProps, ReactNode } from "react";
-import type { TProps as JsxParserProps } from "react-jsx-parser";
 import { cn } from "@a/ui/lib/utils";
 import { AlertCircle } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
   memo,
@@ -13,12 +12,15 @@ import {
   useRef,
   useState,
 } from "react";
+import type { TProps as JsxParserProps } from "react-jsx-parser";
 import JsxParser from "react-jsx-parser";
 interface JSXPreviewContextValue {
   jsx: string;
   processedJsx: string;
+  isStreaming: boolean;
   error: Error | null;
   setError: (error: Error | null) => void;
+  setLastGoodJsx: (jsx: string) => void;
   components: JsxParserProps["components"];
   bindings: JsxParserProps["bindings"];
   onErrorProp?: (error: Error) => void;
@@ -58,6 +60,19 @@ const matchJsxTag = (code: string) => {
     type,
   };
 };
+const stripIncompleteTag = (text: string) => {
+  // Find the last '<' that isn't part of a complete tag
+  const lastOpen = text.lastIndexOf("<");
+  if (lastOpen === -1) {
+    return text;
+  }
+  const afterOpen = text.slice(lastOpen);
+  // If there's no closing '>' after the last '<', it's an incomplete tag
+  if (!afterOpen.includes(">")) {
+    return text.slice(0, lastOpen);
+  }
+  return text;
+};
 const completeJsxTag = (code: string) => {
   const stack: string[] = [];
   let result = "";
@@ -65,8 +80,8 @@ const completeJsxTag = (code: string) => {
   while (currentPosition < code.length) {
     const match = matchJsxTag(code.slice(currentPosition));
     if (!match) {
-      // No more tags found, append remaining content
-      result += code.slice(currentPosition);
+      // No more tags found, strip any trailing incomplete tag
+      result += stripIncompleteTag(code.slice(currentPosition));
       break;
     }
     const { tagName, type, endIndex } = match;
@@ -107,6 +122,7 @@ export const JSXPreview = memo(
   }: JSXPreviewProps) => {
     const [prevJsx, setPrevJsx] = useState(jsx);
     const [error, setError] = useState<Error | null>(null);
+    const [_lastGoodJsx, setLastGoodJsx] = useState("");
     // Clear error when jsx changes (derived state pattern)
     if (jsx !== prevJsx) {
       setPrevJsx(jsx);
@@ -116,18 +132,31 @@ export const JSXPreview = memo(
       () => (isStreaming ? completeJsxTag(jsx) : jsx),
       [jsx, isStreaming]
     );
+    const contextValue = useMemo(
+      () => ({
+        bindings,
+        components,
+        error,
+        isStreaming,
+        jsx,
+        onErrorProp: onError,
+        processedJsx,
+        setError,
+        setLastGoodJsx,
+      }),
+      [
+        bindings,
+        components,
+        error,
+        isStreaming,
+        jsx,
+        onError,
+        processedJsx,
+        setError,
+      ]
+    );
     return (
-      <JSXPreviewContext.Provider
-        value={{
-          bindings,
-          components,
-          error,
-          jsx,
-          onErrorProp: onError,
-          processedJsx,
-          setError,
-        }}
-      >
+      <JSXPreviewContext.Provider value={contextValue}>
         <div className={cn("relative", className)} {...props}>
           {children}
         </div>
@@ -139,13 +168,22 @@ JSXPreview.displayName = "JSXPreview";
 export type JSXPreviewContentProps = Omit<ComponentProps<"div">, "children">;
 export const JSXPreviewContent = memo(
   ({ className, ...props }: JSXPreviewContentProps) => {
-    const { processedJsx, components, bindings, setError, onErrorProp } =
-      useJSXPreview();
+    const {
+      processedJsx,
+      isStreaming,
+      components,
+      bindings,
+      setError,
+      setLastGoodJsx,
+      onErrorProp,
+    } = useJSXPreview();
     const errorReportedRef = useRef<string | null>(null);
+    const lastGoodJsxRef = useRef("");
+    const [hadError, setHadError] = useState(false);
     // Reset error tracking when jsx changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: processedJsx change should reset tracking
     useEffect(() => {
       errorReportedRef.current = null;
+      setHadError(false);
     }, [processedJsx]);
     const handleError = useCallback(
       (err: Error) => {
@@ -154,17 +192,32 @@ export const JSXPreviewContent = memo(
           return;
         }
         errorReportedRef.current = processedJsx;
+        // During streaming, suppress errors and fall back to last good JSX
+        if (isStreaming) {
+          setHadError(true);
+          return;
+        }
         setError(err);
         onErrorProp?.(err);
       },
-      [processedJsx, onErrorProp, setError]
+      [processedJsx, isStreaming, onErrorProp, setError]
     );
+    // Track the last JSX that rendered without error
+    useEffect(() => {
+      if (!errorReportedRef.current) {
+        lastGoodJsxRef.current = processedJsx;
+        setLastGoodJsx(processedJsx);
+      }
+    }, [processedJsx, setLastGoodJsx]);
+    // During streaming, if the current JSX errored, re-render with last good version
+    const displayJsx =
+      isStreaming && hadError ? lastGoodJsxRef.current : processedJsx;
     return (
       <div className={cn("jsx-preview-content", className)} {...props}>
         <JsxParser
           bindings={bindings}
           components={components}
-          jsx={processedJsx}
+          jsx={displayJsx}
           onError={handleError}
           renderInWrapper={false}
         />

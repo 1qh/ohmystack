@@ -1,10 +1,10 @@
 "use client";
-import type { ComponentProps, HTMLAttributes } from "react";
 import { Badge } from "@a/ui/components/badge";
 import { Button } from "@a/ui/components/button";
 import { Switch } from "@a/ui/components/switch";
 import { cn } from "@a/ui/lib/utils";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import type { ComponentProps, HTMLAttributes } from "react";
 import {
   createContext,
   useCallback,
@@ -129,39 +129,6 @@ const EnvironmentVariableContext =
     name: "",
     value: "",
   });
-export type EnvironmentVariableProps = HTMLAttributes<HTMLDivElement> & {
-  name: string;
-  value: string;
-};
-export const EnvironmentVariable = ({
-  name,
-  value,
-  className,
-  children,
-  ...props
-}: EnvironmentVariableProps) => {
-  const envVarContextValue = useMemo(() => ({ name, value }), [name, value]);
-  return (
-    <EnvironmentVariableContext.Provider value={envVarContextValue}>
-      <div
-        className={cn(
-          "flex items-center justify-between gap-4 px-4 py-3",
-          className
-        )}
-        {...props}
-      >
-        {children ?? (
-          <>
-            <div className="flex items-center gap-2">
-              <EnvironmentVariableName />
-            </div>
-            <EnvironmentVariableValue />
-          </>
-        )}
-      </div>
-    </EnvironmentVariableContext.Provider>
-  );
-};
 export type EnvironmentVariableGroupProps = HTMLAttributes<HTMLDivElement>;
 export const EnvironmentVariableGroup = ({
   className,
@@ -207,6 +174,39 @@ export const EnvironmentVariableValue = ({
     >
       {children ?? displayValue}
     </span>
+  );
+};
+export type EnvironmentVariableProps = HTMLAttributes<HTMLDivElement> & {
+  name: string;
+  value: string;
+};
+export const EnvironmentVariable = ({
+  name,
+  value,
+  className,
+  children,
+  ...props
+}: EnvironmentVariableProps) => {
+  const envVarContextValue = useMemo(() => ({ name, value }), [name, value]);
+  return (
+    <EnvironmentVariableContext.Provider value={envVarContextValue}>
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 px-4 py-3",
+          className
+        )}
+        {...props}
+      >
+        {children ?? (
+          <>
+            <div className="flex items-center gap-2">
+              <EnvironmentVariableName />
+            </div>
+            <EnvironmentVariableValue />
+          </>
+        )}
+      </div>
+    </EnvironmentVariableContext.Provider>
   );
 };
 export type EnvironmentVariableCopyButtonProps = ComponentProps<

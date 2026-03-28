@@ -1,5 +1,4 @@
 "use client";
-import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@a/ui/components/button";
 import {
   Collapsible,
@@ -13,8 +12,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@a/ui/components/tooltip";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { ChevronDownIcon } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
   useCallback,
@@ -104,18 +104,7 @@ export const WebPreviewNavigationButton = ({
 }: WebPreviewNavigationButtonProps) => (
   <TooltipProvider>
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          className="h-8 w-8 p-0 hover:text-foreground"
-          disabled={disabled}
-          onClick={onClick}
-          size="sm"
-          variant="ghost"
-          {...props}
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger render={<Button className="h-8 w-8 p-0 hover:text-foreground" disabled={disabled} onClick={onClick} size="sm" variant="ghost" {...props} />}>{children}</TooltipTrigger>
       <TooltipContent>
         <p>{tooltip}</p>
       </TooltipContent>
@@ -207,20 +196,13 @@ export const WebPreviewConsole = ({
       open={consoleOpen}
       {...props}
     >
-      <CollapsibleTrigger asChild>
-        <Button
-          className="flex w-full items-center justify-between p-4 text-left font-medium hover:bg-muted/50"
-          variant="ghost"
-        >
-          Console
-          <ChevronDownIcon
-            className={cn(
-              "h-4 w-4 transition-transform duration-200",
-              consoleOpen && "rotate-180"
-            )}
-          />
-        </Button>
-      </CollapsibleTrigger>
+      <CollapsibleTrigger render={<Button className="flex w-full items-center justify-between p-4 text-left font-medium hover:bg-muted/50" variant="ghost" />}>Console
+                    <ChevronDownIcon
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        consoleOpen && "rotate-180"
+                      )}
+                    /></CollapsibleTrigger>
       <CollapsibleContent
         className={cn(
           "px-4 pb-4",
@@ -231,7 +213,7 @@ export const WebPreviewConsole = ({
           {logs.length === 0 ? (
             <p className="text-muted-foreground">No console output</p>
           ) : (
-            logs.map((log, index) => (
+            logs.map((log) => (
               <div
                 className={cn(
                   "text-xs",
@@ -239,7 +221,7 @@ export const WebPreviewConsole = ({
                   log.level === "warn" && "text-yellow-600",
                   log.level === "log" && "text-foreground"
                 )}
-                key={`${log.timestamp.getTime()}-${index}`}
+                key={`${log.timestamp.getTime()}-${log.level}-${log.message}`}
               >
                 <span className="text-muted-foreground">
                   {log.timestamp.toLocaleTimeString()}

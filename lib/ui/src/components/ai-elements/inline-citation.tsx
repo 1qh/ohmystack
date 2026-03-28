@@ -1,7 +1,6 @@
 "use client";
-import type { CarouselApi } from "@a/ui/components/carousel";
-import type { ComponentProps } from "react";
 import { Badge } from "@a/ui/components/badge";
+import type { CarouselApi } from "@a/ui/components/carousel";
 import {
   Carousel,
   CarouselContent,
@@ -12,8 +11,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@a/ui/components/hover-card";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 import {
   createContext,
   useCallback,
@@ -53,22 +53,14 @@ export const InlineCitationCardTrigger = ({
   className,
   ...props
 }: InlineCitationCardTriggerProps) => (
-  <HoverCardTrigger asChild>
-    <Badge
-      className={cn("ml-1 rounded-full", className)}
-      variant="secondary"
-      {...props}
-    >
-      {sources[0] ? (
-        <>
-          {new URL(sources[0]).hostname}{" "}
-          {sources.length > 1 && `+${sources.length - 1}`}
-        </>
-      ) : (
-        "unknown"
-      )}
-    </Badge>
-  </HoverCardTrigger>
+  <HoverCardTrigger render={<Badge className={cn("ml-1 rounded-full", className)} variant="secondary" {...props} />}>{sources[0] ? (
+            <>
+              {new URL(sources[0]).hostname}{" "}
+              {sources.length > 1 && `+${sources.length - 1}`}
+            </>
+          ) : (
+            "unknown"
+          )}</HoverCardTrigger>
 );
 export type InlineCitationCardBodyProps = ComponentProps<"div">;
 export const InlineCitationCardBody = ({
@@ -133,20 +125,23 @@ export const InlineCitationCarouselIndex = ({
   const api = useCarouselApi();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
-  useEffect(() => {
+  const syncState = useCallback(() => {
     if (!api) {
       return;
     }
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-    const handleSelect = () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-    };
-    api.on("select", handleSelect);
-    return () => {
-      api.off("select", handleSelect);
-    };
   }, [api]);
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    syncState();
+    api.on("select", syncState);
+    return () => {
+      api.off("select", syncState);
+    };
+  }, [api, syncState]);
   return (
     <div
       className={cn(

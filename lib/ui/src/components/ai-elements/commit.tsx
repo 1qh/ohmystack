@@ -1,5 +1,4 @@
 "use client";
-import type { ComponentProps, HTMLAttributes } from "react";
 import { Avatar, AvatarFallback } from "@a/ui/components/avatar";
 import { Button } from "@a/ui/components/button";
 import {
@@ -7,7 +6,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@a/ui/components/collapsible";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import {
   CheckIcon,
   CopyIcon,
@@ -16,6 +15,7 @@ import {
   MinusIcon,
   PlusIcon,
 } from "lucide-react";
+import type { ComponentProps, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 export type CommitProps = ComponentProps<typeof Collapsible>;
 export const Commit = ({ className, children, ...props }: CommitProps) => (
@@ -32,16 +32,10 @@ export const CommitHeader = ({
   children,
   ...props
 }: CommitHeaderProps) => (
-  <CollapsibleTrigger asChild {...props}>
-    <div
-      className={cn(
-        "group flex cursor-pointer items-center justify-between gap-4 p-3 text-left transition-colors hover:opacity-80",
-        className
-      )}
-    >
-      {children}
-    </div>
-  </CollapsibleTrigger>
+  <CollapsibleTrigger {...props} render={<div className={cn(
+            "group flex cursor-pointer items-center justify-between gap-4 p-3 text-left transition-colors hover:opacity-80",
+            className
+          )} />}>{children}</CollapsibleTrigger>
 );
 export type CommitHashProps = HTMLAttributes<HTMLSpanElement>;
 export const CommitHash = ({
@@ -128,16 +122,25 @@ export type CommitTimestampProps = HTMLAttributes<HTMLTimeElement> & {
 const relativeTimeFormat = new Intl.RelativeTimeFormat("en", {
   numeric: "auto",
 });
+const formatRelativeDate = (date: Date) => {
+  const days = Math.round(
+    (date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  );
+  return relativeTimeFormat.format(days, "day");
+};
 export const CommitTimestamp = ({
   date,
   className,
   children,
   ...props
 }: CommitTimestampProps) => {
-  const formatted = relativeTimeFormat.format(
-    Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
-    "day"
-  );
+  const [formatted, setFormatted] = useState("");
+  const updateFormatted = useCallback(() => {
+    setFormatted(formatRelativeDate(date));
+  }, [date]);
+  useEffect(() => {
+    updateFormatted();
+  }, [updateFormatted]);
   return (
     <time
       className={cn("text-xs", className)}
@@ -156,8 +159,6 @@ export const CommitActions = ({
   children,
   ...props
 }: CommitActionsProps) => (
-  // biome-ignore lint/a11y/noNoninteractiveElementInteractions: stopPropagation required for nested interactions
-  // biome-ignore lint/a11y/useSemanticElements: fieldset doesn't fit this UI pattern
   <div
     className={cn("flex items-center gap-1", className)}
     onClick={handleActionsClick}

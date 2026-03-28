@@ -1,17 +1,17 @@
 "use client";
-import type { ComponentProps, ReactNode } from "react";
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { useControllableState } from "../../hooks/use-controllable-state"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@a/ui/components/collapsible";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
   memo,
@@ -192,9 +192,7 @@ export const ReasoningContent = memo(
       )}
       {...props}
     >
-      <Streamdown plugins={streamdownPlugins}>
-        {children}
-      </Streamdown>
+      <Streamdown plugins={streamdownPlugins}>{children}</Streamdown>
     </CollapsibleContent>
   )
 );

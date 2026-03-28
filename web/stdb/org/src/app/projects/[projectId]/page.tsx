@@ -31,7 +31,7 @@ const priorityOptions = enumToOptions(s.task.shape.priority.unwrap()),
   asPriority = (value: string | undefined): Priority =>
     value === 'high' || value === 'low' || value === 'medium' ? value : 'medium',
   PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
-    <Select onValueChange={v => onValueChange(v as Priority)} value={value}>
+    <Select onValueChange={v => onValueChange(v!)} value={value}>
       <SelectTrigger className='w-28'>
         <SelectValue />
       </SelectTrigger>

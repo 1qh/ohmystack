@@ -27,7 +27,7 @@ type Member = FunctionReturnType<typeof api.org.members>[number]
 type Priority = NonNullable<output<typeof orgScoped.task>['priority']>
 const priorityOptions = enumToOptions(orgScoped.task.shape.priority.unwrap()),
   PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
-    <Select onValueChange={v => onValueChange(v as Priority)} value={value}>
+    <Select onValueChange={v => onValueChange(v!)} value={value}>
       <SelectTrigger className='w-28'>
         <SelectValue />
       </SelectTrigger>

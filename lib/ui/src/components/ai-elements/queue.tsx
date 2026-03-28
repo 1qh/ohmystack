@@ -1,5 +1,4 @@
 "use client";
-import type { ComponentProps } from "react";
 import { Button } from "@a/ui/components/button";
 import {
   Collapsible,
@@ -7,8 +6,9 @@ import {
   CollapsibleTrigger,
 } from "@a/ui/components/collapsible";
 import { ScrollArea } from "@a/ui/components/scroll-area";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 export interface QueueMessagePart {
   type: string;
   text?: string;
@@ -184,18 +184,10 @@ export const QueueSectionTrigger = ({
   className,
   ...props
 }: QueueSectionTriggerProps) => (
-  <CollapsibleTrigger asChild>
-    <button
-      className={cn(
-        "group flex w-full items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-left font-medium text-muted-foreground text-sm transition-colors hover:bg-muted",
-        className
-      )}
-      type="button"
-      {...props}
-    >
-      {children}
-    </button>
-  </CollapsibleTrigger>
+  <CollapsibleTrigger render={<button className={cn(
+            "group flex w-full items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-left font-medium text-muted-foreground text-sm transition-colors hover:bg-muted",
+            className
+          )} type="button" {...props} />}>{children}</CollapsibleTrigger>
 );
 // QueueSectionLabel - label content with icon and count
 export type QueueSectionLabelProps = ComponentProps<"span"> & {

@@ -1,19 +1,19 @@
 "use client";
-import type { ComponentProps } from "react";
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { useControllableState } from "../../hooks/use-controllable-state"
 import { Button } from "@a/ui/components/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@a/ui/components/collapsible";
-import { cn } from "@a/ui";
+import { cn } from "@a/ui/lib/utils";
 import {
   AlertTriangleIcon,
   CheckIcon,
   ChevronDownIcon,
   CopyIcon,
 } from "lucide-react";
+import type { ComponentProps } from "react";
 import {
   createContext,
   memo,
@@ -191,16 +191,10 @@ export const StackTraceHeader = memo(
     const { isOpen, setIsOpen } = useStackTrace();
     return (
       <Collapsible onOpenChange={setIsOpen} open={isOpen}>
-        <CollapsibleTrigger asChild {...props}>
-          <div
-            className={cn(
-              "flex w-full cursor-pointer items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50",
-              className
-            )}
-          >
-            {children}
-          </div>
-        </CollapsibleTrigger>
+        <CollapsibleTrigger {...props} render={<div className={cn(
+                          "flex w-full cursor-pointer items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50",
+                          className
+                        )} />}>{children}</CollapsibleTrigger>
       </Collapsible>
     );
   }
@@ -254,8 +248,6 @@ const handleActionsKeyDown = (e: React.KeyboardEvent) => {
 };
 export const StackTraceActions = memo(
   ({ className, children, ...props }: StackTraceActionsProps) => (
-    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: stopPropagation required for nested interactions
-    // biome-ignore lint/a11y/useSemanticElements: fieldset doesn't fit this UI pattern
     <div
       className={cn("flex shrink-0 items-center gap-1", className)}
       onClick={handleActionsClick}
@@ -422,7 +414,7 @@ export const StackTraceFrames = memo(
       : trace.frames.filter((f) => !f.isInternal);
     return (
       <div className={cn("space-y-1 p-3", className)} {...props}>
-        {framesToShow.map((frame, index) => (
+        {framesToShow.map((frame) => (
           <div
             className={cn(
               "text-xs",
@@ -430,7 +422,7 @@ export const StackTraceFrames = memo(
                 ? "text-muted-foreground/50"
                 : "text-foreground/90"
             )}
-            key={`${frame.raw}-${index}`}
+            key={frame.raw}
           >
             <span className="text-muted-foreground">at </span>
             {frame.functionName && (
