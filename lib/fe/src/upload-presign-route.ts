@@ -7,7 +7,8 @@ interface PresignBody {
   filename?: string
   size?: number
 }
-const MAX_FILE_SIZE = 10 * 1024 * 1024,
+const BEARER_RE = /^Bearer\s+/u,
+  MAX_FILE_SIZE = 10 * 1024 * 1024,
   PRESIGN_EXPIRY_SECONDS = 900,
   S3_REGION = 'us-east-1',
   generateStorageKey = (filename: string): string => {
@@ -18,8 +19,10 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024,
   },
   POST = async (request: NextRequest) => {
     const authHeader = request.headers.get('Authorization'),
-      sessionCookie = request.cookies.get('session_token')?.value ?? request.cookies.get('__session')?.value
-    if (!(authHeader || sessionCookie)) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      sessionCookie = request.cookies.get('session_token')?.value ?? request.cookies.get('__session')?.value,
+      token = authHeader?.replace(BEARER_RE, '') ?? sessionCookie ?? ''
+    if (!token || token.split('.').length - 1 < 2)
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     const accessKeyId = process.env.S3_ACCESS_KEY_ID,
       secretAccessKey = process.env.S3_SECRET_ACCESS_KEY,
       endpoint = process.env.S3_ENDPOINT,

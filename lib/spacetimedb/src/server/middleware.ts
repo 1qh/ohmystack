@@ -30,15 +30,21 @@ const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareC
     const threshold = opts?.threshold ?? DEFAULT_SLOW_THRESHOLD_MS
     return {
       afterCreate: (ctx, { row }) => {
-        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
+        const start = (ctx as unknown as Rec)._mwStart as number | undefined
+        if (start === undefined) return
+        const dur = Date.now() - start
         if (dur > threshold) log('warn', 'slow:create', { durationMs: dur, row, table: ctx.table, threshold })
       },
       afterDelete: (ctx, { row }) => {
-        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
+        const start = (ctx as unknown as Rec)._mwStart as number | undefined
+        if (start === undefined) return
+        const dur = Date.now() - start
         if (dur > threshold) log('warn', 'slow:delete', { durationMs: dur, row, table: ctx.table, threshold })
       },
       afterUpdate: (ctx, { prev }) => {
-        const dur = Date.now() - (((ctx as unknown as Rec)._mwStart as number | undefined) ?? Date.now())
+        const start = (ctx as unknown as Rec)._mwStart as number | undefined
+        if (start === undefined) return
+        const dur = Date.now() - start
         if (dur > threshold) log('warn', 'slow:update', { durationMs: dur, prev, table: ctx.table, threshold })
       },
       beforeCreate: (ctx, { data }) => {

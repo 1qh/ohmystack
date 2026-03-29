@@ -102,8 +102,8 @@ const filterSupportedParts = (parts: Record<string, unknown>[]) =>
       isToolApprovalFlow = Boolean(messages)
     let chat = await fetchQuery(api.chat.read, { id: chatId }, opts)
     if (!chat && message?.role === 'user') {
-      await fetchMutation(api.chat.create, { isPublic: false, title: 'New Chat' }, opts)
-      chat = await fetchQuery(api.chat.read, { id: chatId }, opts)
+      const newChatId = await fetchMutation(api.chat.create, { isPublic: false, title: 'New Chat' }, opts)
+      chat = await fetchQuery(api.chat.read, { id: newChatId as Id<'chat'> }, opts)
     }
     if (!chat) return new Response('Chat not found', { status: 404 })
     let existingMessages: UIMessage[] = []
