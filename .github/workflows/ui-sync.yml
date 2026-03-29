@@ -11,16 +11,12 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
         with:
           bun-version: 'latest'
       - run: bun i
@@ -34,7 +30,6 @@ jobs:
           title: 'chore: sync ui components from upstream'
           body: |
             Automated sync from shadcn/ui and ai-elements.
-            
             - Regenerated `lib/ui` with `bun ui:sync`
             - Verified with `bun fix`
             - Verified with `bun test`

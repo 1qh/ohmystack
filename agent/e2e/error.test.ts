@@ -15,7 +15,7 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       const sessionId = (page.url().split('/chat/')[1] ?? '').trim()
-      await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+      await convex.mutation(anyApi.sessions?.archiveSession as FunctionReference<'mutation'>, {
         sessionId: sessionId as never
       })
       await page.getByPlaceholder(MESSAGE_RE).fill('This should fail')
@@ -45,7 +45,7 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       const sessionId = (page.url().split('/chat/')[1] ?? '').trim()
-      await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+      await convex.mutation(anyApi.sessions?.archiveSession as FunctionReference<'mutation'>, {
         sessionId: sessionId as never
       })
       await page.goto(`/chat/${sessionId}`)

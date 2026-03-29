@@ -28,7 +28,7 @@ test.describe
       await expect(chatPage.getMessages().first()).toContainText('Hello')
       await chatPage.sendMessage('Tell me more')
       await page.waitForTimeout(3000)
-      const logText = await page.getByRole('log').textContent(),
+      const logText = (await page.getByRole('log').textContent()) ?? '',
         firstIndex = logText.indexOf('Hello'),
         secondIndex = logText.indexOf('Tell me more')
       expect(firstIndex).toBeGreaterThanOrEqual(0)
@@ -71,7 +71,7 @@ test.describe
         })
       }
       await page.waitForTimeout(5000)
-      const logText = await page.getByRole('log').textContent()
+      const logText = (await page.getByRole('log').textContent()) ?? ''
       let previousIndex = -1
       for (const message of sent) {
         const firstIndex = logText.indexOf(message)
@@ -82,13 +82,13 @@ test.describe
     })
     test('session archival removes session from list', async ({ page, sessionListPage }) => {
       const title = `archive-${Date.now()}`,
-        created = (await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, {
+        created = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
           title
         })) as { sessionId: string }
       await sessionListPage.goto('/')
       await page.waitForTimeout(1500)
       await expect(page.getByText(title)).toBeVisible({ timeout: 5000 })
-      await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+      await convex.mutation(anyApi.sessions?.archiveSession as FunctionReference<'mutation'>, {
         sessionId: created.sessionId as never
       })
       await page.reload()
@@ -122,11 +122,11 @@ test.describe
       await expect(page.locator('.is-user, .is-assistant').first()).toContainText(message)
     })
     test('empty state transitions to first chat and back to list', async ({ page, sessionListPage }) => {
-      const existing = (await convex.query(anyApi.sessions.listSessions as FunctionReference<'query'>, {})) as {
+      const existing = (await convex.query(anyApi.sessions?.listSessions as FunctionReference<'query'>, {})) as {
         _id: string
       }[]
       for (const session of existing)
-        await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+        await convex.mutation(anyApi.sessions?.archiveSession as FunctionReference<'mutation'>, {
           sessionId: session._id as never
         })
       await sessionListPage.goto('/')
@@ -143,7 +143,7 @@ test.describe
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       const sessionId = (page.url().split('/chat/')[1] ?? '').trim()
-      await convex.mutation(anyApi.sessions.archiveSession as FunctionReference<'mutation'>, {
+      await convex.mutation(anyApi.sessions?.archiveSession as FunctionReference<'mutation'>, {
         sessionId: sessionId as never
       })
       await page.getByPlaceholder(MESSAGE_RE).fill('trigger error')
@@ -209,13 +209,13 @@ test.describe
       await context2.close()
     })
     test('chat with many messages loads and scrolls', async ({ page }) => {
-      const created = (await convex.mutation(anyApi.sessions.createSession as FunctionReference<'mutation'>, {
+      const created = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
         title: `many-${Date.now()}`
       })) as { sessionId: string }
       let seeded = 0
       while (seeded < 10)
         try {
-          await convex.mutation(anyApi.orchestrator.submitMessage as FunctionReference<'mutation'>, {
+          await convex.mutation(anyApi.orchestrator?.submitMessage as FunctionReference<'mutation'>, {
             content: `seed-many-${seeded}`,
             sessionId: created.sessionId as never
           })

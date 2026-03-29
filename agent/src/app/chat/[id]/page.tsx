@@ -274,7 +274,7 @@ const mapToolState = (status?: string) => {
         | undefined,
       tasks = useQuery(api.tasks.listTasks, { sessionId: id }) as SessionTask[] | undefined,
       todos = useQuery(api.todos.listTodos, { sessionId: id }) as SessionTodo[] | undefined,
-      tokenUsage = useQuery(tokenUsageQuery as never, { sessionId: id }) as SessionTokenUsage | undefined,
+      tokenUsage = useQuery(tokenUsageQuery as never, { sessionId: id } as never) as SessionTokenUsage | undefined,
       submitMessage = useMutation(api.orchestrator.submitMessage),
       lastMessage = messages && messages.length > 0 ? (messages.at(-1) ?? null) : null,
       isTyping = lastMessage?.role === 'assistant' && !lastMessage.isComplete,

@@ -63,6 +63,7 @@
     "sharp": "latest"
   },
   "devDependencies": {
+    "@a/shared": "workspace:*",
     "tsdown": "latest"
   },
   "peerDependencies": {
