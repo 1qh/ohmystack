@@ -2,7 +2,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 import { internalMutation } from './_generated/server'
 import { buildTaskTerminalReminder, maybeContinueOrchestratorInline } from './tasks'
-const FIVE_MINUTES_MS = 5 * 60 * 1000,
+const MAX_BATCH = 100,
+  FIVE_MINUTES_MS = 5 * 60 * 1000,
   INTERRUPTED_RESULT = 'Interrupted: agent run terminated before tool completion',
   INTERRUPTED_TEXT = '[Message interrupted]',
   timeoutStaleTasks = internalMutation({
@@ -13,11 +14,11 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
         runningTasks = await ctx.db
           .query('tasks')
           .withIndex('by_status', idx => idx.eq('status', 'running'))
-          .collect(),
+          .take(MAX_BATCH),
         pendingTasks = await ctx.db
           .query('tasks')
           .withIndex('by_status', idx => idx.eq('status', 'pending'))
-          .collect()
+          .take(MAX_BATCH)
       let timedOutCount = 0
       for (const t of runningTasks)
         if (t.heartbeatAt && t.heartbeatAt < staleBefore) {
@@ -82,13 +83,13 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000,
         idleStates = await ctx.db
           .query('threadRunState')
           .withIndex('by_status', idx => idx.eq('status', 'idle'))
-          .collect()
+          .take(MAX_BATCH)
       let cleanedCount = 0
       for (const s of idleStates) {
         const messages = await ctx.db
           .query('messages')
           .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
-          .collect()
+          .take(MAX_BATCH)
         for (const m of messages)
           if (!m.isComplete && m._creationTime < staleBefore) {
             const nextContent =

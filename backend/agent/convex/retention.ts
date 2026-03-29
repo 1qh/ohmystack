@@ -5,6 +5,7 @@ const DAY_MS = 24 * 60 * 60 * 1000,
   ARCHIVE_AFTER_MS = 7 * DAY_MS,
   IDLE_AFTER_MS = DAY_MS,
   RETENTION_MS = 180 * DAY_MS,
+  MAX_BATCH = 100,
   MAX_SESSIONS_PER_CLEANUP = 10,
   archiveIdleSessions = internalMutation({
     args: {},
@@ -15,11 +16,11 @@ const DAY_MS = 24 * 60 * 60 * 1000,
         activeSessions = await ctx.db
           .query('session')
           .withIndex('by_status', idx => idx.eq('status', 'active'))
-          .collect(),
+          .take(MAX_BATCH),
         idleSessions = await ctx.db
           .query('session')
           .withIndex('by_status', idx => idx.eq('status', 'idle'))
-          .collect()
+          .take(MAX_BATCH)
       for (const s of activeSessions)
         if (s.lastActivityAt < idleBefore)
           await ctx.db.patch(s._id, {
@@ -54,26 +55,26 @@ const DAY_MS = 24 * 60 * 60 * 1000,
         archivedSessions = await ctx.db
           .query('session')
           .withIndex('by_status', idx => idx.eq('status', 'archived'))
-          .collect()
+          .take(MAX_SESSIONS_PER_CLEANUP)
       let deletedCount = 0
       for (const s of archivedSessions)
         if (deletedCount < MAX_SESSIONS_PER_CLEANUP && s.archivedAt && s.archivedAt < deleteBefore) {
           const tokenUsages = await ctx.db
               .query('tokenUsage')
               .withIndex('by_session', idx => idx.eq('sessionId', s._id))
-              .collect(),
+              .take(MAX_BATCH),
             todos = await ctx.db
               .query('todos')
               .withIndex('by_session_position', idx => idx.eq('sessionId', s._id))
-              .collect(),
+              .take(MAX_BATCH),
             sessionMessages = await ctx.db
               .query('messages')
               .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
-              .collect(),
+              .take(MAX_BATCH),
             tasks = await ctx.db
               .query('tasks')
               .withIndex('by_session', idx => idx.eq('sessionId', s._id))
-              .collect(),
+              .take(MAX_BATCH),
             runState = await ctx.db
               .query('threadRunState')
               .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
@@ -86,7 +87,7 @@ const DAY_MS = 24 * 60 * 60 * 1000,
               const workerMessages = await ctx.db
                 .query('messages')
                 .withIndex('by_threadId', idx => idx.eq('threadId', t.threadId))
-                .collect()
+                .take(MAX_BATCH)
               await Promise.all(workerMessages.map(async m => ctx.db.delete(m._id)))
               await ctx.db.delete(t._id)
             })

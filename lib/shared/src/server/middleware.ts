@@ -142,7 +142,16 @@ const createComposeMiddleware = <
     const result: Rec = {}
     for (const key of Object.keys(data)) {
       const v = data[key]
-      result[key] = typeof v === 'string' ? sanitizeString(v) : v
+      if (typeof v === 'string') result[key] = sanitizeString(v)
+      else if (Array.isArray(v)) {
+        const arr: unknown[] = []
+        for (const el of v)
+          if (typeof el === 'string') arr.push(sanitizeString(el))
+          else if (el && typeof el === 'object' && !Array.isArray(el)) arr.push(sanitizeRec(el as Rec))
+          else arr.push(el)
+        result[key] = arr
+      } else if (v && typeof v === 'object' && !Array.isArray(v)) result[key] = sanitizeRec(v as Rec)
+      else result[key] = v
     }
     return result
   },

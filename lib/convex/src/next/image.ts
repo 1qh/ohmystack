@@ -75,9 +75,17 @@ const fetchImage = async ({
         return NextResponse.json({ error: error instanceof Error ? error.message : 'Processing failed' }, { status: 500 })
       }
     },
+  clientCache = new Map<string, ConvexHttpClient>(),
+  getCachedClient = (url: string): ConvexHttpClient => {
+    const existing = clientCache.get(url)
+    if (existing) return existing
+    const client = new ConvexHttpClient(url)
+    clientCache.set(url, client)
+    return client
+  },
   makeImageRoute = async ({ convexUrl, fileInfoQuery = 'file:info' }: ImageRouteConfig) => {
     await Promise.resolve()
-    const getClient = () => new ConvexHttpClient(convexUrl),
+    const getClient = () => getCachedClient(convexUrl),
       opts = { getClient, queryRef: fileInfoQuery }
     return { GET: makeGet(opts), POST: makePost(opts) }
   }

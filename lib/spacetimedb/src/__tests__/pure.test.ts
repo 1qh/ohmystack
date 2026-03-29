@@ -1858,8 +1858,8 @@ describe('isRecord', () => {
   test('boolean returns false', () => {
     expect(isRecord(true)).toBe(false)
   })
-  test('array returns true (arrays are objects)', () => {
-    expect(isRecord([1, 2, 3])).toBe(true)
+  test('array returns false', () => {
+    expect(isRecord([1, 2, 3])).toBe(false)
   })
   test('0 returns false', () => {
     expect(isRecord(0)).toBe(false)
@@ -2895,14 +2895,14 @@ describe('field-level error routing (R9.3)', () => {
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
-  test('extractErrorData treats array fieldErrors as record (isRecord passes arrays)', () => {
+  test('extractErrorData ignores array fieldErrors (arrays are not records)', () => {
     const e = makeSenderError({
         code: 'VALIDATION_FAILED',
         fieldErrors: ['title', 'content']
       }),
       d = extractErrorData(e)
     expect(d).toBeDefined()
-    expect(d?.fieldErrors).toBeDefined()
+    expect(d?.fieldErrors).toBeUndefined()
   })
   test('end-to-end: errValidation → extractErrorData preserves fieldErrors', () => {
     const zodError = {

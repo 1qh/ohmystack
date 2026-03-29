@@ -49,7 +49,7 @@ const TOKEN_BYTES = 24,
     // eslint-disable-next-line no-console
     console[level](JSON.stringify({ level, msg, ts: Date.now(), ...data }))
   },
-  isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object',
+  isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object' && !Array.isArray(v),
   isComparisonOp = (val: unknown): val is ComparisonOp<unknown> =>
     typeof val === 'object' &&
     val !== null &&

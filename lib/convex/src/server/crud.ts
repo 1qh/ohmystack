@@ -319,6 +319,8 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
         handler: typed(async (c: CrudMCtx, a: Rec) => {
           const items = a.items as Rec[] | undefined
           if (items) {
+            if (opt?.rateLimit && !isTestMode())
+              await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
             const ids: string[] = []
             for (const item of items) {
               let data = item
