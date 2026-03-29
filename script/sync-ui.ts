@@ -211,6 +211,10 @@ const lineBreakRegex = /\r?\n/u,
     if (diff.exitCode !== 0) throw new Error(`lib/ui is out of sync with sync script output:\n${output}`)
   },
   UI_PACKAGE: JsonRecord = {
+    devDependencies: {
+      '@tailwindcss/postcss': 'latest',
+      '@tailwindcss/typography': 'latest'
+    },
     exports: {
       '.': './src/lib/utils.ts',
       './*': './src/components/*.tsx',
@@ -274,7 +278,10 @@ const lineBreakRegex = /\r?\n/u,
         merged = {
           ...UI_PACKAGE,
           dependencies: filterWorkspace(nextPackage.dependencies),
-          devDependencies: filterWorkspace(nextPackage.devDependencies)
+          devDependencies: {
+            ...(isRecord(UI_PACKAGE.devDependencies) ? UI_PACKAGE.devDependencies : {}),
+            ...filterWorkspace(nextPackage.devDependencies)
+          }
         }
       await writeJson({ filePath: join(tmpUi, 'package.json'), value: merged })
     }
