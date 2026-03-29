@@ -123,14 +123,21 @@ const createComposeMiddleware = <
   DATA_URI_SCRIPT_PATTERN = /data\s*:\s*text\/html/giu,
   DANGEROUS_TAG_PATTERN = /<\s*\/?\s*(?:iframe|object|embed|applet|form|base|meta)\b[^>]*>/giu,
   HTML_ENCODED_SCRIPT_PATTERN = /&#(?:x0*(?:3c|3e)|0*(?:60|62));/giu,
-  sanitizeString = (val: string): string =>
-    val
-      .replace(SCRIPT_TAG_PATTERN, '')
-      .replace(EVENT_HANDLER_PATTERN, '')
-      .replace(JAVASCRIPT_PROTO_PATTERN, '')
-      .replace(DATA_URI_SCRIPT_PATTERN, '')
-      .replace(DANGEROUS_TAG_PATTERN, '')
-      .replace(HTML_ENCODED_SCRIPT_PATTERN, ''),
+  sanitizeString = (val: string): string => {
+    let result = val,
+      prev = ''
+    while (prev !== result) {
+      prev = result
+      result = result
+        .replace(SCRIPT_TAG_PATTERN, '')
+        .replace(EVENT_HANDLER_PATTERN, '')
+        .replace(JAVASCRIPT_PROTO_PATTERN, '')
+        .replace(DATA_URI_SCRIPT_PATTERN, '')
+        .replace(DANGEROUS_TAG_PATTERN, '')
+        .replace(HTML_ENCODED_SCRIPT_PATTERN, '')
+    }
+    return result
+  },
   sanitizeRec = (data: Rec): Rec => {
     const result: Rec = {}
     for (const key of Object.keys(data)) {

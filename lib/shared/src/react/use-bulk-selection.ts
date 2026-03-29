@@ -36,14 +36,13 @@ const useBulkSelection = ({
       })
     }, []),
     toggleSelectAll = useCallback(() => {
-      if (selected.size === items.length) {
-        setSelected(new Set<string>())
-        return
-      }
-      const next = new Set<string>()
-      for (const i of items) next.add(i._id)
-      setSelected(next)
-    }, [items, selected.size]),
+      setSelected(prev => {
+        if (prev.size === items.length) return new Set<string>()
+        const next = new Set<string>()
+        for (const i of items) next.add(i._id)
+        return next
+      })
+    }, [items]),
     handleBulkDelete = useCallback(async () => {
       if (selected.size === 0 || !rm) return
       const ids = [...selected],

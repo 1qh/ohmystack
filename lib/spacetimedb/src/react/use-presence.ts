@@ -1,6 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HEARTBEAT_INTERVAL_MS } from '../server/presence'
 interface PresenceHeartbeatArgs {
   data: Record<string, unknown>
@@ -89,11 +89,17 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
       }, heartbeatIntervalMs)
       return () => clearInterval(intervalId)
     }, [enabled, heartbeatIntervalMs])
+    const [now, setNow] = useState(() => Date.now())
+    useEffect(() => {
+      if (!enabled) return
+      const id = setInterval(() => {
+        setNow(Date.now())
+      }, heartbeatIntervalMs)
+      return () => clearInterval(id)
+    }, [enabled, heartbeatIntervalMs])
     const users = useMemo(() => {
         if (!enabled) return []
-        // eslint-disable-next-line react-hooks/purity
-        const now = Date.now(),
-          cutoff = now - ttlMs,
+        const cutoff = now - ttlMs,
           filtered: PresenceRow[] = []
         for (const row of data)
           if (toMillis(row.lastSeen) >= cutoff)
@@ -102,7 +108,7 @@ const PRESENCE_TTL_FALLBACK_MS = HEARTBEAT_INTERVAL_MS * 2,
               data: typeof row.data === 'string' ? (JSON.parse(row.data) as unknown) : row.data
             })
         return filtered
-      }, [data, enabled, ttlMs]),
+      }, [data, enabled, now, ttlMs]),
       updatePresence = useCallback((nextData: Record<string, unknown>) => {
         localDataRef.current = nextData
         runHeartbeat({

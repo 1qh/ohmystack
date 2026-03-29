@@ -12,7 +12,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024,
   S3_REGION = 'us-east-1',
   generateStorageKey = (filename: string): string => {
     const timestamp = Date.now(),
-      random = Math.random().toString(36).slice(2, 10),
+      random = crypto.randomUUID(),
       safeName = filename.replaceAll(/[^\w.-]/gu, '_')
     return `uploads/${timestamp}-${random}-${safeName}`
   },

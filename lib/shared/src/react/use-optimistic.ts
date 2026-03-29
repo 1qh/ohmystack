@@ -17,19 +17,28 @@ const useOptimisticMutation = <A, R = void>({
   const [isPending, setIsPending] = useState(false),
     [mutationError, setMutationError] = useState<Error | null>(null),
     pendingCountRef = useRef(0),
+    errorSourceRef = useRef(0),
+    mutationIdRef = useRef(0),
     execute = useCallback(
       async (args: A): Promise<null | R> => {
+        mutationIdRef.current += 1
+        const myId = mutationIdRef.current
         pendingCountRef.current += 1
         setIsPending(true)
-        setMutationError(null)
+        if (errorSourceRef.current === 0) setMutationError(null)
         onOptimistic?.(args)
         try {
           const result = await mutate(args)
+          if (errorSourceRef.current === myId) {
+            errorSourceRef.current = 0
+            setMutationError(null)
+          }
           onSuccess?.(result, args)
           onSettled?.(args, undefined, result)
           return result
         } catch (error) {
           const err = error instanceof Error ? error : new Error('Mutation failed')
+          errorSourceRef.current = myId
           setMutationError(err)
           onRollback?.(args, err)
           onSettled?.(args, error)

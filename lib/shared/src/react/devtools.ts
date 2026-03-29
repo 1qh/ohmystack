@@ -53,7 +53,7 @@ const MAX_ERRORS = 50,
       mutationStore: DevMutation[] = [],
       cacheStore = new Map<string, DevCacheEntry>(),
       subStore = new Map<number, DevSubscription>(),
-      listeners: (() => void)[] = []
+      listeners = new Set<() => void>()
     let nextId = 1
     const notify = () => {
         for (const fn of listeners) fn()
@@ -171,10 +171,9 @@ const MAX_ERRORS = 50,
         const [, bump] = useReducer((n: number) => n + 1, 0)
         useEffect(() => {
           const fn = () => bump()
-          listeners.push(fn)
+          listeners.add(fn)
           return () => {
-            const idx = listeners.indexOf(fn)
-            if (idx !== -1) listeners.splice(idx, 1)
+            listeners.delete(fn)
           }
         }, [])
         return {
