@@ -25,7 +25,7 @@ const syncOwned = internalMutation({
           const existing = await ctx.db.get(t.id)
           // oxlint-disable-next-line unicorn/prefer-ternary
           if (existing?.sessionId === sessionId)
-            ctx.db.patch(t.id, {
+            await ctx.db.patch(t.id, {
               content: t.content,
               position: t.position,
               priority: t.priority,

@@ -40,14 +40,27 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
         throw lastError
       },
       fetchWithRetry = async (url: string, options?: RequestInit & { retry?: RetryOptions }): Promise<Response> => {
-        const { retry, ...fetchOptions } = options ?? {}
-        return withRetry(async () => {
+        const { retry, ...fetchOptions } = options ?? {},
+          mergedOpts = { ...DEFAULT_OPTIONS, ...retry }
+        let attempt = 0
+        for (;;) {
           const response = await fetch(url, fetchOptions),
-            SERVER_ERROR = 500
-          if (!response.ok && response.status >= SERVER_ERROR)
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-          return response
-        }, retry)
+            SERVER_ERROR = 500,
+            TOO_MANY = 429,
+            isRetryable = (response.status >= SERVER_ERROR || response.status === TOO_MANY) && !response.ok
+          if (!isRetryable) return response
+          attempt += 1
+          if (attempt >= mergedOpts.maxAttempts) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          if (response.status === TOO_MANY) {
+            const retryAfter = response.headers.get('Retry-After'),
+              retryMs = retryAfter ? Number(retryAfter) * 1000 : undefined
+            await sleep(
+              retryMs && retryMs > 0 && Number.isFinite(retryMs)
+                ? Math.min(retryMs, mergedOpts.maxDelayMs)
+                : calculateDelay(attempt, mergedOpts)
+            )
+          } else await sleep(calculateDelay(attempt, mergedOpts))
+        }
       }
     return { fetchWithRetry, withRetry }
   }
