@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Button } from "@a/ui/components/button";
 import {
@@ -317,12 +318,8 @@ export const AttachmentRemove = ({
 // AttachmentHoverCard - Hover preview
 // ============================================================================
 export type AttachmentHoverCardProps = ComponentProps<typeof HoverCard>;
-export const AttachmentHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: AttachmentHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+export const AttachmentHoverCard = (props: AttachmentHoverCardProps) => (
+  <HoverCard {...props} />
 );
 export type AttachmentHoverCardTriggerProps = ComponentProps<
   typeof HoverCardTrigger

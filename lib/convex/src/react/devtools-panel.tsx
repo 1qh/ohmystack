@@ -1,5 +1,5 @@
-/* oxlint-disable react-perf/jsx-no-new-object-as-prop */
-/* eslint-disable complexity, react-hooks/refs, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react-hooks/refs */
+/* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 /* oxlint-disable eslint/complexity */
 'use client'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'

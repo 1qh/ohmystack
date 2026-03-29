@@ -1,4 +1,5 @@
 // biome-ignore-all lint/a11y/useSemanticElements: intentional div usage
+/** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 'use client'
 import type { AnyFieldApi } from '@tanstack/react-form'
 import type { ComponentProps, ReactNode } from 'react'

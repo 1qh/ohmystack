@@ -103,23 +103,21 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
           if (!form.isPending) setOpen(v)
         }}
         open={open}>
-        <DialogTrigger asChild>
-          <Button
-            aria-label='Create blog post'
-            className='fixed top-2 right-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
-            data-testid='create-blog-trigger'
-            size='icon'
-            type='button'
-            variant='ghost'>
-            <Plus className='size-full' />
-          </Button>
+        <DialogTrigger
+          render={p => (
+            <Button
+              {...p}
+              aria-label='Create blog post'
+              className='fixed top-2 right-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
+              data-testid='create-blog-trigger'
+              size='icon'
+              type='button'
+              variant='ghost'
+            />
+          )}>
+          <Plus className='size-full' />
         </DialogTrigger>
-        <DialogContent
-          className='max-h-[90%] max-w-lg overflow-auto'
-          data-testid='create-blog-dialog'
-          onInteractOutside={e => {
-            if (form.isPending) e.preventDefault()
-          }}>
+        <DialogContent className='max-h-[90%] max-w-lg overflow-auto' data-testid='create-blog-dialog'>
           <Form
             className='flex flex-col gap-4'
             form={form}
@@ -182,10 +180,12 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
       {own ? (
         <>
           <Publish className='mr-2 ml-auto' id={id} published={published} />
-          <Button asChild className='group-hover:block' size='icon' variant='ghost'>
-            <Link href={`/${id}/edit`}>
-              <Pencil className='size-full stroke-1' />
-            </Link>
+          <Button
+            className='group-hover:block'
+            render={p => <Link {...p} href={`/${id}/edit`} />}
+            size='icon'
+            variant='ghost'>
+            <Pencil className='size-full stroke-1' />
           </Button>
           <Delete id={id} onOptimisticRemove={onOptimisticRemove} />
         </>

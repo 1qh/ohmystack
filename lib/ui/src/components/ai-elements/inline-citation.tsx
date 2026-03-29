@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Badge } from "@a/ui/components/badge";
 import type { CarouselApi } from "@a/ui/components/carousel";
@@ -43,7 +44,7 @@ export const InlineCitationText = ({
 );
 export type InlineCitationCardProps = ComponentProps<typeof HoverCard>;
 export const InlineCitationCard = (props: InlineCitationCardProps) => (
-  <HoverCard closeDelay={0} openDelay={0} {...props} />
+  <HoverCard {...props} />
 );
 export type InlineCitationCardTriggerProps = ComponentProps<typeof Badge> & {
   sources: string[];

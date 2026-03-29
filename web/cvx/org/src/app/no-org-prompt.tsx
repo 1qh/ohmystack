@@ -11,11 +11,9 @@ const NoOrgPrompt = () => (
       <CardDescription>Create or join an organization to get started.</CardDescription>
     </CardHeader>
     <CardContent className='flex justify-center gap-4'>
-      <Button asChild>
-        <Link href='/new'>
-          <Plus className='mr-2 size-4' />
-          Create organization
-        </Link>
+      <Button render={p => <Link {...p} href='/new' />}>
+        <Plus className='mr-2 size-4' />
+        Create organization
       </Button>
     </CardContent>
   </Card>

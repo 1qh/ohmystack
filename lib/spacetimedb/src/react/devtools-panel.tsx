@@ -1,6 +1,6 @@
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 /* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
-/* oxlint-disable eslint/complexity */
+/* oxlint-disable eslint/complexity, react-hooks/refs */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'

@@ -727,8 +727,8 @@ const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu,
                     <Select
                       disabled={disabled}
                       name={f.name}
-                      onValueChange={v => {
-                        if (disabled) return
+                      onValueChange={(v: null | string) => {
+                        if (disabled || !v) return
                         if (selected.includes(v)) f.handleChange(selected.filter(x => x !== v))
                         else {
                           if (mx && selected.length >= mx) {

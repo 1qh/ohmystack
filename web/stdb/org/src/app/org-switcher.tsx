@@ -25,22 +25,20 @@ const toAvatarSrc = (avatarId: string) => `/api/image?id=${avatarId}`,
     }
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button className='gap-2' variant='outline'>
-            {activeOrg ? (
-              <>
-                <OrgAvatar
-                  name={activeOrg.name}
-                  size='sm'
-                  src={activeOrg.avatarId ? toAvatarSrc(activeOrg.avatarId) : undefined}
-                />
-                <span className='max-w-24 truncate'>{activeOrg.name}</span>
-              </>
-            ) : (
-              <span>Select org</span>
-            )}
-            <ChevronDown className='size-4' />
-          </Button>
+        <DropdownMenuTrigger render={p => <Button {...p} className='gap-2' variant='outline' />}>
+          {activeOrg ? (
+            <>
+              <OrgAvatar
+                name={activeOrg.name}
+                size='sm'
+                src={activeOrg.avatarId ? toAvatarSrc(activeOrg.avatarId) : undefined}
+              />
+              <span className='max-w-24 truncate'>{activeOrg.name}</span>
+            </>
+          ) : (
+            <span>Select org</span>
+          )}
+          <ChevronDown className='size-4' />
         </DropdownMenuTrigger>
         <DropdownMenuContent align='start'>
           {orgs.map(item => (

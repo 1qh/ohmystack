@@ -25,7 +25,7 @@ interface UserMenuShellProps {
   email?: string
   image?: string
   isSignedIn: boolean
-  loginButtonProps?: Omit<ComponentProps<typeof Button>, 'asChild' | 'children'>
+  loginButtonProps?: Omit<ComponentProps<typeof Button>, 'children' | 'render'>
   loginHref?: string
   loginLabel?: string
   loginLinkProps?: Omit<ComponentProps<typeof Link>, 'children' | 'href'>
@@ -158,12 +158,10 @@ const UserMenuShell = ({
         ) : (
           <Button
             {...loginButtonProps}
-            asChild
             className={cn('w-full', loginButtonProps?.className)}
+            render={p => <Link {...p} {...loginLinkProps} href={loginHref} />}
             variant={loginButtonProps?.variant ?? 'ghost'}>
-            <Link {...loginLinkProps} href={loginHref}>
-              {loginLabel}
-            </Link>
+            {loginLabel}
           </Button>
         )}
       </PopoverContent>

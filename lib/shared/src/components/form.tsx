@@ -24,12 +24,12 @@ const ConflictDialog = ({
     conflict: ConflictData | null
     onResolve: (action: GuardAction) => void
   }) => (
-    <Dialog open={Boolean(conflict)}>
-      <DialogContent
-        className={cn('[&>button]:hidden', className)}
-        {...props}
-        onEscapeKeyDown={() => onResolve('cancel')}
-        onInteractOutside={() => onResolve('cancel')}>
+    <Dialog
+      onOpenChange={open => {
+        if (!open) onResolve('cancel')
+      }}
+      open={Boolean(conflict)}>
+      <DialogContent className={cn('[&>button]:hidden', className)} {...props}>
         <h2 className='text-lg font-semibold'>Conflict Detected</h2>
         <p className='text-sm text-muted-foreground'>
           This record was modified by someone else. Choose how to resolve the conflict.

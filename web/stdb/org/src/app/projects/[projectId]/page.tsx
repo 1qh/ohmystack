@@ -28,10 +28,14 @@ import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 type Priority = NonNullable<output<typeof s.task>['priority']>
 const priorityOptions = enumToOptions(s.task.shape.priority.unwrap()),
-  asPriority = (value: string | undefined): Priority =>
+  asPriority = (value: null | string | undefined): Priority =>
     value === 'high' || value === 'low' || value === 'medium' ? value : 'medium',
   PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
-    <Select onValueChange={v => onValueChange(v!)} value={value}>
+    <Select
+      onValueChange={(v: null | string) => {
+        if (v) onValueChange(asPriority(v))
+      }}
+      value={value}>
       <SelectTrigger className='w-28'>
         <SelectValue />
       </SelectTrigger>
@@ -233,11 +237,9 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
             {canEditProject ? null : <Badge variant='secondary'>View only</Badge>}
           </div>
           {canEditProject ? (
-            <Button asChild variant='outline'>
-              <Link href={`/projects/${projectId}/edit`}>
-                <Pencil className='mr-2 size-4' />
-                Edit
-              </Link>
+            <Button render={p => <Link {...p} href={`/projects/${projectId}/edit`} />} variant='outline'>
+              <Pencil className='mr-2 size-4' />
+              Edit
             </Button>
           ) : null}
         </div>

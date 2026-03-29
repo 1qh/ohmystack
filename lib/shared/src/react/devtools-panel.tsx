@@ -1,4 +1,5 @@
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop */
+/** biome-ignore-all lint/nursery/noInlineStyles: dynamic waterfall positioning */
 'use client'
 import { useEffect, useState } from 'react'
 import type { DevCacheEntry, DevSubscription } from './devtools'

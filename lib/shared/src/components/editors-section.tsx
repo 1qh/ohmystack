@@ -59,7 +59,10 @@ const EditorsSection = ({
       <CardHeader className={cn('flex flex-row items-center justify-between', headerClassName)}>
         <CardTitle>{title}</CardTitle>
         {available.length > 0 ? (
-          <Select onValueChange={onAdd}>
+          <Select
+            onValueChange={(v: null | string) => {
+              if (v) onAdd(v)
+            }}>
             <SelectTrigger className={cn('w-40', triggerClassName)} data-testid='add-editor-trigger'>
               <UserPlus className='mr-2 size-4' />
               <SelectValue placeholder={addEditorPlaceholder} />

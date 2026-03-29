@@ -69,7 +69,11 @@ const OrgSettingsPage = () => {
             <CardDescription>Transfer ownership to an admin. You will become an admin.</CardDescription>
           </CardHeader>
           <CardContent className='flex gap-2'>
-            <Select onValueChange={setTransferTarget} value={transferTarget}>
+            <Select
+              onValueChange={(v: null | string) => {
+                if (v) setTransferTarget(v)
+              }}
+              value={transferTarget}>
               <SelectTrigger className='w-64'>
                 <SelectValue placeholder='Select an admin' />
               </SelectTrigger>

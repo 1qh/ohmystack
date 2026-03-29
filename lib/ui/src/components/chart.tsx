@@ -1,7 +1,7 @@
 "use client"
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-import type { TooltipValueType } from "recharts"
+type TooltipValueType = number | string | Array<number | string>
 import { cn } from "@a/ui/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const

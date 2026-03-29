@@ -55,11 +55,9 @@ const ProjectsPage = () => {
             </div>
           ) : null}
         </div>
-        <Button asChild>
-          <Link href='/projects/new'>
-            <Plus className='mr-2 size-4' />
-            New project
-          </Link>
+        <Button render={p => <Link {...p} href='/projects/new' />}>
+          <Plus className='mr-2 size-4' />
+          New project
         </Button>
       </div>
       <div className='relative'>

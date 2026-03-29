@@ -59,10 +59,8 @@ const MemberList = () => {
                 <TableCell>
                   {showActions ? (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size='icon' variant='ghost'>
-                          <MoreHorizontal className='size-4' />
-                        </Button>
+                      <DropdownMenuTrigger render={p => <Button {...p} size='icon' variant='ghost' />}>
+                        <MoreHorizontal className='size-4' />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end'>
                         {canManageAdmins ? (

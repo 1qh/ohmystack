@@ -99,11 +99,9 @@ const WikiPage = () => {
             Trash
           </Button>
           {showDeleted ? null : (
-            <Button asChild>
-              <Link href='/wiki/new'>
-                <Plus className='mr-2 size-4' />
-                New wiki
-              </Link>
+            <Button render={p => <Link {...p} href='/wiki/new' />}>
+              <Plus className='mr-2 size-4' />
+              New wiki
             </Button>
           )}
         </div>

@@ -78,11 +78,9 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
               Trash
             </Button>
             {showDeleted ? null : (
-              <Button asChild>
-                <Link href='/wiki/new'>
-                  <Plus className='mr-2 size-4' />
-                  New wiki
-                </Link>
+              <Button render={p => <Link {...p} href='/wiki/new' />}>
+                <Plus className='mr-2 size-4' />
+                New wiki
               </Button>
             )}
           </div>

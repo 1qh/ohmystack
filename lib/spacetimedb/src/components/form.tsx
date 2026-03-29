@@ -136,8 +136,12 @@ const FileFieldWarning = createFileFieldWarning({
           {render(fields as TypedFields<T>)}
         </form>
         <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
-        <Dialog open={guard.active}>
-          <DialogContent className='[&>button]:hidden' onEscapeKeyDown={guard.reject} onInteractOutside={guard.reject}>
+        <Dialog
+          onOpenChange={open => {
+            if (!open) guard.reject()
+          }}
+          open={guard.active}>
+          <DialogContent className='[&>button]:hidden'>
             <p>You have unsaved changes. Are you sure you want to leave?</p>
             <div className='flex justify-end gap-2'>
               <Button onClick={guard.reject} variant='outline'>

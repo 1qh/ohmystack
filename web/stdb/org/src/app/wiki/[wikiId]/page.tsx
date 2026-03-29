@@ -79,11 +79,9 @@ const emptyMembers: never[] = [],
             )}
           </div>
           {canEditWiki && !isDeleted ? (
-            <Button asChild variant='outline'>
-              <Link href={`/wiki/${wikiId}/edit`}>
-                <Pencil className='mr-2 size-4' />
-                Edit
-              </Link>
+            <Button render={p => <Link {...p} href={`/wiki/${wikiId}/edit`} />} variant='outline'>
+              <Pencil className='mr-2 size-4' />
+              Edit
             </Button>
           ) : null}
         </div>

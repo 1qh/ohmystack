@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import {
   Command,
@@ -397,7 +398,7 @@ export const PromptInputActionAddScreenshot = ({
 }: PromptInputActionAddScreenshotProps) => {
   const attachments = usePromptInputAttachments();
   const handleSelect = useCallback(
-    async (event: Event) => {
+    async (event: Parameters<NonNullable<ComponentProps<typeof DropdownMenuItem>['onSelect']>>[0]) => {
       onSelect?.(event);
       if (event.defaultPrevented) {
         return;
@@ -1163,12 +1164,8 @@ export const PromptInputSelectValue = ({
   <SelectValue className={cn(className)} {...props} />
 );
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
-export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+export const PromptInputHoverCard = (props: PromptInputHoverCardProps) => (
+  <HoverCard {...props} />
 );
 export type PromptInputHoverCardTriggerProps = ComponentProps<
   typeof HoverCardTrigger

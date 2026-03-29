@@ -21,11 +21,9 @@ const InviteDialog = ({ orgId }: InviteDialogProps) => {
     })
   return (
     <Dialog onOpenChange={setOpen} open={open}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className='mr-2 size-4' />
-          Invite member
-        </Button>
+      <DialogTrigger render={p => <Button {...p} />}>
+        <Plus className='mr-2 size-4' />
+        Invite member
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
