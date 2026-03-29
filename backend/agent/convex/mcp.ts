@@ -6,6 +6,7 @@ import { crud, q } from '../lazy'
 import { owned } from '../t'
 import { internalMutation } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
+const PRIVATE_172_RE = /^172\.(?<oct>\d+)\./u
 interface IndexEq {
   eq: (field: string, value: unknown) => IndexEq
 }
@@ -37,7 +38,16 @@ const MCP_CACHE_TTL_MS = 5 * 60 * 1000,
       hostname.endsWith('.internal') ||
       hostname.startsWith('10.') ||
       hostname.startsWith('192.168.') ||
-      hostname.startsWith('172.')
+      hostname.startsWith('169.254.') ||
+      hostname.startsWith('fc00:') ||
+      hostname.startsWith('fd00:') ||
+      hostname === '::ffff:127.0.0.1' ||
+      hostname === '[::ffff:127.0.0.1]' ||
+      (PRIVATE_172_RE.test(hostname) &&
+        (() => {
+          const oct = Number.parseInt(PRIVATE_172_RE.exec(hostname)?.groups?.oct ?? '', 10)
+          return oct >= 16 && oct <= 31
+        })())
     )
       throw new Error('blocked_url')
   },

@@ -1,17 +1,25 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { httpRouter } from 'convex/server'
+import env from '../env'
 import { api } from './_generated/api'
 import { httpAction } from './_generated/server'
 import { auth } from './auth'
 const http = httpRouter()
 auth.addHttpRoutes(http)
-const corsHeaders = {
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Origin': '*'
-}
+const getAllowedOrigin = (request?: Request) => {
+    const siteUrl = env.SITE_URL,
+      allowed = siteUrl ? [siteUrl] : [],
+      origin = request?.headers.get('Origin') ?? ''
+    if (allowed.length === 0 || allowed.includes(origin)) return origin
+    return allowed[0] ?? ''
+  },
+  makeCorsHeaders = (request?: Request) => ({
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Origin': getAllowedOrigin(request)
+  })
 http.route({
-  handler: httpAction(async () => new Response(null, { headers: corsHeaders, status: 204 })),
+  handler: httpAction(async (_ctx, request) => new Response(null, { headers: makeCorsHeaders(request), status: 204 })),
   method: 'OPTIONS',
   path: '/api/auth/signin'
 })
@@ -31,7 +39,7 @@ http.route({
       return Response.json(
         { redirect: result.redirect, verifier: result.verifier },
         {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: { 'Content-Type': 'application/json', ...makeCorsHeaders(request) },
           status: 200
         }
       )
@@ -39,14 +47,14 @@ http.route({
       return Response.json(
         { token: result.tokens.token },
         {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: { 'Content-Type': 'application/json', ...makeCorsHeaders(request) },
           status: 200
         }
       )
     return Response.json(
       { error: 'Authentication failed' },
       {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { 'Content-Type': 'application/json', ...makeCorsHeaders(request) },
         status: 401
       }
     )

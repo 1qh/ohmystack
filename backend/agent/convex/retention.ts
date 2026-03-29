@@ -59,39 +59,47 @@ const DAY_MS = 24 * 60 * 60 * 1000,
       let deletedCount = 0
       for (const s of archivedSessions)
         if (deletedCount < MAX_SESSIONS_PER_CLEANUP && s.archivedAt && s.archivedAt < deleteBefore) {
-          const tokenUsages = await ctx.db
-              .query('tokenUsage')
-              .withIndex('by_session', idx => idx.eq('sessionId', s._id))
-              .take(MAX_BATCH),
-            todos = await ctx.db
-              .query('todos')
-              .withIndex('by_session_position', idx => idx.eq('sessionId', s._id))
-              .take(MAX_BATCH),
-            sessionMessages = await ctx.db
-              .query('messages')
-              .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
-              .take(MAX_BATCH),
-            tasks = await ctx.db
-              .query('tasks')
-              .withIndex('by_session', idx => idx.eq('sessionId', s._id))
-              .take(MAX_BATCH),
-            runState = await ctx.db
-              .query('threadRunState')
-              .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
-              .unique()
-          await Promise.all(tokenUsages.map(async u => ctx.db.delete(u._id)))
-          await Promise.all(todos.map(async t => ctx.db.delete(t._id)))
-          await Promise.all(sessionMessages.map(async m => ctx.db.delete(m._id)))
-          await Promise.all(
-            tasks.map(async t => {
-              const workerMessages = await ctx.db
+          let hasRemaining = true
+          while (hasRemaining) {
+            const tokenUsages = await ctx.db
+                .query('tokenUsage')
+                .withIndex('by_session', idx => idx.eq('sessionId', s._id))
+                .take(MAX_BATCH),
+              todos = await ctx.db
+                .query('todos')
+                .withIndex('by_session_position', idx => idx.eq('sessionId', s._id))
+                .take(MAX_BATCH),
+              sessionMessages = await ctx.db
                 .query('messages')
-                .withIndex('by_threadId', idx => idx.eq('threadId', t.threadId))
+                .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
+                .take(MAX_BATCH),
+              tasks = await ctx.db
+                .query('tasks')
+                .withIndex('by_session', idx => idx.eq('sessionId', s._id))
                 .take(MAX_BATCH)
-              await Promise.all(workerMessages.map(async m => ctx.db.delete(m._id)))
-              await ctx.db.delete(t._id)
-            })
-          )
+            await Promise.all(tokenUsages.map(async u => ctx.db.delete(u._id)))
+            await Promise.all(todos.map(async t => ctx.db.delete(t._id)))
+            await Promise.all(sessionMessages.map(async m => ctx.db.delete(m._id)))
+            await Promise.all(
+              tasks.map(async t => {
+                const workerMessages = await ctx.db
+                  .query('messages')
+                  .withIndex('by_threadId', idx => idx.eq('threadId', t.threadId))
+                  .take(MAX_BATCH)
+                await Promise.all(workerMessages.map(async m => ctx.db.delete(m._id)))
+                await ctx.db.delete(t._id)
+              })
+            )
+            hasRemaining =
+              tokenUsages.length === MAX_BATCH ||
+              todos.length === MAX_BATCH ||
+              sessionMessages.length === MAX_BATCH ||
+              tasks.length === MAX_BATCH
+          }
+          const runState = await ctx.db
+            .query('threadRunState')
+            .withIndex('by_threadId', idx => idx.eq('threadId', s.threadId))
+            .unique()
           if (runState) await ctx.db.delete(runState._id)
           await ctx.db.delete(s._id)
           deletedCount += 1

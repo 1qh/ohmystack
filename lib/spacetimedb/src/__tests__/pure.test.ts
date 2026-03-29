@@ -1508,8 +1508,8 @@ describe('generateToken', () => {
   test('returns a string', () => {
     expect(typeof generateToken()).toBe('string')
   })
-  test('returns 32 characters', () => {
-    expect(generateToken()).toHaveLength(32)
+  test('returns 48 characters', () => {
+    expect(generateToken()).toHaveLength(48)
   })
   test('generates unique tokens', () => {
     const tokens = new Set<string>()

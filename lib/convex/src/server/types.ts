@@ -135,6 +135,7 @@ interface UserCtx extends DbCtx {
 }
 const ERROR_MESSAGES = {
   ALREADY_ORG_MEMBER: 'Already a member of this organization',
+  ALREADY_PROCESSED: 'Request has already been processed',
   CANNOT_MODIFY_ADMIN: 'Admins cannot modify other admins',
   CANNOT_MODIFY_OWNER: 'Cannot modify the owner',
   CHUNK_ALREADY_UPLOADED: 'Chunk already uploaded',

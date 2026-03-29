@@ -1238,7 +1238,7 @@ describe('bridge functions', () => {
     })
   })
 })
-const BASE36_PATTERN = /^[\da-z]+$/u,
+const HEX_PATTERN = /^[\da-f]+$/u,
   captureWarns = () => {
     const warns: string[] = [],
       origWarn = console.warn
@@ -1339,17 +1339,17 @@ describe('generateToken', () => {
   test('returns a string', () => {
     expect(typeof generateToken()).toBe('string')
   })
-  test('returns 32 characters', () => {
-    expect(generateToken()).toHaveLength(32)
+  test('returns 48 characters', () => {
+    expect(generateToken()).toHaveLength(48)
   })
   test('generates unique tokens', () => {
     const tokens = new Set<string>()
     for (let i = 0; i < 100; i += 1) tokens.add(generateToken())
     expect(tokens.size).toBe(100)
   })
-  test('contains only base-36 characters', () => {
+  test('contains only hex characters', () => {
     const token = generateToken()
-    expect(token).toMatch(BASE36_PATTERN)
+    expect(token).toMatch(HEX_PATTERN)
   })
   test('SEVEN_DAYS_MS is 7 days in milliseconds', () => {
     expect(SEVEN_DAYS_MS).toBe(7 * 24 * 60 * 60 * 1000)

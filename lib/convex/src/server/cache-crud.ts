@@ -88,8 +88,25 @@ const chk = (c: DbCtx) => ({ db: c.db }),
           ) => {
             const qr = c.db.query(table).order('desc')
             if (ie) return qr.paginate(op)
-            const { page, ...rest } = await qr.paginate({ ...op, numItems: (op.numItems as number) * 2 })
-            return { ...rest, page: page.filter(valid).slice(0, op.numItems as number) }
+            const target = op.numItems as number,
+              collected: Rec[] = []
+            let cursor = op.cursor as string | undefined,
+              isDone = false
+            while (collected.length < target && !isDone) {
+              const {
+                continueCursor,
+                isDone: done,
+                page
+              } = await qr.paginate({
+                ...op,
+                cursor,
+                numItems: target * 2
+              })
+              for (const item of page) if (collected.length < target && valid(item)) collected.push(item)
+              cursor = continueCursor
+              isDone = done
+            }
+            return { continueCursor: cursor ?? '', isDone, page: collected }
           }
         )
       }),

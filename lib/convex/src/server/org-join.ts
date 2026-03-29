@@ -52,6 +52,7 @@ const makeJoinHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
         const db = c.db as DbLike,
           requestDoc = await db.get(requestId)
         if (!requestDoc) return err('NOT_FOUND')
+        if (requestDoc.status !== 'pending') return err('ALREADY_PROCESSED')
         await requireOrgRole({
           db,
           minRole: 'admin',

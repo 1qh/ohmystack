@@ -34,15 +34,14 @@ interface MutationOk<T> {
 }
 type MutationResult<T> = MutationFail | MutationOk<T>
 const TOKEN_BYTES = 24,
-  TOKEN_RADIX = 36,
-  TOKEN_LENGTH = 32,
+  TOKEN_LENGTH = 48,
   SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000,
   RUNTIME_FILTER_WARN_THRESHOLD = 1000,
   generateToken = () => {
     const bytes = new Uint8Array(TOKEN_BYTES)
     crypto.getRandomValues(bytes)
     let token = ''
-    for (const b of bytes) token += b.toString(TOKEN_RADIX).padStart(2, '0').slice(0, 2)
+    for (const b of bytes) token += b.toString(16).padStart(2, '0')
     return token.slice(0, TOKEN_LENGTH)
   },
   log = (level: 'debug' | 'error' | 'info' | 'warn', msg: string, data?: Record<string, unknown>) => {
@@ -206,6 +205,5 @@ export {
   SEVEN_DAYS_MS,
   time,
   TOKEN_BYTES,
-  TOKEN_LENGTH,
-  TOKEN_RADIX
+  TOKEN_LENGTH
 }

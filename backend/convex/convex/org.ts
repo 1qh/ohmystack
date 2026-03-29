@@ -1,3 +1,6 @@
+/* oxlint-disable eslint/no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential slug checks */
+/* eslint-disable no-await-in-loop */
 import { ConvexError } from 'convex/values'
 import type { MutationCtx } from './_generated/server'
 import { orgFns } from '../lazy'
@@ -34,14 +37,13 @@ const {
       .query('org')
       .withIndex('by_slug', o => o.eq('slug', slug))
       .unique(),
-  /** biome-ignore lint/suspicious/useAwait: promise-function-async compatibility */
+  MAX_SLUG_ATTEMPTS = 100,
   findUniqueSlug = async (ctx: MutationCtx, base: string): Promise<string> => {
-    const next = async (attempt: number): Promise<string> => {
+    for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt += 1) {
       const candidate = attempt === 0 ? base : `${base}-${String(attempt)}`
       if (!(await slugTaken(ctx, candidate))) return candidate
-      return next(attempt + 1)
     }
-    return next(0)
+    throw new ConvexError({ code: 'SLUG_GENERATION_FAILED' })
   },
   getOrCreate = mutation({
     args: {},

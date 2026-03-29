@@ -184,6 +184,8 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
           const { items, orgId } = a as { items?: Rec[]; orgId: string }
           await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
           if (items) {
+            if (opt?.rateLimit && !isTestMode())
+              await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
             const ids: string[] = []
             for (const item of items) {
               let data = item
