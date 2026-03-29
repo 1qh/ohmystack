@@ -39,7 +39,7 @@ export {
   useDevErrors
 } from './devtools'
 export { DevtoolsAutoMount } from './devtools-panel'
-export { default as BetterspaceDevtools } from './devtools-panel'
+export { BetterspaceDevtools, default as NoboilStdbDevtools } from './devtools-panel'
 export type { DevtoolsProps } from './devtools-panel'
 export type { ErrorToastOptions, ToastFn } from './error-toast'
 export { makeErrorHandler, toastFieldError, useErrorToast } from './error-toast'

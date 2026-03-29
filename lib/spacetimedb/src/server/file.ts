@@ -17,7 +17,7 @@ interface SenderLike {
   toHexString?: () => string
   toString?: () => string
 }
-/** Default MIME types accepted by Betterspace file upload reducers. */
+/** Default MIME types accepted by noboil file upload reducers. */
 const DEFAULT_ALLOWED_TYPES = new Set([
     'application/json',
     'application/msword',

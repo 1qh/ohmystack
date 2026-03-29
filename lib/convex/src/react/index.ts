@@ -14,7 +14,7 @@ export {
   useDevErrors
 } from './devtools'
 export { DevtoolsAutoMount } from './devtools-panel'
-export { default as LazyConvexDevtools } from './devtools-panel'
+export { LazyConvexDevtools, default as NoboilConvexDevtools } from './devtools-panel'
 export type { DevtoolsProps } from './devtools-panel'
 export type { ErrorToastOptions, ToastFn } from './error-toast'
 export { makeErrorHandler, toastFieldError, useErrorToast } from './error-toast'

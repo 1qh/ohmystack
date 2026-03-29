@@ -183,7 +183,7 @@ const NUMBER_TAGS = new Set([
     if (tag === 'Product') return productSchema(v, schemaFromBuilder)
     return unknown()
   },
-  /** Applies Betterspace defaults for excluding internal or generated fields. */
+  /** Applies noboil defaults for excluding internal or generated fields. */
   shouldExcludeByDefault = (v: unknown): boolean => {
     if (isIdentityLike(v) || isTimestampLike(v) || isConnectionIdLike(v)) return true
     if (!hasTypeBuilder(v)) return false

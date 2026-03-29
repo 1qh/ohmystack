@@ -221,7 +221,7 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`,
     })
   },
   /**
-   * Starts the integrated Betterspace development workflow.
+   * Starts the integrated noboil development workflow.
    */
   dev = async (args: string[] = []) => {
     const flags = parseDevFlags(args)

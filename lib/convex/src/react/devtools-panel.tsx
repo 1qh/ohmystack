@@ -1,13 +1,14 @@
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop, react-hooks/refs */
 /* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 /* oxlint-disable eslint/complexity */
+/** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
 'use client'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { DevError, DevMutation, DevSubscription } from './devtools'
 import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
-/** Props for customizing the LazyConvex DevTools panel. */
+/** Props for customizing the noboil DevTools panel. */
 interface DevtoolsProps {
   /** Additional CSS class for the floating trigger button. */
   buttonClassName?: string
@@ -135,7 +136,7 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
     )
   },
   /** Development-only floating panel that displays errors, subscriptions, mutations, and cache stats. */
-  LazyConvexDevtools = ({
+  NoboilConvexDevtools = ({
     buttonClassName,
     className,
     defaultOpen = false,
@@ -164,7 +165,7 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
         <button
           className={`fixed ${posClass} z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors ${count > 0 ? 'bg-red-600 text-white hover:bg-red-700' : staleCount > 0 || pendingCount > 0 ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'} ${className ?? ''} ${buttonClassName ?? ''}`}
           onClick={() => setOpen(v => !v)}
-          title='LazyConvex DevTools'
+          title='noboil DevTools'
           type='button'>
           {count > 0 ? (
             <span className='text-sm font-bold'>{count > MAX_BADGE ? `${MAX_BADGE}+` : String(count)}</span>
@@ -307,8 +308,8 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     }
   }, [])
   if (!(mounted && containerRef.current)) return null
-  return createPortal(<LazyConvexDevtools {...props} />, containerRef.current)
+  return createPortal(<NoboilConvexDevtools {...props} />, containerRef.current)
 }
-export default LazyConvexDevtools
-export { DevtoolsAutoMount }
+export default NoboilConvexDevtools
+export { DevtoolsAutoMount, NoboilConvexDevtools as LazyConvexDevtools, NoboilConvexDevtools }
 export type { DevtoolsProps }

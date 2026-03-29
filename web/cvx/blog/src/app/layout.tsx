@@ -6,7 +6,7 @@ import Logout from '@a/fe/user-menu'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-const metadata: Metadata = { description: 'lazyconvex blog demo', title: 'Blog' },
+const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' },
   renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>,
   Layout = async ({ children }: { children: ReactNode }) => {
     const requestHeaders = await headers(),

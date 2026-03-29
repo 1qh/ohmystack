@@ -339,7 +339,7 @@ Multi-step wizard with per-step Zod schemas and compile-time field checking.
 
 ```tsx
 import { defineSteps } from '@noboil/convex/components'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 const profileStep = z.object({
   displayName: z.string().min(1),

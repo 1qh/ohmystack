@@ -37,7 +37,7 @@ interface ChildFn {
     schema: ZodObject<S>
   }
 }
-/** Creates a file-id schema annotated for Betterspace file inputs. */
+/** Creates a file-id schema annotated for noboil file inputs. */
 const cvFile = () =>
     string()
       .min(1)

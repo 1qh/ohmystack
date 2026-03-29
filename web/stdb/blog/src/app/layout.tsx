@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import Logout from '@a/fe/spacetimedb-user-menu'
-import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
+import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
@@ -27,7 +27,7 @@ const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog'
             </Link>
             <Logout className='fixed bottom-2 left-2' />
             {children}
-            <BetterspaceDevtools position='bottom-right' />
+            <NoboilStdbDevtools position='bottom-right' />
           </div>
         )}
       </AuthLayout>

@@ -27,7 +27,7 @@ interface OrgContextValue<O extends OrgDoc = OrgDoc, M = unknown> {
   orgs: OrgMembership<O>[]
   role: OrgRole
 }
-/** Minimal org document contract used by Betterspace org hooks. */
+/** Minimal org document contract used by noboil org hooks. */
 interface OrgDoc {
   [key: string]: unknown
   _id: string

@@ -9,7 +9,7 @@ Define a Zod schema once. Get authenticated CRUD, typesafe forms, file upload, r
 ## Quick Start
 
 ```sh
-bun noboil@latest init
+bunx noboil@latest init
 ```
 
 Pick a database, name your project, done. The CLI scaffolds the full monorepo.

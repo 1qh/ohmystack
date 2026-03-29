@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
+/** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
 // biome-ignore-all lint/suspicious/useAwait: async without await
 'use client'
 import { createErrorBoundary } from '@a/shared/components/error-boundary'
@@ -21,8 +22,8 @@ const asRecord = (value: unknown): null | Record<string, unknown> => {
     if (message.length > 0) return message
     return 'Unknown error'
   },
-  BetterspaceErrorBoundary = createErrorBoundary({
+  NoboilStdbErrorBoundary = createErrorBoundary({
     readErrorCode,
     readErrorMessage
   })
-export default BetterspaceErrorBoundary
+export { NoboilStdbErrorBoundary as BetterspaceErrorBoundary, NoboilStdbErrorBoundary as default, NoboilStdbErrorBoundary }

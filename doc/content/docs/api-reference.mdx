@@ -38,7 +38,7 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 | `@noboil/convex`             | `guardApi`, `strictApi` |
 | `@noboil/convex/server`      | `setup`, `ownedTable`, `orgTable`, `baseTable`, `singletonTable`, `childTable`, `orgChildTable`, `orgTables`, `uploadTables`, `rateLimitTable`, `orgCascade`, `ownedCascade`, `canEdit`, `getOrgMember`, `getOrgRole`, `requireOrgMember`, `requireOrgRole`, `handleConvexError`, `getErrorCode`, `getErrorMessage`, `getErrorDetail`, `extractErrorData`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `checkRateLimit`, `checkSchema`, `makeOrg`, `makeFileUpload`, `makePresence`, `presenceTable`, `err`, `ok`, `fail`, `time`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn` |
 | `@noboil/convex/test`        | `makeTestAuth`, `makeOrgTestCrud`, `getOrgMembership`, `discoverModules`, `createTestContext`, `isTestMode`, `TEST_EMAIL` |
-| `@noboil/convex/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `toastFieldError`, `OrgProvider`, `OptimisticProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `canEditResource`, `setActiveOrgCookieClient`, `buildMeta`, `getMeta`, `useDevErrors`, `LazyConvexDevtools`, `SchemaPlayground`, `usePendingMutations`, `defaultOnError` |
+| `@noboil/convex/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `toastFieldError`, `OrgProvider`, `OptimisticProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `canEditResource`, `setActiveOrgCookieClient`, `buildMeta`, `getMeta`, `useDevErrors`, `NoboilConvexDevtools`, `SchemaPlayground`, `usePendingMutations`, `defaultOnError` |
 | `@noboil/convex/components`  | `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OfflineIndicator`, `OrgAvatar`, `RoleBadge`, `AutoSaveIndicator`, `ConflictDialog`, `ConvexErrorBoundary`, `FileApiProvider` |
 | `@noboil/convex/schema`      | `child`, `cvFile`, `cvFiles`, `makeBase`, `makeOrgScoped`, `makeOwned`, `makeSingleton`, `orgSchema` |
 | `@noboil/convex/zod`         | `unwrapZod`, `cvFileKindOf`, `cvMetaOf`, `defaultValue`, `defaultValues`, `elementOf`, `enumToOptions`, `isArrayType`, `isBooleanType`, `isDateType`, `isNumberType`, `isOptionalField`, `isStringType`, `pickValues`, `coerceOptionals`, `requiredPartial` |
@@ -50,13 +50,15 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 
 | Module                               | Key Exports |
 | ------------------------------------ | ----------- |
-| `@noboil/spacetimedb`             | `idToWire`, `idFromWire`, `identityToHex`, `identityFromHex`, `UndefinedToOptional` |
-| `@noboil/spacetimedb/server`      | `noboilStdb`, `makePresence`, `makeFileUpload`, `makeSchema`, `setupCrud`, `ownedTable`, `orgScopedTable`, `orgTable`, `singletonTable`, `cacheTable`, `childTable`, `err`, `errValidation`, `extractErrorData`, `getErrorCode`, `getErrorMessage`, `getFirstFieldError`, `identityEquals`, `identityToHex`, `identityFromHex`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn`, `createS3UploadPresignedUrl`, `createS3DownloadPresignedUrl`, `InferRow`, `InferCreate`, `InferUpdate`, `InferRows`, `InferReducerArgs`, `InferReducerReturn`, `TypedFieldErrors`, `getFieldErrors`, `schemaVariants` |
-| `@noboil/spacetimedb/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useMutation`, `useMut`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `OrgProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `toastFieldError`, `defaultOnError`, `BetterspaceDevtools`, `SchemaPlayground`, `buildMeta`, `injectError`, `createFileUploader`, `createSpacetimeClient`, `createTokenStore`, `toWsUri` |
+| `@noboil/spacetimedb`             | `guardApi`, `strictApi`, `zodFromTable`, `idToWire`, `idFromWire`, `identityToHex`, `identityFromHex`, `identityEquals` |
+| `@noboil/spacetimedb/server`      | `noboilStdb`, `setup`, `setupCrud`, `makeCrud`, `makeSingletonCrud`, `makeCacheCrud`, `makeChildCrud`, `makeOrg`, `makeOrgTables`, `makeOrgCrud`, `checkMembership`, `canEdit`, `requireOrgMember`, `makePresence`, `presenceTable`, `makeFileUpload`, `makeSchema`, `zodToStdbFields`, `ownedTable`, `orgTable`, `orgChildTable`, `singletonTable`, `baseTable`, `childTable`, `rateLimitTable`, `uploadTables`, `orgTables`, `checkSchema`, `ownedCascade`, `orgCascade`, `err`, `errValidation`, `extractErrorData`, `fail`, `ok`, `time`, `getErrorCode`, `getErrorDetail`, `getErrorMessage`, `getFirstFieldError`, `getFieldErrors`, `handleError`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `makeUnique`, `checkRateLimit`, `warnLargeFilterSet`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn`, `createS3UploadPresignedUrl`, `createS3DownloadPresignedUrl`, `identityEquals`, `identityToHex`, `identityFromHex`, `idToWire`, `idFromWire`, `createTestContext`, `createTestUser`, `asUser`, `callReducer`, `cleanup`, `queryTable`, `isTestMode`, `discoverModules`, `InferRow`, `InferCreate`, `InferUpdate`, `InferRows`, `InferReducerArgs`, `InferReducerReturn`, `TypedFieldErrors` |
+| `@noboil/spacetimedb/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useMutation`, `useMut`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `OrgProvider`, `OptimisticProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `toastFieldError`, `defaultOnError`, `NoboilStdbDevtools`, `SchemaPlayground`, `buildMeta`, `getMeta`, `injectError`, `useDevErrors`, `usePendingMutations`, `canEditResource`, `setActiveOrgCookieClient`, `createFileUploader`, `createSpacetimeClient`, `createTokenStore`, `toWsUri`, `noop` |
 | `@noboil/spacetimedb/components`  | `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OfflineIndicator`, `OrgAvatar`, `RoleBadge`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `FileApiProvider`, `fields` |
-| `@noboil/spacetimedb/schema`      | `schema`, `child` |
-| `@noboil/spacetimedb/zod`         | `partialValues`, `schemaVariants`, `zodFromTable` |
+| `@noboil/spacetimedb/schema`      | `schema`, `child`, `cvFile`, `cvFiles`, `makeOwned`, `makeOrgScoped`, `makeOrg`, `makeBase`, `makeSingleton`, `orgSchema` |
+| `@noboil/spacetimedb/zod`         | `unwrapZod`, `cvFileKindOf`, `cvMetaOf`, `defaultValue`, `defaultValues`, `elementOf`, `enumToOptions`, `isArrayType`, `isBooleanType`, `isDateType`, `isNumberType`, `isOptionalField`, `isStringType`, `partialValues`, `pickValues`, `coerceOptionals`, `requiredPartial`, `schemaVariants` |
 | `@noboil/spacetimedb/retry`       | `withRetry`, `fetchWithRetry` |
+| `@noboil/spacetimedb/next`        | `getActiveOrg`, `setActiveOrgCookie`, `clearActiveOrgCookie`, `getToken`, `isAuthenticated`, `makeImageRoute` |
+| `@noboil/spacetimedb/s3`          | S3 presigned URL utilities |
 
 </Tab>
 </Tabs>
@@ -943,18 +945,18 @@ Development panel showing active subscriptions, pending mutations, and errors:
 <Tab value="Convex">
 
 ```typescript
-import { LazyConvexDevtools } from '@noboil/convex/react'
+import { NoboilConvexDevtools } from '@noboil/convex/react'
 
-{process.env.NODE_ENV === 'development' && <LazyConvexDevtools />}
+{process.env.NODE_ENV === 'development' && <NoboilConvexDevtools />}
 ```
 
 </Tab>
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
+import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 
-{process.env.NODE_ENV === 'development' && <BetterspaceDevtools />}
+{process.env.NODE_ENV === 'development' && <NoboilStdbDevtools />}
 ```
 
 </Tab>

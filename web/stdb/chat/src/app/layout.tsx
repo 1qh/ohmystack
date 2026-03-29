@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
-import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
+import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from './sidebar'
@@ -32,7 +32,7 @@ const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat'
         ) : (
           children
         )}
-        <BetterspaceDevtools position='bottom-right' />
+        <NoboilStdbDevtools position='bottom-right' />
       </AuthLayout>
     )
   }

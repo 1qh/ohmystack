@@ -7,7 +7,7 @@ import { isAuthenticated } from '@noboil/convex/next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from './sidebar'
-const metadata: Metadata = { description: 'lazyconvex chat demo', title: 'Chat' },
+const metadata: Metadata = { description: 'noboil chat demo', title: 'Chat' },
   PUBLIC_PATHS = ['/login', '/public'],
   renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider>{inner}</ConvexProvider>,
   isPublicPath = (pathname: string) => {

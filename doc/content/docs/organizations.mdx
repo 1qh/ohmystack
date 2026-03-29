@@ -16,7 +16,7 @@ Define org-scoped tables in `convex/t.ts`:
 
 ```tsx
 import { makeOrgScoped } from '@noboil/convex/server'
-import { object, string } from 'zod'
+import { object, string } from 'zod/v4'
 
 const orgScoped = makeOrgScoped({
   wiki: object({

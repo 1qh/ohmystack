@@ -11,7 +11,7 @@ import { tables } from '@a/be-spacetimedb/spacetimedb'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { sameIdentity } from '@a/fe/utils'
-import { BetterspaceDevtools } from '@noboil/spacetimedb/react'
+import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
@@ -104,7 +104,7 @@ const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings'],
   LayoutContent = ({ children }: { children: ReactNode }) => (
     <>
       <OrgLayoutInner>{children}</OrgLayoutInner>
-      <BetterspaceDevtools position='bottom-right' />
+      <NoboilStdbDevtools position='bottom-right' />
     </>
   ),
   Layout = ({ children }: { children: ReactNode }) => (

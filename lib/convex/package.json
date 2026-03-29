@@ -50,7 +50,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "clean": "git clean -xdf dist node_modules",
+    "clean": "rm -rf .cache .turbo dist node_modules",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

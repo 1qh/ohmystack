@@ -1,4 +1,5 @@
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
+/** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
 /* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 /* oxlint-disable eslint/complexity, react-hooks/refs */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
@@ -135,7 +136,7 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
       </li>
     )
   },
-  BetterspaceDevtools = ({
+  NoboilStdbDevtools = ({
     buttonClassName,
     className,
     defaultOpen = false,
@@ -164,7 +165,7 @@ const isStale = (sub: DevSubscription) => sub.status === 'loaded' && Date.now() 
         <button
           className={`fixed ${posClass} z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors ${count > 0 || connWarnCount > 0 ? 'bg-red-600 text-white hover:bg-red-700' : staleCount > 0 || pendingCount > 0 ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'} ${className ?? ''} ${buttonClassName ?? ''}`}
           onClick={() => setOpen(v => !v)}
-          title='Betterspace DevTools'
+          title='noboil DevTools'
           type='button'>
           {count > 0 ? (
             <span className='text-sm font-bold'>{count > MAX_BADGE ? `${MAX_BADGE}+` : count}</span>
@@ -335,8 +336,8 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     }
   }, [])
   if (!(mounted && containerRef.current)) return null
-  return createPortal(<BetterspaceDevtools {...props} />, containerRef.current)
+  return createPortal(<NoboilStdbDevtools {...props} />, containerRef.current)
 }
-export default BetterspaceDevtools
-export { DevtoolsAutoMount }
+export default NoboilStdbDevtools
+export { NoboilStdbDevtools as BetterspaceDevtools, DevtoolsAutoMount, NoboilStdbDevtools }
 export type { DevtoolsProps }

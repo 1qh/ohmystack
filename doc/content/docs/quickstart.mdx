@@ -114,19 +114,19 @@ cat > docker-compose.yml << 'EOF'
 services:
   spacetimedb:
     image: clockworklabs/spacetime:latest
-    command: start --listen-addr 0.0.0.0:3000
+    command: start --listen-addr 0.0.0.0:4000
     ports:
-      - "3000:3000"
+      - "4000:4000"
     volumes:
       - spacetimedb_data:/stdb
     restart: unless-stopped
 
   minio:
     image: minio/minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":4601"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "4600:9000"
+      - "4601:4601"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -160,7 +160,7 @@ docker compose ps
 
 ```typescript
 import { makeOwned } from '@noboil/convex/server'
-import { boolean, object, string } from 'zod'
+import { boolean, object, string } from 'zod/v4'
 
 const owned = makeOwned({
   blog: object({
@@ -226,7 +226,7 @@ bunx convex dev &
 bun dev
 ```
 
-Open `http://localhost:4000`. Your backend is live.
+Open `http://localhost:4100`. Your backend is live.
 
 </Tab>
 <Tab value="SpacetimeDB">
