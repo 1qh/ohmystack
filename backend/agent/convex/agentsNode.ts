@@ -12,7 +12,7 @@ import { WORKER_SYSTEM_PROMPT } from '../prompts'
 import { internalAction } from './_generated/server'
 import { createWorkerTools } from './agents'
 const markRunningRef = makeFunctionReference<'mutation', { taskId: Id<'tasks'> }, { ok: boolean }>('tasks:markRunning'),
-  getByIdRef = makeFunctionReference<'query', { taskId: Id<'tasks'> }, Doc<'tasks'> | null>('tasks:getById'),
+  getByIdRef = makeFunctionReference<'query', { taskId: Id<'tasks'> }, Doc<'tasks'> | null>('tasks:getOwnedTaskStatus'),
   listMessagesForPromptRef = makeFunctionReference<
     'query',
     { promptMessageId?: string; threadId: string },

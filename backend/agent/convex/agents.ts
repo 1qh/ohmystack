@@ -19,12 +19,12 @@ const spawnTaskRef = makeFunctionReference<
     'query',
     { taskId: string },
     null | { description: string; status: 'cancelled' | 'completed' | 'failed' | 'pending' | 'running' | 'timed_out' }
-  >('tasks:getOwnedTaskStatusInternal'),
+  >('tasks:getOwnedTaskStatus'),
   getOwnedTaskOutputRef = makeFunctionReference<
     'query',
     { taskId: string },
     null | { result?: string; status?: 'cancelled' | 'completed' | 'failed' | 'pending' | 'running' | 'timed_out' }
-  >('tasks:getOwnedTaskOutput'),
+  >('tasks:getOwnedTaskStatus'),
   syncOwnedRef = makeFunctionReference<
     'mutation',
     {
@@ -40,7 +40,7 @@ const spawnTaskRef = makeFunctionReference<
     { updated: number }
   >('todos:syncOwned'),
   listOwnedByThreadRef = makeFunctionReference<'query', { threadId: string }, unknown[] | { todos: unknown[] }>(
-    'todos:listOwnedByThread'
+    'todos:listTodos'
   ),
   mcpDiscoverRef = makeFunctionReference<
     'mutation',

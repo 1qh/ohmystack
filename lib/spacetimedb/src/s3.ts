@@ -109,7 +109,7 @@ const HEX_RADIX = 16,
       endpointUrl = new URL(endpoint),
       host = toHost(endpointUrl),
       pathPrefix = endpointUrl.pathname === '/' ? '' : endpointUrl.pathname.replace(TRAILING_SLASH_REGEX, ''),
-      canonicalObjectPath = `${pathPrefix}/${encodeUriSegment(bucket)}/${key.split('/').map(encodeUriSegment).join('/')}`,
+      canonicalObjectPath = `${pathPrefix}/${bucket}/${key}`,
       canonicalUri = encodeCanonicalPath(canonicalObjectPath),
       credentialScope = `${dateStamp}/${region}/s3/aws4_request`,
       headers: Record<string, string> = {
