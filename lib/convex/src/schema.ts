@@ -5,7 +5,6 @@ import type { BaseSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema }
 import { typed } from './server/bridge'
 /** Zod schema for a Convex storage file reference. */
 const cvFile = () => zid('_storage').meta({ cv: 'file' as const }),
-  /** Zod schema for an array of Convex storage file references. */
   cvFiles = () => array(cvFile()).meta({ cv: 'files' as const }),
   /** Defines a child table with a foreign key relationship to a parent table. */
   child = <

@@ -42,7 +42,6 @@ const cvFile = () =>
     string()
       .min(1)
       .meta({ cv: 'file' as const }),
-  /** Creates an array schema for multi-file fields. */
   cvFiles = () => array(cvFile()).meta({ cv: 'files' as const }),
   child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject) => {
     if (typeof configOrParent === 'string')
