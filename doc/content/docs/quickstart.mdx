@@ -159,7 +159,7 @@ docker compose ps
 `noboil init` generates `convex/t.ts` with your Zod schemas. Edit it to define your tables:
 
 ```typescript
-import { makeOwned } from '@noboil/convex/server'
+import { makeOwned } from '@noboil/convex/schema'
 import { boolean, object, string } from 'zod/v4'
 
 const owned = makeOwned({
@@ -226,7 +226,7 @@ bunx convex dev &
 bun dev
 ```
 
-Open `http://localhost:4100`. Your backend is live.
+Open `http://localhost:3000`. Your backend is live.
 
 </Tab>
 <Tab value="SpacetimeDB">
@@ -448,7 +448,7 @@ export default CreatePost
 <Tab value="Convex">
 
 ```tsx
-import { Form, Text, Toggle, Choose } from '@noboil/convex/components'
+import { Form } from '@noboil/convex/components'
 import { useFormMutation } from '@noboil/convex/react'
 import { api } from '../convex/_generated/api'
 import { owned } from '../convex/t'
@@ -457,11 +457,15 @@ const BlogForm = () => {
   const form = useFormMutation(api.blog.create, owned.blog)
   return (
     <Form {...form}>
-      <Text name="title" />
-      <Text name="content" />
-      <Choose name="category" />
-      <Toggle name="published" />
-      <button type="submit">Create</button>
+      {({ Text, Toggle, Choose }) => (
+        <>
+          <Text name="title" />
+          <Text name="content" />
+          <Choose name="category" />
+          <Toggle name="published" />
+          <button type="submit">Create</button>
+        </>
+      )}
     </Form>
   )
 }
@@ -576,7 +580,7 @@ The generated `api` object is fully typed. `api.blog.create` knows exactly which
 `@noboil/spacetimedb` exports utility types that derive TypeScript types directly from your schema. No manual type duplication needed:
 
 ```typescript
-import type { InferRow, InferCreate, InferUpdate } from '@noboil/spacetimedb/server'
+import type { InferRow, InferCreate, InferUpdate } from '@noboil/spacetimedb'
 
 type PostRow = InferRow<typeof postSchema>
 type PostCreate = InferCreate<typeof postSchema>
@@ -588,7 +592,7 @@ const PostCard = ({ post }: { post: PostRow }) => <h2>{post.title}</h2>
 For reducer types:
 
 ```typescript
-import type { InferReducerArgs, InferReducerReturn } from '@noboil/spacetimedb/server'
+import type { InferReducerArgs, InferReducerReturn } from '@noboil/spacetimedb'
 import { reducers } from '@/generated/module_bindings'
 
 type CreateArgs = InferReducerArgs<typeof reducers.create_post>

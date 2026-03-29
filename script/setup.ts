@@ -59,7 +59,7 @@ const envContent = [
   `JWT_PRIVATE_KEY="${privateK.trimEnd().replaceAll('\n', ' ')}"`,
   `JWKS=${jwks}`,
   '',
-  'SITE_URL=http://localhost:4000',
+  'SITE_URL=http://localhost:4100',
   `TMDB_KEY=${tmdbKey}`,
   `AUTH_GOOGLE_ID=${googleId}`,
   `AUTH_GOOGLE_SECRET=${googleSecret}`,
@@ -89,7 +89,7 @@ const tmpFile = join(root, '.tmp-env-val'),
 if (tmdbKey) await setEnv('TMDB_KEY', tmdbKey)
 await setEnv('CONVEX_TEST_MODE', 'true')
 await setEnv('CI', '')
-await setEnv('SITE_URL', 'http://localhost:4000')
+await setEnv('SITE_URL', 'http://localhost:4100')
 await setEnv('JWKS', jwks)
 await setEnv('JWT_PRIVATE_KEY', privateK.trimEnd())
 await run('rm -f .tmp-env-val')
