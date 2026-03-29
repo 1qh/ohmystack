@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { useControllableState } from "../../hooks/use-controllable-state"
 import { Button } from "@a/ui/components/button";

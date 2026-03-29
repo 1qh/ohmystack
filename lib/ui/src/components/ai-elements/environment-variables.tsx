@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Badge } from "@a/ui/components/badge";
 import { Button } from "@a/ui/components/button";

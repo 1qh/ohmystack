@@ -74,7 +74,7 @@ export const VoiceSelector = ({
   });
   const [open, setOpen] = useControllableState({
     defaultProp: defaultOpen,
-    onChange: onOpenChange ? (v: boolean) => onOpenChange(v) : undefined,
+    onChange: onOpenChange,
     prop: openProp,
   });
   const voiceSelectorContext = useMemo(

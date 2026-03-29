@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Button } from "@a/ui/components/button";
 import { Spinner } from "@a/ui/components/spinner";

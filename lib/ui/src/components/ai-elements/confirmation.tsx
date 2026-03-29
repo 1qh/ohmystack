@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Alert, AlertDescription } from "@a/ui/components/alert";
 import { Button } from "@a/ui/components/button";

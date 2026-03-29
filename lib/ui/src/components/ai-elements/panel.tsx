@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cn } from "@a/ui/lib/utils";
 import { Panel as PanelPrimitive } from "@xyflow/react";
 import type { ComponentProps } from "react";

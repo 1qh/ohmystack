@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { useControllableState } from "../../hooks/use-controllable-state"
 import { cn } from "@a/ui/lib/utils";

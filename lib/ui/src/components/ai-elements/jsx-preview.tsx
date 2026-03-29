@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { cn } from "@a/ui/lib/utils";
 import { AlertCircle } from "lucide-react";

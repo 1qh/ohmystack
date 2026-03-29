@@ -318,7 +318,9 @@ export const AttachmentRemove = ({
 // AttachmentHoverCard - Hover preview
 // ============================================================================
 export type AttachmentHoverCardProps = ComponentProps<typeof HoverCard>;
-export const AttachmentHoverCard = (props: AttachmentHoverCardProps) => (
+export const AttachmentHoverCard = ({
+  ...props
+}: AttachmentHoverCardProps) => (
   <HoverCard {...props} />
 );
 export type AttachmentHoverCardTriggerProps = ComponentProps<

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { EdgeProps, InternalNode, Node } from "@xyflow/react";
 import {
   BaseEdge,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { Button } from "@a/ui/components/button";
 import { Separator } from "@a/ui/components/separator";

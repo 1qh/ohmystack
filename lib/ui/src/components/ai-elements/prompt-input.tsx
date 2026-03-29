@@ -398,7 +398,7 @@ export const PromptInputActionAddScreenshot = ({
 }: PromptInputActionAddScreenshotProps) => {
   const attachments = usePromptInputAttachments();
   const handleSelect = useCallback(
-    async (event: Parameters<NonNullable<ComponentProps<typeof DropdownMenuItem>['onSelect']>>[0]) => {
+    async (event: Event) => {
       onSelect?.(event);
       if (event.defaultPrevented) {
         return;
@@ -1164,7 +1164,9 @@ export const PromptInputSelectValue = ({
   <SelectValue className={cn(className)} {...props} />
 );
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
-export const PromptInputHoverCard = (props: PromptInputHoverCardProps) => (
+export const PromptInputHoverCard = ({
+  ...props
+}: PromptInputHoverCardProps) => (
   <HoverCard {...props} />
 );
 export type PromptInputHoverCardTriggerProps = ComponentProps<
