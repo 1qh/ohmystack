@@ -1,7 +1,8 @@
 import { child, cvFile, cvFiles, schema } from '@noboil/spacetimedb/schema'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
-const file = cvFile(),
-  files = cvFiles(),
+const MAX_FILE_BYTES = 10_000_000,
+  file = cvFile().max(MAX_FILE_BYTES),
+  files = cvFiles().max(MAX_FILE_BYTES),
   messagePart = union([
     object({ text: string(), type: zenum(['text']) }),
     object({ image: file, type: zenum(['image']) }),
