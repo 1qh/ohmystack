@@ -15,10 +15,10 @@
   "menuAccent": "subtle",
   "aliases": {
     "components": "@a/ui/components",
-    "utils": "@a/ui",
-    "ui": "@a/ui/components",
+    "hooks": "@a/ui/hooks",
     "lib": "@a/ui/lib",
-    "hooks": "@a/ui/hooks"
+    "ui": "@a/ui/components",
+    "utils": "@a/ui"
   },
   "registries": {
     "@ai-elements": "https://ai-sdk.dev/elements/api/registry/{name}.json"

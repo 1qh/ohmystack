@@ -264,11 +264,18 @@ const lineBreakRegex = /\r?\n/u,
         value: getNestedString({ keys: ['aliases', 'components'], source: nextComponents })
       })
     if (nextPackage) {
-      const merged = {
-        ...UI_PACKAGE,
-        dependencies: nextPackage.dependencies,
-        devDependencies: nextPackage.devDependencies
-      }
+      const filterWorkspace = (deps: unknown): JsonRecord => {
+          if (!isRecord(deps)) return {}
+          const out: JsonRecord = {}
+          for (const k of Object.keys(deps))
+            if (typeof deps[k] === 'string' && !deps[k].includes('workspace:')) out[k] = deps[k]
+          return out
+        },
+        merged = {
+          ...UI_PACKAGE,
+          dependencies: filterWorkspace(nextPackage.dependencies),
+          devDependencies: filterWorkspace(nextPackage.devDependencies)
+        }
       await writeJson({ filePath: join(tmpUi, 'package.json'), value: merged })
     }
     if (nextComponents) {
