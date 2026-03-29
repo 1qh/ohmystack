@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential stream read */
+/* eslint-disable no-await-in-loop */
+/* oxlint-disable no-await-in-loop */
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 interface ImagePostBody {
@@ -39,11 +42,34 @@ const PRIVATE_IP_PATTERNS = [
       return false
     }
   },
+  MAX_RESPONSE_SIZE = 10 * 1024 * 1024,
   fetchRemote = async (url: string) => {
     const response = await fetch(url)
     if (!response.ok) return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
+    const contentLength = response.headers.get('content-length')
+    if (contentLength && Number(contentLength) > MAX_RESPONSE_SIZE)
+      return NextResponse.json({ error: 'Response too large' }, { status: 413 })
     const contentType = response.headers.get('content-type') ?? 'application/octet-stream',
-      body = new Uint8Array(await response.arrayBuffer())
+      reader = response.body?.getReader()
+    if (!reader) return NextResponse.json({ error: 'No response body' }, { status: 502 })
+    const chunks: Uint8Array[] = []
+    let totalSize = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalSize += value.byteLength
+      if (totalSize > MAX_RESPONSE_SIZE) {
+        reader.cancel()
+        return NextResponse.json({ error: 'Response too large' }, { status: 413 })
+      }
+      chunks.push(value)
+    }
+    const body = new Uint8Array(totalSize)
+    let offset = 0
+    for (const chunk of chunks) {
+      body.set(chunk, offset)
+      offset += chunk.byteLength
+    }
     return new NextResponse(body, {
       headers: {
         'Cache-Control': 'public, max-age=31536000, immutable',

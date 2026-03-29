@@ -38,7 +38,7 @@ const isTestMode = () =>
   },
   setActiveOrgCookie = async ({ orgId, slug }: { orgId: string; slug: string }) => {
     const cookieStore = await cookies(),
-      opts = { httpOnly: false, maxAge: ONE_YEAR_SECONDS, path: '/' } as const
+      opts = { httpOnly: true, maxAge: ONE_YEAR_SECONDS, path: '/' } as const
     cookieStore.set(ACTIVE_ORG_COOKIE, orgId, opts)
     cookieStore.set(ACTIVE_ORG_SLUG_COOKIE, slug, opts)
   },
