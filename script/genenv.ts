@@ -4,7 +4,7 @@ import { log } from 'node:console'
 log(`TMDB_KEY=${env.TMDB_KEY}`)
 log(`AUTH_GOOGLE_ID=${env.AUTH_GOOGLE_ID}`)
 log(`AUTH_GOOGLE_SECRET=${env.AUTH_GOOGLE_SECRET}`)
-log('SITE_URL=http://localhost:4000')
+log('SITE_URL=http://localhost:4100')
 const { privateKey, publicKey } = await generateKeyPair('RS256', { extractable: true }),
   privateK = await exportPKCS8(privateKey),
   publicK = await exportJWK(publicKey)

@@ -11,24 +11,26 @@ If `README.md` exists at the repo root, read it first.
 
 All services and apps use the 4xxx range so they don’t conflict with common dev ports (3000-3999). All 8 demo apps can run simultaneously.
 
-| Port | Service            |
-| ---- | ------------------ |
-| 4000 | SpacetimeDB server |
-| 4001 | Convex backend API |
-| 4002 | Convex site        |
-| 4100 | cvx/blog           |
-| 4101 | cvx/chat           |
-| 4102 | cvx/movie          |
-| 4103 | cvx/org            |
-| 4200 | stdb/blog          |
-| 4201 | stdb/chat          |
-| 4202 | stdb/movie         |
-| 4203 | stdb/org           |
-| 4300 | doc site           |
-| 4400 | agent              |
-| 4500 | Convex dashboard   |
-| 4600 | stdb MinIO API     |
-| 4601 | stdb MinIO console |
+| Port | Service                |
+| ---- | ---------------------- |
+| 4000 | SpacetimeDB server     |
+| 4001 | Convex backend API     |
+| 4002 | Convex site            |
+| 4100 | cvx/blog               |
+| 4101 | cvx/chat               |
+| 4102 | cvx/movie              |
+| 4103 | cvx/org                |
+| 4200 | stdb/blog              |
+| 4201 | stdb/chat              |
+| 4202 | stdb/movie             |
+| 4203 | stdb/org               |
+| 4300 | doc site               |
+| 4400 | agent                  |
+| 4500 | Convex dashboard       |
+| 5432 | Postgres (Convex)      |
+| 5432 | Postgres (SpacetimeDB) |
+| 4600 | stdb MinIO API         |
+| 4601 | stdb MinIO console     |
 
 **Do NOT change these ports** — they are referenced in docker compose files, env files, playwright configs, E2E helpers, library defaults, and documentation. Changing one port requires updating all of them.
 
@@ -68,7 +70,7 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`) are published to npm. `lib/
 - Short map callback names: `t`, `m`, `i`
 - Max 3 positional args — use destructured object for 4+
 - Co-locate components with their page; only move to `~/components` when reused
-- Explicit imports from exact file paths — no barrel `index.ts` files
+- Explicit imports from exact file paths — no barrel `index.ts` in app code (library packages use barrels for their public API)
 - Prefer existing libraries over new dependencies
 
 ### Must NOT do

@@ -1,7 +1,9 @@
+/** biome-ignore-all lint/style/noProcessEnv: env fallbacks */
+/** biome-ignore-all lint/nursery/noUndeclaredEnvVars: e2e proxy env vars */
 import { serve } from 'bun'
-const BACKEND_API = 'http://127.0.0.1:4001',
-  BACKEND_WS = 'ws://127.0.0.1:4001',
-  SITE_URL = 'http://127.0.0.1:4002',
+const BACKEND_API = process.env.CONVEX_URL ?? 'http://127.0.0.1:4001',
+  BACKEND_WS = process.env.CONVEX_WS_URL ?? 'ws://127.0.0.1:4001',
+  SITE_URL = process.env.CONVEX_SITE_URL ?? 'http://127.0.0.1:4002',
   swallow = () => undefined
 process.on('uncaughtException', swallow)
 process.on('unhandledRejection', swallow)

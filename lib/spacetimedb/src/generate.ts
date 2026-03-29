@@ -21,10 +21,10 @@ const DOCKER_COMPOSE = `services:
       start_period: 10s
   minio:
     image: minio/minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9003"
     ports:
       - "4600:9000"
-      - "4601:9001"
+      - "4601:9003"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
