@@ -27,7 +27,6 @@ All services and apps use the 4xxx range so they don’t conflict with common de
 | 4300 | doc site               |
 | 4400 | agent                  |
 | 4500 | Convex dashboard       |
-| 5432 | Postgres (Convex)      |
 | 5432 | Postgres (SpacetimeDB) |
 | 4600 | stdb MinIO API         |
 | 4601 | stdb MinIO console     |

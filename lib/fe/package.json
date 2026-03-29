@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "clean": "git clean -xdf .cache .turbo node_modules"
+    "clean": "rm -rf .cache .turbo node_modules"
   },
   "dependencies": {
     "@a/be-convex": "workspace:*",

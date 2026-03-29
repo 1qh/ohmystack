@@ -8,14 +8,14 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "clean": "rm -rf .cache .turbo dist node_modules",
     "test": "bun with-env bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@noboil/spacetimedb": "workspace:*",
-    "@t3-oss/env-nextjs": "latest",
+    "@t3-oss/env-core": "latest",
     "ky": "latest",
     "spacetimedb": "latest"
   }
