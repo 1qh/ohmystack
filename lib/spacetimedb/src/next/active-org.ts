@@ -28,7 +28,7 @@ const isTestMode = () =>
   /** Persists active org id and slug in response cookies. */
   setActiveOrgCookie = async ({ orgId, slug }: { orgId: string; slug: string }) => {
     const cookieStore = await cookies(),
-      opts = { httpOnly: false, maxAge: ONE_YEAR_SECONDS, path: '/' } as const
+      opts = { httpOnly: true, maxAge: ONE_YEAR_SECONDS, path: '/' } as const
     cookieStore.set(ACTIVE_ORG_COOKIE, orgId, opts)
     cookieStore.set(ACTIVE_ORG_SLUG_COOKIE, slug, opts)
   },
@@ -68,8 +68,10 @@ const isTestMode = () =>
     const wsUri = process.env.NEXT_PUBLIC_SPACETIMEDB_URI ?? process.env.SPACETIMEDB_URI,
       moduleName = process.env.SPACETIMEDB_MODULE_NAME
     if (!(wsUri && moduleName)) return null
+    const parsed = Number.parseInt(orgId, 10)
+    if (Number.isNaN(parsed) || parsed < 1) return null
     const endpoint = `${toHttpUri(wsUri)}/v1/database/${moduleName}/sql`,
-      statement = sql.replace(':orgId', `'${orgId.replaceAll("'", "''")}'`),
+      statement = sql.replace(':orgId', `'${String(parsed)}'`),
       response = await fetch(endpoint, {
         body: statement,
         headers: {

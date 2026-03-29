@@ -54,16 +54,23 @@ const makeTempId = () => {
   createOptimisticStore = (): OptimisticStore => {
     const entries = new Map<string, PendingMutation>(),
       order: string[] = [],
-      listeners = new Set<() => void>(),
-      notify = () => {
+      listeners = new Set<() => void>()
+    let version = 0,
+      cachedVersion = -1,
+      cachedSnapshot: PendingMutation[] = []
+    const notify = () => {
+        version += 1
         for (const fn of listeners) fn()
       },
-      getSnapshot = () => {
+      getSnapshot = (): PendingMutation[] => {
+        if (cachedVersion === version) return cachedSnapshot
         const out: PendingMutation[] = []
         for (const tempId of order) {
           const entry = entries.get(tempId)
           if (entry) out.push(entry)
         }
+        cachedVersion = version
+        cachedSnapshot = out
         return out
       }
     return {

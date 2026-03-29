@@ -388,7 +388,10 @@ const DEFAULT_ALLOWED_TYPES = new Set([
           return {
             completedChunks: session.completedChunks,
             finalStorageId: session.finalStorageId,
-            progress: Math.round(((session.completedChunks as number) / (session.totalChunks as number)) * 100),
+            progress:
+              (session.totalChunks as number) === 0
+                ? 0
+                : Math.round(((session.completedChunks as number) / (session.totalChunks as number)) * 100),
             status: session.status,
             totalChunks: session.totalChunks
           }
