@@ -1,4 +1,4 @@
-import type { Popover as PopoverPrimitive } from 'radix-ui'
+import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
 import { api } from '@a/be-convex'
 import { convexAuthNextjsToken as tok } from '@convex-dev/auth/nextjs/server'
@@ -6,7 +6,7 @@ import { fetchAction, fetchQuery } from 'convex/nextjs'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import UserMenuShell from './user-menu-shell'
-interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
+interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
   shellProps?: Omit<
     ComponentProps<typeof UserMenuShell>,
     'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'

@@ -1,4 +1,4 @@
-import type { Popover as PopoverPrimitive } from 'radix-ui'
+import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -9,7 +9,7 @@ interface UserInfo {
   image?: string
   name?: string
 }
-interface UserMenuProps extends ComponentProps<typeof PopoverPrimitive.Trigger> {
+interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
   shellProps?: Omit<
     ComponentProps<typeof UserMenuShell>,
     'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
