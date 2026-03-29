@@ -97,6 +97,6 @@ log('   Deploying...')
 await run('cd backend/convex && bun with-env npx convex dev --once')
 log('[7/7] Publishing SpacetimeDB module...')
 await run(
-  'bash -lc \'PATH="$HOME/.local/bin:$PATH" spacetime publish noboil --module-path backend/spacetimedb --delete-data -y\''
+  "bash -lc 'PATH=\"$HOME/.local/bin:$PATH\" spacetime server remove local 2>/dev/null; spacetime server add local --url http://localhost:4000 --no-fingerprint --default && spacetime publish noboil --module-path backend/spacetimedb --delete-data -y'"
 )
 log('\n=== Setup complete ===')
