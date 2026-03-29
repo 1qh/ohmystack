@@ -56,6 +56,11 @@ const fetchImage = async ({
         const body = (await req.json()) as { options?: ProcessOptions; storageId: string; thumbnail?: boolean },
           { options, storageId, thumbnail } = body
         if (!storageId) return NextResponse.json({ error: 'storageId is required' }, { status: 400 })
+        const MAX_DIMENSION = 4096
+        if (options?.resize?.width && options.resize.width > MAX_DIMENSION)
+          return NextResponse.json({ error: `Width exceeds ${MAX_DIMENSION}` }, { status: 400 })
+        if (options?.resize?.height && options.resize.height > MAX_DIMENSION)
+          return NextResponse.json({ error: `Height exceeds ${MAX_DIMENSION}` }, { status: 400 })
         const result = await fetchImage({ client: getClient(), queryRef, storageId })
         if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status })
         const { buffer, contentType } = result,

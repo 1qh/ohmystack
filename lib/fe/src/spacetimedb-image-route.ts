@@ -44,7 +44,7 @@ const PRIVATE_IP_PATTERNS = [
   },
   MAX_RESPONSE_SIZE = 10 * 1024 * 1024,
   fetchRemote = async (url: string) => {
-    const response = await fetch(url)
+    const response = await fetch(url, { redirect: 'manual' })
     if (!response.ok) return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
     const contentLength = response.headers.get('content-length')
     if (contentLength && Number(contentLength) > MAX_RESPONSE_SIZE)

@@ -1,14 +1,14 @@
 // biome-ignore-all lint/style/noProcessEnv: server-only route
 import type { NextRequest } from 'next/server'
 import { createS3UploadPresignedUrl } from '@noboil/spacetimedb/s3'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 interface PresignBody {
   contentType?: string
   filename?: string
   size?: number
 }
-const BEARER_RE = /^Bearer\s+/u,
-  MAX_FILE_SIZE = 10 * 1024 * 1024,
+const MAX_FILE_SIZE = 10 * 1024 * 1024,
   PRESIGN_EXPIRY_SECONDS = 900,
   S3_REGION = 'us-east-1',
   generateStorageKey = (filename: string): string => {
@@ -18,11 +18,9 @@ const BEARER_RE = /^Bearer\s+/u,
     return `uploads/${timestamp}-${random}-${safeName}`
   },
   POST = async (request: NextRequest) => {
-    const authHeader = request.headers.get('Authorization'),
-      sessionCookie = request.cookies.get('session_token')?.value ?? request.cookies.get('__session')?.value,
-      token = authHeader?.replace(BEARER_RE, '') ?? sessionCookie ?? ''
-    if (!token || token.split('.').length - 1 < 2)
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    const cookieStore = await cookies(),
+      token = cookieStore.get('spacetimedb_token')?.value ?? ''
+    if (!token) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     const accessKeyId = process.env.S3_ACCESS_KEY_ID,
       secretAccessKey = process.env.S3_SECRET_ACCESS_KEY,
       endpoint = process.env.S3_ENDPOINT,
