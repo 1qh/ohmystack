@@ -1,4 +1,3 @@
-import type { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
 import {
@@ -49,7 +48,7 @@ interface UserMenuShellProps {
   triggerClassName?: string
   triggerFallbackProps?: Omit<ComponentProps<'span'>, 'children'>
   triggerImageProps?: Omit<ComponentProps<typeof Image>, 'alt' | 'height' | 'src' | 'width'>
-  triggerProps: ComponentProps<typeof PopoverPrimitive.Trigger>
+  triggerProps: ComponentProps<typeof PopoverTrigger>
 }
 const UserMenuShell = ({
   alertDialogContentProps,
