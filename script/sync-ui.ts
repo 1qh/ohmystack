@@ -13,21 +13,6 @@ const lineBreakRegex = /\r?\n/u,
       value = JSON.parse(source) as unknown
     return isRecord(value) ? value : null
   },
-  readJsonFromGit = ({ filePath }: { filePath: string }): JsonRecord | null => {
-    const result = spawnSync({
-      cmd: ['git', 'show', `HEAD:${filePath}`],
-      cwd: process.cwd(),
-      stderr: 'pipe',
-      stdout: 'pipe'
-    })
-    if (result.exitCode !== 0) return null
-    try {
-      const value = JSON.parse(decode(result.stdout)) as unknown
-      return isRecord(value) ? value : null
-    } catch {
-      return null
-    }
-  },
   expandBunx = (cmd: string[]): string[] => {
     if (cmd[0] === 'bunx') return ['bun', 'x', ...cmd.slice(1)]
     return cmd
@@ -77,12 +62,6 @@ const lineBreakRegex = /\r?\n/u,
     let next = withoutPlugin.join(lineBreak)
     if (!next.endsWith(lineBreak)) next = `${next}${lineBreak}`
     if (next !== source) await write(file(cssPath), next)
-  },
-  mergeWithOrder = ({ base, overlay }: { base: JsonRecord; overlay: JsonRecord }) => {
-    const merged: JsonRecord = {}
-    for (const key of Object.keys(base)) merged[key] = Object.hasOwn(overlay, key) ? overlay[key] : base[key]
-    for (const key of Object.keys(overlay)) if (!Object.hasOwn(merged, key)) merged[key] = overlay[key]
-    return merged
   },
   getNestedString = ({ keys, source }: { keys: string[]; source: JsonRecord | null }): null | string => {
     let cur: unknown = source
@@ -231,17 +210,40 @@ const lineBreakRegex = /\r?\n/u,
       output = `${decode(diff.stdout)}${decode(diff.stderr)}`
     if (diff.exitCode !== 0) throw new Error(`lib/ui is out of sync with sync script output:\n${output}`)
   },
+  UI_PACKAGE: JsonRecord = {
+    exports: {
+      '.': './src/lib/utils.ts',
+      './*': './src/components/*.tsx',
+      './components/*': './src/components/*.tsx',
+      './globals.css': './src/styles/globals.css',
+      './hooks/*': './src/hooks/*.ts',
+      './lib/*': './src/lib/*.ts',
+      './postcss.config': './postcss.config.mjs'
+    },
+    name: '@a/ui',
+    private: true,
+    scripts: {
+      clean: 'git clean -xdf .cache .turbo dist node_modules',
+      typecheck: "echo 'skip: generated read-only package'"
+    },
+    type: 'module',
+    version: '0.0.0'
+  },
+  UI_ALIASES: JsonRecord = {
+    components: '@a/ui/components',
+    hooks: '@a/ui/hooks',
+    lib: '@a/ui/lib',
+    ui: '@a/ui/components',
+    utils: '@a/ui'
+  },
+  UI_TSCONFIG: JsonRecord = {
+    compilerOptions: { paths: { '@a/ui/*': ['./src/*'] }, rootDir: '.', strict: false },
+    exclude: ['dist', 'node_modules'],
+    extends: 'lintmax/tsconfig',
+    include: ['.']
+  },
+  UI_PREFIX = '@a/ui',
   syncUpdate = async () => {
-    const [fallbackComponents, fallbackPackage, fallbackTsconfig, fallbackTsconfigLint] = await Promise.all([
-        readJson(join(uiDir, 'components.json')),
-        readJson(join(uiDir, 'package.json')),
-        readJson(join(uiDir, 'tsconfig.json')),
-        readJson(join(uiDir, 'tsconfig.lint.json'))
-      ]),
-      snapshotComponents = readJsonFromGit({ filePath: 'lib/ui/components.json' }) ?? fallbackComponents,
-      snapshotPackage = readJsonFromGit({ filePath: 'lib/ui/package.json' }) ?? fallbackPackage,
-      snapshotTsconfig = readJsonFromGit({ filePath: 'lib/ui/tsconfig.json' }) ?? fallbackTsconfig,
-      snapshotTsconfigLint = readJsonFromGit({ filePath: 'lib/ui/tsconfig.lint.json' }) ?? fallbackTsconfigLint
     run({ cmd: ['rm', '-rf', tmpDir] })
     run({ cmd: ['mkdir', '-p', tmpDir] })
     run({ cmd: ['mkdir', '-p', tmpBin] })
@@ -260,35 +262,21 @@ const lineBreakRegex = /\r?\n/u,
       generatedPrefix = stripSuffix({
         suffix: '/components',
         value: getNestedString({ keys: ['aliases', 'components'], source: nextComponents })
-      }),
-      snapshotPrefix = stripSuffix({
-        suffix: '/components',
-        value: getNestedString({ keys: ['aliases', 'components'], source: snapshotComponents })
       })
-    if (snapshotPackage && nextPackage) {
-      const { name } = snapshotPackage,
-        { dependencies } = snapshotPackage,
-        { devDependencies } = snapshotPackage,
-        { exports } = snapshotPackage,
-        { scripts } = snapshotPackage,
-        { type } = snapshotPackage
-      if (typeof name === 'string') nextPackage.name = name
-      if (isRecord(dependencies)) nextPackage.dependencies = dependencies
-      if (isRecord(devDependencies)) nextPackage.devDependencies = devDependencies
-      if (isRecord(exports)) nextPackage.exports = exports
-      if (isRecord(scripts)) nextPackage.scripts = scripts
-      if (typeof type === 'string') nextPackage.type = type
-      const orderedPackage = mergeWithOrder({ base: snapshotPackage, overlay: nextPackage })
-      await writeJson({ filePath: join(tmpUi, 'package.json'), value: orderedPackage })
+    if (nextPackage) {
+      const merged = {
+        ...UI_PACKAGE,
+        dependencies: nextPackage.dependencies,
+        devDependencies: nextPackage.devDependencies
+      }
+      await writeJson({ filePath: join(tmpUi, 'package.json'), value: merged })
     }
-    if (snapshotComponents && nextComponents) {
-      const { aliases } = snapshotComponents
-      if (isRecord(aliases)) nextComponents.aliases = aliases
+    if (nextComponents) {
+      nextComponents.aliases = UI_ALIASES
       await writeJson({ filePath: join(tmpUi, 'components.json'), value: nextComponents })
     }
-    if (snapshotTsconfig) await writeJson({ filePath: join(tmpUi, 'tsconfig.json'), value: snapshotTsconfig })
-    if (snapshotTsconfigLint) await writeJson({ filePath: join(tmpUi, 'tsconfig.lint.json'), value: snapshotTsconfigLint })
-    await replaceImportPrefix({ fromPrefix: generatedPrefix, srcDir: join(tmpUi, 'src'), toPrefix: snapshotPrefix })
+    await writeJson({ filePath: join(tmpUi, 'tsconfig.json'), value: UI_TSCONFIG })
+    await replaceImportPrefix({ fromPrefix: generatedPrefix, srcDir: join(tmpUi, 'src'), toPrefix: UI_PREFIX })
     await patchRadixToBaseUi({ srcDir: join(tmpUi, 'src') })
     await ensureTypographyPluginBeforeImports({ cssPath: join(tmpUi, 'src/styles/globals.css') })
     run({ cmd: ['rm', '-rf', join(tmpUi, 'node_modules')] })
