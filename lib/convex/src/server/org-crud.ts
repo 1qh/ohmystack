@@ -248,19 +248,30 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
           const { orgId } = a as { orgId: string },
             rawItems = a.items as (Rec & { expectedUpdatedAt?: number; id: string })[] | undefined
           if (rawItems) {
-            await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-            const results: Rec[] = []
+            const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
+              results: Rec[] = []
             for (const rawItem of rawItems) {
               const doc = await c.db.get(rawItem.id)
-              if (doc?.orgId === orgId) {
-                let patch = partial.parse(rawItem) as Rec
-                if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
-                const now = time()
-                await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
-                await dbPatch(c.db, rawItem.id, { ...patch, ...now })
-                if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
-                results.push({ ...doc, ...patch, ...now })
-              }
+              /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+              if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
+              const aclDoc = await resolveAclDoc(c.db, doc, opt)
+              if (
+                !canEdit({
+                  acl: useAcl,
+                  doc: aclDoc as { editors?: string[]; userId: string },
+                  role,
+                  userId: c.user._id as string
+                })
+              )
+                /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+                continue // eslint-disable-line no-continue
+              let patch = partial.parse(rawItem) as Rec
+              if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
+              const now = time()
+              await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
+              await dbPatch(c.db, rawItem.id, { ...patch, ...now })
+              if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
+              results.push({ ...doc, ...patch, ...now })
             }
             return results
           }
@@ -296,19 +307,32 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
           const { orgId } = a as { orgId: string },
             ids = a.ids as string[] | undefined
           if (ids) {
-            await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+            const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
             let deleted = 0
             for (const id of ids) {
               const doc = await c.db.get(id)
-              if (doc?.orgId === orgId) {
-                if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
-                else {
-                  await cascadeDelete(c.db, id)
-                  await dbDelete(c.db, id)
-                  await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
-                }
-                deleted += 1
+              /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+              if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
+              const aclDoc = await resolveAclDoc(c.db, doc, opt)
+              if (
+                !canEdit({
+                  acl: useAcl,
+                  doc: aclDoc as { editors?: string[]; userId: string },
+                  role,
+                  userId: c.user._id as string
+                })
+              )
+                /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+                continue // eslint-disable-line no-continue
+              if (hooks?.beforeDelete) await hooks.beforeDelete(ohk(c), { doc, id })
+              if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
+              else {
+                await cascadeDelete(c.db, id)
+                await dbDelete(c.db, id)
               }
+              await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+              if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
+              deleted += 1
             }
             return deleted
           }
