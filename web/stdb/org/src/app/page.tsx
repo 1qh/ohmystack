@@ -36,6 +36,7 @@ const Page = () => {
     if (orgsReady && membersReady && myOrgs.length === 0) router.replace('/onboarding')
   }, [myOrgs.length, orgsReady, membersReady, router])
   if (!identity) return null
+  if (!(orgsReady && membersReady)) return null
   if (myOrgs.length === 0) return null
   if (myOrgs.length === 1) {
     const [first] = myOrgs

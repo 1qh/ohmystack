@@ -17,7 +17,7 @@ const toUIMessages = (messages: Message[]): UIMessage[] =>
       [allChats, isChatsReady] = useTable(tables.chat),
       [allMessages, isMessagesReady] = useTable(tables.message),
       { identity } = useSpacetimeDB(),
-      isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1' || navigator.webdriver,
+      isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
       id = Number(params.id),
       chat: Chat | undefined = Number.isNaN(id) ? undefined : allChats.find(c => c.id === id),
       identityKey = toIdentityKey(identity),
