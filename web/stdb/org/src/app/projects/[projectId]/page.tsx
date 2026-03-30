@@ -16,7 +16,7 @@ import { Input } from '@a/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@a/ui/select'
 import { Skeleton } from '@a/ui/skeleton'
 import { EditorsSection } from '@noboil/spacetimedb/components'
-import { useBulkMutate, useMut } from '@noboil/spacetimedb/react'
+import { canEditResource, useBulkMutate, useMut } from '@noboil/spacetimedb/react'
 import { enumToOptions } from '@noboil/spacetimedb/zod'
 import { Check, Pencil, Plus, Trash, X } from 'lucide-react'
 import Link from 'next/link'
@@ -191,9 +191,7 @@ const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
         }
       })
     if (!(project && identity)) return <Skeleton className='h-40' />
-    const canEditProject =
-        isAdmin || sameIdentity(project.userId, identity) || (project.editors ?? []).some(e => sameIdentity(e, identity)),
-      editorsList = (project.editors ?? []).map(e => {
+    const editorsList = (project.editors ?? []).map(e => {
         const userId = e.toHexString(),
           profile = profileByUserId.get(userId)
         return { email: '', name: profile?.displayName ?? userId.slice(0, 8), userId }
@@ -202,6 +200,12 @@ const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
         const userId = m.userId.toHexString(),
           profile = profileByUserId.get(userId)
         return { user: { email: undefined, name: profile?.displayName }, userId }
+      }),
+      canEditProject = canEditResource({
+        editorsList,
+        isAdmin,
+        resource: { userId: project.userId.toHexString() },
+        userId: identity.toHexString()
       }),
       doAddTask = async () => {
         if (!title.trim()) return

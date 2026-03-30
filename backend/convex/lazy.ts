@@ -1,4 +1,4 @@
-import { makeFileUpload, makePresence, setup } from '@noboil/convex/server'
+import { auditLog, inputSanitize, makeFileUpload, makePresence, setup, slowQueryWarn } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { org } from './t'
@@ -7,6 +7,7 @@ const s = setup({
     getAuthUserId: getAuthUserIdOrTest,
     internalMutation,
     internalQuery,
+    middleware: [auditLog(), inputSanitize(), slowQueryWarn()],
     mutation,
     orgCascadeTables: ['task', 'project'],
     orgSchema: org.team,
