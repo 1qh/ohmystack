@@ -124,17 +124,50 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
             render={({ Arr, Choose, File, Files, Submit, Text }) => (
               <>
                 <FieldGroup>
-                  <Text data-testid='blog-title' name='title' placeholder='My awesome post' />
-                  <Choose data-testid='blog-category' name='category' placeholder='Select' />
-                  <Text className='min-h-32' data-testid='blog-content' multiline name='content' placeholder='Write...' />
-                  <File accept='image/*' data-testid='blog-cover-image' maxSize={5 * 1024 * 1024} name='coverImage' />
+                  <Text
+                    data-testid='blog-title'
+                    helpText='Use a concise, clear title.'
+                    name='title'
+                    placeholder='My awesome post'
+                    required
+                  />
+                  <Choose
+                    data-testid='blog-category'
+                    helpText='Choose the best matching topic.'
+                    name='category'
+                    placeholder='Select'
+                    required
+                  />
+                  <Text
+                    className='min-h-32'
+                    data-testid='blog-content'
+                    helpText='At least 3 characters.'
+                    multiline
+                    name='content'
+                    placeholder='Write...'
+                    required
+                  />
+                  <File
+                    accept='image/*'
+                    data-testid='blog-cover-image'
+                    helpText='Optional cover image.'
+                    maxSize={5 * 1024 * 1024}
+                    name='coverImage'
+                  />
                   <Files
                     accept='image/*,application/pdf'
                     data-testid='blog-attachments'
+                    helpText='Optional attachments, up to 5 files.'
                     maxSize={10 * 1024 * 1024}
                     name='attachments'
                   />
-                  <Arr data-testid='blog-tags' name='tags' placeholder='Add tag...' transform={s => s.toLowerCase()} />
+                  <Arr
+                    data-testid='blog-tags'
+                    helpText='Press Enter to add each tag.'
+                    name='tags'
+                    placeholder='Add tag...'
+                    transform={s => s.toLowerCase()}
+                  />
                 </FieldGroup>
                 <Submit className='ml-auto' data-testid='create-blog-submit' Icon={Send}>
                   Create

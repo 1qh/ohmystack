@@ -5,19 +5,31 @@ import { fail } from '@a/fe/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Button } from '@a/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@a/ui/dropdown-menu'
+import { Input } from '@a/ui/input'
 import { Skeleton } from '@a/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@a/ui/table'
 import { RoleBadge } from '@noboil/convex/components'
 import { useOrgQuery } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
-import { MoreHorizontal, UserMinus } from 'lucide-react'
+import { MoreHorizontal, Search, UserMinus } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
 const MemberList = () => {
   const { canManageAdmins, canManageMembers, role: myRole } = useOrg(),
     members = useOrgQuery(api.org.members),
     removeMember = useMutation(api.org.removeMember),
-    setAdmin = useMutation(api.org.setAdmin)
+    setAdmin = useMutation(api.org.setAdmin),
+    [query, setQuery] = useState(''),
+    displayMembers = useMemo(() => {
+      if (!members) return []
+      const q = query.trim().toLowerCase()
+      if (!q) return members
+      const out: typeof members = []
+      for (const m of members)
+        if (m.role.toLowerCase().includes(q) || (m.user?.name ?? '').toLowerCase().includes(q)) out.push(m)
+      return out
+    }, [members, query])
   if (!members) return <Skeleton className='h-40 w-full' />
   type MemberId = NonNullable<(typeof members)[number]['memberId']>
   const handleRemove = (memberId: MemberId) => {
@@ -31,59 +43,65 @@ const MemberList = () => {
         .catch(fail)
     }
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Member</TableHead>
-          <TableHead>Role</TableHead>
-          {canManageMembers ? <TableHead className='w-10' /> : null}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {members.map(m => {
-          const { memberId } = m,
-            showActions = m.role !== 'owner' && memberId
-          return (
-            <TableRow key={m.userId}>
-              <TableCell className='flex items-center gap-2'>
-                <Avatar className='size-8'>
-                  {m.user?.image ? <AvatarImage src={m.user.image} /> : null}
-                  <AvatarFallback>{m.user?.name?.slice(0, 2).toUpperCase() ?? '??'}</AvatarFallback>
-                </Avatar>
-                <span>{m.user?.name ?? 'Unknown'}</span>
-              </TableCell>
-              <TableCell>
-                <RoleBadge role={m.role} />
-              </TableCell>
-              {canManageMembers ? (
-                <TableCell>
-                  {showActions ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger render={p => <Button {...p} size='icon' variant='ghost' />}>
-                        <MoreHorizontal className='size-4' />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        {canManageAdmins ? (
-                          <DropdownMenuItem onSelect={() => handleToggleAdmin(memberId, m.role === 'admin')}>
-                            {m.role === 'admin' ? 'Demote to member' : 'Promote to admin'}
-                          </DropdownMenuItem>
-                        ) : null}
-                        {(myRole === 'owner' || m.role === 'member') && (
-                          <DropdownMenuItem className='text-destructive' onSelect={() => handleRemove(memberId)}>
-                            <UserMinus className='mr-2 size-4' />
-                            Remove
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
+    <div className='flex flex-col gap-3'>
+      <div className='relative'>
+        <Search className='absolute top-2.5 left-2.5 size-4 text-muted-foreground' />
+        <Input className='pl-9' onChange={e => setQuery(e.target.value)} placeholder='Search members...' value={query} />
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Member</TableHead>
+            <TableHead>Role</TableHead>
+            {canManageMembers ? <TableHead className='w-10' /> : null}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {displayMembers.map(m => {
+            const { memberId } = m,
+              showActions = m.role !== 'owner' && memberId
+            return (
+              <TableRow key={m.userId}>
+                <TableCell className='flex items-center gap-2'>
+                  <Avatar className='size-8'>
+                    {m.user?.image ? <AvatarImage src={m.user.image} /> : null}
+                    <AvatarFallback>{m.user?.name?.slice(0, 2).toUpperCase() ?? '??'}</AvatarFallback>
+                  </Avatar>
+                  <span>{m.user?.name ?? 'Unknown'}</span>
                 </TableCell>
-              ) : null}
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
+                <TableCell>
+                  <RoleBadge role={m.role} />
+                </TableCell>
+                {canManageMembers ? (
+                  <TableCell>
+                    {showActions ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={p => <Button {...p} size='icon' variant='ghost' />}>
+                          <MoreHorizontal className='size-4' />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          {canManageAdmins ? (
+                            <DropdownMenuItem onSelect={() => handleToggleAdmin(memberId, m.role === 'admin')}>
+                              {m.role === 'admin' ? 'Demote to member' : 'Promote to admin'}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {(myRole === 'owner' || m.role === 'member') && (
+                            <DropdownMenuItem className='text-destructive' onSelect={() => handleRemove(memberId)}>
+                              <UserMinus className='mr-2 size-4' />
+                              Remove
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
   )
 }
 export default MemberList

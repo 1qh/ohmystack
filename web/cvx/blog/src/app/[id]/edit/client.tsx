@@ -65,16 +65,36 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
           <>
             <Err error={form.error} />
             <FieldGroup className='gap-5'>
-              <Text data-testid='edit-title' name='title' />
-              <Text className='min-h-64' data-testid='edit-content' multiline name='content' />
-              <File accept='image/*' data-testid='edit-cover-image' maxSize={5 * 1024 * 1024} name='coverImage' />
+              <Text data-testid='edit-title' helpText='A clear title improves discoverability.' name='title' required />
+              <Text
+                className='min-h-64'
+                data-testid='edit-content'
+                helpText='Keep it readable and specific.'
+                multiline
+                name='content'
+                required
+              />
+              <File
+                accept='image/*'
+                data-testid='edit-cover-image'
+                helpText='Optional cover image.'
+                maxSize={5 * 1024 * 1024}
+                name='coverImage'
+              />
               <Files
                 accept='image/*,application/pdf'
                 data-testid='edit-attachments'
+                helpText='Optional supporting files.'
                 maxSize={10 * 1024 * 1024}
                 name='attachments'
               />
-              <Arr data-testid='edit-tags' name='tags' placeholder='Add tag...' transform={s => s.toLowerCase()} />
+              <Arr
+                data-testid='edit-tags'
+                helpText='Press Enter to add each tag.'
+                name='tags'
+                placeholder='Add tag...'
+                transform={s => s.toLowerCase()}
+              />
             </FieldGroup>
             <AutoSaveIndicator className='ml-auto block' data-testid='auto-save-indicator' lastSaved={form.lastSaved} />
           </>
@@ -102,8 +122,13 @@ const Publish = ({ className, id, published, ...props }: ComponentProps<'div'> &
         render={({ Choose, Submit, Toggle }) => (
           <>
             <FieldGroup className='gap-5'>
-              <Choose name='category' />
-              <Toggle falseLabel='Draft' name='published' trueLabel='Published' />
+              <Choose helpText='Choose how this post is categorized.' name='category' required />
+              <Toggle
+                falseLabel='Draft'
+                helpText='Publish when ready to make it visible.'
+                name='published'
+                trueLabel='Published'
+              />
             </FieldGroup>
             <Submit>Save</Submit>
           </>

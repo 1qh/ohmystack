@@ -174,6 +174,10 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
               <MovieCard key={m.tmdb_id} movie={m} />
             ))}
           </div>
+        ) : query.trim() && !pending && !searchError ? (
+          <p className='text-sm text-muted-foreground' data-testid='no-results'>
+            No results found
+          </p>
         ) : null}
       </div>
     )

@@ -5,6 +5,7 @@
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import { Input } from '@a/ui/input'
+import { useOnlineStatus } from '@noboil/convex/react'
 import { useAction } from 'convex/react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
@@ -37,7 +38,8 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
     </div>
   ),
   Page = () => {
-    const search = useAction(api.movie.search),
+    const isOnline = useOnlineStatus(),
+      search = useAction(api.movie.search),
       [query, setQuery] = useState(''),
       [results, setResults] = useState<SearchResult[]>([]),
       [searchError, setSearchError] = useState<SearchError>(null),
@@ -72,6 +74,11 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             value={query}
           />
         </form>
+        {isOnline ? null : (
+          <p className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive' data-testid='offline-banner'>
+            You are offline — search requires an internet connection
+          </p>
+        )}
         {searchError ? (
           <p className='text-sm text-destructive' data-testid='movie-search-error'>
             {searchError.message}
@@ -83,6 +90,10 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
               <MovieCard key={m.tmdb_id} movie={m} />
             ))}
           </div>
+        ) : query.trim() && !pending && !searchError ? (
+          <p className='text-sm text-muted-foreground' data-testid='no-results'>
+            No results found
+          </p>
         ) : null}
       </div>
     )

@@ -7,23 +7,38 @@ import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { Checkbox } from '@a/ui/checkbox'
+import { Input } from '@a/ui/input'
 import { Skeleton } from '@a/ui/skeleton'
 import { useBulkSelection, useOrgMutation, useOrgQuery } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
-import { FileText, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { FileText, Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
-const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
+const filterByQuery = <T extends Record<string, unknown>>(items: T[], fields: (keyof T & string)[], q: string): T[] => {
+    const normalized = q.trim().toLowerCase()
+    if (!normalized) return items
+    const out: T[] = []
+    for (const item of items)
+      for (const f of fields)
+        if (String(item[f]).toLowerCase().includes(normalized)) {
+          out.push(item)
+          break
+        }
+    return out
+  },
+  wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
   WikiPage = () => {
     const { isAdmin, org } = useOrg(),
       [showDeleted, setShowDeleted] = useState(false),
+      [query, setQuery] = useState(''),
       wikis = useOrgQuery(api.wiki.list, showDeleted ? 'skip' : { paginationOpts: { cursor: null, numItems: 100 } }),
       deletedWikis = useOrgQuery(api.wiki.listDeleted, showDeleted ? {} : 'skip'),
+      filteredWikis = useMemo(() => filterByQuery(wikis?.page ?? [], ['title', 'slug'], query), [wikis?.page, query]),
       restoreMut = useOrgMutation(wikiRestore),
       { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
-        items: wikis?.page ?? [],
+        items: filteredWikis,
         onError: (e: unknown) => {
           fail(e)
         },
@@ -37,7 +52,7 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
       })
     if (showDeleted && !deletedWikis) return <Skeleton className='h-40' />
     if (!(showDeleted || wikis)) return <Skeleton className='h-40' />
-    const activeItems = showDeleted ? [] : (wikis?.page ?? []),
+    const activeItems = showDeleted ? [] : filteredWikis,
       deletedItems = deletedWikis ?? [],
       visibleCount = showDeleted ? deletedItems.length : activeItems.length
     return (
@@ -85,6 +100,19 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
             )}
           </div>
         </div>
+        {showDeleted ? null : (
+          <div className='relative'>
+            <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+            <Input
+              className='pl-9'
+              data-testid='wiki-search-input'
+              onChange={e => setQuery(e.target.value)}
+              placeholder='Search wiki pages...'
+              type='search'
+              value={query}
+            />
+          </div>
+        )}
         {showDeleted ? (
           deletedItems.length === 0 ? (
             <Card>
