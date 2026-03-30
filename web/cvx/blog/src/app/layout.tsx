@@ -4,6 +4,7 @@ import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
 import Logout from '@a/fe/user-menu'
 import { OfflineIndicator } from '@noboil/convex/components'
+import { NoboilConvexDevtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
@@ -27,6 +28,7 @@ const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' },
             </Link>
             <Logout className='fixed bottom-2 left-2' />
             <OfflineIndicator />
+            <NoboilConvexDevtools position='bottom-right' />
             {children}
           </div>
         )}

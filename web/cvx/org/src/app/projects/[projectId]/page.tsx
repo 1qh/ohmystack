@@ -15,7 +15,7 @@ import { Input } from '@a/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@a/ui/select'
 import { Skeleton } from '@a/ui/skeleton'
 import { EditorsSection } from '@noboil/convex/components'
-import { canEditResource, useOrgMutation, useOrgQuery } from '@noboil/convex/react'
+import { canEditResource, useBulkMutate, useOrgMutation, useOrgQuery } from '@noboil/convex/react'
 import { enumToOptions } from '@noboil/convex/zod'
 import { useQuery } from 'convex/react'
 import { Check, Pencil, Plus, Trash, X } from 'lucide-react'
@@ -149,7 +149,14 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       removeEditorMut = useOrgMutation(api.project.removeEditor),
       [title, setTitle] = useState(''),
       [priority, setPriority] = useState<Priority>('medium'),
-      [selected, setSelected] = useState<Set<Id<'task'>>>(() => new Set())
+      [selected, setSelected] = useState<Set<Id<'task'>>>(() => new Set()),
+      bulkDelete = useBulkMutate(async (id: Id<'task'>) => removeTask({ id }), {
+        toast: { error: 'Bulk delete failed', success: n => `${n} task(s) deleted` }
+      }),
+      bulkUpdate = useBulkMutate(
+        async (args: { completed: boolean; id: Id<'task'> }) => updateTask({ completed: args.completed, id: args.id }),
+        { toast: { error: 'Bulk update failed', success: n => `${n} task(s) updated` } }
+      )
     if (!(project && tasks && me && members && editorsList)) return <Skeleton className='h-40' />
     const canEditProject = canEditResource({ editorsList, isAdmin, resource: project, userId: me._id }),
       doAddTask = async () => {
@@ -188,9 +195,9 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       handleBulkDelete = () => {
         if (selected.size === 0) return
-        removeTask({ ids: [...selected] })
+        bulkDelete
+          .run([...selected])
           .then(() => {
-            toast.success(`${selected.size} task(s) deleted`)
             setSelected(new Set())
             return null
           })
@@ -198,11 +205,11 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       },
       handleBulkComplete = (completed: boolean) => {
         if (selected.size === 0) return
-        const items: { completed: boolean; id: string }[] = []
+        const items: { completed: boolean; id: Id<'task'> }[] = []
         for (const id of selected) items.push({ completed, id })
-        updateTask({ items })
+        bulkUpdate
+          .run(items)
           .then(() => {
-            toast.success(`${selected.size} task(s) updated`)
             setSelected(new Set())
             return null
           })

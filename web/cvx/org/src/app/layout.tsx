@@ -8,6 +8,7 @@ import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { getActiveOrg, getToken, isAuthenticated } from '@noboil/convex/next'
+import { NoboilConvexDevtools } from '@noboil/convex/react'
 import { fetchQuery } from 'convex/nextjs'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -79,6 +80,7 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
     return (
       <AuthLayout convexProvider={renderConvexProvider}>
         <OfflineIndicator />
+        <NoboilConvexDevtools position='bottom-right' />
         {content}
       </AuthLayout>
     )

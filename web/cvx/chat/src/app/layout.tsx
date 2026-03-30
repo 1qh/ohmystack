@@ -5,6 +5,7 @@ import ConvexProvider from '@a/fe/convex-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { isAuthenticated } from '@noboil/convex/next'
+import { NoboilConvexDevtools } from '@noboil/convex/react'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from './sidebar'
@@ -23,6 +24,7 @@ const metadata: Metadata = { description: 'noboil chat demo', title: 'Chat' },
     return (
       <AuthLayout convexProvider={renderConvexProvider}>
         <OfflineIndicator />
+        <NoboilConvexDevtools position='bottom-right' />
         {showSidebar ? (
           <SidebarProvider>
             <Sidebar />
