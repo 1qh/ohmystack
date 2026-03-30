@@ -9,6 +9,7 @@ import { useOnlineStatus } from '@noboil/convex/react'
 import { useAction } from 'convex/react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 type SearchError = null | { message: string }
 type SearchResult = FunctionReturnType<typeof api.movie.search>[number]
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
@@ -63,6 +64,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
                 setSearchError(null)
                 setResults(await search({ query: query.trim() }))
               } catch (error) {
+                toast.error(error instanceof Error ? error.message : 'Search failed')
                 setSearchError({ message: error instanceof Error ? error.message : 'Search failed' })
               }
             })
