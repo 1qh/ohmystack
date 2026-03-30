@@ -16,7 +16,7 @@ import { Input } from '@a/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@a/ui/select'
 import { Skeleton } from '@a/ui/skeleton'
 import { EditorsSection } from '@noboil/spacetimedb/components'
-import { noop, useBulkMutate, useMut } from '@noboil/spacetimedb/react'
+import { useBulkMutate, useMut } from '@noboil/spacetimedb/react'
 import { enumToOptions } from '@noboil/spacetimedb/zod'
 import { Check, Pencil, Plus, Trash, X } from 'lucide-react'
 import Link from 'next/link'
@@ -171,6 +171,7 @@ const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
         onSuccess: () => setTitle(''),
         toast: { success: 'Task added' }
       }),
+      updateProject = useMut(reducers.updateProject),
       updateTask = useMut(reducers.updateTask),
       removeTask = useMut(reducers.rmTask, { toast: { success: 'Task deleted' } }),
       [priority, setPriority] = useState<Priority>('medium'),
@@ -347,7 +348,25 @@ const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
           </CardContent>
         </Card>
         {isAdmin ? (
-          <EditorsSection editorsList={editorsList} members={membersForEditors} onAdd={noop} onRemove={noop} />
+          <EditorsSection
+            editorsList={editorsList}
+            members={membersForEditors}
+            onAdd={(userId: string) => {
+              const member = members.find(m => m.userId.toHexString() === userId)
+              if (!member) return
+              const current = project.editors ?? [],
+                next = [...current, member.userId]
+              updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+              toast.success('Editor added')
+            }}
+            onRemove={(userId: string) => {
+              const current = project.editors ?? [],
+                next: typeof current = []
+              for (const e of current) if (e.toHexString() !== userId) next.push(e)
+              updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+              toast.success('Editor removed')
+            }}
+          />
         ) : null}
       </div>
     )

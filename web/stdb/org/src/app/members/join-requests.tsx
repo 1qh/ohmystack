@@ -10,12 +10,14 @@ import { useMut } from '@noboil/spacetimedb/react'
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { useOrgTable } from '~/hook/use-org-table'
+import { useProfileMap } from '~/hook/use-profile-map'
 const JoinRequests = () => {
   const [orgRequests] = useOrgTable<OrgJoinRequest>(tables.orgJoinRequest),
     requests = orgRequests.filter(r => r.status === 'pending').map(r => ({ request: r })),
     approveRequest = useMut(reducers.orgApproveJoin, { toast: { success: 'Request approved' } }),
     rejectRequest = useMut(reducers.orgRejectJoin, { toast: { success: 'Request rejected' } }),
-    [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
+    [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({}),
+    profileByUserId = useProfileMap()
   if (requests.length === 0) return null
   return (
     <div className='space-y-2'>
@@ -35,9 +37,13 @@ const JoinRequests = () => {
             <TableRow key={r.id}>
               <TableCell className='flex items-center gap-2'>
                 <Avatar className='size-6'>
-                  <AvatarFallback className='text-xs'>?</AvatarFallback>
+                  <AvatarFallback className='text-xs'>
+                    {(profileByUserId.get(r.userId.toHexString())?.displayName ?? '?').slice(0, 2)}
+                  </AvatarFallback>
                 </Avatar>
-                <span>Unknown</span>
+                <span>
+                  {profileByUserId.get(r.userId.toHexString())?.displayName ?? r.userId.toHexString().slice(0, 8)}
+                </span>
               </TableCell>
               <TableCell className='max-w-48 truncate text-sm text-muted-foreground'>{r.message ?? '-'}</TableCell>
               <TableCell className='text-sm text-muted-foreground'>{r.createdAt.toDate().toLocaleDateString()}</TableCell>

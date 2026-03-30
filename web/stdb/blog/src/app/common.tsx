@@ -192,7 +192,17 @@ const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
       updatedAtDate = updatedAt.toDate()
     return (
       <div className={cn('flex items-center', className)}>
-        <UserRound className='size-8 shrink-0 rounded-full bg-border stroke-1 pt-0.5 text-background' />
+        {authorProfile?.avatar ? (
+          <img
+            alt={authorName}
+            className='size-8 shrink-0 rounded-full object-cover'
+            height={32}
+            src={authorProfile.avatar}
+            width={32}
+          />
+        ) : (
+          <UserRound className='size-8 shrink-0 rounded-full bg-border stroke-1 pt-0.5 text-background' />
+        )}
         <div className='mx-2'>
           <p className='text-sm'>{authorName}</p>
           <div className='flex items-center gap-1 text-xs text-muted-foreground' title={format(updatedAtDate, 'PPPPpp')}>

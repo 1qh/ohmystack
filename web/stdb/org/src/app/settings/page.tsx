@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { useReducer } from 'spacetimedb/react'
 import { useOrg, useOrgMutation } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
+import { useProfileMap } from '~/hook/use-profile-map'
 import OrgSettingsForm from './org-settings-form'
 const OrgSettingsPage = () => {
   const router = useRouter(),
@@ -47,7 +48,8 @@ const OrgSettingsPage = () => {
       }
     ),
     [members] = useOrgTable<OrgMember>(tables.orgMember),
-    [transferTarget, setTransferTarget] = useState('')
+    [transferTarget, setTransferTarget] = useState(''),
+    profileByUserId = useProfileMap()
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
   const adminMembers = members.filter(m => m.isAdmin),
@@ -85,11 +87,15 @@ const OrgSettingsPage = () => {
                 <SelectValue placeholder='Select an admin' />
               </SelectTrigger>
               <SelectContent>
-                {adminMembers.map(m => (
-                  <SelectItem key={m.id} value={m.userId.toHexString()}>
-                    {m.userId.toHexString()}
-                  </SelectItem>
-                ))}
+                {adminMembers.map(m => {
+                  const hex = m.userId.toHexString(),
+                    profile = profileByUserId.get(hex)
+                  return (
+                    <SelectItem key={m.id} value={hex}>
+                      {profile?.displayName ?? hex.slice(0, 8)}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
             <Button disabled={!transferTarget} onClick={handleTransfer} variant='outline'>

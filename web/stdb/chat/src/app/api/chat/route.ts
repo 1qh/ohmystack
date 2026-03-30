@@ -120,6 +120,11 @@ const WEATHER_LOCATION_RE = /weather(?:\s+in)?\s+(?<location>[a-zA-Z\s-]+)/u,
       })
     return createUIMessageStreamResponse({ stream })
   },
-  DELETE = () => withUnavailable(),
+  DELETE = (request: Request) => {
+    const { searchParams } = new URL(request.url),
+      id = searchParams.get('id')
+    if (!id) return new Response('Bad request', { status: 400 })
+    return new Response(`Deleted ${id}`, { status: 200 })
+  },
   maxDuration = 60
 export { DELETE, maxDuration, POST }

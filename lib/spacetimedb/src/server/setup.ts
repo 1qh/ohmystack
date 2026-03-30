@@ -523,6 +523,7 @@ const dbTable: (db: unknown, name: string) => unknown = (db, name) => (db as Rec
 interface RegCtx {
   defaults: CrudDefaults
   expectedUpdatedAtField: TypeBuilder<unknown, AlgebraicTypeType>
+  extraFieldsByTable: Record<string, Record<string, unknown>>
   fkField: TypeBuilder<unknown, AlgebraicTypeType>
   idField: TypeBuilder<unknown, AlgebraicTypeType>
   opts: RegTableOpts
@@ -535,26 +536,33 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
     const names = Object.keys(schemas)
     for (const name of names) {
       const fields = schemas[name]
-      if (fields)
+      if (fields) {
+        const resolved = resolveCrudFields(fields, name, ctx.defaults) as CrudFieldBuilders,
+          extra = ctx.extraFieldsByTable[name],
+          merged = extra ? { ...resolved, ...extra } : resolved
         ctx.s.crud({
           expectedUpdatedAtField: ctx.expectedUpdatedAtField,
-          fields: resolveCrudFields(fields, name, ctx.defaults) as CrudFieldBuilders,
+          fields: merged as CrudFieldBuilders,
           idField: ctx.idField,
           options: (ctx.opts?.[name] ?? undefined) as CrudOptions | undefined,
           pk: pkById,
           table: tblOf(name),
           tableName: name
         })
+      }
     }
   },
   regOrgScoped = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
     const names = Object.keys(schemas)
     for (const name of names) {
       const fields = schemas[name]
-      if (fields)
+      if (fields) {
+        const resolved = resolveCrudFields(fields, name, ctx.defaults) as OrgCrudFieldBuilders,
+          extra = ctx.extraFieldsByTable[name],
+          merged = extra ? { ...resolved, ...extra } : resolved
         ctx.s.orgCrud({
           expectedUpdatedAtField: ctx.expectedUpdatedAtField,
-          fields: resolveCrudFields(fields, name, ctx.defaults) as OrgCrudFieldBuilders,
+          fields: merged as OrgCrudFieldBuilders,
           idField: ctx.idField,
           isOrgOwner: makeIsOrgOwner(tblOf('org')),
           options: (ctx.opts?.[name] ?? undefined) as OrgCrudOptions | undefined,
@@ -564,6 +572,7 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
           table: tblOf(name),
           tableName: name
         })
+      }
     }
   },
   regSingleton = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
@@ -833,11 +842,13 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
       },
       registerAll: (
         schemas: RegisterAllSchemas,
-        tableOptions?: Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }>
+        tableOptions?: Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }>,
+        extraFieldsByTable?: Record<string, Record<string, unknown>>
       ) => {
         const ctx: RegCtx = {
           defaults: resolvedDefaults,
           expectedUpdatedAtField,
+          extraFieldsByTable: extraFieldsByTable ?? {},
           fkField,
           idField,
           opts: tableOptions,
@@ -867,6 +878,7 @@ interface BsCtx {
   baseZ: Record<string, ZodLike>
   cascades: string[]
   childZ: Record<string, { foreignKey: string; parent: string; schema: ZodLike }>
+  extraFieldsByTable: Record<string, Record<string, unknown>>
   orgScopedZ: Record<string, ZodLike>
   ownedZ: Record<string, ZodLike>
   singletonZ: Record<string, ZodLike>
@@ -881,6 +893,7 @@ interface BsTag {
   category: 'base' | 'children' | 'file' | 'org' | 'orgScoped' | 'owned' | 'singleton'
   childFk?: string
   childParent?: string
+  extraFields?: Record<string, unknown>
   keyName?: string
   pub?: boolean | string
   rateLimit?: { max: number; window: number }
@@ -1044,6 +1057,7 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
     if (oKeys(o).length > 0) ctx.tblOpts[name] = o as never
   },
   collectBsSchema = (name: string, m: BsTag, ctx: BsCtx): { fileNs?: boolean | string; orgZod?: ZodLike } => {
+    if (m.extraFields) ctx.extraFieldsByTable[name] = m.extraFields
     if (m.category === 'owned' && m.zod) ctx.ownedZ[name] = m.zod
     if (m.category === 'orgScoped') {
       if (m.zod) ctx.orgScopedZ[name] = m.zod
@@ -1127,6 +1141,7 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
             cascade,
             cascadeTo,
             category: 'orgScoped',
+            extraFields: extra as Record<string, unknown> | undefined,
             pub,
             rateLimit,
             softDelete,
@@ -1154,7 +1169,14 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
             unique
           })
         return bsOf(
-          { category: 'owned', pub, rateLimit, softDelete, zod: bsZod(fields) },
+          {
+            category: 'owned',
+            extraFields: extra as Record<string, unknown> | undefined,
+            pub,
+            rateLimit,
+            softDelete,
+            zod: bsZod(fields)
+          },
           raw.ownedTable(fields, mergedExtra)
         )
       },
@@ -1216,6 +1238,7 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
         baseZ: {},
         cascades: [],
         childZ: {},
+        extraFieldsByTable: {},
         orgScopedZ: {},
         ownedZ: {},
         singletonZ: {},
@@ -1243,7 +1266,12 @@ const compoundIndexToEntry = (columns: string[]): { accessor: string; algorithm:
       s = setupCrud(spacetimedb as SpacetimeDbLike),
       schemas = buildBsSchemas(ctx)
     if (fileNs) schemas.file = fileNs
-    if (oKeys(schemas).length > 0) s.registerAll(schemas, oKeys(ctx.tblOpts).length > 0 ? ctx.tblOpts : undefined)
+    if (oKeys(schemas).length > 0)
+      s.registerAll(
+        schemas,
+        oKeys(ctx.tblOpts).length > 0 ? ctx.tblOpts : undefined,
+        oKeys(ctx.extraFieldsByTable).length > 0 ? ctx.extraFieldsByTable : undefined
+      )
     if (orgZod) s.org(orgZod, ctx.cascades.length > 0 ? { cascadeTables: ctx.cascades } : undefined)
     const rlsExports: Record<string, unknown> = {}
     let rlsI = 0

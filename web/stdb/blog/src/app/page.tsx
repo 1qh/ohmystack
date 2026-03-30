@@ -31,7 +31,7 @@ const Page = () => {
       setRemovedIds(prev => new Set(prev).add(id))
     }, [])
   return (
-    <div>
+    <div data-testid='crud-dynamic-page'>
       <Create />
       <SearchInput
         className='mb-4'
