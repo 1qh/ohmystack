@@ -73,87 +73,46 @@ Auto-excluded fields (unless explicitly included):
 - `timestamp` columns (e.g., `updatedAt`)
 - Auto-increment primary keys (e.g., `id`)
 
-Then wire it up with `@tanstack/react-form`:
+Then build the form with the same `<Form>` render-prop component as Convex:
 
-```bash
-bun add @tanstack/react-form zod
-```
-
-```typescript
-'use client'
-
-import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
+```tsx
+import { Form, useFormMutation } from '@noboil/spacetimedb/components'
 import { useReducer } from 'spacetimedb/react'
 import { reducers } from '@/generated/module_bindings'
-import { createPostSchema } from '@/schema-client'
+import { postSchema } from '@/schema-client'
 
-const CreatePostForm = () => {
+const CreatePost = () => {
   const createPost = useReducer(reducers.create_post)
-
-  const form = useForm({
-    defaultValues: {
-      title: '',
-      content: '',
-    },
-    validatorAdapter: zodValidator(),
-    validators: {
-      onChange: createPostSchema,
-    },
-    onSubmit: async ({ value }) => {
-      await createPost({
-        ...value,
-        published: false,
-      })
-      form.reset()
-    },
+  const form = useFormMutation({
+    schema: postSchema,
+    mutate: d => createPost({ ...d, published: false }),
+    toast: 'Created'
   })
 
   return (
-    <form
-      onSubmit={e => {
-        e.preventDefault()
-        form.handleSubmit()
-      }}
-    >
-      <form.Field
-        name="title"
-        children={field => (
-          <div>
-            <label>Title</label>
-            <input
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-            {field.state.meta.errors.map(err => (
-              <span key={err}>{err}</span>
-            ))}
-          </div>
-        )}
-      />
-      <form.Field
-        name="content"
-        children={field => (
-          <div>
-            <label>Content</label>
-            <textarea
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </div>
-        )}
-      />
-      <button type="submit" disabled={form.state.isSubmitting}>
-        {form.state.isSubmitting ? 'Creating...' : 'Create post'}
-      </button>
-    </form>
+    <Form
+      form={form}
+      render={({ Text, Choose, Toggle, Submit }) => (
+        <>
+          <Text name="title" label="Title" />
+          <Text name="content" label="Content" multiline />
+          <Choose name="category" label="Category" />
+          <Toggle name="published" label="Published" />
+          <Submit>Create</Submit>
+        </>
+      )}
+    />
   )
 }
-
-export default CreatePostForm
 ```
+
+What's happening:
+
+- `useFormMutation` takes your Zod schema and wires up the reducer call
+- `name='title'` is checked at compile time — `name='titl'` is a type error
+- `Choose` auto-generates options from the Zod enum
+- `Toggle` knows `published` is a boolean field — using `<Text name='published' />` would be a type error
+- Zod validation runs on submit — `title.min(1)` enforces non-empty
 
 </Tab>
 </Tabs>
@@ -366,44 +325,44 @@ const EditPost = ({ post }: { post: Doc<'blog'> }) => {
 </Tab>
 <Tab value="SpacetimeDB">
 
-Pre-fill form values from an existing row:
+Switch to `useFormMutation` which wires up the reducer and pre-fills values:
 
-```typescript
+```tsx
+import { Form, useFormMutation } from '@noboil/spacetimedb/components'
+import { pickValues } from '@noboil/spacetimedb/zod'
+import { useReducer } from 'spacetimedb/react'
+import { reducers } from '@/generated/module_bindings'
+import { postSchema } from '@/schema-client'
+
 const EditPost = ({ post }: { post: PostRow }) => {
   const updatePost = useReducer(reducers.update_post)
-
-  const form = useForm({
-    defaultValues: {
-      title: post.title,
-      content: post.content,
-    },
-    validatorAdapter: zodValidator(),
-    validators: { onChange: editPostSchema },
-    onSubmit: async ({ value }) => {
-      await updatePost({
-        id: post.id,
-        ...value,
-        expectedUpdatedAt: post.updatedAt,
-      })
-    },
+  const form = useFormMutation({
+    schema: postSchema,
+    values: pickValues(postSchema, post),
+    mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+    toast: 'Saved'
   })
 
   return (
-    <form onSubmit={e => { e.preventDefault(); form.handleSubmit() }}>
-      <form.Field
-        name="title"
-        children={field => (
-          <input
-            value={field.state.value}
-            onChange={e => field.handleChange(e.target.value)}
-          />
-        )}
-      />
-      <button type="submit">Save</button>
-    </form>
+    <Form
+      form={form}
+      render={({ Text, Choose, File, Submit }) => (
+        <>
+          <Text name="title" label="Title" />
+          <Text name="content" label="Content" multiline />
+          <Choose name="category" label="Category" />
+          <File name="coverImage" label="Cover Image" accept="image/*" />
+          <Submit>Save</Submit>
+        </>
+      )}
+    />
   )
 }
 ```
+
+- `pickValues` extracts schema-matching fields from the row (ignores `id`, `userId`, `updatedAt`)
+- `transform` adds the `id` and `expectedUpdatedAt` fields before submitting
+- Empty optional strings auto-coerce to `undefined`
 
 </Tab>
 </Tabs>
@@ -436,30 +395,24 @@ No extra UI code needed — the dialog is built into the `Form` component.
 </Tab>
 <Tab value="SpacetimeDB">
 
-Pass `expectedUpdatedAt` when calling the update reducer:
+Pass `expectedUpdatedAt` when calling the update reducer. The `Form` component includes a built-in `ConflictDialog` that handles conflicts automatically:
 
-```typescript
-await updatePost({
-  id: post.id,
-  title: newTitle,
-  expectedUpdatedAt: post.updatedAt,
+```tsx
+const form = useFormMutation({
+  schema: postSchema,
+  values: pickValues(postSchema, post),
+  mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+  toast: 'Saved'
 })
 ```
 
-If the row was modified since the client last read it, the reducer returns `CONFLICT`. Handle it in the form's `onSubmit`:
+When the server detects a stale `expectedUpdatedAt`, a `ConflictDialog` appears automatically with three options:
 
-```typescript
-onSubmit: async ({ value }) => {
-  try {
-    await updatePost({ id: post.id, ...value, expectedUpdatedAt: post.updatedAt })
-  } catch (error) {
-    const data = extractErrorData(error)
-    if (data?.code === 'CONFLICT') {
-      toast.error('Someone else edited this post. Reload to see the latest version.')
-    }
-  }
-}
-```
+- **Cancel** -- discard your changes
+- **Reload** -- fetch the latest version
+- **Overwrite** -- force your changes through
+
+No extra UI code needed -- the dialog is built into the `Form` component.
 
 </Tab>
 </Tabs>
@@ -491,28 +444,25 @@ This shows "Saved 5s ago" that updates in real-time.
 </Tab>
 <Tab value="SpacetimeDB">
 
-Implement auto-save with a `useEffect` and debounce:
+For a document editor experience, enable auto-save with debounce:
 
-```typescript
-import { useEffect, useRef } from 'react'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-
-const useAutoSave = (post: PostRow, value: { title: string; content: string }) => {
-  const updatePost = useReducer(reducers.update_post)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      updatePost({ id: post.id, ...value, expectedUpdatedAt: post.updatedAt })
-    }, 1000)
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [value.title, value.content])
-}
+```tsx
+const form = useFormMutation({
+  schema: postSchema,
+  values: pickValues(postSchema, post),
+  mutate: d => updatePost({ id: post.id, ...d }),
+  autoSave: { enabled: true, debounceMs: 1000 }
+})
 ```
+
+Add a save indicator:
+
+```tsx
+import { AutoSaveIndicator } from '@noboil/spacetimedb/components'
+;<AutoSaveIndicator lastSaved={form.lastSaved} />
+```
+
+This shows "Saved" that updates in real-time.
 
 </Tab>
 </Tabs>
@@ -538,27 +488,17 @@ The validation runs 500ms after the user stops typing and shows inline feedback.
 </Tab>
 <Tab value="SpacetimeDB">
 
-Use `@tanstack/react-form`'s async validators:
+Check if a slug is already taken while the user types:
 
-```typescript
-<form.Field
-  name="slug"
-  asyncDebounceMs={500}
-  validators={{
-    onChangeAsync: async ({ value }) => {
-      const posts = [...conn.db.post.iter()]
-      const taken = posts.some(p => p.slug === value && p.id !== currentId)
-      return taken ? 'Slug already taken' : undefined
-    }
-  }}
-  children={field => (
-    <input
-      value={field.state.value}
-      onChange={e => field.handleChange(e.target.value)}
-    />
-  )}
-/>
+```tsx
+<Text name='slug' asyncValidate={async v => {
+  const posts = [...conn.db.post.iter()]
+  const taken = posts.some(p => p.slug === v && p.id !== currentId)
+  return taken ? 'Slug already taken' : undefined
+}} asyncDebounceMs={500} />
 ```
+
+The validation runs 500ms after the user stops typing and shows inline feedback.
 
 </Tab>
 </Tabs>
@@ -626,33 +566,45 @@ Each step has its own Zod schema and independent validation. `name='displayName'
 </Tab>
 <Tab value="SpacetimeDB">
 
-Implement multi-step forms with local state:
+For complex forms like onboarding, use `defineSteps` to split into typed steps:
 
-```typescript
-const [step, setStep] = useState<'profile' | 'org' | 'preferences'>('profile')
-const [profileData, setProfileData] = useState<ProfileData | null>(null)
-const [orgData, setOrgData] = useState<OrgData | null>(null)
+```tsx
+import { defineSteps } from '@noboil/spacetimedb/components'
 
-const profileForm = useForm({
-  defaultValues: { displayName: '', bio: '' },
-  validatorAdapter: zodValidator(),
-  validators: { onChange: profileSchema },
-  onSubmit: async ({ value }) => {
-    setProfileData(value)
-    setStep('org')
+const { StepForm, useStepper } = defineSteps(
+  { id: 'profile', label: 'Profile', schema: profileStep },
+  { id: 'org', label: 'Organization', schema: orgStep },
+  { id: 'preferences', label: 'Preferences', schema: preferencesStep }
+)
+
+const stepper = useStepper({
+  onSubmit: async d => {
+    await upsertProfile({ ...d.profile, ...d.preferences })
+    await createOrg({ name: d.org.name, slug: d.org.slug })
   },
+  onSuccess: () => toast.success('Done!')
 })
 
-const orgForm = useForm({
-  defaultValues: { name: '', slug: '' },
-  validatorAdapter: zodValidator(),
-  validators: { onChange: orgSchema },
-  onSubmit: async ({ value }) => {
-    setOrgData(value)
-    setStep('preferences')
-  },
-})
+<StepForm stepper={stepper} submitLabel='Complete'>
+  <StepForm.Step id='profile' render={({ Text, File }) => (
+    <>
+      <Text name='displayName' label='Name' />
+      <File name='avatar' label='Avatar' accept='image/*' />
+    </>
+  )} />
+  <StepForm.Step id='org' render={({ Text }) => (
+    <>
+      <Text name='name' label='Org Name' />
+      <Text name='slug' label='URL Slug' />
+    </>
+  )} />
+  <StepForm.Step id='preferences' render={({ Choose }) => (
+    <Choose name='theme' label='Theme' />
+  )} />
+</StepForm>
 ```
+
+Each step has its own Zod schema and independent validation. `name='displayName'` compiles on the profile step but errors on the org step.
 
 </Tab>
 </Tabs>
@@ -703,38 +655,57 @@ SpacetimeDB's ~39ms latency makes optimistic updates unnecessary in most cases. 
 </Tab>
 </Tabs>
 
-## Available field components (Convex)
+## Available field components
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-| Component  | Zod types                      | Renders                          |
-| ---------- | ------------------------------ | -------------------------------- |
-| `Text`     | `string()`, `string().email()` | Input or textarea (`multiline`)  |
-| `Num`      | `number()`                     | Number input                     |
-| `Choose`   | `enum()`                       | Select dropdown                  |
-| `Toggle`   | `boolean()`                    | Checkbox or switch               |
-| `File`     | `cvFile()`                     | File picker with upload          |
-| `Files`    | `cvFiles()`                    | Multi-file picker                |
-| `Arr`      | `array(string())`              | Tag input                        |
-| `Datepick` | `date()`                       | Date picker                      |
-| `Combobox` | `string()` with options        | Searchable dropdown              |
-| `Submit`   | —                              | Submit button with loading state |
+| Component     | Zod types                      | Renders                          |
+| ------------- | ------------------------------ | -------------------------------- |
+| `Text`        | `string()`, `string().email()` | Input or textarea (`multiline`)  |
+| `Num`         | `number()`                     | Number input                     |
+| `Choose`      | `enum()`                       | Select dropdown                  |
+| `Toggle`      | `boolean()`                    | Checkbox or switch               |
+| `File`        | `cvFile()`                     | File picker with upload          |
+| `Files`       | `cvFiles()`                    | Multi-file picker                |
+| `Arr`         | `array(string())`              | Tag input                        |
+| `Datepick`    | `date()`                       | Date picker                      |
+| `Combobox`    | `string()` with options        | Searchable dropdown              |
+| `Colorpick`   | `string()`                     | Color picker                     |
+| `MultiSelect` | `array(string())`              | Multi-select dropdown            |
+| `Rating`      | `number()`                     | Star rating                      |
+| `Slider`      | `number()`                     | Range slider                     |
+| `Timepick`    | `string()`                     | Time picker                      |
+| `Submit`      | --                             | Submit button with loading state |
+| `Err`         | --                             | Field error display              |
 
 All components accept `label`, `placeholder`, `disabled`, and `className` props.
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-With `@tanstack/react-form`, you build your own field components. The `zodFromTable` schema drives validation — field types come from your SpacetimeDB column definitions.
+SpacetimeDB uses the same field components as Convex, available via `<Form render={...} />`:
 
-Lower-level utilities are available from `@noboil/spacetimedb/react`:
+| Component     | Zod types                      | Renders                          |
+| ------------- | ------------------------------ | -------------------------------- |
+| `Text`        | `string()`, `string().email()` | Input or textarea (`multiline`)  |
+| `Num`         | `number()`                     | Number input                     |
+| `Choose`      | `enum()`                       | Select dropdown                  |
+| `Toggle`      | `boolean()`                    | Checkbox or switch               |
+| `File`        | `stdbFile()`                   | File picker with S3 upload       |
+| `Files`       | `stdbFiles()`                  | Multi-file picker                |
+| `Arr`         | `array(string())`              | Tag input                        |
+| `Datepick`    | `date()`                       | Date picker                      |
+| `Combobox`    | `string()` with options        | Searchable dropdown              |
+| `Colorpick`   | `string()`                     | Color picker                     |
+| `MultiSelect` | `array(string())`              | Multi-select dropdown            |
+| `Rating`      | `number()`                     | Star rating                      |
+| `Slider`      | `number()`                     | Range slider                     |
+| `Timepick`    | `string()`                     | Time picker                      |
+| `Submit`      | --                             | Submit button with loading state |
+| `Err`         | --                             | Field error display              |
 
-```typescript
-import { buildMeta, getMeta, useForm, useFormMutation } from '@noboil/spacetimedb/react'
-```
-
-For most cases, `@tanstack/react-form` with `zodFromTable` is the recommended approach.
+All components accept `label`, `placeholder`, `disabled`, and `className` props.
 
 </Tab>
 </Tabs>
@@ -803,29 +774,43 @@ import { ConvexErrorBoundary } from '@noboil/convex/components'
 </Tab>
 <Tab value="SpacetimeDB">
 
-Reducer errors use the `SenderError('CODE: message')` convention. Parse them to show field-level errors:
+**Validation errors** -- Zod validation runs on submit. Field-level errors appear automatically:
 
-```typescript
-import { extractErrorData } from '@noboil/spacetimedb/server'
-
-const form = useForm({
-  onSubmit: async ({ value }) => {
-    try {
-      await createPost(value)
-    } catch (error) {
-      const data = extractErrorData(error)
-      if (data?.code === 'CONFLICT') {
-        form.setFieldMeta('title', meta => ({
-          ...meta,
-          errors: ['A post with this title already exists']
-        }))
-      }
-    }
-  }
+```tsx
+const form = useFormMutation({
+  schema: postSchema,
+  mutate: d => createPost(d),
+  toast: 'Created'
 })
 ```
 
-`useMut` and `useFormMutation` from `@noboil/spacetimedb/react` automatically parse these errors and surface them as toasts or field-level validation messages.
+When `title.min(1)` fails, the `<Text name='title' />` field shows "Required" inline -- no manual error wiring needed.
+
+**Reducer errors** -- `useFormMutation` shows error toasts by default:
+
+```tsx
+const form = useFormMutation({
+  schema: postSchema,
+  mutate: d => createPost(d),
+  onError: e => toast.error(`Failed: ${e.message}`)
+})
+
+const form = useFormMutation({
+  schema: postSchema,
+  mutate: d => createPost(d),
+  onError: false
+})
+```
+
+**Toast shorthand** -- pass a string to `toast` for automatic success/error handling:
+
+```tsx
+const form = useFormMutation({
+  schema: postSchema,
+  mutate: d => createPost(d),
+  toast: 'Created'
+})
+```
 
 </Tab>
 </Tabs>

@@ -319,4 +319,4 @@ const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined
       user = { me: q({ handler: (c: Rec) => c.user }) }
     return { cacheCrud, childCrud, cm, cq, crud, m, org, orgCrud, pq, q, singletonCrud, uniqueCheck, user }
   }
-export { setup }
+export { mergeCacheHooks, mergeGlobalHooks, mergeHooks, setup }

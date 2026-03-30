@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "quickstart",
+    "architecture",
     "cli",
     "components",
     "data-fetching",

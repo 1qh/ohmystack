@@ -1,0 +1,242 @@
+---
+title: Architecture
+description: The mental model behind noboil — schema-first CRUD generation, branded types, lifecycle hooks, and escape hatches.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+This page explains how noboil thinks so you can predict its behavior instead of memorizing its API.
+
+## Schema-first design
+
+You define a Zod schema once. Everything else — the Convex table definition, the CRUD endpoints, the TypeScript types for input validation and query results — is derived from that single source of truth.
+
+```ts
+const owned = makeOwned({
+  blog: z.object({
+    title: z.string().min(1),
+    body: z.string(),
+    published: z.boolean().default(false),
+  }),
+})
+```
+
+The schema is the contract. Change it, and the table shape, validators, and endpoint signatures all update. There is no separate Convex `v.object(...)` definition to keep in sync.
+
+## Schema branding
+
+Noboil uses TypeScript's structural type system against you (in a good way). Each schema-creation function stamps the Zod object with an opaque brand that the CRUD factories check at the type level:
+
+| Function | Brand | Automatic fields | Indexes | Use with |
+|---|---|---|---|---|
+| `makeOwned` | `owned` | `userId`, `updatedAt` | `by_user` | `crud()` + `ownedTable()` |
+| `makeOrgScoped` | `org` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | `orgCrud()` + `orgTable()` |
+| `makeBase` | `base` | `updatedAt` (optional) | none | `cacheCrud()` + `baseTable()` |
+| `makeSingleton` | `singleton` | `userId`, `updatedAt` | `by_user` | `singletonCrud()` + `singletonTable()` |
+
+Passing an `owned`-branded schema to `orgCrud()` is a compile-time error. The `SchemaTypeError` type produces a message like:
+
+```
+Schema mismatch: expected org-scoped (makeOrgScoped), got user-owned (makeOwned).
+Created by makeOrgScoped() -> use orgCrud() + orgTable()
+```
+
+**When to use which:**
+
+- **`makeOwned`** — most tables. Each row belongs to one user. The generated `list` endpoint filters by the authenticated user automatically.
+- **`makeOrgScoped`** — rows belong to an organization. Queries scope by `orgId`; mutations verify org membership and role.
+- **`makeBase`** — shared/global data with no ownership (e.g., a cache of external API responses). No auth required on reads or writes.
+- **`makeSingleton`** — exactly one row per user (e.g., user profile, user preferences). `singletonCrud()` returns `get` and `upsert` instead of the full CRUD set.
+
+## The `setup()` function
+
+`setup()` is the single entry point. You call it once with your Convex builders and auth function, and it returns factory functions and custom query/mutation builders:
+
+```ts
+const { crud, orgCrud, childCrud, cacheCrud, singletonCrud, pq, q, m, cq, cm } = setup({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  hooks: { /* global hooks */ },
+  middleware: [auditLog(), inputSanitize()],
+})
+```
+
+### CRUD factories
+
+| Factory | Input | Returns | Purpose |
+|---|---|---|---|
+| `crud(table, schema, opts?)` | `OwnedSchema` | `{ create, update, rm, pub, auth, ... }` | User-owned tables |
+| `orgCrud(table, schema, opts?)` | `OrgSchema` | `{ create, update, rm, list, read, ... }` | Org-scoped tables |
+| `childCrud(table, meta, opts?)` | child config | `{ create, update, rm, list, get, ... }` | Tables with a foreign key to a parent |
+| `cacheCrud(opts)` | `BaseSchema` + key field | `{ load, get, invalidate, refresh, ... }` | External data cache with TTL |
+| `singletonCrud(table, schema, opts?)` | `SingletonSchema` | `{ get, upsert }` | One row per user |
+
+### Custom builders
+
+| Builder | Auth required | Context | Use for |
+|---|---|---|---|
+| `pq` | No (viewer ID resolved but optional) | `viewerId`, `withAuthor` | Public queries — anyone can call, viewer info available if logged in |
+| `q` | Yes (throws if unauthenticated) | `user`, `viewerId`, `get`, `withAuthor` | Authenticated queries with ownership checks |
+| `m` | Yes | `user`, `create`, `patch`, `delete`, `get` | Authenticated mutations with ownership checks |
+| `cq` | No | empty | Context-free queries (internal tooling, cron jobs) |
+| `cm` | No | empty | Context-free mutations (internal tooling, cron jobs) |
+
+## Auth/pub split
+
+Every `crud()` call returns two read APIs: `pub` and `auth`.
+
+```ts
+export const { create, update, rm, pub, auth } = crud('blog', owned.blog)
+
+// In your Convex module, re-export:
+export const { list, read, search } = pub   // no auth required
+// auth.list, auth.read, auth.search        // require login
+```
+
+- **`pub.list`**, **`pub.read`**, **`pub.search`** — callable by anyone, including unauthenticated users. Use for public-facing content.
+- **`auth.list`**, **`auth.read`**, **`auth.search`** — require a logged-in user. `auth.list` automatically scopes to the current user's rows.
+- **`create`**, **`update`**, **`rm`** — always require authentication. Mutations verify the caller owns the document before allowing changes.
+
+You can attach default `where` filters to either side:
+
+```ts
+crud('blog', owned.blog, {
+  pub: { where: { published: true } },       // public list only shows published
+  auth: { where: { archived: false } },      // authed list hides archived
+})
+```
+
+## Hooks and middleware
+
+### Lifecycle hooks
+
+Six hooks fire around each mutation. `before*` hooks can transform data; `after*` hooks are side-effect-only.
+
+| Hook | Fires | Receives | Returns |
+|---|---|---|---|
+| `beforeCreate` | Before insert | `{ data }` | Modified `data` |
+| `afterCreate` | After insert | `{ data, id }` | void |
+| `beforeUpdate` | Before patch | `{ id, patch, prev }` | Modified `patch` |
+| `afterUpdate` | After patch | `{ id, patch, prev }` | void |
+| `beforeDelete` | Before delete | `{ id, doc }` | void |
+| `afterDelete` | After delete | `{ id, doc }` | void |
+
+### Global vs per-table hooks
+
+**Global hooks** are passed to `setup()` and run on every table. Their context includes a `table` field so you can branch:
+
+```ts
+setup({
+  // ...
+  hooks: {
+    afterCreate: (ctx, { id }) => {
+      console.log(`Created ${id} in ${ctx.table}`)
+    },
+  },
+})
+```
+
+**Per-table hooks** are passed in the options of each CRUD factory:
+
+```ts
+crud('blog', owned.blog, {
+  hooks: {
+    beforeCreate: (_ctx, { data }) => ({ ...data, slug: slugify(data.title) }),
+  },
+})
+```
+
+When both exist, global hooks run first. For `before*` hooks, the global hook's output is piped into the per-table hook.
+
+### Built-in middleware
+
+Middleware is syntactic sugar over global hooks with a `name` field and an `operation` field in context. Pass them to `setup()`:
+
+```ts
+setup({
+  // ...
+  middleware: [auditLog(), inputSanitize(), slowQueryWarn({ threshold: 300 })],
+})
+```
+
+| Middleware | What it does |
+|---|---|
+| `auditLog(opts?)` | Logs create/update/delete with table, userId, and id. `verbose: true` includes payload. |
+| `inputSanitize(opts?)` | Strips HTML/script tags from string fields in `beforeCreate` and `beforeUpdate`. |
+| `slowQueryWarn(opts?)` | Warns when a mutation exceeds `threshold` ms (default 500). |
+
+Multiple middleware compose left-to-right. They merge into the global hooks chain via `composeMiddleware()`.
+
+## The `where` clause query language
+
+All `list`, `read`, and `search` endpoints accept an optional `where` parameter. It is a typed object derived from your schema shape.
+
+### Field equality
+
+```ts
+// Exact match
+where: { published: true }
+
+// Multiple fields (AND)
+where: { published: true, category: "tech" }
+```
+
+### Comparison operators
+
+For numeric fields, use comparison operator objects instead of a direct value:
+
+```ts
+where: { rating: { $gte: 4 } }
+where: { price: { $between: [10, 50] } }
+```
+
+Available operators: `$gt`, `$gte`, `$lt`, `$lte`, `$between`.
+
+### The `own` filter
+
+```ts
+where: { own: true }
+```
+
+Shorthand for "only rows where `userId` matches the authenticated caller." This works on `pub` endpoints too — if the caller is logged in, it scopes; if not, it is ignored.
+
+### OR groups
+
+```ts
+where: {
+  published: true,
+  or: [
+    { category: "tech" },
+    { category: "science" },
+  ],
+}
+```
+
+Top-level fields are AND-ed. The `or` array creates a disjunction — each entry is a `WhereGroupOf<S>` with the same shape as the top-level (minus `or` itself).
+
+## Escape hatches
+
+### Custom queries alongside generated ones
+
+The `pq`, `q`, `m`, `cq`, and `cm` builders returned by `setup()` are standard `zCustomQuery`/`zCustomMutation` wrappers. Use them in the same file as your generated CRUD:
+
+```ts
+export const { create, update, rm, pub } = crud('blog', owned.blog)
+
+// Custom query alongside generated ones
+export const trending = pq({
+  args: { limit: z.number().default(10) },
+  handler: async (ctx, { limit }) => {
+    // Full access to ctx.db — write any query you want
+    return ctx.db.query('blog')
+      .filter(q => q.eq(q.field('published'), true))
+      .order('desc')
+      .take(limit)
+  },
+})
+```
+
+`pq` gives you viewer info without requiring auth. `q` requires auth and gives you `ctx.user` and `ctx.get` (ownership-checked document fetch). `m` gives you `ctx.create`, `ctx.patch`, `ctx.delete` with automatic timestamps and ownership.
+
+### Ejecting individual tables
+
+If a table outgrows the CRUD pattern, stop calling the factory for that table and write raw Convex functions using `pq`/`q`/`m`. The schema branding and table definitions are independent of the CRUD layer — you keep `ownedTable(owned.blog)` in your schema even after ejecting the CRUD for `blog`. See the [ejecting guide](/docs/ejecting) for a full walkthrough.

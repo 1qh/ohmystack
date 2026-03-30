@@ -147,6 +147,7 @@ import {
 import { orgCascade } from '../server/org-crud'
 import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '../server/presence'
 import { baseTable, orgTable, ownedTable, singletonTable } from '../server/schema-helpers'
+import { mergeCacheHooks, mergeGlobalHooks, mergeHooks } from '../server/setup'
 import { isTestMode } from '../server/test'
 import { ERROR_MESSAGES } from '../server/types'
 import { extractChildren, extractFieldsFromBlock, extractFieldType, extractWrapperTables, generateMermaid } from '../viz'
@@ -7270,5 +7271,287 @@ describe('doctor', () => {
     const fails: CheckResult[] = []
     for (let i = 0; i < 10; i += 1) fails.push({ details: [], status: 'fail', title: `F${i}` })
     expect(calcHealthScore(fails)).toBe(0)
+  })
+})
+describe('matchW — additional edge cases', () => {
+  const doc = { category: 'tech', price: 50, published: true, title: 'Test', userId: 'u1' }
+  test('empty where object matches everything', () => {
+    expect(matchW(doc, {} as Rec & { own?: boolean })).toBe(true)
+  })
+  test('OR with own: true group', () => {
+    expect(
+      matchW(doc, { or: [{ published: true }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u1')
+    ).toBe(true)
+    expect(
+      matchW(doc, { or: [{ published: false }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u2')
+    ).toBe(false)
+  })
+  test('simple field equality — published: true', () => {
+    expect(matchW(doc, { published: true })).toBe(true)
+    expect(matchW(doc, { published: false })).toBe(false)
+  })
+  test('views $gt: 100 on doc without views field', () => {
+    expect(matchW(doc, { views: { $gt: 100 } })).toBe(false)
+  })
+  test('multiple AND conditions — published + category', () => {
+    expect(matchW(doc, { category: 'tech', published: true })).toBe(true)
+    expect(matchW(doc, { category: 'food', published: true })).toBe(false)
+  })
+})
+describe('mergeGlobalHooks', () => {
+  test('both undefined returns undefined', () => {
+    expect(mergeGlobalHooks(undefined, undefined)).toBeUndefined()
+  })
+  test('only a defined returns a', () => {
+    const a: GlobalHooks = { beforeCreate: async (_ctx, { data }) => data }
+    expect(mergeGlobalHooks(a, undefined)).toBe(a)
+  })
+  test('only b defined returns b', () => {
+    const b: GlobalHooks = { afterCreate: async () => undefined }
+    expect(mergeGlobalHooks(undefined, b)).toBe(b)
+  })
+  test('beforeCreate — a then b in order, b receives a output', async () => {
+    const order: string[] = [],
+      a: GlobalHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('a')
+          return { ...data, fromA: true }
+        }
+      },
+      b: GlobalHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('b')
+          return { ...data, fromB: true }
+        }
+      },
+      merged = mergeGlobalHooks(a, b),
+      ctx = {} as GlobalHookCtx,
+      result = await merged?.beforeCreate?.(ctx, { data: { title: 'x' } })
+    expect(order).toEqual(['a', 'b'])
+    expect(result).toEqual({ fromA: true, fromB: true, title: 'x' })
+  })
+  test('afterCreate — both fire in order', async () => {
+    const order: string[] = [],
+      a: GlobalHooks = {
+        afterCreate: async () => {
+          order.push('a')
+        }
+      },
+      b: GlobalHooks = {
+        afterCreate: async () => {
+          order.push('b')
+        }
+      },
+      merged = mergeGlobalHooks(a, b)
+    await merged?.afterCreate?.({} as GlobalHookCtx, { data: {}, id: '1' })
+    expect(order).toEqual(['a', 'b'])
+  })
+  test('beforeUpdate — a then b, data passes through', async () => {
+    const a: GlobalHooks = {
+        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, aField: 1 })
+      },
+      b: GlobalHooks = {
+        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, bField: 2 })
+      },
+      merged = mergeGlobalHooks(a, b),
+      result = await merged?.beforeUpdate?.({} as GlobalHookCtx, { id: '1', patch: { x: 0 }, prev: {} })
+    expect(result).toEqual({ aField: 1, bField: 2, x: 0 })
+  })
+  test('afterUpdate — both fire', async () => {
+    const order: string[] = [],
+      a: GlobalHooks = {
+        afterUpdate: async () => {
+          order.push('a')
+        }
+      },
+      b: GlobalHooks = {
+        afterUpdate: async () => {
+          order.push('b')
+        }
+      },
+      merged = mergeGlobalHooks(a, b)
+    await merged?.afterUpdate?.({} as GlobalHookCtx, { id: '1', patch: {}, prev: {} })
+    expect(order).toEqual(['a', 'b'])
+  })
+  test('beforeDelete — both fire in order', async () => {
+    const order: string[] = [],
+      a: GlobalHooks = {
+        beforeDelete: async () => {
+          order.push('a')
+        }
+      },
+      b: GlobalHooks = {
+        beforeDelete: async () => {
+          order.push('b')
+        }
+      },
+      merged = mergeGlobalHooks(a, b)
+    await merged?.beforeDelete?.({} as GlobalHookCtx, { doc: {}, id: '1' })
+    expect(order).toEqual(['a', 'b'])
+  })
+  test('afterDelete — both fire in order', async () => {
+    const order: string[] = [],
+      a: GlobalHooks = {
+        afterDelete: async () => {
+          order.push('a')
+        }
+      },
+      b: GlobalHooks = {
+        afterDelete: async () => {
+          order.push('b')
+        }
+      },
+      merged = mergeGlobalHooks(a, b)
+    await merged?.afterDelete?.({} as GlobalHookCtx, { doc: {}, id: '1' })
+    expect(order).toEqual(['a', 'b'])
+  })
+})
+describe('mergeHooks — global + per-table', () => {
+  test('both undefined returns undefined', () => {
+    expect(mergeHooks(undefined, undefined, 'blog')).toBeUndefined()
+  })
+  test('only global hook defined — fires with table in ctx', async () => {
+    let receivedTable = ''
+    const gh: GlobalHooks = {
+        beforeCreate: async (ctx, { data }) => {
+          receivedTable = ctx.table
+          return data
+        }
+      },
+      merged = mergeHooks(gh, undefined, 'blog')
+    await merged?.beforeCreate?.({} as HookCtx, { data: { x: 1 } })
+    expect(receivedTable).toBe('blog')
+  })
+  test('only per-table hook defined — fires normally', async () => {
+    let called = false
+    const fh: CrudHooks = {
+        afterCreate: async () => {
+          called = true
+        }
+      },
+      merged = mergeHooks(undefined, fh, 'blog')
+    await merged?.afterCreate?.({} as HookCtx, { data: {}, id: '1' })
+    expect(called).toBe(true)
+  })
+  test('global beforeCreate then per-table beforeCreate — data flows through', async () => {
+    const order: string[] = [],
+      gh: GlobalHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('global')
+          return { ...data, global: true }
+        }
+      },
+      fh: CrudHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('table')
+          return { ...data, table: true }
+        }
+      },
+      merged = mergeHooks(gh, fh, 'posts'),
+      result = await merged?.beforeCreate?.({} as HookCtx, { data: { title: 'hi' } })
+    expect(order).toEqual(['global', 'table'])
+    expect(result).toEqual({ global: true, table: true, title: 'hi' })
+  })
+  test('beforeUpdate — global then per-table, patch flows', async () => {
+    const gh: GlobalHooks = {
+        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, g: 1 })
+      },
+      fh: CrudHooks = {
+        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, t: 2 })
+      },
+      merged = mergeHooks(gh, fh, 'posts'),
+      result = await merged?.beforeUpdate?.({} as HookCtx, { id: '1', patch: { x: 0 }, prev: {} })
+    expect(result).toEqual({ g: 1, t: 2, x: 0 })
+  })
+  test('afterUpdate — global then per-table in order', async () => {
+    const order: string[] = [],
+      gh: GlobalHooks = {
+        afterUpdate: async () => {
+          order.push('global')
+        }
+      },
+      fh: CrudHooks = {
+        afterUpdate: async () => {
+          order.push('table')
+        }
+      },
+      merged = mergeHooks(gh, fh, 'posts')
+    await merged?.afterUpdate?.({} as HookCtx, { id: '1', patch: {}, prev: {} })
+    expect(order).toEqual(['global', 'table'])
+  })
+  test('beforeDelete — global then per-table', async () => {
+    const order: string[] = [],
+      gh: GlobalHooks = {
+        beforeDelete: async () => {
+          order.push('global')
+        }
+      },
+      fh: CrudHooks = {
+        beforeDelete: async () => {
+          order.push('table')
+        }
+      },
+      merged = mergeHooks(gh, fh, 'posts')
+    await merged?.beforeDelete?.({} as HookCtx, { doc: {}, id: '1' })
+    expect(order).toEqual(['global', 'table'])
+  })
+  test('afterDelete — global then per-table', async () => {
+    const order: string[] = [],
+      gh: GlobalHooks = {
+        afterDelete: async () => {
+          order.push('global')
+        }
+      },
+      fh: CrudHooks = {
+        afterDelete: async () => {
+          order.push('table')
+        }
+      },
+      merged = mergeHooks(gh, fh, 'posts')
+    await merged?.afterDelete?.({} as HookCtx, { doc: {}, id: '1' })
+    expect(order).toEqual(['global', 'table'])
+  })
+  test('missing hooks on one side do not break composition', async () => {
+    const gh: GlobalHooks = {
+        beforeCreate: async (_ctx, { data }) => ({ ...data, g: true })
+      },
+      fh: CrudHooks = {
+        afterDelete: async () => undefined
+      },
+      merged = mergeHooks(gh, fh, 'x')
+    expect(merged?.afterUpdate).toBeUndefined()
+    const createResult = await merged?.beforeCreate?.({} as HookCtx, { data: {} })
+    expect(createResult).toEqual({ g: true })
+    expect(merged?.afterDelete).toBeDefined()
+  })
+})
+describe('mergeCacheHooks', () => {
+  test('both undefined returns undefined', () => {
+    expect(mergeCacheHooks(undefined, undefined, 'cache')).toBeUndefined()
+  })
+  test('global + cache hooks merge beforeCreate in order', async () => {
+    const order: string[] = [],
+      gh: GlobalHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('global')
+          return { ...data, g: true }
+        }
+      },
+      fh: CacheHooks = {
+        beforeCreate: async (_ctx, { data }) => {
+          order.push('cache')
+          return { ...data, c: true }
+        }
+      },
+      merged = mergeCacheHooks(gh, fh, 'cache_table'),
+      result = await merged?.beforeCreate?.({} as CacheHookCtx, { data: { key: 'k' } })
+    expect(order).toEqual(['global', 'cache'])
+    expect(result).toEqual({ c: true, g: true, key: 'k' })
+  })
+  test('onFetch from cache hooks is preserved', () => {
+    const onFetch = async () => ({}),
+      fh: CacheHooks = { onFetch },
+      merged = mergeCacheHooks(undefined, fh, 't')
+    expect(merged?.onFetch).toBe(onFetch)
   })
 })

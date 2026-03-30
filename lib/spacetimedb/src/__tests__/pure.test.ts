@@ -314,6 +314,28 @@ describe('matchW', () => {
     expect(matchW(doc, { price: { $between: [51, 60] } })).toBe(false)
     expect(matchW(doc, { price: { $between: [50, 50] } })).toBe(true)
   })
+  test('empty where object matches everything', () => {
+    expect(matchW(doc, {} as Rec & { own?: boolean })).toBe(true)
+  })
+  test('OR with own: true group', () => {
+    expect(
+      matchW(doc, { or: [{ published: true }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u1')
+    ).toBe(true)
+    expect(
+      matchW(doc, { or: [{ published: false }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u2')
+    ).toBe(false)
+  })
+  test('simple field equality — published: true', () => {
+    expect(matchW(doc, { published: true })).toBe(true)
+    expect(matchW(doc, { published: false })).toBe(false)
+  })
+  test('views $gt: 100 on doc without views field', () => {
+    expect(matchW(doc, { views: { $gt: 100 } })).toBe(false)
+  })
+  test('multiple AND conditions — published + category', () => {
+    expect(matchW(doc, { category: 'tech', published: true })).toBe(true)
+    expect(matchW(doc, { category: 'food', published: true })).toBe(false)
+  })
 })
 describe('groupList', () => {
   test('undefined returns empty array', () => {
