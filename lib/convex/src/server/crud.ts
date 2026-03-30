@@ -323,7 +323,9 @@ const hk = (c: CrudMCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.
               await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
             const ids: string[] = []
             for (const item of items) {
-              let data = item
+              const parsed = schema.safeParse(item)
+              if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+              let data = parsed.data as Rec
               if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
               const id = await c.create(table, data)
               if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })

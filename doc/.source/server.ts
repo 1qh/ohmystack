@@ -20,10 +20,8 @@ import * as __fd_glob_1 from "../content/docs/api-reference.mdx?collection=docs"
 import { default as __fd_glob_0 } from "../content/docs/meta.json?collection=docs"
 import { server } from 'fumadocs-mdx/runtime/server';
 import type * as Config from '../source.config';
-
 const create = server<typeof Config, import("fumadocs-mdx/runtime/types").InternalTypeConfig & {
   DocData: {
   }
 }>({"doc":{"passthroughs":["extractedReferences"]}});
-
 export const docs = await create.docs("docs", "content/docs", {"meta.json": __fd_glob_0, }, {"api-reference.mdx": __fd_glob_1, "architecture.mdx": __fd_glob_2, "cli.mdx": __fd_glob_3, "components.mdx": __fd_glob_4, "custom-queries.mdx": __fd_glob_5, "data-fetching.mdx": __fd_glob_6, "deployment.mdx": __fd_glob_7, "ejecting.mdx": __fd_glob_8, "forms.mdx": __fd_glob_9, "index.mdx": __fd_glob_10, "migration.mdx": __fd_glob_11, "organizations.mdx": __fd_glob_12, "quickstart.mdx": __fd_glob_13, "recipes.mdx": __fd_glob_14, "schema-evolution.mdx": __fd_glob_15, "security.mdx": __fd_glob_16, "testing.mdx": __fd_glob_17, "troubleshooting.mdx": __fd_glob_18, });

@@ -197,11 +197,10 @@ const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined
         config.mutation,
         customCtx(async (c: MCtx) => {
           const db = asDb(c),
-            now = time(),
             user = await getUser({ ctx: typed(c), db, getAuthUserId }),
             get = ownGet(db, user._id)
           return {
-            create: async (t: string, d: Rec) => dbInsert(db, t, { ...d, ...now, userId: user._id }),
+            create: async (t: string, d: Rec) => dbInsert(db, t, { ...d, ...time(), userId: user._id }),
             delete: async (id: string) => {
               const d = await get(id)
               await db.delete(id)
@@ -215,7 +214,8 @@ const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined
             ) => {
               const doc = await get(id)
               if (expectedUpdatedAt !== undefined && doc.updatedAt !== expectedUpdatedAt) return err('CONFLICT')
-              const up = typeof data === 'function' ? await data(doc) : data
+              const up = typeof data === 'function' ? await data(doc) : data,
+                now = time()
               await dbPatch(db, id, { ...up, ...now })
               return { ...doc, ...up, ...now }
             },

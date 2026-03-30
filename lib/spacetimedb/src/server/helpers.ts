@@ -330,7 +330,7 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
     await Promise.all(tasks)
     return o as WithUrls<D>
   },
-  rlState = new Map<string, { count: number; windowStart: number }>(),
+  rlState = new Map<string, { count: number; windowMs: number; windowStart: number }>(),
   resetRateLimitState = () => {
     rlState.clear()
   },
@@ -339,14 +339,14 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
     const key = `${tableName}:${identityToHex(sender)}`,
       now = timestamp ?? Date.now(),
       windowMs = config.window
-    for (const [k, entry] of rlState) if (now - entry.windowStart > windowMs) rlState.delete(k)
+    for (const [k, entry] of rlState) if (now - entry.windowStart > entry.windowMs) rlState.delete(k)
     const existing = rlState.get(key)
     if (!existing) {
-      rlState.set(key, { count: 1, windowStart: now })
+      rlState.set(key, { count: 1, windowMs, windowStart: now })
       return
     }
     if (now - existing.windowStart >= windowMs) {
-      rlState.set(key, { count: 1, windowStart: now })
+      rlState.set(key, { count: 1, windowMs, windowStart: now })
       return
     }
     if (existing.count >= config.max) {

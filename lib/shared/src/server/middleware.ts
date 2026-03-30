@@ -121,7 +121,7 @@ const createComposeMiddleware = <
   EVENT_HANDLER_PATTERN = /\bon\w+\s*=/giu,
   JAVASCRIPT_PROTO_PATTERN = /javascript\s*:/giu,
   DATA_URI_SCRIPT_PATTERN = /data\s*:\s*text\/html/giu,
-  DANGEROUS_TAG_PATTERN = /<\s*\/?\s*(?:iframe|object|embed|applet|form|base|meta)\b[^>]*>/giu,
+  DANGEROUS_TAG_PATTERN = /<\s*\/?\s*(?:iframe|object|embed|applet|form|base|meta|svg|math|details|marquee)\b[^>]*>/giu,
   HTML_ENCODED_SCRIPT_PATTERN = /&#(?:x0*(?:3c|3e)|0*(?:60|62));/giu,
   sanitizeString = (val: string): string => {
     let result = val,

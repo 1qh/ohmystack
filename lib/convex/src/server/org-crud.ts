@@ -33,6 +33,7 @@ import {
   dbPatch,
   detectFiles,
   err,
+  errValidation,
   log,
   pgOpts,
   time
@@ -188,7 +189,9 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
               await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
             const ids: string[] = []
             for (const item of items) {
-              let data = item
+              const parsed = schema.safeParse(item)
+              if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+              let data = parsed.data as Rec
               if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
               const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
               if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })

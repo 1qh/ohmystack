@@ -46,6 +46,8 @@ const makeInviteHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
             )
             .unique()
         if (!inviteDoc) return err('INVALID_INVITE')
+        const userEmail = (c.user as Rec).email as string | undefined
+        if (!userEmail || userEmail !== inviteDoc.email) return err('FORBIDDEN')
         if ((inviteDoc.expiresAt as number) < Date.now()) return err('INVITE_EXPIRED')
         const existingMember = await getOrgMember({ db, orgId: inviteDoc.orgId as string, userId }),
           orgDoc = await db.get(inviteDoc.orgId as string)
