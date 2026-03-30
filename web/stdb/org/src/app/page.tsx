@@ -15,8 +15,8 @@ interface MyOrgsItem {
 const Page = () => {
   const router = useRouter(),
     { identity } = useSpacetimeDB(),
-    [orgs] = useTable(tables.org),
-    [members] = useTable(tables.orgMember)
+    [orgs, orgsReady] = useTable(tables.org),
+    [members, membersReady] = useTable(tables.orgMember)
   useEffect(() => {
     if (!identity) router.replace('/login')
   }, [identity, router])
@@ -33,8 +33,8 @@ const Page = () => {
       })
       .filter(item => item !== null)
   useEffect(() => {
-    if (myOrgs.length === 0) router.replace('/onboarding')
-  }, [myOrgs.length, router])
+    if (orgsReady && membersReady && myOrgs.length === 0) router.replace('/onboarding')
+  }, [myOrgs.length, orgsReady, membersReady, router])
   if (!identity) return null
   if (myOrgs.length === 0) return null
   if (myOrgs.length === 1) {

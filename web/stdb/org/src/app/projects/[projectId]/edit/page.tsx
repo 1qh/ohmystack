@@ -12,6 +12,7 @@ import { useMut } from '@noboil/spacetimedb/react'
 import { pickValues } from '@noboil/spacetimedb/zod'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
+import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
@@ -34,7 +35,10 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
         values: project ? pickValues(projectSchema, project) : undefined
       }),
       handleDelete = () => {
-        if (taskCount > 0) return
+        if (taskCount > 0) {
+          toast.error('Delete all tasks first')
+          return
+        }
         removeProject({ id: projectId })
       }
     if (!project) return <Skeleton className='h-40' />

@@ -124,6 +124,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
       }),
       [query, setQuery] = useState(''),
       [results, setResults] = useState<SearchResult[]>([]),
+      [searchError, setSearchError] = useState<null | { message: string }>(null),
       [pending, go] = useTransition()
     return (
       <div className='mx-auto flex max-w-2xl flex-col gap-4 p-4' data-testid='movie-search-page'>
@@ -141,9 +142,11 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             if (!query.trim()) return
             go(async () => {
               try {
+                setSearchError(null)
                 setResults(await searchMovies(query.trim()))
               } catch (error) {
                 setResults([])
+                setSearchError({ message: error instanceof Error ? error.message : 'Search failed' })
                 handleError(error)
               }
             })
@@ -155,6 +158,11 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             value={query}
           />
         </form>
+        {searchError ? (
+          <p className='text-sm text-destructive' data-testid='movie-search-error'>
+            {searchError.message}
+          </p>
+        ) : null}
         {isOnline ? null : (
           <p className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive' data-testid='offline-banner'>
             You are offline — search requires an internet connection
