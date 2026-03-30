@@ -33,10 +33,10 @@ const NewWikiPage = () => {
             render={({ Choose, Submit, Text }) => (
               <>
                 <FieldGroup>
-                  <Text name='title' placeholder='Page title' />
-                  <Text name='slug' placeholder='my-wiki-page' />
-                  <Text multiline name='content' />
-                  <Choose name='status' />
+                  <Text helpText='Page heading shown in wiki lists.' name='title' placeholder='Page title' required />
+                  <Text helpText='URL-safe slug used in links.' name='slug' placeholder='my-wiki-page' required />
+                  <Text helpText='Optional draft content.' multiline name='content' />
+                  <Choose helpText='Publish when content is ready.' name='status' required />
                 </FieldGroup>
                 <Submit className='w-full'>Create wiki page</Submit>
               </>

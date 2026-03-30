@@ -55,9 +55,9 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
         render={({ Choose, Submit, Text }) => (
           <>
             <FieldGroup>
-              <Text name='name' placeholder='Project name' />
-              <Text multiline name='description' />
-              <Choose name='status' />
+              <Text helpText='Project display name.' name='name' placeholder='Project name' required />
+              <Text helpText='Optional details for collaborators.' multiline name='description' />
+              <Choose helpText='Current project lifecycle state.' name='status' />
             </FieldGroup>
             <div className='flex gap-2'>
               <Submit className='flex-1'>Save changes</Submit>

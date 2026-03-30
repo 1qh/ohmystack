@@ -46,10 +46,10 @@ const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm
         render={({ Choose, Text }) => (
           <>
             <FieldGroup>
-              <Text name='title' placeholder='Page title' />
-              <Text name='slug' placeholder='my-wiki-page' />
-              <Text multiline name='content' />
-              <Choose name='status' />
+              <Text helpText='Page heading shown in wiki lists.' name='title' placeholder='Page title' required />
+              <Text helpText='URL-safe slug used in links.' name='slug' placeholder='my-wiki-page' required />
+              <Text helpText='Optional draft content.' multiline name='content' />
+              <Choose helpText='Publish when content is ready.' name='status' required />
             </FieldGroup>
             <div className='flex items-center gap-2'>
               <AutoSaveIndicator data-testid='auto-save-indicator' lastSaved={form.lastSaved} />

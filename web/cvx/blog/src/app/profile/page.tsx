@@ -51,11 +51,23 @@ const Page = () => {
         render={({ Choose, File, Submit, Text, Toggle }) => (
           <>
             <FieldGroup className='gap-5'>
-              <Text data-testid='profile-displayName' name='displayName' />
-              <Text className='min-h-24' data-testid='profile-bio' multiline name='bio' />
-              <Choose data-testid='profile-theme' name='theme' />
-              <Toggle data-testid='profile-notifications' falseLabel='Off' name='notifications' trueLabel='On' />
-              <File accept='image/*' data-testid='profile-avatar' maxSize={5 * 1024 * 1024} name='avatar' />
+              <Text data-testid='profile-displayName' helpText='Shown to other users.' name='displayName' required />
+              <Text className='min-h-24' data-testid='profile-bio' helpText='Optional short bio.' multiline name='bio' />
+              <Choose data-testid='profile-theme' helpText='Pick your preferred appearance.' name='theme' required />
+              <Toggle
+                data-testid='profile-notifications'
+                falseLabel='Off'
+                helpText='Enable activity notifications.'
+                name='notifications'
+                trueLabel='On'
+              />
+              <File
+                accept='image/*'
+                data-testid='profile-avatar'
+                helpText='Optional avatar image.'
+                maxSize={5 * 1024 * 1024}
+                name='avatar'
+              />
             </FieldGroup>
             <Submit className='ml-auto' data-testid='profile-submit'>
               Save

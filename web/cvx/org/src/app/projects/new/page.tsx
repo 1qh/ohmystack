@@ -33,9 +33,9 @@ const NewProjectPage = () => {
             render={({ Choose, Submit, Text }) => (
               <>
                 <FieldGroup>
-                  <Text name='name' placeholder='Project name' />
-                  <Text multiline name='description' />
-                  <Choose name='status' />
+                  <Text helpText='Keep it short and clear.' name='name' placeholder='Project name' required />
+                  <Text helpText='Optional context for the team.' multiline name='description' />
+                  <Choose helpText='Current project state.' name='status' />
                 </FieldGroup>
                 <Submit className='w-full'>Create project</Submit>
               </>

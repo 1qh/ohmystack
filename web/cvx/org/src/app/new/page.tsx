@@ -48,8 +48,14 @@ const orgKeys = {
               render={({ Submit, Text }) => (
                 <>
                   <FieldGroup>
-                    <Text name={orgKeys.name} placeholder='Acme Inc' />
-                    <Text label='URL slug' name={orgKeys.slug} placeholder='acme-inc' />
+                    <Text helpText='Public organization name.' name={orgKeys.name} placeholder='Acme Inc' required />
+                    <Text
+                      helpText='Lowercase letters, numbers, and dashes.'
+                      label='URL slug'
+                      name={orgKeys.slug}
+                      placeholder='acme-inc'
+                      required
+                    />
                   </FieldGroup>
                   <p className='text-xs text-muted-foreground'>/{slug || 'your-slug'}</p>
                   <Submit className='w-full'>Create organization</Submit>

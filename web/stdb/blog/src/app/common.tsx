@@ -131,6 +131,7 @@ const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
                     data-testid='blog-category'
                     helpText='Choose the best matching topic.'
                     name='category'
+                    placeholder='Select'
                     required
                   />
                   <Text
