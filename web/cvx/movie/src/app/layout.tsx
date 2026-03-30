@@ -3,7 +3,7 @@ import '@a/ui/globals.css'
 import type { ReactNode } from 'react'
 import ConvexProvider from '@a/fe/convex-provider'
 import { Toaster } from '@a/ui/sonner'
-import { ConvexErrorBoundary } from '@noboil/convex/components'
+import { ConvexErrorBoundary, OfflineIndicator } from '@noboil/convex/components'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
 const Layout = ({ children }: { children: ReactNode }) => (
@@ -15,6 +15,7 @@ const Layout = ({ children }: { children: ReactNode }) => (
             <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
               {children}
             </ThemeProvider>
+            <OfflineIndicator />
           </ConvexProvider>
           <Toaster duration={1000} />
         </ConvexErrorBoundary>

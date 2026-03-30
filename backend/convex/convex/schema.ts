@@ -5,6 +5,7 @@ import {
   orgTable,
   orgTables,
   ownedTable,
+  presenceTable,
   rateLimitTable,
   singletonTable,
   uploadTables
@@ -16,6 +17,7 @@ import { base, children, orgScoped, owned, singleton } from '../t'
 export default defineSchema({
   ...authTables,
   ...orgTables(),
+  ...presenceTable(),
   ...rateLimitTable(),
   ...uploadTables(),
   ...({

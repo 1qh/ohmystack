@@ -8,6 +8,7 @@ import { fetchQuery } from 'convex/nextjs'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
+import TypingIndicator from './typing-indicator'
 const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
     try {
       return await fn()
@@ -31,6 +32,7 @@ const tryFetch = async <T,>(fn: () => Promise<T>): Promise<null | T> => {
         return (
           <Suspense fallback={null}>
             <Client chatId={id} initialMessages={toUIMessages(messages)} />
+            <TypingIndicator chatId={id} />
           </Suspense>
         )
       }

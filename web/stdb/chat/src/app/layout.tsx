@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
+import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -24,6 +25,7 @@ const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat'
     const showSidebar = !isPublicPath(pathname)
     return (
       <AuthLayout provider={renderSpacetimeProvider}>
+        <OfflineIndicator />
         {showSidebar ? (
           <SidebarProvider>
             <Sidebar />

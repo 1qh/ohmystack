@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
 import Logout from '@a/fe/user-menu'
+import { OfflineIndicator } from '@noboil/convex/components'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
@@ -25,6 +26,7 @@ const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' },
               <UserRound className='size-full' />
             </Link>
             <Logout className='fixed bottom-2 left-2' />
+            <OfflineIndicator />
             {children}
           </div>
         )}

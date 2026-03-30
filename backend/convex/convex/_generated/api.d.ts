@@ -17,6 +17,7 @@ import type * as message from "../message.js";
 import type * as movie from "../movie.js";
 import type * as org from "../org.js";
 import type * as orgProfile from "../orgProfile.js";
+import type * as presence from "../presence.js";
 import type * as project from "../project.js";
 import type * as task from "../task.js";
 import type * as testauth from "../testauth.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   movie: typeof movie;
   org: typeof org;
   orgProfile: typeof orgProfile;
+  presence: typeof presence;
   project: typeof project;
   task: typeof task;
   testauth: typeof testauth;

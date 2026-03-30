@@ -3,7 +3,7 @@ import '@a/ui/globals.css'
 import type { ReactNode } from 'react'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { Toaster } from '@a/ui/sonner'
-import { ErrorBoundary } from '@noboil/spacetimedb/components'
+import { ErrorBoundary, OfflineIndicator } from '@noboil/spacetimedb/components'
 import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
@@ -17,6 +17,7 @@ const Layout = ({ children }: { children: ReactNode }) => (
               {children}
             </ThemeProvider>
             <NoboilStdbDevtools position='bottom-right' />
+            <OfflineIndicator />
           </SpacetimeProvider>
           <Toaster duration={1000} />
         </ErrorBoundary>

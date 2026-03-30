@@ -1,4 +1,4 @@
-import { makeFileUpload, setup } from '@noboil/convex/server'
+import { makeFileUpload, makePresence, setup } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { org } from './t'
@@ -23,5 +23,6 @@ const s = setup({
     query
   })
 if (!s.org) throw new Error('org not configured')
-const orgFns = s.org
-export { cacheCrud, childCrud, crud, file, m, orgCrud, orgFns, pq, q, singletonCrud, uniqueCheck }
+const orgFns = s.org,
+  presence = makePresence({ m, q })
+export { cacheCrud, childCrud, crud, file, m, orgCrud, orgFns, pq, presence, q, singletonCrud, uniqueCheck }

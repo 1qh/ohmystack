@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { api } from '@a/be-convex'
 import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
+import { OfflineIndicator } from '@noboil/convex/components'
 import { getActiveOrg, getToken, isAuthenticated } from '@noboil/convex/next'
 import { fetchQuery } from 'convex/nextjs'
 import { headers } from 'next/headers'
@@ -75,6 +76,11 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
         </OrgLayoutClient>
       )
     }
-    return <AuthLayout convexProvider={renderConvexProvider}>{content}</AuthLayout>
+    return (
+      <AuthLayout convexProvider={renderConvexProvider}>
+        <OfflineIndicator />
+        {content}
+      </AuthLayout>
+    )
   }
 export default Layout

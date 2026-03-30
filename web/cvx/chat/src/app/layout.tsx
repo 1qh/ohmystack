@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import ConvexProvider from '@a/fe/convex-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
+import { OfflineIndicator } from '@noboil/convex/components'
 import { isAuthenticated } from '@noboil/convex/next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -21,6 +22,7 @@ const metadata: Metadata = { description: 'noboil chat demo', title: 'Chat' },
     const showSidebar = !isPublicPath(pathname)
     return (
       <AuthLayout convexProvider={renderConvexProvider}>
+        <OfflineIndicator />
         {showSidebar ? (
           <SidebarProvider>
             <Sidebar />
