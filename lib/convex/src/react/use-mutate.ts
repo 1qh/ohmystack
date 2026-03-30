@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import type { RetryOptions } from '../retry'
 import type { MutationType } from './optimistic-store'
 import { withRetry } from '../retry'
-import { extractErrorData, getErrorMessage, handleConvexError } from '../server/helpers'
+import { extractErrorData, getErrorMessage, handleError } from '../server/helpers'
 import { completeMutation, pushError, trackMutation } from './devtools'
 import { makeTempId, useOptimisticStore } from './optimistic-store'
 interface MutateOptions<A = unknown, R = unknown> {
@@ -32,7 +32,7 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
   getMutationName = (ref: MutationRef): string =>
     typeof ref === 'string' ? ref : ((ref as { _name?: string })._name ?? 'unknown'),
   defaultOnError = (error: unknown) => {
-    handleConvexError(error, {
+    handleError(error, {
       NOT_AUTHENTICATED: () => {
         toast.error('Please log in')
       },

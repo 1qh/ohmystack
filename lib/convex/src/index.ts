@@ -4,7 +4,7 @@ export type { DevError, DevSubscription } from './react/devtools'
 export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn } from './react/form'
 export type { OrgContextValue, OrgDoc, OrgProviderProps } from './react/org'
 export type { SoftDeleteOpts, ToastFn } from './react/use-soft-delete'
-export type { ConvexErrorData, ErrorHandler } from './server/helpers'
+export type { ConvexErrorData, ErrorData, ErrorHandler } from './server/helpers'
 export type {
   Ab,
   ActionCtxLike,

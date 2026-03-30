@@ -37,14 +37,15 @@ import type {
 import { cvFileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { ERROR_MESSAGES } from './types'
-interface ConvexErrorData extends SharedErrorData {
+type ConvexErrorData = ErrorData
+interface ErrorData extends SharedErrorData {
   code: ErrorCode
 }
-type ErrorHandler = Partial<Record<ErrorCode, (data: ConvexErrorData) => void>> & {
+type ErrorHandler = Partial<Record<ErrorCode, (data: ErrorData) => void>> & {
   default?: (error: unknown) => void
 }
 interface MutationFail {
-  error: ConvexErrorData
+  error: ErrorData
   ok: false
 }
 interface MutationOk<T> {
@@ -54,7 +55,7 @@ interface MutationOk<T> {
 type MutationResult<T> = MutationFail | MutationOk<T>
 const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
   time = () => sharedTime(),
-  extractErrorData = (e: unknown): ConvexErrorData | undefined => {
+  extractErrorData = (e: unknown): ErrorData | undefined => {
     if (!(e instanceof ConvexError)) return
     const { data } = e as { data?: unknown }
     if (!isRecord(data)) return
@@ -65,7 +66,7 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
       debug: typeof data.debug === 'string' ? data.debug : undefined,
       fieldErrors: isRecord(data.fieldErrors) ? (data.fieldErrors as Record<string, string>) : undefined,
       fields: Array.isArray(data.fields) ? (data.fields as string[]) : undefined,
-      limit: isRecord(data.limit) ? (data.limit as ConvexErrorData['limit']) : undefined,
+      limit: isRecord(data.limit) ? (data.limit as ErrorData['limit']) : undefined,
       message: typeof data.message === 'string' ? data.message : undefined,
       op: typeof data.op === 'string' ? data.op : undefined,
       retryAfter: typeof data.retryAfter === 'number' ? data.retryAfter : undefined,
@@ -95,19 +96,20 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
   getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?.code,
   getErrorMessage = (e: unknown): string => errorUtils.getErrorMessage(e),
   getErrorDetail = (e: unknown): string => errorUtils.getErrorDetail(e),
-  handleConvexError = (e: unknown, handlers: ErrorHandler): void => {
+  handleError = (e: unknown, handlers: ErrorHandler): void => {
     errorUtils.handleError(e, handlers as SharedErrorHandler)
   },
-  fail = (code: ErrorCode, detail?: Omit<ConvexErrorData, 'code'>): MutationResult<never> =>
+  handleConvexError = handleError,
+  fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> =>
     errorUtils.fail(code, detail) as MutationResult<never>,
-  isMutationError = (e: unknown): e is ConvexErrorData => extractErrorData(e) !== undefined,
+  isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined,
   isErrorCode = (e: unknown, code: ErrorCode): boolean => {
     const d = extractErrorData(e)
     return d?.code === code
   },
   matchError = <R>(
     e: unknown,
-    handlers: Partial<Record<ErrorCode, (data: ConvexErrorData) => R>> & { _?: (error: unknown) => R }
+    handlers: Partial<Record<ErrorCode, (data: ErrorData) => R>> & { _?: (error: unknown) => R }
   ): R | undefined => {
     const d = extractErrorData(e)
     if (d) {
@@ -296,7 +298,7 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
         })
       })
     )
-export type { ConvexErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult }
+export type { ConvexErrorData, ErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult }
 export {
   addUrls,
   checkRateLimit,
@@ -316,6 +318,7 @@ export {
   getUser,
   groupList,
   handleConvexError,
+  handleError,
   isComparisonOp,
   isErrorCode,
   isMutationError,

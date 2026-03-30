@@ -157,17 +157,8 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
     }
     return handlers._?.(e)
   },
-  warnLargeFilterSet = ({
-    context,
-    count,
-    strict,
-    table
-  }: {
-    context: string
-    count: number
-    strict?: boolean
-    table: string
-  }) => {
+  // eslint-disable-next-line @typescript-eslint/max-params
+  warnLargeFilterSet = (count: number, table: string, context: string, strict?: boolean) => {
     if (count > RUNTIME_FILTER_WARN_THRESHOLD) {
       const msg = `Runtime filtering ${count} docs in "${table}" (${context}) exceeds ${RUNTIME_FILTER_WARN_THRESHOLD} threshold. Add an index for better performance.`
       if (strict) throw new Error(msg)
@@ -343,23 +334,26 @@ const ok = <T>(value: T): MutationResult<T> => ({ ok: true, value }),
   resetRateLimitState = () => {
     rlState.clear()
   },
-  enforceRateLimit = (tableName: string, sender: Identity, config: RateLimitConfig) => {
+  // eslint-disable-next-line @typescript-eslint/max-params
+  enforceRateLimit = (tableName: string, sender: Identity, config: RateLimitConfig, timestamp?: number) => {
     const key = `${tableName}:${identityToHex(sender)}`,
-      now = Date.now(),
-      existing = rlState.get(key)
+      now = timestamp ?? Date.now(),
+      windowMs = config.window
+    for (const [k, entry] of rlState) if (now - entry.windowStart > windowMs) rlState.delete(k)
+    const existing = rlState.get(key)
     if (!existing) {
       rlState.set(key, { count: 1, windowStart: now })
       return
     }
-    if (now - existing.windowStart >= config.window) {
+    if (now - existing.windowStart >= windowMs) {
       rlState.set(key, { count: 1, windowStart: now })
       return
     }
     if (existing.count >= config.max) {
-      const retryAfter = config.window - (now - existing.windowStart)
+      const retryAfter = windowMs - (now - existing.windowStart)
       err('RATE_LIMITED', {
         debug: `${tableName}:create`,
-        limit: { max: config.max, remaining: 0, window: config.window },
+        limit: { max: config.max, remaining: 0, window: windowMs },
         op: 'create',
         retryAfter,
         table: tableName

@@ -816,13 +816,8 @@ Use `warnLargeFilterSet` to catch unbounded data patterns during development:
 ```typescript
 import { warnLargeFilterSet } from '@noboil/spacetimedb/server'
 
-warnLargeFilterSet({ count: rows.length, table: 'posts', context: 'home-feed' })
-warnLargeFilterSet({
-  count: rows.length,
-  table: 'posts',
-  context: 'home-feed',
-  strict: true
-})
+warnLargeFilterSet(rows.length, 'posts', 'home-feed')
+warnLargeFilterSet(rows.length, 'posts', 'home-feed', true)
 ```
 
 </Tab>

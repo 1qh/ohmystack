@@ -1423,19 +1423,19 @@ describe('warnLargeFilterSet', () => {
   })
   test('does not warn below threshold', () => {
     const { origWarn, warns } = captureWarns()
-    warnLargeFilterSet({ context: 'list', count: 999, table: 'blog' })
+    warnLargeFilterSet(999, 'blog', 'list')
     console.warn = origWarn
     expect(warns).toHaveLength(0)
   })
   test('does not warn at exactly threshold', () => {
     const { origWarn, warns } = captureWarns()
-    warnLargeFilterSet({ context: 'list', count: 1000, table: 'blog' })
+    warnLargeFilterSet(1000, 'blog', 'list')
     console.warn = origWarn
     expect(warns).toHaveLength(0)
   })
   test('warns above threshold', () => {
     const { origWarn, warns } = captureWarns()
-    warnLargeFilterSet({ context: 'list', count: 1001, table: 'blog' })
+    warnLargeFilterSet(1001, 'blog', 'list')
     console.warn = origWarn
     expect(warns).toHaveLength(1)
     expect(warns[0]).toContain('large_filter_set')
@@ -1443,7 +1443,7 @@ describe('warnLargeFilterSet', () => {
   })
   test('warn message includes count, table, context, threshold', () => {
     const { origWarn, warns } = captureWarns()
-    warnLargeFilterSet({ context: 'search', count: 5000, table: 'wiki' })
+    warnLargeFilterSet(5000, 'wiki', 'search')
     console.warn = origWarn
     expect(warns).toHaveLength(1)
     const parsed = JSON.parse(String(warns[0])) as Record<string, unknown>
@@ -1455,39 +1455,18 @@ describe('warnLargeFilterSet', () => {
   })
   test('zero count does not warn', () => {
     const { origWarn, warns } = captureWarns()
-    warnLargeFilterSet({ context: 'list', count: 0, table: 'blog' })
+    warnLargeFilterSet(0, 'blog', 'list')
     console.warn = origWarn
     expect(warns).toHaveLength(0)
   })
   test('strict mode throws above threshold', () => {
-    expect(() =>
-      warnLargeFilterSet({
-        context: 'list',
-        count: 1001,
-        strict: true,
-        table: 'blog'
-      })
-    ).toThrow('Runtime filtering 1001 docs')
+    expect(() => warnLargeFilterSet(1001, 'blog', 'list', true)).toThrow('Runtime filtering 1001 docs')
   })
   test('strict mode does not throw below threshold', () => {
-    expect(() =>
-      warnLargeFilterSet({
-        context: 'list',
-        count: 999,
-        strict: true,
-        table: 'blog'
-      })
-    ).not.toThrow()
+    expect(() => warnLargeFilterSet(999, 'blog', 'list', true)).not.toThrow()
   })
   test('strict mode does not throw at exactly threshold', () => {
-    expect(() =>
-      warnLargeFilterSet({
-        context: 'list',
-        count: 1000,
-        strict: true,
-        table: 'blog'
-      })
-    ).not.toThrow()
+    expect(() => warnLargeFilterSet(1000, 'blog', 'list', true)).not.toThrow()
   })
 })
 describe('useOnlineStatus module', () => {

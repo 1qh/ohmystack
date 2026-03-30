@@ -49,7 +49,8 @@ const makeCrud = <
     }
     if (expectedUpdatedAtField) updateParams.expectedUpdatedAt = expectedUpdatedAtField.optional()
     const createReducer = spacetimedb.reducer({ name: createName }, fields, (ctx, args) => {
-        if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
+        if (options?.rateLimit)
+          enforceRateLimit(tableName, ctx.sender, options.rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
         const typedArgs = args as CrudFieldValues<F>,
           hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp },
           table = tableAccessor(ctx.db)

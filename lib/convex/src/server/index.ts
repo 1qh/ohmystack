@@ -1,6 +1,6 @@
 export { ownedCascade } from './crud'
 export { makeFileUpload } from './file'
-export type { ConvexErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult } from './helpers'
+export type { ConvexErrorData, ErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult } from './helpers'
 export {
   checkRateLimit,
   err,
@@ -10,6 +10,7 @@ export {
   getErrorDetail,
   getErrorMessage,
   handleConvexError,
+  handleError,
   isErrorCode,
   isMutationError,
   isRecord,

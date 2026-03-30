@@ -221,6 +221,10 @@ noboil/
 | `@noboil/convex`      | Convex library               |
 | `@noboil/spacetimedb` | SpacetimeDB library          |
 
+## Requirements
+
+A TypeScript-capable bundler (Vite, Next.js, esbuild, etc.) is required. Library package.json `exports` point directly to `.ts` source files — this is intentional so consumers get full type inference without a separate build step.
+
 ## Docs
 
 [noboil.dev/docs](https://noboil.dev/docs)
