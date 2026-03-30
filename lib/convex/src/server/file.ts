@@ -161,7 +161,7 @@ const DEFAULT_ALLOWED_TYPES = new Set([
           if (!isTestMode()) await checkRateLimit(c.db, userId)
           if (!allowedTypes.has(contentType)) throw cvErr('INVALID_FILE_TYPE', `File type ${contentType} not allowed`)
           if (totalSize > maxFileSize) throw cvErr('FILE_TOO_LARGE', `File size ${totalSize} exceeds ${maxFileSize} bytes`)
-          const uploadId = `${userId}_${Date.now()}_${Math.random().toString(36).slice(2)}`
+          const uploadId = `${userId}_${Date.now()}_${crypto.randomUUID()}`
           await c.db.insert('uploadSession', {
             completedChunks: 0,
             contentType,
