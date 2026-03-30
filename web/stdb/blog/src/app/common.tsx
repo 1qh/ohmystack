@@ -91,7 +91,7 @@ const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
         onSuccess: () => setOpen(false),
         schema: createBlog,
         toast: { success: 'Created' },
-        transform: d => ({ ...d, published: isPlaywrightTest })
+        transform: d => ({ ...d, published: false })
       })
     return (
       <Dialog

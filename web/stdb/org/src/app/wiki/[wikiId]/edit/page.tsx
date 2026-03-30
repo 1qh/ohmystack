@@ -1,3 +1,6 @@
+/* oxlint-disable unicorn/no-useless-promise-resolve-reject, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
+/* eslint-disable @typescript-eslint/strict-void-return */
+/** biome-ignore-all lint/suspicious/useAwait: sync reducers wrapped as promises */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
@@ -8,10 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
 import { Skeleton } from '@a/ui/skeleton'
 import { AutoSaveIndicator, Form, PermissionGuard, useFormMutation } from '@noboil/spacetimedb/components'
-import { useMut } from '@noboil/spacetimedb/react'
+import { useSoftDelete } from '@noboil/spacetimedb/react'
 import { pickValues } from '@noboil/spacetimedb/zod'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
+import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { wiki as wikiSchema } from '~/schema'
@@ -20,9 +24,28 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
       { org } = useOrg(),
       [wikis] = useTable(tables.wiki),
       wiki = wikis.find((w: Wiki) => w.id === wikiId && w.orgId === Number(org._id)),
-      removeWiki = useMut(reducers.rmWiki, {
-        onSuccess: () => router.push('/wiki'),
-        toast: { success: 'Wiki page deleted' }
+      updateWikiReducer = useReducer(reducers.updateWiki),
+      rmWikiReducer = useReducer(reducers.rmWiki),
+      { remove } = useSoftDelete({
+        label: 'wiki page',
+        restore: async (restoreArgs: { id: string }) => {
+          const target = wikis.find(w => w.id === Number(restoreArgs.id))
+          if (target)
+            updateWikiReducer({
+              content: target.content,
+              expectedUpdatedAt: undefined,
+              id: target.id,
+              slug: target.slug,
+              status: target.status,
+              title: target.title
+            })
+          return Promise.resolve()
+        },
+        rm: async (rmArgs: { id: string }) => {
+          rmWikiReducer({ id: Number(rmArgs.id) })
+          return Promise.resolve()
+        },
+        toast
       }),
       form = useFormMutation({
         mutate: useReducer(reducers.updateWiki),
@@ -56,7 +79,7 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
               <span className='flex-1' />
               <Button
                 onClick={() => {
-                  removeWiki({ id: wikiId })
+                  remove({ id: String(wikiId) }).then(() => router.push('/wiki'))
                 }}
                 type='button'
                 variant='destructive'>
