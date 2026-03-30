@@ -4,7 +4,7 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
-import { reducers } from '@a/be-spacetimedb/spacetimedb'
+import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { cn } from '@a/ui'
 import {
   AlertDialog,
@@ -29,7 +29,7 @@ import { Pencil, Plus, Send, Trash, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useReducer, useSpacetimeDB } from 'spacetimedb/react'
+import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { createBlog } from '~/schema'
 import { Publish } from './[id]/edit/client'
 const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
@@ -185,13 +185,16 @@ const isPlaywrightTest = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1',
     userId
   }: Blog & { className?: string; onOptimisticRemove?: () => void }) => {
     const { identity } = useSpacetimeDB(),
+      [profiles] = useTable(tables.blogProfile),
+      authorProfile = profiles.find(p => p.userId.isEqual(userId)),
+      authorName = authorProfile?.displayName ?? 'Author',
       own = isPlaywrightTest || (identity ? userId.isEqual(identity) : false),
       updatedAtDate = updatedAt.toDate()
     return (
       <div className={cn('flex items-center', className)}>
         <UserRound className='size-8 shrink-0 rounded-full bg-border stroke-1 pt-0.5 text-background' />
         <div className='mx-2'>
-          <p className='text-sm'>Author</p>
+          <p className='text-sm'>{authorName}</p>
           <div className='flex items-center gap-1 text-xs text-muted-foreground' title={format(updatedAtDate, 'PPPPpp')}>
             {formatDistance(updatedAtDate, new Date(), { addSuffix: true })}
             <p>•</p>

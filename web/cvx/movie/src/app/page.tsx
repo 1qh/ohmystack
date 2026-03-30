@@ -8,6 +8,7 @@ import { Input } from '@a/ui/input'
 import { useAction } from 'convex/react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
+type SearchError = null | { message: string }
 type SearchResult = FunctionReturnType<typeof api.movie.search>[number]
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
   MovieCard = ({ movie }: { movie: SearchResult }) => (
@@ -39,6 +40,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
     const search = useAction(api.movie.search),
       [query, setQuery] = useState(''),
       [results, setResults] = useState<SearchResult[]>([]),
+      [searchError, setSearchError] = useState<SearchError>(null),
       [pending, go] = useTransition()
     return (
       <div className='mx-auto flex max-w-2xl flex-col gap-4 p-4' data-testid='movie-search-page'>
@@ -54,7 +56,14 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
           onSubmit={e => {
             e.preventDefault()
             if (!query.trim()) return
-            go(async () => setResults(await search({ query: query.trim() })))
+            go(async () => {
+              try {
+                setSearchError(null)
+                setResults(await search({ query: query.trim() }))
+              } catch (error) {
+                setSearchError({ message: error instanceof Error ? error.message : 'Search failed' })
+              }
+            })
           }}>
           <Input
             data-testid='movie-search-input'
@@ -63,6 +72,11 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w200',
             value={query}
           />
         </form>
+        {searchError ? (
+          <p className='text-sm text-destructive' data-testid='movie-search-error'>
+            {searchError.message}
+          </p>
+        ) : null}
         {results.length > 0 ? (
           <div data-testid='movie-results'>
             {results.map(m => (

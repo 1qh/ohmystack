@@ -1,7 +1,7 @@
 /* oxlint-disable react-perf/jsx-no-new-array-as-prop */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-import type { OrgMember, Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
+import type { OrgMember, OrgProfile, Project, Task } from '@a/be-spacetimedb/spacetimedb/types'
 import type { SyntheticEvent } from 'react'
 import type { output } from 'zod/v4'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -56,9 +56,24 @@ interface TaskRowProps {
   onDelete: () => void
   onToggle: () => void
   onUpdate: (title: string, priority: Priority) => Promise<void>
+  profileByUserId: Map<string, OrgProfile>
   task: Task
 }
-const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, onUpdate, task: t }: TaskRowProps) => {
+const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
+    const profile = profileByUserId.get(hex)
+    return profile?.displayName ?? hex.slice(0, 8)
+  },
+  TaskRow = ({
+    canAssign,
+    canEdit,
+    members,
+    onAssign,
+    onDelete,
+    onToggle,
+    onUpdate,
+    profileByUserId,
+    task: t
+  }: TaskRowProps) => {
     const [editing, setEditing] = useState(false),
       [editTitle, setEditTitle] = useState(() => t.title),
       [editPriority, setEditPriority] = useState<Priority>(() => asPriority(t.priority)),
@@ -109,7 +124,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
               <SelectItem value='none'>Unassigned</SelectItem>
               {members.map(m => (
                 <SelectItem key={m.id} value={m.userId.toHexString()}>
-                  {m.userId.toHexString()}
+                  {displayName(profileByUserId, m.userId.toHexString())}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -118,9 +133,13 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
           <div className='flex items-center gap-1'>
             <Avatar className='size-5'>
               <AvatarImage src={undefined} />
-              <AvatarFallback className='text-xs'>{assignee.userId.toHexString().slice(2, 4)}</AvatarFallback>
+              <AvatarFallback className='text-xs'>
+                {displayName(profileByUserId, assignee.userId.toHexString()).slice(0, 2)}
+              </AvatarFallback>
             </Avatar>
-            <span className='text-xs text-muted-foreground'>{assignee.userId.toHexString()}</span>
+            <span className='text-xs text-muted-foreground'>
+              {displayName(profileByUserId, assignee.userId.toHexString())}
+            </span>
           </div>
         ) : null}
         {canEdit ? (
@@ -316,6 +335,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
                             title: newTitle
                           })
                         }}
+                        profileByUserId={profileByUserId}
                         task={t}
                       />
                     </div>

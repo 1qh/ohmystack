@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui
 import { useMutation } from 'convex/react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = use(params),
@@ -14,17 +14,24 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
     [accepted, setAccepted] = useState(false),
     [inviteError, setInviteError] = useState<null | string>(null),
     acceptInvite = useMutation(api.org.acceptInvite),
+    timerRef = useRef<null | ReturnType<typeof setTimeout>>(null),
     handleAccept = () => {
       acceptInvite({ token })
         .then(() => {
           setAccepted(true)
           toast.success('Welcome to the organization!')
-          setTimeout(() => router.push('/'), 1500)
+          timerRef.current = setTimeout(() => router.push('/'), 1500)
         })
         .catch((acceptError: unknown) => {
           setInviteError(acceptError instanceof Error ? acceptError.message : 'Invalid or expired invite')
         })
     }
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    []
+  )
   if (accepted)
     return (
       <div className='container flex justify-center py-16'>

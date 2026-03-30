@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui
 import { useMut } from '@noboil/spacetimedb/react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = use(params),
     router = useRouter(),
     [accepted, setAccepted] = useState(false),
     [inviteError, setInviteError] = useState<null | string>(null),
+    timerRef = useRef<null | ReturnType<typeof setTimeout>>(null),
     acceptInvite = useMut(reducers.orgAcceptInvite, {
       onSettled: (_args, error) => {
         if (!error) return
@@ -19,10 +20,16 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
       },
       onSuccess: () => {
         setAccepted(true)
-        setTimeout(() => router.push('/'), 1500)
+        timerRef.current = setTimeout(() => router.push('/'), 1500)
       },
       toast: { success: 'Welcome to the organization!' }
     })
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    []
+  )
   if (accepted)
     return (
       <div className='container flex justify-center py-16'>

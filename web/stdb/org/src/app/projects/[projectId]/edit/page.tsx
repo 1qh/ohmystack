@@ -34,7 +34,7 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
         values: project ? pickValues(projectSchema, project) : undefined
       }),
       handleDelete = () => {
-        if (taskCount < 0) return
+        if (taskCount > 0) return
         removeProject({ id: projectId })
       }
     if (!project) return <Skeleton className='h-40' />
