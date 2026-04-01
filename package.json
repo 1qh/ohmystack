@@ -13,7 +13,6 @@
   "scripts": {
     "build:ts": "q turbo run build --output-logs=errors-only",
     "check": "q lintmax check",
-    "verify": "bun run tsc && bun run check && bun run build:ts",
     "clean": "rm -rf bun.lock node_modules .cache **/node_modules **/.cache **/.next **/.turbo **/dist **/build **/tsconfig.tsbuildinfo",
     "clean:all": "bun clean",
     "clean:workspaces": "q turbo run clean --output-logs=errors-only",
@@ -39,7 +38,8 @@
     "tsc": "q turbo run typecheck --output-logs=errors-only",
     "ui:sync": "q bun script/sync-ui.ts",
     "ui:sync:check": "q bun script/sync-ui.ts --check",
-    "ui:sync:update": "q bun script/sync-ui.ts --update"
+    "ui:sync:update": "q bun script/sync-ui.ts --update",
+    "verify": "bun run tsc && bun run check && bun run build:ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
