@@ -13,7 +13,7 @@
   "scripts": {
     "build:ts": "q turbo run build --output-logs=errors-only",
     "check": "q lintmax check",
-    "ci": "bun run tsc && bun run check && bun run build:ts",
+    "verify": "bun run tsc && bun run check && bun run build:ts",
     "clean": "rm -rf bun.lock node_modules .cache **/node_modules **/.cache **/.next **/.turbo **/dist **/build **/tsconfig.tsbuildinfo",
     "clean:all": "bun clean",
     "clean:workspaces": "q turbo run clean --output-logs=errors-only",
