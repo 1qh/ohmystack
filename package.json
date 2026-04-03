@@ -22,7 +22,7 @@
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",
     "postinstall": "sherif",
     "prepare": "bunx simple-git-hooks",
-    "publish:all": "npm publish --silent --access public --cwd tool/cli && npm publish --silent --access public --cwd lib/convex && npm publish --silent --access public --cwd lib/spacetimedb",
+    "publish:all": "bun publish --silent --access public --cwd tool/cli && bun publish --silent --access public --cwd lib/convex && bun publish --silent --access public --cwd lib/spacetimedb",
     "spacetime:generate": "bash -lc 'PATH=\"$HOME/.local/bin:$PATH\" spacetime generate --lang typescript --out-dir lib/spacetimedb/src/generated --module-path backend/spacetimedb'",
     "spacetime:health": "bash -lc \"curl -fsS http://localhost:4000/v1/ping >/dev/null && echo ' SpacetimeDB is healthy'\"",
     "spacetime:publish": "bash -lc 'PATH=\"$HOME/.local/bin:$PATH\" spacetime publish noboil --module-path backend/spacetimedb --delete-data=on-conflict -y'",
