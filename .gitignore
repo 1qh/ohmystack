@@ -7,3 +7,6 @@ bun.lock
 dist
 node_modules/
 next-env.d.ts
+playwright-report/
+test-results/
+.stdb-test-token.json
