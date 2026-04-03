@@ -14,13 +14,14 @@
   "scripts": {
     "build:ts": "turbo run build --output-logs=errors-only",
     "check": "lintmax check",
-    "clean": "rm -rf bun.lock node_modules .cache **/node_modules **/.cache **/.next **/.turbo **/dist **/build **/tsconfig.tsbuildinfo",
+    "clean": "sh clean.sh",
     "convex:reset": "docker compose -f convex.yml down -v && docker compose -f convex.yml up -d --quiet-pull",
     "convex:up": "docker compose -f convex.yml up -d --quiet-pull && echo 'Convex ready on http://localhost:4001'",
     "dev:web": "f() { turbo watch dev -F @a/$1 -F @a/$2; }; f",
     "fix": "lintmax fix && turbo typecheck build --output-logs=errors-only",
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",
     "postinstall": "sherif",
+    "prepare": "bunx simple-git-hooks",
     "publish:all": "npm publish --silent --access public --cwd tool/cli && npm publish --silent --access public --cwd lib/convex && npm publish --silent --access public --cwd lib/spacetimedb",
     "spacetime:generate": "bash -lc 'PATH=\"$HOME/.local/bin:$PATH\" spacetime generate --lang typescript --out-dir lib/spacetimedb/src/generated --module-path backend/spacetimedb'",
     "spacetime:health": "bash -lc \"curl -fsS http://localhost:4000/v1/ping >/dev/null && echo ' SpacetimeDB is healthy'\"",
@@ -33,6 +34,9 @@
     "test:web": "bun run test",
     "tsc": "turbo run typecheck --output-logs=errors-only",
     "verify": "bun run tsc && bun run check && bun run build:ts"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "sh up.sh && git add -u"
   },
   "devDependencies": {
     "@types/bun": "latest",
