@@ -9,25 +9,25 @@ import { SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createElement, useId, useState, useTransition } from 'react'
 const Page = () => {
-  const router = useRouter(),
-    createChat = useMutation(api.chat.create),
-    [isSubmitting, setIsSubmitting] = useState(false),
-    [isPublic, setIsPublic] = useState(false),
-    [isPending, startTransition] = useTransition(),
-    toggleId = useId(),
-    emptyStateIcon = createElement(SparklesIcon, { className: 'size-8' }),
-    handleSubmit = async ({ text }: { text: string }) => {
-      if (!text.trim() || isSubmitting) return
-      setIsSubmitting(true)
-      try {
-        const created = await createChat({ isPublic, title: text }),
-          chatId = Array.isArray(created) ? created[0] : created
-        if (typeof chatId !== 'string') return
-        startTransition(() => router.push(`/${chatId}?query=${encodeURIComponent(text)}`))
-      } finally {
-        setIsSubmitting(false)
-      }
+  const router = useRouter()
+  const createChat = useMutation(api.chat.create)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const toggleId = useId()
+  const emptyStateIcon = createElement(SparklesIcon, { className: 'size-8' })
+  const handleSubmit = async ({ text }: { text: string }) => {
+    if (!text.trim() || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const created = await createChat({ isPublic, title: text })
+      const chatId = Array.isArray(created) ? created[0] : created
+      if (typeof chatId !== 'string') return
+      startTransition(() => router.push(`/${chatId}?query=${encodeURIComponent(text)}`))
+    } finally {
+      setIsSubmitting(false)
     }
+  }
   return (
     <div className='flex flex-1 flex-col overflow-hidden'>
       <Conversation>

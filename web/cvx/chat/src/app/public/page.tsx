@@ -5,13 +5,13 @@ import { useList } from '@noboil/convex/react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 const Page = () => {
-  const { data: allChats } = useList(api.chat.list, { where: { isPublic: true } }),
-    [query, setQuery] = useState(''),
-    chats = useMemo(() => {
-      const q = query.toLowerCase().trim()
-      if (!q) return allChats
-      return allChats.filter(c => c.title.toLowerCase().includes(q))
-    }, [allChats, query])
+  const { data: allChats } = useList(api.chat.list, { where: { isPublic: true } })
+  const [query, setQuery] = useState('')
+  const chats = useMemo(() => {
+    const q = query.toLowerCase().trim()
+    if (!q) return allChats
+    return allChats.filter(c => c.title.toLowerCase().includes(q))
+  }, [allChats, query])
   return (
     <div className='mx-auto max-w-3xl p-4' data-testid='public-chats-page'>
       <h1 className='mb-4 text-xl font-semibold'>Public Chats</h1>

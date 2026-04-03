@@ -13,17 +13,17 @@ interface FireLoadCtx {
   setIsLoading: (v: boolean) => void
 }
 type QueryRef = FunctionReference<'query'>
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
-  fireLoad = async ({ args, load, loadingRef, setIsLoading }: FireLoadCtx) => {
-    try {
-      await load(args)
-    } catch {
-      /* oxlint-disable-next-line no-empty */
-    } finally {
-      loadingRef.current = false
-      setIsLoading(false)
-    }
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'
+const fireLoad = async ({ args, load, loadingRef, setIsLoading }: FireLoadCtx) => {
+  try {
+    await load(args)
+  } catch {
+    /* oxlint-disable-next-line no-empty */
+  } finally {
+    loadingRef.current = false
+    setIsLoading(false)
   }
+}
 /** Options for useCacheEntry: the query to read cached data and the action to refresh it. */
 interface UseCacheEntryOptions<Q extends QueryRef, A extends ActionRef> {
   args: OptionalRestArgs<Q>[0]
@@ -43,12 +43,12 @@ const useCacheEntry = <Q extends QueryRef, A extends ActionRef>({
   get: getRef,
   load: loadRef
 }: UseCacheEntryOptions<Q, A>): UseCacheEntryResult<Record<string, unknown>> => {
-  const cached = useQuery(getRef, args ?? {}),
-    load = useAction(loadRef),
-    [isLoading, setIsLoading] = useState(false),
-    loadingRef = useRef(false),
-    argsRef = useRef(args),
-    queryName = typeof getRef === 'string' ? getRef : ((getRef as { _name?: string })._name ?? 'unknown')
+  const cached = useQuery(getRef, args ?? {})
+  const load = useAction(loadRef)
+  const [isLoading, setIsLoading] = useState(false)
+  const loadingRef = useRef(false)
+  const argsRef = useRef(args)
+  const queryName = typeof getRef === 'string' ? getRef : ((getRef as { _name?: string })._name ?? 'unknown')
   useEffect(() => {
     argsRef.current = args
   }, [args])
@@ -72,19 +72,19 @@ const useCacheEntry = <Q extends QueryRef, A extends ActionRef>({
     trackCacheAccess({ hit: !stale, key: JSON.stringify(args ?? {}), stale, table: queryName })
   }, [cached, args, queryName])
   const refresh = useCallback(() => {
-      if (loadingRef.current) return
-      loadingRef.current = true
-      setIsLoading(true)
-      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget cache refresh
-      fireLoad({
-        args: argsRef.current ?? {},
-        load: load as (a: Record<string, unknown>) => Promise<unknown>,
-        loadingRef,
-        setIsLoading
-      })
-    }, [load]),
-    data = cached === undefined ? null : (cached as null | Record<string, unknown>),
-    isStale = data !== null && data.stale === true
+    if (loadingRef.current) return
+    loadingRef.current = true
+    setIsLoading(true)
+    // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget cache refresh
+    fireLoad({
+      args: argsRef.current ?? {},
+      load: load as (a: Record<string, unknown>) => Promise<unknown>,
+      loadingRef,
+      setIsLoading
+    })
+  }, [load])
+  const data = cached === undefined ? null : (cached as null | Record<string, unknown>)
+  const isStale = data !== null && data.stale === true
   return { data, isLoading: isLoading || cached === undefined, isStale, refresh }
 }
 export type { UseCacheEntryOptions, UseCacheEntryResult }

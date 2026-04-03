@@ -13,32 +13,32 @@ import { use } from 'react'
 import { toast } from 'sonner'
 import { joinRequest } from '~/schema'
 const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
-  const { slug } = use(params),
-    router = useRouter(),
-    org = useQuery(api.org.getPublic, { slug }),
-    myRequest = useQuery(api.org.myJoinRequest, org ? { orgId: org._id } : 'skip'),
-    membership = useQuery(api.org.membership, org ? { orgId: org._id } : 'skip'),
-    cancelRequest = useMutation(api.org.cancelJoinRequest),
-    requestJoin = useMutation(api.org.requestJoin),
-    form = useForm({
-      onSubmit: async d => {
-        if (!org) return d
-        await requestJoin({ message: d.message ?? undefined, orgId: org._id })
-        toast.success('Join request sent')
-        return d
-      },
-      resetOnSuccess: true,
-      schema: joinRequest
-    }),
-    handleCancel = async () => {
-      if (!myRequest) return
-      try {
-        await cancelRequest({ requestId: myRequest._id })
-        toast.success('Request cancelled')
-      } catch (error) {
-        fail(error)
-      }
+  const { slug } = use(params)
+  const router = useRouter()
+  const org = useQuery(api.org.getPublic, { slug })
+  const myRequest = useQuery(api.org.myJoinRequest, org ? { orgId: org._id } : 'skip')
+  const membership = useQuery(api.org.membership, org ? { orgId: org._id } : 'skip')
+  const cancelRequest = useMutation(api.org.cancelJoinRequest)
+  const requestJoin = useMutation(api.org.requestJoin)
+  const form = useForm({
+    onSubmit: async d => {
+      if (!org) return d
+      await requestJoin({ message: d.message ?? undefined, orgId: org._id })
+      toast.success('Join request sent')
+      return d
+    },
+    resetOnSuccess: true,
+    schema: joinRequest
+  })
+  const handleCancel = async () => {
+    if (!myRequest) return
+    try {
+      await cancelRequest({ requestId: myRequest._id })
+      toast.success('Request cancelled')
+    } catch (error) {
+      fail(error)
     }
+  }
   if (org === undefined) return <Skeleton className='mx-auto h-64 max-w-md' />
   if (org === null) return <div className='text-center text-muted-foreground'>Organization not found</div>
   if (membership && !('code' in membership)) {

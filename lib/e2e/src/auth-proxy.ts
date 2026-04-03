@@ -1,10 +1,10 @@
 /** biome-ignore-all lint/style/noProcessEnv: env fallbacks */
 /** biome-ignore-all lint/nursery/noUndeclaredEnvVars: e2e proxy env vars */
 import { serve } from 'bun'
-const BACKEND_API = process.env.CONVEX_URL ?? 'http://127.0.0.1:4001',
-  BACKEND_WS = process.env.CONVEX_WS_URL ?? 'ws://127.0.0.1:4001',
-  SITE_URL = process.env.CONVEX_SITE_URL ?? 'http://127.0.0.1:4002',
-  swallow = () => undefined
+const BACKEND_API = process.env.CONVEX_URL ?? 'http://127.0.0.1:4001'
+const BACKEND_WS = process.env.CONVEX_WS_URL ?? 'ws://127.0.0.1:4001'
+const SITE_URL = process.env.CONVEX_SITE_URL ?? 'http://127.0.0.1:4002'
+const swallow = () => undefined
 process.on('uncaughtException', swallow)
 process.on('unhandledRejection', swallow)
 serve({
@@ -20,9 +20,9 @@ serve({
           return
         return new Response('WebSocket upgrade failed', { status: 500 })
       }
-      const target = url.pathname.startsWith('/api/auth') ? SITE_URL : BACKEND_API,
-        targetUrl = `${target}${url.pathname}${url.search}`,
-        headers = new Headers(req.headers)
+      const target = url.pathname.startsWith('/api/auth') ? SITE_URL : BACKEND_API
+      const targetUrl = `${target}${url.pathname}${url.search}`
+      const headers = new Headers(req.headers)
       headers.delete('host')
       const response = await fetch(targetUrl, {
         body: req.body,
@@ -64,8 +64,8 @@ serve({
     },
     open: ws => {
       try {
-        const { url } = ws.data as { url: string },
-          upstream = new WebSocket(url)
+        const { url } = ws.data as { url: string }
+        const upstream = new WebSocket(url)
         ;(ws.data as Record<string, unknown>).upstream = upstream
         upstream.addEventListener('open', () => {
           ;(ws.data as Record<string, unknown>).ready = true

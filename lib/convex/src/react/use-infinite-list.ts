@@ -15,27 +15,27 @@ type InfiniteListRest<F extends PaginatedQueryReference> =
 type ListItems<F extends PaginatedQueryReference> = FunctionReturnType<F>['page']
 /** Wraps useList with an IntersectionObserver sentinel for automatic infinite scroll pagination. */
 const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: InfiniteListRest<F>) => {
-  const [args, opts] = rest as [PaginatedQueryArgs<F> | undefined, InfiniteListOptions | undefined],
-    { data, isDone, items, loadMore, status } = (useList as (...a: unknown[]) => ReturnType<typeof useList>)(
-      query,
-      args ?? {},
-      {
-        pageSize: opts?.pageSize
-      }
-    ),
-    sentinelRef = useRef<HTMLElement | null>(null),
-    observerRef = useRef<IntersectionObserver | null>(null),
-    isLoadingMore = status === 'LoadingMore',
-    canLoad = status === 'CanLoadMore',
-    pageSize = opts?.pageSize ?? DEFAULT_PAGE_SIZE,
-    // eslint-disable-next-line @eslint-react/no-unnecessary-use-callback
-    handleIntersect = useCallback(
-      (entries: IntersectionObserverEntry[]) => {
-        const [entry] = entries
-        if (entry?.isIntersecting && canLoad && !isLoadingMore) loadMore(pageSize)
-      },
-      [canLoad, isLoadingMore, loadMore, pageSize]
-    )
+  const [args, opts] = rest as [PaginatedQueryArgs<F> | undefined, InfiniteListOptions | undefined]
+  const { data, isDone, items, loadMore, status } = (useList as (...a: unknown[]) => ReturnType<typeof useList>)(
+    query,
+    args ?? {},
+    {
+      pageSize: opts?.pageSize
+    }
+  )
+  const sentinelRef = useRef<HTMLElement | null>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const isLoadingMore = status === 'LoadingMore'
+  const canLoad = status === 'CanLoadMore'
+  const pageSize = opts?.pageSize ?? DEFAULT_PAGE_SIZE
+  // eslint-disable-next-line @eslint-react/no-unnecessary-use-callback
+  const handleIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const [entry] = entries
+      if (entry?.isIntersecting && canLoad && !isLoadingMore) loadMore(pageSize)
+    },
+    [canLoad, isLoadingMore, loadMore, pageSize]
+  )
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return

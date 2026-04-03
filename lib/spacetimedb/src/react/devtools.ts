@@ -25,69 +25,69 @@ interface DevError extends SharedDevError {
 type DevMutation = SharedDevMutation
 type DevSubscription = SharedDevSubscription
 const toDisplay = (value: unknown): string => {
-    if (value === null || value === undefined) return ''
-    if (typeof value === 'string') return value
-    if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value)
-    if (typeof value === 'object' && 'toHexString' in value) {
-      const obj = value as { toHexString?: () => string }
-      if (typeof obj.toHexString === 'function') return obj.toHexString()
-    }
-    if (typeof value === 'object')
-      try {
-        return JSON.stringify(value)
-      } catch {
-        return Object.prototype.toString.call(value)
-      }
-    return ''
-  },
-  core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage }),
-  { clearErrors } = core,
-  { clearMutations } = core,
-  { completeMutation } = core,
-  completeReducerCall = core.completeMutation,
-  { pushError } = core,
-  { trackCacheAccess } = core,
-  { trackMutation } = core,
-  trackReducerCall = core.trackMutation,
-  { trackSubscription } = core,
-  { untrackSubscription } = core,
-  { updateSubscription } = core,
-  { updateSubscriptionData } = core,
-  injectError = (code: ErrorCode, opts?: { detail?: string; message?: string; op?: string; table?: string }) => {
-    const data: ErrorData = { code, ...opts }
-    pushError({ data, detail: opts?.detail ?? `Injected error: ${code}`, message: opts?.message ?? code })
-  },
-  useDevErrors = () => {
-    const spacetime = useSpacetimeDB(),
-      { connectionError, connectionId, identity, isActive, token } = spacetime,
-      connection: DevConnection = {
-        connectionError: connectionError ? getErrorMessage(connectionError) : '',
-        connectionId: toDisplay(connectionId),
-        hasConnection: Boolean(spacetime.getConnection()),
-        identity: toDisplay(identity),
-        isActive,
-        token: token ?? ''
-      }
-    return core.useDevStore({
-      deps: [
-        connection.connectionError,
-        connection.connectionId,
-        connection.identity,
-        connection.isActive,
-        connection.token
-      ],
-      extra: () => ({ connection })
-    }) as {
-      cache: DevCacheEntry[]
-      clear: () => void
-      clearMutations: () => void
-      connection: DevConnection
-      errors: DevError[]
-      mutations: DevMutation[]
-      push: (e: unknown) => void
-      subscriptions: DevSubscription[]
-    }
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value)
+  if (typeof value === 'object' && 'toHexString' in value) {
+    const obj = value as { toHexString?: () => string }
+    if (typeof obj.toHexString === 'function') return obj.toHexString()
   }
+  if (typeof value === 'object')
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return Object.prototype.toString.call(value)
+    }
+  return ''
+}
+const core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage })
+const { clearErrors } = core
+const { clearMutations } = core
+const { completeMutation } = core
+const completeReducerCall = core.completeMutation
+const { pushError } = core
+const { trackCacheAccess } = core
+const { trackMutation } = core
+const trackReducerCall = core.trackMutation
+const { trackSubscription } = core
+const { untrackSubscription } = core
+const { updateSubscription } = core
+const { updateSubscriptionData } = core
+const injectError = (code: ErrorCode, opts?: { detail?: string; message?: string; op?: string; table?: string }) => {
+  const data: ErrorData = { code, ...opts }
+  pushError({ data, detail: opts?.detail ?? `Injected error: ${code}`, message: opts?.message ?? code })
+}
+const useDevErrors = () => {
+  const spacetime = useSpacetimeDB()
+  const { connectionError, connectionId, identity, isActive, token } = spacetime
+  const connection: DevConnection = {
+    connectionError: connectionError ? getErrorMessage(connectionError) : '',
+    connectionId: toDisplay(connectionId),
+    hasConnection: Boolean(spacetime.getConnection()),
+    identity: toDisplay(identity),
+    isActive,
+    token: token ?? ''
+  }
+  return core.useDevStore({
+    deps: [
+      connection.connectionError,
+      connection.connectionId,
+      connection.identity,
+      connection.isActive,
+      connection.token
+    ],
+    extra: () => ({ connection })
+  }) as {
+    cache: DevCacheEntry[]
+    clear: () => void
+    clearMutations: () => void
+    connection: DevConnection
+    errors: DevError[]
+    mutations: DevMutation[]
+    push: (e: unknown) => void
+    subscriptions: DevSubscription[]
+  }
+}
 export type { DevCacheEntry, DevConnection, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

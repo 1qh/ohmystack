@@ -10,46 +10,50 @@ interface UseSearchResult<T> {
   isSearching: boolean
   results: T[]
 }
-const normalizeQuery = (query: string): string => query.trim().toLowerCase(),
-  rowMatchesQuery = (row: Rec, fields: string[], normalizedQuery: string): boolean => {
-    for (const field of fields) {
-      const value = row[field]
-      if (String(value).toLowerCase().includes(normalizedQuery)) return true
-    }
-    return false
-  },
-  filterSearchData = <T extends Rec>(rows: T[], fields: string[], normalizedQuery: string): T[] => {
-    if (!normalizedQuery) return rows
-    const out: T[] = []
-    for (const row of rows) if (rowMatchesQuery(row, fields, normalizedQuery)) out.push(row)
-    return out
-  },
-  DEFAULT_DEBOUNCE_MS = 300,
-  SKIP_SEARCH: UseSearchResult<never> = { isSearching: true, results: [] },
-  /**
-   * Filters rows by a debounced text query across selected fields.
-   * @param data Source rows to search.
-   * @param isReady Whether upstream data is ready for searching.
-   * @param options Search configuration or `'skip'` to disable searching.
-   * @returns Search results and searching state for UI rendering.
-   */
-  useSearch = <T extends Rec>(data: T[], isReady: boolean, options: 'skip' | UseSearchOptions<T>): UseSearchResult<T> => {
-    const skipped = options === 'skip',
-      opts = skipped ? { debounceMs: DEFAULT_DEBOUNCE_MS, fields: [] as (keyof T & string)[], query: '' } : options,
-      debounceMs = opts.debounceMs ?? DEFAULT_DEBOUNCE_MS,
-      [debouncedQuery, setDebouncedQuery] = useState(opts.query)
-    useEffect(() => {
-      if (skipped) return
-      const id = setTimeout(() => setDebouncedQuery(opts.query), debounceMs)
-      return () => clearTimeout(id)
-    }, [debounceMs, opts.query, skipped])
-    const results = useMemo(() => {
-        if (skipped) return []
-        return filterSearchData(data, opts.fields, normalizeQuery(debouncedQuery))
-      }, [data, debouncedQuery, opts.fields, skipped]),
-      isSearching = skipped || opts.query !== debouncedQuery || !isReady
-    if (skipped) return SKIP_SEARCH as UseSearchResult<T>
-    return { isSearching, results }
+const normalizeQuery = (query: string): string => query.trim().toLowerCase()
+const rowMatchesQuery = (row: Rec, fields: string[], normalizedQuery: string): boolean => {
+  for (const field of fields) {
+    const value = row[field]
+    if (String(value).toLowerCase().includes(normalizedQuery)) return true
   }
+  return false
+}
+const filterSearchData = <T extends Rec>(rows: T[], fields: string[], normalizedQuery: string): T[] => {
+  if (!normalizedQuery) return rows
+  const out: T[] = []
+  for (const row of rows) if (rowMatchesQuery(row, fields, normalizedQuery)) out.push(row)
+  return out
+}
+const DEFAULT_DEBOUNCE_MS = 300
+const SKIP_SEARCH: UseSearchResult<never> = { isSearching: true, results: [] }
+/**
+ * Filters rows by a debounced text query across selected fields.
+ * @param data Source rows to search.
+ * @param isReady Whether upstream data is ready for searching.
+ * @param options Search configuration or `'skip'` to disable searching.
+ * @returns Search results and searching state for UI rendering.
+ */
+const useSearch = <T extends Rec>(
+  data: T[],
+  isReady: boolean,
+  options: 'skip' | UseSearchOptions<T>
+): UseSearchResult<T> => {
+  const skipped = options === 'skip'
+  const opts = skipped ? { debounceMs: DEFAULT_DEBOUNCE_MS, fields: [] as (keyof T & string)[], query: '' } : options
+  const debounceMs = opts.debounceMs ?? DEFAULT_DEBOUNCE_MS
+  const [debouncedQuery, setDebouncedQuery] = useState(opts.query)
+  useEffect(() => {
+    if (skipped) return
+    const id = setTimeout(() => setDebouncedQuery(opts.query), debounceMs)
+    return () => clearTimeout(id)
+  }, [debounceMs, opts.query, skipped])
+  const results = useMemo(() => {
+    if (skipped) return []
+    return filterSearchData(data, opts.fields, normalizeQuery(debouncedQuery))
+  }, [data, debouncedQuery, opts.fields, skipped])
+  const isSearching = skipped || opts.query !== debouncedQuery || !isReady
+  if (skipped) return SKIP_SEARCH as UseSearchResult<T>
+  return { isSearching, results }
+}
 export type { UseSearchOptions, UseSearchResult }
 export { DEFAULT_DEBOUNCE_MS, useSearch }

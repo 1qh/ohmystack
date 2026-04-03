@@ -7,43 +7,43 @@ import { buildMeta, createUseForm, getMeta } from '@a/shared/react/form'
 import { useMutation } from 'convex/react'
 import { extractErrorData, getErrorCode, getErrorMessage, isRecord } from '../server/helpers'
 import { defaultOnError } from './use-mutate'
-const useForm = createUseForm({ defaultOnError, extractErrorData, getErrorCode, getErrorMessage, isRecord }),
-  useFormMutation = <S extends ZodObject>({
+const useForm = createUseForm({ defaultOnError, extractErrorData, getErrorCode, getErrorMessage, isRecord })
+const useFormMutation = <S extends ZodObject>({
+  autoSave,
+  mutation: mutationRef,
+  onConflict,
+  onError,
+  onSuccess,
+  resetOnSuccess = true,
+  schema,
+  transform,
+  values
+}: {
+  autoSave?: { debounceMs: number; enabled: boolean }
+  mutation: FunctionReference<'mutation'>
+  onConflict?: (data: ConflictData<output<S>>) => void
+  onError?: ((e: unknown) => void) | false
+  onSuccess?: () => void
+  resetOnSuccess?: boolean
+  schema: S
+  transform?: (d: output<S>) => Record<string, unknown>
+  values?: output<S>
+}) => {
+  const mutate = useMutation(mutationRef)
+  return useForm({
     autoSave,
-    mutation: mutationRef,
     onConflict,
     onError,
+    onSubmit: async (d: output<S>) => {
+      const args = transform ? transform(d) : d
+      await mutate(args)
+      return d
+    },
     onSuccess,
-    resetOnSuccess = true,
+    resetOnSuccess,
     schema,
-    transform,
     values
-  }: {
-    autoSave?: { debounceMs: number; enabled: boolean }
-    mutation: FunctionReference<'mutation'>
-    onConflict?: (data: ConflictData<output<S>>) => void
-    onError?: ((e: unknown) => void) | false
-    onSuccess?: () => void
-    resetOnSuccess?: boolean
-    schema: S
-    transform?: (d: output<S>) => Record<string, unknown>
-    values?: output<S>
-  }) => {
-    const mutate = useMutation(mutationRef)
-    return useForm({
-      autoSave,
-      onConflict,
-      onError,
-      onSubmit: async (d: output<S>) => {
-        const args = transform ? transform(d) : d
-        await mutate(args)
-        return d
-      },
-      onSuccess,
-      resetOnSuccess,
-      schema,
-      values
-    })
-  }
+  })
+}
 export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn }
 export { buildMeta, getMeta, useForm, useFormMutation }

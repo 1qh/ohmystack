@@ -15,24 +15,24 @@ import { useReducer } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const ProjectsPage = () => {
-  const { isAdmin, org } = useOrg(),
-    [orgProjectRows, isProjectsReady] = useOrgTable<Project>(tables.project),
-    orgProjects = orgProjectRows.map(withStringId),
-    [query, setQuery] = useState(''),
-    { results: projects } = useSearch(orgProjects, isProjectsReady, {
-      fields: ['name', 'description'],
-      query
-    }),
-    rmProject = useReducer(reducers.rmProject),
-    { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
-      items: projects,
-      onError: defaultOnError,
-      onSuccess: (count: number) => {
-        toast.success(`${count} project(s) deleted`)
-      },
-      orgId: org._id,
-      rm: async id => rmProject({ id: Number(id) })
-    })
+  const { isAdmin, org } = useOrg()
+  const [orgProjectRows, isProjectsReady] = useOrgTable<Project>(tables.project)
+  const orgProjects = orgProjectRows.map(withStringId)
+  const [query, setQuery] = useState('')
+  const { results: projects } = useSearch(orgProjects, isProjectsReady, {
+    fields: ['name', 'description'],
+    query
+  })
+  const rmProject = useReducer(reducers.rmProject)
+  const { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
+    items: projects,
+    onError: defaultOnError,
+    onSuccess: (count: number) => {
+      toast.success(`${count} project(s) deleted`)
+    },
+    orgId: org._id,
+    rm: async id => rmProject({ id: Number(id) })
+  })
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>

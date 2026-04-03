@@ -17,56 +17,56 @@ import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 import OrgSettingsForm from './org-settings-form'
 const OrgSettingsPage = () => {
-  const router = useRouter(),
-    clearAndGoHome = async () => {
-      await clearActiveOrgCookie()
-      router.push('/')
+  const router = useRouter()
+  const clearAndGoHome = async () => {
+    await clearActiveOrgCookie()
+    router.push('/')
+  }
+  const orgTransferOwnership = useOrgMutation(useReducer(reducers.orgTransferOwnership))
+  const { canDeleteOrg, isAdmin, isOwner, org } = useOrg()
+  const removeOrg = useMutate(useOrgMutation(useReducer(reducers.orgRemove)), {
+    onSuccess: () => {
+      clearAndGoHome()
     },
-    orgTransferOwnership = useOrgMutation(useReducer(reducers.orgTransferOwnership)),
-    { canDeleteOrg, isAdmin, isOwner, org } = useOrg(),
-    removeOrg = useMutate(useOrgMutation(useReducer(reducers.orgRemove)), {
-      onSuccess: () => {
-        clearAndGoHome()
-      },
-      toast: { success: 'Organization deleted' }
-    }),
-    leaveOrg = useMutate(useOrgMutation(useReducer(reducers.orgLeave)), {
-      onSuccess: () => {
-        clearAndGoHome()
-      },
-      toast: { success: 'You have left the organization' }
-    }),
-    transferOwnership = useMutate(
-      // biome-ignore lint/suspicious/useAwait: callback shape comes from useMutate
-      async (args: Record<string, unknown>) => {
-        const newOwnerId = args.newOwnerId as NonNullable<Parameters<typeof orgTransferOwnership>[0]>['newOwnerId']
-        return orgTransferOwnership({ newOwnerId })
-      },
-      {
-        onSuccess: () => router.refresh(),
-        toast: { success: 'Ownership transferred' }
-      }
-    ),
-    [members] = useOrgTable<OrgMember>(tables.orgMember),
-    [transferTarget, setTransferTarget] = useState(''),
-    profileByUserId = useProfileMap()
+    toast: { success: 'Organization deleted' }
+  })
+  const leaveOrg = useMutate(useOrgMutation(useReducer(reducers.orgLeave)), {
+    onSuccess: () => {
+      clearAndGoHome()
+    },
+    toast: { success: 'You have left the organization' }
+  })
+  const transferOwnership = useMutate(
+    // biome-ignore lint/suspicious/useAwait: callback shape comes from useMutate
+    async (args: Record<string, unknown>) => {
+      const newOwnerId = args.newOwnerId as NonNullable<Parameters<typeof orgTransferOwnership>[0]>['newOwnerId']
+      return orgTransferOwnership({ newOwnerId })
+    },
+    {
+      onSuccess: () => router.refresh(),
+      toast: { success: 'Ownership transferred' }
+    }
+  )
+  const [members] = useOrgTable<OrgMember>(tables.orgMember)
+  const [transferTarget, setTransferTarget] = useState('')
+  const profileByUserId = useProfileMap()
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
-  const adminMembers = members.filter(m => m.isAdmin),
-    handleLeave = () => {
-      if (!confirm('Are you sure you want to leave this organization?')) return
-      leaveOrg({})
-    },
-    handleTransfer = () => {
-      const target = adminMembers.find(m => m.userId.toHexString() === transferTarget)
-      if (!target) return
-      if (!confirm('Are you sure? You will become an admin and lose owner privileges.')) return
-      transferOwnership({ newOwnerId: target.userId })
-    },
-    handleDelete = () => {
-      if (!confirm('Are you sure? This will delete all data.')) return
-      removeOrg({})
-    }
+  const adminMembers = members.filter(m => m.isAdmin)
+  const handleLeave = () => {
+    if (!confirm('Are you sure you want to leave this organization?')) return
+    leaveOrg({})
+  }
+  const handleTransfer = () => {
+    const target = adminMembers.find(m => m.userId.toHexString() === transferTarget)
+    if (!target) return
+    if (!confirm('Are you sure? You will become an admin and lose owner privileges.')) return
+    transferOwnership({ newOwnerId: target.userId })
+  }
+  const handleDelete = () => {
+    if (!confirm('Are you sure? This will delete all data.')) return
+    removeOrg({})
+  }
   return (
     <div className='space-y-6'>
       <h1 className='text-2xl font-bold'>Settings</h1>
@@ -88,8 +88,8 @@ const OrgSettingsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 {adminMembers.map(m => {
-                  const hex = m.userId.toHexString(),
-                    profile = profileByUserId.get(hex)
+                  const hex = m.userId.toHexString()
+                  const profile = profileByUserId.get(hex)
                   return (
                     <SelectItem key={m.id} value={hex}>
                       {profile?.displayName ?? hex.slice(0, 8)}

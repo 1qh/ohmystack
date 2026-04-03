@@ -2,10 +2,10 @@ import type { FunctionReference } from 'convex/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { expect, test } from './fixtures'
-const convex = new ConvexHttpClient('http://127.0.0.1:4001'),
-  CHAT_URL_RE = /\/chat\//u,
-  SESSIONS_RE = /sessions/iu,
-  GOOGLE_RE = /continue with google/iu
+const convex = new ConvexHttpClient('http://127.0.0.1:4001')
+const CHAT_URL_RE = /\/chat\//u
+const SESSIONS_RE = /sessions/iu
+const GOOGLE_RE = /continue with google/iu
 test.describe
   .serial('Session Management', () => {
     test.beforeEach(async ({ sessionListPage }) => {
@@ -23,8 +23,8 @@ test.describe
 test.describe
   .serial('Session Management - remaining coverage', () => {
     test('multiple sessions appear in list', async ({ page, sessionListPage }) => {
-      const firstTitle = `Session A ${Date.now()}`,
-        secondTitle = `Session B ${Date.now()}`
+      const firstTitle = `Session A ${Date.now()}`
+      const secondTitle = `Session B ${Date.now()}`
       await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, { title: firstTitle })
       await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, { title: secondTitle })
       await sessionListPage.goto('/')
@@ -43,14 +43,14 @@ test.describe
       await expect(timestamp).not.toHaveText('')
     })
     test('session card navigation opens specific chat', async ({ page, sessionListPage }) => {
-      const firstTitle = `Nav A ${Date.now()}`,
-        secondTitle = `Nav B ${Date.now()}`,
-        firstSession = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
-          title: firstTitle
-        })) as { sessionId: string },
-        secondSession = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
-          title: secondTitle
-        })) as { sessionId: string }
+      const firstTitle = `Nav A ${Date.now()}`
+      const secondTitle = `Nav B ${Date.now()}`
+      const firstSession = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
+        title: firstTitle
+      })) as { sessionId: string }
+      const secondSession = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
+        title: secondTitle
+      })) as { sessionId: string }
       await sessionListPage.goto('/')
       await page.getByRole('button', { name: new RegExp(firstTitle, 'u') }).click()
       await page.waitForURL(new RegExp(`/chat/${firstSession.sessionId}$`, 'u'))

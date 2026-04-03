@@ -10,33 +10,33 @@ import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from './sidebar'
-const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat' },
-  PUBLIC_PATHS = ['/login', '/public'],
-  isPublicPath = (pathname: string) => {
-    for (const p of PUBLIC_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
-    return false
-  },
-  renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider>{inner}</SpacetimeProvider>,
-  Layout = async ({ children }: { children: ReactNode }) => {
-    const pathname = (await headers()).get('x-pathname') ?? '/',
-      token = (await cookies()).get('spacetimedb_token')?.value,
-      isPlaywright = process.env.PLAYWRIGHT === '1' || process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
-    if (!(isPublicPath(pathname) || isPlaywright || (typeof token === 'string' && token.length > 0))) redirect('/login')
-    const showSidebar = !isPublicPath(pathname)
-    return (
-      <AuthLayout provider={renderSpacetimeProvider}>
-        <OfflineIndicator />
-        {showSidebar ? (
-          <SidebarProvider>
-            <Sidebar />
-            <SidebarInset className='flex h-screen flex-col'>{children}</SidebarInset>
-          </SidebarProvider>
-        ) : (
-          children
-        )}
-        <NoboilStdbDevtools position='bottom-right' />
-      </AuthLayout>
-    )
-  }
+const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat' }
+const PUBLIC_PATHS = ['/login', '/public']
+const isPublicPath = (pathname: string) => {
+  for (const p of PUBLIC_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
+  return false
+}
+const renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider>{inner}</SpacetimeProvider>
+const Layout = async ({ children }: { children: ReactNode }) => {
+  const pathname = (await headers()).get('x-pathname') ?? '/'
+  const token = (await cookies()).get('spacetimedb_token')?.value
+  const isPlaywright = process.env.PLAYWRIGHT === '1' || process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
+  if (!(isPublicPath(pathname) || isPlaywright || (typeof token === 'string' && token.length > 0))) redirect('/login')
+  const showSidebar = !isPublicPath(pathname)
+  return (
+    <AuthLayout provider={renderSpacetimeProvider}>
+      <OfflineIndicator />
+      {showSidebar ? (
+        <SidebarProvider>
+          <Sidebar />
+          <SidebarInset className='flex h-screen flex-col'>{children}</SidebarInset>
+        </SidebarProvider>
+      ) : (
+        children
+      )}
+      <NoboilStdbDevtools position='bottom-right' />
+    </AuthLayout>
+  )
+}
 export { metadata }
 export default Layout

@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures'
 import { login } from './helpers'
-const FETCH_BY_ID_RE = /Fetch by ID/iu,
-  CACHE_HIT_RE = /Cache Hit/iu
+const FETCH_BY_ID_RE = /Fetch by ID/iu
+const CACHE_HIT_RE = /Cache Hit/iu
 test.describe
   .serial('Movie Search', () => {
     test.beforeEach(async ({ moviePage, page }) => {
@@ -56,8 +56,8 @@ test.describe
     test('shows cache miss on first fetch', async ({ moviePage }) => {
       const randomId = 550 + Math.floor(Math.random() * 1000)
       await moviePage.fetchMovie(randomId)
-      const detail = moviePage.getMovieDetail(),
-        fetchError = moviePage.getMovieError()
+      const detail = moviePage.getMovieDetail()
+      const fetchError = moviePage.getMovieError()
       await expect(detail.or(fetchError)).toBeVisible({ timeout: 15_000 })
     })
     test('shows cache hit on repeated fetch', async ({ moviePage }) => {

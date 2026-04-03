@@ -6,8 +6,8 @@ interface PlaywrightOptions {
 }
 const createPlaywrightConfig = ({ port, webServerUrl }: PlaywrightOptions) => {
   // biome-ignore lint/style/noProcessEnv: CI detection
-  const baseURL = `http://localhost:${port}`,
-    isCI = Boolean(process.env.CI)
+  const baseURL = `http://localhost:${port}`
+  const isCI = Boolean(process.env.CI)
   return defineConfig({
     expect: { timeout: 5000 },
     forbidOnly: isCI,

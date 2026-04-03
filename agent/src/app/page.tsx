@@ -5,16 +5,16 @@ import { useMutation, useQuery } from 'convex/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 const SessionListPage = () => {
-  const sessions = useQuery(api.sessions.listSessions, {}),
-    createSession = useMutation(api.sessions.createSession),
-    router = useRouter(),
-    createNewSession = async () => {
-      const { sessionId } = await createSession({})
-      router.push(`/chat/${sessionId}`)
-    },
-    handleNew = () => {
-      createNewSession().catch(() => undefined)
-    }
+  const sessions = useQuery(api.sessions.listSessions, {})
+  const createSession = useMutation(api.sessions.createSession)
+  const router = useRouter()
+  const createNewSession = async () => {
+    const { sessionId } = await createSession({})
+    router.push(`/chat/${sessionId}`)
+  }
+  const handleNew = () => {
+    createNewSession().catch(() => undefined)
+  }
   if (!sessions) return <main className='p-8'>Loading...</main>
   if (sessions.length === 0)
     return (

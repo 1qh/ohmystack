@@ -10,12 +10,12 @@ import {
   makeOrgTestUtils,
   tc
 } from './helpers'
-const testPrefix = `e2e-org-members-${Date.now()}`,
-  { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix),
-  readStringId = (value: unknown): string => {
-    if (typeof value === 'string' && value.length > 0) return value
-    throw new TypeError('Expected non-empty string id')
-  }
+const testPrefix = `e2e-org-members-${Date.now()}`
+const { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
+const readStringId = (value: unknown): string => {
+  if (typeof value === 'string' && value.length > 0) return value
+  throw new TypeError('Expected non-empty string id')
+}
 test.beforeEach(async ({ page }) => {
   await login(page)
 })
@@ -24,11 +24,11 @@ test.describe
     let testOrgId: string
     test.beforeAll(async () => {
       await ensureTestUser()
-      const slug = generateSlug('members-ui'),
-        created = await createTestOrg(slug, 'Members UI Test Org')
+      const slug = generateSlug('members-ui')
+      const created = await createTestOrg(slug, 'Members UI Test Org')
       testOrgId = created.orgId
-      const memberEmail = `${testPrefix}-member@test.local`,
-        memberUserId = readStringId(await createTestUser(memberEmail, 'UI Test Member'))
+      const memberEmail = `${testPrefix}-member@test.local`
+      const memberUserId = readStringId(await createTestUser(memberEmail, 'UI Test Member'))
       await addTestOrgMember(testOrgId, memberUserId, false)
     })
     test.afterAll(async () => {
@@ -56,8 +56,8 @@ test.describe
     let testOrgId: string
     test.beforeAll(async () => {
       await ensureTestUser()
-      const slug = generateSlug('invites-ui'),
-        created = await createTestOrg(slug, 'Invites UI Test Org')
+      const slug = generateSlug('invites-ui')
+      const created = await createTestOrg(slug, 'Invites UI Test Org')
       testOrgId = created.orgId
       await tc.mutation(api.org.invite, {
         email: `${testPrefix}-pending@test.local`,
@@ -82,8 +82,8 @@ test.describe
     })
     test('revoke removes invite', async ({ page }) => {
       await page.goto('/members')
-      const revokeButtons = page.locator('button').filter({ has: page.locator('svg.lucide-trash') }),
-        firstRevoke = revokeButtons.first()
+      const revokeButtons = page.locator('button').filter({ has: page.locator('svg.lucide-trash') })
+      const firstRevoke = revokeButtons.first()
       if (await firstRevoke.isVisible().catch(() => false)) {
         await firstRevoke.click()
         await expect(firstRevoke).not.toBeVisible({ timeout: 5000 })
@@ -93,7 +93,8 @@ test.describe
   })
 test.describe
   .serial('Join Request UI', () => {
-    let testOrgId: string, testOrgSlug: string
+    let testOrgId: string
+    let testOrgSlug: string
     test.beforeAll(async () => {
       await ensureTestUser()
       testOrgSlug = generateSlug('join-ui')
@@ -105,8 +106,8 @@ test.describe
       await cleanupTestUsers()
     })
     test('admin sees pending requests on members page', async ({ page }) => {
-      const joinerEmail = `${testPrefix}-joiner@test.local`,
-        joinerUserId = readStringId(await createTestUser(joinerEmail, 'Join Requester'))
+      const joinerEmail = `${testPrefix}-joiner@test.local`
+      const joinerUserId = readStringId(await createTestUser(joinerEmail, 'Join Requester'))
       await tc.raw.mutation('testauth:requestJoinAsUser', {
         message: 'I want to join',
         orgId: testOrgId,
@@ -118,8 +119,8 @@ test.describe
     })
     test('approve adds user to members list', async ({ page }) => {
       await page.goto('/members')
-      const approveButtons = page.locator('button').filter({ has: page.locator('svg.lucide-check') }),
-        firstApprove = approveButtons.first()
+      const approveButtons = page.locator('button').filter({ has: page.locator('svg.lucide-check') })
+      const firstApprove = approveButtons.first()
       if (await firstApprove.isVisible().catch(() => false)) {
         await firstApprove.click()
         await expect(firstApprove).not.toBeVisible({ timeout: 5000 })

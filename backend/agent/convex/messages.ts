@@ -9,10 +9,10 @@ const listMessages = q({
       .unique()
     if (!session) {
       const taskPromise = ctx.db
-          .query('tasks')
-          .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
-          .first(),
-        task = await taskPromise
+        .query('tasks')
+        .withIndex('by_threadId', idx => idx.eq('threadId', threadId))
+        .first()
+      const task = await taskPromise
       if (!task) throw new Error('thread_not_found')
       const taskSession = await ctx.db.get(task.sessionId)
       if (taskSession?.userId !== ctx.user._id) throw new Error('thread_not_found')

@@ -5,24 +5,24 @@ const discoverModules = (
   convexDir: string,
   extras?: Record<string, () => Promise<unknown>>
 ): Record<string, () => Promise<unknown>> => {
-  const modules: Record<string, () => Promise<unknown>> = {},
-    absConvex = join(process.cwd(), convexDir),
-    parentDir = dirname(absConvex),
-    scanDir = (dir: string, prefix: string) => {
-      for (const entry of readdirSync(dir, { withFileTypes: true }))
-        if (entry.isDirectory() && !entry.name.startsWith('_') && entry.name !== 'node_modules')
-          scanDir(join(dir, entry.name), `${prefix}${entry.name}/`)
-        else if (entry.name.endsWith('.ts') && !entry.name.includes('.test.')) {
-          const relKey = `./${prefix}${entry.name}`,
-            absPath = join(dir, entry.name)
-          modules[relKey] = async () => import(absPath)
-        }
-    }
+  const modules: Record<string, () => Promise<unknown>> = {}
+  const absConvex = join(process.cwd(), convexDir)
+  const parentDir = dirname(absConvex)
+  const scanDir = (dir: string, prefix: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }))
+      if (entry.isDirectory() && !entry.name.startsWith('_') && entry.name !== 'node_modules')
+        scanDir(join(dir, entry.name), `${prefix}${entry.name}/`)
+      else if (entry.name.endsWith('.ts') && !entry.name.includes('.test.')) {
+        const relKey = `./${prefix}${entry.name}`
+        const absPath = join(dir, entry.name)
+        modules[relKey] = async () => import(absPath)
+      }
+  }
   scanDir(absConvex, '')
   for (const entry of readdirSync(parentDir))
     if (entry.endsWith('.ts') && !entry.endsWith('.test.ts') && !entry.endsWith('.config.ts')) {
-      const relKey = `../${entry}`,
-        absPath = join(parentDir, entry)
+      const relKey = `../${entry}`
+      const absPath = join(parentDir, entry)
       modules[relKey] = async () => import(absPath)
     }
   if (extras)

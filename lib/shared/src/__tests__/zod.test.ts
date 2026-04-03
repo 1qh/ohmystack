@@ -14,9 +14,9 @@ import {
   pickValues,
   unwrapZod
 } from '../zod'
-const VOID = undefined,
-  cvFile = () => string().meta({ cv: 'file' as const }),
-  cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
+const VOID = undefined
+const cvFile = () => string().meta({ cv: 'file' as const })
+const cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
 describe('unwrapZod', () => {
   test('plain string', () => {
     const r = unwrapZod(string())
@@ -122,8 +122,8 @@ describe('defaultValues', () => {
     expect(defaultValues(s)).toEqual({ attachments: [] })
   })
   test('date fields default to null', () => {
-    const s = object({ createdAt: date() }),
-      result = defaultValues(s)
+    const s = object({ createdAt: date() })
+    const result = defaultValues(s)
     expect(result.createdAt).toBeNull()
   })
 })
@@ -141,8 +141,8 @@ describe('pickValues', () => {
     expect(pickValues(schema, doc)).toEqual({ price: 0, title: 'hello' })
   })
   test('ignores extra fields', () => {
-    const doc = { foo: 'bar', price: 10, title: 'test', userId: 'u1' },
-      result = pickValues(schema, doc)
+    const doc = { foo: 'bar', price: 10, title: 'test', userId: 'u1' }
+    const result = pickValues(schema, doc)
     expect(result).toEqual({ price: 10, title: 'test' })
     expect('foo' in result).toBe(false)
     expect('userId' in result).toBe(false)
@@ -154,8 +154,8 @@ describe('coerceOptionals', () => {
     note: optional(string())
   })
   test('empty string on optional field becomes undefined', () => {
-    const data = { name: 'test', note: '' },
-      result = coerceOptionals(schema, data)
+    const data = { name: 'test', note: '' }
+    const result = coerceOptionals(schema, data)
     expect(result.name).toBe('test')
     expect(result.note).toBeUndefined()
   })
@@ -172,8 +172,8 @@ describe('coerceOptionals', () => {
     expect(coerceOptionals(schema, data).name).toBe('')
   })
   test('non-string optional field is untouched', () => {
-    const s = object({ count: optional(number()) }),
-      data = { count: 0 }
+    const s = object({ count: optional(number()) })
+    const data = { count: 0 }
     expect(coerceOptionals(s, data).count).toBe(0)
   })
 })

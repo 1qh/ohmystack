@@ -38,52 +38,52 @@ import {
   pgOpts,
   time
 } from './helpers'
-const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 },
-  /**
-   * Determines a user's role in an org based on ownership and membership.
-   * @param args - Object with org doc, member doc, and userId
-   * @returns The user's OrgRole or null if not a member
-   */
-  getOrgRole = ({
-    member,
-    org,
-    userId
-  }: {
-    member: null | Record<string, unknown>
-    org: Record<string, unknown>
-    userId: string
-  }): null | OrgRole => {
-    if (org.userId === userId) return 'owner'
-    if (!member) return null
-    return (member as { isAdmin?: boolean }).isAdmin ? 'admin' : 'member'
-  },
-  /**
-   * Fetches the orgMember document for a user in a specific org.
-   * @param args - Object with db, orgId, and userId
-   * @returns The member document or null
-   */
-  getOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) =>
-    (db as DbReadLike)
-      .query('orgMember')
-      .withIndex(
-        'by_org_user',
-        idx(q => q.eq('orgId', orgId).eq('userId', userId))
-      )
-      .unique() as Promise<null | Record<string, unknown>>,
-  /**
-   * Validates that a user is a member of the org, returning their role and member doc.
-   * @param args - Object with db, orgId, and userId
-   * @returns Object with member doc, org doc, and role; throws if not a member
-   */
-  requireOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) => {
-    const dbl = db as DbReadLike,
-      org = await dbl.get(orgId)
-    if (!org) return err('NOT_FOUND')
-    const member = await getOrgMember({ db, orgId, userId }),
-      role = getOrgRole({ member, org, userId })
-    if (!role) return err('NOT_ORG_MEMBER')
-    return { member, org, role }
-  }
+const ROLE_LEVEL: Record<OrgRole, number> = { admin: 2, member: 1, owner: 3 }
+/**
+ * Determines a user's role in an org based on ownership and membership.
+ * @param args - Object with org doc, member doc, and userId
+ * @returns The user's OrgRole or null if not a member
+ */
+const getOrgRole = ({
+  member,
+  org,
+  userId
+}: {
+  member: null | Record<string, unknown>
+  org: Record<string, unknown>
+  userId: string
+}): null | OrgRole => {
+  if (org.userId === userId) return 'owner'
+  if (!member) return null
+  return (member as { isAdmin?: boolean }).isAdmin ? 'admin' : 'member'
+}
+/**
+ * Fetches the orgMember document for a user in a specific org.
+ * @param args - Object with db, orgId, and userId
+ * @returns The member document or null
+ */
+const getOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) =>
+  (db as DbReadLike)
+    .query('orgMember')
+    .withIndex(
+      'by_org_user',
+      idx(q => q.eq('orgId', orgId).eq('userId', userId))
+    )
+    .unique() as Promise<null | Record<string, unknown>>
+/**
+ * Validates that a user is a member of the org, returning their role and member doc.
+ * @param args - Object with db, orgId, and userId
+ * @returns Object with member doc, org doc, and role; throws if not a member
+ */
+const requireOrgMember = async ({ db, orgId, userId }: { db: unknown; orgId: string; userId: string }) => {
+  const dbl = db as DbReadLike
+  const org = await dbl.get(orgId)
+  if (!org) return err('NOT_FOUND')
+  const member = await getOrgMember({ db, orgId, userId })
+  const role = getOrgRole({ member, org, userId })
+  if (!role) return err('NOT_ORG_MEMBER')
+  return { member, org, role }
+}
 interface RequireOrgRoleArgs {
   db: unknown
   minRole: OrgRole
@@ -96,21 +96,21 @@ interface RequireOrgRoleArgs {
  * @returns Object with member doc, org doc, and role; throws if insufficient role
  */
 const requireOrgRole = async ({ db, minRole, orgId, userId }: RequireOrgRoleArgs) => {
-    const result = await requireOrgMember({ db, orgId, userId })
-    if (ROLE_LEVEL[result.role] < ROLE_LEVEL[minRole]) return err('INSUFFICIENT_ORG_ROLE')
-    return result
-  },
-  /**
-   * Checks whether a user can edit a document based on their org role, ownership, and optional ACL editors list.
-   * @param args - Object with acl flag, doc, role, and userId
-   * @returns Whether the user has edit permission
-   */
-  canEdit = ({ acl, doc, role, userId }: CanEditOpts): boolean => {
-    if (role === 'owner' || role === 'admin') return true
-    if (doc.userId === userId) return true
-    if (acl && doc.editors?.includes(userId)) return true
-    return false
-  }
+  const result = await requireOrgMember({ db, orgId, userId })
+  if (ROLE_LEVEL[result.role] < ROLE_LEVEL[minRole]) return err('INSUFFICIENT_ORG_ROLE')
+  return result
+}
+/**
+ * Checks whether a user can edit a document based on their org role, ownership, and optional ACL editors list.
+ * @param args - Object with acl flag, doc, role, and userId
+ * @returns Whether the user has edit permission
+ */
+const canEdit = ({ acl, doc, role, userId }: CanEditOpts): boolean => {
+  if (role === 'owner' || role === 'admin') return true
+  if (doc.userId === userId) return true
+  if (acl && doc.editors?.includes(userId)) return true
+  return false
+}
 interface OrgCrudOptions<S extends ZodRawShape = ZodRawShape> {
   acl?: boolean
   aclFrom?: { field: keyof S & string; table: string }
@@ -119,168 +119,142 @@ interface OrgCrudOptions<S extends ZodRawShape = ZodRawShape> {
   rateLimit?: RateLimitConfig
   softDelete?: boolean
 }
-const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined) ?? [],
-  requireOrgDoc = (doc: null | Rec, orgId: string, debug?: string): Rec => {
-    if (doc?.orgId !== orgId) return err('NOT_FOUND', debug)
-    return doc
-  },
-  resolveAclDoc = async (
-    db: DbLike,
-    doc: Rec,
-    opt?: { aclFrom?: { field: string; table: string } }
-  ): Promise<{
-    editors?: string[]
-    userId: string
-  }> => {
-    if (opt?.aclFrom) {
-      const parentId = doc[opt.aclFrom.field] as string,
-        parent = parentId ? await db.get(parentId) : null
-      return {
-        editors: parent ? getEditors(parent) : [],
-        userId: doc.userId as string
-      }
+const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined) ?? []
+const requireOrgDoc = (doc: null | Rec, orgId: string, debug?: string): Rec => {
+  if (doc?.orgId !== orgId) return err('NOT_FOUND', debug)
+  return doc
+}
+const resolveAclDoc = async (
+  db: DbLike,
+  doc: Rec,
+  opt?: { aclFrom?: { field: string; table: string } }
+): Promise<{
+  editors?: string[]
+  userId: string
+}> => {
+  if (opt?.aclFrom) {
+    const parentId = doc[opt.aclFrom.field] as string
+    const parent = parentId ? await db.get(parentId) : null
+    return {
+      editors: parent ? getEditors(parent) : [],
+      userId: doc.userId as string
     }
-    return doc as { userId: string }
-  },
-  ohk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string }),
-  makeOrgCrud = <S extends ZodRawShape>({
-    builders,
-    options: opt,
-    schema,
-    table
-  }: {
-    builders: BaseBuilders
-    options?: OrgCrudOptions<S>
-    schema: ZodObject<S>
-    table: string
-  }): OrgCrudResult<S> => {
-    const { m, q } = builders,
-      hooks = opt?.hooks,
-      partial = schema.partial(),
-      bulkIdsSchema = array(zid(table)).max(BULK_MAX),
-      fileFs = detectFiles(schema.shape),
-      idArgs = { id: zid(table) },
-      orgIdArg = { orgId: zid('org') },
-      useAcl = Boolean(opt?.acl) || Boolean(opt?.aclFrom),
-      softDel = Boolean(opt?.softDelete),
-      enrich = async (c: ReadCtx, docs: Rec[]) => {
-        const withAuthorDocs = await c.withAuthor(docs as { userId: string }[]),
-          enrichedDocs = await Promise.all(
-            withAuthorDocs.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage }))
-          )
-        return enrichedDocs as OrgEnrichedDoc<S>[]
-      },
-      cascadeDelete = async (db: DbLike, id: string) => {
-        if (!opt?.cascade) return
-        const { foreignKey, table: tbl } = opt.cascade,
-          kids = await db
-            .query(tbl)
-            .filter(flt(f => f.eq(f.field(foreignKey), id)))
-            .collect()
-        for (const kid of kids) await dbDelete(db, kid._id as string)
-      },
-      create = m({
-        args: { ...orgIdArg, ...partial.shape, items: array(schema).max(BULK_MAX).optional() },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { items, orgId } = a as { items?: Rec[]; orgId: string }
-          await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          if (items) {
-            if (opt?.rateLimit && !isTestMode())
-              await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
-            const ids: string[] = []
-            for (const item of items) {
-              const parsed = schema.safeParse(item)
-              if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
-              let data = parsed.data as Rec
-              if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
-              const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
-              if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
-              ids.push(id)
-            }
-            return ids
-          }
-          if (opt?.rateLimit && !isTestMode())
-            await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
-          let data = schema.parse(a) as Rec
+  }
+  return doc as { userId: string }
+}
+const ohk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
+const makeOrgCrud = <S extends ZodRawShape>({
+  builders,
+  options: opt,
+  schema,
+  table
+}: {
+  builders: BaseBuilders
+  options?: OrgCrudOptions<S>
+  schema: ZodObject<S>
+  table: string
+}): OrgCrudResult<S> => {
+  const { m, q } = builders
+  const hooks = opt?.hooks
+  const partial = schema.partial()
+  const bulkIdsSchema = array(zid(table)).max(BULK_MAX)
+  const fileFs = detectFiles(schema.shape)
+  const idArgs = { id: zid(table) }
+  const orgIdArg = { orgId: zid('org') }
+  const useAcl = Boolean(opt?.acl) || Boolean(opt?.aclFrom)
+  const softDel = Boolean(opt?.softDelete)
+  const enrich = async (c: ReadCtx, docs: Rec[]) => {
+    const withAuthorDocs = await c.withAuthor(docs as { userId: string }[])
+    const enrichedDocs = await Promise.all(
+      withAuthorDocs.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage }))
+    )
+    return enrichedDocs as OrgEnrichedDoc<S>[]
+  }
+  const cascadeDelete = async (db: DbLike, id: string) => {
+    if (!opt?.cascade) return
+    const { foreignKey, table: tbl } = opt.cascade
+    const kids = await db
+      .query(tbl)
+      .filter(flt(f => f.eq(f.field(foreignKey), id)))
+      .collect()
+    for (const kid of kids) await dbDelete(db, kid._id as string)
+  }
+  const create = m({
+    args: { ...orgIdArg, ...partial.shape, items: array(schema).max(BULK_MAX).optional() },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { items, orgId } = a as { items?: Rec[]; orgId: string }
+      await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      if (items) {
+        if (opt?.rateLimit && !isTestMode())
+          await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+        const ids: string[] = []
+        for (const item of items) {
+          const parsed = schema.safeParse(item)
+          if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+          let data = parsed.data as Rec
           if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
           const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
           if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
-          return id
-        })
-      }),
-      list = q({
-        args: { ...orgIdArg, paginationOpts: pgOpts },
-        handler: typed(async (c: MutCtx & ReadCtx, { orgId, paginationOpts }: { orgId: string; paginationOpts: Rec }) => {
-          await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          const qry = c.db
-              .query(table)
-              .withIndex(
-                'by_org',
-                idx(o => o.eq('orgId', orgId))
-              )
-              .order('desc'),
-            // oxlint-disable-next-line unicorn/no-useless-undefined
-            filtered = softDel ? qry.filter((f: FilterLike) => f.eq(f.field('deletedAt'), undefined)) : qry,
-            { page, ...rest } = await filtered.paginate(paginationOpts)
-          return { ...rest, page: await enrich(c, page) }
-        })
-      }),
-      read = q({
-        args: { ...orgIdArg, ...idArgs },
-        handler: typed(async (c: MutCtx & ReadCtx, { id, orgId }: { id: string; orgId: string }) => {
-          await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          const dbDoc = await c.db.get(id),
-            doc = requireOrgDoc(dbDoc, orgId),
-            enriched = await enrich(c, [doc])
-          return enriched[0]
-        })
-      }),
-      updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
-      update = m({
-        args: {
-          ...orgIdArg,
-          ...partial.shape,
-          expectedUpdatedAt: number().optional(),
-          id: zid(table).optional(),
-          items: array(updateItemSchema).max(BULK_MAX).optional()
-        },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { orgId } = a as { orgId: string },
-            rawItems = a.items as (Rec & { expectedUpdatedAt?: number; id: string })[] | undefined
-          if (rawItems) {
-            const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
-              results: Rec[] = []
-            for (const rawItem of rawItems) {
-              const doc = await c.db.get(rawItem.id)
-              /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
-              if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
-              const aclDoc = await resolveAclDoc(c.db, doc, opt)
-              if (
-                !canEdit({
-                  acl: useAcl,
-                  doc: aclDoc as { editors?: string[]; userId: string },
-                  role,
-                  userId: c.user._id as string
-                })
-              )
-                /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
-                continue // eslint-disable-line no-continue
-              let patch = partial.parse(rawItem) as Rec
-              if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
-              const now = time()
-              await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
-              await dbPatch(c.db, rawItem.id, { ...patch, ...now })
-              if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
-              results.push({ ...doc, ...patch, ...now })
-            }
-            return results
-          }
-          const id = a.id as string | undefined
-          if (!id) return err('VALIDATION_FAILED', `${table}:update`)
-          const { expectedUpdatedAt } = a as { expectedUpdatedAt?: number },
-            { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
-            doc = requireOrgDoc(await c.db.get(id), orgId),
-            aclDoc = await resolveAclDoc(c.db, doc, opt)
+          ids.push(id)
+        }
+        return ids
+      }
+      if (opt?.rateLimit && !isTestMode())
+        await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+      let data = schema.parse(a) as Rec
+      if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
+      const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })
+      if (hooks?.afterCreate) await hooks.afterCreate(ohk(c), { data, id })
+      return id
+    })
+  })
+  const list = q({
+    args: { ...orgIdArg, paginationOpts: pgOpts },
+    handler: typed(async (c: MutCtx & ReadCtx, { orgId, paginationOpts }: { orgId: string; paginationOpts: Rec }) => {
+      await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      const qry = c.db
+        .query(table)
+        .withIndex(
+          'by_org',
+          idx(o => o.eq('orgId', orgId))
+        )
+        .order('desc')
+      // oxlint-disable-next-line unicorn/no-useless-undefined
+      const filtered = softDel ? qry.filter((f: FilterLike) => f.eq(f.field('deletedAt'), undefined)) : qry
+      const { page, ...rest } = await filtered.paginate(paginationOpts)
+      return { ...rest, page: await enrich(c, page) }
+    })
+  })
+  const read = q({
+    args: { ...orgIdArg, ...idArgs },
+    handler: typed(async (c: MutCtx & ReadCtx, { id, orgId }: { id: string; orgId: string }) => {
+      await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      const dbDoc = await c.db.get(id)
+      const doc = requireOrgDoc(dbDoc, orgId)
+      const enriched = await enrich(c, [doc])
+      return enriched[0]
+    })
+  })
+  const updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) })
+  const update = m({
+    args: {
+      ...orgIdArg,
+      ...partial.shape,
+      expectedUpdatedAt: number().optional(),
+      id: zid(table).optional(),
+      items: array(updateItemSchema).max(BULK_MAX).optional()
+    },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { orgId } = a as { orgId: string }
+      const rawItems = a.items as (Rec & { expectedUpdatedAt?: number; id: string })[] | undefined
+      if (rawItems) {
+        const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+        const results: Rec[] = []
+        for (const rawItem of rawItems) {
+          const doc = await c.db.get(rawItem.id)
+          /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+          if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
+          const aclDoc = await resolveAclDoc(c.db, doc, opt)
           if (
             !canEdit({
               acl: useAcl,
@@ -289,58 +263,56 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
               userId: c.user._id as string
             })
           )
-            return err('FORBIDDEN', `${table}:update`)
-          if (expectedUpdatedAt !== undefined && doc.updatedAt !== expectedUpdatedAt)
-            return err('CONFLICT', `${table}:update`)
-          let patch = partial.parse(a) as Rec
-          if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id, patch, prev: doc })
+            /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+            continue // eslint-disable-line no-continue
+          let patch = partial.parse(rawItem) as Rec
+          if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
           const now = time()
           await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
-          await dbPatch(c.db, id, { ...patch, ...now })
-          if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id, patch, prev: doc })
-          return { ...doc, ...patch, ...now }
+          await dbPatch(c.db, rawItem.id, { ...patch, ...now })
+          if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id: rawItem.id, patch, prev: doc })
+          results.push({ ...doc, ...patch, ...now })
+        }
+        return results
+      }
+      const id = a.id as string | undefined
+      if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+      const { expectedUpdatedAt } = a as { expectedUpdatedAt?: number }
+      const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      const doc = requireOrgDoc(await c.db.get(id), orgId)
+      const aclDoc = await resolveAclDoc(c.db, doc, opt)
+      if (
+        !canEdit({
+          acl: useAcl,
+          doc: aclDoc as { editors?: string[]; userId: string },
+          role,
+          userId: c.user._id as string
         })
-      }),
-      rm = m({
-        args: { ...orgIdArg, id: zid(table).optional(), ids: bulkIdsSchema.optional() },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { orgId } = a as { orgId: string },
-            ids = a.ids as string[] | undefined
-          if (ids) {
-            const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-            let deleted = 0
-            for (const id of ids) {
-              const doc = await c.db.get(id)
-              /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
-              if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
-              const aclDoc = await resolveAclDoc(c.db, doc, opt)
-              if (
-                !canEdit({
-                  acl: useAcl,
-                  doc: aclDoc as { editors?: string[]; userId: string },
-                  role,
-                  userId: c.user._id as string
-                })
-              )
-                /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
-                continue // eslint-disable-line no-continue
-              if (hooks?.beforeDelete) await hooks.beforeDelete(ohk(c), { doc, id })
-              if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
-              else {
-                await cascadeDelete(c.db, id)
-                await dbDelete(c.db, id)
-              }
-              await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
-              if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
-              deleted += 1
-            }
-            return deleted
-          }
-          const id = a.id as string | undefined
-          if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
-          const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
-            doc = requireOrgDoc(await c.db.get(id), orgId),
-            aclDoc = await resolveAclDoc(c.db, doc, opt)
+      )
+        return err('FORBIDDEN', `${table}:update`)
+      if (expectedUpdatedAt !== undefined && doc.updatedAt !== expectedUpdatedAt) return err('CONFLICT', `${table}:update`)
+      let patch = partial.parse(a) as Rec
+      if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(ohk(c), { id, patch, prev: doc })
+      const now = time()
+      await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: c.storage })
+      await dbPatch(c.db, id, { ...patch, ...now })
+      if (hooks?.afterUpdate) await hooks.afterUpdate(ohk(c), { id, patch, prev: doc })
+      return { ...doc, ...patch, ...now }
+    })
+  })
+  const rm = m({
+    args: { ...orgIdArg, id: zid(table).optional(), ids: bulkIdsSchema.optional() },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { orgId } = a as { orgId: string }
+      const ids = a.ids as string[] | undefined
+      if (ids) {
+        const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+        let deleted = 0
+        for (const id of ids) {
+          const doc = await c.db.get(id)
+          /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+          if (doc?.orgId !== orgId) continue // eslint-disable-line no-continue
+          const aclDoc = await resolveAclDoc(c.db, doc, opt)
           if (
             !canEdit({
               acl: useAcl,
@@ -349,138 +321,165 @@ const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined)
               userId: c.user._id as string
             })
           )
-            return err('FORBIDDEN', `${table}:rm`)
+            /** biome-ignore lint/nursery/noContinue: guard clause reduces nesting */
+            continue // eslint-disable-line no-continue
           if (hooks?.beforeDelete) await hooks.beforeDelete(ohk(c), { doc, id })
-          if (softDel) {
-            await dbPatch(c.db, id, { deletedAt: Date.now() })
-            if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
-            log('info', 'crud:delete', { id, soft: true, table })
-            return doc
+          if (softDel) await dbPatch(c.db, id, { deletedAt: Date.now() })
+          else {
+            await cascadeDelete(c.db, id)
+            await dbDelete(c.db, id)
           }
-          await cascadeDelete(c.db, id)
-          await dbDelete(c.db, id)
           await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
           if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
-          return doc
-        })
-      }),
-      restore = softDel
-        ? m({
-            args: { ...orgIdArg, ...idArgs },
-            handler: typed(async (c: MutCtx, { id, orgId }: { id: string; orgId: string }) => {
-              const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string }),
-                doc = requireOrgDoc(await c.db.get(id), orgId),
-                aclDoc = await resolveAclDoc(c.db, doc, opt)
-              if (
-                !canEdit({
-                  acl: useAcl,
-                  doc: aclDoc as { editors?: string[]; userId: string },
-                  role,
-                  userId: c.user._id as string
-                })
-              )
-                return err('FORBIDDEN', `${table}:restore`)
-              await dbPatch(c.db, id, { deletedAt: undefined, ...time() })
-              return { ...doc, deletedAt: undefined }
-            })
-          })
-        : undefined,
-      base = { create, list, read, restore, rm, update },
-      itemIdKey = `${table}Id` as const,
-      itemIdArg = { [itemIdKey]: zid(table) },
-      aclArgs = (a: unknown) => {
-        const args = a as Rec
-        return {
-          editorId: args.editorId as string,
-          editorIds: args.editorIds as string[] | undefined,
-          itemId: args[itemIdKey] as string,
-          orgId: args.orgId as string
+          deleted += 1
         }
-      },
-      addEditor = m({
-        args: { editorId: zid('users'), ...orgIdArg, ...itemIdArg },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { editorId, itemId, orgId } = aclArgs(a)
-          await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const itemDoc = await c.db.get(itemId),
-            doc = requireOrgDoc(itemDoc, orgId),
-            orgDoc = await c.db.get(orgId),
-            editorIsOwner = orgDoc?.userId === editorId,
-            editorMember = await getOrgMember({ db: c.db, orgId, userId: editorId })
-          if (!(editorIsOwner || editorMember)) return err('NOT_ORG_MEMBER')
-          const eds = getEditors(doc),
-            already = eds.some((eid: string) => eid === editorId)
-          if (already) return doc
-          if (eds.length >= 100) return err('LIMIT_EXCEEDED')
-          const now = time(),
-            patch = { editors: [...eds, editorId], ...now }
-          await dbPatch(c.db, itemId, patch)
-          return { ...doc, ...patch }
+        return deleted
+      }
+      const id = a.id as string | undefined
+      if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
+      const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      const doc = requireOrgDoc(await c.db.get(id), orgId)
+      const aclDoc = await resolveAclDoc(c.db, doc, opt)
+      if (
+        !canEdit({
+          acl: useAcl,
+          doc: aclDoc as { editors?: string[]; userId: string },
+          role,
+          userId: c.user._id as string
         })
-      }),
-      removeEditor = m({
-        args: { editorId: zid('users'), ...orgIdArg, ...itemIdArg },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { editorId, itemId, orgId } = aclArgs(a)
-          await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const doc = requireOrgDoc(await c.db.get(itemId), orgId),
-            eds = getEditors(doc),
-            filtered = eds.filter((eid: string) => eid !== editorId),
-            now = time(),
-            patch = { editors: filtered, ...now }
-          await dbPatch(c.db, itemId, patch)
-          return { ...doc, ...patch }
-        })
-      }),
-      editors = q({
-        args: { ...orgIdArg, ...itemIdArg },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { itemId, orgId } = aclArgs(a)
-          await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
-          const doc = requireOrgDoc(await c.db.get(itemId), orgId),
-            editorIds = getEditors(doc),
-            users = await Promise.all(editorIds.map(async (eid: string) => c.db.get(eid))),
-            result: { email: string; name: string; userId: string }[] = []
-          for (let i = 0; i < editorIds.length; i += 1) {
-            const u = users[i] as null | Rec,
-              eid = editorIds[i]
-            if (u && eid) result.push({ email: u.email as string, name: u.name as string, userId: eid })
-          }
-          return result
-        })
-      }),
-      setEditors = m({
-        args: { editorIds: array(zid('users')).max(BULK_MAX), ...orgIdArg, ...itemIdArg },
-        handler: typed(async (c: MutCtx, a: Rec) => {
-          const { editorIds, itemId, orgId } = aclArgs(a)
-          await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
-          const itemDoc = await c.db.get(itemId),
-            doc = requireOrgDoc(itemDoc, orgId)
-          if (editorIds) {
-            const orgDoc = await c.db.get(orgId)
-            for (const editorId of editorIds) {
-              const isOwner = orgDoc?.userId === editorId,
-                member = await getOrgMember({ db: c.db, orgId, userId: editorId })
-              if (!(isOwner || member)) return err('NOT_ORG_MEMBER')
-            }
-          }
-          const now = time(),
-            patch = { editors: editorIds ?? [], ...now }
-          await dbPatch(c.db, itemId, patch)
-          return { ...doc, ...patch }
+      )
+        return err('FORBIDDEN', `${table}:rm`)
+      if (hooks?.beforeDelete) await hooks.beforeDelete(ohk(c), { doc, id })
+      if (softDel) {
+        await dbPatch(c.db, id, { deletedAt: Date.now() })
+        if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
+        log('info', 'crud:delete', { id, soft: true, table })
+        return doc
+      }
+      await cascadeDelete(c.db, id)
+      await dbDelete(c.db, id)
+      await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+      if (hooks?.afterDelete) await hooks.afterDelete(ohk(c), { doc, id })
+      return doc
+    })
+  })
+  const restore = softDel
+    ? m({
+        args: { ...orgIdArg, ...idArgs },
+        handler: typed(async (c: MutCtx, { id, orgId }: { id: string; orgId: string }) => {
+          const { role } = await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+          const doc = requireOrgDoc(await c.db.get(id), orgId)
+          const aclDoc = await resolveAclDoc(c.db, doc, opt)
+          if (
+            !canEdit({
+              acl: useAcl,
+              doc: aclDoc as { editors?: string[]; userId: string },
+              role,
+              userId: c.user._id as string
+            })
+          )
+            return err('FORBIDDEN', `${table}:restore`)
+          await dbPatch(c.db, id, { deletedAt: undefined, ...time() })
+          return { ...doc, deletedAt: undefined }
         })
       })
-    return { ...base, addEditor, editors, removeEditor, setEditors } as unknown as OrgCrudResult<S>
-  },
-  /**
-   * Creates a cascade configuration for org-scoped child tables, used with orgCrud's cascade option.
-   * @param _schema - The child table's Zod schema (used for type inference only)
-   * @param config - Object with foreignKey and table name
-   * @returns CascadeOption config object
-   */
-  orgCascade = <S extends ZodRawShape>(
-    _schema: ZodObject<S>,
-    config: { foreignKey: keyof S & string; table: string }
-  ): CascadeOption => config
+    : undefined
+  const base = { create, list, read, restore, rm, update }
+  const itemIdKey = `${table}Id` as const
+  const itemIdArg = { [itemIdKey]: zid(table) }
+  const aclArgs = (a: unknown) => {
+    const args = a as Rec
+    return {
+      editorId: args.editorId as string,
+      editorIds: args.editorIds as string[] | undefined,
+      itemId: args[itemIdKey] as string,
+      orgId: args.orgId as string
+    }
+  }
+  const addEditor = m({
+    args: { editorId: zid('users'), ...orgIdArg, ...itemIdArg },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { editorId, itemId, orgId } = aclArgs(a)
+      await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+      const itemDoc = await c.db.get(itemId)
+      const doc = requireOrgDoc(itemDoc, orgId)
+      const orgDoc = await c.db.get(orgId)
+      const editorIsOwner = orgDoc?.userId === editorId
+      const editorMember = await getOrgMember({ db: c.db, orgId, userId: editorId })
+      if (!(editorIsOwner || editorMember)) return err('NOT_ORG_MEMBER')
+      const eds = getEditors(doc)
+      const already = eds.some((eid: string) => eid === editorId)
+      if (already) return doc
+      if (eds.length >= 100) return err('LIMIT_EXCEEDED')
+      const now = time()
+      const patch = { editors: [...eds, editorId], ...now }
+      await dbPatch(c.db, itemId, patch)
+      return { ...doc, ...patch }
+    })
+  })
+  const removeEditor = m({
+    args: { editorId: zid('users'), ...orgIdArg, ...itemIdArg },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { editorId, itemId, orgId } = aclArgs(a)
+      await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+      const doc = requireOrgDoc(await c.db.get(itemId), orgId)
+      const eds = getEditors(doc)
+      const filtered = eds.filter((eid: string) => eid !== editorId)
+      const now = time()
+      const patch = { editors: filtered, ...now }
+      await dbPatch(c.db, itemId, patch)
+      return { ...doc, ...patch }
+    })
+  })
+  const editors = q({
+    args: { ...orgIdArg, ...itemIdArg },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { itemId, orgId } = aclArgs(a)
+      await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
+      const doc = requireOrgDoc(await c.db.get(itemId), orgId)
+      const editorIds = getEditors(doc)
+      const users = await Promise.all(editorIds.map(async (eid: string) => c.db.get(eid)))
+      const result: { email: string; name: string; userId: string }[] = []
+      for (let i = 0; i < editorIds.length; i += 1) {
+        const u = users[i] as null | Rec
+        const eid = editorIds[i]
+        if (u && eid) result.push({ email: u.email as string, name: u.name as string, userId: eid })
+      }
+      return result
+    })
+  })
+  const setEditors = m({
+    args: { editorIds: array(zid('users')).max(BULK_MAX), ...orgIdArg, ...itemIdArg },
+    handler: typed(async (c: MutCtx, a: Rec) => {
+      const { editorIds, itemId, orgId } = aclArgs(a)
+      await requireOrgRole({ db: c.db, minRole: 'admin', orgId, userId: c.user._id as string })
+      const itemDoc = await c.db.get(itemId)
+      const doc = requireOrgDoc(itemDoc, orgId)
+      if (editorIds) {
+        const orgDoc = await c.db.get(orgId)
+        for (const editorId of editorIds) {
+          const isOwner = orgDoc?.userId === editorId
+          const member = await getOrgMember({ db: c.db, orgId, userId: editorId })
+          if (!(isOwner || member)) return err('NOT_ORG_MEMBER')
+        }
+      }
+      const now = time()
+      const patch = { editors: editorIds ?? [], ...now }
+      await dbPatch(c.db, itemId, patch)
+      return { ...doc, ...patch }
+    })
+  })
+  return { ...base, addEditor, editors, removeEditor, setEditors } as unknown as OrgCrudResult<S>
+}
+/**
+ * Creates a cascade configuration for org-scoped child tables, used with orgCrud's cascade option.
+ * @param _schema - The child table's Zod schema (used for type inference only)
+ * @param config - Object with foreignKey and table name
+ * @returns CascadeOption config object
+ */
+const orgCascade = <S extends ZodRawShape>(
+  _schema: ZodObject<S>,
+  config: { foreignKey: keyof S & string; table: string }
+): CascadeOption => config
 export type { OrgCrudOptions }
 export { canEdit, getOrgMember, getOrgRole, makeOrgCrud, orgCascade, requireOrgMember, requireOrgRole }

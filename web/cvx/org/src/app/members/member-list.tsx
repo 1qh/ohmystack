@@ -16,32 +16,32 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
 const MemberList = () => {
-  const { canManageAdmins, canManageMembers, role: myRole } = useOrg(),
-    members = useOrgQuery(api.org.members),
-    removeMember = useMutation(api.org.removeMember),
-    setAdmin = useMutation(api.org.setAdmin),
-    [query, setQuery] = useState(''),
-    displayMembers = useMemo(() => {
-      if (!members) return []
-      const q = query.trim().toLowerCase()
-      if (!q) return members
-      const out: typeof members = []
-      for (const m of members)
-        if (m.role.toLowerCase().includes(q) || (m.user?.name ?? '').toLowerCase().includes(q)) out.push(m)
-      return out
-    }, [members, query])
+  const { canManageAdmins, canManageMembers, role: myRole } = useOrg()
+  const members = useOrgQuery(api.org.members)
+  const removeMember = useMutation(api.org.removeMember)
+  const setAdmin = useMutation(api.org.setAdmin)
+  const [query, setQuery] = useState('')
+  const displayMembers = useMemo(() => {
+    if (!members) return []
+    const q = query.trim().toLowerCase()
+    if (!q) return members
+    const out: typeof members = []
+    for (const m of members)
+      if (m.role.toLowerCase().includes(q) || (m.user?.name ?? '').toLowerCase().includes(q)) out.push(m)
+    return out
+  }, [members, query])
   if (!members) return <Skeleton className='h-40 w-full' />
   type MemberId = NonNullable<(typeof members)[number]['memberId']>
   const handleRemove = (memberId: MemberId) => {
-      removeMember({ memberId })
-        .then(() => toast.success('Member removed'))
-        .catch(fail)
-    },
-    handleToggleAdmin = (memberId: MemberId, isAdmin: boolean) => {
-      setAdmin({ isAdmin: !isAdmin, memberId })
-        .then(() => toast.success(isAdmin ? 'Demoted to member' : 'Promoted to admin'))
-        .catch(fail)
-    }
+    removeMember({ memberId })
+      .then(() => toast.success('Member removed'))
+      .catch(fail)
+  }
+  const handleToggleAdmin = (memberId: MemberId, isAdmin: boolean) => {
+    setAdmin({ isAdmin: !isAdmin, memberId })
+      .then(() => toast.success(isAdmin ? 'Demoted to member' : 'Promoted to admin'))
+      .catch(fail)
+  }
   return (
     <div className='flex flex-col gap-3'>
       <div className='relative'>
@@ -58,8 +58,8 @@ const MemberList = () => {
         </TableHeader>
         <TableBody>
           {displayMembers.map(m => {
-            const { memberId } = m,
-              showActions = m.role !== 'owner' && memberId
+            const { memberId } = m
+            const showActions = m.role !== 'owner' && memberId
             return (
               <TableRow key={m.userId}>
                 <TableCell className='flex items-center gap-2'>

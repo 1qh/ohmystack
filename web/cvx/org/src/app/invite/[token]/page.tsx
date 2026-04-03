@@ -9,23 +9,23 @@ import { useRouter } from 'next/navigation'
 import { use, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
-  const { token } = use(params),
-    router = useRouter(),
-    [accepted, setAccepted] = useState(false),
-    [inviteError, setInviteError] = useState<null | string>(null),
-    acceptInvite = useMutation(api.org.acceptInvite),
-    timerRef = useRef<null | ReturnType<typeof setTimeout>>(null),
-    handleAccept = () => {
-      acceptInvite({ token })
-        .then(() => {
-          setAccepted(true)
-          toast.success('Welcome to the organization!')
-          timerRef.current = setTimeout(() => router.push('/'), 1500)
-        })
-        .catch((acceptError: unknown) => {
-          setInviteError(acceptError instanceof Error ? acceptError.message : 'Invalid or expired invite')
-        })
-    }
+  const { token } = use(params)
+  const router = useRouter()
+  const [accepted, setAccepted] = useState(false)
+  const [inviteError, setInviteError] = useState<null | string>(null)
+  const acceptInvite = useMutation(api.org.acceptInvite)
+  const timerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
+  const handleAccept = () => {
+    acceptInvite({ token })
+      .then(() => {
+        setAccepted(true)
+        toast.success('Welcome to the organization!')
+        timerRef.current = setTimeout(() => router.push('/'), 1500)
+      })
+      .catch((acceptError: unknown) => {
+        setInviteError(acceptError instanceof Error ? acceptError.message : 'Invalid or expired invite')
+      })
+  }
   useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current)

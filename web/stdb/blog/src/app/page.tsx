@@ -7,29 +7,29 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { Create, List } from './common'
 const Page = () => {
-  const [allBlogs, isReady] = useTable(tables.blog),
-    { identity } = useSpacetimeDB(),
-    blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null),
-    [stableReady, markReady] = useReducer(() => true, false),
-    [removedIds, setRemovedIds] = useState<Set<number>>(() => new Set()),
-    [query, setQuery] = useState('')
+  const [allBlogs, isReady] = useTable(tables.blog)
+  const { identity } = useSpacetimeDB()
+  const blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null)
+  const [stableReady, markReady] = useReducer(() => true, false)
+  const [removedIds, setRemovedIds] = useState<Set<number>>(() => new Set())
+  const [query, setQuery] = useState('')
   useEffect(() => {
     if (isReady || allBlogs.length > 0) markReady()
   }, [allBlogs.length, isReady])
   const { data, hasMore, isLoading, loadMore } = useList(blogs, stableReady, {
-      search: { debounceMs: 200, fields: ['title', 'content', 'tags'], query },
-      sort: { direction: 'desc', field: 'id' },
-      where: { or: [{ published: true }, { own: true }] }
-    }),
-    filtered = useMemo(() => {
-      if (removedIds.size === 0) return data
-      const out: typeof data = []
-      for (const b of data) if (!removedIds.has(b.id)) out.push(b)
-      return out
-    }, [data, removedIds]),
-    handleRemove = useCallback((id: number) => {
-      setRemovedIds(prev => new Set(prev).add(id))
-    }, [])
+    search: { debounceMs: 200, fields: ['title', 'content', 'tags'], query },
+    sort: { direction: 'desc', field: 'id' },
+    where: { or: [{ published: true }, { own: true }] }
+  })
+  const filtered = useMemo(() => {
+    if (removedIds.size === 0) return data
+    const out: typeof data = []
+    for (const b of data) if (!removedIds.has(b.id)) out.push(b)
+    return out
+  }, [data, removedIds])
+  const handleRemove = useCallback((id: number) => {
+    setRemovedIds(prev => new Set(prev).add(id))
+  }, [])
   return (
     <div data-testid='crud-dynamic-page'>
       <Create />

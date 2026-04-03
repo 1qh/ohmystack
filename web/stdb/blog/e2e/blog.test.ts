@@ -1,8 +1,8 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: x
 import { expect, test } from './fixtures'
 import { cleanupTestData, login } from './helpers'
-const BLOG_DETAIL_URL = /\/[a-z0-9]+$/u,
-  BLOG_EDIT_URL = /\/[a-z0-9]+\/edit$/u
+const BLOG_DETAIL_URL = /\/[a-z0-9]+$/u
+const BLOG_EDIT_URL = /\/[a-z0-9]+\/edit$/u
 test.describe
   .serial('Blog CRUD - Create', () => {
     test.beforeEach(async ({ blogPage, page }) => {
@@ -73,8 +73,8 @@ test.describe
       await expect(page.getByTestId('edit-blog-page').first()).toBeVisible({ timeout: 10_000 })
     })
     test('edit form shows current values', async ({ blogPage, page }) => {
-      const title = `Pre-filled Blog ${Date.now()}`,
-        content = 'Pre-filled content'
+      const title = `Pre-filled Blog ${Date.now()}`
+      const content = 'Pre-filled content'
       await blogPage.createBlog(title, content)
       const card = blogPage.getBlogCards().filter({ hasText: title }).first()
       await expect(card).toBeVisible({ timeout: 10_000 })

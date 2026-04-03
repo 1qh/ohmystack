@@ -11,22 +11,22 @@ import { useMutation } from 'convex/react'
 import { Copy, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 const PendingInvites = () => {
-  const invites = useOrgQuery(api.org.pendingInvites),
-    revokeInvite = useMutation(api.org.revokeInvite)
+  const invites = useOrgQuery(api.org.pendingInvites)
+  const revokeInvite = useMutation(api.org.revokeInvite)
   if (invites === undefined) return <Skeleton className='h-20 w-full' />
   if (invites.length === 0) return null
   const handleCopy = (token: string) => {
-      const url = `${globalThis.location.origin}/invite/${token}`
-      navigator.clipboard
-        .writeText(url)
-        .then(() => toast.success('Invite link copied'))
-        .catch(() => toast.error('Failed to copy'))
-    },
-    handleRevoke = (inviteId: (typeof invites)[number]['_id']) => {
-      revokeInvite({ inviteId })
-        .then(() => toast.success('Invite revoked'))
-        .catch(fail)
-    }
+    const url = `${globalThis.location.origin}/invite/${token}`
+    navigator.clipboard
+      .writeText(url)
+      .then(() => toast.success('Invite link copied'))
+      .catch(() => toast.error('Failed to copy'))
+  }
+  const handleRevoke = (inviteId: (typeof invites)[number]['_id']) => {
+    revokeInvite({ inviteId })
+      .then(() => toast.success('Invite revoked'))
+      .catch(fail)
+  }
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Pending Invites</h3>

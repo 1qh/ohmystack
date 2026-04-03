@@ -36,12 +36,12 @@ interface UsePresenceResult {
  * ```
  */
 const usePresence = (refs: PresenceRefs, roomId: string, options?: UsePresenceOptions): UsePresenceResult => {
-  const enabled = options?.enabled !== false,
-    heartbeatMut = useMutation(refs.heartbeat),
-    leaveMut = useMutation(refs.leave),
-    users = useQuery(refs.list, enabled ? { roomId } : 'skip') as PresenceUser[] | undefined,
-    dataRef = useRef(options?.data),
-    roomIdRef = useRef(roomId)
+  const enabled = options?.enabled !== false
+  const heartbeatMut = useMutation(refs.heartbeat)
+  const leaveMut = useMutation(refs.leave)
+  const users = useQuery(refs.list, enabled ? { roomId } : 'skip') as PresenceUser[] | undefined
+  const dataRef = useRef(options?.data)
+  const roomIdRef = useRef(roomId)
   useEffect(() => {
     dataRef.current = options?.data
     roomIdRef.current = roomId
@@ -63,17 +63,17 @@ const usePresence = (refs: PresenceRefs, roomId: string, options?: UsePresenceOp
     }
   }, [enabled, heartbeatMut, leaveMut])
   const updatePresence = useCallback(
-      (data: Record<string, unknown>) => {
-        dataRef.current = data
-        // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget heartbeat
-        heartbeatMut({ data, roomId: roomIdRef.current })
-      },
-      [heartbeatMut]
-    ),
-    leave = useCallback(() => {
-      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget leave
-      leaveMut({ roomId: roomIdRef.current })
-    }, [leaveMut])
+    (data: Record<string, unknown>) => {
+      dataRef.current = data
+      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget heartbeat
+      heartbeatMut({ data, roomId: roomIdRef.current })
+    },
+    [heartbeatMut]
+  )
+  const leave = useCallback(() => {
+    // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget leave
+    leaveMut({ roomId: roomIdRef.current })
+  }, [leaveMut])
   return {
     leave,
     updatePresence,

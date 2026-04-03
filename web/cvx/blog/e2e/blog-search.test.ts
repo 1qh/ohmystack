@@ -25,8 +25,8 @@ test.describe
       await expect(blogPage.getBlogCards()).toHaveCount(1, { timeout: 10_000 })
     })
     test('filters blogs by content with tags present', async ({ blogPage }) => {
-      const uniqueContent = `content${Date.now()}`,
-        uniqueTitle = `Tagged post ${Date.now()}`
+      const uniqueContent = `content${Date.now()}`
+      const uniqueTitle = `Tagged post ${Date.now()}`
       await blogPage.createBlog(uniqueTitle, `Content with ${uniqueContent}`, { tags: ['tagged'] })
       await blogPage.search(uniqueContent)
       await expect(blogPage.getBlogCards()).toHaveCount(1, { timeout: 15_000 })

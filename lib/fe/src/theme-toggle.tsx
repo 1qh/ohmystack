@@ -25,9 +25,9 @@ const ThemeToggle = ({
   rootProps,
   systemIconProps
 }: ThemeToggleProps) => {
-  const { setTheme, theme } = useTheme(),
-    selectedTheme = theme ?? 'system',
-    selectedThemeValue = useMemo(() => [selectedTheme], [selectedTheme])
+  const { setTheme, theme } = useTheme()
+  const selectedTheme = theme ?? 'system'
+  const selectedThemeValue = useMemo(() => [selectedTheme], [selectedTheme])
   return (
     <ToggleGroup
       {...rootProps}

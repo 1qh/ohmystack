@@ -7,9 +7,9 @@ import { FolderOpen, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useOrg } from '~/hook/use-org'
 const OrgDashboard = () => {
-  const { org, role } = useOrg(),
-    members = useOrgQuery(api.org.members),
-    projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 5 } })
+  const { org, role } = useOrg()
+  const members = useOrgQuery(api.org.members)
+  const projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 5 } })
   return (
     <div className='space-y-6'>
       <div>

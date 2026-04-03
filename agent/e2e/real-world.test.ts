@@ -5,18 +5,18 @@ import type { FunctionReference } from 'convex/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { expect, test } from './fixtures'
-const convex = new ConvexHttpClient('http://127.0.0.1:4001'),
-  CHAT_URL_RE = /\/chat\//u,
-  MESSAGE_RE = /message the agent/iu,
-  SEND_RE = /send/iu,
-  SESSIONS_RE = /sessions/iu,
-  NEW_RE = /new/iu,
-  SETTINGS_RE = /settings/iu,
-  NAME_RE = /name/iu,
-  URL_RE = /url/iu,
-  ADD_RE = /add/iu,
-  DELETE_RE = /delete/iu,
-  RATE_LIMITED_RE = /rate_limited:submitMessage:(?<waitMs>\d+)/u
+const convex = new ConvexHttpClient('http://127.0.0.1:4001')
+const CHAT_URL_RE = /\/chat\//u
+const MESSAGE_RE = /message the agent/iu
+const SEND_RE = /send/iu
+const SESSIONS_RE = /sessions/iu
+const NEW_RE = /new/iu
+const SETTINGS_RE = /settings/iu
+const NAME_RE = /name/iu
+const URL_RE = /url/iu
+const ADD_RE = /add/iu
+const DELETE_RE = /delete/iu
+const RATE_LIMITED_RE = /rate_limited:submitMessage:(?<waitMs>\d+)/u
 test.describe
   .serial('Real-world scenarios', () => {
     test('full conversation flow supports multi-turn chat', async ({ chatPage, page, sessionListPage }) => {
@@ -28,9 +28,9 @@ test.describe
       await expect(chatPage.getMessages().first()).toContainText('Hello')
       await chatPage.sendMessage('Tell me more')
       await page.waitForTimeout(3000)
-      const logText = (await page.getByRole('log').textContent()) ?? '',
-        firstIndex = logText.indexOf('Hello'),
-        secondIndex = logText.indexOf('Tell me more')
+      const logText = (await page.getByRole('log').textContent()) ?? ''
+      const firstIndex = logText.indexOf('Hello')
+      const secondIndex = logText.indexOf('Tell me more')
       expect(firstIndex).toBeGreaterThanOrEqual(0)
       expect(secondIndex).toBeGreaterThan(firstIndex)
     })
@@ -40,8 +40,8 @@ test.describe
         await sessionListPage.goto('/')
         await sessionListPage.getNewButton().click()
         await page.waitForURL(CHAT_URL_RE)
-        const sessionId = (page.url().split('/chat/')[1] ?? '').trim(),
-          marker = `marker-${i}-${Date.now()}`
+        const sessionId = (page.url().split('/chat/')[1] ?? '').trim()
+        const marker = `marker-${i}-${Date.now()}`
         await page.getByPlaceholder(MESSAGE_RE).fill(marker)
         await page.getByRole('button', { name: SEND_RE }).click()
         await page.waitForTimeout(3000)
@@ -81,10 +81,10 @@ test.describe
       }
     })
     test('session archival removes session from list', async ({ page, sessionListPage }) => {
-      const title = `archive-${Date.now()}`,
-        created = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
-          title
-        })) as { sessionId: string }
+      const title = `archive-${Date.now()}`
+      const created = (await convex.mutation(anyApi.sessions?.createSession as FunctionReference<'mutation'>, {
+        title
+      })) as { sessionId: string }
       await sessionListPage.goto('/')
       await page.waitForTimeout(1500)
       await expect(page.getByText(title)).toBeVisible({ timeout: 5000 })
@@ -160,23 +160,23 @@ test.describe
       await page.waitForTimeout(3000)
       const messageRow = page.locator('.is-user, .is-assistant').first()
       await expect(messageRow).toContainText(longMessage.slice(0, 80))
-      const box = await messageRow.boundingBox(),
-        viewport = page.viewportSize()
+      const box = await messageRow.boundingBox()
+      const viewport = page.viewportSize()
       expect(box).not.toBeNull()
       expect(viewport).not.toBeNull()
       expect(box ? box.width : 0).toBeLessThanOrEqual(viewport ? viewport.width : Number.MAX_SAFE_INTEGER)
     })
     test('concurrent tab simulation reflects updates across tabs', async ({ page, sessionListPage }) => {
-      const first = `tab-one-${Date.now()}`,
-        second = `tab-two-${Date.now()}`
+      const first = `tab-one-${Date.now()}`
+      const second = `tab-two-${Date.now()}`
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
       await page.getByPlaceholder(MESSAGE_RE).fill(first)
       await page.getByRole('button', { name: SEND_RE }).click()
       await page.waitForTimeout(3000)
-      const secondTab = await page.context().newPage(),
-        sessionUrl = page.url()
+      const secondTab = await page.context().newPage()
+      const sessionUrl = page.url()
       await secondTab.goto(sessionUrl)
       await secondTab.getByPlaceholder(MESSAGE_RE).fill(second)
       await secondTab.getByRole('button', { name: SEND_RE }).click()
@@ -190,11 +190,11 @@ test.describe
   .serial('Real-world edge scenarios', () => {
     test('two tabs show same messages', async ({ browser, sessionListPage }) => {
       await sessionListPage.goto('/')
-      const context1 = await browser.newContext(),
-        page1 = await context1.newPage(),
-        context2 = await browser.newContext(),
-        page2 = await context2.newPage(),
-        marker = `two-tabs-${Date.now()}`
+      const context1 = await browser.newContext()
+      const page1 = await context1.newPage()
+      const context2 = await browser.newContext()
+      const page2 = await context2.newPage()
+      const marker = `two-tabs-${Date.now()}`
       await page1.goto('/')
       await page1.getByRole('button', { name: NEW_RE }).click()
       await page1.waitForURL(CHAT_URL_RE)
@@ -221,8 +221,8 @@ test.describe
           })
           seeded += 1
         } catch (error) {
-          const message = String(error),
-            match = RATE_LIMITED_RE.exec(message)
+          const message = String(error)
+          const match = RATE_LIMITED_RE.exec(message)
           if (!match?.groups?.waitMs) throw error
           const waitMs = Math.max(250, Number(match.groups.waitMs) - Date.now())
           await page.waitForTimeout(waitMs)
@@ -231,11 +231,11 @@ test.describe
       await page.waitForTimeout(3000)
       const messages = page.locator('.is-user, .is-assistant')
       expect(await messages.count()).toBeGreaterThanOrEqual(5)
-      const log = page.getByRole('log'),
-        dimensions = await log.evaluate(element => ({
-          clientHeight: element.clientHeight,
-          scrollHeight: element.scrollHeight
-        }))
+      const log = page.getByRole('log')
+      const dimensions = await log.evaluate(element => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight
+      }))
       expect(dimensions.scrollHeight).toBeGreaterThanOrEqual(dimensions.clientHeight)
       await log.evaluate(element => {
         element.scrollTop = element.scrollHeight
@@ -267,8 +267,8 @@ test.describe
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Selectable text test')
       await page.waitForTimeout(2000)
-      const msg = chatPage.getMessages().first(),
-        userSelect = await msg.evaluate(el => globalThis.getComputedStyle(el).userSelect)
+      const msg = chatPage.getMessages().first()
+      const userSelect = await msg.evaluate(el => globalThis.getComputedStyle(el).userSelect)
       expect(userSelect).not.toBe('none')
     })
     test('reactive updates work after page idle', async ({ chatPage, page, sessionListPage }) => {

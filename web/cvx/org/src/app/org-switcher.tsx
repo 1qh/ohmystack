@@ -14,9 +14,9 @@ import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
 const OrgSwitcher = () => {
-  const router = useRouter(),
-    { activeOrg, isLoading: activeLoading } = useActiveOrg(),
-    { isLoading: orgsLoading, orgs } = useMyOrgs()
+  const router = useRouter()
+  const { activeOrg, isLoading: activeLoading } = useActiveOrg()
+  const { isLoading: orgsLoading, orgs } = useMyOrgs()
   if (activeLoading || orgsLoading) return <Skeleton className='h-9 w-32' />
   const handleSwitch = (org: (typeof orgs)[number]) => {
     setActiveOrgCookieClient({ orgId: org.org._id, slug: org.org.slug })

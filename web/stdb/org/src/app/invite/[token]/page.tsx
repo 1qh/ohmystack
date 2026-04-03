@@ -8,22 +8,22 @@ import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { use, useEffect, useRef, useState } from 'react'
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
-  const { token } = use(params),
-    router = useRouter(),
-    [accepted, setAccepted] = useState(false),
-    [inviteError, setInviteError] = useState<null | string>(null),
-    timerRef = useRef<null | ReturnType<typeof setTimeout>>(null),
-    acceptInvite = useMut(reducers.orgAcceptInvite, {
-      onSettled: (_args, error) => {
-        if (!error) return
-        setInviteError(error instanceof Error ? error.message : 'Invalid or expired invite')
-      },
-      onSuccess: () => {
-        setAccepted(true)
-        timerRef.current = setTimeout(() => router.push('/'), 1500)
-      },
-      toast: { success: 'Welcome to the organization!' }
-    })
+  const { token } = use(params)
+  const router = useRouter()
+  const [accepted, setAccepted] = useState(false)
+  const [inviteError, setInviteError] = useState<null | string>(null)
+  const timerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
+  const acceptInvite = useMut(reducers.orgAcceptInvite, {
+    onSettled: (_args, error) => {
+      if (!error) return
+      setInviteError(error instanceof Error ? error.message : 'Invalid or expired invite')
+    },
+    onSuccess: () => {
+      setAccepted(true)
+      timerRef.current = setTimeout(() => router.push('/'), 1500)
+    },
+    toast: { success: 'Welcome to the organization!' }
+  })
   useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current)

@@ -23,9 +23,9 @@ const EmailLoginPage = ({
   signInLabel = 'Sign in',
   signUpLabel = 'Sign up'
 }: EmailLoginPageProps) => {
-  const { signIn } = useAuthActions(),
-    [login, setLogin] = useState(true),
-    [pending, setPending] = useState(false)
+  const { signIn } = useAuthActions()
+  const [login, setLogin] = useState(true)
+  const [pending, setPending] = useState(false)
   return (
     <EmailAuthShell
       {...shellProps}

@@ -59,23 +59,23 @@ interface UseStepperOpts<Defs extends readonly StepDef[]> {
   values?: Partial<{ [D in Defs[number] as D['id']]?: output<D['schema']> }>
 }
 const defineStepsBase = createDefineSteps<TypedFields<Record<string, unknown>>>({
-    buildMeta,
-    coerceOptionals,
-    defaultValues: dv,
-    fields: fields as TypedFields<Record<string, unknown>>,
-    onFinalSubmitError: (error: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error('[@noboil/spacetimedb] Step form final submission failed:', error)
-    },
-    renderFormContext: ({ children, value }) => <FormContext value={value as never}>{children}</FormContext>
-  }),
-  defineSteps = defineStepsBase as <const Defs extends readonly [StepDef, ...StepDef[]]>(
-    ...defs: Defs
-  ) => {
-    StepForm: (<D extends Defs>(props: StepFormProps<D>) => ReactNode) & {
-      Step: <Id extends StepIds<Defs>>(props: StepProps<Defs, Id>) => null | ReactNode
-    }
-    steps: InternalStep[]
-    useStepper: (opts: UseStepperOpts<Defs>) => StepperReturn<Defs>
+  buildMeta,
+  coerceOptionals,
+  defaultValues: dv,
+  fields: fields as TypedFields<Record<string, unknown>>,
+  onFinalSubmitError: (error: unknown) => {
+    // eslint-disable-next-line no-console
+    console.error('[@noboil/spacetimedb] Step form final submission failed:', error)
+  },
+  renderFormContext: ({ children, value }) => <FormContext value={value as never}>{children}</FormContext>
+})
+const defineSteps = defineStepsBase as <const Defs extends readonly [StepDef, ...StepDef[]]>(
+  ...defs: Defs
+) => {
+  StepForm: (<D extends Defs>(props: StepFormProps<D>) => ReactNode) & {
+    Step: <Id extends StepIds<Defs>>(props: StepProps<Defs, Id>) => null | ReactNode
   }
+  steps: InternalStep[]
+  useStepper: (opts: UseStepperOpts<Defs>) => StepperReturn<Defs>
+}
 export { defineSteps }

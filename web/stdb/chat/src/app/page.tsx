@@ -11,21 +11,21 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 const Page = () => {
-  const router = useRouter(),
-    publicToggleId = useId(),
-    pendingTitleRef = useRef<null | string>(null),
-    createChat = useMut(reducers.createChat, {
-      onSuccess: () => {
-        pendingTitleRef.current = null
-      },
-      toast: { error: 'Unable to create chat' }
-    }),
-    { identity } = useSpacetimeDB(),
-    [allChats] = useTable(tables.chat),
-    [isSubmitting, setIsSubmitting] = useState(false),
-    [isPublic, setIsPublic] = useState(false),
-    [isPending, startTransition] = useTransition(),
-    identityKey = toIdentityKey(identity)
+  const router = useRouter()
+  const publicToggleId = useId()
+  const pendingTitleRef = useRef<null | string>(null)
+  const createChat = useMut(reducers.createChat, {
+    onSuccess: () => {
+      pendingTitleRef.current = null
+    },
+    toast: { error: 'Unable to create chat' }
+  })
+  const { identity } = useSpacetimeDB()
+  const [allChats] = useTable(tables.chat)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const identityKey = toIdentityKey(identity)
   useEffect(() => {
     if (!pendingTitleRef.current) return
     const title = pendingTitleRef.current

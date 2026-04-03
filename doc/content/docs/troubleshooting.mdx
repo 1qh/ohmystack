@@ -29,7 +29,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 | --- | --- | --- |
 | `bun fix` fails on `next-env.d.ts` | Next.js generates this file with double quotes; biome enforces single quotes | Add `web/**/next-env.d.ts` to biome ignore. This is already handled in the repo config |
 | oxlint and eslint `sort-keys` conflict | oxlint uses ASCII sort order; eslint perfectionist uses natural sort | Disable `eslint/sort-keys` in the oxlint config |
-| `lib/ui` lint errors | Manual edits to `lib/ui` break the generated output | Never edit `lib/ui` directly. Regenerate with `bun ui:sync` |
+| `readonly/ui` lint errors | Manual edits to `readonly/ui` break the generated output | Never edit `readonly/ui` directly. It is synced from cnsync by pm4ai |
 | Turbo env var not passed to tasks | New env var not declared in Turbo config | Add the var to `globalPassThroughEnv` in `turbo.json` |
 
 ## Convex-Specific

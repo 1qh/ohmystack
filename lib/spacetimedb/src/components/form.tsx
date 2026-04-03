@@ -58,105 +58,105 @@ type Widen<T> = T extends string
           : T
 type WithName<P, K> = Omit<P, 'name'> & { name: K }
 const FileFieldWarning = createFileFieldWarning({
-    fileApiContext: FileApiContext,
-    messagePrefix: '[@noboil/spacetimedb]'
-  }),
-  useForm = <S extends ZodObject>(opts: {
-    autoSave?: { debounceMs: number; enabled: boolean }
-    onConflict?: (data: ConflictData) => void
-    onError?: ((e: unknown) => void) | false
-    onSubmit: (d: zinfer<S>, force?: boolean) => Promise<undefined | zinfer<S>> | undefined | zinfer<S>
-    onSuccess?: () => void
-    resetOnSuccess?: boolean
-    schema: S
-    values?: Widen<zinfer<S>>
-  }) => useWithGuard(useBaseForm(opts)),
-  useFormMutation = <S extends ZodObject, M = zinfer<S>>(opts: {
-    autoSave?: { debounceMs: number; enabled: boolean }
-    mutate: (args: M) => Promise<void> | void
-    onConflict?: (data: ConflictData) => void
-    onError?: ((e: unknown) => void) | false
-    onSuccess?: () => void
-    resetOnSuccess?: boolean
-    schema: S
-    toast?: FormToastOption
-    transform?: (d: zinfer<S>) => UndefinedToOptional<M>
-    values?: Widen<zinfer<S>>
-  }) => {
-    const { error: resolvedError, success: resolvedSuccess } = resolveFormToast({
-      onError: opts.onError,
-      onSuccess: opts.onSuccess,
-      toast: opts.toast
+  fileApiContext: FileApiContext,
+  messagePrefix: '[@noboil/spacetimedb]'
+})
+const useForm = <S extends ZodObject>(opts: {
+  autoSave?: { debounceMs: number; enabled: boolean }
+  onConflict?: (data: ConflictData) => void
+  onError?: ((e: unknown) => void) | false
+  onSubmit: (d: zinfer<S>, force?: boolean) => Promise<undefined | zinfer<S>> | undefined | zinfer<S>
+  onSuccess?: () => void
+  resetOnSuccess?: boolean
+  schema: S
+  values?: Widen<zinfer<S>>
+}) => useWithGuard(useBaseForm(opts))
+const useFormMutation = <S extends ZodObject, M = zinfer<S>>(opts: {
+  autoSave?: { debounceMs: number; enabled: boolean }
+  mutate: (args: M) => Promise<void> | void
+  onConflict?: (data: ConflictData) => void
+  onError?: ((e: unknown) => void) | false
+  onSuccess?: () => void
+  resetOnSuccess?: boolean
+  schema: S
+  toast?: FormToastOption
+  transform?: (d: zinfer<S>) => UndefinedToOptional<M>
+  values?: Widen<zinfer<S>>
+}) => {
+  const { error: resolvedError, success: resolvedSuccess } = resolveFormToast({
+    onError: opts.onError,
+    onSuccess: opts.onSuccess,
+    toast: opts.toast
+  })
+  return useWithGuard(
+    useBaseForm({
+      autoSave: opts.autoSave,
+      onConflict: opts.onConflict,
+      onError: resolvedError,
+      onSubmit: async d => {
+        const args = (opts.transform ? opts.transform(d) : d) as unknown as M
+        /** biome-ignore lint/nursery/useAwaitThenable: mutate may be async */
+        await opts.mutate(args)
+        return d
+      },
+      onSuccess: resolvedSuccess,
+      resetOnSuccess: opts.resetOnSuccess ?? true,
+      schema: opts.schema,
+      values: opts.values
     })
-    return useWithGuard(
-      useBaseForm({
-        autoSave: opts.autoSave,
-        onConflict: opts.onConflict,
-        onError: resolvedError,
-        onSubmit: async d => {
-          const args = (opts.transform ? opts.transform(d) : d) as unknown as M
-          /** biome-ignore lint/nursery/useAwaitThenable: mutate may be async */
-          await opts.mutate(args)
-          return d
-        },
-        onSuccess: resolvedSuccess,
-        resetOnSuccess: opts.resetOnSuccess ?? true,
-        schema: opts.schema,
-        values: opts.values
-      })
-    )
-  },
-  Form = <T extends Record<string, unknown>, S extends ZodObject>({
-    form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
-    render,
-    showError = true,
-    ...props
-  }: Omit<ComponentProps<'form'>, 'children' | 'onSubmit'> & {
-    form: FormReturn<T, S>
-    render: (f: TypedFields<T>) => ReactNode
-    showError?: boolean
-  }) => {
-    const contextValue = useMemo(
-      () => ({ form: instance as Api<Record<string, unknown>>, meta, schema, serverErrors: fieldErrors }),
-      [fieldErrors, instance, meta, schema]
-    )
-    return (
-      <FormContext value={contextValue}>
-        <form
-          {...props}
-          onSubmit={e => {
-            e.preventDefault()
-            instance.handleSubmit()
-          }}>
-          {showError && error ? (
-            <p className='mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
-              {error.message}
-            </p>
-          ) : null}
-          {render(fields as TypedFields<T>)}
-        </form>
-        <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
-        <Dialog
-          onOpenChange={open => {
-            if (!open) guard.reject()
-          }}
-          open={guard.active}>
-          <DialogContent className='[&>button]:hidden'>
-            <p>You have unsaved changes. Are you sure you want to leave?</p>
-            <div className='flex justify-end gap-2'>
-              <Button onClick={guard.reject} variant='outline'>
-                Cancel
-              </Button>
-              <Button onClick={guard.accept} variant='destructive'>
-                Discard
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-        <FileFieldWarning meta={meta} />
-        <DevtoolsAutoMount />
-      </FormContext>
-    )
-  }
+  )
+}
+const Form = <T extends Record<string, unknown>, S extends ZodObject>({
+  form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
+  render,
+  showError = true,
+  ...props
+}: Omit<ComponentProps<'form'>, 'children' | 'onSubmit'> & {
+  form: FormReturn<T, S>
+  render: (f: TypedFields<T>) => ReactNode
+  showError?: boolean
+}) => {
+  const contextValue = useMemo(
+    () => ({ form: instance as Api<Record<string, unknown>>, meta, schema, serverErrors: fieldErrors }),
+    [fieldErrors, instance, meta, schema]
+  )
+  return (
+    <FormContext value={contextValue}>
+      <form
+        {...props}
+        onSubmit={e => {
+          e.preventDefault()
+          instance.handleSubmit()
+        }}>
+        {showError && error ? (
+          <p className='mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive' role='alert'>
+            {error.message}
+          </p>
+        ) : null}
+        {render(fields as TypedFields<T>)}
+      </form>
+      <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
+      <Dialog
+        onOpenChange={open => {
+          if (!open) guard.reject()
+        }}
+        open={guard.active}>
+        <DialogContent className='[&>button]:hidden'>
+          <p>You have unsaved changes. Are you sure you want to leave?</p>
+          <div className='flex justify-end gap-2'>
+            <Button onClick={guard.reject} variant='outline'>
+              Cancel
+            </Button>
+            <Button onClick={guard.accept} variant='destructive'>
+              Discard
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <FileFieldWarning meta={meta} />
+      <DevtoolsAutoMount />
+    </FormContext>
+  )
+}
 export type { TypedFields }
 export { AutoSaveIndicator, ConflictDialog, Form, useForm, useFormMutation }

@@ -27,27 +27,27 @@ import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 type Priority = NonNullable<output<typeof s.task>['priority']>
-const priorityOptions = enumToOptions(s.task.shape.priority.unwrap()),
-  asPriority = (value: null | string | undefined): Priority =>
-    value === 'high' || value === 'low' || value === 'medium' ? value : 'medium',
-  PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
-    <Select
-      onValueChange={(v: null | string) => {
-        if (v) onValueChange(asPriority(v))
-      }}
-      value={value}>
-      <SelectTrigger className='w-28'>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {priorityOptions.map(o => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
+const priorityOptions = enumToOptions(s.task.shape.priority.unwrap())
+const asPriority = (value: null | string | undefined): Priority =>
+  value === 'high' || value === 'low' || value === 'medium' ? value : 'medium'
+const PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority) => void; value: Priority }) => (
+  <Select
+    onValueChange={(v: null | string) => {
+      if (v) onValueChange(asPriority(v))
+    }}
+    value={value}>
+    <SelectTrigger className='w-28'>
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      {priorityOptions.map(o => (
+        <SelectItem key={o.value} value={o.value}>
+          {o.label}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+)
 interface TaskRowProps {
   canAssign: boolean
   canEdit: boolean
@@ -60,319 +60,309 @@ interface TaskRowProps {
   task: Task
 }
 const displayName = (profileByUserId: Map<string, OrgProfile>, hex: string) => {
-    const profile = profileByUserId.get(hex)
-    return profile?.displayName ?? hex.slice(0, 8)
-  },
-  TaskRow = ({
-    canAssign,
-    canEdit,
-    members,
-    onAssign,
-    onDelete,
-    onToggle,
-    onUpdate,
-    profileByUserId,
-    task: t
-  }: TaskRowProps) => {
-    const [editing, setEditing] = useState(false),
-      [editTitle, setEditTitle] = useState(() => t.title),
-      [editPriority, setEditPriority] = useState<Priority>(() => asPriority(t.priority)),
-      handleSave = async () => {
-        if (!editTitle.trim()) return
-        await onUpdate(editTitle, editPriority)
-        setEditing(false)
-        toast.success('Task updated')
-      },
-      handleCancel = () => {
-        setEditTitle(t.title)
-        setEditPriority(asPriority(t.priority))
-        setEditing(false)
-      },
-      { assigneeId } = t,
-      assignee = assigneeId ? members.find(m => sameIdentity(m.userId, assigneeId)) : null
-    if (editing)
-      return (
-        <div className='flex items-center gap-2 py-2'>
-          <Input className='flex-1' onChange={e => setEditTitle(e.target.value)} value={editTitle} />
-          <PrioritySelect onValueChange={setEditPriority} value={editPriority} />
-          <Button
-            onClick={() => {
-              handleSave()
-            }}
-            size='icon'
-            variant='ghost'>
-            <Check className='size-4 text-green-600' />
-          </Button>
-          <Button onClick={handleCancel} size='icon' variant='ghost'>
-            <X className='size-4 text-red-600' />
-          </Button>
-        </div>
-      )
+  const profile = profileByUserId.get(hex)
+  return profile?.displayName ?? hex.slice(0, 8)
+}
+const TaskRow = ({
+  canAssign,
+  canEdit,
+  members,
+  onAssign,
+  onDelete,
+  onToggle,
+  onUpdate,
+  profileByUserId,
+  task: t
+}: TaskRowProps) => {
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(() => t.title)
+  const [editPriority, setEditPriority] = useState<Priority>(() => asPriority(t.priority))
+  const handleSave = async () => {
+    if (!editTitle.trim()) return
+    await onUpdate(editTitle, editPriority)
+    setEditing(false)
+    toast.success('Task updated')
+  }
+  const handleCancel = () => {
+    setEditTitle(t.title)
+    setEditPriority(asPriority(t.priority))
+    setEditing(false)
+  }
+  const { assigneeId } = t
+  const assignee = assigneeId ? members.find(m => sameIdentity(m.userId, assigneeId)) : null
+  if (editing)
     return (
-      <div className='flex items-center gap-3 py-2'>
-        <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
-        <span className={t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1'}>{t.title}</span>
-        <span className='text-xs text-muted-foreground'>{t.priority}</span>
-        {canAssign ? (
-          <Select
-            onValueChange={v => onAssign(v === 'none' ? null : v)}
-            value={assigneeId ? assigneeId.toHexString() : 'none'}>
-            <SelectTrigger className='w-32'>
-              <SelectValue placeholder='Unassigned' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='none'>Unassigned</SelectItem>
-              {members.map(m => (
-                <SelectItem key={m.id} value={m.userId.toHexString()}>
-                  {displayName(profileByUserId, m.userId.toHexString())}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : assignee ? (
-          <div className='flex items-center gap-1'>
-            <Avatar className='size-5'>
-              <AvatarImage src={undefined} />
-              <AvatarFallback className='text-xs'>
-                {displayName(profileByUserId, assignee.userId.toHexString()).slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-            <span className='text-xs text-muted-foreground'>
-              {displayName(profileByUserId, assignee.userId.toHexString())}
-            </span>
-          </div>
-        ) : null}
-        {canEdit ? (
-          <>
-            <Button onClick={() => setEditing(true)} size='icon' variant='ghost'>
-              <Pencil className='size-4' />
-            </Button>
-            <Button onClick={onDelete} size='icon' variant='ghost'>
-              <Trash className='size-4' />
-            </Button>
-          </>
-        ) : null}
+      <div className='flex items-center gap-2 py-2'>
+        <Input className='flex-1' onChange={e => setEditTitle(e.target.value)} value={editTitle} />
+        <PrioritySelect onValueChange={setEditPriority} value={editPriority} />
+        <Button
+          onClick={() => {
+            handleSave()
+          }}
+          size='icon'
+          variant='ghost'>
+          <Check className='size-4 text-green-600' />
+        </Button>
+        <Button onClick={handleCancel} size='icon' variant='ghost'>
+          <X className='size-4 text-red-600' />
+        </Button>
       </div>
     )
-  },
-  ProjectDetailPage = ({ params }: { params: Promise<{ projectId: string }> }) => {
-    const { projectId } = use(params),
-      pid = Number(projectId),
-      { isAdmin, org } = useOrg(),
-      { identity } = useSpacetimeDB(),
-      [allProjects] = useOrgTable<Project>(tables.project),
-      [allTasks] = useOrgTable<Task>(tables.task),
-      [members] = useOrgTable<OrgMember>(tables.orgMember),
-      profileByUserId = useProfileMap(),
-      project = allProjects.find(p => p.id === pid),
-      tasks = allTasks.filter(t => t.projectId === pid),
-      [title, setTitle] = useState(''),
-      createTask = useMut(reducers.createTask, {
-        onSuccess: () => setTitle(''),
-        toast: { success: 'Task added' }
-      }),
-      updateProject = useMut(reducers.updateProject),
-      updateTask = useMut(reducers.updateTask),
-      removeTask = useMut(reducers.rmTask, { toast: { success: 'Task deleted' } }),
-      [priority, setPriority] = useState<Priority>('medium'),
-      [selected, setSelected] = useState<Set<number>>(() => new Set()),
-      bulkDelete = useBulkMutate(removeTask, {
-        onSuccess: () => setSelected(new Set()),
-        toast: {
-          loading: p => `Deleting tasks: ${p.succeeded + p.failed}/${p.total}`,
-          success: count => `${count} task(s) deleted`
-        }
-      }),
-      bulkUpdate = useBulkMutate(updateTask, {
-        onSuccess: () => setSelected(new Set()),
-        toast: {
-          loading: p => `Updating tasks: ${p.succeeded + p.failed}/${p.total}`,
-          success: count => `${count} task(s) updated`
-        }
-      })
-    if (!(project && identity)) return <Skeleton className='h-40' />
-    const editorsList = (project.editors ?? []).map(e => {
-        const userId = e.toHexString(),
-          profile = profileByUserId.get(userId)
-        return { email: '', name: profile?.displayName ?? userId.slice(0, 8), userId }
-      }),
-      membersForEditors = members.map(m => {
-        const userId = m.userId.toHexString(),
-          profile = profileByUserId.get(userId)
-        return { user: { email: undefined, name: profile?.displayName }, userId }
-      }),
-      canEditProject = canEditResource({
-        editorsList,
-        isAdmin,
-        resource: { userId: project.userId.toHexString() },
-        userId: identity.toHexString()
-      }),
-      doAddTask = async () => {
-        if (!title.trim()) return
-        await createTask({
-          completed: false,
-          orgId: Number(org._id),
-          priority,
-          projectId: pid,
-          title
-        })
-      },
-      handleAddTask = (e: SyntheticEvent) => {
-        e.preventDefault()
-        doAddTask()
-      },
-      handleToggle = (id: number) => {
-        const current = tasks.find(t => t.id === id)
-        if (!current) return
-        updateTask({ completed: !current.completed, expectedUpdatedAt: current.updatedAt, id })
-      },
-      toggleSelect = (id: number) => {
-        setSelected(prev => {
-          const next = new Set(prev)
-          if (next.has(id)) next.delete(id)
-          else next.add(id)
-          return next
-        })
-      },
-      toggleSelectAll = () => {
-        if (selected.size === tasks.length) setSelected(new Set())
-        else setSelected(new Set(tasks.map(t => t.id)))
-      },
-      handleBulkDelete = () => {
-        if (selected.size === 0) return
-        const items: { id: number }[] = []
-        for (const id of selected) items.push({ id })
-        bulkDelete.run(items)
-      },
-      handleBulkComplete = (completed: boolean) => {
-        if (selected.size === 0) return
-        const items: Parameters<typeof updateTask>[0][] = []
-        for (const id of selected) {
-          const current = tasks.find(t => t.id === id)
-          if (current) items.push({ completed, expectedUpdatedAt: current.updatedAt, id })
-        }
-        bulkUpdate.run(items)
-      }
-    return (
-      <div className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <h1 className='text-2xl font-bold'>{project.name}</h1>
-            {canEditProject ? null : <Badge variant='secondary'>View only</Badge>}
-          </div>
-          {canEditProject ? (
-            <Button render={p => <Link {...p} href={`/projects/${projectId}/edit`} />} variant='outline'>
-              <Pencil className='mr-2 size-4' />
-              Edit
-            </Button>
-          ) : null}
+  return (
+    <div className='flex items-center gap-3 py-2'>
+      <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
+      <span className={t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1'}>{t.title}</span>
+      <span className='text-xs text-muted-foreground'>{t.priority}</span>
+      {canAssign ? (
+        <Select
+          onValueChange={v => onAssign(v === 'none' ? null : v)}
+          value={assigneeId ? assigneeId.toHexString() : 'none'}>
+          <SelectTrigger className='w-32'>
+            <SelectValue placeholder='Unassigned' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='none'>Unassigned</SelectItem>
+            {members.map(m => (
+              <SelectItem key={m.id} value={m.userId.toHexString()}>
+                {displayName(profileByUserId, m.userId.toHexString())}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : assignee ? (
+        <div className='flex items-center gap-1'>
+          <Avatar className='size-5'>
+            <AvatarImage src={undefined} />
+            <AvatarFallback className='text-xs'>
+              {displayName(profileByUserId, assignee.userId.toHexString()).slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+          <span className='text-xs text-muted-foreground'>
+            {displayName(profileByUserId, assignee.userId.toHexString())}
+          </span>
         </div>
-        {project.description ? <p className='text-muted-foreground'>{project.description}</p> : null}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between'>
-            <CardTitle>Tasks</CardTitle>
-            {isAdmin && selected.size > 0 ? (
-              <div className='flex items-center gap-2'>
-                <span className='text-sm text-muted-foreground'>{selected.size} selected</span>
-                <Button onClick={() => handleBulkComplete(true)} size='sm' variant='outline'>
-                  Mark Complete
-                </Button>
-                <Button onClick={() => handleBulkComplete(false)} size='sm' variant='outline'>
-                  Mark Incomplete
-                </Button>
-                <Button onClick={handleBulkDelete} size='sm' variant='destructive'>
-                  Delete
-                </Button>
+      ) : null}
+      {canEdit ? (
+        <>
+          <Button onClick={() => setEditing(true)} size='icon' variant='ghost'>
+            <Pencil className='size-4' />
+          </Button>
+          <Button onClick={onDelete} size='icon' variant='ghost'>
+            <Trash className='size-4' />
+          </Button>
+        </>
+      ) : null}
+    </div>
+  )
+}
+const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: string }> }) => {
+  const { projectId } = use(params)
+  const pid = Number(projectId)
+  const { isAdmin, org } = useOrg()
+  const { identity } = useSpacetimeDB()
+  const [allProjects] = useOrgTable<Project>(tables.project)
+  const [allTasks] = useOrgTable<Task>(tables.task)
+  const [members] = useOrgTable<OrgMember>(tables.orgMember)
+  const profileByUserId = useProfileMap()
+  const project = allProjects.find(p => p.id === pid)
+  const tasks = allTasks.filter(t => t.projectId === pid)
+  const [title, setTitle] = useState('')
+  const createTask = useMut(reducers.createTask, {
+    onSuccess: () => setTitle(''),
+    toast: { success: 'Task added' }
+  })
+  const updateProject = useMut(reducers.updateProject)
+  const updateTask = useMut(reducers.updateTask)
+  const removeTask = useMut(reducers.rmTask, { toast: { success: 'Task deleted' } })
+  const [priority, setPriority] = useState<Priority>('medium')
+  const [selected, setSelected] = useState<Set<number>>(() => new Set())
+  const bulkDelete = useBulkMutate(removeTask, {
+    onSuccess: () => setSelected(new Set()),
+    toast: {
+      loading: p => `Deleting tasks: ${p.succeeded + p.failed}/${p.total}`,
+      success: count => `${count} task(s) deleted`
+    }
+  })
+  const bulkUpdate = useBulkMutate(updateTask, {
+    onSuccess: () => setSelected(new Set()),
+    toast: {
+      loading: p => `Updating tasks: ${p.succeeded + p.failed}/${p.total}`,
+      success: count => `${count} task(s) updated`
+    }
+  })
+  if (!(project && identity)) return <Skeleton className='h-40' />
+  const editorsList = (project.editors ?? []).map(e => {
+    const userId = e.toHexString()
+    const profile = profileByUserId.get(userId)
+    return { email: '', name: profile?.displayName ?? userId.slice(0, 8), userId }
+  })
+  const membersForEditors = members.map(m => {
+    const userId = m.userId.toHexString()
+    const profile = profileByUserId.get(userId)
+    return { user: { email: undefined, name: profile?.displayName }, userId }
+  })
+  const canEditProject = canEditResource({
+    editorsList,
+    isAdmin,
+    resource: { userId: project.userId.toHexString() },
+    userId: identity.toHexString()
+  })
+  const doAddTask = async () => {
+    if (!title.trim()) return
+    await createTask({
+      completed: false,
+      orgId: Number(org._id),
+      priority,
+      projectId: pid,
+      title
+    })
+  }
+  const handleAddTask = (e: SyntheticEvent) => {
+    e.preventDefault()
+    doAddTask()
+  }
+  const handleToggle = (id: number) => {
+    const current = tasks.find(t => t.id === id)
+    if (!current) return
+    updateTask({ completed: !current.completed, expectedUpdatedAt: current.updatedAt, id })
+  }
+  const toggleSelect = (id: number) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const toggleSelectAll = () => {
+    if (selected.size === tasks.length) setSelected(new Set())
+    else setSelected(new Set(tasks.map(t => t.id)))
+  }
+  const handleBulkDelete = () => {
+    if (selected.size === 0) return
+    const items: { id: number }[] = []
+    for (const id of selected) items.push({ id })
+    bulkDelete.run(items)
+  }
+  const handleBulkComplete = (completed: boolean) => {
+    if (selected.size === 0) return
+    const items: Parameters<typeof updateTask>[0][] = []
+    for (const id of selected) {
+      const current = tasks.find(t => t.id === id)
+      if (current) items.push({ completed, expectedUpdatedAt: current.updatedAt, id })
+    }
+    bulkUpdate.run(items)
+  }
+  return (
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <h1 className='text-2xl font-bold'>{project.name}</h1>
+          {canEditProject ? null : <Badge variant='secondary'>View only</Badge>}
+        </div>
+        {canEditProject ? (
+          <Button render={p => <Link {...p} href={`/projects/${projectId}/edit`} />} variant='outline'>
+            <Pencil className='mr-2 size-4' />
+            Edit
+          </Button>
+        ) : null}
+      </div>
+      {project.description ? <p className='text-muted-foreground'>{project.description}</p> : null}
+      <Card>
+        <CardHeader className='flex flex-row items-center justify-between'>
+          <CardTitle>Tasks</CardTitle>
+          {isAdmin && selected.size > 0 ? (
+            <div className='flex items-center gap-2'>
+              <span className='text-sm text-muted-foreground'>{selected.size} selected</span>
+              <Button onClick={() => handleBulkComplete(true)} size='sm' variant='outline'>
+                Mark Complete
+              </Button>
+              <Button onClick={() => handleBulkComplete(false)} size='sm' variant='outline'>
+                Mark Incomplete
+              </Button>
+              <Button onClick={handleBulkDelete} size='sm' variant='destructive'>
+                Delete
+              </Button>
+            </div>
+          ) : null}
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          {canEditProject ? (
+            <form className='flex gap-2' onSubmit={handleAddTask}>
+              <Input className='flex-1' onChange={e => setTitle(e.target.value)} placeholder='New task...' value={title} />
+              <PrioritySelect onValueChange={setPriority} value={priority} />
+              <Button type='submit'>
+                <Plus className='size-4' />
+              </Button>
+            </form>
+          ) : null}
+          <div className='divide-y'>
+            {isAdmin && tasks.length > 0 ? (
+              <div className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
+                <Checkbox checked={selected.size === tasks.length && tasks.length > 0} onCheckedChange={toggleSelectAll} />
+                <span>Select all</span>
               </div>
             ) : null}
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            {canEditProject ? (
-              <form className='flex gap-2' onSubmit={handleAddTask}>
-                <Input
-                  className='flex-1'
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder='New task...'
-                  value={title}
-                />
-                <PrioritySelect onValueChange={setPriority} value={priority} />
-                <Button type='submit'>
-                  <Plus className='size-4' />
-                </Button>
-              </form>
-            ) : null}
-            <div className='divide-y'>
-              {isAdmin && tasks.length > 0 ? (
-                <div className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
-                  <Checkbox
-                    checked={selected.size === tasks.length && tasks.length > 0}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                  <span>Select all</span>
-                </div>
-              ) : null}
-              {tasks.map(t => {
-                const isTaskCreator = sameIdentity(t.userId, identity),
-                  canEdit = isTaskCreator || canEditProject
-                return (
-                  <div className='flex items-center gap-2' key={t.id}>
-                    {isAdmin ? <Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggleSelect(t.id)} /> : null}
-                    <div className='flex-1'>
-                      <TaskRow
-                        canAssign={canEditProject}
-                        canEdit={canEdit}
-                        members={members}
-                        onAssign={userId => {
-                          const assignee = userId
-                            ? members.find(m => m.userId.toHexString() === userId)?.userId
-                            : undefined
-                          updateTask({ assigneeId: assignee, expectedUpdatedAt: t.updatedAt, id: t.id })
-                        }}
-                        onDelete={() => {
-                          removeTask({ id: t.id })
-                        }}
-                        onToggle={() => handleToggle(t.id)}
-                        onUpdate={async (newTitle, newPriority) => {
-                          await updateTask({
-                            expectedUpdatedAt: t.updatedAt,
-                            id: t.id,
-                            priority: newPriority,
-                            title: newTitle
-                          })
-                        }}
-                        profileByUserId={profileByUserId}
-                        task={t}
-                      />
-                    </div>
+            {tasks.map(t => {
+              const isTaskCreator = sameIdentity(t.userId, identity)
+              const canEdit = isTaskCreator || canEditProject
+              return (
+                <div className='flex items-center gap-2' key={t.id}>
+                  {isAdmin ? <Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggleSelect(t.id)} /> : null}
+                  <div className='flex-1'>
+                    <TaskRow
+                      canAssign={canEditProject}
+                      canEdit={canEdit}
+                      members={members}
+                      onAssign={userId => {
+                        const assignee = userId ? members.find(m => m.userId.toHexString() === userId)?.userId : undefined
+                        updateTask({ assigneeId: assignee, expectedUpdatedAt: t.updatedAt, id: t.id })
+                      }}
+                      onDelete={() => {
+                        removeTask({ id: t.id })
+                      }}
+                      onToggle={() => handleToggle(t.id)}
+                      onUpdate={async (newTitle, newPriority) => {
+                        await updateTask({
+                          expectedUpdatedAt: t.updatedAt,
+                          id: t.id,
+                          priority: newPriority,
+                          title: newTitle
+                        })
+                      }}
+                      profileByUserId={profileByUserId}
+                      task={t}
+                    />
                   </div>
-                )
-              })}
-              {tasks.length === 0 && <p className='py-4 text-center text-muted-foreground'>No tasks yet</p>}
-            </div>
-          </CardContent>
-        </Card>
-        {isAdmin ? (
-          <EditorsSection
-            editorsList={editorsList}
-            members={membersForEditors}
-            onAdd={(userId: string) => {
-              const member = members.find(m => m.userId.toHexString() === userId)
-              if (!member) return
-              const current = project.editors ?? [],
-                next = [...current, member.userId]
-              updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
-              toast.success('Editor added')
-            }}
-            onRemove={(userId: string) => {
-              const current = project.editors ?? [],
-                next: typeof current = []
-              for (const e of current) if (e.toHexString() !== userId) next.push(e)
-              updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
-              toast.success('Editor removed')
-            }}
-          />
-        ) : null}
-      </div>
-    )
-  }
+                </div>
+              )
+            })}
+            {tasks.length === 0 && <p className='py-4 text-center text-muted-foreground'>No tasks yet</p>}
+          </div>
+        </CardContent>
+      </Card>
+      {isAdmin ? (
+        <EditorsSection
+          editorsList={editorsList}
+          members={membersForEditors}
+          onAdd={(userId: string) => {
+            const member = members.find(m => m.userId.toHexString() === userId)
+            if (!member) return
+            const current = project.editors ?? []
+            const next = [...current, member.userId]
+            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+            toast.success('Editor added')
+          }}
+          onRemove={(userId: string) => {
+            const current = project.editors ?? []
+            const next: typeof current = []
+            for (const e of current) if (e.toHexString() !== userId) next.push(e)
+            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+            toast.success('Editor removed')
+          }}
+        />
+      ) : null}
+    </div>
+  )
+}
 export default ProjectDetailPage

@@ -5,10 +5,10 @@ import { reducers, tables } from '../module_bindings'
 import { findMine, getNumber, getString, listTable, none, some, withCtx } from './test-helpers'
 describe('binding edges', () => {
   test('binding context types are exported', () => {
-    const eventContextType: EventContext | null = null,
-      reducerContextType: null | ReducerEventContext = null,
-      subscriptionContextType: null | SubscriptionEventContext = null,
-      errorContextType: ErrorContext | null = null
+    const eventContextType: EventContext | null = null
+    const reducerContextType: null | ReducerEventContext = null
+    const subscriptionContextType: null | SubscriptionEventContext = null
+    const errorContextType: ErrorContext | null = null
     expect(eventContextType).toBeNull()
     expect(reducerContextType).toBeNull()
     expect(subscriptionContextType).toBeNull()
@@ -53,13 +53,13 @@ describe('runtime edges', () => {
         voteAverage: 7.1,
         voteCount: 10
       })
-      const rows = await listTable(ctx, 'movie', user),
-        found = rows.find(row => getNumber(row, 'tmdb_id') === tmdbId)
+      const rows = await listTable(ctx, 'movie', user)
+      const found = rows.find(row => getNumber(row, 'tmdb_id') === tmdbId)
       expect(found).toBeDefined()
       expect(getString(found as Record<string, unknown>, 'title')).toBe(`Movie-${tmdbId.toString()}`)
       await callReducer(ctx, 'rm_movie', { tmdbId })
-      const afterRm = await listTable(ctx, 'movie', user),
-        stillExists = afterRm.some(row => getNumber(row, 'tmdb_id') === tmdbId)
+      const afterRm = await listTable(ctx, 'movie', user)
+      const stillExists = afterRm.some(row => getNumber(row, 'tmdb_id') === tmdbId)
       expect(stillExists).toBe(false)
     })
   })
@@ -75,16 +75,16 @@ describe('runtime edges', () => {
         notifications: some(true),
         theme: some('system')
       })
-      const rows = await listTable(ctx, 'blog_profile', user),
-        mine = findMine(rows, user.identity),
-        found = mine.find(row => getString(row, 'display_name') === displayName)
+      const rows = await listTable(ctx, 'blog_profile', user)
+      const mine = findMine(rows, user.identity)
+      const found = mine.find(row => getString(row, 'display_name') === displayName)
       expect(found).toBeDefined()
     })
   })
   test('reducer failures keep REDUCER_CALL_FAILED prefix and parse as unknown server error', () => {
-    const error = new Error('REDUCER_CALL_FAILED: The instance encountered a fatal error.'),
-      parsed = extractErrorData(error),
-      code = getErrorCode(error)
+    const error = new Error('REDUCER_CALL_FAILED: The instance encountered a fatal error.')
+    const parsed = extractErrorData(error)
+    const code = getErrorCode(error)
     expect(parsed).toBeUndefined()
     expect(code).toBeUndefined()
     expect(error.message.startsWith('REDUCER_CALL_FAILED')).toBe(true)

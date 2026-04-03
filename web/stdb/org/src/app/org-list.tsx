@@ -7,11 +7,11 @@ import { setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
 type OrgItem = OrgListGridItem<OrgRole>
 const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
-  const router = useRouter(),
-    onSelect = (o: OrgItem) => {
-      setActiveOrgCookieClient({ orgId: o.id, slug: o.slug })
-      router.push('/dashboard')
-    }
+  const router = useRouter()
+  const onSelect = (o: OrgItem) => {
+    setActiveOrgCookieClient({ orgId: o.id, slug: o.slug })
+    router.push('/dashboard')
+  }
   return (
     <OrgListGrid
       onSelect={onSelect}

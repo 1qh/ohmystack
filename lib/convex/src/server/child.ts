@@ -31,233 +31,233 @@ interface ChildMeta<S extends ZodRawShape = ZodRawShape, PS extends ZodRawShape 
   schema: ZodObject<S>
 }
 const chk = (ctx: UserCtx): HookCtx => ({
-    db: ctx.db,
-    storage: (ctx as unknown as { storage: unknown }).storage as HookCtx['storage'],
-    userId: ctx.user._id as string
-  }),
-  checkParentField = async (db: DbReadLike, parentId: string, field: string) => {
-    const p = await db.get(parentId)
-    return p?.[field] ? p : null
-  },
-  mergeChildHooks = (gh: GlobalHooks | undefined, fh: CrudHooks | undefined, table: string): CrudHooks | undefined => {
-    if (!(gh || fh)) return
-    const merged: CrudHooks = {}
-    if (gh?.beforeCreate ?? fh?.beforeCreate)
-      merged.beforeCreate = async (ctx: HookCtx, args: { data: Rec }) => {
-        let { data } = args
-        if (gh?.beforeCreate) data = await gh.beforeCreate({ ...ctx, table }, { data })
-        if (fh?.beforeCreate) data = await fh.beforeCreate(ctx, { data })
-        return data
-      }
-    if (gh?.afterCreate ?? fh?.afterCreate)
-      merged.afterCreate = async (ctx: HookCtx, args: { data: Rec; id: string }) => {
-        if (gh?.afterCreate) await gh.afterCreate({ ...ctx, table }, args)
-        if (fh?.afterCreate) await fh.afterCreate(ctx, args)
-      }
-    if (gh?.beforeUpdate ?? fh?.beforeUpdate)
-      merged.beforeUpdate = async (ctx: HookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
-        let { patch } = args
-        if (gh?.beforeUpdate) patch = await gh.beforeUpdate({ ...ctx, table }, { ...args, patch })
-        if (fh?.beforeUpdate) patch = await fh.beforeUpdate(ctx, { ...args, patch })
-        return patch
-      }
-    if (gh?.afterUpdate ?? fh?.afterUpdate)
-      merged.afterUpdate = async (ctx: HookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
-        if (gh?.afterUpdate) await gh.afterUpdate({ ...ctx, table }, args)
-        if (fh?.afterUpdate) await fh.afterUpdate(ctx, args)
-      }
-    if (gh?.beforeDelete ?? fh?.beforeDelete)
-      merged.beforeDelete = async (ctx: HookCtx, args: { doc: Rec; id: string }) => {
-        if (gh?.beforeDelete) await gh.beforeDelete({ ...ctx, table }, args)
-        if (fh?.beforeDelete) await fh.beforeDelete(ctx, args)
-      }
-    if (gh?.afterDelete ?? fh?.afterDelete)
-      merged.afterDelete = async (ctx: HookCtx, args: { doc: Rec; id: string }) => {
-        if (gh?.afterDelete) await gh.afterDelete({ ...ctx, table }, args)
-        if (fh?.afterDelete) await fh.afterDelete(ctx, args)
-      }
-    return merged
-  },
-  makeChildCrud = <S extends ZodRawShape, PS extends ZodRawShape = ZodRawShape>({
-    builders,
-    globalHooks: gh,
-    meta,
-    options,
-    table
-  }: {
-    builders: BaseBuilders
-    globalHooks?: GlobalHooks
-    meta: ChildMeta<S, PS>
-    options?: ChildCrudOptions<PS>
-    table: string
-  }): ChildCrudResult<S> => {
-    const { m, pq, q } = builders,
-      hooks = mergeChildHooks(gh, options?.hooks, table),
-      { foreignKey, index, parent, schema } = meta,
-      getFK = (doc: Rec): string => doc[foreignKey] as string,
-      schemaKeys = Object.keys(schema.shape),
-      partial = schema.partial(),
-      fileFs = detectFiles(schema.shape),
-      idArgs = { id: zid(table) },
-      bulkIdsSchema = array(zid(table)).max(BULK_MAX),
-      // oxlint-disable-next-line unicorn/consistent-function-scoping
-      verifyParentOwnership = async (ctx: UserCtx, parentId: string) => {
-        const p = await ctx.db.get(parentId)
-        return p && p.userId === ctx.user._id ? p : null
-      },
-      updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) }),
-      create = m({
-        args: { ...partial.shape, [foreignKey]: zid(parent), items: array(schema).max(BULK_MAX).optional() },
-        handler: typed(async (ctx: UserCtx, a: Rec) => {
-          const parentId = a[foreignKey] as string,
-            items = a.items as Rec[] | undefined
-          if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:create`)
-          if (items) {
-            const ids: string[] = []
-            for (const item of items) {
-              let data = schema.parse(pickFields(item, schemaKeys)) as Rec
-              if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
-              const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
-              if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
-              ids.push(id)
-            }
-            return ids
-          }
-          let data = schema.parse(pickFields(a, schemaKeys)) as Rec
+  db: ctx.db,
+  storage: (ctx as unknown as { storage: unknown }).storage as HookCtx['storage'],
+  userId: ctx.user._id as string
+})
+const checkParentField = async (db: DbReadLike, parentId: string, field: string) => {
+  const p = await db.get(parentId)
+  return p?.[field] ? p : null
+}
+const mergeChildHooks = (gh: GlobalHooks | undefined, fh: CrudHooks | undefined, table: string): CrudHooks | undefined => {
+  if (!(gh || fh)) return
+  const merged: CrudHooks = {}
+  if (gh?.beforeCreate ?? fh?.beforeCreate)
+    merged.beforeCreate = async (ctx: HookCtx, args: { data: Rec }) => {
+      let { data } = args
+      if (gh?.beforeCreate) data = await gh.beforeCreate({ ...ctx, table }, { data })
+      if (fh?.beforeCreate) data = await fh.beforeCreate(ctx, { data })
+      return data
+    }
+  if (gh?.afterCreate ?? fh?.afterCreate)
+    merged.afterCreate = async (ctx: HookCtx, args: { data: Rec; id: string }) => {
+      if (gh?.afterCreate) await gh.afterCreate({ ...ctx, table }, args)
+      if (fh?.afterCreate) await fh.afterCreate(ctx, args)
+    }
+  if (gh?.beforeUpdate ?? fh?.beforeUpdate)
+    merged.beforeUpdate = async (ctx: HookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
+      let { patch } = args
+      if (gh?.beforeUpdate) patch = await gh.beforeUpdate({ ...ctx, table }, { ...args, patch })
+      if (fh?.beforeUpdate) patch = await fh.beforeUpdate(ctx, { ...args, patch })
+      return patch
+    }
+  if (gh?.afterUpdate ?? fh?.afterUpdate)
+    merged.afterUpdate = async (ctx: HookCtx, args: { id: string; patch: Rec; prev: Rec }) => {
+      if (gh?.afterUpdate) await gh.afterUpdate({ ...ctx, table }, args)
+      if (fh?.afterUpdate) await fh.afterUpdate(ctx, args)
+    }
+  if (gh?.beforeDelete ?? fh?.beforeDelete)
+    merged.beforeDelete = async (ctx: HookCtx, args: { doc: Rec; id: string }) => {
+      if (gh?.beforeDelete) await gh.beforeDelete({ ...ctx, table }, args)
+      if (fh?.beforeDelete) await fh.beforeDelete(ctx, args)
+    }
+  if (gh?.afterDelete ?? fh?.afterDelete)
+    merged.afterDelete = async (ctx: HookCtx, args: { doc: Rec; id: string }) => {
+      if (gh?.afterDelete) await gh.afterDelete({ ...ctx, table }, args)
+      if (fh?.afterDelete) await fh.afterDelete(ctx, args)
+    }
+  return merged
+}
+const makeChildCrud = <S extends ZodRawShape, PS extends ZodRawShape = ZodRawShape>({
+  builders,
+  globalHooks: gh,
+  meta,
+  options,
+  table
+}: {
+  builders: BaseBuilders
+  globalHooks?: GlobalHooks
+  meta: ChildMeta<S, PS>
+  options?: ChildCrudOptions<PS>
+  table: string
+}): ChildCrudResult<S> => {
+  const { m, pq, q } = builders
+  const hooks = mergeChildHooks(gh, options?.hooks, table)
+  const { foreignKey, index, parent, schema } = meta
+  const getFK = (doc: Rec): string => doc[foreignKey] as string
+  const schemaKeys = Object.keys(schema.shape)
+  const partial = schema.partial()
+  const fileFs = detectFiles(schema.shape)
+  const idArgs = { id: zid(table) }
+  const bulkIdsSchema = array(zid(table)).max(BULK_MAX)
+  // oxlint-disable-next-line unicorn/consistent-function-scoping
+  const verifyParentOwnership = async (ctx: UserCtx, parentId: string) => {
+    const p = await ctx.db.get(parentId)
+    return p && p.userId === ctx.user._id ? p : null
+  }
+  const updateItemSchema = partial.extend({ expectedUpdatedAt: number().optional(), id: zid(table) })
+  const create = m({
+    args: { ...partial.shape, [foreignKey]: zid(parent), items: array(schema).max(BULK_MAX).optional() },
+    handler: typed(async (ctx: UserCtx, a: Rec) => {
+      const parentId = a[foreignKey] as string
+      const items = a.items as Rec[] | undefined
+      if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:create`)
+      if (items) {
+        const ids: string[] = []
+        for (const item of items) {
+          let data = schema.parse(pickFields(item, schemaKeys)) as Rec
           if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
           const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
           if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
-          return id
-        })
-      }),
-      update = m({
-        args: { ...partial.shape, id: zid(table).optional(), items: array(updateItemSchema).max(BULK_MAX).optional() },
-        handler: typed(async (ctx: MutCtx, a: Rec) => {
-          const rawItems = a.items as (Rec & { id: string })[] | undefined
-          if (rawItems) {
-            const results: Rec[] = []
-            for (const rawItem of rawItems) {
-              const doc = await ctx.db.get(rawItem.id)
-              if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
-                let patch = partial.parse(pickFields(rawItem, schemaKeys)) as Rec
-                if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
-                const now = time()
-                await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
-                await dbPatch(ctx.db, rawItem.id, { ...patch, ...now })
-                if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
-                results.push({ ...doc, ...patch, ...now })
-              }
-            }
-            return results
+          ids.push(id)
+        }
+        return ids
+      }
+      let data = schema.parse(pickFields(a, schemaKeys)) as Rec
+      if (hooks?.beforeCreate) data = await hooks.beforeCreate(chk(ctx), { data })
+      const id = await dbInsert(ctx.db, table, { ...data, [foreignKey]: parentId, ...time() })
+      if (hooks?.afterCreate) await hooks.afterCreate(chk(ctx), { data, id })
+      return id
+    })
+  })
+  const update = m({
+    args: { ...partial.shape, id: zid(table).optional(), items: array(updateItemSchema).max(BULK_MAX).optional() },
+    handler: typed(async (ctx: MutCtx, a: Rec) => {
+      const rawItems = a.items as (Rec & { id: string })[] | undefined
+      if (rawItems) {
+        const results: Rec[] = []
+        for (const rawItem of rawItems) {
+          const doc = await ctx.db.get(rawItem.id)
+          if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
+            let patch = partial.parse(pickFields(rawItem, schemaKeys)) as Rec
+            if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
+            const now = time()
+            await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
+            await dbPatch(ctx.db, rawItem.id, { ...patch, ...now })
+            if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id: rawItem.id, patch, prev: doc })
+            results.push({ ...doc, ...patch, ...now })
           }
-          const id = a.id as string | undefined
-          if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+        }
+        return results
+      }
+      const id = a.id as string | undefined
+      if (!id) return err('VALIDATION_FAILED', `${table}:update`)
+      const doc = await ctx.db.get(id)
+      if (!doc) return err('NOT_FOUND', `${table}:update`)
+      if (!(await verifyParentOwnership(ctx, getFK(doc)))) return err('NOT_FOUND', `${table}:update`)
+      let patch = partial.parse(pickFields(a, schemaKeys)) as Rec
+      if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id, patch, prev: doc })
+      const now = time()
+      await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
+      await dbPatch(ctx.db, id, { ...patch, ...now })
+      if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id, patch, prev: doc })
+      return { ...doc, ...patch, ...now }
+    })
+  })
+  const rm = m({
+    args: { id: zid(table).optional(), ids: bulkIdsSchema.optional() },
+    handler: typed(async (ctx: MutCtx, a: Rec) => {
+      const ids = a.ids as string[] | undefined
+      if (ids) {
+        let deleted = 0
+        for (const id of ids) {
           const doc = await ctx.db.get(id)
-          if (!doc) return err('NOT_FOUND', `${table}:update`)
-          if (!(await verifyParentOwnership(ctx, getFK(doc)))) return err('NOT_FOUND', `${table}:update`)
-          let patch = partial.parse(pickFields(a, schemaKeys)) as Rec
-          if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(ctx), { id, patch, prev: doc })
-          const now = time()
-          await cleanFiles({ doc, fileFields: fileFs, next: patch, storage: ctx.storage })
-          await dbPatch(ctx.db, id, { ...patch, ...now })
-          if (hooks?.afterUpdate) await hooks.afterUpdate(chk(ctx), { id, patch, prev: doc })
-          return { ...doc, ...patch, ...now }
-        })
-      }),
-      rm = m({
-        args: { id: zid(table).optional(), ids: bulkIdsSchema.optional() },
-        handler: typed(async (ctx: MutCtx, a: Rec) => {
-          const ids = a.ids as string[] | undefined
-          if (ids) {
-            let deleted = 0
-            for (const id of ids) {
+          if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
+            if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
+            await dbDelete(ctx.db, id)
+            await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
+            if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
+            deleted += 1
+          }
+        }
+        return deleted
+      }
+      const id = a.id as string | undefined
+      if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
+      const doc = await ctx.db.get(id)
+      if (!doc) return err('NOT_FOUND', `${table}:rm`)
+      const parentId = getFK(doc)
+      if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:rm`)
+      if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
+      await dbDelete(ctx.db, id)
+      await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
+      if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
+      return doc
+    })
+  })
+  const list = q({
+    args: { [foreignKey]: zid(parent), limit: number().optional() },
+    handler: typed(async (ctx: UserCtx, a: Rec) => {
+      const args = a
+      const parentId = args[foreignKey] as string
+      if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_AUTHORIZED', `${table}:list`)
+      const qry = ctx.db
+        .query(table)
+        .withIndex(
+          index,
+          idx(i => i.eq(foreignKey, parentId))
+        )
+        .order('asc')
+      return args.limit ? qry.take(args.limit as number) : qry.collect()
+    })
+  })
+  const get = q({
+    args: idArgs,
+    handler: typed(async (ctx: UserCtx, { id }: { id: string }) => {
+      const doc = await ctx.db.get(id)
+      if (!doc) return null
+      const parentId = getFK(doc)
+      if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_AUTHORIZED', `${table}:get`)
+      return doc
+    })
+  })
+  const pubField = options?.pub?.parentField
+  const pub =
+    pubField && pq
+      ? {
+          get: pq({
+            args: idArgs,
+            handler: typed(async (ctx: { db: DbReadLike }, { id }: { id: string }) => {
               const doc = await ctx.db.get(id)
-              if (doc && (await verifyParentOwnership(ctx, getFK(doc)))) {
-                if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
-                await dbDelete(ctx.db, id)
-                await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
-                if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
-                deleted += 1
-              }
-            }
-            return deleted
-          }
-          const id = a.id as string | undefined
-          if (!id) return err('VALIDATION_FAILED', `${table}:rm`)
-          const doc = await ctx.db.get(id)
-          if (!doc) return err('NOT_FOUND', `${table}:rm`)
-          const parentId = getFK(doc)
-          if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_FOUND', `${table}:rm`)
-          if (hooks?.beforeDelete) await hooks.beforeDelete(chk(ctx), { doc, id })
-          await dbDelete(ctx.db, id)
-          await cleanFiles({ doc, fileFields: fileFs, storage: ctx.storage })
-          if (hooks?.afterDelete) await hooks.afterDelete(chk(ctx), { doc, id })
-          return doc
-        })
-      }),
-      list = q({
-        args: { [foreignKey]: zid(parent), limit: number().optional() },
-        handler: typed(async (ctx: UserCtx, a: Rec) => {
-          const args = a,
-            parentId = args[foreignKey] as string
-          if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_AUTHORIZED', `${table}:list`)
-          const qry = ctx.db
-            .query(table)
-            .withIndex(
-              index,
-              idx(i => i.eq(foreignKey, parentId))
-            )
-            .order('asc')
-          return args.limit ? qry.take(args.limit as number) : qry.collect()
-        })
-      }),
-      get = q({
-        args: idArgs,
-        handler: typed(async (ctx: UserCtx, { id }: { id: string }) => {
-          const doc = await ctx.db.get(id)
-          if (!doc) return null
-          const parentId = getFK(doc)
-          if (!(await verifyParentOwnership(ctx, parentId))) return err('NOT_AUTHORIZED', `${table}:get`)
-          return doc
-        })
-      }),
-      pubField = options?.pub?.parentField,
-      pub =
-        pubField && pq
-          ? {
-              get: pq({
-                args: idArgs,
-                handler: typed(async (ctx: { db: DbReadLike }, { id }: { id: string }) => {
-                  const doc = await ctx.db.get(id)
-                  if (!doc) return null
-                  if (!(await checkParentField(ctx.db, getFK(doc), pubField))) return err('NOT_FOUND', `${table}:pub.get`)
-                  return doc
-                })
-              }),
-              list: pq({
-                args: { [foreignKey]: zid(parent), limit: number().optional() },
-                handler: typed(async (ctx: { db: DbReadLike }, a: Rec) => {
-                  const parentId = a[foreignKey] as string
-                  if (!(await checkParentField(ctx.db, parentId, pubField))) return err('NOT_FOUND', `${table}:pub.list`)
-                  const qry = ctx.db
-                    .query(table)
-                    .withIndex(
-                      index,
-                      idx(i => i.eq(foreignKey, parentId))
-                    )
-                    .order('asc')
-                  return a.limit ? qry.take(a.limit as number) : qry.collect()
-                })
-              })
-            }
-          : undefined
-    return {
-      create,
-      get,
-      list,
-      ...(pub ? { pub } : {}),
-      rm,
-      update
-    } as unknown as ChildCrudResult<S>
-  }
+              if (!doc) return null
+              if (!(await checkParentField(ctx.db, getFK(doc), pubField))) return err('NOT_FOUND', `${table}:pub.get`)
+              return doc
+            })
+          }),
+          list: pq({
+            args: { [foreignKey]: zid(parent), limit: number().optional() },
+            handler: typed(async (ctx: { db: DbReadLike }, a: Rec) => {
+              const parentId = a[foreignKey] as string
+              if (!(await checkParentField(ctx.db, parentId, pubField))) return err('NOT_FOUND', `${table}:pub.list`)
+              const qry = ctx.db
+                .query(table)
+                .withIndex(
+                  index,
+                  idx(i => i.eq(foreignKey, parentId))
+                )
+                .order('asc')
+              return a.limit ? qry.take(a.limit as number) : qry.collect()
+            })
+          })
+        }
+      : undefined
+  return {
+    create,
+    get,
+    list,
+    ...(pub ? { pub } : {}),
+    rm,
+    update
+  } as unknown as ChildCrudResult<S>
+}
 export { makeChildCrud }

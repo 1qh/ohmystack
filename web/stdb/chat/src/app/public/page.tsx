@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useTable } from 'spacetimedb/react'
 const Page = () => {
-  const [allChats, isReady] = useTable(tables.chat),
-    [query, setQuery] = useState(''),
-    { data: chats } = useList(allChats, isReady, {
-      search: { debounceMs: 200, fields: ['title'], query },
-      sort: { direction: 'desc', field: 'updatedAt' },
-      where: { isPublic: true }
-    })
+  const [allChats, isReady] = useTable(tables.chat)
+  const [query, setQuery] = useState('')
+  const { data: chats } = useList(allChats, isReady, {
+    search: { debounceMs: 200, fields: ['title'], query },
+    sort: { direction: 'desc', field: 'updatedAt' },
+    where: { isPublic: true }
+  })
   return (
     <div className='mx-auto max-w-3xl p-4' data-testid='public-chats-page'>
       <h1 className='mb-4 text-xl font-semibold'>Public Chats</h1>

@@ -28,143 +28,119 @@ interface MutateToast<A = unknown, R = unknown> {
   success?: ((result: R, args: A) => string) | string
 }
 type MutationRef = FunctionReference<'mutation'>
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
-  getMutationName = (ref: MutationRef): string =>
-    typeof ref === 'string' ? ref : ((ref as { _name?: string })._name ?? 'unknown'),
-  defaultOnError = (error: unknown) => {
-    handleError(error, {
-      NOT_AUTHENTICATED: () => {
-        toast.error('Please log in')
-      },
-      RATE_LIMITED: () => {
-        const data = extractErrorData(error)
-        toast.error(
-          data?.retryAfter
-            ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
-            : 'Too many requests, try again later'
-        )
-      },
-      default: () => {
-        toast.error(getErrorMessage(error))
-      }
-    })
-  },
-  getFirstFieldError = (error: unknown): string | undefined => {
-    const data = extractErrorData(error),
-      fieldErrors = data?.fieldErrors
-    if (!fieldErrors) return
-    const keys = Object.keys(fieldErrors)
-    for (const key of keys) {
-      const message = fieldErrors[key]
-      if (message) return message
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'
+const getMutationName = (ref: MutationRef): string =>
+  typeof ref === 'string' ? ref : ((ref as { _name?: string })._name ?? 'unknown')
+const defaultOnError = (error: unknown) => {
+  handleError(error, {
+    NOT_AUTHENTICATED: () => {
+      toast.error('Please log in')
+    },
+    RATE_LIMITED: () => {
+      const data = extractErrorData(error)
+      toast.error(
+        data?.retryAfter
+          ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
+          : 'Too many requests, try again later'
+      )
+    },
+    default: () => {
+      toast.error(getErrorMessage(error))
     }
-  },
-  resolveToastError = <A = unknown, R = unknown>(
-    options?: MutateOptions<A, R>
-  ): ((error: unknown) => void) | undefined => {
-    const toastOptions = options?.toast
-    if (options?.onError === false) return
-    if (options?.onError) return options.onError
-    if (!toastOptions) return defaultOnError
-    const useFieldErrors = toastOptions.fieldErrors !== false
-    return (error: unknown) => {
-      if (useFieldErrors) {
-        const fieldMessage = getFirstFieldError(error)
-        if (fieldMessage) {
-          toast.error(fieldMessage)
-          return
-        }
-      }
-      const errMessage = toastOptions.error
-      if (errMessage) {
-        toast.error(typeof errMessage === 'function' ? errMessage(error) : errMessage)
+  })
+}
+const getFirstFieldError = (error: unknown): string | undefined => {
+  const data = extractErrorData(error)
+  const fieldErrors = data?.fieldErrors
+  if (!fieldErrors) return
+  const keys = Object.keys(fieldErrors)
+  for (const key of keys) {
+    const message = fieldErrors[key]
+    if (message) return message
+  }
+}
+const resolveToastError = <A = unknown, R = unknown>(
+  options?: MutateOptions<A, R>
+): ((error: unknown) => void) | undefined => {
+  const toastOptions = options?.toast
+  if (options?.onError === false) return
+  if (options?.onError) return options.onError
+  if (!toastOptions) return defaultOnError
+  const useFieldErrors = toastOptions.fieldErrors !== false
+  return (error: unknown) => {
+    if (useFieldErrors) {
+      const fieldMessage = getFirstFieldError(error)
+      if (fieldMessage) {
+        toast.error(fieldMessage)
         return
       }
-      defaultOnError(error)
     }
-  },
-  resolveToastSuccess = <A = unknown, R = unknown>(
-    options?: MutateOptions<A, R>
-  ): ((result: R, args: A) => void) | undefined => {
-    const userCb = options?.onSuccess,
-      successMessage = options?.toast?.success
-    if (userCb || successMessage)
-      return (result: R, args: A) => {
-        userCb?.(result, args)
-        if (successMessage)
-          toast.success(typeof successMessage === 'function' ? successMessage(result, args) : successMessage)
-      }
-  },
-  detectMutationType = (ref: MutationRef): MutationType => {
-    const name = getMutationName(ref)
-    if (name.endsWith(':rm') || name.endsWith('.rm') || name.includes('delete') || name.includes('remove')) return 'delete'
-    if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
-    return 'create'
-  },
-  /**
-   * Wraps a Convex mutation with optimistic store tracking, devtools integration, and default error toasting.
-   *
-   * By default, errors are shown as toast notifications with smart routing for auth and rate-limit errors.
-   * Pass `onError: false` to disable, or `onError: (e) => {...}` for custom handling.
-   *
-   * @example
-   * ```tsx
-   * const update = useMutate(api.blog.update)
-   * const remove = useMutate(api.blog.rm, { onError: false })
-   * ```
-   */
-  useMutate = <T extends MutationRef>(
-    ref: T,
-    options?: MutateOptions
-  ): ((args: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>) => {
-    const mutate = useMutation(ref),
-      store = useOptimisticStore(),
-      isOptimistic = options?.optimistic !== false,
-      errorHandler = resolveToastError(options),
-      successHandler = resolveToastSuccess(options),
-      getName = options?.getName,
-      onSettled = options?.onSettled,
-      resolveId = options?.resolveId,
-      retryOptions = options?.retry,
-      type = options?.type
-    return useCallback(
-      async (args: OptionalRestArgs<T>[0]): Promise<FunctionReturnType<T>> => {
-        const argsRecord = typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {},
-          mutationType = type ?? detectMutationType(ref),
-          name = getName?.(args) ?? getMutationName(ref),
-          devId = isDev ? trackMutation(name, argsRecord) : 0,
-          exec = retryOptions
-            ? async () =>
-                withRetry(
-                  async () => (mutate as (a: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>)(args),
-                  typeof retryOptions === 'number' ? { maxAttempts: retryOptions } : retryOptions
-                )
-            : async () => (mutate as (a: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>)(args)
-        if (!(store && isOptimistic))
-          try {
-            const result = await exec()
-            if (isDev && devId) completeMutation(devId, 'success')
-            successHandler?.(result, args)
-            onSettled?.(args, undefined, result)
-            return result
-          } catch (error) {
-            if (isDev) {
-              if (devId) completeMutation(devId, 'error')
-              pushError(error)
-            }
-            if (errorHandler) errorHandler(error)
-            onSettled?.(args, error)
-            throw error
-          }
-        const tempId = makeTempId(),
-          id = resolveId?.(args) ?? (argsRecord.id as string | undefined)
-        store.add({
-          args: argsRecord,
-          id: id ?? tempId,
-          tempId,
-          timestamp: Date.now(),
-          type: mutationType
-        })
+    const errMessage = toastOptions.error
+    if (errMessage) {
+      toast.error(typeof errMessage === 'function' ? errMessage(error) : errMessage)
+      return
+    }
+    defaultOnError(error)
+  }
+}
+const resolveToastSuccess = <A = unknown, R = unknown>(
+  options?: MutateOptions<A, R>
+): ((result: R, args: A) => void) | undefined => {
+  const userCb = options?.onSuccess
+  const successMessage = options?.toast?.success
+  if (userCb || successMessage)
+    return (result: R, args: A) => {
+      userCb?.(result, args)
+      if (successMessage)
+        toast.success(typeof successMessage === 'function' ? successMessage(result, args) : successMessage)
+    }
+}
+const detectMutationType = (ref: MutationRef): MutationType => {
+  const name = getMutationName(ref)
+  if (name.endsWith(':rm') || name.endsWith('.rm') || name.includes('delete') || name.includes('remove')) return 'delete'
+  if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
+  return 'create'
+}
+/**
+ * Wraps a Convex mutation with optimistic store tracking, devtools integration, and default error toasting.
+ *
+ * By default, errors are shown as toast notifications with smart routing for auth and rate-limit errors.
+ * Pass `onError: false` to disable, or `onError: (e) => {...}` for custom handling.
+ *
+ * @example
+ * ```tsx
+ * const update = useMutate(api.blog.update)
+ * const remove = useMutate(api.blog.rm, { onError: false })
+ * ```
+ */
+const useMutate = <T extends MutationRef>(
+  ref: T,
+  options?: MutateOptions
+): ((args: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>) => {
+  const mutate = useMutation(ref)
+  const store = useOptimisticStore()
+  const isOptimistic = options?.optimistic !== false
+  const errorHandler = resolveToastError(options)
+  const successHandler = resolveToastSuccess(options)
+  const getName = options?.getName
+  const onSettled = options?.onSettled
+  const resolveId = options?.resolveId
+  const retryOptions = options?.retry
+  const type = options?.type
+  return useCallback(
+    async (args: OptionalRestArgs<T>[0]): Promise<FunctionReturnType<T>> => {
+      const argsRecord = typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {}
+      const mutationType = type ?? detectMutationType(ref)
+      const name = getName?.(args) ?? getMutationName(ref)
+      const devId = isDev ? trackMutation(name, argsRecord) : 0
+      const exec = retryOptions
+        ? async () =>
+            withRetry(
+              async () => (mutate as (a: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>)(args),
+              typeof retryOptions === 'number' ? { maxAttempts: retryOptions } : retryOptions
+            )
+        : async () => (mutate as (a: OptionalRestArgs<T>[0]) => Promise<FunctionReturnType<T>>)(args)
+      if (!(store && isOptimistic))
         try {
           const result = await exec()
           if (isDev && devId) completeMutation(devId, 'success')
@@ -179,12 +155,36 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
           if (errorHandler) errorHandler(error)
           onSettled?.(args, error)
           throw error
-        } finally {
-          store.remove(tempId)
         }
-      },
-      [errorHandler, getName, isOptimistic, mutate, onSettled, ref, resolveId, retryOptions, store, successHandler, type]
-    )
-  }
+      const tempId = makeTempId()
+      const id = resolveId?.(args) ?? (argsRecord.id as string | undefined)
+      store.add({
+        args: argsRecord,
+        id: id ?? tempId,
+        tempId,
+        timestamp: Date.now(),
+        type: mutationType
+      })
+      try {
+        const result = await exec()
+        if (isDev && devId) completeMutation(devId, 'success')
+        successHandler?.(result, args)
+        onSettled?.(args, undefined, result)
+        return result
+      } catch (error) {
+        if (isDev) {
+          if (devId) completeMutation(devId, 'error')
+          pushError(error)
+        }
+        if (errorHandler) errorHandler(error)
+        onSettled?.(args, error)
+        throw error
+      } finally {
+        store.remove(tempId)
+      }
+    },
+    [errorHandler, getName, isOptimistic, mutate, onSettled, ref, resolveId, retryOptions, store, successHandler, type]
+  )
+}
 export type { MutateOptions, MutateToast }
 export { defaultOnError, useMutate }

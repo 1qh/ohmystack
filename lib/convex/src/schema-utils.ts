@@ -12,8 +12,8 @@ import {
   parseObjectFields,
   SINGLETON_BASE
 } from '@a/shared/schema-utils'
-const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'],
-  { endpointsForFactory, extractSchemaFields } = createSchemaUtils({ wrapperFactories })
+const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase']
+const { endpointsForFactory, extractSchemaFields } = createSchemaUtils({ wrapperFactories })
 export {
   CACHE_BASE,
   CHILD_BASE,

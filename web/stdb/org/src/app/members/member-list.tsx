@@ -18,35 +18,35 @@ import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 const MemberList = () => {
-  const { canManageAdmins, canManageMembers, org, role: myRole } = useOrg(),
-    { identity } = useSpacetimeDB(),
-    [memberRows, isReady] = useOrgTable<OrgMember>(tables.orgMember),
-    profileByUserId = useProfileMap(),
-    removeMember = useMut(reducers.orgRemoveMember, { toast: { success: 'Member removed' } }),
-    setAdmin = useMut(reducers.orgSetAdmin, {
-      toast: {
-        success: (_result, args) => (args.isAdmin ? 'Promoted to admin' : 'Demoted to member')
-      }
-    }),
-    [query, setQuery] = useState(''),
-    members = memberRows.map(m => {
-      const p = profileByUserId.get(m.userId.toHexString()),
-        role: 'admin' | 'member' | 'owner' =
-          m.userId.toHexString() === org.userId.toHexString() ? 'owner' : m.isAdmin ? 'admin' : 'member'
-      return {
-        memberId: m.id,
-        name: p?.displayName ?? 'Unknown',
-        role,
-        user: p ? { image: p.avatar ?? null, name: p.displayName } : null,
-        userId: m.userId.toHexString()
-      }
-    }),
-    { results: filteredMembers } = useSearch(
-      members,
-      isReady,
-      query.trim() ? { fields: ['name', 'role'], query } : 'skip'
-    ),
-    displayMembers = query.trim() ? filteredMembers : members
+  const { canManageAdmins, canManageMembers, org, role: myRole } = useOrg()
+  const { identity } = useSpacetimeDB()
+  const [memberRows, isReady] = useOrgTable<OrgMember>(tables.orgMember)
+  const profileByUserId = useProfileMap()
+  const removeMember = useMut(reducers.orgRemoveMember, { toast: { success: 'Member removed' } })
+  const setAdmin = useMut(reducers.orgSetAdmin, {
+    toast: {
+      success: (_result, args) => (args.isAdmin ? 'Promoted to admin' : 'Demoted to member')
+    }
+  })
+  const [query, setQuery] = useState('')
+  const members = memberRows.map(m => {
+    const p = profileByUserId.get(m.userId.toHexString())
+    const role: 'admin' | 'member' | 'owner' =
+      m.userId.toHexString() === org.userId.toHexString() ? 'owner' : m.isAdmin ? 'admin' : 'member'
+    return {
+      memberId: m.id,
+      name: p?.displayName ?? 'Unknown',
+      role,
+      user: p ? { image: p.avatar ?? null, name: p.displayName } : null,
+      userId: m.userId.toHexString()
+    }
+  })
+  const { results: filteredMembers } = useSearch(
+    members,
+    isReady,
+    query.trim() ? { fields: ['name', 'role'], query } : 'skip'
+  )
+  const displayMembers = query.trim() ? filteredMembers : members
   if (!identity) return <Skeleton className='h-40 w-full' />
   return (
     <div className='flex flex-col gap-3'>
@@ -64,8 +64,8 @@ const MemberList = () => {
         </TableHeader>
         <TableBody>
           {displayMembers.map(m => {
-            const { memberId } = m,
-              showActions = m.role !== 'owner'
+            const { memberId } = m
+            const showActions = m.role !== 'owner'
             return (
               <TableRow key={m.userId}>
                 <TableCell className='flex items-center gap-2'>

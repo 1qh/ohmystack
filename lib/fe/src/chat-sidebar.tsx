@@ -68,14 +68,14 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
   threads,
   untitledThreadLabel = 'Untitled'
 }: ChatSidebarProps<TThread, TId>) => {
-  const router = useRouter(),
-    params = useParams(),
-    rootPath = basePath || '/',
-    handleDelete = async (e: React.KeyboardEvent | React.MouseEvent, threadId: TId) => {
-      e.stopPropagation()
-      await onDelete(threadId)
-      if (params.id === String(threadId)) router.push(rootPath)
-    }
+  const router = useRouter()
+  const params = useParams()
+  const rootPath = basePath || '/'
+  const handleDelete = async (e: React.KeyboardEvent | React.MouseEvent, threadId: TId) => {
+    e.stopPropagation()
+    await onDelete(threadId)
+    if (params.id === String(threadId)) router.push(rootPath)
+  }
   return (
     <Sidebar {...rootProps} side='left'>
       <SidebarHeader className={cn('gap-2', headerClassName)}>

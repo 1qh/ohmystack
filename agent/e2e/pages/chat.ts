@@ -1,6 +1,6 @@
 import BasePage from '@a/e2e/base-page'
-const MESSAGE_RE = /message/iu,
-  SEND_RE = /send/iu
+const MESSAGE_RE = /message/iu
+const SEND_RE = /send/iu
 class ChatPage extends BasePage {
   getComposer = () => this.page.getByPlaceholder(MESSAGE_RE)
   getMessageLog = () => this.page.getByRole('log')

@@ -19,12 +19,12 @@ test.describe
         .locator('[data-testid="pagination-exhausted"], [data-testid="load-more-trigger"], [data-testid="loading-more"]')
         .first()
         .waitFor({ timeout: 10_000 })
-      const exhausted = blogPage.getPaginationExhausted(),
-        loadMore = blogPage.getLoadMoreTrigger(),
-        loadingMore = blogPage.getLoadingMore(),
-        exhaustedVisible = await exhausted.isVisible().catch(() => false),
-        loadMoreVisible = await loadMore.isVisible().catch(() => false),
-        loadingVisible = await loadingMore.isVisible().catch(() => false)
+      const exhausted = blogPage.getPaginationExhausted()
+      const loadMore = blogPage.getLoadMoreTrigger()
+      const loadingMore = blogPage.getLoadingMore()
+      const exhaustedVisible = await exhausted.isVisible().catch(() => false)
+      const loadMoreVisible = await loadMore.isVisible().catch(() => false)
+      const loadingVisible = await loadingMore.isVisible().catch(() => false)
       expect(exhaustedVisible || loadMoreVisible || loadingVisible).toBe(true)
     })
   })

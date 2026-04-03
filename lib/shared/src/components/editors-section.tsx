@@ -47,12 +47,12 @@ const EditorsSection = ({
   onRemove: (userId: string) => void
   triggerClassName?: string
 }) => {
-  const editorIds = new Set(editorsList.map(e => e.userId)),
-    available: MemberInfo[] = [],
-    title = labels?.title ?? 'Editors',
-    addEditorPlaceholder = labels?.addEditorPlaceholder ?? 'Add editor',
-    unknownMember = labels?.unknownMember ?? 'Unknown',
-    emptyState = labels?.emptyState ?? 'No editors assigned'
+  const editorIds = new Set(editorsList.map(e => e.userId))
+  const available: MemberInfo[] = []
+  const title = labels?.title ?? 'Editors'
+  const addEditorPlaceholder = labels?.addEditorPlaceholder ?? 'Add editor'
+  const unknownMember = labels?.unknownMember ?? 'Unknown'
+  const emptyState = labels?.emptyState ?? 'No editors assigned'
   for (const m of members) if (!editorIds.has(m.userId)) available.push(m)
   return (
     <Card {...props} data-testid='editors-section'>

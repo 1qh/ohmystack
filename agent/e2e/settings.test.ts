@@ -2,15 +2,15 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright page interactions */
 /** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import { expect, test } from './fixtures'
-const DELETE_RE = /delete/iu,
-  NAME_RE = /name/iu,
-  URL_RE = /url/iu,
-  ADD_RE = /add/iu,
-  DUPLICATE_RE = /name.*taken|duplicate/iu,
-  BLOCKED_RE = /blocked/iu,
-  DISABLE_RE = /disable/iu,
-  ENABLE_RE = /enable/iu,
-  MCP_SERVERS_RE = /mcp servers/iu
+const DELETE_RE = /delete/iu
+const NAME_RE = /name/iu
+const URL_RE = /url/iu
+const ADD_RE = /add/iu
+const DUPLICATE_RE = /name.*taken|duplicate/iu
+const BLOCKED_RE = /blocked/iu
+const DISABLE_RE = /disable/iu
+const ENABLE_RE = /enable/iu
+const MCP_SERVERS_RE = /mcp servers/iu
 test.describe
   .serial('Settings (MCP)', () => {
     test.beforeEach(async ({ page }) => {

@@ -7,10 +7,10 @@ import Link from 'next/link'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const OrgDashboard = () => {
-  const { org, role } = useOrg(),
-    [members] = useOrgTable(tables.orgMember),
-    [orgProjects] = useOrgTable(tables.project),
-    projects = orgProjects.slice(0, 5)
+  const { org, role } = useOrg()
+  const [members] = useOrgTable(tables.orgMember)
+  const [orgProjects] = useOrgTable(tables.project)
+  const projects = orgProjects.slice(0, 5)
   return (
     <div className='space-y-6'>
       <div>

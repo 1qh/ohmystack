@@ -1,6 +1,6 @@
 import BasePage from '@a/e2e/base-page'
-const NEW_RE = /new/iu,
-  SESSIONS_RE = /sessions/iu
+const NEW_RE = /new/iu
+const SESSIONS_RE = /sessions/iu
 class SessionListPage extends BasePage {
   getNewButton = () => this.page.getByRole('button', { name: NEW_RE })
   getSessionCards = () => this.page.locator('button').filter({ has: this.page.locator('.font-medium') })

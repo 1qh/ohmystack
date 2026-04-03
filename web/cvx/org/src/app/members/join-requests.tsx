@@ -13,23 +13,23 @@ import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 const JoinRequests = () => {
-  const requests = useOrgQuery(api.org.pendingJoinRequests),
-    approveRequest = useMutation(api.org.approveJoinRequest),
-    rejectRequest = useMutation(api.org.rejectJoinRequest),
-    [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
+  const requests = useOrgQuery(api.org.pendingJoinRequests)
+  const approveRequest = useMutation(api.org.approveJoinRequest)
+  const rejectRequest = useMutation(api.org.rejectJoinRequest)
+  const [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
   if (requests === undefined) return <Skeleton className='h-20 w-full' />
   if (requests.length === 0) return null
   type ReqId = NonNullable<typeof requests>[number]['request']['_id']
   const handleApprove = (requestId: ReqId, isAdmin: boolean) => {
-      approveRequest({ isAdmin, requestId })
-        .then(() => toast.success('Request approved'))
-        .catch(fail)
-    },
-    handleReject = (requestId: ReqId) => {
-      rejectRequest({ requestId })
-        .then(() => toast.success('Request rejected'))
-        .catch(fail)
-    }
+    approveRequest({ isAdmin, requestId })
+      .then(() => toast.success('Request approved'))
+      .catch(fail)
+  }
+  const handleReject = (requestId: ReqId) => {
+    rejectRequest({ requestId })
+      .then(() => toast.success('Request rejected'))
+      .catch(fail)
+  }
   return (
     <div className='space-y-2'>
       <h3 className='font-medium'>Join Requests</h3>

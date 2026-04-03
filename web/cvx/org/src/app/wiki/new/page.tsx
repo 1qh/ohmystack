@@ -8,18 +8,18 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
 const NewWikiPage = () => {
-  const router = useRouter(),
-    { org } = useOrg(),
-    form = useFormMutation({
-      mutation: api.wiki.create,
-      onSuccess: () => {
-        toast.success('Wiki page created')
-        router.push('/wiki')
-      },
-      resetOnSuccess: true,
-      schema: orgScoped.wiki,
-      transform: d => ({ ...d, orgId: org._id })
-    })
+  const router = useRouter()
+  const { org } = useOrg()
+  const form = useFormMutation({
+    mutation: api.wiki.create,
+    onSuccess: () => {
+      toast.success('Wiki page created')
+      router.push('/wiki')
+    },
+    resetOnSuccess: true,
+    schema: orgScoped.wiki,
+    transform: d => ({ ...d, orgId: org._id })
+  })
   return (
     <div className='flex justify-center'>
       <Card className='w-full max-w-md'>

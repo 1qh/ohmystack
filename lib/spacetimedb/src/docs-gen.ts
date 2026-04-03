@@ -9,245 +9,245 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { FactoryCall } from './check'
 import { endpointsForFactory, extractSchemaFields } from './check'
-const schemaMarkers = ['schema(', 'table(', 't.'],
-  reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu,
-  listTypeScriptFiles = (root: string): string[] => {
-    const out: string[] = [],
-      skip = new Set(['.git', '.next', '.turbo', 'build', 'dist', 'node_modules']),
-      walk = (dir: string) => {
-        if (!existsSync(dir)) return
-        for (const entry of readdirSync(dir, { withFileTypes: true })) {
-          const full = join(dir, entry.name)
-          if (entry.isDirectory()) {
-            if (!(skip.has(entry.name) || entry.name.startsWith('.'))) walk(full)
-          } else if (entry.name.endsWith('.ts') && !entry.name.includes('.test.') && !entry.name.includes('.config.'))
-            out.push(full)
-        }
+const schemaMarkers = ['schema(', 'table(', 't.']
+const reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu
+const listTypeScriptFiles = (root: string): string[] => {
+  const out: string[] = []
+  const skip = new Set(['.git', '.next', '.turbo', 'build', 'dist', 'node_modules'])
+  const walk = (dir: string) => {
+    if (!existsSync(dir)) return
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (!(skip.has(entry.name) || entry.name.startsWith('.'))) walk(full)
+      } else if (entry.name.endsWith('.ts') && !entry.name.includes('.test.') && !entry.name.includes('.config.'))
+        out.push(full)
+    }
+  }
+  walk(root)
+  return out
+}
+const findModuleDir = (root: string): string | undefined => {
+  const candidates = [
+    root,
+    join(root, 'module'),
+    join(root, 'src', 'module'),
+    join(root, 'src'),
+    join(root, 'backend', 'spacetimedb', 'src')
+  ]
+  for (const candidate of candidates)
+    if (existsSync(candidate)) {
+      const files = listTypeScriptFiles(candidate)
+      for (const file of files) {
+        const content = readFileSync(file, 'utf8')
+        if (isSchemaFile(content, schemaMarkers)) return candidate
       }
-    walk(root)
-    return out
-  },
-  findModuleDir = (root: string): string | undefined => {
-    const candidates = [
-      root,
-      join(root, 'module'),
-      join(root, 'src', 'module'),
-      join(root, 'src'),
-      join(root, 'backend', 'spacetimedb', 'src')
-    ]
-    for (const candidate of candidates)
-      if (existsSync(candidate)) {
-        const files = listTypeScriptFiles(candidate)
+    }
+  if (!existsSync(root)) return
+  for (const sub of readdirSync(root, { withFileTypes: true }))
+    if (sub.isDirectory()) {
+      const nested = join(root, sub.name, 'module')
+      if (existsSync(nested)) {
+        const files = listTypeScriptFiles(nested)
         for (const file of files) {
           const content = readFileSync(file, 'utf8')
-          if (isSchemaFile(content, schemaMarkers)) return candidate
+          if (isSchemaFile(content, schemaMarkers)) return nested
         }
       }
-    if (!existsSync(root)) return
-    for (const sub of readdirSync(root, { withFileTypes: true }))
-      if (sub.isDirectory()) {
-        const nested = join(root, sub.name, 'module')
-        if (existsSync(nested)) {
-          const files = listTypeScriptFiles(nested)
-          for (const file of files) {
-            const content = readFileSync(file, 'utf8')
-            if (isSchemaFile(content, schemaMarkers)) return nested
-          }
-        }
-      }
-  },
-  findSchemaFile = (moduleDir: string): undefined | { content: string; path: string } => {
-    const files = listTypeScriptFiles(moduleDir)
-    for (const full of files) {
-      const content = readFileSync(full, 'utf8')
-      if (isSchemaFile(content, schemaMarkers) && content.includes('schema(') && content.includes('table('))
-        return { content, path: full }
     }
-  },
-  extractFactoryCalls = (moduleDir: string): FactoryCall[] => {
-    const byTable = new Map<string, { endpoints: Set<string>; file: string }>(),
-      files = listTypeScriptFiles(moduleDir)
-    for (const full of files) {
-      const content = readFileSync(full, 'utf8'),
-        file = full.slice(moduleDir.length + 1)
-      let m = reducerPat.exec(content)
-      while (m) {
-        const table = m.groups?.table ?? '',
-          endpoint = m.groups?.endpoint ?? ''
-        if (table && endpoint) {
-          const entry = byTable.get(table) ?? { endpoints: new Set<string>(), file }
-          entry.endpoints.add(endpoint)
-          byTable.set(table, entry)
-        }
-        m = reducerPat.exec(content)
+}
+const findSchemaFile = (moduleDir: string): undefined | { content: string; path: string } => {
+  const files = listTypeScriptFiles(moduleDir)
+  for (const full of files) {
+    const content = readFileSync(full, 'utf8')
+    if (isSchemaFile(content, schemaMarkers) && content.includes('schema(') && content.includes('table('))
+      return { content, path: full }
+  }
+}
+const extractFactoryCalls = (moduleDir: string): FactoryCall[] => {
+  const byTable = new Map<string, { endpoints: Set<string>; file: string }>()
+  const files = listTypeScriptFiles(moduleDir)
+  for (const full of files) {
+    const content = readFileSync(full, 'utf8')
+    const file = full.slice(moduleDir.length + 1)
+    let m = reducerPat.exec(content)
+    while (m) {
+      const table = m.groups?.table ?? ''
+      const endpoint = m.groups?.endpoint ?? ''
+      if (table && endpoint) {
+        const entry = byTable.get(table) ?? { endpoints: new Set<string>(), file }
+        entry.endpoints.add(endpoint)
+        byTable.set(table, entry)
       }
-      reducerPat.lastIndex = 0
+      m = reducerPat.exec(content)
     }
-    const calls: FactoryCall[] = []
-    for (const [table, entry] of byTable)
-      calls.push({
-        factory: 'reducer',
-        file: entry.file,
-        options: `endpoints=${[...entry.endpoints].toSorted().join(',')}`,
-        table
-      })
-    return calls
-  },
-  FACTORY_DESCRIPTIONS: Record<string, string> = {
-    reducer: 'SpacetimeDB reducers for table operations'
-  },
-  ENDPOINT_ARGS: Record<string, string> = {
-    create: 'Table field payload',
-    get: '`{ id }` or primary-key selector',
-    list: 'Optional pagination/filter payload',
-    read: '`{ id }`',
-    rm: '`{ id }`',
-    search: '`{ query, where? }`',
-    update: '`{ id, ...partialFields }`',
-    upsert: 'Table field payload'
-  },
-  ENDPOINT_RETURNS: Record<string, string> = {
-    create: 'Inserted row or row id',
-    get: 'Row or null',
-    list: 'Rows list',
-    read: 'Row or null',
-    rm: 'Deleted row metadata',
-    search: 'Rows list',
-    update: 'Updated row',
-    upsert: 'Upserted row'
-  },
-  ENDPOINT_TYPES: Record<string, string> = {
-    create: 'reducer',
-    get: 'reducer',
-    list: 'reducer',
-    read: 'reducer',
-    rm: 'reducer',
-    search: 'reducer',
-    update: 'reducer',
-    upsert: 'reducer'
-  },
-  generateMarkdown = (calls: FactoryCall[], tableFields: Map<string, { name: string; type: string }[]>): string => {
-    const lines: string[] = [
-      '# API Reference',
-      '',
-      '*Auto-generated by `noboil-stdb docs`*',
-      '',
-      `**${calls.length} table reducer groups** registered across your project.`,
-      '',
-      '## Tables',
-      '',
-      '| Table | Source | Reducers |',
-      '|-------|--------|----------|'
-    ]
-    for (const call of calls) {
-      const eps = endpointsForFactory(call)
-      lines.push(`| ${call.table} | \`${call.file}\` | ${eps.length} |`)
+    reducerPat.lastIndex = 0
+  }
+  const calls: FactoryCall[] = []
+  for (const [table, entry] of byTable)
+    calls.push({
+      factory: 'reducer',
+      file: entry.file,
+      options: `endpoints=${[...entry.endpoints].toSorted().join(',')}`,
+      table
+    })
+  return calls
+}
+const FACTORY_DESCRIPTIONS: Record<string, string> = {
+  reducer: 'SpacetimeDB reducers for table operations'
+}
+const ENDPOINT_ARGS: Record<string, string> = {
+  create: 'Table field payload',
+  get: '`{ id }` or primary-key selector',
+  list: 'Optional pagination/filter payload',
+  read: '`{ id }`',
+  rm: '`{ id }`',
+  search: '`{ query, where? }`',
+  update: '`{ id, ...partialFields }`',
+  upsert: 'Table field payload'
+}
+const ENDPOINT_RETURNS: Record<string, string> = {
+  create: 'Inserted row or row id',
+  get: 'Row or null',
+  list: 'Rows list',
+  read: 'Row or null',
+  rm: 'Deleted row metadata',
+  search: 'Rows list',
+  update: 'Updated row',
+  upsert: 'Upserted row'
+}
+const ENDPOINT_TYPES: Record<string, string> = {
+  create: 'reducer',
+  get: 'reducer',
+  list: 'reducer',
+  read: 'reducer',
+  rm: 'reducer',
+  search: 'reducer',
+  update: 'reducer',
+  upsert: 'reducer'
+}
+const generateMarkdown = (calls: FactoryCall[], tableFields: Map<string, { name: string; type: string }[]>): string => {
+  const lines: string[] = [
+    '# API Reference',
+    '',
+    '*Auto-generated by `noboil-stdb docs`*',
+    '',
+    `**${calls.length} table reducer groups** registered across your project.`,
+    '',
+    '## Tables',
+    '',
+    '| Table | Source | Reducers |',
+    '|-------|--------|----------|'
+  ]
+  for (const call of calls) {
+    const eps = endpointsForFactory(call)
+    lines.push(`| ${call.table} | \`${call.file}\` | ${eps.length} |`)
+  }
+  lines.push('')
+  for (const call of calls) {
+    const eps = endpointsForFactory(call)
+    const desc = FACTORY_DESCRIPTIONS[call.factory] ?? ''
+    const fields = tableFields.get(call.table)
+    lines.push(`## ${call.table}`, '')
+    lines.push(`**Source:** \`${call.file}\``)
+    if (desc) lines.push('', desc)
+    lines.push('')
+    if (fields && fields.length > 0) {
+      lines.push('### Schema Fields', '')
+      lines.push('| Field | Type |')
+      lines.push('|-------|------|')
+      for (const f of fields) lines.push(`| ${f.name} | \`${f.type}\` |`)
+      lines.push('')
+    }
+    lines.push('### Reducers', '')
+    lines.push('| Reducer | Type | Args | Returns |')
+    lines.push('|---------|------|------|---------|')
+    for (const ep of eps) {
+      const rootName = ep.includes('.') ? ep.slice(ep.lastIndexOf('.') + 1) : ep
+      const epType = ENDPOINT_TYPES[rootName] ?? 'reducer'
+      const args = ENDPOINT_ARGS[rootName] ?? 'Custom reducer payload'
+      const returns = ENDPOINT_RETURNS[rootName] ?? 'Custom reducer return value'
+      lines.push(`| \`${call.table}.${ep}\` | ${epType} | ${args} | ${returns} |`)
     }
     lines.push('')
-    for (const call of calls) {
-      const eps = endpointsForFactory(call),
-        desc = FACTORY_DESCRIPTIONS[call.factory] ?? '',
-        fields = tableFields.get(call.table)
-      lines.push(`## ${call.table}`, '')
-      lines.push(`**Source:** \`${call.file}\``)
-      if (desc) lines.push('', desc)
-      lines.push('')
-      if (fields && fields.length > 0) {
-        lines.push('### Schema Fields', '')
-        lines.push('| Field | Type |')
-        lines.push('|-------|------|')
-        for (const f of fields) lines.push(`| ${f.name} | \`${f.type}\` |`)
-        lines.push('')
-      }
-      lines.push('### Reducers', '')
-      lines.push('| Reducer | Type | Args | Returns |')
-      lines.push('|---------|------|------|---------|')
-      for (const ep of eps) {
-        const rootName = ep.includes('.') ? ep.slice(ep.lastIndexOf('.') + 1) : ep,
-          epType = ENDPOINT_TYPES[rootName] ?? 'reducer',
-          args = ENDPOINT_ARGS[rootName] ?? 'Custom reducer payload',
-          returns = ENDPOINT_RETURNS[rootName] ?? 'Custom reducer return value'
-        lines.push(`| \`${call.table}.${ep}\` | ${epType} | ${args} | ${returns} |`)
-      }
-      lines.push('')
-    }
-    return lines.join('\n')
-  },
-  ENTRY_POINTS: { label: string; path: string }[] = [
-    { label: '@noboil/spacetimedb', path: 'index.ts' },
-    { label: '@noboil/spacetimedb/schema', path: 'schema.ts' },
-    { label: '@noboil/spacetimedb/react', path: 'react/index.ts' },
-    { label: '@noboil/spacetimedb/server', path: 'server/index.ts' },
-    { label: '@noboil/spacetimedb/components', path: 'components/index.ts' },
-    { label: '@noboil/spacetimedb/next', path: 'next/index.ts' },
-    { label: '@noboil/spacetimedb/zod', path: 'zod.ts' },
-    { label: '@noboil/spacetimedb/seed', path: 'seed.ts' },
-    { label: '@noboil/spacetimedb/retry', path: 'retry.ts' },
-    { label: '@noboil/spacetimedb/eslint', path: 'eslint.ts' },
-    { label: '@noboil/spacetimedb/test', path: 'server/test.ts' }
-  ],
-  generateFullReference = (srcDir: string): string => {
-    const lines: string[] = [
-      '# @noboil/spacetimedb \u2014 Full API Reference',
-      '',
-      '*Auto-generated by `noboil-stdb docs --full`*',
-      ''
-    ]
-    let totalSymbols = 0
-    for (const ep of ENTRY_POINTS) totalSymbols += processEntryPoint(ep, srcDir, lines)
-    lines.push('---', '', `**${totalSymbols} exports** across ${ENTRY_POINTS.length} entry points.`)
-    return lines.join('\n')
-  },
-  run = () => {
-    const root = process.cwd(),
-      flags = new Set(process.argv.slice(2))
-    console.log(bold('\nnoboil-stdb docs\n'))
-    if (flags.has('--full')) {
-      const srcDir = join(root, 'src')
-      if (!existsSync(srcDir)) {
-        console.log(red('\u2717 Could not find src/ directory'))
-        process.exit(1)
-      }
-      console.log(generateFullReference(srcDir))
-      return
-    }
-    const moduleDir = findModuleDir(root)
-    if (!moduleDir) {
-      console.log(red('\u2717 Could not find SpacetimeDB schema directory (module/ or src/)'))
-      process.exit(1)
-    }
-    const schemaFile = findSchemaFile(moduleDir)
-    if (!schemaFile) {
-      console.log(red('\u2717 Could not find schema file with SpacetimeDB markers'))
-      process.exit(1)
-    }
-    console.log(`${dim('schema:')} ${schemaFile.path}`)
-    console.log(`${dim('module:')} ${moduleDir}\n`)
-    const calls = extractFactoryCalls(moduleDir),
-      schemaTables = extractSchemaFields(schemaFile.content),
-      tableFields = new Map<string, { name: string; type: string }[]>()
-    for (const t of schemaTables)
-      tableFields.set(
-        t.table,
-        t.fields.map(f => ({ name: f.field, type: f.type }))
-      )
-    if (flags.has('--markdown') || flags.has('--md')) {
-      console.log(generateMarkdown(calls, tableFields))
-      return
-    }
-    let total = 0
-    for (const call of calls) {
-      const eps = endpointsForFactory(call),
-        fields = tableFields.get(call.table)
-      total += eps.length
-      console.log(`${bold(call.table)} ${dim(`(${call.factory})`)} ${dim(`\u2014 ${call.file}`)}`)
-      if (fields && fields.length > 0)
-        console.log(`  ${dim('fields:')} ${fields.map(f => `${f.name}: ${f.type}`).join(', ')}`)
-      console.log(`  ${dim('reducers:')} ${eps.join(', ')}`)
-      console.log('')
-    }
-    console.log(`${green('\u2713')} ${bold(String(total))} reducers from ${bold(String(calls.length))} tables`)
-    console.log(dim('\nRun with --markdown for full API reference output\n'))
   }
+  return lines.join('\n')
+}
+const ENTRY_POINTS: { label: string; path: string }[] = [
+  { label: '@noboil/spacetimedb', path: 'index.ts' },
+  { label: '@noboil/spacetimedb/schema', path: 'schema.ts' },
+  { label: '@noboil/spacetimedb/react', path: 'react/index.ts' },
+  { label: '@noboil/spacetimedb/server', path: 'server/index.ts' },
+  { label: '@noboil/spacetimedb/components', path: 'components/index.ts' },
+  { label: '@noboil/spacetimedb/next', path: 'next/index.ts' },
+  { label: '@noboil/spacetimedb/zod', path: 'zod.ts' },
+  { label: '@noboil/spacetimedb/seed', path: 'seed.ts' },
+  { label: '@noboil/spacetimedb/retry', path: 'retry.ts' },
+  { label: '@noboil/spacetimedb/eslint', path: 'eslint.ts' },
+  { label: '@noboil/spacetimedb/test', path: 'server/test.ts' }
+]
+const generateFullReference = (srcDir: string): string => {
+  const lines: string[] = [
+    '# @noboil/spacetimedb \u2014 Full API Reference',
+    '',
+    '*Auto-generated by `noboil-stdb docs --full`*',
+    ''
+  ]
+  let totalSymbols = 0
+  for (const ep of ENTRY_POINTS) totalSymbols += processEntryPoint(ep, srcDir, lines)
+  lines.push('---', '', `**${totalSymbols} exports** across ${ENTRY_POINTS.length} entry points.`)
+  return lines.join('\n')
+}
+const run = () => {
+  const root = process.cwd()
+  const flags = new Set(process.argv.slice(2))
+  console.log(bold('\nnoboil-stdb docs\n'))
+  if (flags.has('--full')) {
+    const srcDir = join(root, 'src')
+    if (!existsSync(srcDir)) {
+      console.log(red('\u2717 Could not find src/ directory'))
+      process.exit(1)
+    }
+    console.log(generateFullReference(srcDir))
+    return
+  }
+  const moduleDir = findModuleDir(root)
+  if (!moduleDir) {
+    console.log(red('\u2717 Could not find SpacetimeDB schema directory (module/ or src/)'))
+    process.exit(1)
+  }
+  const schemaFile = findSchemaFile(moduleDir)
+  if (!schemaFile) {
+    console.log(red('\u2717 Could not find schema file with SpacetimeDB markers'))
+    process.exit(1)
+  }
+  console.log(`${dim('schema:')} ${schemaFile.path}`)
+  console.log(`${dim('module:')} ${moduleDir}\n`)
+  const calls = extractFactoryCalls(moduleDir)
+  const schemaTables = extractSchemaFields(schemaFile.content)
+  const tableFields = new Map<string, { name: string; type: string }[]>()
+  for (const t of schemaTables)
+    tableFields.set(
+      t.table,
+      t.fields.map(f => ({ name: f.field, type: f.type }))
+    )
+  if (flags.has('--markdown') || flags.has('--md')) {
+    console.log(generateMarkdown(calls, tableFields))
+    return
+  }
+  let total = 0
+  for (const call of calls) {
+    const eps = endpointsForFactory(call)
+    const fields = tableFields.get(call.table)
+    total += eps.length
+    console.log(`${bold(call.table)} ${dim(`(${call.factory})`)} ${dim(`\u2014 ${call.file}`)}`)
+    if (fields && fields.length > 0)
+      console.log(`  ${dim('fields:')} ${fields.map(f => `${f.name}: ${f.type}`).join(', ')}`)
+    console.log(`  ${dim('reducers:')} ${eps.join(', ')}`)
+    console.log('')
+  }
+  console.log(`${green('\u2713')} ${bold(String(total))} reducers from ${bold(String(calls.length))} tables`)
+  console.log(dim('\nRun with --markdown for full API reference output\n'))
+}
 if (import.meta.main) run()
 export { extractJSDoc, generateFullReference, generateMarkdown, resolveReExports }

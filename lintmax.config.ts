@@ -1,25 +1,25 @@
 import { defineConfig, eslintImport } from 'lintmax'
 const backendLintIgnoreFiles = [
-    'backend/agent/convex/f.test.ts',
-    'backend/convex/convex/edge.test.ts',
-    'backend/convex/convex/f.test.ts',
-    'backend/convex/convex/org-api.test.ts'
-  ],
-  tailwindUnknownClassIgnore = [
-    'group',
-    'peer',
-    'nodrag',
-    'nopan',
-    'nowheel',
-    'not-prose',
-    'is-user',
-    'is-assistant',
-    'is-user:dark',
-    'animated',
-    'node-container',
-    'origin-top-center',
-    'toaster'
-  ]
+  'backend/agent/convex/f.test.ts',
+  'backend/convex/convex/edge.test.ts',
+  'backend/convex/convex/f.test.ts',
+  'backend/convex/convex/org-api.test.ts'
+]
+const tailwindUnknownClassIgnore = [
+  'group',
+  'peer',
+  'nodrag',
+  'nopan',
+  'nowheel',
+  'not-prose',
+  'is-user',
+  'is-assistant',
+  'is-user:dark',
+  'animated',
+  'node-container',
+  'origin-top-center',
+  'toaster'
+]
 export default defineConfig({
   eslint: {
     append: [
@@ -85,7 +85,7 @@ export default defineConfig({
     ],
     ignores: [...backendLintIgnoreFiles]
   },
-  ignores: ['**/.source/**', 'lib/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
+  ignores: ['**/.source/**', 'readonly/ui/**', 'web/*/*/next-env.d.ts', 'doc/next-env.d.ts'],
   oxlint: {
     overrides: [
       {
@@ -103,5 +103,5 @@ export default defineConfig({
       }
     ]
   },
-  tailwind: 'lib/ui/src/styles/globals.css'
+  tailwind: 'readonly/ui/src/styles/globals.css'
 })

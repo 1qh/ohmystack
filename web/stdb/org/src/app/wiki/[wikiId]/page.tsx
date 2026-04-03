@@ -17,38 +17,38 @@ import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => {
-  const { wikiId } = use(params),
-    id = Number(wikiId),
-    { isAdmin, org } = useOrg(),
-    { identity } = useSpacetimeDB(),
-    [allWikis] = useTable(tables.wiki),
-    wiki = allWikis.find((w: Wiki) => w.id === id && w.orgId === Number(org._id)),
-    updateWiki = useMut(reducers.updateWiki, { toast: { success: 'Wiki restored' } }),
-    [members] = useOrgTable<OrgMember>(tables.orgMember),
-    profileByUserId = useProfileMap(),
-    restoreMut = async (args: { id: number }) => {
-      if (!wiki) return
-      await updateWiki({
-        content: wiki.content,
-        deletedAt: undefined,
-        editors: wiki.editors,
-        expectedUpdatedAt: wiki.updatedAt,
-        id: args.id,
-        slug: wiki.slug,
-        status: wiki.status,
-        title: wiki.title
-      })
-    }
+  const { wikiId } = use(params)
+  const id = Number(wikiId)
+  const { isAdmin, org } = useOrg()
+  const { identity } = useSpacetimeDB()
+  const [allWikis] = useTable(tables.wiki)
+  const wiki = allWikis.find((w: Wiki) => w.id === id && w.orgId === Number(org._id))
+  const updateWiki = useMut(reducers.updateWiki, { toast: { success: 'Wiki restored' } })
+  const [members] = useOrgTable<OrgMember>(tables.orgMember)
+  const profileByUserId = useProfileMap()
+  const restoreMut = async (args: { id: number }) => {
+    if (!wiki) return
+    await updateWiki({
+      content: wiki.content,
+      deletedAt: undefined,
+      editors: wiki.editors,
+      expectedUpdatedAt: wiki.updatedAt,
+      id: args.id,
+      slug: wiki.slug,
+      status: wiki.status,
+      title: wiki.title
+    })
+  }
   if (!(wiki && identity)) return <Skeleton className='h-40' />
-  const isDeleted = wiki.deletedAt !== undefined,
-    // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
-    editorsList = (wiki.editors ?? []).map(e => {
-      const userId = e.toHexString(),
-        profile = profileByUserId.get(userId)
-      return { email: '', name: profile?.displayName ?? userId.slice(0, 8), userId }
-    }),
-    canEditWiki =
-      isAdmin || sameIdentity(wiki.userId, identity) || editorsList.some(e => e.userId === identity.toHexString())
+  const isDeleted = wiki.deletedAt !== undefined
+  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+  const editorsList = (wiki.editors ?? []).map(e => {
+    const userId = e.toHexString()
+    const profile = profileByUserId.get(userId)
+    return { email: '', name: profile?.displayName ?? userId.slice(0, 8), userId }
+  })
+  const canEditWiki =
+    isAdmin || sameIdentity(wiki.userId, identity) || editorsList.some(e => e.userId === identity.toHexString())
   return (
     <div className='space-y-6'>
       {isDeleted ? (
@@ -97,15 +97,15 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
           editorsList={editorsList}
           // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
           members={members.map(m => {
-            const userId = m.userId.toHexString(),
-              profile = profileByUserId.get(userId)
+            const userId = m.userId.toHexString()
+            const profile = profileByUserId.get(userId)
             return { user: { email: undefined, name: profile?.displayName }, userId }
           })}
           onAdd={(userId: string) => {
             const member = members.find(m => m.userId.toHexString() === userId)
             if (!member) return
-            const current = wiki.editors ?? [],
-              next = [...current, member.userId]
+            const current = wiki.editors ?? []
+            const next = [...current, member.userId]
             updateWiki({
               content: wiki.content,
               deletedAt: wiki.deletedAt,
@@ -119,8 +119,8 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
             toast.success('Editor added')
           }}
           onRemove={(userId: string) => {
-            const current = wiki.editors ?? [],
-              next: typeof current = []
+            const current = wiki.editors ?? []
+            const next: typeof current = []
             for (const e of current) if (e.toHexString() !== userId) next.push(e)
             updateWiki({
               content: wiki.content,

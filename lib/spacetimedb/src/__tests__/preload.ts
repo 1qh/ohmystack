@@ -1,7 +1,7 @@
 import { mock } from 'bun:test'
-const noop = () => undefined,
-  zero = () => 0,
-  zeroBig = () => 0n
+const noop = () => undefined
+const zero = () => 0
+const zeroBig = () => 0n
 mock.module('sonner', () => ({
   toast: Object.assign(noop, {
     dismiss: noop,

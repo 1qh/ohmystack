@@ -2,13 +2,13 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright ops */
 /** biome-ignore-all lint/nursery/noPlaywrightWaitForTimeout: Convex reactive delay */
 import { expect, test } from './fixtures'
-const CHAT_URL_RE = /\/chat\//u,
-  SESSIONS_RE = /sessions/iu,
-  UNTITLED_RE = /untitled/iu,
-  DISCOVER_RE = /discover/iu,
-  COMPLETED_RE = /completed|running|error/iu,
-  LETTER_RE = /[a-z]/iu,
-  TOOL_CALL_RE = / - /u
+const CHAT_URL_RE = /\/chat\//u
+const SESSIONS_RE = /sessions/iu
+const UNTITLED_RE = /untitled/iu
+const DISCOVER_RE = /discover/iu
+const COMPLETED_RE = /completed|running|error/iu
+const LETTER_RE = /[a-z]/iu
+const TOOL_CALL_RE = / - /u
 test.describe
   .serial('Chat & Streaming', () => {
     test('send message shows user row', async ({ chatPage, page, sessionListPage }) => {
@@ -65,8 +65,8 @@ test.describe
       await page.waitForTimeout(1500)
       await chatPage.sendMessage('Second message')
       await page.waitForTimeout(1500)
-      const messages = chatPage.getMessages(),
-        count = await messages.count()
+      const messages = chatPage.getMessages()
+      const count = await messages.count()
       expect(count).toBeGreaterThanOrEqual(2)
       const first = await messages.first().textContent()
       expect(first).toContain('First message')
@@ -97,11 +97,11 @@ test.describe
         await chatPage.sendMessage(`scroll-seed-${i}`)
         await page.waitForTimeout(1000)
       }
-      const log = chatPage.getMessageLog(),
-        before = await log.evaluate(element => ({
-          clientHeight: element.clientHeight,
-          scrollHeight: element.scrollHeight
-        }))
+      const log = chatPage.getMessageLog()
+      const before = await log.evaluate(element => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight
+      }))
       if (before.scrollHeight <= before.clientHeight)
         for (let i = 6; i < 20; i += 1) {
           await chatPage.sendMessage(`scroll-extra-${i}`)
@@ -130,8 +130,8 @@ test.describe
       await page.waitForURL(CHAT_URL_RE)
       await chatPage.sendMessage('Tell me something')
       await page.waitForTimeout(3000)
-      const messages = chatPage.getMessages(),
-        count = await messages.count()
+      const messages = chatPage.getMessages()
+      const count = await messages.count()
       expect(count).toBeGreaterThanOrEqual(1)
     })
   })
@@ -179,8 +179,8 @@ test.describe
       await sessionListPage.goto('/')
       await sessionListPage.getNewButton().click()
       await page.waitForURL(CHAT_URL_RE)
-      const typingDetails = page.getByTestId('typing-panel'),
-        typingSummary = typingDetails.locator('summary')
+      const typingDetails = page.getByTestId('typing-panel')
+      const typingSummary = typingDetails.locator('summary')
       await expect(typingDetails).toHaveAttribute('open', '')
       await typingSummary.focus()
       await page.keyboard.press('Enter')

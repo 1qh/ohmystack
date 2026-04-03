@@ -16,19 +16,19 @@ const LoginPage = ({
   redirectTo = '/',
   shellProps
 }: LoginPageProps) => {
-  const auth = useAuth(),
-    signInWithGoogle = () => {
-      ;(async () => {
-        try {
-          await auth.signinRedirect({
-            extraQueryParams: { provider: 'google' },
-            state: { redirectTo }
-          })
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : 'Could not sign in')
-        }
-      })()
-    }
+  const auth = useAuth()
+  const signInWithGoogle = () => {
+    ;(async () => {
+      try {
+        await auth.signinRedirect({
+          extraQueryParams: { provider: 'google' },
+          state: { redirectTo }
+        })
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Could not sign in')
+      }
+    })()
+  }
   return (
     <OAuthLoginShell
       {...shellProps}

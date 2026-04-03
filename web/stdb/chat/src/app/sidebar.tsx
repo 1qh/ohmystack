@@ -8,19 +8,19 @@ import { useMut } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 const Sb = () => {
-  const { identity } = useSpacetimeDB(),
-    [allChats, isReady] = useTable(tables.chat),
-    deleteChat = useMut(reducers.rmChat, {
-      getName: (args: { id: number }) => `chat.rm:${args.id}`,
-      toast: { error: 'Failed to delete conversation', success: 'Conversation deleted' }
-    }),
-    identityKey = toIdentityKey(identity),
-    chats: Chat[] = allChats
-      .filter(c => toIdentityKey(c.userId) === identityKey)
-      .toSorted((a, b) => (a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0)),
-    handleDelete = async (chatId: number) => {
-      await deleteChat({ id: chatId })
-    }
+  const { identity } = useSpacetimeDB()
+  const [allChats, isReady] = useTable(tables.chat)
+  const deleteChat = useMut(reducers.rmChat, {
+    getName: (args: { id: number }) => `chat.rm:${args.id}`,
+    toast: { error: 'Failed to delete conversation', success: 'Conversation deleted' }
+  })
+  const identityKey = toIdentityKey(identity)
+  const chats: Chat[] = allChats
+    .filter(c => toIdentityKey(c.userId) === identityKey)
+    .toSorted((a, b) => (a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0))
+  const handleDelete = async (chatId: number) => {
+    await deleteChat({ id: chatId })
+  }
   return (
     <>
       <ChatSidebar basePath='' getThreadId={thread => thread.id} onDelete={handleDelete} threads={chats} />

@@ -31,17 +31,17 @@ const ChatInput = ({
   rootProps,
   submitProps
 }: ChatInputProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false),
-    handleSubmit = async ({ text }: { text: string }) => {
-      if (!text.trim() || isSubmitting || isBusy) return
-      setIsSubmitting(true)
-      try {
-        await Promise.resolve(onSubmit(text))
-      } finally {
-        setIsSubmitting(false)
-      }
-    },
-    effectiveBusy = isSubmitting || isBusy
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const handleSubmit = async ({ text }: { text: string }) => {
+    if (!text.trim() || isSubmitting || isBusy) return
+    setIsSubmitting(true)
+    try {
+      await Promise.resolve(onSubmit(text))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+  const effectiveBusy = isSubmitting || isBusy
   return (
     <PromptInput
       {...rootProps}

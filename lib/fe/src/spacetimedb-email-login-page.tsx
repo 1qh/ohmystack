@@ -21,26 +21,26 @@ const EmailLoginPage = ({
   signInLabel = 'Continue with email',
   signUpLabel = 'Create account with email'
 }: EmailLoginPageProps) => {
-  const emailId = useId(),
-    auth = useAuth(),
-    [login, setLogin] = useState(true),
-    [pending, setPending] = useState(false),
-    submitMagicLink = (email: string) => {
-      ;(async () => {
-        try {
-          await auth.signinRedirect({
-            extraQueryParams: {
-              login_hint: email,
-              provider: 'magic_link'
-            },
-            state: { flow: login ? 'signIn' : 'signUp' }
-          })
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : 'Could not continue with email')
-          setPending(false)
-        }
-      })()
-    }
+  const emailId = useId()
+  const auth = useAuth()
+  const [login, setLogin] = useState(true)
+  const [pending, setPending] = useState(false)
+  const submitMagicLink = (email: string) => {
+    ;(async () => {
+      try {
+        await auth.signinRedirect({
+          extraQueryParams: {
+            login_hint: email,
+            provider: 'magic_link'
+          },
+          state: { flow: login ? 'signIn' : 'signUp' }
+        })
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Could not continue with email')
+        setPending(false)
+      }
+    })()
+  }
   return (
     <EmailAuthShell
       {...shellProps}
@@ -48,9 +48,9 @@ const EmailLoginPage = ({
       onSubmit={ev => {
         ev.preventDefault()
         setPending(true)
-        const fd = new FormData(ev.currentTarget),
-          emailVal = fd.get('email'),
-          email = typeof emailVal === 'string' ? emailVal.trim() : ''
+        const fd = new FormData(ev.currentTarget)
+        const emailVal = fd.get('email')
+        const email = typeof emailVal === 'string' ? emailVal.trim() : ''
         submitMagicLink(email)
       }}
       onToggle={() => setLogin(!login)}

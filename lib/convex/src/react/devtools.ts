@@ -14,27 +14,27 @@ interface DevError extends SharedDevError {
 }
 type DevMutation = SharedDevMutation
 type DevSubscription = SharedDevSubscription
-const core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage }),
-  { clearErrors } = core,
-  { clearMutations } = core,
-  { completeMutation } = core,
-  { pushError } = core,
-  { trackCacheAccess } = core,
-  { trackMutation } = core,
-  { trackSubscription } = core,
-  { untrackSubscription } = core,
-  { updateSubscription } = core,
-  { updateSubscriptionData } = core,
-  useDevErrors = () =>
-    core.useDevStore({ deps: [], extra: () => ({}) }) as {
-      cache: DevCacheEntry[]
-      clear: () => void
-      clearMutations: () => void
-      errors: DevError[]
-      mutations: DevMutation[]
-      push: (e: unknown) => void
-      subscriptions: DevSubscription[]
-    }
+const core = createDevtoolsCore({ extractErrorData, getErrorDetail, getErrorMessage })
+const { clearErrors } = core
+const { clearMutations } = core
+const { completeMutation } = core
+const { pushError } = core
+const { trackCacheAccess } = core
+const { trackMutation } = core
+const { trackSubscription } = core
+const { untrackSubscription } = core
+const { updateSubscription } = core
+const { updateSubscriptionData } = core
+const useDevErrors = () =>
+  core.useDevStore({ deps: [], extra: () => ({}) }) as {
+    cache: DevCacheEntry[]
+    clear: () => void
+    clearMutations: () => void
+    errors: DevError[]
+    mutations: DevMutation[]
+    push: (e: unknown) => void
+    subscriptions: DevSubscription[]
+  }
 export type { DevCacheEntry, DevError, DevMutation, DevSubscription }
 export {
   clearErrors,

@@ -17,50 +17,50 @@ import { useReducer } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { useOrgTable } from '~/hook/use-org-table'
 const WikiPage = () => {
-  const { isAdmin, org } = useOrg(),
-    [showDeleted, setShowDeleted] = useState(false),
-    [query, setQuery] = useState(''),
-    [allWikis, isWikisReady] = useOrgTable<Wiki>(tables.wiki),
-    orgWikis = allWikis.filter(w => w.deletedAt === undefined).map(withStringId),
-    { results: wikis } = useSearch(orgWikis, isWikisReady, {
-      fields: ['title', 'slug'],
-      query
-    }),
-    deletedWikis = allWikis.filter(w => w.deletedAt !== undefined).map(withStringId),
-    updateWiki = useReducer(reducers.updateWiki),
-    restoreFn = async (args: { id: string }) => {
-      const wiki = allWikis.find(w => w.id === Number(args.id))
-      if (!wiki) return
-      await updateWiki({
-        content: wiki.content,
-        expectedUpdatedAt: undefined,
-        id: wiki.id,
-        slug: wiki.slug,
-        status: wiki.status,
-        title: wiki.title
-      })
+  const { isAdmin, org } = useOrg()
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [query, setQuery] = useState('')
+  const [allWikis, isWikisReady] = useOrgTable<Wiki>(tables.wiki)
+  const orgWikis = allWikis.filter(w => w.deletedAt === undefined).map(withStringId)
+  const { results: wikis } = useSearch(orgWikis, isWikisReady, {
+    fields: ['title', 'slug'],
+    query
+  })
+  const deletedWikis = allWikis.filter(w => w.deletedAt !== undefined).map(withStringId)
+  const updateWiki = useReducer(reducers.updateWiki)
+  const restoreFn = async (args: { id: string }) => {
+    const wiki = allWikis.find(w => w.id === Number(args.id))
+    if (!wiki) return
+    await updateWiki({
+      content: wiki.content,
+      expectedUpdatedAt: undefined,
+      id: wiki.id,
+      slug: wiki.slug,
+      status: wiki.status,
+      title: wiki.title
+    })
+  }
+  const restoreWiki = useMutate(restoreFn)
+  const rmWiki = useReducer(reducers.rmWiki)
+  const { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
+    items: wikis,
+    onError: defaultOnError,
+    orgId: org._id,
+    restore: restoreWiki,
+    rm: async args => {
+      if (args.ids) {
+        const tasks = args.ids.map(async id => rmWiki({ id: Number(id) }))
+        await Promise.all(tasks)
+      } else if (args.id) await rmWiki({ id: Number(args.id) })
     },
-    restoreWiki = useMutate(restoreFn),
-    rmWiki = useReducer(reducers.rmWiki),
-    { clear, handleBulkDelete, selected, toggleSelect, toggleSelectAll } = useBulkSelection({
-      items: wikis,
-      onError: defaultOnError,
-      orgId: org._id,
-      restore: restoreWiki,
-      rm: async args => {
-        if (args.ids) {
-          const tasks = args.ids.map(async id => rmWiki({ id: Number(id) }))
-          await Promise.all(tasks)
-        } else if (args.id) await rmWiki({ id: Number(args.id) })
-      },
-      toast: (msg, opts) => {
-        toast(msg, opts)
-      },
-      undoLabel: 'wiki page'
-    }),
-    activeItems = showDeleted ? [] : wikis,
-    deletedItems = deletedWikis,
-    visibleCount = showDeleted ? deletedItems.length : activeItems.length
+    toast: (msg, opts) => {
+      toast(msg, opts)
+    },
+    undoLabel: 'wiki page'
+  })
+  const activeItems = showDeleted ? [] : wikis
+  const deletedItems = deletedWikis
+  const visibleCount = showDeleted ? deletedItems.length : activeItems.length
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>

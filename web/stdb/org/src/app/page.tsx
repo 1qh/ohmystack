@@ -13,25 +13,23 @@ interface MyOrgsItem {
   role: OrgRole
 }
 const Page = () => {
-  const router = useRouter(),
-    { identity } = useSpacetimeDB(),
-    [orgs, orgsReady] = useTable(tables.org),
-    [members, membersReady] = useTable(tables.orgMember)
+  const router = useRouter()
+  const { identity } = useSpacetimeDB()
+  const [orgs, orgsReady] = useTable(tables.org)
+  const [members, membersReady] = useTable(tables.orgMember)
   useEffect(() => {
     if (!identity) router.replace('/login')
   }, [identity, router])
-  const myMemberships = identity
-      ? members.filter((m: OrgMember) => m.userId.toHexString() === identity.toHexString())
-      : [],
-    myOrgs = myMemberships
-      .map((m: OrgMember) => {
-        if (!identity) return null
-        const org = orgs.find((o: Org) => o.id === m.orgId)
-        if (!org) return null
-        const role: OrgRole = sameIdentity(org.userId, identity) ? 'owner' : m.isAdmin ? 'admin' : 'member'
-        return { org: { _id: `${org.id}`, avatarId: org.avatarId, name: org.name, slug: org.slug }, role }
-      })
-      .filter(item => item !== null)
+  const myMemberships = identity ? members.filter((m: OrgMember) => m.userId.toHexString() === identity.toHexString()) : []
+  const myOrgs = myMemberships
+    .map((m: OrgMember) => {
+      if (!identity) return null
+      const org = orgs.find((o: Org) => o.id === m.orgId)
+      if (!org) return null
+      const role: OrgRole = sameIdentity(org.userId, identity) ? 'owner' : m.isAdmin ? 'admin' : 'member'
+      return { org: { _id: `${org.id}`, avatarId: org.avatarId, name: org.name, slug: org.slug }, role }
+    })
+    .filter(item => item !== null)
   useEffect(() => {
     if (orgsReady && membersReady && myOrgs.length === 0) router.replace('/onboarding')
   }, [myOrgs.length, orgsReady, membersReady, router])

@@ -12,20 +12,20 @@ interface PlaygroundProps
   reducerClassName?: string
 }
 const labels: ComponentProps<typeof SharedSchemaPlayground>['labels'] = {
-    generatedCountNoun: 'reducer',
-    generatedEmptyWithSchema: 'No tables detected. Use defineTables, makeOwned, makeOrgScoped, etc.',
-    generatedEmptyWithoutSchema: 'Enter a schema to preview generated tables and reducers',
-    generatedTitle: 'SpacetimeDB Preview',
-    tableItemsLabel: 'Reducers'
-  },
-  SchemaPlayground = ({ endpointClassName, reducerClassName, ...props }: PlaygroundProps) => (
-    <SharedSchemaPlayground
-      {...props}
-      endpointClassName={reducerClassName ?? endpointClassName}
-      endpointsForFactory={endpointsForFactory}
-      extractSchemaFields={extractSchemaFields}
-      labels={labels}
-    />
-  )
+  generatedCountNoun: 'reducer',
+  generatedEmptyWithSchema: 'No tables detected. Use defineTables, makeOwned, makeOrgScoped, etc.',
+  generatedEmptyWithoutSchema: 'Enter a schema to preview generated tables and reducers',
+  generatedTitle: 'SpacetimeDB Preview',
+  tableItemsLabel: 'Reducers'
+}
+const SchemaPlayground = ({ endpointClassName, reducerClassName, ...props }: PlaygroundProps) => (
+  <SharedSchemaPlayground
+    {...props}
+    endpointClassName={reducerClassName ?? endpointClassName}
+    endpointsForFactory={endpointsForFactory}
+    extractSchemaFields={extractSchemaFields}
+    labels={labels}
+  />
+)
 export default SchemaPlayground
 export type { PlaygroundProps }

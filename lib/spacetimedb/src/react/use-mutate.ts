@@ -29,119 +29,95 @@ interface MutateToast<A extends Record<string, unknown>, R = void> {
   fieldErrors?: boolean
   success?: ((result: R, args: A) => string) | string
 }
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production',
-  /** Default mutation error handler. Toasts NOT_AUTHENTICATED and RATE_LIMITED with user-friendly messages, falls back to error message for other codes. */
-  defaultOnError = (error: unknown) => {
-    handleError(error, {
-      NOT_AUTHENTICATED: () => {
-        toast.error('Please log in')
-      },
-      RATE_LIMITED: () => {
-        const data = extractErrorData(error)
-        toast.error(
-          data?.retryAfter
-            ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
-            : 'Too many requests, try again later'
-        )
-      },
-      default: () => {
-        toast.error(getErrorMessage(error))
-      }
-    })
-  },
-  detectMutationType = (name: string): MutationType => {
-    if (name.endsWith(':rm') || name.endsWith('.rm') || name.includes('delete') || name.includes('remove')) return 'delete'
-    if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
-    return 'create'
-  },
-  /** Wraps a mutation with optimistic updates, devtools tracking, and toast errors.
-   * @param mutate - Mutation function to execute
-   * @param options - Optimistic and error-handling options
-   * @returns Stable callback that executes the mutation
-   * @example
-   * ```ts
-   * const save = useMutate(api.posts.update, { optimistic: true })
-   * ```
-   */
-  resolveToastError = <A extends Record<string, unknown>, R = void>(
-    opts?: MutateOptions<A, R>
-  ): ((error: unknown) => void) | undefined => {
-    const t = opts?.toast
-    if (opts?.onError === false) return
-    if (opts?.onError) return opts.onError
-    if (!t) return defaultOnError
-    const fieldErrors = t.fieldErrors !== false
-    return (error: unknown) => {
-      if (fieldErrors) {
-        const msg = getFirstFieldError(error)
-        if (msg) {
-          toast.error(msg)
-          return
-        }
-      }
-      const errMsg = t.error
-      if (errMsg) {
-        toast.error(typeof errMsg === 'function' ? errMsg(error) : errMsg)
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'
+/** Default mutation error handler. Toasts NOT_AUTHENTICATED and RATE_LIMITED with user-friendly messages, falls back to error message for other codes. */
+const defaultOnError = (error: unknown) => {
+  handleError(error, {
+    NOT_AUTHENTICATED: () => {
+      toast.error('Please log in')
+    },
+    RATE_LIMITED: () => {
+      const data = extractErrorData(error)
+      toast.error(
+        data?.retryAfter
+          ? `Too many requests, retry in ${Math.ceil(data.retryAfter / 1000)}s`
+          : 'Too many requests, try again later'
+      )
+    },
+    default: () => {
+      toast.error(getErrorMessage(error))
+    }
+  })
+}
+const detectMutationType = (name: string): MutationType => {
+  if (name.endsWith(':rm') || name.endsWith('.rm') || name.includes('delete') || name.includes('remove')) return 'delete'
+  if (name.endsWith(':update') || name.endsWith('.update') || name.includes('patch')) return 'update'
+  return 'create'
+}
+/** Wraps a mutation with optimistic updates, devtools tracking, and toast errors.
+ * @param mutate - Mutation function to execute
+ * @param options - Optimistic and error-handling options
+ * @returns Stable callback that executes the mutation
+ * @example
+ * ```ts
+ * const save = useMutate(api.posts.update, { optimistic: true })
+ * ```
+ */
+const resolveToastError = <A extends Record<string, unknown>, R = void>(
+  opts?: MutateOptions<A, R>
+): ((error: unknown) => void) | undefined => {
+  const t = opts?.toast
+  if (opts?.onError === false) return
+  if (opts?.onError) return opts.onError
+  if (!t) return defaultOnError
+  const fieldErrors = t.fieldErrors !== false
+  return (error: unknown) => {
+    if (fieldErrors) {
+      const msg = getFirstFieldError(error)
+      if (msg) {
+        toast.error(msg)
         return
       }
-      defaultOnError(error)
     }
-  },
-  resolveToastSuccess = <A extends Record<string, unknown>, R = void>(
-    opts?: MutateOptions<A, R>
-  ): ((result: R, args: A) => void) | undefined => {
-    const userCb = opts?.onSuccess,
-      successMsg = opts?.toast?.success
-    if (userCb || successMsg)
-      return (result: R, args: A) => {
-        userCb?.(result, args)
-        if (successMsg) toast.success(typeof successMsg === 'function' ? successMsg(result, args) : successMsg)
-      }
-  },
-  /** Wraps a mutation function with devtools tracking, error toasting, and optional retry. */
-  useMutate = <A extends Record<string, unknown>, R = void>(
-    mutate: (args: A) => Promise<R>,
-    options?: MutateOptions<A, R>
-  ): ((args: A) => Promise<R>) => {
-    const store = useOptimisticStore(),
-      isOptimistic = options?.optimistic !== false,
-      errorHandler = resolveToastError(options),
-      successHandler = resolveToastSuccess(options)
-    return useCallback(
-      async (args: A): Promise<R> => {
-        const name = options?.getName?.(args) ?? (mutate.name || 'mutation'),
-          type = options?.type ?? detectMutationType(name),
-          devId = isDev ? trackMutation(name, args) : 0,
-          retryOpt = options?.retry,
-          exec = retryOpt
-            ? async () =>
-                withRetry(async () => mutate(args), typeof retryOpt === 'number' ? { maxAttempts: retryOpt } : retryOpt)
-            : async () => mutate(args)
-        if (!(store && isOptimistic))
-          try {
-            const result = await exec()
-            if (isDev && devId) completeMutation(devId, 'success')
-            successHandler?.(result, args)
-            options?.onSettled?.(args, undefined, result)
-            return result
-          } catch (catchError) {
-            if (isDev) {
-              if (devId) completeMutation(devId, 'error')
-              pushError(catchError)
-            }
-            if (errorHandler) errorHandler(catchError)
-            options?.onSettled?.(args, catchError)
-            throw catchError
-          }
-        const tempId = makeTempId(),
-          id = options?.resolveId?.(args) ?? (typeof args.id === 'string' ? args.id : tempId)
-        store.add({
-          args,
-          id,
-          tempId,
-          timestamp: Date.now(),
-          type
-        })
+    const errMsg = t.error
+    if (errMsg) {
+      toast.error(typeof errMsg === 'function' ? errMsg(error) : errMsg)
+      return
+    }
+    defaultOnError(error)
+  }
+}
+const resolveToastSuccess = <A extends Record<string, unknown>, R = void>(
+  opts?: MutateOptions<A, R>
+): ((result: R, args: A) => void) | undefined => {
+  const userCb = opts?.onSuccess
+  const successMsg = opts?.toast?.success
+  if (userCb || successMsg)
+    return (result: R, args: A) => {
+      userCb?.(result, args)
+      if (successMsg) toast.success(typeof successMsg === 'function' ? successMsg(result, args) : successMsg)
+    }
+}
+/** Wraps a mutation function with devtools tracking, error toasting, and optional retry. */
+const useMutate = <A extends Record<string, unknown>, R = void>(
+  mutate: (args: A) => Promise<R>,
+  options?: MutateOptions<A, R>
+): ((args: A) => Promise<R>) => {
+  const store = useOptimisticStore()
+  const isOptimistic = options?.optimistic !== false
+  const errorHandler = resolveToastError(options)
+  const successHandler = resolveToastSuccess(options)
+  return useCallback(
+    async (args: A): Promise<R> => {
+      const name = options?.getName?.(args) ?? (mutate.name || 'mutation')
+      const type = options?.type ?? detectMutationType(name)
+      const devId = isDev ? trackMutation(name, args) : 0
+      const retryOpt = options?.retry
+      const exec = retryOpt
+        ? async () =>
+            withRetry(async () => mutate(args), typeof retryOpt === 'number' ? { maxAttempts: retryOpt } : retryOpt)
+        : async () => mutate(args)
+      if (!(store && isOptimistic))
         try {
           const result = await exec()
           if (isDev && devId) completeMutation(devId, 'success')
@@ -156,35 +132,59 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
           if (errorHandler) errorHandler(catchError)
           options?.onSettled?.(args, catchError)
           throw catchError
-        } finally {
-          store.remove(tempId)
-          if (id !== tempId) store.reconcileIds([id])
         }
-      },
-      [errorHandler, isOptimistic, mutate, options, store, successHandler]
-    )
-  },
-  inferReducerName = (reducer: unknown): string | undefined => {
-    if (typeof reducer === 'object' && reducer !== null) {
-      const r = reducer as Record<string, unknown>
-      if (typeof r.accessorName === 'string') return r.accessorName
-      if (typeof r.name === 'string') return r.name
-    }
-  },
-  useMutation = <A extends Record<string, unknown>, R = void, D = unknown>(
-    useReducerHook: (desc: D) => (args: A) => Promise<R>,
-    reducer: D,
-    options?: MutateOptions<A, R>
-  ): ((args: UndefinedToOptional<A>) => Promise<R>) => {
-    const inferredName = inferReducerName(reducer),
-      opts = inferredName && !options?.getName ? { ...options, getName: () => inferredName } : options,
-      strict = useMutate(useReducerHook(reducer), opts)
-    return async (args: UndefinedToOptional<A>) => strict(args as Record<string, unknown> as A)
-  },
-  useMut = <A extends Record<string, unknown>, R = void>(
-    reducer: unknown,
-    options?: MutateOptions<A, R>
-  ): ((args: UndefinedToOptional<A>) => Promise<R>) =>
-    useMutation(useStdbReducer as unknown as (desc: unknown) => (args: A) => Promise<R>, reducer, options)
+      const tempId = makeTempId()
+      const id = options?.resolveId?.(args) ?? (typeof args.id === 'string' ? args.id : tempId)
+      store.add({
+        args,
+        id,
+        tempId,
+        timestamp: Date.now(),
+        type
+      })
+      try {
+        const result = await exec()
+        if (isDev && devId) completeMutation(devId, 'success')
+        successHandler?.(result, args)
+        options?.onSettled?.(args, undefined, result)
+        return result
+      } catch (catchError) {
+        if (isDev) {
+          if (devId) completeMutation(devId, 'error')
+          pushError(catchError)
+        }
+        if (errorHandler) errorHandler(catchError)
+        options?.onSettled?.(args, catchError)
+        throw catchError
+      } finally {
+        store.remove(tempId)
+        if (id !== tempId) store.reconcileIds([id])
+      }
+    },
+    [errorHandler, isOptimistic, mutate, options, store, successHandler]
+  )
+}
+const inferReducerName = (reducer: unknown): string | undefined => {
+  if (typeof reducer === 'object' && reducer !== null) {
+    const r = reducer as Record<string, unknown>
+    if (typeof r.accessorName === 'string') return r.accessorName
+    if (typeof r.name === 'string') return r.name
+  }
+}
+const useMutation = <A extends Record<string, unknown>, R = void, D = unknown>(
+  useReducerHook: (desc: D) => (args: A) => Promise<R>,
+  reducer: D,
+  options?: MutateOptions<A, R>
+): ((args: UndefinedToOptional<A>) => Promise<R>) => {
+  const inferredName = inferReducerName(reducer)
+  const opts = inferredName && !options?.getName ? { ...options, getName: () => inferredName } : options
+  const strict = useMutate(useReducerHook(reducer), opts)
+  return async (args: UndefinedToOptional<A>) => strict(args as Record<string, unknown> as A)
+}
+const useMut = <A extends Record<string, unknown>, R = void>(
+  reducer: unknown,
+  options?: MutateOptions<A, R>
+): ((args: UndefinedToOptional<A>) => Promise<R>) =>
+  useMutation(useStdbReducer as unknown as (desc: unknown) => (args: A) => Promise<R>, reducer, options)
 export type { MutateOptions, MutateToast }
 export { defaultOnError, useMut, useMutate, useMutation }

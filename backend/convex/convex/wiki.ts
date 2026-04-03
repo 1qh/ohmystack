@@ -3,22 +3,22 @@ import { zid } from 'convex-helpers/server/zod4'
 import { orgCrud, q, uniqueCheck } from '../lazy'
 import { orgScoped } from '../t'
 export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = orgCrud(
-    'wiki',
-    orgScoped.wiki,
-    { acl: true, rateLimit: { max: 30, window: 60_000 }, softDelete: true }
-  ),
-  listDeleted = q({
-    args: { orgId: zid('org') },
-    handler: async (c, { orgId }: { orgId: string }) => {
-      await requireOrgMember({ db: c.db, orgId, userId: c.user._id })
-      const docs = await c.db
-          .query('wiki')
-          .filter(f => f.eq(f.field('orgId'), orgId))
-          .order('desc')
-          .collect(),
-        deleted: typeof docs = []
-      for (const d of docs) if (d.deletedAt !== undefined) deleted.push(d)
-      return deleted
-    }
-  }),
-  isSlugAvailable = uniqueCheck(orgScoped.wiki, 'wiki', 'slug')
+  'wiki',
+  orgScoped.wiki,
+  { acl: true, rateLimit: { max: 30, window: 60_000 }, softDelete: true }
+)
+export const listDeleted = q({
+  args: { orgId: zid('org') },
+  handler: async (c, { orgId }: { orgId: string }) => {
+    await requireOrgMember({ db: c.db, orgId, userId: c.user._id })
+    const docs = await c.db
+      .query('wiki')
+      .filter(f => f.eq(f.field('orgId'), orgId))
+      .order('desc')
+      .collect()
+    const deleted: typeof docs = []
+    for (const d of docs) if (d.deletedAt !== undefined) deleted.push(d)
+    return deleted
+  }
+})
+export const isSlugAvailable = uniqueCheck(orgScoped.wiki, 'wiki', 'slug')

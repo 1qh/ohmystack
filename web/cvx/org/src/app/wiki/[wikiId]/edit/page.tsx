@@ -16,74 +16,74 @@ import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
-const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore,
-  EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {
-    const router = useRouter(),
-      { org } = useOrg(),
-      wiki = useOrgQuery(api.wiki.read, { id: wikiId }),
-      { remove } = useSoftDelete({
-        label: 'wiki page',
-        restore: useOrgMutation(wikiRestore),
-        rm: useOrgMutation(api.wiki.rm),
-        toast
-      }),
-      form = useFormMutation({
-        autoSave: { debounceMs: 2000, enabled: true },
-        mutation: api.wiki.update,
-        schema: orgScoped.wiki,
-        transform: d => ({ ...d, expectedUpdatedAt: wiki?.updatedAt, id: wikiId, orgId: org._id }),
-        values: wiki ? pickValues(orgScoped.wiki, wiki) : undefined
-      }),
-      handleDelete = async () => {
-        await remove({ id: wikiId })
-        router.push('/wiki')
-      }
-    if (!wiki) return <Skeleton className='h-40' />
-    return (
-      <Form
-        className='space-y-4'
-        form={form}
-        render={({ Choose, Text }) => (
-          <>
-            <FieldGroup>
-              <Text helpText='Page heading shown in wiki lists.' name='title' placeholder='Page title' required />
-              <Text helpText='URL-safe slug used in links.' name='slug' placeholder='my-wiki-page' required />
-              <Text helpText='Optional draft content.' multiline name='content' />
-              <Choose helpText='Publish when content is ready.' name='status' required />
-            </FieldGroup>
-            <div className='flex items-center gap-2'>
-              <AutoSaveIndicator data-testid='auto-save-indicator' lastSaved={form.lastSaved} />
-              <span className='flex-1' />
-              <Button onClick={handleDelete} type='button' variant='destructive'>
-                Delete
-              </Button>
-            </div>
-          </>
-        )}
-      />
-    )
-  },
-  EditWikiPage = ({ params }: { params: Promise<{ wikiId: Id<'wiki'> }> }) => {
-    const { wikiId } = use(params),
-      { isAdmin } = useOrg(),
-      me = useQuery(api.user.me, {}),
-      wiki = useOrgQuery(api.wiki.read, { id: wikiId }),
-      editorsList = useOrgQuery(api.wiki.editors, { wikiId })
-    if (!(wiki && me && editorsList)) return <Skeleton className='h-40' />
-    const canEditWiki = canEditResource({ editorsList, isAdmin, resource: wiki, userId: me._id })
-    return (
-      <PermissionGuard backHref={`/wiki/${wikiId}`} backLabel='wiki page' canAccess={canEditWiki} resource='wiki page'>
-        <div className='flex justify-center'>
-          <Card className='w-full max-w-md'>
-            <CardHeader>
-              <CardTitle>Edit wiki page</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EditWikiForm wikiId={wikiId} />
-            </CardContent>
-          </Card>
-        </div>
-      </PermissionGuard>
-    )
+const wikiRestore = (api.wiki as typeof api.wiki & { restore: typeof api.wiki.rm }).restore
+const EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {
+  const router = useRouter()
+  const { org } = useOrg()
+  const wiki = useOrgQuery(api.wiki.read, { id: wikiId })
+  const { remove } = useSoftDelete({
+    label: 'wiki page',
+    restore: useOrgMutation(wikiRestore),
+    rm: useOrgMutation(api.wiki.rm),
+    toast
+  })
+  const form = useFormMutation({
+    autoSave: { debounceMs: 2000, enabled: true },
+    mutation: api.wiki.update,
+    schema: orgScoped.wiki,
+    transform: d => ({ ...d, expectedUpdatedAt: wiki?.updatedAt, id: wikiId, orgId: org._id }),
+    values: wiki ? pickValues(orgScoped.wiki, wiki) : undefined
+  })
+  const handleDelete = async () => {
+    await remove({ id: wikiId })
+    router.push('/wiki')
   }
+  if (!wiki) return <Skeleton className='h-40' />
+  return (
+    <Form
+      className='space-y-4'
+      form={form}
+      render={({ Choose, Text }) => (
+        <>
+          <FieldGroup>
+            <Text helpText='Page heading shown in wiki lists.' name='title' placeholder='Page title' required />
+            <Text helpText='URL-safe slug used in links.' name='slug' placeholder='my-wiki-page' required />
+            <Text helpText='Optional draft content.' multiline name='content' />
+            <Choose helpText='Publish when content is ready.' name='status' required />
+          </FieldGroup>
+          <div className='flex items-center gap-2'>
+            <AutoSaveIndicator data-testid='auto-save-indicator' lastSaved={form.lastSaved} />
+            <span className='flex-1' />
+            <Button onClick={handleDelete} type='button' variant='destructive'>
+              Delete
+            </Button>
+          </div>
+        </>
+      )}
+    />
+  )
+}
+const EditWikiPage = ({ params }: { params: Promise<{ wikiId: Id<'wiki'> }> }) => {
+  const { wikiId } = use(params)
+  const { isAdmin } = useOrg()
+  const me = useQuery(api.user.me, {})
+  const wiki = useOrgQuery(api.wiki.read, { id: wikiId })
+  const editorsList = useOrgQuery(api.wiki.editors, { wikiId })
+  if (!(wiki && me && editorsList)) return <Skeleton className='h-40' />
+  const canEditWiki = canEditResource({ editorsList, isAdmin, resource: wiki, userId: me._id })
+  return (
+    <PermissionGuard backHref={`/wiki/${wikiId}`} backLabel='wiki page' canAccess={canEditWiki} resource='wiki page'>
+      <div className='flex justify-center'>
+        <Card className='w-full max-w-md'>
+          <CardHeader>
+            <CardTitle>Edit wiki page</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EditWikiForm wikiId={wikiId} />
+          </CardContent>
+        </Card>
+      </div>
+    </PermissionGuard>
+  )
+}
 export default EditWikiPage

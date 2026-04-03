@@ -20,20 +20,20 @@ interface OrgSettingsFormProps {
   org: Doc<'org'>
 }
 const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
-  const router = useRouter(),
-    update = useMutation(api.org.update),
-    form = useForm({
-      onSubmit: async d => {
-        await update({ data: d, orgId: o._id })
-        toast.success('Settings updated')
-        if (d.slug !== o.slug) setActiveOrgCookieClient({ orgId: o._id, slug: d.slug })
-        router.push('/settings')
-        return d
-      },
-      schema: orgTeam,
-      values: pickValues(orgTeam, o)
-    }),
-    slug = form.watch(orgKeys.slug)
+  const router = useRouter()
+  const update = useMutation(api.org.update)
+  const form = useForm({
+    onSubmit: async d => {
+      await update({ data: d, orgId: o._id })
+      toast.success('Settings updated')
+      if (d.slug !== o.slug) setActiveOrgCookieClient({ orgId: o._id, slug: d.slug })
+      router.push('/settings')
+      return d
+    },
+    schema: orgTeam,
+    values: pickValues(orgTeam, o)
+  })
+  const slug = form.watch(orgKeys.slug)
   return (
     <Card>
       <CardHeader>

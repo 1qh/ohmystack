@@ -12,15 +12,15 @@ import { useMut, useMutate } from '@noboil/spacetimedb/react'
 import { Copy, Trash } from 'lucide-react'
 import { useOrgTable } from '~/hook/use-org-table'
 const PendingInvites = () => {
-  const [invites] = useOrgTable<OrgInvite>(tables.orgInvite),
-    revokeInvite = useMut(reducers.orgRevokeInvite, { toast: { success: 'Invite revoked' } }),
-    copyInviteLink = useMutate(
-      async ({ token }: { token: string }) => {
-        const url = `${window.location.origin}/invite/${token}`
-        await navigator.clipboard.writeText(url)
-      },
-      { toast: { error: 'Failed to copy', success: 'Invite link copied' } }
-    )
+  const [invites] = useOrgTable<OrgInvite>(tables.orgInvite)
+  const revokeInvite = useMut(reducers.orgRevokeInvite, { toast: { success: 'Invite revoked' } })
+  const copyInviteLink = useMutate(
+    async ({ token }: { token: string }) => {
+      const url = `${window.location.origin}/invite/${token}`
+      await navigator.clipboard.writeText(url)
+    },
+    { toast: { error: 'Failed to copy', success: 'Invite link copied' } }
+  )
   if (invites.length === 0) return null
   return (
     <div className='space-y-2'>

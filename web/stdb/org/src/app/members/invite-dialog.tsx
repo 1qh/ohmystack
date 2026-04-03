@@ -11,14 +11,14 @@ interface InviteDialogProps {
   orgId: string
 }
 const InviteDialog = ({ orgId }: InviteDialogProps) => {
-  const [open, setOpen] = useState(false),
-    form = useFormMutation({
-      mutate: useReducer(reducers.orgSendInvite),
-      onSuccess: () => setOpen(false),
-      schema: invite,
-      toast: { success: 'Invite sent' },
-      transform: d => ({ ...d, orgId: Number(orgId) })
-    })
+  const [open, setOpen] = useState(false)
+  const form = useFormMutation({
+    mutate: useReducer(reducers.orgSendInvite),
+    onSuccess: () => setOpen(false),
+    schema: invite,
+    toast: { success: 'Invite sent' },
+    transform: d => ({ ...d, orgId: Number(orgId) })
+  })
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger render={p => <Button {...p} />}>

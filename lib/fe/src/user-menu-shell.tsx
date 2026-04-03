@@ -83,38 +83,38 @@ const UserMenuShell = ({
   triggerImageProps,
   triggerProps
 }: UserMenuShellProps) => {
-  const { className: triggerPropsClassName, ...triggerRestProps } = triggerProps,
-    { className: triggerImageClassName, ...triggerImageRestProps } = triggerImageProps ?? {},
-    { className: triggerFallbackClassName, ...triggerFallbackRestProps } = triggerFallbackProps ?? {},
-    description = logoutDescription ?? (email ? `Log out of ${email}?` : 'Log out?'),
-    title = name ?? 'Account',
-    trigger = createElement(
-      'button',
-      {
-        ...triggerRestProps,
-        'aria-label': triggerAriaLabel,
-        className: cn('size-8 shrink-0 rounded-full', triggerClassName, triggerPropsClassName),
-        type: 'button'
-      },
-      isSignedIn && image
-        ? createElement(Image, {
-            ...triggerImageRestProps,
-            alt: '',
-            className: cn('rounded-full', triggerImageClassName),
-            height: 32,
-            src: image,
-            width: 32
-          })
-        : createElement('span', {
-            ...triggerFallbackRestProps,
-            className: cn('block size-8 rounded-full bg-muted-foreground', triggerFallbackClassName)
-          })
-    ),
-    logoutTrigger = createElement(Button, {
-      ...logoutButtonProps,
-      type: 'button',
-      variant: logoutButtonProps?.variant ?? 'ghost'
-    })
+  const { className: triggerPropsClassName, ...triggerRestProps } = triggerProps
+  const { className: triggerImageClassName, ...triggerImageRestProps } = triggerImageProps ?? {}
+  const { className: triggerFallbackClassName, ...triggerFallbackRestProps } = triggerFallbackProps ?? {}
+  const description = logoutDescription ?? (email ? `Log out of ${email}?` : 'Log out?')
+  const title = name ?? 'Account'
+  const trigger = createElement(
+    'button',
+    {
+      ...triggerRestProps,
+      'aria-label': triggerAriaLabel,
+      className: cn('size-8 shrink-0 rounded-full', triggerClassName, triggerPropsClassName),
+      type: 'button'
+    },
+    isSignedIn && image
+      ? createElement(Image, {
+          ...triggerImageRestProps,
+          alt: '',
+          className: cn('rounded-full', triggerImageClassName),
+          height: 32,
+          src: image,
+          width: 32
+        })
+      : createElement('span', {
+          ...triggerFallbackRestProps,
+          className: cn('block size-8 rounded-full bg-muted-foreground', triggerFallbackClassName)
+        })
+  )
+  const logoutTrigger = createElement(Button, {
+    ...logoutButtonProps,
+    type: 'button',
+    variant: logoutButtonProps?.variant ?? 'ghost'
+  })
   return (
     <Popover {...popoverProps}>
       <PopoverTrigger render={trigger} />

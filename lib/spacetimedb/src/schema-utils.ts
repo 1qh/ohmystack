@@ -13,26 +13,26 @@ import {
   parseObjectFields,
   SINGLETON_BASE
 } from '@a/shared/schema-utils'
-const tableCallPat = /(?<pname>\w+)\s*:\s*t\.table\(\{/gu,
-  wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase', 'defineTables'],
-  extractSpacetimeTables = (content: string): SchemaTable[] => {
-    const tables: SchemaTable[] = [],
-      p = new RegExp(tableCallPat.source, 'gu')
-    let m = p.exec(content)
-    while (m) {
-      const tableName = m.groups?.pname ?? 'unknown',
-        startBlock = m.index + m[0].length,
-        fields = parseObjectFields(content, startBlock)
-      tables.push({ factory: 'spacetimeCrud', fields, table: tableName })
-      m = p.exec(content)
-    }
-    return tables
-  },
-  { endpointsForFactory, extractSchemaFields } = createSchemaUtils({
-    baseTables: extractSpacetimeTables,
-    schemaFactoryMap: { defineTables: 'spacetimeCrud' },
-    wrapperFactories
-  })
+const tableCallPat = /(?<pname>\w+)\s*:\s*t\.table\(\{/gu
+const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase', 'defineTables']
+const extractSpacetimeTables = (content: string): SchemaTable[] => {
+  const tables: SchemaTable[] = []
+  const p = new RegExp(tableCallPat.source, 'gu')
+  let m = p.exec(content)
+  while (m) {
+    const tableName = m.groups?.pname ?? 'unknown'
+    const startBlock = m.index + m[0].length
+    const fields = parseObjectFields(content, startBlock)
+    tables.push({ factory: 'spacetimeCrud', fields, table: tableName })
+    m = p.exec(content)
+  }
+  return tables
+}
+const { endpointsForFactory, extractSchemaFields } = createSchemaUtils({
+  baseTables: extractSpacetimeTables,
+  schemaFactoryMap: { defineTables: 'spacetimeCrud' },
+  wrapperFactories
+})
 export {
   CACHE_BASE,
   CHILD_BASE,

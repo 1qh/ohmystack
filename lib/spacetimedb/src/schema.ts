@@ -39,79 +39,79 @@ interface ChildFn {
 }
 /** Creates a file-id schema annotated for noboil file inputs. */
 const cvFile = () =>
-    string()
-      .min(1)
-      .meta({ cv: 'file' as const }),
-  cvFiles = () => array(cvFile()).meta({ cv: 'files' as const }),
-  child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject) => {
-    if (typeof configOrParent === 'string')
-      return {
-        foreignKey: `${configOrParent}Id`,
-        index: `by_${configOrParent}`,
-        parent: configOrParent,
-        schema: childSchema
-      } as never
-    const config = configOrParent as { index?: string; parent: string }
-    return { ...configOrParent, index: config.index ?? `by_${config.parent}` } as never
-  },
-  /** Default organization schema used by org helpers. */
-  orgSchema = object({
-    avatarId: string().min(1).nullable().optional(),
-    name: string().min(1),
-    slug: string()
-      .min(1)
-      .regex(/^[a-z0-9-]+$/u)
-  }),
-  brandSchemas = <B extends string, T extends Record<string, ZodObject>>(
-    brand: B,
-    schemas: T
-  ): { [K in keyof T]: SchemaBrand<B> & T[K] } => {
-    const keys = Object.keys(schemas)
-    for (const key of keys) {
-      const schema = schemas[key]
-      if (schema)
-        Object.defineProperty(schema as unknown as { __bs?: B }, '__bs', {
-          configurable: true,
-          enumerable: false,
-          value: brand
-        })
-    }
-    return typed(schemas)
-  },
-  makeOwned = <T extends Record<string, ZodObject>>(schemas: T) =>
-    brandSchemas('owned', schemas) as {
-      [K in keyof T]: OwnedSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
-    },
-  makeOrgScoped = <T extends Record<string, ZodObject>>(schemas: T) =>
-    brandSchemas('org', schemas) as {
-      [K in keyof T]: OrgSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
-    },
-  makeOrg = <T extends Record<string, ZodObject>>(schemas: T) =>
-    brandSchemas('orgDef', schemas) as {
-      [K in keyof T]: OrgDefSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
-    },
-  makeBase = <T extends Record<string, ZodObject>>(schemas: T) =>
-    brandSchemas('base', schemas) as {
-      [K in keyof T]: BaseSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
-    },
-  makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
-    brandSchemas('singleton', schemas) as {
-      [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
-    },
-  mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {
-    const keys = Object.keys(source)
-    for (const key of keys) target[key] = source[key]
-  },
-  schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
-    const result: Record<string, unknown> = {}
-    if (config.owned) mergeInto(result, makeOwned(config.owned))
-    if (config.orgScoped) mergeInto(result, makeOrgScoped(config.orgScoped))
-    if (config.org) mergeInto(result, makeOrg(config.org))
-    if (config.base) mergeInto(result, makeBase(config.base))
-    if (config.singleton) mergeInto(result, makeSingleton(config.singleton))
-    if (config.children) mergeInto(result, config.children)
-    return typed(result)
+  string()
+    .min(1)
+    .meta({ cv: 'file' as const })
+const cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
+const child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject) => {
+  if (typeof configOrParent === 'string')
+    return {
+      foreignKey: `${configOrParent}Id`,
+      index: `by_${configOrParent}`,
+      parent: configOrParent,
+      schema: childSchema
+    } as never
+  const config = configOrParent as { index?: string; parent: string }
+  return { ...configOrParent, index: config.index ?? `by_${config.parent}` } as never
+}
+/** Default organization schema used by org helpers. */
+const orgSchema = object({
+  avatarId: string().min(1).nullable().optional(),
+  name: string().min(1),
+  slug: string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/u)
+})
+const brandSchemas = <B extends string, T extends Record<string, ZodObject>>(
+  brand: B,
+  schemas: T
+): { [K in keyof T]: SchemaBrand<B> & T[K] } => {
+  const keys = Object.keys(schemas)
+  for (const key of keys) {
+    const schema = schemas[key]
+    if (schema)
+      Object.defineProperty(schema as unknown as { __bs?: B }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: brand
+      })
   }
+  return typed(schemas)
+}
+const makeOwned = <T extends Record<string, ZodObject>>(schemas: T) =>
+  brandSchemas('owned', schemas) as {
+    [K in keyof T]: OwnedSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
+  }
+const makeOrgScoped = <T extends Record<string, ZodObject>>(schemas: T) =>
+  brandSchemas('org', schemas) as {
+    [K in keyof T]: OrgSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
+  }
+const makeOrg = <T extends Record<string, ZodObject>>(schemas: T) =>
+  brandSchemas('orgDef', schemas) as {
+    [K in keyof T]: OrgDefSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
+  }
+const makeBase = <T extends Record<string, ZodObject>>(schemas: T) =>
+  brandSchemas('base', schemas) as {
+    [K in keyof T]: BaseSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
+  }
+const makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
+  brandSchemas('singleton', schemas) as {
+    [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
+  }
+const mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {
+  const keys = Object.keys(source)
+  for (const key of keys) target[key] = source[key]
+}
+const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
+  const result: Record<string, unknown> = {}
+  if (config.owned) mergeInto(result, makeOwned(config.owned))
+  if (config.orgScoped) mergeInto(result, makeOrgScoped(config.orgScoped))
+  if (config.org) mergeInto(result, makeOrg(config.org))
+  if (config.base) mergeInto(result, makeBase(config.base))
+  if (config.singleton) mergeInto(result, makeSingleton(config.singleton))
+  if (config.children) mergeInto(result, config.children)
+  return typed(result)
+}
 interface SchemaConfig {
   base?: Record<string, ZodObject>
   children?: Record<string, ChildEntry>

@@ -31,12 +31,12 @@ const createErrorBoundary = ({ readErrorCode, readErrorMessage }: CreateErrorBou
       if (onError) onError(error, errorInfo)
     }
     override render() {
-      const { error } = this.state,
-        { children, className, fallback } = this.props
+      const { error } = this.state
+      const { children, className, fallback } = this.props
       if (!error) return children
       if (fallback) return fallback({ error, resetErrorBoundary: () => this.setState({ error: null }) })
-      const code = readErrorCode(error),
-        message = readErrorMessage(error)
+      const code = readErrorCode(error)
+      const message = readErrorMessage(error)
       return (
         <div className={cn('flex min-h-[200px] items-center justify-center p-6', className)}>
           <div className='max-w-md space-y-3 text-center'>

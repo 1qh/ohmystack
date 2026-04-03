@@ -2,42 +2,42 @@ import { $ } from 'bun'
 import { exportJWK, exportPKCS8, generateKeyPair } from 'jose'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-const root = join(import.meta.dirname, '..'),
-  envPath = join(root, '.env'),
-  log = (msg: string) => process.stdout.write(`${msg}\n`),
-  run = async (cmd: string) => {
-    log(`> ${cmd}`)
-    const result = await $`bash -c ${cmd}`.cwd(root).quiet()
-    if (result.exitCode !== 0) {
-      process.stderr.write(result.stderr.toString())
-      throw new Error(`Command failed: ${cmd}`)
-    }
-    return result.stdout.toString().trim()
-  },
-  readExistingEnv = (): Record<string, string> => {
-    if (!existsSync(envPath)) return {}
-    const lines = readFileSync(envPath, 'utf8').split('\n'),
-      env: Record<string, string> = {}
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (trimmed && !trimmed.startsWith('#')) {
-        const eqIdx = trimmed.indexOf('=')
-        if (eqIdx > 0) env[trimmed.slice(0, eqIdx)] = trimmed.slice(eqIdx + 1)
-      }
-    }
-    return env
+const root = join(import.meta.dirname, '..')
+const envPath = join(root, '.env')
+const log = (msg: string) => process.stdout.write(`${msg}\n`)
+const run = async (cmd: string) => {
+  log(`> ${cmd}`)
+  const result = await $`bash -c ${cmd}`.cwd(root).quiet()
+  if (result.exitCode !== 0) {
+    process.stderr.write(result.stderr.toString())
+    throw new Error(`Command failed: ${cmd}`)
   }
+  return result.stdout.toString().trim()
+}
+const readExistingEnv = (): Record<string, string> => {
+  if (!existsSync(envPath)) return {}
+  const lines = readFileSync(envPath, 'utf8').split('\n')
+  const env: Record<string, string> = {}
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed && !trimmed.startsWith('#')) {
+      const eqIdx = trimmed.indexOf('=')
+      if (eqIdx > 0) env[trimmed.slice(0, eqIdx)] = trimmed.slice(eqIdx + 1)
+    }
+  }
+  return env
+}
 log('=== noboil setup ===\n')
 const existing = readExistingEnv()
 log('[1/7] Generating JWT keys...')
-const { privateKey, publicKey } = await generateKeyPair('RS256', { extractable: true }),
-  privateK = await exportPKCS8(privateKey),
-  publicK = await exportJWK(publicKey),
-  jwks = JSON.stringify({ keys: [{ use: 'sig', ...publicK }] })
+const { privateKey, publicKey } = await generateKeyPair('RS256', { extractable: true })
+const privateK = await exportPKCS8(privateKey)
+const publicK = await exportJWK(publicKey)
+const jwks = JSON.stringify({ keys: [{ use: 'sig', ...publicK }] })
 log('[2/7] Writing .env (preserving existing secrets)...')
-const tmdbKey = existing.TMDB_KEY ?? '',
-  googleId = existing.AUTH_GOOGLE_ID ?? '',
-  googleSecret = existing.AUTH_GOOGLE_SECRET ?? ''
+const tmdbKey = existing.TMDB_KEY ?? ''
+const googleId = existing.AUTH_GOOGLE_ID ?? ''
+const googleSecret = existing.AUTH_GOOGLE_SECRET ?? ''
 if (!tmdbKey) log('   WARNING: TMDB_KEY not set — add it to .env manually')
 const envContent = [
   'POSTGRES_PASSWORD=postgres',
@@ -71,8 +71,8 @@ await run('bun convex:up')
 log('[4/7] Starting SpacetimeDB...')
 await run('bun spacetime:up')
 log('[5/7] Generating Convex admin key...')
-const adminKeyRaw = await run('docker compose -f convex.yml exec -T backend ./generate_admin_key.sh'),
-  adminKeyMatch = /convex-self-hosted\|[a-f0-9]+/u.exec(adminKeyRaw)
+const adminKeyRaw = await run('docker compose -f convex.yml exec -T backend ./generate_admin_key.sh')
+const adminKeyMatch = /convex-self-hosted\|[a-f0-9]+/u.exec(adminKeyRaw)
 if (!adminKeyMatch) throw new Error(`Failed to parse admin key from: ${adminKeyRaw}`)
 const adminKey = adminKeyMatch[0]
 log(`   Key: ${adminKey.slice(0, 30)}...`)
@@ -81,11 +81,11 @@ writeFileSync(
   envContent.replace('CONVEX_SELF_HOSTED_ADMIN_KEY=placeholder', `CONVEX_SELF_HOSTED_ADMIN_KEY=${adminKey}`)
 )
 log('[6/7] Deploying Convex backend...')
-const tmpFile = join(root, '.tmp-env-val'),
-  setEnv = async (k: string, v: string) => {
-    writeFileSync(tmpFile, v)
-    await run(`cd backend/convex && bun with-env npx convex env set ${k} -- "$(cat ${tmpFile})"`)
-  }
+const tmpFile = join(root, '.tmp-env-val')
+const setEnv = async (k: string, v: string) => {
+  writeFileSync(tmpFile, v)
+  await run(`cd backend/convex && bun with-env npx convex env set ${k} -- "$(cat ${tmpFile})"`)
+}
 if (tmdbKey) await setEnv('TMDB_KEY', tmdbKey)
 await setEnv('CONVEX_TEST_MODE', 'true')
 await setEnv('CI', '')

@@ -1,18 +1,18 @@
 import { expect, test } from './fixtures'
-const NEW_RE = /new/iu,
-  SESSIONS_RE = /sessions/iu,
-  CHAT_URL_RE = /\/chat\//u,
-  NO_MESSAGES_RE = /no messages/iu,
-  MCP_RE = /mcp/iu,
-  MCP_SERVERS_RE = /mcp servers/iu,
-  MESSAGE_RE = /message/iu,
-  SEND_RE = /send/iu,
-  SETTINGS_RE = /settings/iu,
-  ATTACH_RE = /attach|upload|file/iu,
-  IDLE_TYPING_RE = /idle|typing/iu,
-  AGENT_TYPING_RE = /idle|typing|agent is typing/iu,
-  LOADING_RE = /loading tasks|loading todos|loading token usage|loading/iu,
-  SETTLED_RE = /no background tasks|no todos|input|output|total/iu
+const NEW_RE = /new/iu
+const SESSIONS_RE = /sessions/iu
+const CHAT_URL_RE = /\/chat\//u
+const NO_MESSAGES_RE = /no messages/iu
+const MCP_RE = /mcp/iu
+const MCP_SERVERS_RE = /mcp servers/iu
+const MESSAGE_RE = /message/iu
+const SEND_RE = /send/iu
+const SETTINGS_RE = /settings/iu
+const ATTACH_RE = /attach|upload|file/iu
+const IDLE_TYPING_RE = /idle|typing/iu
+const AGENT_TYPING_RE = /idle|typing|agent is typing/iu
+const LOADING_RE = /loading tasks|loading todos|loading token usage|loading/iu
+const SETTLED_RE = /no background tasks|no todos|input|output|total/iu
 test.describe('Frontend States', () => {
   test('session list shows New Chat for new user', async ({ page }) => {
     await page.goto('/')
@@ -122,8 +122,8 @@ test.describe('Frontend States - final remaining coverage', () => {
     await sessionListPage.goto('/')
     await sessionListPage.getNewButton().click()
     await page.waitForURL(CHAT_URL_RE)
-    const loadingHints = page.getByText(LOADING_RE),
-      settledHints = page.getByText(SETTLED_RE)
+    const loadingHints = page.getByText(LOADING_RE)
+    const settledHints = page.getByText(SETTLED_RE)
     if ((await loadingHints.count()) > 0) {
       await expect(loadingHints.first()).toBeVisible()
       return

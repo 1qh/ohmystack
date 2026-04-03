@@ -8,32 +8,32 @@ import { NoboilConvexDevtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' },
-  renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>,
-  Layout = async ({ children }: { children: ReactNode }) => {
-    const requestHeaders = await headers(),
-      pathname = requestHeaders.get('x-pathname') ?? '/',
-      isLogin = pathname === '/login' || pathname.startsWith('/login/')
-    return (
-      <AuthLayout convexProvider={renderConvexProvider}>
-        {isLogin ? (
-          children
-        ) : (
-          <div className='mx-auto max-w-3xl py-2.5'>
-            <Link
-              className='fixed bottom-12 left-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
-              data-testid='profile-link'
-              href='/profile'>
-              <UserRound className='size-full' />
-            </Link>
-            <Logout className='fixed bottom-2 left-2' />
-            <OfflineIndicator />
-            <NoboilConvexDevtools position='bottom-right' />
-            {children}
-          </div>
-        )}
-      </AuthLayout>
-    )
-  }
+const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' }
+const renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>
+const Layout = async ({ children }: { children: ReactNode }) => {
+  const requestHeaders = await headers()
+  const pathname = requestHeaders.get('x-pathname') ?? '/'
+  const isLogin = pathname === '/login' || pathname.startsWith('/login/')
+  return (
+    <AuthLayout convexProvider={renderConvexProvider}>
+      {isLogin ? (
+        children
+      ) : (
+        <div className='mx-auto max-w-3xl py-2.5'>
+          <Link
+            className='fixed bottom-12 left-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
+            data-testid='profile-link'
+            href='/profile'>
+            <UserRound className='size-full' />
+          </Link>
+          <Logout className='fixed bottom-2 left-2' />
+          <OfflineIndicator />
+          <NoboilConvexDevtools position='bottom-right' />
+          {children}
+        </div>
+      )}
+    </AuthLayout>
+  )
+}
 export { metadata }
 export default Layout

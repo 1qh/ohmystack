@@ -8,21 +8,21 @@ import { useInView } from 'react-intersection-observer'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { Create, List } from '../common'
 const Page = () => {
-  const { inView, ref } = useInView(),
-    [allBlogs, isReady] = useTable(tables.blog),
-    { identity } = useSpacetimeDB(),
-    blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null),
-    [stableReady, markReady] = useReducer(() => true, false)
+  const { inView, ref } = useInView()
+  const [allBlogs, isReady] = useTable(tables.blog)
+  const { identity } = useSpacetimeDB()
+  const blogs = useOwnRows(allBlogs, identity ? (b: (typeof allBlogs)[number]) => b.userId.isEqual(identity) : null)
+  const [stableReady, markReady] = useReducer(() => true, false)
   useEffect(() => {
     if (isReady || allBlogs.length > 0) markReady()
   }, [allBlogs.length, isReady])
   const { data, hasMore, isLoading, loadMore } = useInfiniteList(blogs, stableReady, {
-      sort: { direction: 'desc', field: 'id' },
-      where: { or: [{ published: true }, { own: true }] }
-    }),
-    showLoading = isLoading,
-    showLoadMore = !isLoading && hasMore,
-    showExhausted = !(isLoading || hasMore) && data.length > 0
+    sort: { direction: 'desc', field: 'id' },
+    where: { or: [{ published: true }, { own: true }] }
+  })
+  const showLoading = isLoading
+  const showLoadMore = !isLoading && hasMore
+  const showExhausted = !(isLoading || hasMore) && data.length > 0
   useEffect(() => {
     if (inView && hasMore && !isLoading) loadMore()
   }, [hasMore, inView, isLoading, loadMore])

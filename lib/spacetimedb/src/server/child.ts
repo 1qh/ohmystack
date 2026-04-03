@@ -40,32 +40,32 @@ const makeChildCrud = <
   config: ChildCrudConfig<DB, F, Row, Id, Tbl, Pk, ParentRow, ParentId, ParentTbl, ParentPk>
 ): ChildCrudExports => {
   const {
-      expectedUpdatedAtField,
-      fields,
-      foreignKeyField,
-      foreignKeyName,
-      idField,
-      options,
-      parentPk: parentPkAccessor,
-      parentTable: parentTableAccessor,
-      pk: pkAccessor,
-      table: tableAccessor,
-      tableName
-    } = config,
-    hooks = options?.hooks,
-    fieldNames = Object.keys(fields) as (keyof F & string)[],
-    createName = `create_${tableName}`,
-    updateName = `update_${tableName}`,
-    rmName = `rm_${tableName}`,
-    createParams: CrudFieldBuilders = {
-      [foreignKeyName]: foreignKeyField as TypeBuilder<unknown, AlgebraicTypeType>
-    },
-    createFieldKeys = Object.keys(fields),
-    updateParams: Record<string, TypeBuilder<unknown, AlgebraicTypeType>> = {
-      id: idField
-    },
-    optionalFields = makeOptionalFields(fields),
-    optionalKeys = Object.keys(optionalFields)
+    expectedUpdatedAtField,
+    fields,
+    foreignKeyField,
+    foreignKeyName,
+    idField,
+    options,
+    parentPk: parentPkAccessor,
+    parentTable: parentTableAccessor,
+    pk: pkAccessor,
+    table: tableAccessor,
+    tableName
+  } = config
+  const hooks = options?.hooks
+  const fieldNames = Object.keys(fields) as (keyof F & string)[]
+  const createName = `create_${tableName}`
+  const updateName = `update_${tableName}`
+  const rmName = `rm_${tableName}`
+  const createParams: CrudFieldBuilders = {
+    [foreignKeyName]: foreignKeyField as TypeBuilder<unknown, AlgebraicTypeType>
+  }
+  const createFieldKeys = Object.keys(fields)
+  const updateParams: Record<string, TypeBuilder<unknown, AlgebraicTypeType>> = {
+    id: idField
+  }
+  const optionalFields = makeOptionalFields(fields)
+  const optionalKeys = Object.keys(optionalFields)
   for (const key of createFieldKeys) {
     const field = fields[key]
     if (field) createParams[key] = field
@@ -76,86 +76,86 @@ const makeChildCrud = <
   }
   if (expectedUpdatedAtField) updateParams.expectedUpdatedAt = expectedUpdatedAtField.optional()
   const createReducer = spacetimedb.reducer({ name: createName }, createParams, (ctx, args) => {
-      if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
-      const typedArgs = args as CrudFieldValues<F> & Record<string, unknown>,
-        hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp },
-        table = tableAccessor(ctx.db),
-        parentId = typedArgs[foreignKeyName] as ParentId,
-        parent = parentPkAccessor(parentTableAccessor(ctx.db)).find(parentId)
-      if (!parent) throw makeError('NOT_FOUND', `${tableName}:create`)
-      let data = typedArgs
-      if (hooks?.beforeCreate)
-        data = hooks.beforeCreate(hookCtx, { data }) as unknown as CrudFieldValues<F> & Record<string, unknown>
-      const payload = data as unknown as Record<string, unknown>
-      table.insert({
-        ...payload,
-        createdAt: ctx.timestamp,
-        [foreignKeyName]: parentId,
-        id: 0 as Id,
-        updatedAt: ctx.timestamp,
-        userId: ctx.sender
-      } as unknown as Row)
-    }),
-    updateReducer = spacetimedb.reducer({ name: updateName }, updateParams, (ctx, args) => {
-      const typedArgs = args as UpdateArgs<F, Id>,
-        hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp },
-        table = tableAccessor(ctx.db),
-        { pk, row } = getOwnedRow({
-          ctxSender: ctx.sender,
-          id: typedArgs.id,
-          operation: 'update',
-          pkAccessor: pkAccessor as unknown as (tbl: TableLike<OwnedRow>) => PkLike<OwnedRow, Id>,
-          table: table as unknown as TableLike<OwnedRow>,
-          tableName
-        })
-      if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
-        throw makeError('CONFLICT', `${tableName}:update`)
-      let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
-      if (hooks?.beforeUpdate)
-        patch = hooks.beforeUpdate(hookCtx, {
-          patch: patch as unknown as Partial<CrudFieldValues<F>>,
-          prev: row as unknown as Row
-        }) as unknown as Record<string, unknown>
-      const prev = row as unknown as Row,
-        next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
-      if (hooks?.afterUpdate)
-        hooks.afterUpdate(hookCtx, {
-          next,
-          patch: patch as unknown as Partial<CrudFieldValues<F>>,
-          prev
-        })
-    }),
-    rmReducer = spacetimedb.reducer({ name: rmName }, { id: idField }, (ctx, args) => {
-      const { id } = args as { id: Id },
-        hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp },
-        table = tableAccessor(ctx.db),
-        { pk, row } = getOwnedRow({
-          ctxSender: ctx.sender,
-          id,
-          operation: 'rm',
-          pkAccessor: pkAccessor as unknown as (tbl: TableLike<OwnedRow>) => PkLike<OwnedRow, Id>,
-          table: table as unknown as TableLike<OwnedRow>,
-          tableName
-        })
-      if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
-      if (options?.softDelete) {
-        const nextRecord = {
-          ...(row as unknown as Record<string, unknown>),
-          deletedAt: ctx.timestamp,
-          updatedAt: ctx.timestamp
-        }
-        pk.update(nextRecord as unknown as Row)
-      } else {
-        const deleted = pk.delete(id)
-        if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
+    if (options?.rateLimit) enforceRateLimit(tableName, ctx.sender, options.rateLimit)
+    const typedArgs = args as CrudFieldValues<F> & Record<string, unknown>
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
+    const table = tableAccessor(ctx.db)
+    const parentId = typedArgs[foreignKeyName] as ParentId
+    const parent = parentPkAccessor(parentTableAccessor(ctx.db)).find(parentId)
+    if (!parent) throw makeError('NOT_FOUND', `${tableName}:create`)
+    let data = typedArgs
+    if (hooks?.beforeCreate)
+      data = hooks.beforeCreate(hookCtx, { data }) as unknown as CrudFieldValues<F> & Record<string, unknown>
+    const payload = data as unknown as Record<string, unknown>
+    table.insert({
+      ...payload,
+      createdAt: ctx.timestamp,
+      [foreignKeyName]: parentId,
+      id: 0 as Id,
+      updatedAt: ctx.timestamp,
+      userId: ctx.sender
+    } as unknown as Row)
+  })
+  const updateReducer = spacetimedb.reducer({ name: updateName }, updateParams, (ctx, args) => {
+    const typedArgs = args as UpdateArgs<F, Id>
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
+    const table = tableAccessor(ctx.db)
+    const { pk, row } = getOwnedRow({
+      ctxSender: ctx.sender,
+      id: typedArgs.id,
+      operation: 'update',
+      pkAccessor: pkAccessor as unknown as (tbl: TableLike<OwnedRow>) => PkLike<OwnedRow, Id>,
+      table: table as unknown as TableLike<OwnedRow>,
+      tableName
+    })
+    if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
+      throw makeError('CONFLICT', `${tableName}:update`)
+    let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
+    if (hooks?.beforeUpdate)
+      patch = hooks.beforeUpdate(hookCtx, {
+        patch: patch as unknown as Partial<CrudFieldValues<F>>,
+        prev: row as unknown as Row
+      }) as unknown as Record<string, unknown>
+    const prev = row as unknown as Row
+    const next = pk.update(applyPatch(prev, patch, ctx.timestamp)) as unknown as Row
+    if (hooks?.afterUpdate)
+      hooks.afterUpdate(hookCtx, {
+        next,
+        patch: patch as unknown as Partial<CrudFieldValues<F>>,
+        prev
+      })
+  })
+  const rmReducer = spacetimedb.reducer({ name: rmName }, { id: idField }, (ctx, args) => {
+    const { id } = args as { id: Id }
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
+    const table = tableAccessor(ctx.db)
+    const { pk, row } = getOwnedRow({
+      ctxSender: ctx.sender,
+      id,
+      operation: 'rm',
+      pkAccessor: pkAccessor as unknown as (tbl: TableLike<OwnedRow>) => PkLike<OwnedRow, Id>,
+      table: table as unknown as TableLike<OwnedRow>,
+      tableName
+    })
+    if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: row as unknown as Row })
+    if (options?.softDelete) {
+      const nextRecord = {
+        ...(row as unknown as Record<string, unknown>),
+        deletedAt: ctx.timestamp,
+        updatedAt: ctx.timestamp
       }
-      if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: row as unknown as Row })
-    }),
-    exportsRecord = {
-      [createName]: createReducer,
-      [rmName]: rmReducer,
-      [updateName]: updateReducer
-    } as unknown as ChildCrudExports['exports']
+      pk.update(nextRecord as unknown as Row)
+    } else {
+      const deleted = pk.delete(id)
+      if (!deleted) throw makeError('NOT_FOUND', `${tableName}:rm`)
+    }
+    if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: row as unknown as Row })
+  })
+  const exportsRecord = {
+    [createName]: createReducer,
+    [rmName]: rmReducer,
+    [updateName]: updateReducer
+  } as unknown as ChildCrudExports['exports']
   return {
     exports: exportsRecord
   }

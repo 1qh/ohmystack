@@ -8,15 +8,15 @@ import { useReducer } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { wiki } from '~/schema'
 const NewWikiPage = () => {
-  const router = useRouter(),
-    { org } = useOrg(),
-    form = useFormMutation({
-      mutate: useReducer(reducers.createWiki),
-      onSuccess: () => router.push('/wiki'),
-      schema: wiki,
-      toast: { success: 'Wiki page created' },
-      transform: d => ({ ...d, orgId: Number(org._id) })
-    })
+  const router = useRouter()
+  const { org } = useOrg()
+  const form = useFormMutation({
+    mutate: useReducer(reducers.createWiki),
+    onSuccess: () => router.push('/wiki'),
+    schema: wiki,
+    toast: { success: 'Wiki page created' },
+    transform: d => ({ ...d, orgId: Number(org._id) })
+  })
   return (
     <div className='flex justify-center'>
       <Card className='w-full max-w-md'>

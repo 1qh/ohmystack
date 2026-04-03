@@ -74,8 +74,8 @@ test.describe('Authentication Failures', () => {
     await page.fill('[name="password"]', 'testpassword')
     const toggleButton = page.getByRole('button', { name: /account/iu })
     await toggleButton.click()
-    const emailValue = await page.locator('[name="email"]').inputValue(),
-      passwordValue = await page.locator('[name="password"]').inputValue()
+    const emailValue = await page.locator('[name="email"]').inputValue()
+    const passwordValue = await page.locator('[name="password"]').inputValue()
     expect(emailValue).toBe('test@example.com')
     expect(passwordValue).toBe('testpassword')
   })

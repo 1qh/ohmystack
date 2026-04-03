@@ -14,50 +14,50 @@ import { toast } from 'sonner'
 import { useOrg } from '~/hook/use-org'
 import OrgSettingsForm from './org-settings-form'
 const OrgSettingsPage = () => {
-  const router = useRouter(),
-    { canDeleteOrg, isAdmin, isOwner, org } = useOrg(),
-    removeOrg = useOrgMutation(api.org.remove),
-    leaveOrg = useOrgMutation(api.org.leave),
-    transferOwnership = useOrgMutation(api.org.transferOwnership),
-    members = useOrgQuery(api.org.members),
-    [transferTarget, setTransferTarget] = useState('')
+  const router = useRouter()
+  const { canDeleteOrg, isAdmin, isOwner, org } = useOrg()
+  const removeOrg = useOrgMutation(api.org.remove)
+  const leaveOrg = useOrgMutation(api.org.leave)
+  const transferOwnership = useOrgMutation(api.org.transferOwnership)
+  const members = useOrgQuery(api.org.members)
+  const [transferTarget, setTransferTarget] = useState('')
   if (!isAdmin)
     return <div className='text-center text-muted-foreground'>You do not have permission to access settings.</div>
-  const adminMembers = members?.filter(m => m.role === 'admin') ?? [],
-    handleLeave = () => {
-      /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
-      if (!confirm('Are you sure you want to leave this organization?')) return
-      leaveOrg()
-        .then(async () => {
-          await clearActiveOrgCookie()
-          toast.success('You have left the organization')
-          router.push('/')
-        })
-        .catch(fail)
-    },
-    handleTransfer = () => {
-      const target = adminMembers.find(m => m.userId === transferTarget)
-      if (!target) return
-      /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
-      if (!confirm('Are you sure? You will become an admin and lose owner privileges.')) return
-      transferOwnership({ newOwnerId: target.userId })
-        .then(() => {
-          toast.success('Ownership transferred')
-          router.refresh()
-        })
-        .catch(fail)
-    },
-    handleDelete = () => {
-      /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
-      if (!confirm('Are you sure? This will delete all data.')) return
-      removeOrg()
-        .then(async () => {
-          await clearActiveOrgCookie()
-          toast.success('Organization deleted')
-          router.push('/')
-        })
-        .catch(fail)
-    }
+  const adminMembers = members?.filter(m => m.role === 'admin') ?? []
+  const handleLeave = () => {
+    /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
+    if (!confirm('Are you sure you want to leave this organization?')) return
+    leaveOrg()
+      .then(async () => {
+        await clearActiveOrgCookie()
+        toast.success('You have left the organization')
+        router.push('/')
+      })
+      .catch(fail)
+  }
+  const handleTransfer = () => {
+    const target = adminMembers.find(m => m.userId === transferTarget)
+    if (!target) return
+    /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
+    if (!confirm('Are you sure? You will become an admin and lose owner privileges.')) return
+    transferOwnership({ newOwnerId: target.userId })
+      .then(() => {
+        toast.success('Ownership transferred')
+        router.refresh()
+      })
+      .catch(fail)
+  }
+  const handleDelete = () => {
+    /** biome-ignore lint/suspicious/noAlert: demo page uses native confirm */
+    if (!confirm('Are you sure? This will delete all data.')) return
+    removeOrg()
+      .then(async () => {
+        await clearActiveOrgCookie()
+        toast.success('Organization deleted')
+        router.push('/')
+      })
+      .catch(fail)
+  }
   return (
     <div className='space-y-6'>
       <h1 className='text-2xl font-bold'>Settings</h1>

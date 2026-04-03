@@ -1,11 +1,11 @@
 import { expect, test } from './fixtures'
-const CHAT_URL_RE = /\/chat\//u,
-  NOOPENER_RE = /noopener/iu,
-  MESSAGE_RE = /message the agent/iu,
-  SEND_RE = /send/iu,
-  IDLE_TYPING_RE = /idle|typing/iu,
-  SESSIONS_RE = /sessions/iu,
-  MESSAGE_PLACEHOLDER_RE = /message/iu
+const CHAT_URL_RE = /\/chat\//u
+const NOOPENER_RE = /noopener/iu
+const MESSAGE_RE = /message the agent/iu
+const SEND_RE = /send/iu
+const IDLE_TYPING_RE = /idle|typing/iu
+const SESSIONS_RE = /sessions/iu
+const MESSAGE_PLACEHOLDER_RE = /message/iu
 test.describe('Accessibility', () => {
   test('chat log has role=log (duplicate coverage)', async ({ chatPage, page, sessionListPage }) => {
     await sessionListPage.goto('/')
@@ -24,12 +24,12 @@ test.describe('Accessibility', () => {
     await chatPage.sendMessage('Hello')
     /** biome-ignore lint/nursery/noPlaywrightWaitForTimeout: wait for Convex reactive update */
     await page.waitForTimeout(3000)
-    const sourceLinks = page.locator('a[target="_blank"]'),
-      count = await sourceLinks.count()
+    const sourceLinks = page.locator('a[target="_blank"]')
+    const count = await sourceLinks.count()
     if (count > 0) await expect(sourceLinks.first()).toHaveAttribute('rel', NOOPENER_RE)
     else {
-      const allLinks = page.locator('a[href^="http"]'),
-        extCount = await allLinks.count()
+      const allLinks = page.locator('a[href^="http"]')
+      const extCount = await allLinks.count()
       expect(extCount).toBeGreaterThanOrEqual(0)
     }
   })

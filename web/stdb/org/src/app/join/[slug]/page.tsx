@@ -11,36 +11,36 @@ import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { joinRequest } from '~/schema'
 const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
-  const { slug } = use(params),
-    router = useRouter(),
-    { identity } = useSpacetimeDB(),
-    [orgs] = useTable(tables.org),
-    [requests] = useTable(tables.orgJoinRequest),
-    [members] = useTable(tables.orgMember),
-    org = orgs.find(o => o.slug === slug),
-    myRequest =
-      identity && org
-        ? requests.find(
-            r => r.orgId === org.id && r.userId.toHexString() === identity.toHexString() && r.status === 'pending'
-          )
-        : null,
-    membership =
-      identity && org ? members.find(m => m.orgId === org.id && m.userId.toHexString() === identity.toHexString()) : null,
-    cancelRequest = useMut(reducers.orgCancelJoin, {
-      toast: { error: 'Failed to cancel request', success: 'Request cancelled' }
-    }),
-    requestJoin = useMut(reducers.orgRequestJoin, {
-      toast: { error: 'Join request failed', success: 'Join request sent' }
-    }),
-    form = useForm({
-      onSubmit: async d => {
-        if (!org) return d
-        await requestJoin({ message: d.message, orgId: org.id })
-        return d
-      },
-      resetOnSuccess: true,
-      schema: joinRequest
-    })
+  const { slug } = use(params)
+  const router = useRouter()
+  const { identity } = useSpacetimeDB()
+  const [orgs] = useTable(tables.org)
+  const [requests] = useTable(tables.orgJoinRequest)
+  const [members] = useTable(tables.orgMember)
+  const org = orgs.find(o => o.slug === slug)
+  const myRequest =
+    identity && org
+      ? requests.find(
+          r => r.orgId === org.id && r.userId.toHexString() === identity.toHexString() && r.status === 'pending'
+        )
+      : null
+  const membership =
+    identity && org ? members.find(m => m.orgId === org.id && m.userId.toHexString() === identity.toHexString()) : null
+  const cancelRequest = useMut(reducers.orgCancelJoin, {
+    toast: { error: 'Failed to cancel request', success: 'Request cancelled' }
+  })
+  const requestJoin = useMut(reducers.orgRequestJoin, {
+    toast: { error: 'Join request failed', success: 'Join request sent' }
+  })
+  const form = useForm({
+    onSubmit: async d => {
+      if (!org) return d
+      await requestJoin({ message: d.message, orgId: org.id })
+      return d
+    },
+    resetOnSuccess: true,
+    schema: joinRequest
+  })
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!orgs) return <Skeleton className='mx-auto h-64 max-w-md' />
   if (!org) return <div className='text-center text-muted-foreground'>Organization not found</div>

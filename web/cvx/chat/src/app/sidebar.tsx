@@ -8,12 +8,12 @@ import { Check } from 'lucide-react'
 import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 const Sb = () => {
-  const { inView, ref } = useInView(),
-    { data, loadMore, status } = useList(api.chat.list, { where: { own: true } }),
-    deleteChat = useMutation(api.chat.rm),
-    handleDelete = async (chatId: string) => {
-      await deleteChat({ id: chatId })
-    }
+  const { inView, ref } = useInView()
+  const { data, loadMore, status } = useList(api.chat.list, { where: { own: true } })
+  const deleteChat = useMutation(api.chat.rm)
+  const handleDelete = async (chatId: string) => {
+    await deleteChat({ id: chatId })
+  }
   useEffect(() => {
     if (inView && status === 'CanLoadMore') loadMore()
   }, [inView, loadMore, status])

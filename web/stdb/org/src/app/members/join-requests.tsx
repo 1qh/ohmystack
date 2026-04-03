@@ -12,12 +12,12 @@ import { useState } from 'react'
 import { useOrgTable } from '~/hook/use-org-table'
 import { useProfileMap } from '~/hook/use-profile-map'
 const JoinRequests = () => {
-  const [orgRequests] = useOrgTable<OrgJoinRequest>(tables.orgJoinRequest),
-    requests = orgRequests.filter(r => r.status === 'pending').map(r => ({ request: r })),
-    approveRequest = useMut(reducers.orgApproveJoin, { toast: { success: 'Request approved' } }),
-    rejectRequest = useMut(reducers.orgRejectJoin, { toast: { success: 'Request rejected' } }),
-    [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({}),
-    profileByUserId = useProfileMap()
+  const [orgRequests] = useOrgTable<OrgJoinRequest>(tables.orgJoinRequest)
+  const requests = orgRequests.filter(r => r.status === 'pending').map(r => ({ request: r }))
+  const approveRequest = useMut(reducers.orgApproveJoin, { toast: { success: 'Request approved' } })
+  const rejectRequest = useMut(reducers.orgRejectJoin, { toast: { success: 'Request rejected' } })
+  const [asAdmin, setAsAdmin] = useState<Record<string, boolean>>({})
+  const profileByUserId = useProfileMap()
   if (requests.length === 0) return null
   return (
     <div className='space-y-2'>

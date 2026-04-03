@@ -39,9 +39,9 @@ describe('blog reducer flow', () => {
       if (!user) throw new Error('Missing test user')
       const title = `blog-create-${Date.now().toString()}`
       await createBlog(ctx, user, title)
-      const rows = await listTable(ctx, 'blog', user),
-        mine = findMine(rows, user.identity),
-        found = mine.find(row => getString(row, 'title') === title)
+      const rows = await listTable(ctx, 'blog', user)
+      const mine = findMine(rows, user.identity)
+      const found = mine.find(row => getString(row, 'title') === title)
       expect(found).toBeDefined()
       expect(getString(found as Record<string, unknown>, 'category')).toBe('tech')
     })
@@ -52,9 +52,9 @@ describe('blog reducer flow', () => {
       if (!user) throw new Error('Missing test user')
       const title = `blog-owner-${Date.now().toString()}`
       await createBlog(ctx, user, title)
-      const rows = await listTable(ctx, 'blog', user),
-        mine = findMine(rows, user.identity),
-        found = mine.find(row => getString(row, 'title') === title)
+      const rows = await listTable(ctx, 'blog', user)
+      const mine = findMine(rows, user.identity)
+      const found = mine.find(row => getString(row, 'title') === title)
       if (!found) throw new Error('Missing created row')
       const id = getNumber(found, 'id')
       await callReducer(
@@ -73,13 +73,13 @@ describe('blog reducer flow', () => {
         },
         user
       )
-      const afterUpdate = await listTable(ctx, 'blog', user),
-        updated = afterUpdate.find(row => getNumber(row, 'id') === id)
+      const afterUpdate = await listTable(ctx, 'blog', user)
+      const updated = afterUpdate.find(row => getNumber(row, 'id') === id)
       expect(updated).toBeDefined()
       expect(getString(updated as Record<string, unknown>, 'title')).toBe(`${title}-updated`)
       await callReducer(ctx, 'rm_blog', { id }, user)
-      const afterRemove = await listTable(ctx, 'blog', user),
-        exists = afterRemove.some(row => getNumber(row, 'id') === id)
+      const afterRemove = await listTable(ctx, 'blog', user)
+      const exists = afterRemove.some(row => getNumber(row, 'id') === id)
       expect(exists).toBe(false)
     })
   })
@@ -90,9 +90,9 @@ describe('blog reducer flow', () => {
       if (!other) throw new Error('Missing other user')
       const title = `blog-auth-${Date.now().toString()}`
       await createBlog(ctx, owner, title)
-      const rows = await listTable(ctx, 'blog', owner),
-        mine = findMine(rows, owner.identity),
-        found = mine.find(row => getString(row, 'title') === title)
+      const rows = await listTable(ctx, 'blog', owner)
+      const mine = findMine(rows, owner.identity)
+      const found = mine.find(row => getString(row, 'title') === title)
       if (!found) throw new Error('Missing created row')
       const id = getNumber(found, 'id')
       let threw = false
@@ -128,19 +128,19 @@ describe('chat and message reducers', () => {
       if (!user) throw new Error('Missing test user')
       const title = `chat-${Date.now().toString()}`
       await createChat(ctx, user, title)
-      const chats = await listTable(ctx, 'chat', user),
-        mineChats = findMine(chats, user.identity),
-        chat = mineChats.find(row => getString(row, 'title') === title)
+      const chats = await listTable(ctx, 'chat', user)
+      const mineChats = findMine(chats, user.identity)
+      const chat = mineChats.find(row => getString(row, 'title') === title)
       if (!chat) throw new Error('Missing chat row')
       const chatId = getNumber(chat, 'id')
       await createMessage(ctx, user, chatId, 'hello')
       await createMessage(ctx, user, chatId, 'second')
-      const messagesBefore = await listTable(ctx, 'message', user),
-        forChatBefore = messagesBefore.filter(row => getNumber(row, 'chat_id') === chatId)
+      const messagesBefore = await listTable(ctx, 'message', user)
+      const forChatBefore = messagesBefore.filter(row => getNumber(row, 'chat_id') === chatId)
       expect(forChatBefore.length).toBeGreaterThanOrEqual(2)
       await callReducer(ctx, 'rm_chat', { id: chatId }, user)
-      const messagesAfter = await listTable(ctx, 'message', user),
-        forChatAfter = messagesAfter.filter(row => getNumber(row, 'chat_id') === chatId)
+      const messagesAfter = await listTable(ctx, 'message', user)
+      const forChatAfter = messagesAfter.filter(row => getNumber(row, 'chat_id') === chatId)
       expect(forChatAfter.length).toBeGreaterThanOrEqual(2)
     })
   })

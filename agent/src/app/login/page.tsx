@@ -5,15 +5,15 @@ import { useConvexAuth } from 'convex/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 const LoginPage = () => {
-  const { signIn } = useAuthActions(),
-    { isAuthenticated, isLoading } = useConvexAuth(),
-    router = useRouter(),
-    signInWithGoogle = async () => {
-      await signIn('google', { redirectTo: '/' })
-    },
-    onGoogle = () => {
-      signInWithGoogle().catch(() => undefined)
-    }
+  const { signIn } = useAuthActions()
+  const { isAuthenticated, isLoading } = useConvexAuth()
+  const router = useRouter()
+  const signInWithGoogle = async () => {
+    await signIn('google', { redirectTo: '/' })
+  }
+  const onGoogle = () => {
+    signInWithGoogle().catch(() => undefined)
+  }
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
     router.replace('/')

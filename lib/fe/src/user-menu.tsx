@@ -14,19 +14,19 @@ interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
 }
 const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
   await connection()
-  const token = await tok(),
-    { user } = api,
-    profile = token
-      ? ((await fetchQuery(user.me, {}, { token })) as { email?: string; image?: string; name?: string })
-      : null,
-    email = profile?.email,
-    image = profile?.image,
-    name = profile?.name,
-    onLogout = async () => {
-      'use server'
-      await fetchAction(api.auth.signOut, undefined, { token })
-      redirect('/login')
-    }
+  const token = await tok()
+  const { user } = api
+  const profile = token
+    ? ((await fetchQuery(user.me, {}, { token })) as { email?: string; image?: string; name?: string })
+    : null
+  const email = profile?.email
+  const image = profile?.image
+  const name = profile?.name
+  const onLogout = async () => {
+    'use server'
+    await fetchAction(api.auth.signOut, undefined, { token })
+    redirect('/login')
+  }
   return (
     <UserMenuShell
       {...shellProps}

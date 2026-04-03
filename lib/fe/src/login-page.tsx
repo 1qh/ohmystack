@@ -15,14 +15,14 @@ const LoginPage = ({
   redirectTo = '/',
   shellProps
 }: LoginPageProps) => {
-  const { signIn } = useAuthActions(),
-    onGoogleClick = () => {
-      const signInAttempt = signIn('google', { redirectTo })
-      signInAttempt.catch((error: unknown) => {
-        // eslint-disable-next-line no-console
-        console.error(error)
-      })
-    }
+  const { signIn } = useAuthActions()
+  const onGoogleClick = () => {
+    const signInAttempt = signIn('google', { redirectTo })
+    signInAttempt.catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error(error)
+    })
+  }
   return (
     <OAuthLoginShell
       {...shellProps}

@@ -14,42 +14,42 @@ const useOptimisticMutation = <A, R = void>({
   onSettled,
   onSuccess
 }: OptimisticOptions<A, R>) => {
-  const [isPending, setIsPending] = useState(false),
-    [mutationError, setMutationError] = useState<Error | null>(null),
-    pendingCountRef = useRef(0),
-    errorSourceRef = useRef(0),
-    mutationIdRef = useRef(0),
-    execute = useCallback(
-      async (args: A): Promise<null | R> => {
-        mutationIdRef.current += 1
-        const myId = mutationIdRef.current
-        pendingCountRef.current += 1
-        setIsPending(true)
-        if (errorSourceRef.current === 0) setMutationError(null)
-        onOptimistic?.(args)
-        try {
-          const result = await mutate(args)
-          if (errorSourceRef.current === myId) {
-            errorSourceRef.current = 0
-            setMutationError(null)
-          }
-          onSuccess?.(result, args)
-          onSettled?.(args, undefined, result)
-          return result
-        } catch (error) {
-          const err = error instanceof Error ? error : new Error('Mutation failed')
-          errorSourceRef.current = myId
-          setMutationError(err)
-          onRollback?.(args, err)
-          onSettled?.(args, error)
-          return null
-        } finally {
-          pendingCountRef.current -= 1
-          if (pendingCountRef.current === 0) setIsPending(false)
+  const [isPending, setIsPending] = useState(false)
+  const [mutationError, setMutationError] = useState<Error | null>(null)
+  const pendingCountRef = useRef(0)
+  const errorSourceRef = useRef(0)
+  const mutationIdRef = useRef(0)
+  const execute = useCallback(
+    async (args: A): Promise<null | R> => {
+      mutationIdRef.current += 1
+      const myId = mutationIdRef.current
+      pendingCountRef.current += 1
+      setIsPending(true)
+      if (errorSourceRef.current === 0) setMutationError(null)
+      onOptimistic?.(args)
+      try {
+        const result = await mutate(args)
+        if (errorSourceRef.current === myId) {
+          errorSourceRef.current = 0
+          setMutationError(null)
         }
-      },
-      [mutate, onOptimistic, onRollback, onSettled, onSuccess]
-    )
+        onSuccess?.(result, args)
+        onSettled?.(args, undefined, result)
+        return result
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Mutation failed')
+        errorSourceRef.current = myId
+        setMutationError(err)
+        onRollback?.(args, err)
+        onSettled?.(args, error)
+        return null
+      } finally {
+        pendingCountRef.current -= 1
+        if (pendingCountRef.current === 0) setIsPending(false)
+      }
+    },
+    [mutate, onOptimistic, onRollback, onSettled, onSuccess]
+  )
   return { error: mutationError, execute, isPending }
 }
 export type { OptimisticOptions }

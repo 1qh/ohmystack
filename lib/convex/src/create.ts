@@ -4,8 +4,8 @@ import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '@a/shared/
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-const { bold, dim, green, yellow } = createCliTheme(),
-  SCHEMA_TS = `import { authTables } from '@convex-dev/auth/server'
+const { bold, dim, green, yellow } = createCliTheme()
+const SCHEMA_TS = `import { authTables } from '@convex-dev/auth/server'
 import { defineSchema } from 'convex/server'
 import { ownedTable, rateLimitTable, uploadTables } from '@noboil/convex/server'
 import { owned } from './t'
@@ -15,8 +15,8 @@ export default defineSchema({
   ...rateLimitTable(),
   blog: ownedTable(owned.blog)
 })
-`,
-  T_TS = `import { cvFile, makeOwned } from '@noboil/convex/schema'
+`
+const T_TS = `import { cvFile, makeOwned } from '@noboil/convex/schema'
 import { boolean, object, string, enum as zenum } from 'zod/v4'
 const owned = makeOwned({
   blog: object({
@@ -28,8 +28,8 @@ const owned = makeOwned({
   })
 })
 export { owned }
-`,
-  LAZY_TS = `import { getAuthUserId } from '@convex-dev/auth/server'
+`
+const LAZY_TS = `import { getAuthUserId } from '@convex-dev/auth/server'
 import { makeFileUpload, setup } from '@noboil/convex/server'
 // import { auditLog, inputSanitize, slowQueryWarn } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
@@ -52,24 +52,24 @@ const file = makeFileUpload({
   query
 })
 export { crud, file, m, pq, q }
-`,
-  BLOG_TS = `import { crud } from './lazy'
+`
+const BLOG_TS = `import { crud } from './lazy'
 import { owned } from './t'
 export const {
   create,
   pub: { list, read },
   rm, update
 } = crud('blog', owned.blog, { search: 'content' })
-`,
-  FILE_TS = `import { file } from './lazy'
+`
+const FILE_TS = `import { file } from './lazy'
 export const { info, upload } = file
-`,
-  GUARDED_API_TS = `import { guardApi } from '@noboil/convex'
+`
+const GUARDED_API_TS = `import { guardApi } from '@noboil/convex'
 import { api as rawApi } from './convex/_generated/api'
 const api = guardApi(rawApi, ['blog', 'file', 'user'])
 export { api }
-`,
-  PROVIDER_TSX = `'use client'
+`
+const PROVIDER_TSX = `'use client'
 import type { ReactNode } from 'react'
 import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexReactClient } from 'convex/react'
@@ -85,8 +85,8 @@ const ConvexProvider = ({ children }: { children: ReactNode }) => (
   </ConvexErrorBoundary>
 )
 export default ConvexProvider
-`,
-  LAYOUT_TSX = `import type { ReactNode } from 'react'
+`
+const LAYOUT_TSX = `import type { ReactNode } from 'react'
 import ConvexProvider from './convex-provider'
 import './globals.css'
 const RootLayout = ({ children }: { children: ReactNode }) => (
@@ -97,8 +97,8 @@ const RootLayout = ({ children }: { children: ReactNode }) => (
   </html>
 )
 export default RootLayout
-`,
-  PAGE_TSX = `'use client'
+`
+const PAGE_TSX = `'use client'
 import { useMutation } from 'convex/react'
 import { useList } from '@noboil/convex/react'
 import { useState } from 'react'
@@ -148,75 +148,75 @@ const BlogPage = () => {
   )
 }
 export default BlogPage
-`,
-  ENV_LOCAL = `CONVEX_URL=
+`
+const ENV_LOCAL = `CONVEX_URL=
 NEXT_PUBLIC_CONVEX_URL=
-`,
-  BACKEND_FILES: [string, string][] = [
-    ['schema.ts', SCHEMA_TS],
-    ['t.ts', T_TS],
-    ['lazy.ts', LAZY_TS],
-    ['file.ts', FILE_TS],
-    ['blog.ts', BLOG_TS]
-  ],
-  FRONTEND_FILES: [string, string][] = [
-    ['guarded-api.ts', GUARDED_API_TS],
-    ['convex-provider.tsx', PROVIDER_TSX],
-    ['layout.tsx', LAYOUT_TSX],
-    ['page.tsx', PAGE_TSX]
-  ],
-  parseFlags = (args: string[]) => {
-    let convexDir = 'convex',
-      appDir = 'src/app'
-    const help = hasFlag(args, '--help', '-h')
-    convexDir = readEqFlag(args, 'convex-dir', convexDir)
-    appDir = readEqFlag(args, 'app-dir', appDir)
-    return { appDir, convexDir, help }
-  },
-  printHelp = () => {
-    console.log(`${bold('noboil-convex init')} — scaffold an @noboil/convex project\n`)
-    console.log(bold('Usage:'))
-    console.log('  noboil-convex init [options]\n')
-    console.log(bold('Options:'))
-    console.log(`  --convex-dir=DIR  Convex directory ${dim('(default: convex)')}`)
-    console.log(`  --app-dir=DIR     Next.js app directory ${dim('(default: src/app)')}`)
-    console.log('  --help, -h        Show this help\n')
-  },
-  printSummary = (created: number, skipped: number) => {
-    console.log('')
-    if (created > 0) console.log(`${green('✓')} Created ${created} file${created > 1 ? 's' : ''}.`)
-    if (skipped > 0) console.log(`${yellow('⚠')} Skipped ${skipped} existing file${skipped > 1 ? 's' : ''}.`)
-    console.log(`\n${bold('Next steps:')}`)
-    console.log(`  ${dim('$')} bun add @noboil/convex convex @convex-dev/auth zod`)
-    console.log(`  ${dim('$')} bunx convex dev & bun dev\n`)
-  },
-  init = (args: string[] = []) => {
-    const { appDir, convexDir, help } = parseFlags(args)
-    if (help) {
-      printHelp()
-      return
-    }
-    console.log(`\n${bold('Scaffolding @noboil/convex project...')}\n`)
-    const b = writeFilesToDir({
-        baseDir: join(process.cwd(), convexDir),
-        files: BACKEND_FILES,
-        label: convexDir,
-        theme: { dim, green, yellow }
-      }),
-      f = writeFilesToDir({
-        baseDir: join(process.cwd(), appDir),
-        files: FRONTEND_FILES,
-        label: appDir,
-        theme: { dim, green, yellow }
-      }),
-      envPath = join(process.cwd(), '.env.local')
-    if (existsSync(envPath)) console.log(`  ${yellow('skip')} .env.local ${dim('(exists)')}`)
-    else {
-      writeFileSync(envPath, ENV_LOCAL)
-      console.log(`  ${green('✓')} .env.local`)
-    }
-    printSummary(b.created + f.created, b.skipped + f.skipped)
+`
+const BACKEND_FILES: [string, string][] = [
+  ['schema.ts', SCHEMA_TS],
+  ['t.ts', T_TS],
+  ['lazy.ts', LAZY_TS],
+  ['file.ts', FILE_TS],
+  ['blog.ts', BLOG_TS]
+]
+const FRONTEND_FILES: [string, string][] = [
+  ['guarded-api.ts', GUARDED_API_TS],
+  ['convex-provider.tsx', PROVIDER_TSX],
+  ['layout.tsx', LAYOUT_TSX],
+  ['page.tsx', PAGE_TSX]
+]
+const parseFlags = (args: string[]) => {
+  let convexDir = 'convex'
+  let appDir = 'src/app'
+  const help = hasFlag(args, '--help', '-h')
+  convexDir = readEqFlag(args, 'convex-dir', convexDir)
+  appDir = readEqFlag(args, 'app-dir', appDir)
+  return { appDir, convexDir, help }
+}
+const printHelp = () => {
+  console.log(`${bold('noboil-convex init')} — scaffold an @noboil/convex project\n`)
+  console.log(bold('Usage:'))
+  console.log('  noboil-convex init [options]\n')
+  console.log(bold('Options:'))
+  console.log(`  --convex-dir=DIR  Convex directory ${dim('(default: convex)')}`)
+  console.log(`  --app-dir=DIR     Next.js app directory ${dim('(default: src/app)')}`)
+  console.log('  --help, -h        Show this help\n')
+}
+const printSummary = (created: number, skipped: number) => {
+  console.log('')
+  if (created > 0) console.log(`${green('✓')} Created ${created} file${created > 1 ? 's' : ''}.`)
+  if (skipped > 0) console.log(`${yellow('⚠')} Skipped ${skipped} existing file${skipped > 1 ? 's' : ''}.`)
+  console.log(`\n${bold('Next steps:')}`)
+  console.log(`  ${dim('$')} bun add @noboil/convex convex @convex-dev/auth zod`)
+  console.log(`  ${dim('$')} bunx convex dev & bun dev\n`)
+}
+const init = (args: string[] = []) => {
+  const { appDir, convexDir, help } = parseFlags(args)
+  if (help) {
+    printHelp()
+    return
   }
+  console.log(`\n${bold('Scaffolding @noboil/convex project...')}\n`)
+  const b = writeFilesToDir({
+    baseDir: join(process.cwd(), convexDir),
+    files: BACKEND_FILES,
+    label: convexDir,
+    theme: { dim, green, yellow }
+  })
+  const f = writeFilesToDir({
+    baseDir: join(process.cwd(), appDir),
+    files: FRONTEND_FILES,
+    label: appDir,
+    theme: { dim, green, yellow }
+  })
+  const envPath = join(process.cwd(), '.env.local')
+  if (existsSync(envPath)) console.log(`  ${yellow('skip')} .env.local ${dim('(exists)')}`)
+  else {
+    writeFileSync(envPath, ENV_LOCAL)
+    console.log(`  ${green('✓')} .env.local`)
+  }
+  printSummary(b.created + f.created, b.skipped + f.skipped)
+}
 if (process.argv[1]?.endsWith('create.ts') || process.argv[1]?.endsWith('create-noboil-convex-app'))
   init(process.argv.slice(2))
 export { init }

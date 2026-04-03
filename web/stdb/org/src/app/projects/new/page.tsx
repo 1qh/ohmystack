@@ -8,15 +8,15 @@ import { useReducer } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { project } from '~/schema'
 const NewProjectPage = () => {
-  const router = useRouter(),
-    { org } = useOrg(),
-    form = useFormMutation({
-      mutate: useReducer(reducers.createProject),
-      onSuccess: () => router.push('/projects'),
-      schema: project,
-      toast: { success: 'Project created' },
-      transform: d => ({ ...d, orgId: Number(org._id) })
-    })
+  const router = useRouter()
+  const { org } = useOrg()
+  const form = useFormMutation({
+    mutate: useReducer(reducers.createProject),
+    onSuccess: () => router.push('/projects'),
+    schema: project,
+    toast: { success: 'Project created' },
+    transform: d => ({ ...d, orgId: Number(org._id) })
+  })
   return (
     <div className='flex justify-center'>
       <Card className='w-full max-w-md'>

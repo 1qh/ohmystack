@@ -222,10 +222,10 @@ describe('groupList', () => {
   })
   test('with or[]', () => {
     const input = { category: 'tech', or: [{ category: 'life' }] } as Record<string, unknown> & {
-        or?: Record<string, unknown>[]
-        own?: boolean
-      },
-      gs = groupList(input)
+      or?: Record<string, unknown>[]
+      own?: boolean
+    }
+    const gs = groupList(input)
     expect(gs).toHaveLength(2)
     expect(gs[0]?.category).toBe('tech')
     expect(gs[1]?.category).toBe('life')
@@ -238,10 +238,10 @@ describe('groupList', () => {
   })
   test('filters out empty or groups', () => {
     const input = { category: 'tech', or: [{}] } as Record<string, unknown> & {
-        or?: Record<string, unknown>[]
-        own?: boolean
-      },
-      gs = groupList(input)
+      or?: Record<string, unknown>[]
+      own?: boolean
+    }
+    const gs = groupList(input)
     expect(gs).toHaveLength(1)
   })
 })
@@ -256,11 +256,11 @@ describe('detectFiles', () => {
   })
   test('detects both cvFile and cvFiles', () => {
     const shape = {
-        attachments: cvFiles(),
-        photo: cvFile().nullable(),
-        title: string()
-      },
-      result = detectFiles(shape)
+      attachments: cvFiles(),
+      photo: cvFile().nullable(),
+      title: string()
+    }
+    const result = detectFiles(shape)
     expect(result).toContain('photo')
     expect(result).toContain('attachments')
     expect(result).toHaveLength(2)
@@ -301,20 +301,20 @@ describe('CrudOptions search config', () => {
   })
   test('search: { field, index } accepts valid schema keys', () => {
     const opts: CrudOptions<BlogShape> = {
-        search: { field: 'content', index: 'search_content' }
-      },
-      search = opts.search as { field?: string; index?: string }
+      search: { field: 'content', index: 'search_content' }
+    }
+    const search = opts.search as { field?: string; index?: string }
     expect(search.field).toBe('content')
     expect(search.index).toBe('search_content')
   })
   test('search: { field } accepts any schema field name', () => {
-    const opts: CrudOptions<BlogShape> = { search: { field: 'title' } },
-      search = opts.search as { field?: string }
+    const opts: CrudOptions<BlogShape> = { search: { field: 'title' } }
+    const search = opts.search as { field?: string }
     expect(search.field).toBe('title')
   })
   test('search: {} defaults both field and index', () => {
-    const opts: CrudOptions<BlogShape> = { search: {} },
-      search = opts.search as { field?: string; index?: string }
+    const opts: CrudOptions<BlogShape> = { search: {} }
+    const search = opts.search as { field?: string; index?: string }
     expect(search.field).toBeUndefined()
     expect(search.index).toBeUndefined()
   })
@@ -340,19 +340,19 @@ describe('CrudOptions search config', () => {
   })
 })
 describe('typesafe field references', () => {
-  const chatSchema = object({ isPublic: boolean(), title: string().min(1) }),
-    messageSchema = object({
-      chatId: string(),
-      content: string(),
-      role: string()
-    }),
-    taskSchema = object({
-      completed: boolean(),
-      priority: string(),
-      projectId: string(),
-      title: string()
-    }),
-    movieSchema = object({ title: string(), tmdb_id: number() })
+  const chatSchema = object({ isPublic: boolean(), title: string().min(1) })
+  const messageSchema = object({
+    chatId: string(),
+    content: string(),
+    role: string()
+  })
+  const taskSchema = object({
+    completed: boolean(),
+    priority: string(),
+    projectId: string(),
+    title: string()
+  })
+  const movieSchema = object({ title: string(), tmdb_id: number() })
   test('child() accepts valid foreignKey', () => {
     const result = child({
       foreignKey: 'chatId',
@@ -537,27 +537,27 @@ describe('CrudOptions type safety', () => {
 })
 describe('branded schema type enforcement', () => {
   const ownedSchemas = makeOwned({
-      blog: object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      })
-    }),
-    orgSchemas = makeOrgScoped({
-      wiki: object({ content: string(), slug: string(), title: string() })
-    }),
-    baseSchemas = makeBase({
-      movie: object({ title: string(), tmdb_id: number() })
-    }),
-    singletonSchemas = makeSingleton({
-      profile: object({
-        bio: string().optional(),
-        displayName: string(),
-        notifications: boolean(),
-        theme: zenum(['light', 'dark', 'system'])
-      })
-    }),
-    plainSchema = object({ name: string() })
+    blog: object({
+      content: string(),
+      published: boolean(),
+      title: string()
+    })
+  })
+  const orgSchemas = makeOrgScoped({
+    wiki: object({ content: string(), slug: string(), title: string() })
+  })
+  const baseSchemas = makeBase({
+    movie: object({ title: string(), tmdb_id: number() })
+  })
+  const singletonSchemas = makeSingleton({
+    profile: object({
+      bio: string().optional(),
+      displayName: string(),
+      notifications: boolean(),
+      theme: zenum(['light', 'dark', 'system'])
+    })
+  })
+  const plainSchema = object({ name: string() })
   describe('table helper constraints', () => {
     test('ownedTable accepts makeOwned schema', () => {
       const table = ownedTable(ownedSchemas.blog)
@@ -742,22 +742,22 @@ describe('branded schema type enforcement', () => {
 })
 describe('branded schema error messages (SchemaTypeError)', () => {
   const ownedSchemas = makeOwned({
-      blog: object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      })
-    }),
-    orgSchemas = makeOrgScoped({
-      wiki: object({ content: string(), slug: string(), title: string() })
-    }),
-    baseSchemas = makeBase({
-      movie: object({ title: string(), tmdb_id: number() })
-    }),
-    singletonSchemas = makeSingleton({
-      profile: object({ bio: string().optional(), displayName: string() })
-    }),
-    plainSchema = object({ name: string() })
+    blog: object({
+      content: string(),
+      published: boolean(),
+      title: string()
+    })
+  })
+  const orgSchemas = makeOrgScoped({
+    wiki: object({ content: string(), slug: string(), title: string() })
+  })
+  const baseSchemas = makeBase({
+    movie: object({ title: string(), tmdb_id: number() })
+  })
+  const singletonSchemas = makeSingleton({
+    profile: object({ bio: string().optional(), displayName: string() })
+  })
+  const plainSchema = object({ name: string() })
   describe('DetectBrand extracts correct brand', () => {
     test('DetectBrand<OwnedSchema> is owned', () => {
       type Result = DetectBrand<typeof ownedSchemas.blog>
@@ -927,27 +927,27 @@ describe('cleanFiles resilience', () => {
 })
 describe('defineSteps type safety', () => {
   const profileSchema = object({
-      avatar: string().optional(),
-      bio: string().max(500).optional(),
-      displayName: string().min(1)
-    }),
-    orgSchema = object({
-      name: string().min(1),
-      slug: string().min(1)
-    }),
-    appearanceSchema = object({
-      orgAvatar: string()
-    }),
-    preferencesSchema = object({
-      notifications: boolean(),
-      theme: zenum(['light', 'dark', 'system'])
-    }),
-    { StepForm, steps, useStepper } = defineSteps(
-      { id: 'profile', label: 'Profile', schema: profileSchema },
-      { id: 'org', label: 'Organization', schema: orgSchema },
-      { id: 'appearance', label: 'Appearance', schema: appearanceSchema },
-      { id: 'preferences', label: 'Preferences', schema: preferencesSchema }
-    )
+    avatar: string().optional(),
+    bio: string().max(500).optional(),
+    displayName: string().min(1)
+  })
+  const orgSchema = object({
+    name: string().min(1),
+    slug: string().min(1)
+  })
+  const appearanceSchema = object({
+    orgAvatar: string()
+  })
+  const preferencesSchema = object({
+    notifications: boolean(),
+    theme: zenum(['light', 'dark', 'system'])
+  })
+  const { StepForm, steps, useStepper } = defineSteps(
+    { id: 'profile', label: 'Profile', schema: profileSchema },
+    { id: 'org', label: 'Organization', schema: orgSchema },
+    { id: 'appearance', label: 'Appearance', schema: appearanceSchema },
+    { id: 'preferences', label: 'Preferences', schema: preferencesSchema }
+  )
   test('defineSteps returns StepForm, useStepper, steps', () => {
     expect(StepForm).toBeDefined()
     expect(StepForm.Step).toBeDefined()
@@ -966,10 +966,10 @@ describe('defineSteps type safety', () => {
     expect(steps[3]?.label).toBe('Preferences')
   })
   test('StepForm.Step accepts valid step IDs', () => {
-    const _p = StepForm.Step({ id: 'profile', render: () => null }),
-      _o = StepForm.Step({ id: 'org', render: () => null }),
-      _a = StepForm.Step({ id: 'appearance', render: () => null }),
-      _pr = StepForm.Step({ id: 'preferences', render: () => null })
+    const _p = StepForm.Step({ id: 'profile', render: () => null })
+    const _o = StepForm.Step({ id: 'org', render: () => null })
+    const _a = StepForm.Step({ id: 'appearance', render: () => null })
+    const _pr = StepForm.Step({ id: 'preferences', render: () => null })
     expect(_p).toBeNull()
     expect(_o).toBeNull()
     expect(_a).toBeNull()
@@ -1081,8 +1081,8 @@ describe('defineSteps type safety', () => {
     expect(r).toBeNull()
   })
   test('single-step stepper compiles', () => {
-    const singleSchema = object({ title: string() }),
-      single = defineSteps({ id: 'only', label: 'Only', schema: singleSchema })
+    const singleSchema = object({ title: string() })
+    const single = defineSteps({ id: 'only', label: 'Only', schema: singleSchema })
     expect(single.steps).toHaveLength(1)
     expect(single.StepForm).toBeDefined()
   })
@@ -1126,31 +1126,31 @@ describe('defineSteps type safety', () => {
   })
   test('step with all optional fields passes validation', () => {
     const optSchema = object({
-        bio: string().optional(),
-        name: string().optional()
-      }),
-      opt = defineSteps({ id: 'info', label: 'Info', schema: optSchema })
+      bio: string().optional(),
+      name: string().optional()
+    })
+    const opt = defineSteps({ id: 'info', label: 'Info', schema: optSchema })
     expect(opt.steps).toHaveLength(1)
     expect(opt.StepForm).toBeDefined()
   })
   test('steps with overlapping field names are independently typed', () => {
-    const stepA = object({ name: string().min(1) }),
-      stepB = object({ name: string().max(100) }),
-      overlap = defineSteps({ id: 'a', label: 'A', schema: stepA }, { id: 'b', label: 'B', schema: stepB }),
-      ra = overlap.StepForm.Step({
-        id: 'a',
-        render: f => {
-          f.Text({ label: 'N', name: 'name' })
-          return null
-        }
-      }),
-      rb = overlap.StepForm.Step({
-        id: 'b',
-        render: f => {
-          f.Text({ label: 'N', name: 'name' })
-          return null
-        }
-      })
+    const stepA = object({ name: string().min(1) })
+    const stepB = object({ name: string().max(100) })
+    const overlap = defineSteps({ id: 'a', label: 'A', schema: stepA }, { id: 'b', label: 'B', schema: stepB })
+    const ra = overlap.StepForm.Step({
+      id: 'a',
+      render: f => {
+        f.Text({ label: 'N', name: 'name' })
+        return null
+      }
+    })
+    const rb = overlap.StepForm.Step({
+      id: 'b',
+      render: f => {
+        f.Text({ label: 'N', name: 'name' })
+        return null
+      }
+    })
     expect(ra).toBeNull()
     expect(rb).toBeNull()
   })
@@ -1159,29 +1159,29 @@ describe('defineSteps type safety', () => {
 describe('bridge functions', () => {
   describe('idx', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('name', 'test'),
-        result: unknown = idx(fn as never)
+      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('name', 'test')
+      const result: unknown = idx(fn as never)
       expect(result).toBe(fn)
     })
     test('preserves function identity', () => {
-      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('id', 42),
-        a: unknown = idx(fn as never),
-        b: unknown = idx(fn as never)
+      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('id', 42)
+      const a: unknown = idx(fn as never)
+      const b: unknown = idx(fn as never)
       expect(a).toBe(b)
       expect(a).toBe(fn)
     })
   })
   describe('flt', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (fb: { eq: (f: string, v: unknown) => unknown }) => fb.eq('active', true),
-        result: unknown = flt(fn as never)
+      const fn = (fb: { eq: (f: string, v: unknown) => unknown }) => fb.eq('active', true)
+      const result: unknown = flt(fn as never)
       expect(result).toBe(fn)
     })
   })
   describe('sch', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (sb: { search: (f: string, q: string) => unknown }) => sb.search('content', 'hello'),
-        result: unknown = sch(fn as never)
+      const fn = (sb: { search: (f: string, q: string) => unknown }) => sb.search('content', 'hello')
+      const result: unknown = sch(fn as never)
       expect(result).toBe(fn)
     })
   })
@@ -1195,13 +1195,13 @@ describe('bridge functions', () => {
       expect(result).toBe(42)
     })
     test('returns object reference as-is', () => {
-      const obj = { a: 1, b: 'two' },
-        result: unknown = typed(obj)
+      const obj = { a: 1, b: 'two' }
+      const result: unknown = typed(obj)
       expect(result).toBe(obj)
     })
     test('returns array reference as-is', () => {
-      const arr = [1, 2, 3],
-        result: unknown = typed(arr)
+      const arr = [1, 2, 3]
+      const result: unknown = typed(arr)
       expect(result).toBe(arr)
     })
     test('returns null as-is', () => {
@@ -1209,13 +1209,13 @@ describe('bridge functions', () => {
       expect(result).toBeNull()
     })
     test('returns function as-is', () => {
-      const fn = () => 42,
-        result: unknown = typed(fn)
+      const fn = () => 42
+      const result: unknown = typed(fn)
       expect(result).toBe(fn)
     })
     test('preserves nested object structure', () => {
-      const nested = { deep: { arr: [1, 2], val: true } },
-        result: unknown = typed(nested)
+      const nested = { deep: { arr: [1, 2], val: true } }
+      const result: unknown = typed(nested)
       expect(result).toBe(nested)
       expect((result as typeof nested).deep.arr).toEqual([1, 2])
     })
@@ -1239,15 +1239,15 @@ describe('bridge functions', () => {
     })
   })
 })
-const HEX_PATTERN = /^[\da-f]+$/u,
-  captureWarns = () => {
-    const warns: string[] = [],
-      origWarn = console.warn
-    console.warn = (...args: unknown[]) => {
-      warns.push(String(args[0]))
-    }
-    return { origWarn, warns }
+const HEX_PATTERN = /^[\da-f]+$/u
+const captureWarns = () => {
+  const warns: string[] = []
+  const origWarn = console.warn
+  console.warn = (...args: unknown[]) => {
+    warns.push(String(args[0]))
   }
+  return { origWarn, warns }
+}
 describe('warnLargeFilterSet', () => {
   test('threshold is 1000', () => {
     expect(RUNTIME_FILTER_WARN_THRESHOLD).toBe(1000)
@@ -1377,9 +1377,9 @@ describe('time helper', () => {
     expect(typeof result.updatedAt).toBe('number')
   })
   test('updatedAt is close to Date.now()', () => {
-    const before = Date.now(),
-      result = time(),
-      after = Date.now()
+    const before = Date.now()
+    const result = time()
+    const after = Date.now()
     expect(result.updatedAt).toBeGreaterThanOrEqual(before)
     expect(result.updatedAt).toBeLessThanOrEqual(after)
   })
@@ -1445,22 +1445,22 @@ describe('Promise.allSettled resilience pattern', () => {
   })
   test('allSettled collects all failures', async () => {
     const results = await Promise.allSettled([
-        Promise.reject(new Error('fail 1')),
-        Promise.reject(new Error('fail 2')),
-        Promise.resolve('ok')
-      ]),
-      rejected = results.filter(r => r.status === 'rejected')
+      Promise.reject(new Error('fail 1')),
+      Promise.reject(new Error('fail 2')),
+      Promise.resolve('ok')
+    ])
+    const rejected = results.filter(r => r.status === 'rejected')
     expect(rejected).toHaveLength(2)
     expect(results[2].status).toBe('fulfilled')
   })
   test('subsequent Promise.all still runs after allSettled failures', async () => {
-    const order: string[] = [],
-      sr = await Promise.allSettled([
-        Promise.reject(new Error('storage cleanup fail')),
-        (async () => {
-          order.push('storage-2')
-        })()
-      ])
+    const order: string[] = []
+    const sr = await Promise.allSettled([
+      Promise.reject(new Error('storage cleanup fail')),
+      (async () => {
+        order.push('storage-2')
+      })()
+    ])
     expect(sr[0].status).toBe('rejected')
     await Promise.all([
       (async () => {
@@ -1536,15 +1536,15 @@ describe('getMeta', () => {
 describe('buildMeta', () => {
   test('builds meta map for all field types', () => {
     const s = object({
-        active: boolean(),
-        avatar: cvFile().nullable().optional(),
-        bio: optional(string()),
-        count: number(),
-        photos: cvFiles().max(3),
-        tags: array(string()).max(10),
-        title: string()
-      }),
-      meta = buildMeta(s)
+      active: boolean(),
+      avatar: cvFile().nullable().optional(),
+      bio: optional(string()),
+      count: number(),
+      photos: cvFiles().max(3),
+      tags: array(string()).max(10),
+      title: string()
+    })
+    const meta = buildMeta(s)
     expect(meta.title).toEqual({ kind: 'string' })
     expect(meta.count).toEqual({ kind: 'number' })
     expect(meta.active).toEqual({ kind: 'boolean' })
@@ -1558,8 +1558,8 @@ describe('buildMeta', () => {
     expect(buildMeta(s)).toEqual({})
   })
   test('schema with only one field', () => {
-    const s = object({ name: string() }),
-      meta = buildMeta(s)
+    const s = object({ name: string() })
+    const meta = buildMeta(s)
     expect(Object.keys(meta)).toHaveLength(1)
     expect(meta.name).toEqual({ kind: 'string' })
   })
@@ -1705,32 +1705,32 @@ describe('isRecord', () => {
 })
 describe('extractErrorData', () => {
   test('extracts code from ConvexError', () => {
-    const e = new ConvexError({ code: 'NOT_FOUND' }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'NOT_FOUND' })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.code).toBe('NOT_FOUND')
   })
   test('extracts code, debug from ConvexError', () => {
     const e = new ConvexError({
-        code: 'NOT_AUTHENTICATED',
-        debug: 'session-expired'
-      }),
-      d = extractErrorData(e)
+      code: 'NOT_AUTHENTICATED',
+      debug: 'session-expired'
+    })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('NOT_AUTHENTICATED')
     expect(d?.debug).toBe('session-expired')
   })
   test('extracts code, message from ConvexError', () => {
-    const e = new ConvexError({ code: 'RATE_LIMITED', message: 'Too fast' }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'RATE_LIMITED', message: 'Too fast' })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('RATE_LIMITED')
     expect(d?.message).toBe('Too fast')
   })
   test('extracts code, fields from ConvexError', () => {
     const e = new ConvexError({
-        code: 'NOT_FOUND',
-        fields: ['title', 'content']
-      }),
-      d = extractErrorData(e)
+      code: 'NOT_FOUND',
+      fields: ['title', 'content']
+    })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('NOT_FOUND')
     expect(d?.fields).toEqual(['title', 'content'])
   })
@@ -1756,18 +1756,18 @@ describe('extractErrorData', () => {
     expect(extractErrorData(e)).toBeUndefined()
   })
   test('debug is undefined when not a string', () => {
-    const e = new ConvexError({ code: 'NOT_FOUND', debug: 123 }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'NOT_FOUND', debug: 123 })
+    const d = extractErrorData(e)
     expect(d?.debug).toBeUndefined()
   })
   test('message is undefined when not a string', () => {
-    const e = new ConvexError({ code: 'NOT_FOUND', message: false }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'NOT_FOUND', message: false })
+    const d = extractErrorData(e)
     expect(d?.message).toBeUndefined()
   })
   test('fields is undefined when not an array', () => {
-    const e = new ConvexError({ code: 'NOT_FOUND', fields: 'title' }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'NOT_FOUND', fields: 'title' })
+    const d = extractErrorData(e)
     expect(d?.fields).toBeUndefined()
   })
 })
@@ -1893,8 +1893,8 @@ describe('withRetry', () => {
     expect(calls).toBe(2)
   })
   test('throws last error after all attempts exhausted', async () => {
-    let calls = 0,
-      threw = false
+    let calls = 0
+    let threw = false
     try {
       await withRetry(
         async () => {
@@ -1911,8 +1911,8 @@ describe('withRetry', () => {
     expect(calls).toBe(3)
   })
   test('respects maxAttempts: 1 (no retry)', async () => {
-    let calls = 0,
-      threw = false
+    let calls = 0
+    let threw = false
     try {
       await withRetry(
         async () => {
@@ -1960,7 +1960,6 @@ describe('withRetry', () => {
     expect(calls).toBe(3)
   })
 })
-/* eslint-disable require-atomic-updates */
 const mockFetch = (fn: (...args: never[]) => Promise<Response>) => {
   globalThis.fetch = fn as never
 }
@@ -2125,13 +2124,13 @@ describe('Fix #2: singleton first-upsert validates full schema', () => {
     expect(result.success).toBe(true)
   })
   test('partial schema allows subset of fields', () => {
-    const partial = singletonProfile.partial(),
-      result = partial.safeParse({ bio: 'hello' })
+    const partial = singletonProfile.partial()
+    const result = partial.safeParse({ bio: 'hello' })
     expect(result.success).toBe(true)
   })
   test('partial schema allows empty object', () => {
-    const partial = singletonProfile.partial(),
-      result = partial.safeParse({})
+    const partial = singletonProfile.partial()
+    const result = partial.safeParse({})
     expect(result.success).toBe(true)
   })
   test('invalid enum value fails full schema', () => {
@@ -2164,16 +2163,16 @@ describe('Fix #3: factory table names typed as keyof DM & string', () => {
 })
 describe('Fix #4: ownedCascade helper', () => {
   const taskSchema = object({
-      completed: boolean(),
-      priority: string(),
-      projectId: string(),
-      title: string()
-    }),
-    messageSchema = object({
-      chatId: string(),
-      content: string(),
-      role: string()
-    })
+    completed: boolean(),
+    priority: string(),
+    projectId: string(),
+    title: string()
+  })
+  const messageSchema = object({
+    chatId: string(),
+    content: string(),
+    role: string()
+  })
   test('ownedCascade accepts valid foreignKey', () => {
     const result = ownedCascade(taskSchema, {
       foreignKey: 'projectId',
@@ -2229,10 +2228,10 @@ describe('Fix #4: ownedCascade helper', () => {
   })
   test('ownedCascade mirrors orgCascade behavior', () => {
     const owned = ownedCascade(taskSchema, {
-        foreignKey: 'projectId',
-        table: 'task'
-      }),
-      org = orgCascade(taskSchema, { foreignKey: 'projectId', table: 'task' })
+      foreignKey: 'projectId',
+      table: 'task'
+    })
+    const org = orgCascade(taskSchema, { foreignKey: 'projectId', table: 'task' })
     expect(owned.foreignKey).toBe(org.foreignKey)
     expect(owned.table).toBe(org.table)
   })
@@ -2346,8 +2345,8 @@ describe('Fix #8: cache purge uses take(batchSize)', () => {
     expect(capBatchSize(1)).toBe(1)
   })
   test('batchSize schema accepts number or undefined', () => {
-    const bsSchema = number().optional(),
-      undef = undefined
+    const bsSchema = number().optional()
+    const undef = undefined
     expect(bsSchema.safeParse(undef).success).toBe(true)
     expect(bsSchema.safeParse(50).success).toBe(true)
     expect(bsSchema.safeParse('abc').success).toBe(false)
@@ -2388,8 +2387,8 @@ describe('Fix #9: useList accepts optional pageSize', () => {
 })
 describe('Fix #10: isTestMode production safety', () => {
   test('isTestMode returns true when CONVEX_TEST_MODE=true and NODE_ENV=test', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.CONVEX_TEST_MODE = 'true'
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(true)
@@ -2397,8 +2396,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when CONVEX_TEST_MODE=true regardless of NODE_ENV', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.CONVEX_TEST_MODE = 'true'
     process.env.NODE_ENV = 'production'
     expect(isTestMode()).toBe(true)
@@ -2406,8 +2405,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when CONVEX_TEST_MODE is false', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.CONVEX_TEST_MODE = 'false'
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(false)
@@ -2415,8 +2414,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when CONVEX_TEST_MODE is undefined', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
     delete process.env.CONVEX_TEST_MODE
     process.env.NODE_ENV = 'test'
@@ -2425,8 +2424,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when both are undefined', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
     delete process.env.CONVEX_TEST_MODE
     /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
@@ -2436,8 +2435,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when CONVEX_TEST_MODE=true and NODE_ENV=development', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.CONVEX_TEST_MODE = 'true'
     process.env.NODE_ENV = 'development'
     expect(isTestMode()).toBe(true)
@@ -2445,8 +2444,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when CONVEX_TEST_MODE=true and NODE_ENV is empty', () => {
-    const origTest = process.env.CONVEX_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.CONVEX_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.CONVEX_TEST_MODE = 'true'
     process.env.NODE_ENV = ''
     expect(isTestMode()).toBe(true)
@@ -2478,8 +2477,8 @@ describe('VALIDATION_FAILED error code', () => {
     }
   })
   test('extractErrorData works with VALIDATION_FAILED', () => {
-    const e = new ConvexError({ code: 'VALIDATION_FAILED', fields: ['title'] }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'VALIDATION_FAILED', fields: ['title'] })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.code).toBe('VALIDATION_FAILED')
     expect(d?.fields).toEqual(['title'])
@@ -2593,36 +2592,36 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData returns fieldErrors from ConvexError', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { content: 'Too short', title: 'Required' },
-        fields: ['title', 'content'],
-        message: 'Invalid: title, content'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { content: 'Too short', title: 'Required' },
+      fields: ['title', 'content'],
+      message: 'Invalid: title, content'
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toEqual({ content: 'Too short', title: 'Required' })
   })
   test('extractErrorData returns undefined fieldErrors when not a record', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: 'not-a-record'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: 'not-a-record'
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData returns undefined fieldErrors when missing', () => {
-    const e = new ConvexError({ code: 'NOT_FOUND' }),
-      d = extractErrorData(e)
+    const e = new ConvexError({ code: 'NOT_FOUND' })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData ignores array fieldErrors (arrays are not records)', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: ['title', 'content']
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: ['title', 'content']
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
@@ -2669,27 +2668,27 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData with fieldErrors as null returns undefined', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: null
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: null
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData with fieldErrors as number returns undefined', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: 42
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: 42
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData with nested fieldErrors preserves values', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { email: 'Already taken', password: 'Too weak' },
-        fields: ['email', 'password']
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { email: 'Already taken', password: 'Too weak' },
+      fields: ['email', 'password']
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toEqual({
       email: 'Already taken',
       password: 'Too weak'
@@ -2711,20 +2710,20 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData with empty record fieldErrors returns empty record', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: {}
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: {}
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toEqual({})
   })
   test('field-level errors coexist with general error message', () => {
     const e = new ConvexError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { title: 'Too long' },
-        fields: ['title'],
-        message: 'Validation failed'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { title: 'Too long' },
+      fields: ['title'],
+      message: 'Validation failed'
+    })
+    const d = extractErrorData(e)
     expect(d?.message).toBe('Validation failed')
     expect(d?.fieldErrors).toEqual({ title: 'Too long' })
   })
@@ -2842,12 +2841,12 @@ describe('detectFiles on child-like schemas', () => {
   })
   test('detects multiple file fields in child schema', () => {
     const shape = {
-        attachments: cvFiles(),
-        chatId: string(),
-        content: string(),
-        thumbnail: cvFile().nullable().optional()
-      },
-      result = detectFiles(shape)
+      attachments: cvFiles(),
+      chatId: string(),
+      content: string(),
+      thumbnail: cvFile().nullable().optional()
+    }
+    const result = detectFiles(shape)
     expect(result).toContain('attachments')
     expect(result).toContain('thumbnail')
     expect(result).toHaveLength(2)
@@ -2890,11 +2889,11 @@ describe('ERROR_MESSAGES completeness', () => {
 })
 describe('guardApi', () => {
   const fakeApi = {
-      blog: { list: 'fn1' },
-      blogProfile: { get: 'fn2' },
-      chat: { send: 'fn3' }
-    },
-    modules = ['blog', 'blogProfile', 'chat']
+    blog: { list: 'fn1' },
+    blogProfile: { get: 'fn2' },
+    chat: { send: 'fn3' }
+  }
+  const modules = ['blog', 'blogProfile', 'chat']
   test('allows valid module access', () => {
     const guarded = guardApi(fakeApi, modules)
     expect(guarded.blog.list).toBe('fn1')
@@ -2920,18 +2919,18 @@ describe('guardApi', () => {
 })
 describe('makeErrorHandler', () => {
   test('calls toast with message for unknown error', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler((m: string) => {
-        messages.push(m)
-      })
+    const messages: string[] = []
+    const handler = makeErrorHandler((m: string) => {
+      messages.push(m)
+    })
     handler(new Error('something broke'))
     expect(messages).toEqual(['something broke'])
   })
   test('calls toast with ConvexError message', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler((m: string) => {
-        messages.push(m)
-      })
+    const messages: string[] = []
+    const handler = makeErrorHandler((m: string) => {
+      messages.push(m)
+    })
     handler(new ConvexError({ code: 'NOT_FOUND', message: 'Blog not found' }))
     expect(messages).toEqual(['Blog not found'])
   })
@@ -2953,42 +2952,42 @@ describe('makeErrorHandler', () => {
     expect(messages).toEqual([])
   })
   test('falls back to toast for codes without override', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler(
-        (m: string) => {
-          messages.push(m)
-        },
-        {
-          RATE_LIMITED: () => {
-            /* Noop */
-          }
+    const messages: string[] = []
+    const handler = makeErrorHandler(
+      (m: string) => {
+        messages.push(m)
+      },
+      {
+        RATE_LIMITED: () => {
+          /* Noop */
         }
-      )
+      }
+    )
     handler(new ConvexError({ code: 'NOT_FOUND', message: 'Gone' }))
     expect(messages).toEqual(['Gone'])
   })
   test('toastFieldError toasts first field message', () => {
-    const messages: string[] = [],
-      didToast = toastFieldError(
-        new ConvexError({
-          code: 'VALIDATION_FAILED',
-          fieldErrors: {
-            content: 'Content is required',
-            title: 'Title is required'
-          }
-        }),
-        (m: string) => {
-          messages.push(m)
+    const messages: string[] = []
+    const didToast = toastFieldError(
+      new ConvexError({
+        code: 'VALIDATION_FAILED',
+        fieldErrors: {
+          content: 'Content is required',
+          title: 'Title is required'
         }
-      )
+      }),
+      (m: string) => {
+        messages.push(m)
+      }
+    )
     expect(didToast).toBe(true)
     expect(messages).toEqual(['Content is required'])
   })
   test('toastFieldError returns false without field errors', () => {
-    const messages: string[] = [],
-      didToast = toastFieldError(new ConvexError({ code: 'NOT_FOUND', message: 'Missing' }), (m: string) => {
-        messages.push(m)
-      })
+    const messages: string[] = []
+    const didToast = toastFieldError(new ConvexError({ code: 'NOT_FOUND', message: 'Missing' }), (m: string) => {
+      messages.push(m)
+    })
     expect(didToast).toBe(false)
     expect(messages).toEqual([])
   })
@@ -3019,8 +3018,8 @@ describe('noboil-convex-viz', () => {
     const block = `
       title: string().min(1),
       published: boolean(),
-      count: number()`,
-      fields = extractFieldsFromBlock(block)
+      count: number()`
+    const fields = extractFieldsFromBlock(block)
     expect(fields).toHaveLength(3)
     expect(fields[0]).toEqual({ name: 'title', type: 'string' })
     expect(fields[1]).toEqual({ name: 'published', type: 'boolean' })
@@ -3032,8 +3031,8 @@ describe('noboil-convex-viz', () => {
     title: string().min(1),
     published: boolean()
   })
-})`,
-      tables = extractWrapperTables(content)
+})`
+    const tables = extractWrapperTables(content)
     expect(tables).toHaveLength(1)
     const [t] = tables
     expect(t).toBeDefined()
@@ -3051,8 +3050,8 @@ describe('noboil-convex-viz', () => {
       role: string()
     })
   })
-}`,
-      children = extractChildren(content)
+}`
+    const children = extractChildren(content)
     expect(children).toHaveLength(1)
     const [c] = children
     expect(c).toBeDefined()
@@ -3062,22 +3061,22 @@ describe('noboil-convex-viz', () => {
   })
   test('generateMermaid outputs erDiagram', () => {
     const tables = [
-        {
-          fields: [{ name: 'title', type: 'string' }],
-          name: 'blog',
-          tableType: 'owned'
-        }
-      ],
-      children = [
-        {
-          fields: [{ name: 'chatId', type: 'id<chat>' }],
-          foreignKey: 'chatId',
-          name: 'message',
-          parent: 'chat',
-          tableType: 'child'
-        }
-      ],
-      mermaid = generateMermaid(tables, children)
+      {
+        fields: [{ name: 'title', type: 'string' }],
+        name: 'blog',
+        tableType: 'owned'
+      }
+    ]
+    const children = [
+      {
+        fields: [{ name: 'chatId', type: 'id<chat>' }],
+        foreignKey: 'chatId',
+        name: 'message',
+        parent: 'chat',
+        tableType: 'child'
+      }
+    ]
+    const mermaid = generateMermaid(tables, children)
     expect(mermaid).toContain('erDiagram')
     expect(mermaid).toContain('blog {')
     expect(mermaid).toContain('message {')
@@ -3148,37 +3147,37 @@ describe('noboil-convex-check --endpoints', () => {
 })
 describe('bundle verification', () => {
   test('@noboil/convex/server does not export React hooks', async () => {
-    const serverExports = await import('../server/index'),
-      names = Object.keys(serverExports)
+    const serverExports = await import('../server/index')
+    const names = Object.keys(serverExports)
     for (const name of names) expect(name.startsWith('use')).toBe(false)
   })
   test('@noboil/convex/schema has no React imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
     expect(content.includes("from 'react'")).toBe(false)
     expect(content.includes('useState')).toBe(false)
     expect(content.includes('useEffect')).toBe(false)
   })
   test('@noboil/convex/schema has no node:fs imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
     expect(content.includes("from 'node:fs'")).toBe(false)
   })
   test('@noboil/convex/retry has no React or server imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'retry.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'retry.ts'), 'utf8')
     expect(content.includes("from 'react'")).toBe(false)
     expect(content.includes("from 'node:fs'")).toBe(false)
   })
   test('entry point count matches package.json exports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', '..', 'package.json'), 'utf8'),
-      pkg = JSON.parse(content) as { exports: Record<string, string> },
-      exportKeys = Object.keys(pkg.exports)
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', '..', 'package.json'), 'utf8')
+    const pkg = JSON.parse(content) as { exports: Record<string, string> }
+    const exportKeys = Object.keys(pkg.exports)
     expect(exportKeys.length).toBeGreaterThanOrEqual(8)
   })
 })
@@ -3193,8 +3192,8 @@ describe('devtools subscription tracking', () => {
     untrackSubscription(id)
   })
   test('trackSubscription assigns unique ids', () => {
-    const id1 = trackSubscription('api.blog.list'),
-      id2 = trackSubscription('api.chat.list')
+    const id1 = trackSubscription('api.blog.list')
+    const id2 = trackSubscription('api.chat.list')
     expect(id1).not.toBe(id2)
     untrackSubscription(id1)
     untrackSubscription(id2)
@@ -3217,12 +3216,12 @@ describe('devtools subscription tracking', () => {
 })
 describe('devtools subscription data tracking', () => {
   test('updateSubscriptionData updates preview and counts', () => {
-    const id = trackSubscription('api.blog.list'),
-      data = [
-        { _id: '1', title: 'Hello' },
-        { _id: '2', title: 'World' }
-      ],
-      preview = JSON.stringify(data[0]).slice(0, 200)
+    const id = trackSubscription('api.blog.list')
+    const data = [
+      { _id: '1', title: 'Hello' },
+      { _id: '2', title: 'World' }
+    ]
+    const preview = JSON.stringify(data[0]).slice(0, 200)
     updateSubscriptionData(id, data, preview)
     expect(id).toBeGreaterThan(0)
     untrackSubscription(id)
@@ -3407,33 +3406,33 @@ describe('lifecycle hooks in orgCrud and childCrud', () => {
   })
   test('all 6 hook callbacks work with HookCtx', async () => {
     const ctx: HookCtx = {
-        db: {} as HookCtx['db'],
-        storage: {} as HookCtx['storage'],
-        userId: 'user_456'
+      db: {} as HookCtx['db'],
+      storage: {} as HookCtx['storage'],
+      userId: 'user_456'
+    }
+    const hooks: CrudHooks = {
+      afterCreate: (c, { id }) => {
+        expect(c.userId).toBe('user_456')
+        expect(typeof id).toBe('string')
       },
-      hooks: CrudHooks = {
-        afterCreate: (c, { id }) => {
-          expect(c.userId).toBe('user_456')
-          expect(typeof id).toBe('string')
-        },
-        afterDelete: c => {
-          expect(c.db).toBeDefined()
-        },
-        afterUpdate: (_c, { prev }) => {
-          expect(prev).toBeDefined()
-        },
-        beforeCreate: (c, { data }) => {
-          expect(c.storage).toBeDefined()
-          return data
-        },
-        beforeDelete: (_c, { doc }) => {
-          expect(doc).toBeDefined()
-        },
-        beforeUpdate: (c, { patch }) => {
-          expect(c.userId).toBe('user_456')
-          return patch
-        }
+      afterDelete: c => {
+        expect(c.db).toBeDefined()
+      },
+      afterUpdate: (_c, { prev }) => {
+        expect(prev).toBeDefined()
+      },
+      beforeCreate: (c, { data }) => {
+        expect(c.storage).toBeDefined()
+        return data
+      },
+      beforeDelete: (_c, { doc }) => {
+        expect(doc).toBeDefined()
+      },
+      beforeUpdate: (c, { patch }) => {
+        expect(c.userId).toBe('user_456')
+        return patch
       }
+    }
     hooks.beforeCreate?.(ctx, { data: { title: 'test' } })
     hooks.afterCreate?.(ctx, { data: { title: 'test' }, id: 'id_123' })
     hooks.beforeUpdate?.(ctx, {
@@ -3480,87 +3479,87 @@ describe('noboil-convex-docs', () => {
     expect(md).toContain('noboil-convex docs')
   })
   test('generateMarkdown includes factory table', () => {
-    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-      fields = new Map([['blog', [{ name: 'title', type: 'string' }]]]),
-      md = generateMarkdown(calls, fields)
+    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+    const fields = new Map([['blog', [{ name: 'title', type: 'string' }]]])
+    const md = generateMarkdown(calls, fields)
     expect(md).toContain('## blog')
     expect(md).toContain('`crud`')
     expect(md).toContain('blog.ts')
     expect(md).toContain('title')
   })
   test('generateMarkdown lists endpoints per factory', () => {
-    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-      md = generateMarkdown(calls, new Map())
+    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('blog.create')
     expect(md).toContain('blog.update')
     expect(md).toContain('blog.rm')
   })
   test('generateMarkdown handles orgCrud with acl', () => {
     const calls = [
-        {
-          factory: 'orgCrud',
-          file: 'wiki.ts',
-          options: 'acl: true',
-          table: 'wiki'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'orgCrud',
+        file: 'wiki.ts',
+        options: 'acl: true',
+        table: 'wiki'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('wiki.addEditor')
     expect(md).toContain('wiki.setEditors')
   })
   test('generateMarkdown handles singletonCrud', () => {
     const calls = [
-        {
-          factory: 'singletonCrud',
-          file: 'profile.ts',
-          options: '',
-          table: 'profile'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'singletonCrud',
+        file: 'profile.ts',
+        options: '',
+        table: 'profile'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('profile.get')
     expect(md).toContain('profile.upsert')
   })
   test('generateMarkdown includes schema fields section', () => {
-    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-      fields = new Map([
+    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+    const fields = new Map([
+      [
+        'blog',
         [
-          'blog',
-          [
-            { name: 'title', type: 'string' },
-            { name: 'published', type: 'boolean' }
-          ]
+          { name: 'title', type: 'string' },
+          { name: 'published', type: 'boolean' }
         ]
-      ]),
-      md = generateMarkdown(calls, fields)
+      ]
+    ])
+    const md = generateMarkdown(calls, fields)
     expect(md).toContain('### Schema Fields')
     expect(md).toContain('| title | `string` |')
     expect(md).toContain('| published | `boolean` |')
   })
   test('generateMarkdown shows endpoint types', () => {
-    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-      md = generateMarkdown(calls, new Map())
+    const calls = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('mutation')
     expect(md).toContain('query')
   })
 })
 describe('seed data generator', () => {
   test('generateOne produces valid object for simple schema', () => {
-    const schema = object({ published: boolean(), title: string().min(1) }),
-      result = generateOne(schema)
+    const schema = object({ published: boolean(), title: string().min(1) })
+    const result = generateOne(schema)
     expect(typeof result.title).toBe('string')
     expect(typeof result.published).toBe('boolean')
     expect(result.title.length).toBeGreaterThan(0)
   })
   test('generateSeed produces correct count', () => {
-    const schema = object({ name: string() }),
-      results = generateSeed(schema, 5)
+    const schema = object({ name: string() })
+    const results = generateSeed(schema, 5)
     expect(results).toHaveLength(5)
     for (const r of results) expect(typeof r.name).toBe('string')
   })
   test('generateFieldValue handles enum', () => {
-    const field = zenum(['tech', 'life', 'tutorial']),
-      val = generateFieldValue(field)
+    const field = zenum(['tech', 'life', 'tutorial'])
+    const val = generateFieldValue(field)
     expect(['tech', 'life', 'tutorial']).toContain(String(val))
   })
   test('generateFieldValue handles number', () => {
@@ -3581,14 +3580,14 @@ describe('seed data generator', () => {
     expect(Array.isArray(val)).toBe(true)
   })
   test('generateOne handles optional fields', () => {
-    const schema = object({ bio: optional(string()), name: string() }),
-      result = generateOne(schema)
+    const schema = object({ bio: optional(string()), name: string() })
+    const result = generateOne(schema)
     expect(typeof result.name).toBe('string')
     expect(['string', 'undefined']).toContain(typeof result.bio)
   })
   test('generateSeed default count is 1', () => {
-    const schema = object({ x: string() }),
-      results = generateSeed(schema)
+    const schema = object({ x: string() })
+    const results = generateSeed(schema)
     expect(results).toHaveLength(1)
   })
 })
@@ -3712,55 +3711,55 @@ describe('cacheCrud hooks', () => {
   })
   test('onFetch receives plain data without context', () => {
     const hooks: CacheHooks = {
-        onFetch: data => {
-          expect(data).toBeDefined()
-          return { ...data, normalized: true }
-        }
-      },
-      result = hooks.onFetch?.({ title: 'test' })
+      onFetch: data => {
+        expect(data).toBeDefined()
+        return { ...data, normalized: true }
+      }
+    }
+    const result = hooks.onFetch?.({ title: 'test' })
     expect(result).toEqual({ normalized: true, title: 'test' })
   })
   test('CacheHooks beforeCreate transforms data', () => {
     const hooks: CacheHooks = {
-        beforeCreate: (_ctx, { data }) => ({ ...data, extra: 'added' })
-      },
-      ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] },
-      result = hooks.beforeCreate?.(ctx, { data: { title: 'hi' } })
+      beforeCreate: (_ctx, { data }) => ({ ...data, extra: 'added' })
+    }
+    const ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const result = hooks.beforeCreate?.(ctx, { data: { title: 'hi' } })
     expect(result).toEqual({ extra: 'added', title: 'hi' })
   })
   test('CacheHooks beforeUpdate transforms patch', () => {
     const hooks: CacheHooks = {
-        beforeUpdate: (_ctx, { patch }) => ({ ...patch, modified: true })
-      },
-      ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] },
-      result = hooks.beforeUpdate?.(ctx, {
-        id: '123',
-        patch: { title: 'new' },
-        prev: { title: 'old' }
-      })
+      beforeUpdate: (_ctx, { patch }) => ({ ...patch, modified: true })
+    }
+    const ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const result = hooks.beforeUpdate?.(ctx, {
+      id: '123',
+      patch: { title: 'new' },
+      prev: { title: 'old' }
+    })
     expect(result).toEqual({ modified: true, title: 'new' })
   })
   test('CacheHooks afterDelete receives doc and id', () => {
-    let capturedId = '',
-      capturedDoc: Record<string, unknown> = {}
+    let capturedId = ''
+    let capturedDoc: Record<string, unknown> = {}
     const hooks: CacheHooks = {
-        afterDelete: (_ctx, { doc, id }) => {
-          capturedId = id
-          capturedDoc = doc as Record<string, unknown>
-        }
-      },
-      ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+      afterDelete: (_ctx, { doc, id }) => {
+        capturedId = id
+        capturedDoc = doc as Record<string, unknown>
+      }
+    }
+    const ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
     hooks.afterDelete?.(ctx, { doc: { title: 'deleted' }, id: 'doc_123' })
     expect(capturedId).toBe('doc_123')
     expect(capturedDoc.title).toBe('deleted')
   })
   test('CacheHooks differ from CrudHooks by context type', () => {
-    const cacheCtx: CacheHookCtx = { db: {} as CacheHookCtx['db'] },
-      crudCtx: HookCtx = {
-        db: {} as HookCtx['db'],
-        storage: {} as HookCtx['storage'],
-        userId: 'user_123'
-      }
+    const cacheCtx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const crudCtx: HookCtx = {
+      db: {} as HookCtx['db'],
+      storage: {} as HookCtx['storage'],
+      userId: 'user_123'
+    }
     expect(Object.keys(cacheCtx)).toEqual(['db'])
     expect(Object.keys(crudCtx).toSorted()).toEqual(['db', 'storage', 'userId'])
   })
@@ -3850,10 +3849,10 @@ describe('useSearch', () => {
     type HasSetQuery = 'setQuery' extends keyof R ? true : false
     type HasResults = 'results' extends keyof R ? true : false
     type HasIsSearching = 'isSearching' extends keyof R ? true : false
-    const _q: HasQuery = true,
-      _sq: HasSetQuery = true,
-      _r: HasResults = true,
-      _is: HasIsSearching = true
+    const _q: HasQuery = true
+    const _sq: HasSetQuery = true
+    const _r: HasResults = true
+    const _is: HasIsSearching = true
     expect(_q).toBe(true)
     expect(_sq).toBe(true)
     expect(_r).toBe(true)
@@ -3918,13 +3917,13 @@ describe('global hooks', () => {
     expect(hooks.afterDelete).toBeDefined()
   })
   test('GlobalHookCtx includes table name for cross-cutting concerns', () => {
-    const tables: string[] = [],
-      hooks: GlobalHooks = {
-        afterCreate: _c => {
-          tables.push(_c.table)
-        }
-      },
-      ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' }
+    const tables: string[] = []
+    const hooks: GlobalHooks = {
+      afterCreate: _c => {
+        tables.push(_c.table)
+      }
+    }
+    const ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' }
     hooks.afterCreate?.(ctx, { data: {}, id: '123' })
     const ctx2: GlobalHookCtx = {
       db: {} as GlobalHookCtx['db'],
@@ -3946,25 +3945,25 @@ describe('global hooks', () => {
   test('GlobalHooks beforeCreate receives table in context', () => {
     let capturedTable = ''
     const hooks: GlobalHooks = {
-        beforeCreate: (_c, { data }) => {
-          capturedTable = _c.table
-          return data
-        }
-      },
-      ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' }
+      beforeCreate: (_c, { data }) => {
+        capturedTable = _c.table
+        return data
+      }
+    }
+    const ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' }
     hooks.beforeCreate?.(ctx, { data: { title: 'test' } })
     expect(capturedTable).toBe('blog')
   })
   test('GlobalHooks beforeUpdate composes data transform', () => {
     const hooks: GlobalHooks = {
-        beforeUpdate: (_ctx, { patch }) => ({ ...patch, globalField: true })
-      },
-      ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' },
-      result = hooks.beforeUpdate?.(ctx, {
-        id: '123',
-        patch: { title: 'new' },
-        prev: { title: 'old' }
-      })
+      beforeUpdate: (_ctx, { patch }) => ({ ...patch, globalField: true })
+    }
+    const ctx: GlobalHookCtx = { db: {} as GlobalHookCtx['db'], table: 'blog' }
+    const result = hooks.beforeUpdate?.(ctx, {
+      id: '123',
+      patch: { title: 'new' },
+      prev: { title: 'old' }
+    })
     expect(result).toEqual({ globalField: true, title: 'new' })
   })
 })
@@ -4034,16 +4033,16 @@ describe('optimistic store', () => {
     expect(notified).toBe(1)
   })
   test('makeTempId generates unique ids', () => {
-    const id1 = makeTempId(),
-      id2 = makeTempId()
+    const id1 = makeTempId()
+    const id2 = makeTempId()
     expect(id1).not.toBe(id2)
     expect(id1).toContain('__optimistic_')
     expect(id2).toContain('__optimistic_')
   })
   test('multiple subscribers all get notified', () => {
     const store = createOptimisticStore()
-    let count1 = 0,
-      count2 = 0
+    let count1 = 0
+    let count2 = 0
     store.subscribe(() => {
       count1 += 1
     })
@@ -4070,17 +4069,17 @@ describe('applyOptimistic', () => {
     expect(applyOptimistic(items, [])).toBe(items)
   })
   test('prepends optimistic creates', () => {
-    const items: Rec[] = [{ _id: '1', title: 'existing' }],
-      pending: PendingMutation[] = [
-        {
-          args: { title: 'new' },
-          id: 'temp_1',
-          tempId: 'temp_1',
-          timestamp: 2000,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items: Rec[] = [{ _id: '1', title: 'existing' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { title: 'new' },
+        id: 'temp_1',
+        tempId: 'temp_1',
+        timestamp: 2000,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(2)
     expect(result[0]?.title).toBe('new')
     expect(result[0]?._id).toBe('temp_1')
@@ -4089,34 +4088,34 @@ describe('applyOptimistic', () => {
   })
   test('filters out optimistic deletes', () => {
     const items = [
-        { _id: '1', title: 'a' },
-        { _id: '2', title: 'b' }
-      ],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '1' },
-          id: '1',
-          tempId: 'temp_d',
-          timestamp: 2000,
-          type: 'delete'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+      { _id: '1', title: 'a' },
+      { _id: '2', title: 'b' }
+    ]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '1' },
+        id: '1',
+        tempId: 'temp_d',
+        timestamp: 2000,
+        type: 'delete'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?._id).toBe('2')
   })
   test('merges optimistic updates', () => {
-    const items = [{ _id: '1', status: 'draft', title: 'old' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '1', title: 'new' },
-          id: '1',
-          tempId: 'temp_u',
-          timestamp: 2000,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', status: 'draft', title: 'old' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '1', title: 'new' },
+        id: '1',
+        tempId: 'temp_u',
+        timestamp: 2000,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?.title).toBe('new')
     expect(result[0]?.status).toBe('draft')
@@ -4124,34 +4123,34 @@ describe('applyOptimistic', () => {
   })
   test('handles create + delete + update together', () => {
     const items: Rec[] = [
-        { _id: '1', title: 'keep' },
-        { _id: '2', title: 'remove' },
-        { _id: '3', title: 'update' }
-      ],
-      pending: PendingMutation[] = [
-        {
-          args: { title: 'brand new' },
-          id: 'temp_c',
-          tempId: 'temp_c',
-          timestamp: 3000,
-          type: 'create'
-        },
-        {
-          args: { id: '2' },
-          id: '2',
-          tempId: 'temp_d',
-          timestamp: 3001,
-          type: 'delete'
-        },
-        {
-          args: { id: '3', title: 'updated' },
-          id: '3',
-          tempId: 'temp_u',
-          timestamp: 3002,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+      { _id: '1', title: 'keep' },
+      { _id: '2', title: 'remove' },
+      { _id: '3', title: 'update' }
+    ]
+    const pending: PendingMutation[] = [
+      {
+        args: { title: 'brand new' },
+        id: 'temp_c',
+        tempId: 'temp_c',
+        timestamp: 3000,
+        type: 'create'
+      },
+      {
+        args: { id: '2' },
+        id: '2',
+        tempId: 'temp_d',
+        timestamp: 3001,
+        type: 'delete'
+      },
+      {
+        args: { id: '3', title: 'updated' },
+        id: '3',
+        tempId: 'temp_u',
+        timestamp: 3002,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(3)
     expect(result[0]?.title).toBe('brand new')
     expect(result[0]?.__optimistic).toBe(true)
@@ -4159,89 +4158,89 @@ describe('applyOptimistic', () => {
     expect(result[2]?.title).toBe('updated')
   })
   test('multiple updates to same id merge patches', () => {
-    const items: Rec[] = [{ _id: '1', a: 1, b: 2, c: 3 }],
-      pending: PendingMutation[] = [
-        {
-          args: { a: 10, id: '1' },
-          id: '1',
-          tempId: 't1',
-          timestamp: 1000,
-          type: 'update'
-        },
-        {
-          args: { b: 20, id: '1' },
-          id: '1',
-          tempId: 't2',
-          timestamp: 1001,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items: Rec[] = [{ _id: '1', a: 1, b: 2, c: 3 }]
+    const pending: PendingMutation[] = [
+      {
+        args: { a: 10, id: '1' },
+        id: '1',
+        tempId: 't1',
+        timestamp: 1000,
+        type: 'update'
+      },
+      {
+        args: { b: 20, id: '1' },
+        id: '1',
+        tempId: 't2',
+        timestamp: 1001,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result[0]).toEqual({ _id: '1', a: 10, b: 20, c: 3, id: '1' })
   })
   test('delete of non-existent id is no-op', () => {
-    const items = [{ _id: '1', title: 'a' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '999' },
-          id: '999',
-          tempId: 'td',
-          timestamp: 1000,
-          type: 'delete'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', title: 'a' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '999' },
+        id: '999',
+        tempId: 'td',
+        timestamp: 1000,
+        type: 'delete'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?._id).toBe('1')
   })
   test('update of non-existent id is no-op', () => {
-    const items = [{ _id: '1', title: 'a' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '999', title: 'x' },
-          id: '999',
-          tempId: 'tu',
-          timestamp: 1000,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', title: 'a' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '999', title: 'x' },
+        id: '999',
+        tempId: 'tu',
+        timestamp: 1000,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?.title).toBe('a')
   })
   test('optimistic creates get __optimistic flag and timestamps', () => {
     const pending: PendingMutation[] = [
-        {
-          args: { title: 'test' },
-          id: 'tc',
-          tempId: 'tc',
-          timestamp: 5000,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic([] as Rec[], pending)
+      {
+        args: { title: 'test' },
+        id: 'tc',
+        tempId: 'tc',
+        timestamp: 5000,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic([] as Rec[], pending)
     expect(result[0]?._creationTime).toBe(5000)
     expect(result[0]?.updatedAt).toBe(5000)
     expect(result[0]?.__optimistic).toBe(true)
   })
   test('empty items with creates works', () => {
     const pending: PendingMutation[] = [
-        {
-          args: { title: 'first' },
-          id: 't1',
-          tempId: 't1',
-          timestamp: 1000,
-          type: 'create'
-        },
-        {
-          args: { title: 'second' },
-          id: 't2',
-          tempId: 't2',
-          timestamp: 1001,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic([] as Rec[], pending)
+      {
+        args: { title: 'first' },
+        id: 't1',
+        tempId: 't1',
+        timestamp: 1000,
+        type: 'create'
+      },
+      {
+        args: { title: 'second' },
+        id: 't2',
+        tempId: 't2',
+        timestamp: 1001,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic([] as Rec[], pending)
     expect(result).toHaveLength(2)
     expect(result[0]?.title).toBe('second')
     expect(result[1]?.title).toBe('first')
@@ -4287,9 +4286,9 @@ describe('optimistic types', () => {
   })
   test('MutateToast success callback is typed with result and args', () => {
     const toastOpts: MutateToast<{ id: string }, { title: string }> = {
-        success: (result, args) => `${args.id}:${result.title}`
-      },
-      message = typeof toastOpts.success === 'function' ? toastOpts.success({ title: 'Done' }, { id: 'abc' }) : ''
+      success: (result, args) => `${args.id}:${result.title}`
+    }
+    const message = typeof toastOpts.success === 'function' ? toastOpts.success({ title: 'Done' }, { id: 'abc' }) : ''
     expect(message).toBe('abc:Done')
   })
   test('UseListOptions accepts optimistic field', () => {
@@ -4373,8 +4372,8 @@ describe('devtools mutation tracking', () => {
     expect(id).toBeGreaterThan(0)
   })
   test('trackMutation assigns unique ids', () => {
-    const id1 = trackMutation('blog:create'),
-      id2 = trackMutation('blog:update')
+    const id1 = trackMutation('blog:create')
+    const id2 = trackMutation('blog:update')
     expect(id1).not.toBe(id2)
   })
   test('completeMutation marks as success', () => {
@@ -4420,14 +4419,14 @@ describe('devtools cache tracking', () => {
 })
 describe('extractCustomIndexes', () => {
   test('parses single .index() from schema definition', () => {
-    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']), chat: ownedTable(owned.chat) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']), chat: ownedTable(owned.chat) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toEqual([{ fields: ['published'], name: 'by_published', type: 'custom' }])
     expect(result.get('chat')).toEqual([])
   })
   test('parses multiple indexes on same table', () => {
-    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']).index('by_category', ['category']) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']).index('by_category', ['category']) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toHaveLength(2)
     expect(result.get('blog')).toContainEqual({
       fields: ['published'],
@@ -4441,18 +4440,18 @@ describe('extractCustomIndexes', () => {
     })
   })
   test('parses compound index fields', () => {
-    const content = `export default defineSchema({ wiki: orgTable(orgScoped.wiki).index('by_slug', ['orgId', 'slug']) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ wiki: orgTable(orgScoped.wiki).index('by_slug', ['orgId', 'slug']) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('wiki')).toEqual([{ fields: ['orgId', 'slug'], name: 'by_slug', type: 'custom' }])
   })
   test('parses searchIndex', () => {
-    const content = `export default defineSchema({ blog: ownedTable(owned.blog).searchIndex('search_field', { searchField: 'content' }) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ blog: ownedTable(owned.blog).searchIndex('search_field', { searchField: 'content' }) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toEqual([{ fields: ['content'], name: 'search_field', type: 'search' }])
   })
   test('parses mixed index and searchIndex', () => {
-    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']).searchIndex('search_field', { searchField: 'content' }) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']).searchIndex('search_field', { searchField: 'content' }) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toHaveLength(2)
     const blogIdxs = result.get('blog')
     expect(blogIdxs).toBeDefined()
@@ -4464,13 +4463,13 @@ describe('extractCustomIndexes', () => {
     expect(result.size).toBe(0)
   })
   test('parses defineTable usage', () => {
-    const content = `export default defineSchema({ message: defineTable({ content: v.string() }).index('by_chat', ['chatId']) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ message: defineTable({ content: v.string() }).index('by_chat', ['chatId']) })`
+    const result = extractCustomIndexes(content)
     expect(result.get('message')).toEqual([{ fields: ['chatId'], name: 'by_chat', type: 'custom' }])
   })
   test('handles multiple tables', () => {
-    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']), movie: baseTable(base.movie).index('by_tmdb_id', ['tmdb_id']) })`,
-      result = extractCustomIndexes(content)
+    const content = `export default defineSchema({ blog: ownedTable(owned.blog).index('by_published', ['published']), movie: baseTable(base.movie).index('by_tmdb_id', ['tmdb_id']) })`
+    const result = extractCustomIndexes(content)
     expect(result.size).toBe(2)
     expect(result.get('blog')?.[0]?.name).toBe('by_published')
     expect(result.get('movie')?.[0]?.name).toBe('by_tmdb_id')
@@ -4548,8 +4547,8 @@ describe('noboil-convex-migrate', () => {
     content: string().min(3),
     published: boolean()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('blog')
       expect(result.tables[0]?.factory).toBe('crud')
@@ -4561,8 +4560,8 @@ describe('noboil-convex-migrate', () => {
     title: string(),
     slug: string()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.factory).toBe('orgCrud')
     })
@@ -4572,8 +4571,8 @@ describe('noboil-convex-migrate', () => {
     displayName: string(),
     theme: zenum(['light', 'dark'])
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.factory).toBe('singletonCrud')
     })
@@ -4583,8 +4582,8 @@ describe('noboil-convex-migrate', () => {
     title: string(),
     tmdb_id: number()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.factory).toBe('cacheCrud')
     })
@@ -4598,8 +4597,8 @@ describe('noboil-convex-migrate', () => {
       role: zenum(['user', 'assistant'])
     })
   })
-}`,
-        result = parseSchemaContent(content)
+}`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('message')
       expect(result.tables[0]?.factory).toBe('childCrud')
@@ -4611,16 +4610,16 @@ describe('noboil-convex-migrate', () => {
 })
 const orgScoped = makeOrgScoped({
   wiki: object({ content: string() })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(3)
     })
     test('returns sorted tables', () => {
       const content = `const owned = makeOwned({
   zzz: object({ a: string() }),
   aaa: object({ b: string() })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables[0]?.name).toBe('aaa')
       expect(result.tables[1]?.name).toBe('zzz')
     })
@@ -4633,8 +4632,8 @@ const orgScoped = makeOrgScoped({
     test('parses simple fields', () => {
       const block = `title: string().min(1),
     content: string(),
-    published: boolean()`,
-        fields = parseFieldsFromBlock(block)
+    published: boolean()`
+      const fields = parseFieldsFromBlock(block)
       expect(fields).toHaveLength(3)
       expect(fields[0]?.name).toBe('title')
       expect(fields[0]?.type).toBe('string')
@@ -4643,27 +4642,27 @@ const orgScoped = makeOrgScoped({
     })
     test('detects optional fields', () => {
       const block = `bio: string().optional(),
-    name: string()`,
-        fields = parseFieldsFromBlock(block)
+    name: string()`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.optional).toBe(true)
       expect(fields[1]?.optional).toBe(false)
     })
     test('detects nullable fields', () => {
-      const block = 'avatar: cvFile().nullable()',
-        fields = parseFieldsFromBlock(block)
+      const block = 'avatar: cvFile().nullable()'
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.optional).toBe(true)
     })
     test('detects file types', () => {
       const block = `cover: cvFile(),
-    attachments: cvFiles()`,
-        fields = parseFieldsFromBlock(block)
+    attachments: cvFiles()`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.type).toBe('file')
       expect(fields[1]?.type).toBe('file[]')
     })
     test('detects number and enum types', () => {
       const block = `count: number(),
-    status: zenum(['active', 'archived'])`,
-        fields = parseFieldsFromBlock(block)
+    status: zenum(['active', 'archived'])`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.type).toBe('number')
       expect(fields[1]?.type).toBe('enum')
     })
@@ -4682,230 +4681,230 @@ const orgScoped = makeOrgScoped({
   describe('diffSnapshots', () => {
     test('no changes returns empty actions', () => {
       const snapshot = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(snapshot, snapshot)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(snapshot, snapshot)
       expect(actions).toHaveLength(0)
     })
     test('detects added table', () => {
       const before = {
-          tables: [] as {
-            factory: string
-            fields: { name: string; optional: boolean; type: string }[]
-            name: string
-          }[]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [] as {
+          factory: string
+          fields: { name: string; optional: boolean; type: string }[]
+          name: string
+        }[]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('table_added')
     })
     test('detects removed table', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [] as {
-            factory: string
-            fields: { name: string; optional: boolean; type: string }[]
-            name: string
-          }[]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [] as {
+          factory: string
+          fields: { name: string; optional: boolean; type: string }[]
+          name: string
+        }[]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('table_removed')
     })
     test('detects factory change', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'orgCrud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'orgCrud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('factory_changed')
     })
     test('detects added required field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'category', optional: false, type: 'enum' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'category', optional: false, type: 'enum' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_added_required')
     })
     test('detects added optional field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'bio', optional: true, type: 'string' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'bio', optional: true, type: 'string' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_added_optional')
     })
     test('detects removed field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'subtitle', optional: true, type: 'string' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'subtitle', optional: true, type: 'string' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_removed')
     })
     test('detects field type change', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'count', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'count', optional: false, type: 'number' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'count', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'count', optional: false, type: 'number' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_type_changed')
     })
     test('multiple changes across tables', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            },
-            {
-              factory: 'orgCrud',
-              fields: [{ name: 'content', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'tags', optional: true, type: 'array' }
-              ],
-              name: 'blog'
-            },
-            {
-              factory: 'crud',
-              fields: [{ name: 'name', optional: false, type: 'string' }],
-              name: 'project'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after),
-        types = actions.map(a => a.type)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          },
+          {
+            factory: 'orgCrud',
+            fields: [{ name: 'content', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'tags', optional: true, type: 'array' }
+            ],
+            name: 'blog'
+          },
+          {
+            factory: 'crud',
+            fields: [{ name: 'name', optional: false, type: 'string' }],
+            name: 'project'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
+      const types = actions.map(a => a.type)
       expect(types).toContain('table_added')
       expect(types).toContain('table_removed')
       expect(types).toContain('field_added_optional')
     })
     test('unchanged table produces no actions', () => {
       const table = {
-          factory: 'crud',
-          fields: [{ name: 'title', optional: false, type: 'string' }],
-          name: 'blog'
-        },
-        before = { tables: [table] },
-        after = { tables: [{ ...table }] },
-        actions = diffSnapshots(before, after)
+        factory: 'crud',
+        fields: [{ name: 'title', optional: false, type: 'string' }],
+        name: 'blog'
+      }
+      const before = { tables: [table] }
+      const after = { tables: [{ ...table }] }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(0)
     })
     test('end-to-end: parse then diff', () => {
@@ -4914,8 +4913,8 @@ const orgScoped = makeOrgScoped({
     title: string(),
     content: string()
   })
-})`,
-        newSchema = `const owned = makeOwned({
+})`
+      const newSchema = `const owned = makeOwned({
   blog: object({
     title: string(),
     content: string(),
@@ -4926,11 +4925,11 @@ const orgScoped = makeOrgScoped({
   wiki: object({
     title: string()
   })
-})`,
-        before = parseSchemaContent(oldSchema),
-        after = parseSchemaContent(newSchema),
-        actions = diffSnapshots(before, after),
-        types = actions.map(a => a.type)
+})`
+      const before = parseSchemaContent(oldSchema)
+      const after = parseSchemaContent(newSchema)
+      const actions = diffSnapshots(before, after)
+      const types = actions.map(a => a.type)
       expect(types).toContain('table_added')
       expect(types).toContain('field_added_required')
     })
@@ -4939,121 +4938,121 @@ const orgScoped = makeOrgScoped({
 describe('accessForFactory', () => {
   test('crud returns Public, Authenticated, Owner levels', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      levels = result.map((e: AccessEntry) => e.level)
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const levels = result.map((e: AccessEntry) => e.level)
     expect(levels).toContain('Public')
     expect(levels).toContain('Authenticated')
     expect(levels).toContain('Owner')
   })
   test('crud Public includes pub.list and pub.read', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub).toBeDefined()
     expect(pub?.endpoints).toContain('pub.list')
     expect(pub?.endpoints).toContain('pub.read')
   })
   test('crud with search adds pub.search to Public', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: "search: 'content'",
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: "search: 'content'",
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub?.endpoints).toContain('pub.search')
   })
   test('crud without search has no pub.search', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub?.endpoints).not.toContain('pub.search')
   })
   test('crud Authenticated includes create', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth).toBeDefined()
     expect(auth?.endpoints).toContain('create')
   })
   test('crud Owner includes update and rm', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Owner')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Owner')
     expect(owner).toBeDefined()
     expect(owner?.endpoints).toContain('update')
     expect(owner?.endpoints).toContain('rm')
   })
   test('crud with softDelete adds restore to Owner', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: 'softDelete: true',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Owner')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: 'softDelete: true',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Owner')
     expect(owner?.endpoints).toContain('restore')
   })
   test('crud without softDelete has no restore', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: '',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Owner')
+      factory: 'crud',
+      file: 'blog.ts',
+      options: '',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Owner')
     expect(owner?.endpoints).not.toContain('restore')
   })
   test('orgCrud returns Org Member and Org Admin levels', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: '',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      levels = result.map((e: AccessEntry) => e.level)
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: '',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const levels = result.map((e: AccessEntry) => e.level)
     expect(levels).toContain('Org Member')
     expect(levels).toContain('Org Admin')
   })
   test('orgCrud Org Member includes list, read, create, update', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: '',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: '',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('list')
     expect(allMemberEps).toContain('read')
@@ -5062,40 +5061,40 @@ describe('accessForFactory', () => {
   })
   test('orgCrud with search adds search to Org Member', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: "search: 'content'",
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: "search: 'content'",
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('search')
   })
   test('orgCrud Org Admin includes rm', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: '',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin'),
-      allAdminEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: '',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin')
+    const allAdminEps: string[] = []
     for (const entry of adminEntries) for (const ep of entry.endpoints) allAdminEps.push(ep)
     expect(allAdminEps).toContain('rm')
   })
   test('orgCrud with acl adds ACL endpoints to Org Admin', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: 'acl: true',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin'),
-      allAdminEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: 'acl: true',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin')
+    const allAdminEps: string[] = []
     for (const entry of adminEntries) for (const ep of entry.endpoints) allAdminEps.push(ep)
     expect(allAdminEps).toContain('addEditor')
     expect(allAdminEps).toContain('removeEditor')
@@ -5104,50 +5103,50 @@ describe('accessForFactory', () => {
   })
   test('orgCrud without acl has no ACL endpoints', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: '',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin'),
-      allAdminEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: '',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin')
+    const allAdminEps: string[] = []
     for (const entry of adminEntries) for (const ep of entry.endpoints) allAdminEps.push(ep)
     expect(allAdminEps).not.toContain('addEditor')
   })
   test('orgCrud with softDelete adds restore to Org Admin', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: 'softDelete: true',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin'),
-      allAdminEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: 'softDelete: true',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin')
+    const allAdminEps: string[] = []
     for (const entry of adminEntries) for (const ep of entry.endpoints) allAdminEps.push(ep)
     expect(allAdminEps).toContain('restore')
   })
   test('childCrud returns Parent Owner level', () => {
     const call: FactoryCall = {
-        factory: 'childCrud',
-        file: 'message.ts',
-        options: '',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      levels = result.map((e: AccessEntry) => e.level)
+      factory: 'childCrud',
+      file: 'message.ts',
+      options: '',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const levels = result.map((e: AccessEntry) => e.level)
     expect(levels).toContain('Parent Owner')
   })
   test('childCrud Parent Owner includes list, create, update, rm', () => {
     const call: FactoryCall = {
-        factory: 'childCrud',
-        file: 'message.ts',
-        options: '',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
+      factory: 'childCrud',
+      file: 'message.ts',
+      options: '',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
     expect(owner).toBeDefined()
     expect(owner?.endpoints).toContain('list')
     expect(owner?.endpoints).toContain('create')
@@ -5156,36 +5155,36 @@ describe('accessForFactory', () => {
   })
   test('childCrud with pub adds Public level with pub.list and pub.get', () => {
     const call: FactoryCall = {
-        factory: 'childCrud',
-        file: 'message.ts',
-        options: 'pub: true',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'childCrud',
+      file: 'message.ts',
+      options: 'pub: true',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub).toBeDefined()
     expect(pub?.endpoints).toContain('pub.list')
     expect(pub?.endpoints).toContain('pub.get')
   })
   test('childCrud without pub has no Public level', () => {
     const call: FactoryCall = {
-        factory: 'childCrud',
-        file: 'message.ts',
-        options: '',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'childCrud',
+      file: 'message.ts',
+      options: '',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub).toBeUndefined()
   })
   test('cacheCrud returns No Auth level with all cache endpoints', () => {
     const call: FactoryCall = {
-        factory: 'cacheCrud',
-        file: 'movie.ts',
-        options: '',
-        table: 'movie'
-      },
-      result = accessForFactory(call)
+      factory: 'cacheCrud',
+      file: 'movie.ts',
+      options: '',
+      table: 'movie'
+    }
+    const result = accessForFactory(call)
     expect(result).toHaveLength(1)
     expect(result[0]?.level).toBe('No Auth')
     expect(result[0]?.endpoints).toContain('get')
@@ -5201,12 +5200,12 @@ describe('accessForFactory', () => {
   })
   test('singletonCrud returns Owner level with get and upsert', () => {
     const call: FactoryCall = {
-        factory: 'singletonCrud',
-        file: 'profile.ts',
-        options: '',
-        table: 'profile'
-      },
-      result = accessForFactory(call)
+      factory: 'singletonCrud',
+      file: 'profile.ts',
+      options: '',
+      table: 'profile'
+    }
+    const result = accessForFactory(call)
     expect(result).toHaveLength(1)
     expect(result[0]?.level).toBe('Owner')
     expect(result[0]?.endpoints).toContain('get')
@@ -5250,57 +5249,57 @@ describe('accessForFactory', () => {
   })
   test('orgCrud with acl + softDelete + search has all options reflected', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: "acl: true, softDelete: true, search: 'title'",
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: "acl: true, softDelete: true, search: 'title'",
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('search')
-    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin'),
-      allAdminEps: string[] = []
+    const adminEntries = result.filter((e: AccessEntry) => e.level === 'Org Admin')
+    const allAdminEps: string[] = []
     for (const entry of adminEntries) for (const ep of entry.endpoints) allAdminEps.push(ep)
     expect(allAdminEps).toContain('restore')
     expect(allAdminEps).toContain('addEditor')
   })
   test('crud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'crud',
-        file: 'blog.ts',
-        options: "search: 'content', softDelete: true",
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'crud',
+      file: 'blog.ts',
+      options: "search: 'content', softDelete: true",
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
   })
   test('orgCrud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'orgCrud',
-        file: 'wiki.ts',
-        options: 'acl: true, softDelete: true',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'orgCrud',
+      file: 'wiki.ts',
+      options: 'acl: true, softDelete: true',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
   })
   test('childCrud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'childCrud',
-        file: 'message.ts',
-        options: 'pub: true',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'childCrud',
+      file: 'message.ts',
+      options: 'pub: true',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
@@ -5323,137 +5322,137 @@ describe('middleware', () => {
       expect(hooks.afterDelete).toBeUndefined()
     })
     test('composes beforeCreate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw1')
-            return { ...data, added1: true }
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw1')
+          return { ...data, added1: true }
         },
-        mw2: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw2')
-            return { ...data, added2: true }
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw2')
+          return { ...data, added2: true }
         },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeCreate?.(mockCtx, {
-          data: { title: 'test' }
-        })
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeCreate?.(mockCtx, {
+        data: { title: 'test' }
+      })
       expect(result).toEqual({ added1: true, added2: true, title: 'test' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes afterCreate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterCreate: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterCreate: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterCreate: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterCreate: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes beforeUpdate from multiple middleware', async () => {
       const mw1: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, from1: true }),
-          name: 'mw1'
-        },
-        mw2: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, from2: true }),
-          name: 'mw2'
-        },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
-          id: 'id1',
-          patch: { title: 'x' },
-          prev: {}
-        })
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, from1: true }),
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, from2: true }),
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeUpdate?.(mockCtx, {
+        id: 'id1',
+        patch: { title: 'x' },
+        prev: {}
+      })
       expect(result).toEqual({ from1: true, from2: true, title: 'x' })
     })
     test('composes afterUpdate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterUpdate: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterUpdate: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterUpdate: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterUpdate: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterUpdate?.(mockCtx, { id: 'id1', patch: {}, prev: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes beforeDelete from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeDelete: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeDelete: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          beforeDelete: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeDelete: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.beforeDelete?.(mockCtx, { doc: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes afterDelete from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterDelete: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterDelete: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterDelete: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterDelete: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterDelete?.(mockCtx, { doc: {}, id: 'id1' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('skips middleware without matching hook', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw1')
-            return data
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw1')
+          return data
         },
-        mw2: Middleware = { name: 'mw2' },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw1'
+      }
+      const mw2: Middleware = { name: 'mw2' }
+      const hooks = composeMiddleware(mw1, mw2)
       hooks.beforeCreate?.(mockCtx, { data: { x: 1 } })
       expect(calls).toEqual(['mw1'])
     })
     test('does not set hooks when no middleware implements them', () => {
       const mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => data,
-          name: 'mw1'
-        },
-        hooks = composeMiddleware(mw1)
+        beforeCreate: (_ctx, { data }) => data,
+        name: 'mw1'
+      }
+      const hooks = composeMiddleware(mw1)
       expect(hooks.beforeCreate).toBeDefined()
       expect(hooks.afterCreate).toBeUndefined()
       expect(hooks.beforeUpdate).toBeUndefined()
@@ -5464,38 +5463,38 @@ describe('middleware', () => {
     test('passes MiddlewareCtx with operation field to hooks', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeCreate: (ctx, { data }) => {
-            capturedOp = ctx.operation
-            return data
-          },
-          name: 'capture'
+        beforeCreate: (ctx, { data }) => {
+          capturedOp = ctx.operation
+          return data
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeCreate?.(mockCtx, { data: {} })
       expect(capturedOp).toBe('create')
     })
     test('passes delete operation in beforeDelete', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeDelete: ctx => {
-            capturedOp = ctx.operation
-          },
-          name: 'capture'
+        beforeDelete: ctx => {
+          capturedOp = ctx.operation
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeDelete?.(mockCtx, { doc: {}, id: 'id1' })
       expect(capturedOp).toBe('delete')
     })
     test('passes update operation in beforeUpdate', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeUpdate: (ctx, { patch }) => {
-            capturedOp = ctx.operation
-            return patch
-          },
-          name: 'capture'
+        beforeUpdate: (ctx, { patch }) => {
+          capturedOp = ctx.operation
+          return patch
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeUpdate?.(mockCtx, { id: 'id1', patch: {}, prev: {} })
       expect(capturedOp).toBe('update')
     })
@@ -5518,13 +5517,13 @@ describe('middleware', () => {
       expect(mw.beforeDelete).toBeUndefined()
     })
     test('afterCreate does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
       expect(async () => mw.afterCreate?.(mwCtx, { data: { title: 'x' }, id: 'id1' })).not.toThrow()
     })
     test('afterUpdate does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
       expect(async () =>
         mw.afterUpdate?.(mwCtx, {
           id: 'id1',
@@ -5534,8 +5533,8 @@ describe('middleware', () => {
       ).not.toThrow()
     })
     test('afterDelete does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'delete' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'delete' }
       expect(async () => mw.afterDelete?.(mwCtx, { doc: { title: 'x' }, id: 'id1' })).not.toThrow()
     })
     test('accepts custom log level', () => {
@@ -5564,17 +5563,17 @@ describe('middleware', () => {
       expect(mw.afterDelete).toBeDefined()
     })
     test('beforeCreate returns data unchanged', () => {
-      const mw = slowQueryWarn(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { title: 'test' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = slowQueryWarn()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { title: 'test' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual(data)
     })
     test('beforeUpdate returns patch unchanged', () => {
-      const mw = slowQueryWarn(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = { title: 'updated' },
-        result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
+      const mw = slowQueryWarn()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = { title: 'updated' }
+      const result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
       expect(result).toEqual(patch)
     })
     test('accepts custom threshold', () => {
@@ -5600,57 +5599,57 @@ describe('middleware', () => {
       expect(mw.afterDelete).toBeUndefined()
     })
     test('sanitizes script tags from string fields on create', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = {
-          content: 'Hello <script>alert(1)</script> World',
-          title: 'Test'
-        },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = {
+        content: 'Hello <script>alert(1)</script> World',
+        title: 'Test'
+      }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ content: 'Hello  World', title: 'Test' })
     })
     test('sanitizes event handlers from string fields on create', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { title: 'Hello onclick= test' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { title: 'Hello onclick= test' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ title: 'Hello  test' })
     })
     test('sanitizes script tags from string fields on update', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = { content: '<script>bad()</script>safe' },
-        result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = { content: '<script>bad()</script>safe' }
+      const result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
       expect(result).toEqual({ content: 'safe' })
     })
     test('leaves non-string values untouched', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { count: 42, published: true, title: 'safe' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { count: 42, published: true, title: 'safe' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ count: 42, published: true, title: 'safe' })
     })
     test('targets specific fields when configured', () => {
-      const mw = inputSanitize({ fields: ['content'] }),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = {
-          content: '<script>x</script>safe',
-          title: '<script>keep</script>'
-        },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize({ fields: ['content'] })
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = {
+        content: '<script>x</script>safe',
+        title: '<script>keep</script>'
+      }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({
         content: 'safe',
         title: '<script>keep</script>'
       })
     })
     test('targets specific fields on update', () => {
-      const mw = inputSanitize({ fields: ['content'] }),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = {
-          content: '<script>x</script>safe',
-          title: '<script>keep</script>'
-        },
-        result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
+      const mw = inputSanitize({ fields: ['content'] })
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = {
+        content: '<script>x</script>safe',
+        title: '<script>keep</script>'
+      }
+      const result = mw.beforeUpdate?.(mwCtx, { id: 'id1', patch, prev: {} })
       expect(result).toEqual({
         content: 'safe',
         title: '<script>keep</script>'
@@ -5718,49 +5717,49 @@ describe('middleware', () => {
   })
   describe('middleware composition with composeMiddleware', () => {
     test('multiple middleware run in order on create', async () => {
-      const order: string[] = [],
-        mw1: Middleware = {
-          afterCreate: () => {
-            order.push('audit')
-          },
-          beforeCreate: (_ctx, { data }) => {
-            order.push('sanitize')
-            return data
-          },
-          name: 'first'
+      const order: string[] = []
+      const mw1: Middleware = {
+        afterCreate: () => {
+          order.push('audit')
         },
-        mw2: Middleware = {
-          afterCreate: () => {
-            order.push('log')
-          },
-          beforeCreate: (_ctx, { data }) => {
-            order.push('validate')
-            return data
-          },
-          name: 'second'
+        beforeCreate: (_ctx, { data }) => {
+          order.push('sanitize')
+          return data
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'first'
+      }
+      const mw2: Middleware = {
+        afterCreate: () => {
+          order.push('log')
+        },
+        beforeCreate: (_ctx, { data }) => {
+          order.push('validate')
+          return data
+        },
+        name: 'second'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.beforeCreate?.(mockCtx, { data: {} })
       await hooks.afterCreate?.(mockCtx, { data: {}, id: 'id1' })
       expect(order).toEqual(['sanitize', 'validate', 'audit', 'log'])
     })
     test('data transforms chain through beforeCreate', async () => {
       const mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step1: true }),
-          name: 'step1'
-        },
-        mw2: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step2: true }),
-          name: 'step2'
-        },
-        mw3: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step3: true }),
-          name: 'step3'
-        },
-        hooks = composeMiddleware(mw1, mw2, mw3),
-        result = await hooks.beforeCreate?.(mockCtx, {
-          data: { original: true }
-        })
+        beforeCreate: (_ctx, { data }) => ({ ...data, step1: true }),
+        name: 'step1'
+      }
+      const mw2: Middleware = {
+        beforeCreate: (_ctx, { data }) => ({ ...data, step2: true }),
+        name: 'step2'
+      }
+      const mw3: Middleware = {
+        beforeCreate: (_ctx, { data }) => ({ ...data, step3: true }),
+        name: 'step3'
+      }
+      const hooks = composeMiddleware(mw1, mw2, mw3)
+      const result = await hooks.beforeCreate?.(mockCtx, {
+        data: { original: true }
+      })
       expect(result).toEqual({
         original: true,
         step1: true,
@@ -5770,48 +5769,48 @@ describe('middleware', () => {
     })
     test('patch transforms chain through beforeUpdate', async () => {
       const mw1: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, normalized: true }),
-          name: 'normalize'
-        },
-        mw2: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, validated: true }),
-          name: 'validate'
-        },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
-          id: 'id1',
-          patch: { title: 'x' },
-          prev: {}
-        })
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, normalized: true }),
+        name: 'normalize'
+      }
+      const mw2: Middleware = {
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, validated: true }),
+        name: 'validate'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeUpdate?.(mockCtx, {
+        id: 'id1',
+        patch: { title: 'x' },
+        prev: {}
+      })
       expect(result).toEqual({ normalized: true, title: 'x', validated: true })
     })
   })
   describe('collectSettled', () => {
     test('separates fulfilled from rejected', () => {
       const settled: PromiseSettledResult<number>[] = [
-          { status: 'fulfilled', value: 1 },
-          { reason: 'fail', status: 'rejected' },
-          { status: 'fulfilled', value: 2 }
-        ],
-        { errors, results } = collectSettled(settled)
+        { status: 'fulfilled', value: 1 },
+        { reason: 'fail', status: 'rejected' },
+        { status: 'fulfilled', value: 2 }
+      ]
+      const { errors, results } = collectSettled(settled)
       expect(results).toEqual([1, 2])
       expect(errors).toEqual(['fail'])
     })
     test('handles all fulfilled', () => {
       const settled: PromiseSettledResult<string>[] = [
-          { status: 'fulfilled', value: 'a' },
-          { status: 'fulfilled', value: 'b' }
-        ],
-        { errors, results } = collectSettled(settled)
+        { status: 'fulfilled', value: 'a' },
+        { status: 'fulfilled', value: 'b' }
+      ]
+      const { errors, results } = collectSettled(settled)
       expect(results).toEqual(['a', 'b'])
       expect(errors).toEqual([])
     })
     test('handles all rejected', () => {
       const settled: PromiseSettledResult<string>[] = [
-          { reason: 'e1', status: 'rejected' },
-          { reason: 'e2', status: 'rejected' }
-        ],
-        { errors, results } = collectSettled(settled)
+        { reason: 'e1', status: 'rejected' },
+        { reason: 'e2', status: 'rejected' }
+      ]
+      const { errors, results } = collectSettled(settled)
       expect(results).toEqual([])
       expect(errors).toEqual(['e1', 'e2'])
     })
@@ -5831,11 +5830,11 @@ describe('middleware', () => {
       expect(handler).toBeUndefined()
     })
     test('returns custom handler when provided', () => {
-      const errors: unknown[] = [],
-        custom = (e: unknown) => {
-          errors.push(e)
-        },
-        handler = resolveBulkError({ onError: custom })
+      const errors: unknown[] = []
+      const custom = (e: unknown) => {
+        errors.push(e)
+      }
+      const handler = resolveBulkError({ onError: custom })
       expect(handler).toBe(custom)
     })
   })
@@ -5862,24 +5861,24 @@ describe('middleware', () => {
 describe('health check', () => {
   describe('checkSchemaConsistency', () => {
     test('returns empty issues for consistent schema', async () => {
-      const { mkdirSync, writeFileSync } = await import('node:fs'),
-        tmpDir = `/tmp/noboil-convex-test-health-${Date.now()}`
+      const { mkdirSync, writeFileSync } = await import('node:fs')
+      const tmpDir = `/tmp/noboil-convex-test-health-${Date.now()}`
       mkdirSync(`${tmpDir}/convex/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/convex/blog.ts`, "crud('blog', owned.blog)")
       const schemaFile = {
-          content: 'const owned = makeOwned({ blog: object({ title: string() }) })',
-          path: `${tmpDir}/schema.ts`
-        },
-        issues = checkSchemaConsistency(`${tmpDir}/convex`, schemaFile),
-        schemaErrors = issues.filter(i => i.level === 'error')
+        content: 'const owned = makeOwned({ blog: object({ title: string() }) })',
+        path: `${tmpDir}/schema.ts`
+      }
+      const issues = checkSchemaConsistency(`${tmpDir}/convex`, schemaFile)
+      const schemaErrors = issues.filter(i => i.level === 'error')
       expect(schemaErrors).toHaveLength(0)
     })
   })
   describe('checkIndexCoverage', () => {
     test('returns empty issues when no where clauses used', async () => {
-      const { mkdirSync, writeFileSync } = await import('node:fs'),
-        calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-        tmpDir = `/tmp/noboil-convex-test-idx-${Date.now()}`
+      const { mkdirSync, writeFileSync } = await import('node:fs')
+      const calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+      const tmpDir = `/tmp/noboil-convex-test-idx-${Date.now()}`
       mkdirSync(`${tmpDir}/convex/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/convex/schema.ts`, 'export default defineSchema({})')
       const issues = checkIndexCoverage(`${tmpDir}/convex`, calls)
@@ -5908,15 +5907,15 @@ describe('health check', () => {
       expect(score).toBe(95)
     })
     test('score calculation: multiple errors and warnings compound', () => {
-      const errors = 2,
-        warns = 3,
-        score = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
+      const errors = 2
+      const warns = 3
+      const score = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
       expect(score).toBe(55)
     })
     test('score never goes below 0', () => {
-      const errors = 10,
-        warns = 10,
-        raw = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
+      const errors = 10
+      const warns = 10
+      const raw = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
       expect(Math.max(0, raw)).toBe(0)
     })
     test('error penalty is higher than warn penalty', () => {
@@ -6137,40 +6136,40 @@ describe('typed error handling (R10.5)', () => {
   })
   describe('matchError()', () => {
     test('matches specific error code', () => {
-      const e = new ConvexError({ code: 'NOT_FOUND' }),
-        result = matchError(e, {
-          NOT_FOUND: d => `found: ${d.code}`
-        })
+      const e = new ConvexError({ code: 'NOT_FOUND' })
+      const result = matchError(e, {
+        NOT_FOUND: d => `found: ${d.code}`
+      })
       expect(result).toBe('found: NOT_FOUND')
     })
     test('returns handler return value', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED', message: 'slow down' }),
-        result = matchError(e, {
-          RATE_LIMITED: d => ({ msg: d.message, retry: true })
-        })
+      const e = new ConvexError({ code: 'RATE_LIMITED', message: 'slow down' })
+      const result = matchError(e, {
+        RATE_LIMITED: d => ({ msg: d.message, retry: true })
+      })
       expect(result).toEqual({ msg: 'slow down', retry: true })
     })
     test('calls _ fallback when no specific handler', () => {
-      const e = new ConvexError({ code: 'FORBIDDEN' }),
-        result = matchError(e, {
-          NOT_FOUND: () => 'not found',
-          _: () => 'fallback'
-        })
+      const e = new ConvexError({ code: 'FORBIDDEN' })
+      const result = matchError(e, {
+        NOT_FOUND: () => 'not found',
+        _: () => 'fallback'
+      })
       expect(result).toBe('fallback')
     })
     test('calls _ fallback for plain Error', () => {
-      const e = new Error('plain'),
-        result = matchError(e, {
-          NOT_FOUND: () => 'not found',
-          _: rawErr => (rawErr as Error).message
-        })
+      const e = new Error('plain')
+      const result = matchError(e, {
+        NOT_FOUND: () => 'not found',
+        _: rawErr => (rawErr as Error).message
+      })
       expect(result).toBe('plain')
     })
     test('returns undefined when no match and no fallback', () => {
-      const e = new ConvexError({ code: 'FORBIDDEN' }),
-        result = matchError(e, {
-          NOT_FOUND: () => 'nope'
-        })
+      const e = new ConvexError({ code: 'FORBIDDEN' })
+      const result = matchError(e, {
+        NOT_FOUND: () => 'nope'
+      })
       expect(result).toBeUndefined()
     })
     test('returns undefined for non-error with no fallback', () => {
@@ -6180,28 +6179,28 @@ describe('typed error handling (R10.5)', () => {
       expect(result).toBeUndefined()
     })
     test('specific handler takes precedence over fallback', () => {
-      const e = new ConvexError({ code: 'CONFLICT' }),
-        result = matchError(e, {
-          CONFLICT: () => 'specific',
-          _: () => 'fallback'
-        })
+      const e = new ConvexError({ code: 'CONFLICT' })
+      const result = matchError(e, {
+        CONFLICT: () => 'specific',
+        _: () => 'fallback'
+      })
       expect(result).toBe('specific')
     })
     test('handler receives full error data', () => {
       const e = new ConvexError({
-          code: 'VALIDATION_FAILED',
-          fieldErrors: { title: 'required' },
-          fields: ['title'],
-          message: 'Invalid input'
-        }),
-        result = matchError(e, {
-          VALIDATION_FAILED: d => ({
-            code: d.code,
-            fieldErrors: d.fieldErrors,
-            fields: d.fields,
-            message: d.message
-          })
+        code: 'VALIDATION_FAILED',
+        fieldErrors: { title: 'required' },
+        fields: ['title'],
+        message: 'Invalid input'
+      })
+      const result = matchError(e, {
+        VALIDATION_FAILED: d => ({
+          code: d.code,
+          fieldErrors: d.fieldErrors,
+          fields: d.fields,
+          message: d.message
         })
+      })
       expect(result).toEqual({
         code: 'VALIDATION_FAILED',
         fieldErrors: { title: 'required' },
@@ -6211,8 +6210,8 @@ describe('typed error handling (R10.5)', () => {
     })
     test('multiple handlers only calls matching one', () => {
       const e = new ConvexError({ code: 'RATE_LIMITED' })
-      let notFoundCalled = false,
-        rateLimitedCalled = false
+      let notFoundCalled = false
+      let rateLimitedCalled = false
       matchError(e, {
         NOT_FOUND: () => {
           notFoundCalled = true
@@ -6225,25 +6224,25 @@ describe('typed error handling (R10.5)', () => {
       expect(rateLimitedCalled).toBe(true)
     })
     test('returns typed result from handler', () => {
-      const e = new ConvexError({ code: 'NOT_FOUND' }),
-        result: number | undefined = matchError(e, {
-          NOT_FOUND: () => 42
-        })
+      const e = new ConvexError({ code: 'NOT_FOUND' })
+      const result: number | undefined = matchError(e, {
+        NOT_FOUND: () => 42
+      })
       expect(result).toBe(42)
     })
     test('_ receives original error for non-ConvexError', () => {
-      const original = new Error('boom'),
-        result = matchError(original, {
-          _: e => (e as Error).message
-        })
+      const original = new Error('boom')
+      const result = matchError(original, {
+        _: e => (e as Error).message
+      })
       expect(result).toBe('boom')
     })
     test('_ receives original error for ConvexError without matching handler', () => {
-      const original = new ConvexError({ code: 'FORBIDDEN' }),
-        result = matchError(original, {
-          NOT_FOUND: () => 'nope',
-          _: () => 'fallback'
-        })
+      const original = new ConvexError({ code: 'FORBIDDEN' })
+      const result = matchError(original, {
+        NOT_FOUND: () => 'nope',
+        _: () => 'fallback'
+      })
       expect(result).toBe('fallback')
     })
   })
@@ -6251,15 +6250,15 @@ describe('typed error handling (R10.5)', () => {
     test('process MutationResult with matchError on error case', () => {
       const result = fail('NOT_FOUND')
       expect(result.ok).toBe(false)
-      const errorData = (result as MutationFail).error,
-        e = new ConvexError({
-          code: errorData.code,
-          message: errorData.message
-        } as Record<string, string | undefined>),
-        msg = matchError(e, {
-          NOT_FOUND: d => `Item not found: ${d.message}`,
-          _: () => 'Unknown error'
-        })
+      const errorData = (result as MutationFail).error
+      const e = new ConvexError({
+        code: errorData.code,
+        message: errorData.message
+      } as Record<string, string | undefined>)
+      const msg = matchError(e, {
+        NOT_FOUND: d => `Item not found: ${d.message}`,
+        _: () => 'Unknown error'
+      })
       expect(msg).toBe('Item not found: Not found')
     })
     test('ok result does not need error handling', () => {
@@ -6269,11 +6268,11 @@ describe('typed error handling (R10.5)', () => {
     test('fail result can be used with isMutationError on ConvexError', () => {
       const result = fail('CONFLICT', { message: 'Stale' })
       expect(result.ok).toBe(false)
-      const errorData = (result as MutationFail).error,
-        thrown = new ConvexError({
-          code: errorData.code,
-          message: errorData.message
-        } as Record<string, string | undefined>)
+      const errorData = (result as MutationFail).error
+      const thrown = new ConvexError({
+        code: errorData.code,
+        message: errorData.message
+      } as Record<string, string | undefined>)
       expect(isMutationError(thrown)).toBe(true)
       expect(isErrorCode(thrown, 'CONFLICT')).toBe(true)
     })
@@ -6350,44 +6349,44 @@ describe('rich error metadata (R11.2)', () => {
   })
   describe('extractErrorData with retryAfter and limit', () => {
     test('extracts retryAfter from ConvexError', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED', retryAfter: 30_000 }),
-        d = extractErrorData(e)
+      const e = new ConvexError({ code: 'RATE_LIMITED', retryAfter: 30_000 })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBe(30_000)
     })
     test('retryAfter undefined when not a number', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED', retryAfter: 'soon' }),
-        d = extractErrorData(e)
+      const e = new ConvexError({ code: 'RATE_LIMITED', retryAfter: 'soon' })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBeUndefined()
     })
     test('extracts limit object from ConvexError', () => {
-      const limit = { max: 10, remaining: 0, window: 60_000 },
-        e = new ConvexError({ code: 'RATE_LIMITED', limit }),
-        d = extractErrorData(e)
+      const limit = { max: 10, remaining: 0, window: 60_000 }
+      const e = new ConvexError({ code: 'RATE_LIMITED', limit })
+      const d = extractErrorData(e)
       expect(d?.limit).toEqual(limit)
     })
     test('limit undefined when not an object', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED', limit: 42 }),
-        d = extractErrorData(e)
+      const e = new ConvexError({ code: 'RATE_LIMITED', limit: 42 })
+      const d = extractErrorData(e)
       expect(d?.limit).toBeUndefined()
     })
     test('limit undefined when null', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED', limit: null }),
-        d = extractErrorData(e)
+      const e = new ConvexError({ code: 'RATE_LIMITED', limit: null })
+      const d = extractErrorData(e)
       expect(d?.limit).toBeUndefined()
     })
     test('both retryAfter and limit extracted together', () => {
       const e = new ConvexError({
-          code: 'RATE_LIMITED',
-          limit: { max: 5, remaining: 0, window: 30_000 },
-          retryAfter: 15_000
-        }),
-        d = extractErrorData(e)
+        code: 'RATE_LIMITED',
+        limit: { max: 5, remaining: 0, window: 30_000 },
+        retryAfter: 15_000
+      })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBe(15_000)
       expect(d?.limit).toEqual({ max: 5, remaining: 0, window: 30_000 })
     })
     test('non-rate-limit errors have no retryAfter or limit', () => {
-      const e = new ConvexError({ code: 'NOT_FOUND' }),
-        d = extractErrorData(e)
+      const e = new ConvexError({ code: 'NOT_FOUND' })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBeUndefined()
       expect(d?.limit).toBeUndefined()
     })
@@ -6395,22 +6394,22 @@ describe('rich error metadata (R11.2)', () => {
   describe('getErrorDetail with rate limit info', () => {
     test('includes retry after in detail string', () => {
       const e = new ConvexError({
-          code: 'RATE_LIMITED',
-          retryAfter: 45_000,
-          table: 'blog'
-        }),
-        detail = getErrorDetail(e)
+        code: 'RATE_LIMITED',
+        retryAfter: 45_000,
+        table: 'blog'
+      })
+      const detail = getErrorDetail(e)
       expect(detail).toContain('blog')
       expect(detail).toContain('retry after 45000ms')
     })
     test('no retry info when retryAfter absent', () => {
-      const e = new ConvexError({ code: 'RATE_LIMITED' }),
-        detail = getErrorDetail(e)
+      const e = new ConvexError({ code: 'RATE_LIMITED' })
+      const detail = getErrorDetail(e)
       expect(detail).not.toContain('retry')
     })
     test('detail without table or retryAfter returns base message', () => {
-      const e = new ConvexError({ code: 'NOT_FOUND' }),
-        detail = getErrorDetail(e)
+      const e = new ConvexError({ code: 'NOT_FOUND' })
+      const detail = getErrorDetail(e)
       expect(detail).toBe('Not found')
     })
   })
@@ -6440,13 +6439,13 @@ describe('rich error metadata (R11.2)', () => {
   describe('matchError with rich metadata', () => {
     test('rate limit handler receives retryAfter and limit', () => {
       const e = new ConvexError({
-          code: 'RATE_LIMITED',
-          limit: { max: 10, remaining: 0, window: 60_000 },
-          retryAfter: 45_000
-        }),
-        result = matchError(e, {
-          RATE_LIMITED: d => ({ limit: d.limit, retryAfter: d.retryAfter })
-        })
+        code: 'RATE_LIMITED',
+        limit: { max: 10, remaining: 0, window: 60_000 },
+        retryAfter: 45_000
+      })
+      const result = matchError(e, {
+        RATE_LIMITED: d => ({ limit: d.limit, retryAfter: d.retryAfter })
+      })
       expect(result).toEqual({
         limit: { max: 10, remaining: 0, window: 60_000 },
         retryAfter: 45_000
@@ -6475,8 +6474,8 @@ describe('parseObjectFields', () => {
     title: string(),
     count: number(),
     active: boolean(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([
       { field: 'title', type: 'string()' },
       { field: 'count', type: 'number()' },
@@ -6484,34 +6483,34 @@ describe('parseObjectFields', () => {
     ])
   })
   test('strips trailing commas', () => {
-    const content = 'name: string(),',
-      fields = parseObjectFields(content, 0)
+    const content = 'name: string(),'
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([{ field: 'name', type: 'string()' }])
   })
   test('simplifies nested parentheses', () => {
-    const content = 'title: string().min(1).max(100),',
-      fields = parseObjectFields(content, 0)
+    const content = 'title: string().min(1).max(100),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.type).toBe('string().min().max()')
   })
   test('simplifies nested braces', () => {
-    const content = 'category: zenum(["tech", "life"]),',
-      fields = parseObjectFields(content, 0)
+    const content = 'category: zenum(["tech", "life"]),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.type).toContain('zenum')
   })
   test('skips comment lines', () => {
     const content = `
     // this is a comment
     title: string(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([{ field: 'title', type: 'string()' }])
   })
   test('skips blank lines', () => {
     const content = `
     title: string(),
     count: number(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toHaveLength(2)
   })
   test('returns empty for empty block', () => {
@@ -6519,8 +6518,8 @@ describe('parseObjectFields', () => {
     expect(fields).toEqual([])
   })
   test('handles balanced brackets in content', () => {
-    const content = 'tags: array(string()),',
-      fields = parseObjectFields(content, 0)
+    const content = 'tags: array(string()),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.field).toBe('tags')
   })
 })
@@ -6531,8 +6530,8 @@ describe('extractSchemaFields', () => {
     title: string(),
     content: string(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('blog')
     expect(tables[0]?.factory).toBe('crud')
@@ -6548,8 +6547,8 @@ describe('extractSchemaFields', () => {
     name: string(),
     isPublic: boolean(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(2)
     const names = tables.map(t => t.table)
     expect(names).toContain('blog')
@@ -6567,14 +6566,14 @@ describe('extractSchemaFields', () => {
   item: object({
     name: string(),
   })
-})`,
-        tables = extractSchemaFields(content)
+})`
+      const tables = extractSchemaFields(content)
       expect(tables[0]?.factory).toBe(expected)
     }
   })
   test('returns empty for content without schema markers', () => {
-    const content = 'const x = { hello: "world" }',
-      tables = extractSchemaFields(content)
+    const content = 'const x = { hello: "world" }'
+    const tables = extractSchemaFields(content)
     expect(tables).toEqual([])
   })
   test('handles child schemas with foreignKey and parent', () => {
@@ -6587,22 +6586,22 @@ describe('extractSchemaFields', () => {
       sender: string(),
     })
   })
-}`,
-      tables = extractSchemaFields(content)
+}`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('message')
     expect(tables[0]?.factory).toBe('childCrud')
   })
   test('skips child without valid pattern', () => {
-    const content = 'const x = child({ schema: object({ a: string() }) })',
-      tables = extractSchemaFields(content)
+    const content = 'const x = child({ schema: object({ a: string() }) })'
+    const tables = extractSchemaFields(content)
     expect(tables).toEqual([])
   })
 })
 describe('printSchemaPreview', () => {
   test('prints table info with factory type', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6610,8 +6609,8 @@ describe('printSchemaPreview', () => {
   blog: object({
     title: string(),
   })
-})`,
-      calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+})`
+    const calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
@@ -6620,8 +6619,8 @@ describe('printSchemaPreview', () => {
     expect(output).toContain('title')
   })
   test('shows options when present', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6629,15 +6628,15 @@ describe('printSchemaPreview', () => {
   blog: object({
     title: string(),
   })
-})`,
-      calls: FactoryCall[] = [
-        {
-          factory: 'crud',
-          file: 'blog.ts',
-          options: "{ search: 'title', softDelete: true }",
-          table: 'blog'
-        }
-      ]
+})`
+    const calls: FactoryCall[] = [
+      {
+        factory: 'crud',
+        file: 'blog.ts',
+        options: "{ search: 'title', softDelete: true }",
+        table: 'blog'
+      }
+    ]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
@@ -6645,8 +6644,8 @@ describe('printSchemaPreview', () => {
     expect(output).toContain('softDelete')
   })
   test('shows no tables message for empty schema', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6656,8 +6655,8 @@ describe('printSchemaPreview', () => {
     expect(output).toContain('No tables found')
   })
   test('shows total count summary', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6669,11 +6668,11 @@ describe('printSchemaPreview', () => {
   chat: object({
     name: string(),
   })
-})`,
-      calls: FactoryCall[] = [
-        { factory: 'crud', file: 'blog.ts', options: '', table: 'blog' },
-        { factory: 'crud', file: 'chat.ts', options: '', table: 'chat' }
-      ]
+})`
+    const calls: FactoryCall[] = [
+      { factory: 'crud', file: 'blog.ts', options: '', table: 'blog' },
+      { factory: 'crud', file: 'chat.ts', options: '', table: 'chat' }
+    ]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
@@ -6760,8 +6759,8 @@ describe('SchemaPlayground (R11.4)', () => {
     title: string(),
     content: string(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('blog')
     expect(tables[0]?.factory).toBe('crud')
@@ -6783,8 +6782,8 @@ describe('SchemaPlayground (R11.4)', () => {
 })
 const org = makeOrgScoped({
   project: object({ name: string() }),
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(2)
     const factories = tables.map(t => t.factory)
     expect(factories).toContain('crud')
@@ -7152,8 +7151,8 @@ describe('docs-gen', () => {
   })
   describe('resolveReExports', () => {
     test('parses named re-exports', () => {
-      const content = `export { useBulkSelection } from './use-bulk-selection'`,
-        result = resolveReExports(content)
+      const content = `export { useBulkSelection } from './use-bulk-selection'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('useBulkSelection')
       expect(result[0]?.sourcePath).toBe('./use-bulk-selection')
@@ -7161,26 +7160,26 @@ describe('docs-gen', () => {
       expect(result[0]?.isType).toBe(false)
     })
     test('parses default as re-exports', () => {
-      const content = `export { default as LazyConvexDevtools } from './devtools-panel'`,
-        result = resolveReExports(content)
+      const content = `export { default as LazyConvexDevtools } from './devtools-panel'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('LazyConvexDevtools')
       expect(result[0]?.isDefault).toBe(true)
     })
     test('parses type re-exports', () => {
-      const content = `export type { DevtoolsProps } from './devtools-panel'`,
-        result = resolveReExports(content)
+      const content = `export type { DevtoolsProps } from './devtools-panel'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('DevtoolsProps')
       expect(result[0]?.isType).toBe(true)
     })
     test('parses multiple re-exports', () => {
       const content = [
-          `export { useBulkSelection } from './use-bulk-selection'`,
-          `export { default as LazyConvexDevtools } from './devtools-panel'`,
-          `export type { DevtoolsProps } from './devtools-panel'`
-        ].join('\n'),
-        result = resolveReExports(content)
+        `export { useBulkSelection } from './use-bulk-selection'`,
+        `export { default as LazyConvexDevtools } from './devtools-panel'`,
+        `export type { DevtoolsProps } from './devtools-panel'`
+      ].join('\n')
+      const result = resolveReExports(content)
       expect(result).toHaveLength(3)
     })
     test('returns empty for content without re-exports', () => {
@@ -7311,97 +7310,97 @@ describe('mergeGlobalHooks', () => {
     expect(mergeGlobalHooks(undefined, b)).toBe(b)
   })
   test('beforeCreate — a then b in order, b receives a output', async () => {
-    const order: string[] = [],
-      a: GlobalHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('a')
-          return { ...data, fromA: true }
-        }
-      },
-      b: GlobalHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('b')
-          return { ...data, fromB: true }
-        }
-      },
-      merged = mergeGlobalHooks(a, b),
-      ctx = {} as GlobalHookCtx,
-      result = await merged?.beforeCreate?.(ctx, { data: { title: 'x' } })
+    const order: string[] = []
+    const a: GlobalHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('a')
+        return { ...data, fromA: true }
+      }
+    }
+    const b: GlobalHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('b')
+        return { ...data, fromB: true }
+      }
+    }
+    const merged = mergeGlobalHooks(a, b)
+    const ctx = {} as GlobalHookCtx
+    const result = await merged?.beforeCreate?.(ctx, { data: { title: 'x' } })
     expect(order).toEqual(['a', 'b'])
     expect(result).toEqual({ fromA: true, fromB: true, title: 'x' })
   })
   test('afterCreate — both fire in order', async () => {
-    const order: string[] = [],
-      a: GlobalHooks = {
-        afterCreate: async () => {
-          order.push('a')
-        }
-      },
-      b: GlobalHooks = {
-        afterCreate: async () => {
-          order.push('b')
-        }
-      },
-      merged = mergeGlobalHooks(a, b)
+    const order: string[] = []
+    const a: GlobalHooks = {
+      afterCreate: async () => {
+        order.push('a')
+      }
+    }
+    const b: GlobalHooks = {
+      afterCreate: async () => {
+        order.push('b')
+      }
+    }
+    const merged = mergeGlobalHooks(a, b)
     await merged?.afterCreate?.({} as GlobalHookCtx, { data: {}, id: '1' })
     expect(order).toEqual(['a', 'b'])
   })
   test('beforeUpdate — a then b, data passes through', async () => {
     const a: GlobalHooks = {
-        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, aField: 1 })
-      },
-      b: GlobalHooks = {
-        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, bField: 2 })
-      },
-      merged = mergeGlobalHooks(a, b),
-      result = await merged?.beforeUpdate?.({} as GlobalHookCtx, { id: '1', patch: { x: 0 }, prev: {} })
+      beforeUpdate: async (_ctx, { patch }) => ({ ...patch, aField: 1 })
+    }
+    const b: GlobalHooks = {
+      beforeUpdate: async (_ctx, { patch }) => ({ ...patch, bField: 2 })
+    }
+    const merged = mergeGlobalHooks(a, b)
+    const result = await merged?.beforeUpdate?.({} as GlobalHookCtx, { id: '1', patch: { x: 0 }, prev: {} })
     expect(result).toEqual({ aField: 1, bField: 2, x: 0 })
   })
   test('afterUpdate — both fire', async () => {
-    const order: string[] = [],
-      a: GlobalHooks = {
-        afterUpdate: async () => {
-          order.push('a')
-        }
-      },
-      b: GlobalHooks = {
-        afterUpdate: async () => {
-          order.push('b')
-        }
-      },
-      merged = mergeGlobalHooks(a, b)
+    const order: string[] = []
+    const a: GlobalHooks = {
+      afterUpdate: async () => {
+        order.push('a')
+      }
+    }
+    const b: GlobalHooks = {
+      afterUpdate: async () => {
+        order.push('b')
+      }
+    }
+    const merged = mergeGlobalHooks(a, b)
     await merged?.afterUpdate?.({} as GlobalHookCtx, { id: '1', patch: {}, prev: {} })
     expect(order).toEqual(['a', 'b'])
   })
   test('beforeDelete — both fire in order', async () => {
-    const order: string[] = [],
-      a: GlobalHooks = {
-        beforeDelete: async () => {
-          order.push('a')
-        }
-      },
-      b: GlobalHooks = {
-        beforeDelete: async () => {
-          order.push('b')
-        }
-      },
-      merged = mergeGlobalHooks(a, b)
+    const order: string[] = []
+    const a: GlobalHooks = {
+      beforeDelete: async () => {
+        order.push('a')
+      }
+    }
+    const b: GlobalHooks = {
+      beforeDelete: async () => {
+        order.push('b')
+      }
+    }
+    const merged = mergeGlobalHooks(a, b)
     await merged?.beforeDelete?.({} as GlobalHookCtx, { doc: {}, id: '1' })
     expect(order).toEqual(['a', 'b'])
   })
   test('afterDelete — both fire in order', async () => {
-    const order: string[] = [],
-      a: GlobalHooks = {
-        afterDelete: async () => {
-          order.push('a')
-        }
-      },
-      b: GlobalHooks = {
-        afterDelete: async () => {
-          order.push('b')
-        }
-      },
-      merged = mergeGlobalHooks(a, b)
+    const order: string[] = []
+    const a: GlobalHooks = {
+      afterDelete: async () => {
+        order.push('a')
+      }
+    }
+    const b: GlobalHooks = {
+      afterDelete: async () => {
+        order.push('b')
+      }
+    }
+    const merged = mergeGlobalHooks(a, b)
     await merged?.afterDelete?.({} as GlobalHookCtx, { doc: {}, id: '1' })
     expect(order).toEqual(['a', 'b'])
   })
@@ -7413,112 +7412,112 @@ describe('mergeHooks — global + per-table', () => {
   test('only global hook defined — fires with table in ctx', async () => {
     let receivedTable = ''
     const gh: GlobalHooks = {
-        beforeCreate: async (ctx, { data }) => {
-          receivedTable = ctx.table
-          return data
-        }
-      },
-      merged = mergeHooks(gh, undefined, 'blog')
+      beforeCreate: async (ctx, { data }) => {
+        receivedTable = ctx.table
+        return data
+      }
+    }
+    const merged = mergeHooks(gh, undefined, 'blog')
     await merged?.beforeCreate?.({} as HookCtx, { data: { x: 1 } })
     expect(receivedTable).toBe('blog')
   })
   test('only per-table hook defined — fires normally', async () => {
     let called = false
     const fh: CrudHooks = {
-        afterCreate: async () => {
-          called = true
-        }
-      },
-      merged = mergeHooks(undefined, fh, 'blog')
+      afterCreate: async () => {
+        called = true
+      }
+    }
+    const merged = mergeHooks(undefined, fh, 'blog')
     await merged?.afterCreate?.({} as HookCtx, { data: {}, id: '1' })
     expect(called).toBe(true)
   })
   test('global beforeCreate then per-table beforeCreate — data flows through', async () => {
-    const order: string[] = [],
-      gh: GlobalHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('global')
-          return { ...data, global: true }
-        }
-      },
-      fh: CrudHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('table')
-          return { ...data, table: true }
-        }
-      },
-      merged = mergeHooks(gh, fh, 'posts'),
-      result = await merged?.beforeCreate?.({} as HookCtx, { data: { title: 'hi' } })
+    const order: string[] = []
+    const gh: GlobalHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('global')
+        return { ...data, global: true }
+      }
+    }
+    const fh: CrudHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('table')
+        return { ...data, table: true }
+      }
+    }
+    const merged = mergeHooks(gh, fh, 'posts')
+    const result = await merged?.beforeCreate?.({} as HookCtx, { data: { title: 'hi' } })
     expect(order).toEqual(['global', 'table'])
     expect(result).toEqual({ global: true, table: true, title: 'hi' })
   })
   test('beforeUpdate — global then per-table, patch flows', async () => {
     const gh: GlobalHooks = {
-        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, g: 1 })
-      },
-      fh: CrudHooks = {
-        beforeUpdate: async (_ctx, { patch }) => ({ ...patch, t: 2 })
-      },
-      merged = mergeHooks(gh, fh, 'posts'),
-      result = await merged?.beforeUpdate?.({} as HookCtx, { id: '1', patch: { x: 0 }, prev: {} })
+      beforeUpdate: async (_ctx, { patch }) => ({ ...patch, g: 1 })
+    }
+    const fh: CrudHooks = {
+      beforeUpdate: async (_ctx, { patch }) => ({ ...patch, t: 2 })
+    }
+    const merged = mergeHooks(gh, fh, 'posts')
+    const result = await merged?.beforeUpdate?.({} as HookCtx, { id: '1', patch: { x: 0 }, prev: {} })
     expect(result).toEqual({ g: 1, t: 2, x: 0 })
   })
   test('afterUpdate — global then per-table in order', async () => {
-    const order: string[] = [],
-      gh: GlobalHooks = {
-        afterUpdate: async () => {
-          order.push('global')
-        }
-      },
-      fh: CrudHooks = {
-        afterUpdate: async () => {
-          order.push('table')
-        }
-      },
-      merged = mergeHooks(gh, fh, 'posts')
+    const order: string[] = []
+    const gh: GlobalHooks = {
+      afterUpdate: async () => {
+        order.push('global')
+      }
+    }
+    const fh: CrudHooks = {
+      afterUpdate: async () => {
+        order.push('table')
+      }
+    }
+    const merged = mergeHooks(gh, fh, 'posts')
     await merged?.afterUpdate?.({} as HookCtx, { id: '1', patch: {}, prev: {} })
     expect(order).toEqual(['global', 'table'])
   })
   test('beforeDelete — global then per-table', async () => {
-    const order: string[] = [],
-      gh: GlobalHooks = {
-        beforeDelete: async () => {
-          order.push('global')
-        }
-      },
-      fh: CrudHooks = {
-        beforeDelete: async () => {
-          order.push('table')
-        }
-      },
-      merged = mergeHooks(gh, fh, 'posts')
+    const order: string[] = []
+    const gh: GlobalHooks = {
+      beforeDelete: async () => {
+        order.push('global')
+      }
+    }
+    const fh: CrudHooks = {
+      beforeDelete: async () => {
+        order.push('table')
+      }
+    }
+    const merged = mergeHooks(gh, fh, 'posts')
     await merged?.beforeDelete?.({} as HookCtx, { doc: {}, id: '1' })
     expect(order).toEqual(['global', 'table'])
   })
   test('afterDelete — global then per-table', async () => {
-    const order: string[] = [],
-      gh: GlobalHooks = {
-        afterDelete: async () => {
-          order.push('global')
-        }
-      },
-      fh: CrudHooks = {
-        afterDelete: async () => {
-          order.push('table')
-        }
-      },
-      merged = mergeHooks(gh, fh, 'posts')
+    const order: string[] = []
+    const gh: GlobalHooks = {
+      afterDelete: async () => {
+        order.push('global')
+      }
+    }
+    const fh: CrudHooks = {
+      afterDelete: async () => {
+        order.push('table')
+      }
+    }
+    const merged = mergeHooks(gh, fh, 'posts')
     await merged?.afterDelete?.({} as HookCtx, { doc: {}, id: '1' })
     expect(order).toEqual(['global', 'table'])
   })
   test('missing hooks on one side do not break composition', async () => {
     const gh: GlobalHooks = {
-        beforeCreate: async (_ctx, { data }) => ({ ...data, g: true })
-      },
-      fh: CrudHooks = {
-        afterDelete: async () => undefined
-      },
-      merged = mergeHooks(gh, fh, 'x')
+      beforeCreate: async (_ctx, { data }) => ({ ...data, g: true })
+    }
+    const fh: CrudHooks = {
+      afterDelete: async () => undefined
+    }
+    const merged = mergeHooks(gh, fh, 'x')
     expect(merged?.afterUpdate).toBeUndefined()
     const createResult = await merged?.beforeCreate?.({} as HookCtx, { data: {} })
     expect(createResult).toEqual({ g: true })
@@ -7530,28 +7529,28 @@ describe('mergeCacheHooks', () => {
     expect(mergeCacheHooks(undefined, undefined, 'cache')).toBeUndefined()
   })
   test('global + cache hooks merge beforeCreate in order', async () => {
-    const order: string[] = [],
-      gh: GlobalHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('global')
-          return { ...data, g: true }
-        }
-      },
-      fh: CacheHooks = {
-        beforeCreate: async (_ctx, { data }) => {
-          order.push('cache')
-          return { ...data, c: true }
-        }
-      },
-      merged = mergeCacheHooks(gh, fh, 'cache_table'),
-      result = await merged?.beforeCreate?.({} as CacheHookCtx, { data: { key: 'k' } })
+    const order: string[] = []
+    const gh: GlobalHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('global')
+        return { ...data, g: true }
+      }
+    }
+    const fh: CacheHooks = {
+      beforeCreate: async (_ctx, { data }) => {
+        order.push('cache')
+        return { ...data, c: true }
+      }
+    }
+    const merged = mergeCacheHooks(gh, fh, 'cache_table')
+    const result = await merged?.beforeCreate?.({} as CacheHookCtx, { data: { key: 'k' } })
     expect(order).toEqual(['global', 'cache'])
     expect(result).toEqual({ c: true, g: true, key: 'k' })
   })
   test('onFetch from cache hooks is preserved', () => {
-    const onFetch = async () => ({}),
-      fh: CacheHooks = { onFetch },
-      merged = mergeCacheHooks(undefined, fh, 't')
+    const onFetch = async () => ({})
+    const fh: CacheHooks = { onFetch }
+    const merged = mergeCacheHooks(undefined, fh, 't')
     expect(merged?.onFetch).toBe(onFetch)
   })
 })

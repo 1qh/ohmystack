@@ -213,54 +213,54 @@ declare module '../server/types/common' {
     }
   }
 }
-const TOKEN_CHARS_PATTERN = /^[0-9a-z]+$/u,
-  VOID = undefined,
-  makeSenderError = (data: unknown): Error => {
-    if (typeof data === 'string') return new Error(data)
-    if (!(data && typeof data === 'object')) return new Error(String(data))
-    const rawCode = (data as { code?: unknown }).code,
-      code = typeof rawCode === 'string' ? rawCode : String(rawCode)
-    return new Error(`${code}:${JSON.stringify(data)}`)
-  },
-  applyOptimistic = (items: Rec[], pending: PendingMutation[]): Rec[] => {
-    if (pending.length === 0) return items
-    let out = [...items]
-    for (const mutation of pending)
-      if (mutation.type === 'create') {
-        const created = {
-          ...(mutation.args as Rec),
-          __optimistic: true,
-          _creationTime: mutation.timestamp,
-          _id: mutation.id,
-          updatedAt: mutation.timestamp
-        }
-        out.unshift(created)
-      } else if (mutation.type === 'delete') {
-        const targetId = typeof mutation.args.id === 'string' ? mutation.args.id : mutation.id,
-          next: Rec[] = []
-        for (const row of out) if (row._id !== targetId) next.push(row)
-        out = next
-      } else if (mutation.type === 'update') {
-        const targetId = typeof mutation.args.id === 'string' ? mutation.args.id : mutation.id
-        for (let i = 0; i < out.length; i += 1) {
-          const row = out[i]
-          if (row?._id === targetId) {
-            out[i] = { ...row, ...(mutation.args as Rec) }
-            break
-          }
+const TOKEN_CHARS_PATTERN = /^[0-9a-z]+$/u
+const VOID = undefined
+const makeSenderError = (data: unknown): Error => {
+  if (typeof data === 'string') return new Error(data)
+  if (!(data && typeof data === 'object')) return new Error(String(data))
+  const rawCode = (data as { code?: unknown }).code
+  const code = typeof rawCode === 'string' ? rawCode : String(rawCode)
+  return new Error(`${code}:${JSON.stringify(data)}`)
+}
+const applyOptimistic = (items: Rec[], pending: PendingMutation[]): Rec[] => {
+  if (pending.length === 0) return items
+  let out = [...items]
+  for (const mutation of pending)
+    if (mutation.type === 'create') {
+      const created = {
+        ...(mutation.args as Rec),
+        __optimistic: true,
+        _creationTime: mutation.timestamp,
+        _id: mutation.id,
+        updatedAt: mutation.timestamp
+      }
+      out.unshift(created)
+    } else if (mutation.type === 'delete') {
+      const targetId = typeof mutation.args.id === 'string' ? mutation.args.id : mutation.id
+      const next: Rec[] = []
+      for (const row of out) if (row._id !== targetId) next.push(row)
+      out = next
+    } else if (mutation.type === 'update') {
+      const targetId = typeof mutation.args.id === 'string' ? mutation.args.id : mutation.id
+      for (let i = 0; i < out.length; i += 1) {
+        const row = out[i]
+        if (row?._id === targetId) {
+          out[i] = { ...row, ...(mutation.args as Rec) }
+          break
         }
       }
-    return out
-  },
-  checkRateLimit = (calls: FactoryCall[]): { status: 'pass' | 'warn' } => {
-    const skipFactories = new Set(['cacheCrud', 'singletonCrud'])
-    for (const call of calls) {
-      const skip = skipFactories.has(call.factory),
-        missingRateLimit = skip ? false : !call.options.includes('rateLimit')
-      if (missingRateLimit) return { status: 'warn' }
     }
-    return { status: 'pass' }
+  return out
+}
+const checkRateLimit = (calls: FactoryCall[]): { status: 'pass' | 'warn' } => {
+  const skipFactories = new Set(['cacheCrud', 'singletonCrud'])
+  for (const call of calls) {
+    const skip = skipFactories.has(call.factory)
+    const missingRateLimit = skip ? false : !call.options.includes('rateLimit')
+    if (missingRateLimit) return { status: 'warn' }
   }
+  return { status: 'pass' }
+}
 describe('matchW', () => {
   const doc = {
     category: 'tech',
@@ -353,10 +353,10 @@ describe('groupList', () => {
   })
   test('with or[]', () => {
     const input = { category: 'tech', or: [{ category: 'life' }] } as Record<string, unknown> & {
-        or?: Record<string, unknown>[]
-        own?: boolean
-      },
-      gs = groupList(input)
+      or?: Record<string, unknown>[]
+      own?: boolean
+    }
+    const gs = groupList(input)
     expect(gs).toHaveLength(2)
     expect(gs[0]?.category).toBe('tech')
     expect(gs[1]?.category).toBe('life')
@@ -369,10 +369,10 @@ describe('groupList', () => {
   })
   test('filters out empty or groups', () => {
     const input = { category: 'tech', or: [{}] } as Record<string, unknown> & {
-        or?: Record<string, unknown>[]
-        own?: boolean
-      },
-      gs = groupList(input)
+      or?: Record<string, unknown>[]
+      own?: boolean
+    }
+    const gs = groupList(input)
     expect(gs).toHaveLength(1)
   })
 })
@@ -387,11 +387,11 @@ describe('detectFiles', () => {
   })
   test('detects both cvFile and cvFiles', () => {
     const shape = {
-        attachments: cvFiles(),
-        photo: cvFile().nullable(),
-        title: string()
-      },
-      result = detectFiles(shape)
+      attachments: cvFiles(),
+      photo: cvFile().nullable(),
+      title: string()
+    }
+    const result = detectFiles(shape)
     expect(result).toContain('photo')
     expect(result).toContain('attachments')
     expect(result).toHaveLength(2)
@@ -459,19 +459,19 @@ describe('CrudOptions search config', () => {
   })
 })
 describe('typesafe field references', () => {
-  const chatSchema = object({ isPublic: boolean(), title: string().min(1) }),
-    messageSchema = object({
-      chatId: string(),
-      content: string(),
-      role: string()
-    }),
-    taskSchema = object({
-      completed: boolean(),
-      priority: string(),
-      projectId: string(),
-      title: string()
-    }),
-    movieSchema = object({ title: string(), tmdb_id: number() })
+  const chatSchema = object({ isPublic: boolean(), title: string().min(1) })
+  const messageSchema = object({
+    chatId: string(),
+    content: string(),
+    role: string()
+  })
+  const taskSchema = object({
+    completed: boolean(),
+    priority: string(),
+    projectId: string(),
+    title: string()
+  })
+  const movieSchema = object({ title: string(), tmdb_id: number() })
   test('child() accepts valid foreignKey', () => {
     const result = child({
       foreignKey: 'chatId',
@@ -510,8 +510,8 @@ describe('typesafe field references', () => {
     expect(result.schema).toBeDefined()
   })
   test('child() string overload infers foreignKey type as template literal', () => {
-    const result = child('chat', object({ content: string(), role: string() })),
-      fk: 'chatId' = result.foreignKey
+    const result = child('chat', object({ content: string(), role: string() }))
+    const fk: 'chatId' = result.foreignKey
     expect(fk).toBe('chatId')
   })
   test('child() string overload works with various parent names', () => {
@@ -687,27 +687,27 @@ describe('CrudOptions type safety', () => {
 })
 describe('branded schema type enforcement', () => {
   const ownedSchemas = makeOwned({
-      blog: object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      })
-    }),
-    orgSchemas = makeOrgScoped({
-      wiki: object({ content: string(), slug: string(), title: string() })
-    }),
-    baseSchemas = makeBase({
-      movie: object({ title: string(), tmdb_id: number() })
-    }),
-    singletonSchemas = makeSingleton({
-      profile: object({
-        bio: string().optional(),
-        displayName: string(),
-        notifications: boolean(),
-        theme: zenum(['light', 'dark', 'system'])
-      })
-    }),
-    plainSchema = object({ name: string() })
+    blog: object({
+      content: string(),
+      published: boolean(),
+      title: string()
+    })
+  })
+  const orgSchemas = makeOrgScoped({
+    wiki: object({ content: string(), slug: string(), title: string() })
+  })
+  const baseSchemas = makeBase({
+    movie: object({ title: string(), tmdb_id: number() })
+  })
+  const singletonSchemas = makeSingleton({
+    profile: object({
+      bio: string().optional(),
+      displayName: string(),
+      notifications: boolean(),
+      theme: zenum(['light', 'dark', 'system'])
+    })
+  })
+  const plainSchema = object({ name: string() })
   describe('table helper constraints', () => {
     test('ownedTable accepts makeOwned schema', () => {
       const table = ownedTable(ownedSchemas.blog)
@@ -893,38 +893,38 @@ describe('branded schema type enforcement', () => {
 describe('universal table()', () => {
   test('makeOrg brands schemas with orgDef at runtime', () => {
     const orgSchemas = makeOrg({
-        team: object({ name: string(), slug: string() })
-      }),
-      brand = (orgSchemas.team as unknown as { __bs?: unknown }).__bs
+      team: object({ name: string(), slug: string() })
+    })
+    const brand = (orgSchemas.team as unknown as { __bs?: unknown }).__bs
     expect(brand).toBe('orgDef')
     const typedOrgSchema: OrgDefSchema<typeof orgSchemas.team.shape> = orgSchemas.team
     expect(typedOrgSchema).toBeDefined()
   })
   test('noboilStdb define helpers include table helper', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
     expect(content.includes('table: TableFn')).toBe(true)
   })
 })
 describe('branded schema error messages (SchemaTypeError)', () => {
   const ownedSchemas = makeOwned({
-      blog: object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      })
-    }),
-    orgSchemas = makeOrgScoped({
-      wiki: object({ content: string(), slug: string(), title: string() })
-    }),
-    baseSchemas = makeBase({
-      movie: object({ title: string(), tmdb_id: number() })
-    }),
-    singletonSchemas = makeSingleton({
-      profile: object({ bio: string().optional(), displayName: string() })
-    }),
-    plainSchema = object({ name: string() })
+    blog: object({
+      content: string(),
+      published: boolean(),
+      title: string()
+    })
+  })
+  const orgSchemas = makeOrgScoped({
+    wiki: object({ content: string(), slug: string(), title: string() })
+  })
+  const baseSchemas = makeBase({
+    movie: object({ title: string(), tmdb_id: number() })
+  })
+  const singletonSchemas = makeSingleton({
+    profile: object({ bio: string().optional(), displayName: string() })
+  })
+  const plainSchema = object({ name: string() })
   describe('DetectBrand extracts correct brand', () => {
     test('DetectBrand<OwnedSchema> is owned', () => {
       type Result = DetectBrand<typeof ownedSchemas.blog>
@@ -1094,27 +1094,27 @@ describe('cleanFiles resilience', () => {
 })
 describe('defineSteps type safety', () => {
   const profileSchema = object({
-      avatar: string().optional(),
-      bio: string().max(500).optional(),
-      displayName: string().min(1)
-    }),
-    orgSchema = object({
-      name: string().min(1),
-      slug: string().min(1)
-    }),
-    appearanceSchema = object({
-      orgAvatar: string()
-    }),
-    preferencesSchema = object({
-      notifications: boolean(),
-      theme: zenum(['light', 'dark', 'system'])
-    }),
-    { StepForm, steps, useStepper } = defineSteps(
-      { id: 'profile', label: 'Profile', schema: profileSchema },
-      { id: 'org', label: 'Organization', schema: orgSchema },
-      { id: 'appearance', label: 'Appearance', schema: appearanceSchema },
-      { id: 'preferences', label: 'Preferences', schema: preferencesSchema }
-    )
+    avatar: string().optional(),
+    bio: string().max(500).optional(),
+    displayName: string().min(1)
+  })
+  const orgSchema = object({
+    name: string().min(1),
+    slug: string().min(1)
+  })
+  const appearanceSchema = object({
+    orgAvatar: string()
+  })
+  const preferencesSchema = object({
+    notifications: boolean(),
+    theme: zenum(['light', 'dark', 'system'])
+  })
+  const { StepForm, steps, useStepper } = defineSteps(
+    { id: 'profile', label: 'Profile', schema: profileSchema },
+    { id: 'org', label: 'Organization', schema: orgSchema },
+    { id: 'appearance', label: 'Appearance', schema: appearanceSchema },
+    { id: 'preferences', label: 'Preferences', schema: preferencesSchema }
+  )
   test('defineSteps returns StepForm, useStepper, steps', () => {
     expect(StepForm).toBeDefined()
     expect(StepForm.Step).toBeDefined()
@@ -1133,10 +1133,10 @@ describe('defineSteps type safety', () => {
     expect(steps[3]?.label).toBe('Preferences')
   })
   test('StepForm.Step accepts valid step IDs', () => {
-    const _p = StepForm.Step({ id: 'profile', render: () => null }),
-      _o = StepForm.Step({ id: 'org', render: () => null }),
-      _a = StepForm.Step({ id: 'appearance', render: () => null }),
-      _pr = StepForm.Step({ id: 'preferences', render: () => null })
+    const _p = StepForm.Step({ id: 'profile', render: () => null })
+    const _o = StepForm.Step({ id: 'org', render: () => null })
+    const _a = StepForm.Step({ id: 'appearance', render: () => null })
+    const _pr = StepForm.Step({ id: 'preferences', render: () => null })
     expect(_p).toBeNull()
     expect(_o).toBeNull()
     expect(_a).toBeNull()
@@ -1248,8 +1248,8 @@ describe('defineSteps type safety', () => {
     expect(r).toBeNull()
   })
   test('single-step stepper compiles', () => {
-    const singleSchema = object({ title: string() }),
-      single = defineSteps({ id: 'only', label: 'Only', schema: singleSchema })
+    const singleSchema = object({ title: string() })
+    const single = defineSteps({ id: 'only', label: 'Only', schema: singleSchema })
     expect(single.steps).toHaveLength(1)
     expect(single.StepForm).toBeDefined()
   })
@@ -1293,31 +1293,31 @@ describe('defineSteps type safety', () => {
   })
   test('step with all optional fields passes validation', () => {
     const optSchema = object({
-        bio: string().optional(),
-        name: string().optional()
-      }),
-      opt = defineSteps({ id: 'info', label: 'Info', schema: optSchema })
+      bio: string().optional(),
+      name: string().optional()
+    })
+    const opt = defineSteps({ id: 'info', label: 'Info', schema: optSchema })
     expect(opt.steps).toHaveLength(1)
     expect(opt.StepForm).toBeDefined()
   })
   test('steps with overlapping field names are independently typed', () => {
-    const stepA = object({ name: string().min(1) }),
-      stepB = object({ name: string().max(100) }),
-      overlap = defineSteps({ id: 'a', label: 'A', schema: stepA }, { id: 'b', label: 'B', schema: stepB }),
-      ra = overlap.StepForm.Step({
-        id: 'a',
-        render: f => {
-          f.Text({ label: 'N', name: 'name' })
-          return null
-        }
-      }),
-      rb = overlap.StepForm.Step({
-        id: 'b',
-        render: f => {
-          f.Text({ label: 'N', name: 'name' })
-          return null
-        }
-      })
+    const stepA = object({ name: string().min(1) })
+    const stepB = object({ name: string().max(100) })
+    const overlap = defineSteps({ id: 'a', label: 'A', schema: stepA }, { id: 'b', label: 'B', schema: stepB })
+    const ra = overlap.StepForm.Step({
+      id: 'a',
+      render: f => {
+        f.Text({ label: 'N', name: 'name' })
+        return null
+      }
+    })
+    const rb = overlap.StepForm.Step({
+      id: 'b',
+      render: f => {
+        f.Text({ label: 'N', name: 'name' })
+        return null
+      }
+    })
     expect(ra).toBeNull()
     expect(rb).toBeNull()
   })
@@ -1326,29 +1326,29 @@ describe('defineSteps type safety', () => {
 describe('bridge functions', () => {
   describe('idx', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('name', 'test'),
-        result: unknown = idx(fn as never)
+      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('name', 'test')
+      const result: unknown = idx(fn as never)
       expect(result).toBe(fn)
     })
     test('preserves function identity', () => {
-      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('id', 42),
-        a: unknown = idx(fn as never),
-        b: unknown = idx(fn as never)
+      const fn = (ib: { eq: (f: string, v: unknown) => unknown }) => ib.eq('id', 42)
+      const a: unknown = idx(fn as never)
+      const b: unknown = idx(fn as never)
       expect(a).toBe(b)
       expect(a).toBe(fn)
     })
   })
   describe('flt', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (fb: { eq: (f: string, v: unknown) => unknown }) => fb.eq('active', true),
-        result: unknown = flt(fn as never)
+      const fn = (fb: { eq: (f: string, v: unknown) => unknown }) => fb.eq('active', true)
+      const result: unknown = flt(fn as never)
       expect(result).toBe(fn)
     })
   })
   describe('sch', () => {
     test('returns the callback as-is (passthrough cast)', () => {
-      const fn = (sb: { search: (f: string, q: string) => unknown }) => sb.search('content', 'hello'),
-        result: unknown = sch(fn as never)
+      const fn = (sb: { search: (f: string, q: string) => unknown }) => sb.search('content', 'hello')
+      const result: unknown = sch(fn as never)
       expect(result).toBe(fn)
     })
   })
@@ -1362,13 +1362,13 @@ describe('bridge functions', () => {
       expect(result).toBe(42)
     })
     test('returns object reference as-is', () => {
-      const obj = { a: 1, b: 'two' },
-        result: unknown = typed(obj)
+      const obj = { a: 1, b: 'two' }
+      const result: unknown = typed(obj)
       expect(result).toBe(obj)
     })
     test('returns array reference as-is', () => {
-      const arr = [1, 2, 3],
-        result: unknown = typed(arr)
+      const arr = [1, 2, 3]
+      const result: unknown = typed(arr)
       expect(result).toBe(arr)
     })
     test('returns null as-is', () => {
@@ -1376,13 +1376,13 @@ describe('bridge functions', () => {
       expect(result).toBeNull()
     })
     test('returns function as-is', () => {
-      const fn = () => 42,
-        result: unknown = typed(fn)
+      const fn = () => 42
+      const result: unknown = typed(fn)
       expect(result).toBe(fn)
     })
     test('preserves nested object structure', () => {
-      const nested = { deep: { arr: [1, 2], val: true } },
-        result: unknown = typed(nested)
+      const nested = { deep: { arr: [1, 2], val: true } }
+      const result: unknown = typed(nested)
       expect(result).toBe(nested)
       expect((result as typeof nested).deep.arr).toEqual([1, 2])
     })
@@ -1406,17 +1406,17 @@ describe('bridge functions', () => {
     })
   })
 })
-const BASE36_PATTERN = /^[\da-z]+$/u,
-  EXPORT_HOOK_PATTERN = /export\s*\{[^}]*\buse[A-Z]/u,
-  /* eslint-disable no-console */
-  captureWarns = () => {
-    const warns: string[] = [],
-      origWarn = console.warn
-    console.warn = (...args: unknown[]) => {
-      warns.push(String(args[0]))
-    }
-    return { origWarn, warns }
+const BASE36_PATTERN = /^[\da-z]+$/u
+const EXPORT_HOOK_PATTERN = /export\s*\{[^}]*\buse[A-Z]/u
+/* eslint-disable no-console */
+const captureWarns = () => {
+  const warns: string[] = []
+  const origWarn = console.warn
+  console.warn = (...args: unknown[]) => {
+    warns.push(String(args[0]))
   }
+  return { origWarn, warns }
+}
 describe('warnLargeFilterSet', () => {
   test('threshold is 1000', () => {
     expect(RUNTIME_FILTER_WARN_THRESHOLD).toBe(1000)
@@ -1546,9 +1546,9 @@ describe('time helper', () => {
     expect(typeof result.updatedAt).toBe('number')
   })
   test('updatedAt is close to Date.now()', () => {
-    const before = Date.now(),
-      result = time(),
-      after = Date.now()
+    const before = Date.now()
+    const result = time()
+    const after = Date.now()
     expect(result.updatedAt).toBeGreaterThanOrEqual(before)
     expect(result.updatedAt).toBeLessThanOrEqual(after)
   })
@@ -1614,22 +1614,22 @@ describe('Promise.allSettled resilience pattern', () => {
   })
   test('allSettled collects all failures', async () => {
     const results = await Promise.allSettled([
-        Promise.reject(new Error('fail 1')),
-        Promise.reject(new Error('fail 2')),
-        Promise.resolve('ok')
-      ]),
-      rejected = results.filter(r => r.status === 'rejected')
+      Promise.reject(new Error('fail 1')),
+      Promise.reject(new Error('fail 2')),
+      Promise.resolve('ok')
+    ])
+    const rejected = results.filter(r => r.status === 'rejected')
     expect(rejected).toHaveLength(2)
     expect(results[2].status).toBe('fulfilled')
   })
   test('subsequent Promise.all still runs after allSettled failures', async () => {
-    const order: string[] = [],
-      sr = await Promise.allSettled([
-        Promise.reject(new Error('storage cleanup fail')),
-        (async () => {
-          order.push('storage-2')
-        })()
-      ])
+    const order: string[] = []
+    const sr = await Promise.allSettled([
+      Promise.reject(new Error('storage cleanup fail')),
+      (async () => {
+        order.push('storage-2')
+      })()
+    ])
     expect(sr[0].status).toBe('rejected')
     await Promise.all([
       (async () => {
@@ -1705,15 +1705,15 @@ describe('getMeta', () => {
 describe('buildMeta', () => {
   test('builds meta map for all field types', () => {
     const s = object({
-        active: boolean(),
-        avatar: cvFile().nullable().optional(),
-        bio: optional(string()),
-        count: number(),
-        photos: cvFiles().max(3),
-        tags: array(string()).max(10),
-        title: string()
-      }),
-      meta = buildMeta(s)
+      active: boolean(),
+      avatar: cvFile().nullable().optional(),
+      bio: optional(string()),
+      count: number(),
+      photos: cvFiles().max(3),
+      tags: array(string()).max(10),
+      title: string()
+    })
+    const meta = buildMeta(s)
     expect(meta.title).toEqual({ kind: 'string' })
     expect(meta.count).toEqual({ kind: 'number' })
     expect(meta.active).toEqual({ kind: 'boolean' })
@@ -1727,8 +1727,8 @@ describe('buildMeta', () => {
     expect(buildMeta(s)).toEqual({})
   })
   test('schema with only one field', () => {
-    const s = object({ name: string() }),
-      meta = buildMeta(s)
+    const s = object({ name: string() })
+    const meta = buildMeta(s)
     expect(Object.keys(meta)).toHaveLength(1)
     expect(meta.name).toEqual({ kind: 'string' })
   })
@@ -1874,32 +1874,32 @@ describe('isRecord', () => {
 })
 describe('extractErrorData', () => {
   test('extracts code from SenderError', () => {
-    const e = makeSenderError({ code: 'NOT_FOUND' }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'NOT_FOUND' })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.code).toBe('NOT_FOUND')
   })
   test('extracts code, debug from SenderError', () => {
     const e = makeSenderError({
-        code: 'NOT_AUTHENTICATED',
-        debug: 'session-expired'
-      }),
-      d = extractErrorData(e)
+      code: 'NOT_AUTHENTICATED',
+      debug: 'session-expired'
+    })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('NOT_AUTHENTICATED')
     expect(d?.debug).toBe('session-expired')
   })
   test('extracts code, message from SenderError', () => {
-    const e = makeSenderError({ code: 'RATE_LIMITED', message: 'Too fast' }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'RATE_LIMITED', message: 'Too fast' })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('RATE_LIMITED')
     expect(d?.message).toBe('Too fast')
   })
   test('extracts code, fields from SenderError', () => {
     const e = makeSenderError({
-        code: 'NOT_FOUND',
-        fields: ['title', 'content']
-      }),
-      d = extractErrorData(e)
+      code: 'NOT_FOUND',
+      fields: ['title', 'content']
+    })
+    const d = extractErrorData(e)
     expect(d?.code).toBe('NOT_FOUND')
     expect(d?.fields).toEqual(['title', 'content'])
   })
@@ -1925,18 +1925,18 @@ describe('extractErrorData', () => {
     expect(extractErrorData(e)).toBeUndefined()
   })
   test('debug is undefined when not a string', () => {
-    const e = makeSenderError({ code: 'NOT_FOUND', debug: 123 }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'NOT_FOUND', debug: 123 })
+    const d = extractErrorData(e)
     expect(d?.debug).toBeUndefined()
   })
   test('message is undefined when not a string', () => {
-    const e = makeSenderError({ code: 'NOT_FOUND', message: false }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'NOT_FOUND', message: false })
+    const d = extractErrorData(e)
     expect(d?.message).toBeUndefined()
   })
   test('fields is undefined when not an array', () => {
-    const e = makeSenderError({ code: 'NOT_FOUND', fields: 'title' }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'NOT_FOUND', fields: 'title' })
+    const d = extractErrorData(e)
     expect(d?.fields).toBeUndefined()
   })
 })
@@ -2062,8 +2062,8 @@ describe('withRetry', () => {
     expect(calls).toBe(2)
   })
   test('throws last error after all attempts exhausted', async () => {
-    let calls = 0,
-      threw = false
+    let calls = 0
+    let threw = false
     try {
       await withRetry(
         async () => {
@@ -2082,8 +2082,8 @@ describe('withRetry', () => {
     expect(calls).toBe(3)
   })
   test('respects maxAttempts: 1 (no retry)', async () => {
-    let calls = 0,
-      threw = false
+    let calls = 0
+    let threw = false
     try {
       await withRetry(
         async () => {
@@ -2131,7 +2131,6 @@ describe('withRetry', () => {
     expect(calls).toBe(3)
   })
 })
-/* eslint-disable require-atomic-updates */
 const mockFetch = (fn: (...args: never[]) => Promise<Response>) => {
   globalThis.fetch = fn as never
 }
@@ -2236,9 +2235,9 @@ describe('Fix #1: getOrgMember compound index', () => {
     expect(mod).not.toHaveProperty('getOrgMember')
   })
   test('getOrgMember is not re-exported from server/index', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
     expect(content.includes('getOrgMember')).toBe(false)
   })
   test('requireOrgMember is not exported from org-crud', async () => {
@@ -2296,13 +2295,13 @@ describe('Fix #2: singleton first-upsert validates full schema', () => {
     expect(result.success).toBe(true)
   })
   test('partial schema allows subset of fields', () => {
-    const partial = singletonProfile.partial(),
-      result = partial.safeParse({ bio: 'hello' })
+    const partial = singletonProfile.partial()
+    const result = partial.safeParse({ bio: 'hello' })
     expect(result.success).toBe(true)
   })
   test('partial schema allows empty object', () => {
-    const partial = singletonProfile.partial(),
-      result = partial.safeParse({})
+    const partial = singletonProfile.partial()
+    const result = partial.safeParse({})
     expect(result.success).toBe(true)
   })
   test('invalid enum value fails full schema', () => {
@@ -2324,30 +2323,30 @@ describe('Fix #2: singleton first-upsert validates full schema', () => {
 })
 describe('Fix #3: factory table names typed as keyof DM & string', () => {
   test('setup is exported from server/setup', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
     expect(content.includes('export') && content.includes('setup')).toBe(true)
   })
   test('setup is re-exported from server/index', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
     expect(content.includes('setup')).toBe(true)
   })
 })
 describe('Fix #4: ownedCascade helper', () => {
   const taskSchema = object({
-      completed: boolean(),
-      priority: string(),
-      projectId: string(),
-      title: string()
-    }),
-    messageSchema = object({
-      chatId: string(),
-      content: string(),
-      role: string()
-    })
+    completed: boolean(),
+    priority: string(),
+    projectId: string(),
+    title: string()
+  })
+  const messageSchema = object({
+    chatId: string(),
+    content: string(),
+    role: string()
+  })
   test('ownedCascade accepts valid foreignKey', () => {
     const result = ownedCascade(taskSchema, {
       foreignKey: 'projectId',
@@ -2397,17 +2396,17 @@ describe('Fix #4: ownedCascade helper', () => {
     expect(typeof result.table).toBe('string')
   })
   test('ownedCascade is re-exported from server/index', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
     expect(content.includes('ownedCascade')).toBe(true)
   })
   test('ownedCascade mirrors orgCascade behavior', () => {
     const owned = ownedCascade(taskSchema, {
-        foreignKey: 'projectId',
-        table: 'task'
-      }),
-      org = orgCascade(taskSchema, { foreignKey: 'projectId', table: 'task' })
+      foreignKey: 'projectId',
+      table: 'task'
+    })
+    const org = orgCascade(taskSchema, { foreignKey: 'projectId', table: 'task' })
     expect(owned.foreignKey).toBe(org.foreignKey)
     expect(owned.table).toBe(org.table)
   })
@@ -2513,8 +2512,8 @@ describe('Fix #8: cache purge uses take(batchSize)', () => {
     expect(capBatchSize(1)).toBe(1)
   })
   test('batchSize schema accepts number or undefined', () => {
-    const bsSchema = number().optional(),
-      undef = undefined
+    const bsSchema = number().optional()
+    const undef = undefined
     expect(bsSchema.safeParse(undef).success).toBe(true)
     expect(bsSchema.safeParse(50).success).toBe(true)
     expect(bsSchema.safeParse('abc').success).toBe(false)
@@ -2633,11 +2632,11 @@ describe('useList where typing', () => {
     expect(opts.where?.own).toBe(true)
   })
   test('ListWhere and WhereGroup exports are importable and usable', () => {
-    const group: WhereGroup<{ title: string }> = { own: true, title: 'hello' },
-      where: ListWhere<{ title: string }> = {
-        or: [{ title: 'a' }, { own: true }],
-        title: 'hello'
-      }
+    const group: WhereGroup<{ title: string }> = { own: true, title: 'hello' }
+    const where: ListWhere<{ title: string }> = {
+      or: [{ title: 'a' }, { own: true }],
+      title: 'hello'
+    }
     expect(group.title).toBe('hello')
     expect(where.or).toHaveLength(2)
   })
@@ -2645,12 +2644,12 @@ describe('useList where typing', () => {
 describe('collectSettled helper', () => {
   test('collectSettled splits fulfilled values from errors', () => {
     const settled: PromiseSettledResult<number>[] = [
-        { status: 'fulfilled', value: 1 },
-        { reason: new Error('boom'), status: 'rejected' },
-        { status: 'fulfilled', value: 2 }
-      ],
-      { errors, results } = collectSettled(settled),
-      bulk: BulkResult<number> = { errors, results, settled }
+      { status: 'fulfilled', value: 1 },
+      { reason: new Error('boom'), status: 'rejected' },
+      { status: 'fulfilled', value: 2 }
+    ]
+    const { errors, results } = collectSettled(settled)
+    const bulk: BulkResult<number> = { errors, results, settled }
     expect(results).toEqual([1, 2])
     expect(errors).toHaveLength(1)
     expect(bulk.settled).toHaveLength(3)
@@ -2668,17 +2667,17 @@ describe('ConflictData typing', () => {
   })
   test('ConflictData default generic uses unknown payloads', () => {
     const conflict: ConflictData = {
-        code: 'CONFLICT',
-        current: { title: 'x' }
-      },
-      { current } = conflict
+      code: 'CONFLICT',
+      current: { title: 'x' }
+    }
+    const { current } = conflict
     expect(current).toBeDefined()
   })
 })
 describe('Fix #10: isTestMode production safety', () => {
   test('isTestMode returns true when SPACETIMEDB_TEST_MODE=true and NODE_ENV=test', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.SPACETIMEDB_TEST_MODE = 'true'
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(true)
@@ -2686,8 +2685,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when SPACETIMEDB_TEST_MODE=true regardless of NODE_ENV', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.SPACETIMEDB_TEST_MODE = 'true'
     process.env.NODE_ENV = 'production'
     expect(isTestMode()).toBe(true)
@@ -2695,8 +2694,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when SPACETIMEDB_TEST_MODE is false', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.SPACETIMEDB_TEST_MODE = 'false'
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(false)
@@ -2704,8 +2703,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when SPACETIMEDB_TEST_MODE is undefined', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     delete process.env.SPACETIMEDB_TEST_MODE
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(false)
@@ -2713,8 +2712,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns false when both are undefined', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     delete process.env.SPACETIMEDB_TEST_MODE
     delete process.env.NODE_ENV
     expect(isTestMode()).toBe(false)
@@ -2722,8 +2721,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when SPACETIMEDB_TEST_MODE=true and NODE_ENV=development', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.SPACETIMEDB_TEST_MODE = 'true'
     process.env.NODE_ENV = 'development'
     expect(isTestMode()).toBe(true)
@@ -2731,8 +2730,8 @@ describe('Fix #10: isTestMode production safety', () => {
     process.env.NODE_ENV = origNode
   })
   test('isTestMode returns true when SPACETIMEDB_TEST_MODE=true and NODE_ENV is empty', () => {
-    const origTest = process.env.SPACETIMEDB_TEST_MODE,
-      origNode = process.env.NODE_ENV
+    const origTest = process.env.SPACETIMEDB_TEST_MODE
+    const origNode = process.env.NODE_ENV
     process.env.SPACETIMEDB_TEST_MODE = 'true'
     process.env.NODE_ENV = ''
     expect(isTestMode()).toBe(true)
@@ -2763,8 +2762,8 @@ describe('VALIDATION_FAILED error code', () => {
     }
   })
   test('extractErrorData works with VALIDATION_FAILED', () => {
-    const e = makeSenderError({ code: 'VALIDATION_FAILED', fields: ['title'] }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'VALIDATION_FAILED', fields: ['title'] })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.code).toBe('VALIDATION_FAILED')
     expect(d?.fields).toEqual(['title'])
@@ -2872,36 +2871,36 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData returns fieldErrors from SenderError', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { content: 'Too short', title: 'Required' },
-        fields: ['title', 'content'],
-        message: 'Invalid: title, content'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { content: 'Too short', title: 'Required' },
+      fields: ['title', 'content'],
+      message: 'Invalid: title, content'
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toEqual({ content: 'Too short', title: 'Required' })
   })
   test('extractErrorData returns undefined fieldErrors when not a record', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: 'not-a-record'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: 'not-a-record'
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData returns undefined fieldErrors when missing', () => {
-    const e = makeSenderError({ code: 'NOT_FOUND' }),
-      d = extractErrorData(e)
+    const e = makeSenderError({ code: 'NOT_FOUND' })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData ignores array fieldErrors (arrays are not records)', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: ['title', 'content']
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: ['title', 'content']
+    })
+    const d = extractErrorData(e)
     expect(d).toBeDefined()
     expect(d?.fieldErrors).toBeUndefined()
   })
@@ -2946,27 +2945,27 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData with fieldErrors as null returns undefined', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: null
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: null
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData with fieldErrors as number returns undefined', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: 42
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: 42
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toBeUndefined()
   })
   test('extractErrorData with nested fieldErrors preserves values', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { email: 'Already taken', password: 'Too weak' },
-        fields: ['email', 'password']
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { email: 'Already taken', password: 'Too weak' },
+      fields: ['email', 'password']
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toEqual({
       email: 'Already taken',
       password: 'Too weak'
@@ -2988,20 +2987,20 @@ describe('field-level error routing (R9.3)', () => {
   })
   test('extractErrorData with empty record fieldErrors returns empty record', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: {}
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: {}
+    })
+    const d = extractErrorData(e)
     expect(d?.fieldErrors).toEqual({})
   })
   test('field-level errors coexist with general error message', () => {
     const e = makeSenderError({
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { title: 'Too long' },
-        fields: ['title'],
-        message: 'Validation failed'
-      }),
-      d = extractErrorData(e)
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { title: 'Too long' },
+      fields: ['title'],
+      message: 'Validation failed'
+    })
+    const d = extractErrorData(e)
     expect(d?.message).toBe('Validation failed')
     expect(d?.fieldErrors).toEqual({ title: 'Too long' })
   })
@@ -3119,12 +3118,12 @@ describe('detectFiles on child-like schemas', () => {
   })
   test('detects multiple file fields in child schema', () => {
     const shape = {
-        attachments: cvFiles(),
-        chatId: string(),
-        content: string(),
-        thumbnail: cvFile().nullable().optional()
-      },
-      result = detectFiles(shape)
+      attachments: cvFiles(),
+      chatId: string(),
+      content: string(),
+      thumbnail: cvFile().nullable().optional()
+    }
+    const result = detectFiles(shape)
     expect(result).toContain('attachments')
     expect(result).toContain('thumbnail')
     expect(result).toHaveLength(2)
@@ -3167,11 +3166,11 @@ describe('ERROR_MESSAGES completeness', () => {
 })
 describe('guardApi', () => {
   const fakeApi = {
-      blog: { list: 'fn1' },
-      blogProfile: { get: 'fn2' },
-      chat: { send: 'fn3' }
-    },
-    modules = ['blog', 'blogProfile', 'chat']
+    blog: { list: 'fn1' },
+    blogProfile: { get: 'fn2' },
+    chat: { send: 'fn3' }
+  }
+  const modules = ['blog', 'blogProfile', 'chat']
   test('allows valid module access', () => {
     const guarded = guardApi(fakeApi, modules)
     expect(guarded.blog.list).toBe('fn1')
@@ -3197,18 +3196,18 @@ describe('guardApi', () => {
 })
 describe('makeErrorHandler', () => {
   test('calls toast with message for unknown error', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler((m: string) => {
-        messages.push(m)
-      })
+    const messages: string[] = []
+    const handler = makeErrorHandler((m: string) => {
+      messages.push(m)
+    })
     handler(new Error('something broke'))
     expect(messages).toEqual(['something broke'])
   })
   test('calls toast with SenderError message', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler((m: string) => {
-        messages.push(m)
-      })
+    const messages: string[] = []
+    const handler = makeErrorHandler((m: string) => {
+      messages.push(m)
+    })
     handler(makeSenderError({ code: 'NOT_FOUND', message: 'Blog not found' }))
     expect(messages).toEqual(['Blog not found'])
   })
@@ -3230,17 +3229,17 @@ describe('makeErrorHandler', () => {
     expect(messages).toEqual([])
   })
   test('falls back to toast for codes without override', () => {
-    const messages: string[] = [],
-      handler = makeErrorHandler(
-        (m: string) => {
-          messages.push(m)
-        },
-        {
-          RATE_LIMITED: () => {
-            /* Noop */
-          }
+    const messages: string[] = []
+    const handler = makeErrorHandler(
+      (m: string) => {
+        messages.push(m)
+      },
+      {
+        RATE_LIMITED: () => {
+          /* Noop */
         }
-      )
+      }
+    )
     handler(makeSenderError({ code: 'NOT_FOUND', message: 'Gone' }))
     expect(messages).toEqual(['Gone'])
   })
@@ -3271,8 +3270,8 @@ describe('noboil-stdb-viz', () => {
     const block = `
       title: t.string(),
       published: t.bool(),
-      count: t.f64(),`,
-      fields = parseFieldsFromBlock(block)
+      count: t.f64(),`
+    const fields = parseFieldsFromBlock(block)
     expect(fields).toHaveLength(3)
     expect(fields[0]).toEqual({
       name: 'title',
@@ -3296,8 +3295,8 @@ describe('noboil-stdb-viz', () => {
     title: t.string(),
     published: t.bool()
   })
-})`,
-      tables = extractWrapperTables(content)
+})`
+    const tables = extractWrapperTables(content)
     expect(tables).toHaveLength(1)
     const [t] = tables
     expect(t).toBeDefined()
@@ -3314,8 +3313,8 @@ describe('noboil-stdb-viz', () => {
     chatId: t.string(),
     role: t.string()
   })
-})`,
-      children = extractChildren(content)
+})`
+    const children = extractChildren(content)
     expect(children).toHaveLength(1)
     const [c] = children
     expect(c).toBeDefined()
@@ -3325,22 +3324,22 @@ describe('noboil-stdb-viz', () => {
   })
   test('generateMermaid outputs erDiagram', () => {
     const tables = [
-        {
-          fields: [{ name: 'title', type: 'string' }],
-          name: 'blog',
-          tableType: 'table'
-        }
-      ],
-      children = [
-        {
-          fields: [{ name: 'chatId', type: 'id<chat>' }],
-          foreignKey: 'chatId',
-          name: 'message',
-          parent: 'chat',
-          tableType: 'child'
-        }
-      ],
-      mermaid = generateMermaid(tables, children)
+      {
+        fields: [{ name: 'title', type: 'string' }],
+        name: 'blog',
+        tableType: 'table'
+      }
+    ]
+    const children = [
+      {
+        fields: [{ name: 'chatId', type: 'id<chat>' }],
+        foreignKey: 'chatId',
+        name: 'message',
+        parent: 'chat',
+        tableType: 'child'
+      }
+    ]
+    const mermaid = generateMermaid(tables, children)
     expect(mermaid).toContain('erDiagram')
     expect(mermaid).toContain('blog {')
     expect(mermaid).toContain('chat ||--o{ message')
@@ -3409,38 +3408,38 @@ describe('noboil-stdb-check --endpoints', () => {
 })
 describe('bundle verification', () => {
   test('@noboil/spacetimedb/server does not export React hooks', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'index.ts'), 'utf8')
     expect(EXPORT_HOOK_PATTERN.test(content)).toBe(false)
   })
   test('@noboil/spacetimedb/schema has no React imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
     expect(content.includes("from 'react'")).toBe(false)
     expect(content.includes('useState')).toBe(false)
     expect(content.includes('useEffect')).toBe(false)
   })
   test('@noboil/spacetimedb/schema has no node:fs imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'schema.ts'), 'utf8')
     expect(content.includes("from 'node:fs'")).toBe(false)
   })
   test('@noboil/spacetimedb/retry has no React or server imports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'retry.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'retry.ts'), 'utf8')
     expect(content.includes("from 'react'")).toBe(false)
     expect(content.includes("from 'node:fs'")).toBe(false)
   })
   test('entry point count matches package.json exports', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', '..', 'package.json'), 'utf8'),
-      pkg = JSON.parse(content) as { exports: Record<string, string> },
-      exportKeys = Object.keys(pkg.exports)
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', '..', 'package.json'), 'utf8')
+    const pkg = JSON.parse(content) as { exports: Record<string, string> }
+    const exportKeys = Object.keys(pkg.exports)
     expect(exportKeys.length).toBeGreaterThanOrEqual(8)
   })
 })
@@ -3455,8 +3454,8 @@ describe('devtools subscription tracking', () => {
     untrackSubscription(id)
   })
   test('trackSubscription assigns unique ids', () => {
-    const id1 = trackSubscription('api.blog.list'),
-      id2 = trackSubscription('api.chat.list')
+    const id1 = trackSubscription('api.blog.list')
+    const id2 = trackSubscription('api.chat.list')
     expect(id1).not.toBe(id2)
     untrackSubscription(id1)
     untrackSubscription(id2)
@@ -3479,12 +3478,12 @@ describe('devtools subscription tracking', () => {
 })
 describe('devtools subscription data tracking', () => {
   test('updateSubscriptionData updates preview and counts', () => {
-    const id = trackSubscription('api.blog.list'),
-      data = [
-        { _id: '1', title: 'Hello' },
-        { _id: '2', title: 'World' }
-      ],
-      preview = JSON.stringify(data[0]).slice(0, 200)
+    const id = trackSubscription('api.blog.list')
+    const data = [
+      { _id: '1', title: 'Hello' },
+      { _id: '2', title: 'World' }
+    ]
+    const preview = JSON.stringify(data[0]).slice(0, 200)
     updateSubscriptionData(id, data, preview)
     expect(id).toBeGreaterThan(0)
     untrackSubscription(id)
@@ -3670,33 +3669,33 @@ describe('lifecycle hooks in orgCrud and childCrud', () => {
   test('all 6 hook callbacks work with HookCtx', () => {
     type CrudHookCtx = Parameters<NonNullable<CrudHooks['beforeCreate']>>[0]
     const ctx: CrudHookCtx = {
-        db: {} as CrudHookCtx['db'],
-        sender: { toString: () => 'user_456' } as CrudHookCtx['sender'],
-        timestamp: { microsSinceUnixEpoch: 0n } as CrudHookCtx['timestamp']
+      db: {} as CrudHookCtx['db'],
+      sender: { toString: () => 'user_456' } as CrudHookCtx['sender'],
+      timestamp: { microsSinceUnixEpoch: 0n } as CrudHookCtx['timestamp']
+    }
+    const hooks: CrudHooks = {
+      afterCreate: (c, { row }) => {
+        expect(c.sender.toString()).toBe('user_456')
+        expect(row).toBeDefined()
       },
-      hooks: CrudHooks = {
-        afterCreate: (c, { row }) => {
-          expect(c.sender.toString()).toBe('user_456')
-          expect(row).toBeDefined()
-        },
-        afterDelete: c => {
-          expect(c.db).toBeDefined()
-        },
-        afterUpdate: (_c, { prev }) => {
-          expect(prev).toBeDefined()
-        },
-        beforeCreate: (c, { data }) => {
-          expect(c.timestamp).toBeDefined()
-          return data
-        },
-        beforeDelete: (_c, { row }) => {
-          expect(row).toBeDefined()
-        },
-        beforeUpdate: (c, { patch }) => {
-          expect(c.sender.toString()).toBe('user_456')
-          return patch
-        }
+      afterDelete: c => {
+        expect(c.db).toBeDefined()
+      },
+      afterUpdate: (_c, { prev }) => {
+        expect(prev).toBeDefined()
+      },
+      beforeCreate: (c, { data }) => {
+        expect(c.timestamp).toBeDefined()
+        return data
+      },
+      beforeDelete: (_c, { row }) => {
+        expect(row).toBeDefined()
+      },
+      beforeUpdate: (c, { patch }) => {
+        expect(c.sender.toString()).toBe('user_456')
+        return patch
       }
+    }
     hooks.beforeCreate?.(ctx, { data: { title: 'test' } })
     hooks.afterCreate?.(ctx, {
       data: { title: 'test' },
@@ -3746,15 +3745,15 @@ describe('noboil-stdb-docs', () => {
   })
   test('generateMarkdown includes factory table', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'blog.ts',
-          options: 'endpoints=create,read',
-          table: 'blog'
-        }
-      ],
-      fields = new Map([['blog', [{ name: 'title', type: 'string' }]]]),
-      md = generateMarkdown(calls, fields)
+      {
+        factory: 'reducer',
+        file: 'blog.ts',
+        options: 'endpoints=create,read',
+        table: 'blog'
+      }
+    ]
+    const fields = new Map([['blog', [{ name: 'title', type: 'string' }]]])
+    const md = generateMarkdown(calls, fields)
     expect(md).toContain('## blog')
     expect(md).toContain('SpacetimeDB reducers for table operations')
     expect(md).toContain('blog.ts')
@@ -3762,97 +3761,97 @@ describe('noboil-stdb-docs', () => {
   })
   test('generateMarkdown lists endpoints per factory', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'blog.ts',
-          options: 'endpoints=create,update,rm',
-          table: 'blog'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'reducer',
+        file: 'blog.ts',
+        options: 'endpoints=create,update,rm',
+        table: 'blog'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('blog.create')
     expect(md).toContain('blog.update')
     expect(md).toContain('blog.rm')
   })
   test('generateMarkdown handles orgCrud with acl', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'wiki.ts',
-          options: 'endpoints=addEditor,setEditors',
-          table: 'wiki'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'reducer',
+        file: 'wiki.ts',
+        options: 'endpoints=addEditor,setEditors',
+        table: 'wiki'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('wiki.addEditor')
     expect(md).toContain('wiki.setEditors')
   })
   test('generateMarkdown handles singletonCrud', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'profile.ts',
-          options: 'endpoints=get,upsert',
-          table: 'profile'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'reducer',
+        file: 'profile.ts',
+        options: 'endpoints=get,upsert',
+        table: 'profile'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('profile.get')
     expect(md).toContain('profile.upsert')
   })
   test('generateMarkdown includes schema fields section', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'blog.ts',
-          options: 'endpoints=create',
-          table: 'blog'
-        }
-      ],
-      fields = new Map([
+      {
+        factory: 'reducer',
+        file: 'blog.ts',
+        options: 'endpoints=create',
+        table: 'blog'
+      }
+    ]
+    const fields = new Map([
+      [
+        'blog',
         [
-          'blog',
-          [
-            { name: 'title', type: 'string' },
-            { name: 'published', type: 'boolean' }
-          ]
+          { name: 'title', type: 'string' },
+          { name: 'published', type: 'boolean' }
         ]
-      ]),
-      md = generateMarkdown(calls, fields)
+      ]
+    ])
+    const md = generateMarkdown(calls, fields)
     expect(md).toContain('### Schema Fields')
     expect(md).toContain('| title | `string` |')
     expect(md).toContain('| published | `boolean` |')
   })
   test('generateMarkdown shows endpoint types', () => {
     const calls = [
-        {
-          factory: 'reducer',
-          file: 'blog.ts',
-          options: 'endpoints=create,list',
-          table: 'blog'
-        }
-      ],
-      md = generateMarkdown(calls, new Map())
+      {
+        factory: 'reducer',
+        file: 'blog.ts',
+        options: 'endpoints=create,list',
+        table: 'blog'
+      }
+    ]
+    const md = generateMarkdown(calls, new Map())
     expect(md).toContain('reducer')
   })
 })
 describe('seed data generator', () => {
   test('generateOne produces valid object for simple schema', () => {
-    const schema = object({ published: boolean(), title: string().min(1) }),
-      result = generateOne(schema)
+    const schema = object({ published: boolean(), title: string().min(1) })
+    const result = generateOne(schema)
     expect(typeof result.title).toBe('string')
     expect(typeof result.published).toBe('boolean')
     expect(result.title.length).toBeGreaterThan(0)
   })
   test('generateSeed produces correct count', () => {
-    const schema = object({ name: string() }),
-      results = generateSeed(schema, 5)
+    const schema = object({ name: string() })
+    const results = generateSeed(schema, 5)
     expect(results).toHaveLength(5)
     for (const r of results) expect(typeof r.name).toBe('string')
   })
   test('generateFieldValue handles enum', () => {
-    const field = zenum(['tech', 'life', 'tutorial']),
-      val = generateFieldValue(field)
+    const field = zenum(['tech', 'life', 'tutorial'])
+    const val = generateFieldValue(field)
     expect(['tech', 'life', 'tutorial']).toContain(String(val))
   })
   test('generateFieldValue handles number', () => {
@@ -3873,14 +3872,14 @@ describe('seed data generator', () => {
     expect(Array.isArray(val)).toBe(true)
   })
   test('generateOne handles optional fields', () => {
-    const schema = object({ bio: optional(string()), name: string() }),
-      result = generateOne(schema)
+    const schema = object({ bio: optional(string()), name: string() })
+    const result = generateOne(schema)
     expect(typeof result.name).toBe('string')
     expect(['string', 'undefined']).toContain(typeof result.bio)
   })
   test('generateSeed default count is 1', () => {
-    const schema = object({ x: string() }),
-      results = generateSeed(schema)
+    const schema = object({ x: string() })
+    const results = generateSeed(schema)
     expect(results).toHaveLength(1)
   })
 })
@@ -3975,12 +3974,12 @@ describe('cacheCrud hooks', () => {
     expect(isCrudHooks).toBe(true)
   })
   test('CacheHooks differ from CrudHooks by context type', () => {
-    const cacheCtx: CacheHookCtx = { db: {} as CacheHookCtx['db'] },
-      crudCtx: HookCtx = {
-        db: {} as HookCtx['db'],
-        storage: {} as HookCtx['storage'],
-        userId: 'user_123'
-      }
+    const cacheCtx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const crudCtx: HookCtx = {
+      db: {} as HookCtx['db'],
+      storage: {} as HookCtx['storage'],
+      userId: 'user_123'
+    }
     expect(Object.keys(cacheCtx)).toEqual(['db'])
     expect(Object.keys(crudCtx).toSorted()).toEqual(['db', 'storage', 'userId'])
   })
@@ -4056,8 +4055,8 @@ describe('useSearch', () => {
     type R = UseSearchResult<string[]>
     type HasResults = 'results' extends keyof R ? true : false
     type HasIsSearching = 'isSearching' extends keyof R ? true : false
-    const _r: HasResults = true,
-      _is: HasIsSearching = true
+    const _r: HasResults = true
+    const _is: HasIsSearching = true
     expect(_r).toBe(true)
     expect(_is).toBe(true)
   })
@@ -4098,15 +4097,15 @@ describe('useSearch type safety', () => {
     type Fields = UseSearchOptions<Row>['fields']
     type IncludesName = 'name' extends Fields[number] ? true : false
     type IncludesAge = 'age' extends Fields[number] ? true : false
-    const _n: IncludesName = true,
-      _a: IncludesAge = true
+    const _n: IncludesName = true
+    const _a: IncludesAge = true
     expect(_n).toBe(true)
     expect(_a).toBe(true)
   })
 })
 describe('global hooks', () => {
-  const sender = { toString: () => 'test' } as GlobalHookCtx['sender'],
-    timestamp = { microsSinceUnixEpoch: 0n } as GlobalHookCtx['timestamp']
+  const sender = { toString: () => 'test' } as GlobalHookCtx['sender']
+  const timestamp = { microsSinceUnixEpoch: 0n } as GlobalHookCtx['timestamp']
   test('GlobalHookCtx has db, table, sender, and timestamp', () => {
     const ctx: GlobalHookCtx = {
       db: {} as GlobalHookCtx['db'],
@@ -4169,18 +4168,18 @@ describe('global hooks', () => {
     expect(hooks.afterDelete).toBeDefined()
   })
   test('GlobalHookCtx includes table name for cross-cutting concerns', () => {
-    const tables: string[] = [],
-      hooks: GlobalHooks = {
-        afterCreate: _c => {
-          tables.push(_c.table)
-        }
-      },
-      ctx: GlobalHookCtx = {
-        db: {} as GlobalHookCtx['db'],
-        sender,
-        table: 'blog',
-        timestamp
+    const tables: string[] = []
+    const hooks: GlobalHooks = {
+      afterCreate: _c => {
+        tables.push(_c.table)
       }
+    }
+    const ctx: GlobalHookCtx = {
+      db: {} as GlobalHookCtx['db'],
+      sender,
+      table: 'blog',
+      timestamp
+    }
     hooks.afterCreate?.(ctx, { data: {}, row: {} })
     const ctx2: GlobalHookCtx = {
       db: {} as GlobalHookCtx['db'],
@@ -4204,34 +4203,34 @@ describe('global hooks', () => {
   test('GlobalHooks beforeCreate receives table in context', () => {
     let capturedTable = ''
     const hooks: GlobalHooks = {
-        beforeCreate: (_c, { data }) => {
-          capturedTable = _c.table
-          return data
-        }
-      },
-      ctx: GlobalHookCtx = {
-        db: {} as GlobalHookCtx['db'],
-        sender,
-        table: 'blog',
-        timestamp
+      beforeCreate: (_c, { data }) => {
+        capturedTable = _c.table
+        return data
       }
+    }
+    const ctx: GlobalHookCtx = {
+      db: {} as GlobalHookCtx['db'],
+      sender,
+      table: 'blog',
+      timestamp
+    }
     hooks.beforeCreate?.(ctx, { data: { title: 'test' } })
     expect(capturedTable).toBe('blog')
   })
   test('GlobalHooks beforeUpdate composes data transform', () => {
     const hooks: GlobalHooks = {
-        beforeUpdate: (_ctx, { patch }) => ({ ...patch, globalField: true })
-      },
-      ctx: GlobalHookCtx = {
-        db: {} as GlobalHookCtx['db'],
-        sender,
-        table: 'blog',
-        timestamp
-      },
-      result = hooks.beforeUpdate?.(ctx, {
-        patch: { title: 'new' },
-        prev: { title: 'old' }
-      })
+      beforeUpdate: (_ctx, { patch }) => ({ ...patch, globalField: true })
+    }
+    const ctx: GlobalHookCtx = {
+      db: {} as GlobalHookCtx['db'],
+      sender,
+      table: 'blog',
+      timestamp
+    }
+    const result = hooks.beforeUpdate?.(ctx, {
+      patch: { title: 'new' },
+      prev: { title: 'old' }
+    })
     expect(result).toEqual({ globalField: true, title: 'new' })
   })
 })
@@ -4301,16 +4300,16 @@ describe('optimistic store', () => {
     expect(notified).toBe(1)
   })
   test('makeTempId generates unique ids', () => {
-    const id1 = makeTempId(),
-      id2 = makeTempId()
+    const id1 = makeTempId()
+    const id2 = makeTempId()
     expect(id1).not.toBe(id2)
     expect(id1).toContain('__optimistic_')
     expect(id2).toContain('__optimistic_')
   })
   test('multiple subscribers all get notified', () => {
     const store = createOptimisticStore()
-    let count1 = 0,
-      count2 = 0
+    let count1 = 0
+    let count2 = 0
     store.subscribe(() => {
       count1 += 1
     })
@@ -4337,17 +4336,17 @@ describe('applyOptimistic', () => {
     expect(applyOptimistic(items, [])).toBe(items)
   })
   test('prepends optimistic creates', () => {
-    const items: Rec[] = [{ _id: '1', title: 'existing' }],
-      pending: PendingMutation[] = [
-        {
-          args: { title: 'new' },
-          id: 'temp_1',
-          tempId: 'temp_1',
-          timestamp: 2000,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items: Rec[] = [{ _id: '1', title: 'existing' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { title: 'new' },
+        id: 'temp_1',
+        tempId: 'temp_1',
+        timestamp: 2000,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(2)
     expect(result[0]?.title).toBe('new')
     expect(result[0]?._id).toBe('temp_1')
@@ -4356,34 +4355,34 @@ describe('applyOptimistic', () => {
   })
   test('filters out optimistic deletes', () => {
     const items = [
-        { _id: '1', title: 'a' },
-        { _id: '2', title: 'b' }
-      ],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '1' },
-          id: '1',
-          tempId: 'temp_d',
-          timestamp: 2000,
-          type: 'delete'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+      { _id: '1', title: 'a' },
+      { _id: '2', title: 'b' }
+    ]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '1' },
+        id: '1',
+        tempId: 'temp_d',
+        timestamp: 2000,
+        type: 'delete'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?._id).toBe('2')
   })
   test('merges optimistic updates', () => {
-    const items = [{ _id: '1', status: 'draft', title: 'old' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '1', title: 'new' },
-          id: '1',
-          tempId: 'temp_u',
-          timestamp: 2000,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', status: 'draft', title: 'old' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '1', title: 'new' },
+        id: '1',
+        tempId: 'temp_u',
+        timestamp: 2000,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?.title).toBe('new')
     expect(result[0]?.status).toBe('draft')
@@ -4391,34 +4390,34 @@ describe('applyOptimistic', () => {
   })
   test('handles create + delete + update together', () => {
     const items: Rec[] = [
-        { _id: '1', title: 'keep' },
-        { _id: '2', title: 'remove' },
-        { _id: '3', title: 'update' }
-      ],
-      pending: PendingMutation[] = [
-        {
-          args: { title: 'brand new' },
-          id: 'temp_c',
-          tempId: 'temp_c',
-          timestamp: 3000,
-          type: 'create'
-        },
-        {
-          args: { id: '2' },
-          id: '2',
-          tempId: 'temp_d',
-          timestamp: 3001,
-          type: 'delete'
-        },
-        {
-          args: { id: '3', title: 'updated' },
-          id: '3',
-          tempId: 'temp_u',
-          timestamp: 3002,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+      { _id: '1', title: 'keep' },
+      { _id: '2', title: 'remove' },
+      { _id: '3', title: 'update' }
+    ]
+    const pending: PendingMutation[] = [
+      {
+        args: { title: 'brand new' },
+        id: 'temp_c',
+        tempId: 'temp_c',
+        timestamp: 3000,
+        type: 'create'
+      },
+      {
+        args: { id: '2' },
+        id: '2',
+        tempId: 'temp_d',
+        timestamp: 3001,
+        type: 'delete'
+      },
+      {
+        args: { id: '3', title: 'updated' },
+        id: '3',
+        tempId: 'temp_u',
+        timestamp: 3002,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(3)
     expect(result[0]?.title).toBe('brand new')
     expect(result[0]?.__optimistic).toBe(true)
@@ -4426,89 +4425,89 @@ describe('applyOptimistic', () => {
     expect(result[2]?.title).toBe('updated')
   })
   test('multiple updates to same id merge patches', () => {
-    const items: Rec[] = [{ _id: '1', a: 1, b: 2, c: 3 }],
-      pending: PendingMutation[] = [
-        {
-          args: { a: 10, id: '1' },
-          id: '1',
-          tempId: 't1',
-          timestamp: 1000,
-          type: 'update'
-        },
-        {
-          args: { b: 20, id: '1' },
-          id: '1',
-          tempId: 't2',
-          timestamp: 1001,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items: Rec[] = [{ _id: '1', a: 1, b: 2, c: 3 }]
+    const pending: PendingMutation[] = [
+      {
+        args: { a: 10, id: '1' },
+        id: '1',
+        tempId: 't1',
+        timestamp: 1000,
+        type: 'update'
+      },
+      {
+        args: { b: 20, id: '1' },
+        id: '1',
+        tempId: 't2',
+        timestamp: 1001,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result[0]).toEqual({ _id: '1', a: 10, b: 20, c: 3, id: '1' })
   })
   test('delete of non-existent id is no-op', () => {
-    const items = [{ _id: '1', title: 'a' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '999' },
-          id: '999',
-          tempId: 'td',
-          timestamp: 1000,
-          type: 'delete'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', title: 'a' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '999' },
+        id: '999',
+        tempId: 'td',
+        timestamp: 1000,
+        type: 'delete'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?._id).toBe('1')
   })
   test('update of non-existent id is no-op', () => {
-    const items = [{ _id: '1', title: 'a' }],
-      pending: PendingMutation[] = [
-        {
-          args: { id: '999', title: 'x' },
-          id: '999',
-          tempId: 'tu',
-          timestamp: 1000,
-          type: 'update'
-        }
-      ],
-      result = applyOptimistic(items, pending)
+    const items = [{ _id: '1', title: 'a' }]
+    const pending: PendingMutation[] = [
+      {
+        args: { id: '999', title: 'x' },
+        id: '999',
+        tempId: 'tu',
+        timestamp: 1000,
+        type: 'update'
+      }
+    ]
+    const result = applyOptimistic(items, pending)
     expect(result).toHaveLength(1)
     expect(result[0]?.title).toBe('a')
   })
   test('optimistic creates get __optimistic flag and timestamps', () => {
     const pending: PendingMutation[] = [
-        {
-          args: { title: 'test' },
-          id: 'tc',
-          tempId: 'tc',
-          timestamp: 5000,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic([] as Rec[], pending)
+      {
+        args: { title: 'test' },
+        id: 'tc',
+        tempId: 'tc',
+        timestamp: 5000,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic([] as Rec[], pending)
     expect(result[0]?._creationTime).toBe(5000)
     expect(result[0]?.updatedAt).toBe(5000)
     expect(result[0]?.__optimistic).toBe(true)
   })
   test('empty items with creates works', () => {
     const pending: PendingMutation[] = [
-        {
-          args: { title: 'first' },
-          id: 't1',
-          tempId: 't1',
-          timestamp: 1000,
-          type: 'create'
-        },
-        {
-          args: { title: 'second' },
-          id: 't2',
-          tempId: 't2',
-          timestamp: 1001,
-          type: 'create'
-        }
-      ],
-      result = applyOptimistic([] as Rec[], pending)
+      {
+        args: { title: 'first' },
+        id: 't1',
+        tempId: 't1',
+        timestamp: 1000,
+        type: 'create'
+      },
+      {
+        args: { title: 'second' },
+        id: 't2',
+        tempId: 't2',
+        timestamp: 1001,
+        type: 'create'
+      }
+    ]
+    const result = applyOptimistic([] as Rec[], pending)
     expect(result).toHaveLength(2)
     expect(result[0]?.title).toBe('second')
     expect(result[1]?.title).toBe('first')
@@ -4621,8 +4620,8 @@ describe('devtools mutation tracking', () => {
     expect(id).toBeGreaterThan(0)
   })
   test('trackMutation assigns unique ids', () => {
-    const id1 = trackMutation('blog:create'),
-      id2 = trackMutation('blog:update')
+    const id1 = trackMutation('blog:create')
+    const id2 = trackMutation('blog:update')
     expect(id1).not.toBe(id2)
   })
   test('completeMutation marks as success', () => {
@@ -4669,29 +4668,29 @@ describe('devtools cache tracking', () => {
 describe('extractCustomIndexes', () => {
   test('parses single .index() from schema definition', () => {
     const content =
-        'const schemaDef = schema({ blog: table({}, { title: t.string() }), chat: table({}, { body: t.string() }) })',
-      result = extractCustomIndexes(content)
+      'const schemaDef = schema({ blog: table({}, { title: t.string() }), chat: table({}, { body: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toEqual([])
     expect(result.get('chat')).toEqual([])
   })
   test('parses multiple indexes on same table', () => {
-    const content = 'const schemaDef = schema({ blog: table({}, { title: t.string() }) })',
-      result = extractCustomIndexes(content)
+    const content = 'const schemaDef = schema({ blog: table({}, { title: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toHaveLength(0)
   })
   test('parses compound index fields', () => {
-    const content = 'const schemaDef = schema({ wiki: table({}, { orgId: t.string(), slug: t.string() }) })',
-      result = extractCustomIndexes(content)
+    const content = 'const schemaDef = schema({ wiki: table({}, { orgId: t.string(), slug: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('wiki')).toEqual([])
   })
   test('parses searchIndex', () => {
-    const content = 'const schemaDef = schema({ blog: table({}, { content: t.string() }) })',
-      result = extractCustomIndexes(content)
+    const content = 'const schemaDef = schema({ blog: table({}, { content: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toEqual([])
   })
   test('parses mixed index and searchIndex', () => {
-    const content = 'const schemaDef = schema({ blog: table({}, { content: t.string() }) })',
-      result = extractCustomIndexes(content)
+    const content = 'const schemaDef = schema({ blog: table({}, { content: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('blog')).toHaveLength(0)
     const blogIdxs = result.get('blog')
     expect(blogIdxs).toBeDefined()
@@ -4702,14 +4701,14 @@ describe('extractCustomIndexes', () => {
     expect(result.size).toBe(0)
   })
   test('parses defineTable usage', () => {
-    const content = 'const schemaDef = schema({ message: table({}, { content: t.string(), chatId: t.string() }) })',
-      result = extractCustomIndexes(content)
+    const content = 'const schemaDef = schema({ message: table({}, { content: t.string(), chatId: t.string() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.get('message')).toEqual([])
   })
   test('handles multiple tables', () => {
     const content =
-        'const schemaDef = schema({ blog: table({}, { title: t.string() }), movie: table({}, { tmdb_id: t.u64() }) })',
-      result = extractCustomIndexes(content)
+      'const schemaDef = schema({ blog: table({}, { title: t.string() }), movie: table({}, { tmdb_id: t.u64() }) })'
+    const result = extractCustomIndexes(content)
     expect(result.size).toBe(2)
     expect(result.get('blog')).toEqual([])
     expect(result.get('movie')).toEqual([])
@@ -4787,8 +4786,8 @@ describe('noboil-stdb-migrate', () => {
     content: t.string(),
     published: t.bool()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('blog')
       expect(result.tables[0]?.fields).toHaveLength(3)
@@ -4799,8 +4798,8 @@ describe('noboil-stdb-migrate', () => {
     title: t.string(),
     slug: t.string()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('wiki')
     })
@@ -4810,8 +4809,8 @@ describe('noboil-stdb-migrate', () => {
     displayName: t.string(),
     theme: t.string()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('profile')
     })
@@ -4821,8 +4820,8 @@ describe('noboil-stdb-migrate', () => {
     title: t.string(),
     tmdb_id: t.f64()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('movie')
     })
@@ -4832,8 +4831,8 @@ describe('noboil-stdb-migrate', () => {
     chatId: t.string(),
     role: t.string()
   })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(1)
       expect(result.tables[0]?.name).toBe('message')
     })
@@ -4842,16 +4841,16 @@ describe('noboil-stdb-migrate', () => {
   blog: table({}, { title: t.string() }),
   chat: table({}, { isPublic: t.bool() }),
   wiki: table({}, { content: t.string() })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables).toHaveLength(3)
     })
     test('returns sorted tables', () => {
       const content = `const schemaDef = schema({
   zzz: table({}, { a: t.string() }),
   aaa: table({}, { b: t.string() })
-})`,
-        result = parseSchemaContent(content)
+})`
+      const result = parseSchemaContent(content)
       expect(result.tables[0]?.name).toBe('aaa')
       expect(result.tables[1]?.name).toBe('zzz')
     })
@@ -4864,8 +4863,8 @@ describe('noboil-stdb-migrate', () => {
     test('parses simple fields', () => {
       const block = `title: t.string(),
     content: t.string(),
-    published: t.bool(),`,
-        fields = parseFieldsFromBlock(block)
+    published: t.bool(),`
+      const fields = parseFieldsFromBlock(block)
       expect(fields).toHaveLength(3)
       expect(fields[0]?.name).toBe('title')
       expect(fields[0]?.type).toBe('string')
@@ -4874,27 +4873,27 @@ describe('noboil-stdb-migrate', () => {
     })
     test('detects optional fields', () => {
       const block = `bio: t.option(t.string()),
-    name: t.string()`,
-        fields = parseFieldsFromBlock(block)
+    name: t.string()`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.optional).toBe(true)
       expect(fields[1]?.optional).toBe(false)
     })
     test('detects nullable fields', () => {
-      const block = 'avatar: t.option(t.bytes())',
-        fields = parseFieldsFromBlock(block)
+      const block = 'avatar: t.option(t.bytes())'
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.optional).toBe(true)
     })
     test('detects file types', () => {
       const block = `cover: t.bytes(),
-    attachments: t.array(t.bytes())`,
-        fields = parseFieldsFromBlock(block)
+    attachments: t.array(t.bytes())`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.type).toBe('bytes')
       expect(fields[1]?.type).toBe('bytes')
     })
     test('detects number and enum types', () => {
       const block = `count: t.f64(),
-    status: t.string()`,
-        fields = parseFieldsFromBlock(block)
+    status: t.string()`
+      const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.type).toBe('number')
       expect(fields[1]?.type).toBe('string')
     })
@@ -4913,227 +4912,227 @@ describe('noboil-stdb-migrate', () => {
   describe('diffSnapshots', () => {
     test('no changes returns empty actions', () => {
       const snapshot = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(snapshot, snapshot)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(snapshot, snapshot)
       expect(actions).toHaveLength(0)
     })
     test('detects added table', () => {
       const before = {
-          tables: [] as {
-            factory: string
-            fields: { name: string; optional: boolean; type: string }[]
-            name: string
-          }[]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [] as {
+          factory: string
+          fields: { name: string; optional: boolean; type: string }[]
+          name: string
+        }[]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('table_added')
     })
     test('detects removed table', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [] as {
-            factory: string
-            fields: { name: string; optional: boolean; type: string }[]
-            name: string
-          }[]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [] as {
+          factory: string
+          fields: { name: string; optional: boolean; type: string }[]
+          name: string
+        }[]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('table_removed')
     })
     test('detects factory change', () => {
       const before = {
-          tables: [
-            {
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(0)
     })
     test('detects added required field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'category', optional: false, type: 'enum' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'category', optional: false, type: 'enum' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_added_required')
     })
     test('detects added optional field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'bio', optional: true, type: 'string' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'bio', optional: true, type: 'string' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_added_optional')
     })
     test('detects removed field', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'subtitle', optional: true, type: 'string' }
-              ],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'subtitle', optional: true, type: 'string' }
+            ],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_removed')
     })
     test('detects field type change', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'count', optional: false, type: 'string' }],
-              name: 'blog'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'count', optional: false, type: 'number' }],
-              name: 'blog'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'count', optional: false, type: 'string' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'count', optional: false, type: 'number' }],
+            name: 'blog'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(1)
       expect(actions[0]?.type).toBe('field_type_changed')
     })
     test('multiple changes across tables', () => {
       const before = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [{ name: 'title', optional: false, type: 'string' }],
-              name: 'blog'
-            },
-            {
-              factory: 'orgCrud',
-              fields: [{ name: 'content', optional: false, type: 'string' }],
-              name: 'wiki'
-            }
-          ]
-        },
-        after = {
-          tables: [
-            {
-              factory: 'crud',
-              fields: [
-                { name: 'title', optional: false, type: 'string' },
-                { name: 'tags', optional: true, type: 'array' }
-              ],
-              name: 'blog'
-            },
-            {
-              factory: 'crud',
-              fields: [{ name: 'name', optional: false, type: 'string' }],
-              name: 'project'
-            }
-          ]
-        },
-        actions = diffSnapshots(before, after),
-        types = actions.map(a => a.type)
+        tables: [
+          {
+            factory: 'crud',
+            fields: [{ name: 'title', optional: false, type: 'string' }],
+            name: 'blog'
+          },
+          {
+            factory: 'orgCrud',
+            fields: [{ name: 'content', optional: false, type: 'string' }],
+            name: 'wiki'
+          }
+        ]
+      }
+      const after = {
+        tables: [
+          {
+            factory: 'crud',
+            fields: [
+              { name: 'title', optional: false, type: 'string' },
+              { name: 'tags', optional: true, type: 'array' }
+            ],
+            name: 'blog'
+          },
+          {
+            factory: 'crud',
+            fields: [{ name: 'name', optional: false, type: 'string' }],
+            name: 'project'
+          }
+        ]
+      }
+      const actions = diffSnapshots(before, after)
+      const types = actions.map(a => a.type)
       expect(types).toContain('table_added')
       expect(types).toContain('table_removed')
       expect(types).toContain('field_added_optional')
     })
     test('unchanged table produces no actions', () => {
       const table = {
-          factory: 'crud',
-          fields: [{ name: 'title', optional: false, type: 'string' }],
-          name: 'blog'
-        },
-        before = { tables: [table] },
-        after = { tables: [{ ...table }] },
-        actions = diffSnapshots(before, after)
+        factory: 'crud',
+        fields: [{ name: 'title', optional: false, type: 'string' }],
+        name: 'blog'
+      }
+      const before = { tables: [table] }
+      const after = { tables: [{ ...table }] }
+      const actions = diffSnapshots(before, after)
       expect(actions).toHaveLength(0)
     })
     test('end-to-end: parse then diff', () => {
@@ -5142,8 +5141,8 @@ describe('noboil-stdb-migrate', () => {
     title: t.string(),
     content: t.string()
   })
-})`,
-        newSchema = `const schemaDef = schema({
+})`
+      const newSchema = `const schemaDef = schema({
   blog: table({}, {
     title: t.string(),
     content: t.string(),
@@ -5152,11 +5151,11 @@ describe('noboil-stdb-migrate', () => {
   wiki: table({}, {
     title: t.string()
   })
-})`,
-        before = parseSchemaContent(oldSchema),
-        after = parseSchemaContent(newSchema),
-        actions = diffSnapshots(before, after),
-        types = actions.map(a => a.type)
+})`
+      const before = parseSchemaContent(oldSchema)
+      const after = parseSchemaContent(newSchema)
+      const actions = diffSnapshots(before, after)
+      const types = actions.map(a => a.type)
       expect(types).toContain('table_added')
       expect(types).toContain('field_added_required')
     })
@@ -5165,117 +5164,117 @@ describe('noboil-stdb-migrate', () => {
 describe('accessForFactory', () => {
   test('crud returns Authenticated level', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=create,update,rm',
-        table: 'blog'
-      },
-      result = accessForFactory(call)
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=create,update,rm',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
     expect(result).toHaveLength(1)
     expect(result[0]?.level).toBe('Authenticated')
   })
   test('crud includes pub.list and pub.read when reducers are present', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=pub.list,pub.read',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=pub.list,pub.read',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth?.endpoints).toContain('pub.list')
     expect(auth?.endpoints).toContain('pub.read')
   })
   test('crud with search includes pub.search', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=pub.search,search',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=pub.search,search',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth?.endpoints).toContain('pub.search')
   })
   test('crud without search has no pub.search', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=create,update',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=create,update',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth?.endpoints).not.toContain('pub.search')
   })
   test('crud Authenticated includes create', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=create',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=create',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth).toBeDefined()
     expect(auth?.endpoints).toContain('create')
   })
   test('crud includes update and rm', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=update,rm',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=update,rm',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth).toBeDefined()
     expect(auth?.endpoints).toContain('update')
     expect(auth?.endpoints).toContain('rm')
   })
   test('crud with softDelete adds restore', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=restore',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=restore',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth?.endpoints).toContain('restore')
   })
   test('crud without softDelete has no restore', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=create,update',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=create,update',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const auth = result.find((e: AccessEntry) => e.level === 'Authenticated')
     expect(auth?.endpoints).not.toContain('restore')
   })
   test('orgCrud returns Org Member level', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=list,read,create,update,rm',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      levels = result.map((e: AccessEntry) => e.level)
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=list,read,create,update,rm',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const levels = result.map((e: AccessEntry) => e.level)
     expect(levels).toContain('Org Member')
   })
   test('orgCrud Org Member includes list, read, create, update', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=list,read,create,update',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=list,read,create,update',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('list')
     expect(allMemberEps).toContain('read')
@@ -5284,40 +5283,40 @@ describe('accessForFactory', () => {
   })
   test('orgCrud with search adds search to Org Member', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=search,list',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=search,list',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('search')
   })
   test('orgCrud Org Admin includes rm', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=rm',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=rm',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('rm')
   })
   test('orgCrud with acl adds ACL endpoints to Org Admin', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=addEditor,removeEditor,setEditors,editors',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=addEditor,removeEditor,setEditors,editors',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('addEditor')
     expect(allMemberEps).toContain('removeEditor')
@@ -5326,50 +5325,50 @@ describe('accessForFactory', () => {
   })
   test('orgCrud without acl has no ACL endpoints', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=list,read',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=list,read',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).not.toContain('addEditor')
   })
   test('orgCrud with softDelete adds restore', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=restore',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=restore',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('restore')
   })
   test('childCrud returns Parent Owner level', () => {
     const call: FactoryCall = {
-        factory: 'makeChildCrud',
-        file: 'message.ts',
-        options: 'endpoints=list,create',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      levels = result.map((e: AccessEntry) => e.level)
+      factory: 'makeChildCrud',
+      file: 'message.ts',
+      options: 'endpoints=list,create',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const levels = result.map((e: AccessEntry) => e.level)
     expect(levels).toContain('Parent Owner')
   })
   test('childCrud Parent Owner includes list, create, update, and rm', () => {
     const call: FactoryCall = {
-        factory: 'makeChildCrud',
-        file: 'message.ts',
-        options: 'endpoints=list,create,update,rm',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
+      factory: 'makeChildCrud',
+      file: 'message.ts',
+      options: 'endpoints=list,create,update,rm',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
     expect(owner).toBeDefined()
     expect(owner?.endpoints).toContain('list')
     expect(owner?.endpoints).toContain('create')
@@ -5378,36 +5377,36 @@ describe('accessForFactory', () => {
   })
   test('childCrud with pub adds pub.list and pub.get reducers', () => {
     const call: FactoryCall = {
-        factory: 'makeChildCrud',
-        file: 'message.ts',
-        options: 'endpoints=pub.list,pub.get',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
+      factory: 'makeChildCrud',
+      file: 'message.ts',
+      options: 'endpoints=pub.list,pub.get',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const owner = result.find((e: AccessEntry) => e.level === 'Parent Owner')
     expect(owner).toBeDefined()
     expect(owner?.endpoints).toContain('pub.list')
     expect(owner?.endpoints).toContain('pub.get')
   })
   test('childCrud without pub has no Public level', () => {
     const call: FactoryCall = {
-        factory: 'makeChildCrud',
-        file: 'message.ts',
-        options: 'endpoints=list,create',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      pub = result.find((e: AccessEntry) => e.level === 'Public')
+      factory: 'makeChildCrud',
+      file: 'message.ts',
+      options: 'endpoints=list,create',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const pub = result.find((e: AccessEntry) => e.level === 'Public')
     expect(pub).toBeUndefined()
   })
   test('cacheCrud returns Public level with all cache endpoints', () => {
     const call: FactoryCall = {
-        factory: 'makeCacheCrud',
-        file: 'movie.ts',
-        options: 'endpoints=get,all,list,create,update,rm,invalidate,purge,load,refresh',
-        table: 'movie'
-      },
-      result = accessForFactory(call)
+      factory: 'makeCacheCrud',
+      file: 'movie.ts',
+      options: 'endpoints=get,all,list,create,update,rm,invalidate,purge,load,refresh',
+      table: 'movie'
+    }
+    const result = accessForFactory(call)
     expect(result).toHaveLength(1)
     expect(result[0]?.level).toBe('Public')
     expect(result[0]?.endpoints).toContain('get')
@@ -5423,12 +5422,12 @@ describe('accessForFactory', () => {
   })
   test('singleton reducers return Project Policy level with get and upsert', () => {
     const call: FactoryCall = {
-        factory: 'reducer',
-        file: 'profile.ts',
-        options: 'endpoints=get,upsert',
-        table: 'profile'
-      },
-      result = accessForFactory(call)
+      factory: 'reducer',
+      file: 'profile.ts',
+      options: 'endpoints=get,upsert',
+      table: 'profile'
+    }
+    const result = accessForFactory(call)
     expect(result).toHaveLength(1)
     expect(result[0]?.level).toBe('Project Policy')
     expect(result[0]?.endpoints).toContain('get')
@@ -5477,14 +5476,14 @@ describe('accessForFactory', () => {
   })
   test('orgCrud with acl + softDelete + search has all options reflected', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=addEditor,restore,search',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member'),
-      allMemberEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=addEditor,restore,search',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const memberEntries = result.filter((e: AccessEntry) => e.level === 'Org Member')
+    const allMemberEps: string[] = []
     for (const entry of memberEntries) for (const ep of entry.endpoints) allMemberEps.push(ep)
     expect(allMemberEps).toContain('search')
     expect(allMemberEps).toContain('restore')
@@ -5492,39 +5491,39 @@ describe('accessForFactory', () => {
   })
   test('crud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'makeCrud',
-        file: 'blog.ts',
-        options: 'endpoints=search,restore,create',
-        table: 'blog'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'makeCrud',
+      file: 'blog.ts',
+      options: 'endpoints=search,restore,create',
+      table: 'blog'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
   })
   test('orgCrud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'makeOrg',
-        file: 'wiki.ts',
-        options: 'endpoints=addEditor,restore,list',
-        table: 'wiki'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'makeOrg',
+      file: 'wiki.ts',
+      options: 'endpoints=addEditor,restore,list',
+      table: 'wiki'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
   })
   test('childCrud access entries do not overlap endpoints', () => {
     const call: FactoryCall = {
-        factory: 'makeChildCrud',
-        file: 'message.ts',
-        options: 'endpoints=pub.list,pub.get,list',
-        table: 'message'
-      },
-      result = accessForFactory(call),
-      allEps: string[] = []
+      factory: 'makeChildCrud',
+      file: 'message.ts',
+      options: 'endpoints=pub.list,pub.get,list',
+      table: 'message'
+    }
+    const result = accessForFactory(call)
+    const allEps: string[] = []
     for (const entry of result) for (const ep of entry.endpoints) allEps.push(ep)
     const unique = new Set(allEps)
     expect(unique.size).toBe(allEps.length)
@@ -5548,136 +5547,136 @@ describe('middleware', () => {
       expect(hooks.afterDelete).toBeUndefined()
     })
     test('composes beforeCreate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw1')
-            return { ...data, added1: true }
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw1')
+          return { ...data, added1: true }
         },
-        mw2: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw2')
-            return { ...data, added2: true }
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw2')
+          return { ...data, added2: true }
         },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeCreate?.(mockCtx, {
-          data: { title: 'test' }
-        })
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeCreate?.(mockCtx, {
+        data: { title: 'test' }
+      })
       expect(result).toEqual({ added1: true, added2: true, title: 'test' })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes afterCreate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterCreate: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterCreate: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterCreate: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterCreate: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes beforeUpdate from multiple middleware', async () => {
       const mw1: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, from1: true }),
-          name: 'mw1'
-        },
-        mw2: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, from2: true }),
-          name: 'mw2'
-        },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
-          patch: { title: 'x' },
-          prev: {}
-        })
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, from1: true }),
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, from2: true }),
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeUpdate?.(mockCtx, {
+        patch: { title: 'x' },
+        prev: {}
+      })
       expect(result).toEqual({ from1: true, from2: true, title: 'x' })
     })
     test('composes afterUpdate from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterUpdate: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterUpdate: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterUpdate: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterUpdate: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterUpdate?.(mockCtx, { next: {}, patch: {}, prev: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes beforeDelete from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeDelete: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeDelete: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          beforeDelete: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        beforeDelete: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.beforeDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('composes afterDelete from multiple middleware', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          afterDelete: () => {
-            calls.push('mw1')
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        afterDelete: () => {
+          calls.push('mw1')
         },
-        mw2: Middleware = {
-          afterDelete: () => {
-            calls.push('mw2')
-          },
-          name: 'mw2'
+        name: 'mw1'
+      }
+      const mw2: Middleware = {
+        afterDelete: () => {
+          calls.push('mw2')
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw2'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.afterDelete?.(mockCtx, { row: {} })
       expect(calls).toEqual(['mw1', 'mw2'])
     })
     test('skips middleware without matching hook', async () => {
-      const calls: string[] = [],
-        mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => {
-            calls.push('mw1')
-            return data
-          },
-          name: 'mw1'
+      const calls: string[] = []
+      const mw1: Middleware = {
+        beforeCreate: (_ctx, { data }) => {
+          calls.push('mw1')
+          return data
         },
-        mw2: Middleware = { name: 'mw2' },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'mw1'
+      }
+      const mw2: Middleware = { name: 'mw2' }
+      const hooks = composeMiddleware(mw1, mw2)
       hooks.beforeCreate?.(mockCtx, { data: { x: 1 } })
       expect(calls).toEqual(['mw1'])
     })
     test('does not set hooks when no middleware implements them', () => {
       const mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => data,
-          name: 'mw1'
-        },
-        hooks = composeMiddleware(mw1)
+        beforeCreate: (_ctx, { data }) => data,
+        name: 'mw1'
+      }
+      const hooks = composeMiddleware(mw1)
       expect(hooks.beforeCreate).toBeDefined()
       expect(hooks.afterCreate).toBeUndefined()
       expect(hooks.beforeUpdate).toBeUndefined()
@@ -5688,38 +5687,38 @@ describe('middleware', () => {
     test('passes MiddlewareCtx with operation field to hooks', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeCreate: (ctx, { data }) => {
-            capturedOp = ctx.operation
-            return data
-          },
-          name: 'capture'
+        beforeCreate: (ctx, { data }) => {
+          capturedOp = ctx.operation
+          return data
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeCreate?.(mockCtx, { data: {} })
       expect(capturedOp).toBe('create')
     })
     test('passes delete operation in beforeDelete', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeDelete: ctx => {
-            capturedOp = ctx.operation
-          },
-          name: 'capture'
+        beforeDelete: ctx => {
+          capturedOp = ctx.operation
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeDelete?.(mockCtx, { row: {} })
       expect(capturedOp).toBe('delete')
     })
     test('passes update operation in beforeUpdate', async () => {
       let capturedOp = ''
       const mw: Middleware = {
-          beforeUpdate: (ctx, { patch }) => {
-            capturedOp = ctx.operation
-            return patch
-          },
-          name: 'capture'
+        beforeUpdate: (ctx, { patch }) => {
+          capturedOp = ctx.operation
+          return patch
         },
-        hooks = composeMiddleware(mw)
+        name: 'capture'
+      }
+      const hooks = composeMiddleware(mw)
       hooks.beforeUpdate?.(mockCtx, { patch: {}, prev: {} })
       expect(capturedOp).toBe('update')
     })
@@ -5742,8 +5741,8 @@ describe('middleware', () => {
       expect(mw.beforeDelete).toBeUndefined()
     })
     test('afterCreate does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
       expect(async () =>
         mw.afterCreate?.(mwCtx, {
           data: { title: 'x' },
@@ -5752,8 +5751,8 @@ describe('middleware', () => {
       ).not.toThrow()
     })
     test('afterUpdate does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
       expect(async () =>
         mw.afterUpdate?.(mwCtx, {
           next: { _id: 'id1', title: 'y' },
@@ -5763,8 +5762,8 @@ describe('middleware', () => {
       ).not.toThrow()
     })
     test('afterDelete does not throw', () => {
-      const mw = auditLog(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'delete' }
+      const mw = auditLog()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'delete' }
       expect(async () => mw.afterDelete?.(mwCtx, { row: { _id: 'id1', title: 'x' } })).not.toThrow()
     })
     test('accepts custom log level', () => {
@@ -5798,17 +5797,17 @@ describe('middleware', () => {
       expect(mw.afterDelete).toBeDefined()
     })
     test('beforeCreate returns data unchanged', () => {
-      const mw = slowQueryWarn(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { title: 'test' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = slowQueryWarn()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { title: 'test' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual(data)
     })
     test('beforeUpdate returns patch unchanged', () => {
-      const mw = slowQueryWarn(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = { title: 'updated' },
-        result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
+      const mw = slowQueryWarn()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = { title: 'updated' }
+      const result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
       expect(result).toEqual(patch)
     })
     test('accepts custom threshold', () => {
@@ -5834,57 +5833,57 @@ describe('middleware', () => {
       expect(mw.afterDelete).toBeUndefined()
     })
     test('sanitizes script tags from string fields on create', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = {
-          content: 'Hello <script>alert(1)</script> World',
-          title: 'Test'
-        },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = {
+        content: 'Hello <script>alert(1)</script> World',
+        title: 'Test'
+      }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ content: 'Hello  World', title: 'Test' })
     })
     test('sanitizes event handlers from string fields on create', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { title: 'Hello onclick= test' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { title: 'Hello onclick= test' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ title: 'Hello  test' })
     })
     test('sanitizes script tags from string fields on update', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = { content: '<script>bad()</script>safe' },
-        result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = { content: '<script>bad()</script>safe' }
+      const result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
       expect(result).toEqual({ content: 'safe' })
     })
     test('leaves non-string values untouched', () => {
-      const mw = inputSanitize(),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = { count: 42, published: true, title: 'safe' },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize()
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = { count: 42, published: true, title: 'safe' }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({ count: 42, published: true, title: 'safe' })
     })
     test('targets specific fields when configured', () => {
-      const mw = inputSanitize({ fields: ['content'] }),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' },
-        data = {
-          content: '<script>x</script>safe',
-          title: '<script>keep</script>'
-        },
-        result = mw.beforeCreate?.(mwCtx, { data })
+      const mw = inputSanitize({ fields: ['content'] })
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'create' }
+      const data = {
+        content: '<script>x</script>safe',
+        title: '<script>keep</script>'
+      }
+      const result = mw.beforeCreate?.(mwCtx, { data })
       expect(result).toEqual({
         content: 'safe',
         title: '<script>keep</script>'
       })
     })
     test('targets specific fields on update', () => {
-      const mw = inputSanitize({ fields: ['content'] }),
-        mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' },
-        patch = {
-          content: '<script>x</script>safe',
-          title: '<script>keep</script>'
-        },
-        result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
+      const mw = inputSanitize({ fields: ['content'] })
+      const mwCtx: MiddlewareCtx = { ...mockCtx, operation: 'update' }
+      const patch = {
+        content: '<script>x</script>safe',
+        title: '<script>keep</script>'
+      }
+      const result = mw.beforeUpdate?.(mwCtx, { patch, prev: {} })
       expect(result).toEqual({
         content: 'safe',
         title: '<script>keep</script>'
@@ -5935,49 +5934,49 @@ describe('middleware', () => {
   })
   describe('middleware composition with composeMiddleware', () => {
     test('multiple middleware run in order on create', async () => {
-      const order: string[] = [],
-        mw1: Middleware = {
-          afterCreate: () => {
-            order.push('audit')
-          },
-          beforeCreate: (_ctx, { data }) => {
-            order.push('sanitize')
-            return data
-          },
-          name: 'first'
+      const order: string[] = []
+      const mw1: Middleware = {
+        afterCreate: () => {
+          order.push('audit')
         },
-        mw2: Middleware = {
-          afterCreate: () => {
-            order.push('log')
-          },
-          beforeCreate: (_ctx, { data }) => {
-            order.push('validate')
-            return data
-          },
-          name: 'second'
+        beforeCreate: (_ctx, { data }) => {
+          order.push('sanitize')
+          return data
         },
-        hooks = composeMiddleware(mw1, mw2)
+        name: 'first'
+      }
+      const mw2: Middleware = {
+        afterCreate: () => {
+          order.push('log')
+        },
+        beforeCreate: (_ctx, { data }) => {
+          order.push('validate')
+          return data
+        },
+        name: 'second'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
       await hooks.beforeCreate?.(mockCtx, { data: {} })
       await hooks.afterCreate?.(mockCtx, { data: {}, row: {} })
       expect(order).toEqual(['sanitize', 'validate', 'audit', 'log'])
     })
     test('data transforms chain through beforeCreate', async () => {
       const mw1: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step1: true }),
-          name: 'step1'
-        },
-        mw2: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step2: true }),
-          name: 'step2'
-        },
-        mw3: Middleware = {
-          beforeCreate: (_ctx, { data }) => ({ ...data, step3: true }),
-          name: 'step3'
-        },
-        hooks = composeMiddleware(mw1, mw2, mw3),
-        result = await hooks.beforeCreate?.(mockCtx, {
-          data: { original: true }
-        })
+        beforeCreate: (_ctx, { data }) => ({ ...data, step1: true }),
+        name: 'step1'
+      }
+      const mw2: Middleware = {
+        beforeCreate: (_ctx, { data }) => ({ ...data, step2: true }),
+        name: 'step2'
+      }
+      const mw3: Middleware = {
+        beforeCreate: (_ctx, { data }) => ({ ...data, step3: true }),
+        name: 'step3'
+      }
+      const hooks = composeMiddleware(mw1, mw2, mw3)
+      const result = await hooks.beforeCreate?.(mockCtx, {
+        data: { original: true }
+      })
       expect(result).toEqual({
         original: true,
         step1: true,
@@ -5987,18 +5986,18 @@ describe('middleware', () => {
     })
     test('patch transforms chain through beforeUpdate', async () => {
       const mw1: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, normalized: true }),
-          name: 'normalize'
-        },
-        mw2: Middleware = {
-          beforeUpdate: (_ctx, { patch }) => ({ ...patch, validated: true }),
-          name: 'validate'
-        },
-        hooks = composeMiddleware(mw1, mw2),
-        result = await hooks.beforeUpdate?.(mockCtx, {
-          patch: { title: 'x' },
-          prev: {}
-        })
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, normalized: true }),
+        name: 'normalize'
+      }
+      const mw2: Middleware = {
+        beforeUpdate: (_ctx, { patch }) => ({ ...patch, validated: true }),
+        name: 'validate'
+      }
+      const hooks = composeMiddleware(mw1, mw2)
+      const result = await hooks.beforeUpdate?.(mockCtx, {
+        patch: { title: 'x' },
+        prev: {}
+      })
       expect(result).toEqual({ normalized: true, title: 'x', validated: true })
     })
   })
@@ -6027,24 +6026,24 @@ describe('middleware', () => {
 describe('health check', () => {
   describe('checkSchemaConsistency', () => {
     test('returns empty issues for consistent schema', async () => {
-      const { mkdirSync, writeFileSync } = await import('node:fs'),
-        tmpDir = `/tmp/noboil-stdb-test-health-${Date.now()}`
+      const { mkdirSync, writeFileSync } = await import('node:fs')
+      const tmpDir = `/tmp/noboil-stdb-test-health-${Date.now()}`
       mkdirSync(`${tmpDir}/spacetimedb/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/spacetimedb/blog.ts`, "crud('blog', owned.blog)")
       const schemaFile = {
-          content: 'const owned = makeOwned({ blog: object({ title: string() }) })',
-          path: `${tmpDir}/schema.ts`
-        },
-        issues = checkSchemaConsistency(`${tmpDir}/spacetimedb`, schemaFile),
-        schemaErrors = issues.filter(i => i.level === 'error')
+        content: 'const owned = makeOwned({ blog: object({ title: string() }) })',
+        path: `${tmpDir}/schema.ts`
+      }
+      const issues = checkSchemaConsistency(`${tmpDir}/spacetimedb`, schemaFile)
+      const schemaErrors = issues.filter(i => i.level === 'error')
       expect(schemaErrors).toHaveLength(0)
     })
   })
   describe('checkIndexCoverage', () => {
     test('returns empty issues when no where clauses used', async () => {
-      const { mkdirSync, writeFileSync } = await import('node:fs'),
-        calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }],
-        tmpDir = `/tmp/noboil-stdb-test-idx-${Date.now()}`
+      const { mkdirSync, writeFileSync } = await import('node:fs')
+      const calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
+      const tmpDir = `/tmp/noboil-stdb-test-idx-${Date.now()}`
       mkdirSync(`${tmpDir}/spacetimedb/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/spacetimedb/schema.ts`, 'export default defineSchema({})')
       const issues = checkIndexCoverage(`${tmpDir}/spacetimedb`, calls)
@@ -6073,15 +6072,15 @@ describe('health check', () => {
       expect(score).toBe(95)
     })
     test('score calculation: multiple errors and warnings compound', () => {
-      const errors = 2,
-        warns = 3,
-        score = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
+      const errors = 2
+      const warns = 3
+      const score = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
       expect(score).toBe(55)
     })
     test('score never goes below 0', () => {
-      const errors = 10,
-        warns = 10,
-        raw = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
+      const errors = 10
+      const warns = 10
+      const raw = HEALTH_MAX - errors * HEALTH_ERROR_PENALTY - warns * HEALTH_WARN_PENALTY
       expect(Math.max(0, raw)).toBe(0)
     })
     test('error penalty is higher than warn penalty', () => {
@@ -6302,40 +6301,40 @@ describe('typed error handling (R10.5)', () => {
   })
   describe('matchError()', () => {
     test('matches specific error code', () => {
-      const e = makeSenderError({ code: 'NOT_FOUND' }),
-        result = matchError(e, {
-          NOT_FOUND: d => `found: ${d.code}`
-        })
+      const e = makeSenderError({ code: 'NOT_FOUND' })
+      const result = matchError(e, {
+        NOT_FOUND: d => `found: ${d.code}`
+      })
       expect(result).toBe('found: NOT_FOUND')
     })
     test('returns handler return value', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED', message: 'slow down' }),
-        result = matchError(e, {
-          RATE_LIMITED: d => ({ msg: d.message, retry: true })
-        })
+      const e = makeSenderError({ code: 'RATE_LIMITED', message: 'slow down' })
+      const result = matchError(e, {
+        RATE_LIMITED: d => ({ msg: d.message, retry: true })
+      })
       expect(result).toEqual({ msg: 'slow down', retry: true })
     })
     test('calls _ fallback when no specific handler', () => {
-      const e = makeSenderError({ code: 'FORBIDDEN' }),
-        result = matchError(e, {
-          NOT_FOUND: () => 'not found',
-          _: () => 'fallback'
-        })
+      const e = makeSenderError({ code: 'FORBIDDEN' })
+      const result = matchError(e, {
+        NOT_FOUND: () => 'not found',
+        _: () => 'fallback'
+      })
       expect(result).toBe('fallback')
     })
     test('calls _ fallback for plain Error', () => {
-      const e = new Error('plain'),
-        result = matchError(e, {
-          NOT_FOUND: () => 'not found',
-          _: rawErr => (rawErr as Error).message
-        })
+      const e = new Error('plain')
+      const result = matchError(e, {
+        NOT_FOUND: () => 'not found',
+        _: rawErr => (rawErr as Error).message
+      })
       expect(result).toBe('plain')
     })
     test('returns undefined when no match and no fallback', () => {
-      const e = makeSenderError({ code: 'FORBIDDEN' }),
-        result = matchError(e, {
-          NOT_FOUND: () => 'nope'
-        })
+      const e = makeSenderError({ code: 'FORBIDDEN' })
+      const result = matchError(e, {
+        NOT_FOUND: () => 'nope'
+      })
       expect(result).toBeUndefined()
     })
     test('returns undefined for non-error with no fallback', () => {
@@ -6345,28 +6344,28 @@ describe('typed error handling (R10.5)', () => {
       expect(result).toBeUndefined()
     })
     test('specific handler takes precedence over fallback', () => {
-      const e = makeSenderError({ code: 'CONFLICT' }),
-        result = matchError(e, {
-          CONFLICT: () => 'specific',
-          _: () => 'fallback'
-        })
+      const e = makeSenderError({ code: 'CONFLICT' })
+      const result = matchError(e, {
+        CONFLICT: () => 'specific',
+        _: () => 'fallback'
+      })
       expect(result).toBe('specific')
     })
     test('handler receives full error data', () => {
       const e = makeSenderError({
-          code: 'VALIDATION_FAILED',
-          fieldErrors: { title: 'required' },
-          fields: ['title'],
-          message: 'Invalid input'
-        }),
-        result = matchError(e, {
-          VALIDATION_FAILED: d => ({
-            code: d.code,
-            fieldErrors: d.fieldErrors,
-            fields: d.fields,
-            message: d.message
-          })
+        code: 'VALIDATION_FAILED',
+        fieldErrors: { title: 'required' },
+        fields: ['title'],
+        message: 'Invalid input'
+      })
+      const result = matchError(e, {
+        VALIDATION_FAILED: d => ({
+          code: d.code,
+          fieldErrors: d.fieldErrors,
+          fields: d.fields,
+          message: d.message
         })
+      })
       expect(result).toEqual({
         code: 'VALIDATION_FAILED',
         fieldErrors: { title: 'required' },
@@ -6376,8 +6375,8 @@ describe('typed error handling (R10.5)', () => {
     })
     test('multiple handlers only calls matching one', () => {
       const e = makeSenderError({ code: 'RATE_LIMITED' })
-      let notFoundCalled = false,
-        rateLimitedCalled = false
+      let notFoundCalled = false
+      let rateLimitedCalled = false
       matchError(e, {
         NOT_FOUND: () => {
           notFoundCalled = true
@@ -6390,25 +6389,25 @@ describe('typed error handling (R10.5)', () => {
       expect(rateLimitedCalled).toBe(true)
     })
     test('returns typed result from handler', () => {
-      const e = makeSenderError({ code: 'NOT_FOUND' }),
-        result: number | undefined = matchError(e, {
-          NOT_FOUND: () => 42
-        })
+      const e = makeSenderError({ code: 'NOT_FOUND' })
+      const result: number | undefined = matchError(e, {
+        NOT_FOUND: () => 42
+      })
       expect(result).toBe(42)
     })
     test('_ receives original error for non-SenderError', () => {
-      const original = new Error('boom'),
-        result = matchError(original, {
-          _: e => (e as Error).message
-        })
+      const original = new Error('boom')
+      const result = matchError(original, {
+        _: e => (e as Error).message
+      })
       expect(result).toBe('boom')
     })
     test('_ receives original error for SenderError without matching handler', () => {
-      const original = makeSenderError({ code: 'FORBIDDEN' }),
-        result = matchError(original, {
-          NOT_FOUND: () => 'nope',
-          _: () => 'fallback'
-        })
+      const original = makeSenderError({ code: 'FORBIDDEN' })
+      const result = matchError(original, {
+        NOT_FOUND: () => 'nope',
+        _: () => 'fallback'
+      })
       expect(result).toBe('fallback')
     })
   })
@@ -6416,15 +6415,15 @@ describe('typed error handling (R10.5)', () => {
     test('process MutationResult with matchError on error case', () => {
       const result = fail('NOT_FOUND')
       expect(result.ok).toBe(false)
-      const errorData = (result as MutationFail).error,
-        e = makeSenderError({
-          code: errorData.code,
-          message: errorData.message
-        } as Record<string, string | undefined>),
-        msg = matchError(e, {
-          NOT_FOUND: d => `Item not found: ${d.message}`,
-          _: () => 'Unknown error'
-        })
+      const errorData = (result as MutationFail).error
+      const e = makeSenderError({
+        code: errorData.code,
+        message: errorData.message
+      } as Record<string, string | undefined>)
+      const msg = matchError(e, {
+        NOT_FOUND: d => `Item not found: ${d.message}`,
+        _: () => 'Unknown error'
+      })
       expect(msg).toBe(`Item not found: ${ERROR_MESSAGES.NOT_FOUND}`)
     })
     test('ok result does not need error handling', () => {
@@ -6434,11 +6433,11 @@ describe('typed error handling (R10.5)', () => {
     test('fail result can be used with isMutationError on SenderError', () => {
       const result = fail('CONFLICT', { message: 'Stale' })
       expect(result.ok).toBe(false)
-      const errorData = (result as MutationFail).error,
-        thrown = makeSenderError({
-          code: errorData.code,
-          message: errorData.message
-        } as Record<string, string | undefined>)
+      const errorData = (result as MutationFail).error
+      const thrown = makeSenderError({
+        code: errorData.code,
+        message: errorData.message
+      } as Record<string, string | undefined>)
       expect(isMutationError(thrown)).toBe(true)
       expect(isErrorCode(thrown, 'CONFLICT')).toBe(true)
     })
@@ -6515,44 +6514,44 @@ describe('rich error metadata (R11.2)', () => {
   })
   describe('extractErrorData with retryAfter and limit', () => {
     test('extracts retryAfter from SenderError', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED', retryAfter: 30_000 }),
-        d = extractErrorData(e)
+      const e = makeSenderError({ code: 'RATE_LIMITED', retryAfter: 30_000 })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBe(30_000)
     })
     test('retryAfter undefined when not a number', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED', retryAfter: 'soon' }),
-        d = extractErrorData(e)
+      const e = makeSenderError({ code: 'RATE_LIMITED', retryAfter: 'soon' })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBeUndefined()
     })
     test('extracts limit object from SenderError', () => {
-      const limit = { max: 10, remaining: 0, window: 60_000 },
-        e = makeSenderError({ code: 'RATE_LIMITED', limit }),
-        d = extractErrorData(e)
+      const limit = { max: 10, remaining: 0, window: 60_000 }
+      const e = makeSenderError({ code: 'RATE_LIMITED', limit })
+      const d = extractErrorData(e)
       expect(d?.limit).toEqual(limit)
     })
     test('limit undefined when not an object', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED', limit: 42 }),
-        d = extractErrorData(e)
+      const e = makeSenderError({ code: 'RATE_LIMITED', limit: 42 })
+      const d = extractErrorData(e)
       expect(d?.limit).toBeUndefined()
     })
     test('limit undefined when null', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED', limit: null }),
-        d = extractErrorData(e)
+      const e = makeSenderError({ code: 'RATE_LIMITED', limit: null })
+      const d = extractErrorData(e)
       expect(d?.limit).toBeUndefined()
     })
     test('both retryAfter and limit extracted together', () => {
       const e = makeSenderError({
-          code: 'RATE_LIMITED',
-          limit: { max: 5, remaining: 0, window: 30_000 },
-          retryAfter: 15_000
-        }),
-        d = extractErrorData(e)
+        code: 'RATE_LIMITED',
+        limit: { max: 5, remaining: 0, window: 30_000 },
+        retryAfter: 15_000
+      })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBe(15_000)
       expect(d?.limit).toEqual({ max: 5, remaining: 0, window: 30_000 })
     })
     test('non-rate-limit errors have no retryAfter or limit', () => {
-      const e = makeSenderError({ code: 'NOT_FOUND' }),
-        d = extractErrorData(e)
+      const e = makeSenderError({ code: 'NOT_FOUND' })
+      const d = extractErrorData(e)
       expect(d?.retryAfter).toBeUndefined()
       expect(d?.limit).toBeUndefined()
     })
@@ -6560,22 +6559,22 @@ describe('rich error metadata (R11.2)', () => {
   describe('getErrorDetail with rate limit info', () => {
     test('includes retry after in detail string', () => {
       const e = makeSenderError({
-          code: 'RATE_LIMITED',
-          retryAfter: 45_000,
-          table: 'blog'
-        }),
-        detail = getErrorDetail(e)
+        code: 'RATE_LIMITED',
+        retryAfter: 45_000,
+        table: 'blog'
+      })
+      const detail = getErrorDetail(e)
       expect(detail).toContain('blog')
       expect(detail).toContain('retry after 45000ms')
     })
     test('no retry info when retryAfter absent', () => {
-      const e = makeSenderError({ code: 'RATE_LIMITED' }),
-        detail = getErrorDetail(e)
+      const e = makeSenderError({ code: 'RATE_LIMITED' })
+      const detail = getErrorDetail(e)
       expect(detail).not.toContain('retry')
     })
     test('detail without table or retryAfter returns base message', () => {
-      const e = makeSenderError({ code: 'NOT_FOUND' }),
-        detail = getErrorDetail(e)
+      const e = makeSenderError({ code: 'NOT_FOUND' })
+      const detail = getErrorDetail(e)
       expect(detail).toBe(ERROR_MESSAGES.NOT_FOUND)
     })
   })
@@ -6605,13 +6604,13 @@ describe('rich error metadata (R11.2)', () => {
   describe('matchError with rich metadata', () => {
     test('rate limit handler receives retryAfter and limit', () => {
       const e = makeSenderError({
-          code: 'RATE_LIMITED',
-          limit: { max: 10, remaining: 0, window: 60_000 },
-          retryAfter: 45_000
-        }),
-        result = matchError(e, {
-          RATE_LIMITED: d => ({ limit: d.limit, retryAfter: d.retryAfter })
-        })
+        code: 'RATE_LIMITED',
+        limit: { max: 10, remaining: 0, window: 60_000 },
+        retryAfter: 45_000
+      })
+      const result = matchError(e, {
+        RATE_LIMITED: d => ({ limit: d.limit, retryAfter: d.retryAfter })
+      })
       expect(result).toEqual({
         limit: { max: 10, remaining: 0, window: 60_000 },
         retryAfter: 45_000
@@ -6640,8 +6639,8 @@ describe('parseObjectFields', () => {
     title: string(),
     count: number(),
     active: boolean(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([
       { field: 'title', type: 'string()' },
       { field: 'count', type: 'number()' },
@@ -6649,34 +6648,34 @@ describe('parseObjectFields', () => {
     ])
   })
   test('strips trailing commas', () => {
-    const content = 'name: string(),',
-      fields = parseObjectFields(content, 0)
+    const content = 'name: string(),'
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([{ field: 'name', type: 'string()' }])
   })
   test('simplifies nested parentheses', () => {
-    const content = 'title: string().min(1).max(100),',
-      fields = parseObjectFields(content, 0)
+    const content = 'title: string().min(1).max(100),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.type).toBe('string().min().max()')
   })
   test('simplifies nested braces', () => {
-    const content = 'category: zenum(["tech", "life"]),',
-      fields = parseObjectFields(content, 0)
+    const content = 'category: zenum(["tech", "life"]),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.type).toContain('zenum')
   })
   test('skips comment lines', () => {
     const content = `
     // this is a comment
     title: string(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toEqual([{ field: 'title', type: 'string()' }])
   })
   test('skips blank lines', () => {
     const content = `
     title: string(),
     count: number(),
-  `,
-      fields = parseObjectFields(content, 0)
+  `
+    const fields = parseObjectFields(content, 0)
     expect(fields).toHaveLength(2)
   })
   test('returns empty for empty block', () => {
@@ -6684,8 +6683,8 @@ describe('parseObjectFields', () => {
     expect(fields).toEqual([])
   })
   test('handles balanced brackets in content', () => {
-    const content = 'tags: array(string()),',
-      fields = parseObjectFields(content, 0)
+    const content = 'tags: array(string()),'
+    const fields = parseObjectFields(content, 0)
     expect(fields[0]?.field).toBe('tags')
   })
 })
@@ -6696,8 +6695,8 @@ describe('extractSchemaFields', () => {
     title: t.string(),
     content: t.string(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('blog')
     expect(tables[0]?.factory).toBe('spacetimedb')
@@ -6716,8 +6715,8 @@ describe('extractSchemaFields', () => {
     name: t.string(),
     isPublic: t.bool(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(2)
     const names = tables.map(t => t.table)
     expect(names).toContain('blog')
@@ -6733,14 +6732,14 @@ describe('extractSchemaFields', () => {
   item: table({}, {
     name: t.string(),
   })
-})`,
-        tables = extractSchemaFields(content)
+})`
+      const tables = extractSchemaFields(content)
       expect(tables[0]?.factory).toBe(expected)
     }
   })
   test('returns empty for content without schema markers', () => {
-    const content = 'const x = { hello: "world" }',
-      tables = extractSchemaFields(content)
+    const content = 'const x = { hello: "world" }'
+    const tables = extractSchemaFields(content)
     expect(tables).toEqual([])
   })
   test('handles child schemas with foreignKey and parent', () => {
@@ -6749,22 +6748,22 @@ describe('extractSchemaFields', () => {
     text: t.string(),
     sender: t.string(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('message')
     expect(tables[0]?.factory).toBe('spacetimedb')
   })
   test('skips child without valid pattern', () => {
-    const content = 'const x = child({ schema: object({ a: string() }) })',
-      tables = extractSchemaFields(content)
+    const content = 'const x = child({ schema: object({ a: string() }) })'
+    const tables = extractSchemaFields(content)
     expect(tables).toEqual([])
   })
 })
 describe('printSchemaPreview', () => {
   test('prints table info with factory type', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6772,15 +6771,15 @@ describe('printSchemaPreview', () => {
   blog: table({}, {
     title: t.string(),
   })
-})`,
-      calls: FactoryCall[] = [
-        {
-          factory: 'makeCrud',
-          file: 'blog.ts',
-          options: 'endpoints=create,read',
-          table: 'blog'
-        }
-      ]
+})`
+    const calls: FactoryCall[] = [
+      {
+        factory: 'makeCrud',
+        file: 'blog.ts',
+        options: 'endpoints=create,read',
+        table: 'blog'
+      }
+    ]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
@@ -6789,8 +6788,8 @@ describe('printSchemaPreview', () => {
     expect(output).toContain('title')
   })
   test('shows options when present', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6798,23 +6797,23 @@ describe('printSchemaPreview', () => {
   blog: table({}, {
     title: t.string(),
   })
-})`,
-      calls: FactoryCall[] = [
-        {
-          factory: 'makeCrud',
-          file: 'blog.ts',
-          options: 'endpoints=search,restore',
-          table: 'blog'
-        }
-      ]
+})`
+    const calls: FactoryCall[] = [
+      {
+        factory: 'makeCrud',
+        file: 'blog.ts',
+        options: 'endpoints=search,restore',
+        table: 'blog'
+      }
+    ]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
     expect(output).toContain('[2 reducers]')
   })
   test('shows no tables message for empty schema', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6824,8 +6823,8 @@ describe('printSchemaPreview', () => {
     expect(output).toContain('No tables found')
   })
   test('shows total count summary', () => {
-    const logs: string[] = [],
-      origLog = console.log
+    const logs: string[] = []
+    const origLog = console.log
     console.log = (...args: unknown[]) => {
       logs.push(args.join(' '))
     }
@@ -6837,21 +6836,21 @@ describe('printSchemaPreview', () => {
   chat: table({}, {
     name: t.string(),
   })
-})`,
-      calls: FactoryCall[] = [
-        {
-          factory: 'makeCrud',
-          file: 'blog.ts',
-          options: 'endpoints=list',
-          table: 'blog'
-        },
-        {
-          factory: 'makeCrud',
-          file: 'chat.ts',
-          options: 'endpoints=list',
-          table: 'chat'
-        }
-      ]
+})`
+    const calls: FactoryCall[] = [
+      {
+        factory: 'makeCrud',
+        file: 'blog.ts',
+        options: 'endpoints=list',
+        table: 'blog'
+      },
+      {
+        factory: 'makeCrud',
+        file: 'chat.ts',
+        options: 'endpoints=list',
+        table: 'chat'
+      }
+    ]
     printSchemaPreview(content, calls)
     console.log = origLog
     const output = logs.join('\n')
@@ -6938,8 +6937,8 @@ describe('SchemaPlayground (R11.4)', () => {
     title: t.string(),
     content: t.string(),
   })
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(1)
     expect(tables[0]?.table).toBe('blog')
     expect(tables[0]?.factory).toBe('spacetimedb')
@@ -6959,8 +6958,8 @@ describe('SchemaPlayground (R11.4)', () => {
     const content = `const schemaDef = schema({
   blog: table({}, { title: t.string() }),
   project: table({}, { name: t.string() }),
-})`,
-      tables = extractSchemaFields(content)
+})`
+    const tables = extractSchemaFields(content)
     expect(tables).toHaveLength(2)
     const factories = tables.map(t => t.factory)
     expect(factories).toContain('spacetimedb')
@@ -7348,8 +7347,8 @@ describe('docs-gen', () => {
   })
   describe('resolveReExports', () => {
     test('parses named re-exports', () => {
-      const content = `export { useBulkSelection } from './use-bulk-selection'`,
-        result = resolveReExports(content)
+      const content = `export { useBulkSelection } from './use-bulk-selection'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('useBulkSelection')
       expect(result[0]?.sourcePath).toBe('./use-bulk-selection')
@@ -7357,26 +7356,26 @@ describe('docs-gen', () => {
       expect(result[0]?.isType).toBe(false)
     })
     test('parses default as re-exports', () => {
-      const content = `export { default as BetterspaceDevtools } from './devtools-panel'`,
-        result = resolveReExports(content)
+      const content = `export { default as BetterspaceDevtools } from './devtools-panel'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('BetterspaceDevtools')
       expect(result[0]?.isDefault).toBe(true)
     })
     test('parses type re-exports', () => {
-      const content = `export type { DevtoolsProps } from './devtools-panel'`,
-        result = resolveReExports(content)
+      const content = `export type { DevtoolsProps } from './devtools-panel'`
+      const result = resolveReExports(content)
       expect(result).toHaveLength(1)
       expect(result[0]?.symbol).toBe('DevtoolsProps')
       expect(result[0]?.isType).toBe(true)
     })
     test('parses multiple re-exports', () => {
       const content = [
-          `export { useBulkSelection } from './use-bulk-selection'`,
-          `export { default as BetterspaceDevtools } from './devtools-panel'`,
-          `export type { DevtoolsProps } from './devtools-panel'`
-        ].join('\n'),
-        result = resolveReExports(content)
+        `export { useBulkSelection } from './use-bulk-selection'`,
+        `export { default as BetterspaceDevtools } from './devtools-panel'`,
+        `export type { DevtoolsProps } from './devtools-panel'`
+      ].join('\n')
+      const result = resolveReExports(content)
       expect(result).toHaveLength(3)
     })
     test('returns empty for content without re-exports', () => {
@@ -7478,38 +7477,38 @@ describe('doctor', () => {
   })
   test('partialValues fills all schema keys at runtime', () => {
     const schema = object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      }),
-      values = partialValues(schema, { published: true, title: 'Sprint 3' })
+      content: string(),
+      published: boolean(),
+      title: string()
+    })
+    const values = partialValues(schema, { published: true, title: 'Sprint 3' })
     expect((values as Record<string, unknown>).content).toBeUndefined()
     expect(values.published).toBe(true)
     expect(values.title).toBe('Sprint 3')
   })
   test('partialValues converts null to undefined', () => {
     const schema = object({
-        coverImage: string().nullable().optional(),
-        title: string()
-      }),
-      values = partialValues(schema, { coverImage: null, title: 'Hello' })
+      coverImage: string().nullable().optional(),
+      title: string()
+    })
+    const values = partialValues(schema, { coverImage: null, title: 'Hello' })
     expect(values.coverImage).toBeUndefined()
     expect(values.title).toBe('Hello')
   })
   test('partialValues passes through extra keys not in schema', () => {
-    const schema = object({ published: boolean(), title: string() }),
-      values = partialValues(schema, { id: 42, published: true, title: 'X' })
+    const schema = object({ published: boolean(), title: string() })
+    const values = partialValues(schema, { id: 42, published: true, title: 'X' })
     expect(values.id).toBe(42)
     expect(values.published).toBe(true)
     expect(values.title).toBe('X')
   })
   test('partialValues fills missing partial schema keys with undefined', () => {
     const schema = object({
-        content: string(),
-        published: boolean(),
-        title: string()
-      }).partial(),
-      values = partialValues(schema, { id: 1, published: true })
+      content: string(),
+      published: boolean(),
+      title: string()
+    }).partial()
+    const values = partialValues(schema, { id: 1, published: true })
     expect((values as Record<string, unknown>).content).toBeUndefined()
     expect((values as Record<string, unknown>).title).toBeUndefined()
     expect(values.published).toBe(true)
@@ -7525,44 +7524,44 @@ describe('doctor', () => {
   })
   test('UseListOptions search.debounceMs accepts number | undefined', () => {
     type DebounceMs = NonNullable<UseListOptions<{ title: string }>['search']>['debounceMs']
-    const debounceNum: DebounceMs = 200,
-      debounceUnset: DebounceMs = undefined,
-      optsWithDebounce = {
-        search: { debounceMs: debounceNum, fields: ['title'], query: 'hello' }
-      } satisfies UseListOptions<{ title: string }>,
-      optsWithoutDebounce: UseListOptions<{ title: string }> = {
-        search: { fields: ['title'], query: 'hello' }
-      }
+    const debounceNum: DebounceMs = 200
+    const debounceUnset: DebounceMs = undefined
+    const optsWithDebounce = {
+      search: { debounceMs: debounceNum, fields: ['title'], query: 'hello' }
+    } satisfies UseListOptions<{ title: string }>
+    const optsWithoutDebounce: UseListOptions<{ title: string }> = {
+      search: { fields: ['title'], query: 'hello' }
+    }
     expect(optsWithDebounce.search?.debounceMs).toBe(200)
     expect(optsWithoutDebounce.search?.debounceMs).toBeUndefined()
     expect(debounceUnset).toBeUndefined()
   })
   test('MutateOptions retry accepts number | RetryOptions', () => {
     type RetrySetting = MutateOptions<Record<string, unknown>>['retry']
-    const retryCount: RetrySetting = 3,
-      retryConfig: RetryOptions = { base: 2, maxAttempts: 4 },
-      retryOpts: RetrySetting = retryConfig,
-      withCount = { retry: retryCount } satisfies MutateOptions<Record<string, unknown>>,
-      withConfig = { retry: retryOpts } satisfies MutateOptions<Record<string, unknown>>
+    const retryCount: RetrySetting = 3
+    const retryConfig: RetryOptions = { base: 2, maxAttempts: 4 }
+    const retryOpts: RetrySetting = retryConfig
+    const withCount = { retry: retryCount } satisfies MutateOptions<Record<string, unknown>>
+    const withConfig = { retry: retryOpts } satisfies MutateOptions<Record<string, unknown>>
     expect(withCount.retry).toBe(3)
     if (typeof withConfig.retry === 'object' && withConfig.retry) expect(withConfig.retry.maxAttempts).toBe(4)
   })
   test('useBulkMutate progress types support BulkProgress, onProgress, and progress state', () => {
     type ProgressState = ReturnType<typeof useBulkMutate>['progress']
     const progress: BulkProgress = {
-        failed: 1,
-        pending: 2,
-        succeeded: 3,
-        total: 6
-      },
-      captured: BulkProgress[] = [],
-      options: UseBulkMutateOptions = {
-        onProgress: p => {
-          captured.push(p)
-        }
-      },
-      stateValue: ProgressState = progress,
-      clearedState: ProgressState = null
+      failed: 1,
+      pending: 2,
+      succeeded: 3,
+      total: 6
+    }
+    const captured: BulkProgress[] = []
+    const options: UseBulkMutateOptions = {
+      onProgress: p => {
+        captured.push(p)
+      }
+    }
+    const stateValue: ProgressState = progress
+    const clearedState: ProgressState = null
     options.onProgress?.(progress)
     expect(progress).toEqual({ failed: 1, pending: 2, succeeded: 3, total: 6 })
     expect(captured[0]).toEqual(progress)
@@ -7571,17 +7570,17 @@ describe('doctor', () => {
   })
   test('BulkMutateToast type supports string and function variants for loading, success, error', () => {
     const stringToast: BulkMutateToast = {
-        error: 'Something failed',
-        loading: 'Processing...',
-        success: 'All done'
-      },
-      fnToast: BulkMutateToast = {
-        error: (e: unknown) => `Failed: ${String(e)}`,
-        loading: (p: BulkProgress) => `${p.succeeded + p.failed}/${p.total}`,
-        success: (count: number) => `${count} items processed`
-      },
-      partialToast: BulkMutateToast = { success: 'Done' },
-      emptyToast: BulkMutateToast = {}
+      error: 'Something failed',
+      loading: 'Processing...',
+      success: 'All done'
+    }
+    const fnToast: BulkMutateToast = {
+      error: (e: unknown) => `Failed: ${String(e)}`,
+      loading: (p: BulkProgress) => `${p.succeeded + p.failed}/${p.total}`,
+      success: (count: number) => `${count} items processed`
+    }
+    const partialToast: BulkMutateToast = { success: 'Done' }
+    const emptyToast: BulkMutateToast = {}
     expect(stringToast.loading).toBe('Processing...')
     expect(stringToast.success).toBe('All done')
     expect(stringToast.error).toBe('Something failed')
@@ -7595,21 +7594,21 @@ describe('doctor', () => {
   })
   test('UseBulkMutateOptions accepts toast option alongside callbacks', () => {
     const withToast: UseBulkMutateOptions = {
-        onSuccess: (count: number) => {
-          expect(count).toBeGreaterThan(0)
-        },
-        toast: {
-          loading: (p: BulkProgress) => `Deleting: ${p.succeeded}/${p.total}`,
-          success: (count: number) => `${count} deleted`
-        }
+      onSuccess: (count: number) => {
+        expect(count).toBeGreaterThan(0)
       },
-      withToastAndError: UseBulkMutateOptions = {
-        onError: false,
-        toast: { error: 'Custom error', success: 'Done' }
-      },
-      withToastOnly: UseBulkMutateOptions = {
-        toast: { loading: 'Working...' }
+      toast: {
+        loading: (p: BulkProgress) => `Deleting: ${p.succeeded}/${p.total}`,
+        success: (count: number) => `${count} deleted`
       }
+    }
+    const withToastAndError: UseBulkMutateOptions = {
+      onError: false,
+      toast: { error: 'Custom error', success: 'Done' }
+    }
+    const withToastOnly: UseBulkMutateOptions = {
+      toast: { loading: 'Working...' }
+    }
     expect(withToast.toast?.loading).toBeDefined()
     expect(withToast.toast?.success).toBeDefined()
     expect(withToast.toast?.error).toBeUndefined()
@@ -7622,12 +7621,12 @@ describe('doctor', () => {
     expect(resolveBulkError({ onError: false })).toBeUndefined()
   })
   test('resolveBulkError returns custom handler when onError is a function', () => {
-    const captured: unknown[] = [],
-      handler = resolveBulkError({
-        onError: (e: unknown) => {
-          captured.push(e)
-        }
-      })
+    const captured: unknown[] = []
+    const handler = resolveBulkError({
+      onError: (e: unknown) => {
+        captured.push(e)
+      }
+    })
     expect(handler).toBeDefined()
     handler?.(new Error('test'))
     expect(captured).toHaveLength(1)
@@ -7650,13 +7649,13 @@ describe('doctor', () => {
     expect(handlerNoOpts).toBeDefined()
   })
   test('resolveBulkError onError takes precedence over toast.error', () => {
-    const captured: unknown[] = [],
-      handler = resolveBulkError({
-        onError: (e: unknown) => {
-          captured.push(e)
-        },
-        toast: { error: 'Should not be used' }
-      })
+    const captured: unknown[] = []
+    const handler = resolveBulkError({
+      onError: (e: unknown) => {
+        captured.push(e)
+      },
+      toast: { error: 'Should not be used' }
+    })
     expect(handler).toBeDefined()
     handler?.(new Error('custom'))
     expect(captured).toHaveLength(1)
@@ -7664,14 +7663,14 @@ describe('doctor', () => {
   })
   test('BulkMutateToast loading function receives BulkProgress and returns string', () => {
     const toastCfg: BulkMutateToast = {
-        loading: p => `Processing ${p.succeeded} of ${p.total} (${p.failed} failed, ${p.pending} pending)`
-      },
-      progress: BulkProgress = {
-        failed: 1,
-        pending: 3,
-        succeeded: 6,
-        total: 10
-      }
+      loading: p => `Processing ${p.succeeded} of ${p.total} (${p.failed} failed, ${p.pending} pending)`
+    }
+    const progress: BulkProgress = {
+      failed: 1,
+      pending: 3,
+      succeeded: 6,
+      total: 10
+    }
     if (typeof toastCfg.loading === 'function')
       expect(toastCfg.loading(progress)).toBe('Processing 6 of 10 (1 failed, 3 pending)')
   })
@@ -7694,114 +7693,114 @@ describe('doctor', () => {
     }
   })
   test('new react index exports are importable and surfaced on module checks', async () => {
-    const mod = await import('../react/index'),
-      conflictType: ReactIndexTypes.ConflictData<{ title: string }> = {
-        code: 'CONFLICT'
+    const mod = await import('../react/index')
+    const conflictType: ReactIndexTypes.ConflictData<{ title: string }> = {
+      code: 'CONFLICT'
+    }
+    const mutateType: ReactIndexTypes.MutateOptions<{ id: string }> = { retry: 2 }
+    const bulkProgressType: ReactIndexTypes.BulkProgress = {
+      failed: 0,
+      pending: 1,
+      succeeded: 0,
+      total: 1
+    }
+    const bulkResultType: ReactIndexTypes.BulkResult<string> = {
+      errors: [],
+      results: ['ok'],
+      settled: [{ status: 'fulfilled', value: 'ok' }]
+    }
+    const bulkMutateToastType: ReactIndexTypes.BulkMutateToast = {
+      loading: p => `${p.succeeded}/${p.total}`,
+      success: count => `${count} done`
+    }
+    const bulkMutateOptionsType: ReactIndexTypes.UseBulkMutateOptions = {
+      onProgress: p => {
+        const next = p.total
+        expect(next).toBe(1)
       },
-      mutateType: ReactIndexTypes.MutateOptions<{ id: string }> = { retry: 2 },
-      bulkProgressType: ReactIndexTypes.BulkProgress = {
-        failed: 0,
-        pending: 1,
-        succeeded: 0,
-        total: 1
-      },
-      bulkResultType: ReactIndexTypes.BulkResult<string> = {
-        errors: [],
-        results: ['ok'],
-        settled: [{ status: 'fulfilled', value: 'ok' }]
-      },
-      bulkMutateToastType: ReactIndexTypes.BulkMutateToast = {
-        loading: p => `${p.succeeded}/${p.total}`,
-        success: count => `${count} done`
-      },
-      bulkMutateOptionsType: ReactIndexTypes.UseBulkMutateOptions = {
-        onProgress: p => {
-          const next = p.total
-          expect(next).toBe(1)
-        },
-        toast: bulkMutateToastType
-      },
-      bulkSelectionType: ReactIndexTypes.UseBulkSelectionOpts = {
-        items: [{ _id: '1' }],
-        orgId: 'org_1'
-      },
-      bulkSelectionWithRm: ReactIndexTypes.UseBulkSelectionOpts = {
-        items: [{ _id: '1' }],
-        orgId: 'org_1',
-        rm: async () => {
-          String(0)
-        }
-      },
-      cacheEntryOptionsType: ReactIndexTypes.UseCacheEntryOptions<{ id: string }, { _id: string; stale?: boolean }> = {
-        args: { id: '1' },
-        data: null,
-        load: async () => {
-          String(0)
-        },
-        table: 'post'
-      },
-      cacheEntryResultType: ReactIndexTypes.UseCacheEntryResult<{
-        _id: string
-      }> = {
-        data: null,
-        isLoading: false,
-        isStale: false,
-        refresh: () => {
-          String(0)
-        }
-      },
-      optimisticType: ReactIndexTypes.OptimisticOptions<{ id: string }, string> = {
-        mutate: async () => 'ok'
-      },
-      searchOptionsType: ReactIndexTypes.UseSearchOptions = {
-        fields: ['title'],
-        query: 'hello'
-      },
-      searchResultType: ReactIndexTypes.UseSearchResult<{ title: string }> = {
-        isSearching: false,
-        results: [{ title: 'x' }]
-      },
-      softDeleteType: ReactIndexTypes.SoftDeleteOpts<{ id: string }> = {
-        restore: async () => 0,
-        rm: async () => 0,
-        toast: () => {
-          String(0)
-        }
-      },
-      infiniteWhereType: ReactIndexTypes.InfiniteListWhere<{ title: string }> = { own: true, title: 'x' },
-      fieldKindType: ReactIndexTypes.FieldKind = 'string',
-      fieldMetaType: ReactIndexTypes.FieldMeta = { kind: 'string' },
-      fieldMetaMapType: ReactIndexTypes.FieldMetaMap = {
-        title: { kind: 'string' }
-      },
-      widenType: ReactIndexTypes.Widen<{ count: 1; tags: ['a'] }> = {
-        count: 1,
-        tags: ['a']
-      },
-      formReturnType = null as null | ReactIndexTypes.FormReturn<{ title: string }, ReturnType<typeof object>>,
-      probe = {
-        ...mod,
-        BulkMutateToast: bulkMutateToastType,
-        BulkProgress: bulkProgressType,
-        BulkResult: bulkResultType,
-        ConflictData: conflictType,
-        FieldKind: fieldKindType,
-        FieldMeta: fieldMetaType,
-        FieldMetaMap: fieldMetaMapType,
-        FormReturn: formReturnType,
-        InfiniteListWhere: infiniteWhereType,
-        MutateOptions: mutateType,
-        OptimisticOptions: optimisticType,
-        SoftDeleteOpts: softDeleteType,
-        UseBulkMutateOptions: bulkMutateOptionsType,
-        UseBulkSelectionOpts: bulkSelectionType,
-        UseBulkSelectionOptsRm: bulkSelectionWithRm,
-        UseCacheEntryOptions: cacheEntryOptionsType,
-        UseCacheEntryResult: cacheEntryResultType,
-        UseSearchOptions: searchOptionsType,
-        UseSearchResult: searchResultType,
-        Widen: widenType
+      toast: bulkMutateToastType
+    }
+    const bulkSelectionType: ReactIndexTypes.UseBulkSelectionOpts = {
+      items: [{ _id: '1' }],
+      orgId: 'org_1'
+    }
+    const bulkSelectionWithRm: ReactIndexTypes.UseBulkSelectionOpts = {
+      items: [{ _id: '1' }],
+      orgId: 'org_1',
+      rm: async () => {
+        String(0)
       }
+    }
+    const cacheEntryOptionsType: ReactIndexTypes.UseCacheEntryOptions<{ id: string }, { _id: string; stale?: boolean }> = {
+      args: { id: '1' },
+      data: null,
+      load: async () => {
+        String(0)
+      },
+      table: 'post'
+    }
+    const cacheEntryResultType: ReactIndexTypes.UseCacheEntryResult<{
+      _id: string
+    }> = {
+      data: null,
+      isLoading: false,
+      isStale: false,
+      refresh: () => {
+        String(0)
+      }
+    }
+    const optimisticType: ReactIndexTypes.OptimisticOptions<{ id: string }, string> = {
+      mutate: async () => 'ok'
+    }
+    const searchOptionsType: ReactIndexTypes.UseSearchOptions = {
+      fields: ['title'],
+      query: 'hello'
+    }
+    const searchResultType: ReactIndexTypes.UseSearchResult<{ title: string }> = {
+      isSearching: false,
+      results: [{ title: 'x' }]
+    }
+    const softDeleteType: ReactIndexTypes.SoftDeleteOpts<{ id: string }> = {
+      restore: async () => 0,
+      rm: async () => 0,
+      toast: () => {
+        String(0)
+      }
+    }
+    const infiniteWhereType: ReactIndexTypes.InfiniteListWhere<{ title: string }> = { own: true, title: 'x' }
+    const fieldKindType: ReactIndexTypes.FieldKind = 'string'
+    const fieldMetaType: ReactIndexTypes.FieldMeta = { kind: 'string' }
+    const fieldMetaMapType: ReactIndexTypes.FieldMetaMap = {
+      title: { kind: 'string' }
+    }
+    const widenType: ReactIndexTypes.Widen<{ count: 1; tags: ['a'] }> = {
+      count: 1,
+      tags: ['a']
+    }
+    const formReturnType = null as null | ReactIndexTypes.FormReturn<{ title: string }, ReturnType<typeof object>>
+    const probe = {
+      ...mod,
+      BulkMutateToast: bulkMutateToastType,
+      BulkProgress: bulkProgressType,
+      BulkResult: bulkResultType,
+      ConflictData: conflictType,
+      FieldKind: fieldKindType,
+      FieldMeta: fieldMetaType,
+      FieldMetaMap: fieldMetaMapType,
+      FormReturn: formReturnType,
+      InfiniteListWhere: infiniteWhereType,
+      MutateOptions: mutateType,
+      OptimisticOptions: optimisticType,
+      SoftDeleteOpts: softDeleteType,
+      UseBulkMutateOptions: bulkMutateOptionsType,
+      UseBulkSelectionOpts: bulkSelectionType,
+      UseBulkSelectionOptsRm: bulkSelectionWithRm,
+      UseCacheEntryOptions: cacheEntryOptionsType,
+      UseCacheEntryResult: cacheEntryResultType,
+      UseSearchOptions: searchOptionsType,
+      UseSearchResult: searchResultType,
+      Widen: widenType
+    }
     bulkMutateOptionsType.onProgress?.(bulkProgressType)
     expect(probe).toHaveProperty('ConflictData')
     expect(probe).toHaveProperty('FormReturn')
@@ -7835,24 +7834,23 @@ type Equal<A, B> =
       ? true
       : false
     : false
-/* eslint-enable @typescript-eslint/no-unnecessary-type-parameters */
 type Expect<T extends true> = T
 describe('Sprint 4 Tier 1', () => {
   test('MutateOptions callbacks type signatures include onSuccess and onSettled', () => {
-    const events: string[] = [],
-      opts: MutateOptions<{ id: string }, { saved: boolean }> = {
-        onSettled: (args, error, result) => {
-          const argId: string = args.id,
-            maybeResult: undefined | { saved: boolean } = result,
-            unknownError: unknown = error
-          events.push(`${argId}:${String(maybeResult?.saved ?? false)}:${String(Boolean(unknownError))}`)
-        },
-        onSuccess: (result, args) => {
-          const { saved } = result,
-            argId: string = args.id
-          events.push(`${argId}:${String(saved)}`)
-        }
+    const events: string[] = []
+    const opts: MutateOptions<{ id: string }, { saved: boolean }> = {
+      onSettled: (args, error, result) => {
+        const argId: string = args.id
+        const maybeResult: undefined | { saved: boolean } = result
+        const unknownError: unknown = error
+        events.push(`${argId}:${String(maybeResult?.saved ?? false)}:${String(Boolean(unknownError))}`)
+      },
+      onSuccess: (result, args) => {
+        const { saved } = result
+        const argId: string = args.id
+        events.push(`${argId}:${String(saved)}`)
       }
+    }
     opts.onSuccess?.({ saved: true }, { id: 'x' })
     opts.onSettled?.({ id: 'x' }, undefined, { saved: true })
     opts.onSettled?.({ id: 'x' }, new Error('boom'))
@@ -7861,12 +7859,12 @@ describe('Sprint 4 Tier 1', () => {
   test('UseListOptions includes where and search query typing', () => {
     type HasWhere = 'where' extends keyof UseListOptions<{ title: string }> ? true : false
     type SearchQuery = NonNullable<UseListOptions<{ title: string }>['search']>['query']
-    const hasWhere: HasWhere = true,
-      query: SearchQuery = 'hello',
-      opts: UseListOptions<{ title: string }> = {
-        search: { fields: ['title'], query },
-        where: { title: 'hello' }
-      }
+    const hasWhere: HasWhere = true
+    const query: SearchQuery = 'hello'
+    const opts: UseListOptions<{ title: string }> = {
+      search: { fields: ['title'], query },
+      where: { title: 'hello' }
+    }
     expect(hasWhere).toBe(true)
     expect(opts.search?.query).toBe('hello')
     expect(opts.where?.title).toBe('hello')
@@ -7880,26 +7878,26 @@ describe('Sprint 4 Tier 1', () => {
   })
   test('react index exports MutationResult family and helper types', () => {
     const okResult: ReactIndexTypes.MutationResult<number> = {
-        ok: true,
-        value: 1
-      },
-      failResult: ReactIndexTypes.MutationResult<number> = {
-        error: { code: 'NOT_FOUND' },
-        ok: false
-      },
-      okShape: ReactIndexTypes.MutationOk<string> = { ok: true, value: 'done' },
-      failShape: ReactIndexTypes.MutationFail = {
-        error: { code: 'FORBIDDEN' },
-        ok: false
-      },
-      data: ReactIndexTypes.ErrorData = {
-        code: 'VALIDATION_FAILED',
-        fieldErrors: { title: 'Required' }
-      },
-      schema = object({ title: string() }),
-      typedErrors: ReactIndexTypes.TypedFieldErrors<typeof schema> = {
-        title: 'Required'
-      }
+      ok: true,
+      value: 1
+    }
+    const failResult: ReactIndexTypes.MutationResult<number> = {
+      error: { code: 'NOT_FOUND' },
+      ok: false
+    }
+    const okShape: ReactIndexTypes.MutationOk<string> = { ok: true, value: 'done' }
+    const failShape: ReactIndexTypes.MutationFail = {
+      error: { code: 'FORBIDDEN' },
+      ok: false
+    }
+    const data: ReactIndexTypes.ErrorData = {
+      code: 'VALIDATION_FAILED',
+      fieldErrors: { title: 'Required' }
+    }
+    const schema = object({ title: string() })
+    const typedErrors: ReactIndexTypes.TypedFieldErrors<typeof schema> = {
+      title: 'Required'
+    }
     expect(okResult.ok).toBe(true)
     expect(failResult.ok).toBe(false)
     expect(okShape.value).toBe('done')
@@ -7910,24 +7908,24 @@ describe('Sprint 4 Tier 1', () => {
   })
   test('field component props include disabled, helpText, and required', () => {
     const textProps: Parameters<(typeof FieldsModule.fields)['Text']>[0] = {
-        disabled: true,
-        helpText: 'x',
-        name: 'title',
-        required: true
-      },
-      chooseProps: Parameters<(typeof FieldsModule.fields)['Choose']>[0] = {
-        disabled: false,
-        helpText: 'y',
-        name: 'status',
-        required: true
-      },
-      toggleProps: Parameters<(typeof FieldsModule.fields)['Toggle']>[0] = {
-        disabled: true,
-        helpText: 'z',
-        name: 'published',
-        required: true,
-        trueLabel: 'On'
-      }
+      disabled: true,
+      helpText: 'x',
+      name: 'title',
+      required: true
+    }
+    const chooseProps: Parameters<(typeof FieldsModule.fields)['Choose']>[0] = {
+      disabled: false,
+      helpText: 'y',
+      name: 'status',
+      required: true
+    }
+    const toggleProps: Parameters<(typeof FieldsModule.fields)['Toggle']>[0] = {
+      disabled: true,
+      helpText: 'z',
+      name: 'published',
+      required: true,
+      trueLabel: 'On'
+    }
     expect(textProps.disabled).toBe(true)
     expect(chooseProps.helpText).toBe('y')
     expect(toggleProps.required).toBe(true)
@@ -7936,20 +7934,20 @@ describe('Sprint 4 Tier 1', () => {
 describe('Sprint 4 Tier 2', () => {
   test('getFieldErrors infers schema keys and returns runtime field errors from Zod validation', () => {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const schema = object({ email: string().email(), title: string().min(3) }),
-      parsed = schema.safeParse({ email: 'invalid', title: '' })
+    const schema = object({ email: string().email(), title: string().min(3) })
+    const parsed = schema.safeParse({ email: 'invalid', title: '' })
     expect(parsed.success).toBe(false)
     if (parsed.success) return
     try {
       errValidation('VALIDATION_FAILED', parsed.error)
     } catch (error) {
-      const fieldErrors = getFieldErrors<typeof schema>(error),
-        emailError: string | undefined = fieldErrors?.email,
-        titleError: string | undefined = fieldErrors?.title
+      const fieldErrors = getFieldErrors<typeof schema>(error)
+      const emailError: string | undefined = fieldErrors?.email
+      const titleError: string | undefined = fieldErrors?.title
       type HasEmail = 'email' extends keyof ReactIndexTypes.TypedFieldErrors<typeof schema> ? true : false
       type HasMissing = 'missing' extends keyof ReactIndexTypes.TypedFieldErrors<typeof schema> ? true : false
-      const hasEmail: HasEmail = true,
-        hasMissing: HasMissing = false
+      const hasEmail: HasEmail = true
+      const hasMissing: HasMissing = false
       expect(hasEmail).toBe(true)
       expect(hasMissing).toBe(false)
       expect(typeof emailError).toBe('string')
@@ -7970,42 +7968,42 @@ describe('Sprint 4 Tier 2', () => {
 })
 describe('Sprint 4 Tier 3', () => {
   test('Register declaration merging works and RegisteredDefaultError defaults to Error', () => {
-    const meta: RegisteredMeta = { traceId: 'trace-1' },
-      isError: Equal<RegisteredDefaultError, Error> = true
+    const meta: RegisteredMeta = { traceId: 'trace-1' }
+    const isError: Equal<RegisteredDefaultError, Error> = true
     expect(meta.traceId).toBe('trace-1')
     expect(isError).toBe(true)
   })
   test('InferRow resolves branded schema system fields for owned, org, base, and singleton', () => {
-    const owned = makeOwned({ post: object({ title: string() }) }),
-      org = makeOrgScoped({ note: object({ body: string() }) }),
-      base = makeBase({ movie: object({ name: string() }) }),
-      singleton = makeSingleton({ profile: object({ displayName: string() }) }),
-      ownedRow: InferRow<typeof owned.post> = {
-        _creationTime: 1,
-        _id: '1',
-        title: 't',
-        updatedAt: 2,
-        userId: 'u'
-      },
-      orgRow: InferRow<typeof org.note> = {
-        _creationTime: 1,
-        _id: '1',
-        body: 'b',
-        orgId: 'org-1',
-        updatedAt: 2,
-        userId: 'u'
-      },
-      baseRow: InferRow<typeof base.movie> = {
-        _creationTime: 1,
-        _id: '1',
-        name: 'n',
-        updatedAt: 2
-      },
-      singletonRow: InferRow<typeof singleton.profile> = {
-        displayName: 'n',
-        updatedAt: 2,
-        userId: 'u'
-      }
+    const owned = makeOwned({ post: object({ title: string() }) })
+    const org = makeOrgScoped({ note: object({ body: string() }) })
+    const base = makeBase({ movie: object({ name: string() }) })
+    const singleton = makeSingleton({ profile: object({ displayName: string() }) })
+    const ownedRow: InferRow<typeof owned.post> = {
+      _creationTime: 1,
+      _id: '1',
+      title: 't',
+      updatedAt: 2,
+      userId: 'u'
+    }
+    const orgRow: InferRow<typeof org.note> = {
+      _creationTime: 1,
+      _id: '1',
+      body: 'b',
+      orgId: 'org-1',
+      updatedAt: 2,
+      userId: 'u'
+    }
+    const baseRow: InferRow<typeof base.movie> = {
+      _creationTime: 1,
+      _id: '1',
+      name: 'n',
+      updatedAt: 2
+    }
+    const singletonRow: InferRow<typeof singleton.profile> = {
+      displayName: 'n',
+      updatedAt: 2,
+      userId: 'u'
+    }
     expect(owned.post).toBeDefined()
     expect(org.note).toBeDefined()
     expect(base.movie).toBeDefined()
@@ -8019,8 +8017,8 @@ describe('Sprint 4 Tier 3', () => {
     const schema = object({ count: number(), title: string() })
     type CheckCreate = Expect<Equal<InferCreate<typeof schema>, z.output<typeof schema>>>
     type CheckUpdate = Expect<Equal<InferUpdate<typeof schema>, Partial<z.output<typeof schema>>>>
-    const createOk: CheckCreate = true,
-      updateOk: CheckUpdate = true
+    const createOk: CheckCreate = true
+    const updateOk: CheckUpdate = true
     expect(schema.safeParse({ count: 1, title: 'x' }).success).toBe(true)
     expect(createOk).toBe(true)
     expect(updateOk).toBe(true)
@@ -8030,8 +8028,8 @@ describe('Sprint 4 Tier 3', () => {
     type Q = RegisteredQuery<'public', { slug: string }, { found: boolean }>
     type ArgsOk = Expect<Equal<InferReducerArgs<M>, { id: string }>>
     type ReturnOk = Expect<Equal<InferReducerReturn<Q>, { found: boolean }>>
-    const argsOk: ArgsOk = true,
-      returnOk: ReturnOk = true
+    const argsOk: ArgsOk = true
+    const returnOk: ReturnOk = true
     expect(argsOk).toBe(true)
     expect(returnOk).toBe(true)
   })
@@ -8046,40 +8044,40 @@ describe('Sprint 4 Tier 3', () => {
     type OutputsOk = Expect<
       Equal<InferReducerOutputs<Reducers>, { createPost: { id: string }; listPosts: { rows: string[] } }>
     >
-    const inputsOk: InputsOk = true,
-      outputsOk: OutputsOk = true
+    const inputsOk: InputsOk = true
+    const outputsOk: OutputsOk = true
     expect(inputsOk).toBe(true)
     expect(outputsOk).toBe(true)
   })
   test('InferRows maps a record of branded schemas', () => {
-    const owned = makeOwned({ post: object({ title: string() }) }),
-      org = makeOrgScoped({ note: object({ body: string() }) }),
-      base = makeBase({ movie: object({ name: string() }) }),
-      singleton = makeSingleton({ profile: object({ displayName: string() }) }),
-      rows: InferRows<{
-        movie: typeof base.movie
-        note: typeof org.note
-        post: typeof owned.post
-        profile: typeof singleton.profile
-      }> = {
-        movie: { _creationTime: 1, _id: '1', name: 'movie', updatedAt: 1 },
-        note: {
-          _creationTime: 1,
-          _id: '2',
-          body: 'body',
-          orgId: 'o',
-          updatedAt: 1,
-          userId: 'u'
-        },
-        post: {
-          _creationTime: 1,
-          _id: '3',
-          title: 'title',
-          updatedAt: 1,
-          userId: 'u'
-        },
-        profile: { displayName: 'name', updatedAt: 1, userId: 'u' }
-      }
+    const owned = makeOwned({ post: object({ title: string() }) })
+    const org = makeOrgScoped({ note: object({ body: string() }) })
+    const base = makeBase({ movie: object({ name: string() }) })
+    const singleton = makeSingleton({ profile: object({ displayName: string() }) })
+    const rows: InferRows<{
+      movie: typeof base.movie
+      note: typeof org.note
+      post: typeof owned.post
+      profile: typeof singleton.profile
+    }> = {
+      movie: { _creationTime: 1, _id: '1', name: 'movie', updatedAt: 1 },
+      note: {
+        _creationTime: 1,
+        _id: '2',
+        body: 'body',
+        orgId: 'o',
+        updatedAt: 1,
+        userId: 'u'
+      },
+      post: {
+        _creationTime: 1,
+        _id: '3',
+        title: 'title',
+        updatedAt: 1,
+        userId: 'u'
+      },
+      profile: { displayName: 'name', updatedAt: 1, userId: 'u' }
+    }
     expect(owned.post).toBeDefined()
     expect(org.note).toBeDefined()
     expect(base.movie).toBeDefined()
@@ -8090,9 +8088,9 @@ describe('Sprint 4 Tier 3', () => {
     expect(rows.profile.displayName).toBe('name')
   })
   test('schemaVariants create returns original, update is partial, and requiredOnUpdate keeps selected keys required', () => {
-    const schema = object({ count: number(), slug: string(), title: string() }),
-      normal = schemaVariants(schema),
-      required = schemaVariants(schema, ['slug'])
+    const schema = object({ count: number(), slug: string(), title: string() })
+    const normal = schemaVariants(schema)
+    const required = schemaVariants(schema, ['slug'])
     expect(normal.create).toBe(schema)
     expect(normal.update.safeParse({}).success).toBe(true)
     expect(normal.update.safeParse({ title: 'x' }).success).toBe(true)
@@ -8158,31 +8156,31 @@ describe('Sprint 5 getFirstFieldError', () => {
 })
 describe('Sprint 5 toastFieldError', () => {
   test('calls toast function with first field error and returns true', () => {
-    const messages: string[] = [],
-      toasted = toastFieldError(
-        makeSenderError({
-          code: 'VALIDATION_FAILED',
-          fieldErrors: { title: 'Title is required' }
-        }),
-        (message: string) => {
-          messages.push(message)
-        }
-      )
+    const messages: string[] = []
+    const toasted = toastFieldError(
+      makeSenderError({
+        code: 'VALIDATION_FAILED',
+        fieldErrors: { title: 'Title is required' }
+      }),
+      (message: string) => {
+        messages.push(message)
+      }
+    )
     expect(toasted).toBe(true)
     expect(messages).toEqual(['Title is required'])
   })
   test('returns false when no field error found', () => {
-    const messages: string[] = [],
-      toasted = toastFieldError(makeSenderError({ code: 'VALIDATION_FAILED' }), (message: string) => {
-        messages.push(message)
-      })
+    const messages: string[] = []
+    const toasted = toastFieldError(makeSenderError({ code: 'VALIDATION_FAILED' }), (message: string) => {
+      messages.push(message)
+    })
     expect(toasted).toBe(false)
   })
   test('returns false for non-Betterspace errors', () => {
-    const messages: string[] = [],
-      toasted = toastFieldError(new Error('plain'), (message: string) => {
-        messages.push(message)
-      })
+    const messages: string[] = []
+    const toasted = toastFieldError(new Error('plain'), (message: string) => {
+      messages.push(message)
+    })
     expect(toasted).toBe(false)
   })
   test('does not call toast when no field error', () => {
@@ -8196,10 +8194,10 @@ describe('Sprint 5 toastFieldError', () => {
 describe('Sprint 5 FieldMeta globalRegistry metadata', () => {
   test('getMeta returns title and description when schema meta is set', () => {
     const schema = string().meta({
-        description: 'Public facing name',
-        title: 'Display Name'
-      }),
-      reg = globalRegistry.get(schema)
+      description: 'Public facing name',
+      title: 'Display Name'
+    })
+    const reg = globalRegistry.get(schema)
     expect(reg?.title).toBe('Display Name')
     expect(reg?.description).toBe('Public facing name')
     expect(getMeta(schema)).toEqual({
@@ -8216,13 +8214,13 @@ describe('Sprint 5 FieldMeta globalRegistry metadata', () => {
   })
   test('buildMeta includes title and description for fields with meta', () => {
     const schema = object({
-        content: string(),
-        title: string().meta({
-          description: 'Name shown in lists',
-          title: 'Title label'
-        })
-      }),
-      meta = buildMeta(schema)
+      content: string(),
+      title: string().meta({
+        description: 'Name shown in lists',
+        title: 'Title label'
+      })
+    })
+    const meta = buildMeta(schema)
     expect(meta.title).toEqual({
       description: 'Name shown in lists',
       kind: 'string',
@@ -8248,8 +8246,8 @@ describe('Sprint 5 skip sentinel type options', () => {
   test('useList options argument accepts skip sentinel', () => {
     type ListOptionsArg = Parameters<typeof useList>[2]
     type IncludesSkip = 'skip' extends Exclude<ListOptionsArg, undefined> ? true : false
-    const includesSkip: IncludesSkip = true,
-      opts: ListOptionsArg = 'skip'
+    const includesSkip: IncludesSkip = true
+    const opts: ListOptionsArg = 'skip'
     expect(includesSkip).toBe(true)
     expect(opts).toBe('skip')
   })
@@ -8257,9 +8255,9 @@ describe('Sprint 5 skip sentinel type options', () => {
     type SearchOptionsArg = Parameters<typeof useSearch>[2]
     type IncludesSkip = 'skip' extends SearchOptionsArg ? true : false
     type SearchConfig = Exclude<SearchOptionsArg, 'skip'>
-    const includesSkip: IncludesSkip = true,
-      skipOption: SearchOptionsArg = 'skip',
-      config: SearchConfig = { fields: ['title'], query: 'draft' }
+    const includesSkip: IncludesSkip = true
+    const skipOption: SearchOptionsArg = 'skip'
+    const config: SearchConfig = { fields: ['title'], query: 'draft' }
     expect(includesSkip).toBe(true)
     expect(skipOption).toBe('skip')
     expect(config.query).toBe('draft')
@@ -8267,8 +8265,8 @@ describe('Sprint 5 skip sentinel type options', () => {
   test('useInfiniteList options argument accepts skip sentinel', () => {
     type InfiniteOptionsArg = Parameters<typeof useInfiniteList>[2]
     type IncludesSkip = 'skip' extends Exclude<InfiniteOptionsArg, undefined> ? true : false
-    const includesSkip: IncludesSkip = true,
-      opts: InfiniteOptionsArg = 'skip'
+    const includesSkip: IncludesSkip = true
+    const opts: InfiniteOptionsArg = 'skip'
     expect(includesSkip).toBe(true)
     expect(opts).toBe('skip')
   })
@@ -8293,9 +8291,9 @@ describe('Sprint 5 useMutation exports', () => {
     expect(mod.useMut).toBe(useMutDirect)
   })
   test('useMut signature in source matches generic reducer-first contract', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'react', 'use-mutate.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'react', 'use-mutate.ts'), 'utf8')
     expect(content.includes('useMut = <A extends Record<string, unknown>, R = void>(')).toBe(true)
   })
   test('MutateOptions type is exported from react index', () => {
@@ -8360,8 +8358,8 @@ describe('Sprint 6 Tier 1.1 list-utils exports and behavior', () => {
     ])
   })
   test('sortData with no sort returns copied array and handles empty array', () => {
-    const rows = [{ name: 'a' }, { name: 'b' }],
-      out = sortData(rows)
+    const rows = [{ name: 'a' }, { name: 'b' }]
+    const out = sortData(rows)
     expect(out).toEqual(rows)
     expect(out).not.toBe(rows)
     expect(sortData([])).toEqual([])
@@ -8413,20 +8411,20 @@ describe('Sprint 6 Tier 1.2 MutateToast typing and options', () => {
   })
   test('MutateToast type accepts success function shape', () => {
     const toastConfig: ReactIndexTypes.MutateToast<{ id: string }, { ok: boolean }> = {
-        success: (result, args) => `${args.id}:${String(result.ok)}`
-      },
-      { success } = toastConfig
+      success: (result, args) => `${args.id}:${String(result.ok)}`
+    }
+    const { success } = toastConfig
     expect(typeof success).toBe('function')
     if (typeof success === 'function') expect(success({ ok: true }, { id: 'abc' })).toBe('abc:true')
   })
   test('MutateToast type accepts fieldErrors false and fieldErrors optional', () => {
     const disabledFieldErrors: ReactIndexTypes.MutateToast<{ id: string }, { ok: boolean }> = {
-        fieldErrors: false,
-        success: 'Saved'
-      },
-      optionalFieldErrors: ReactIndexTypes.MutateToast<{ id: string }, { ok: boolean }> = {
-        success: 'Saved'
-      }
+      fieldErrors: false,
+      success: 'Saved'
+    }
+    const optionalFieldErrors: ReactIndexTypes.MutateToast<{ id: string }, { ok: boolean }> = {
+      success: 'Saved'
+    }
     expect(disabledFieldErrors.fieldErrors).toBe(false)
     expect(optionalFieldErrors.fieldErrors).toBeUndefined()
   })
@@ -8474,9 +8472,9 @@ describe('Sprint 6 Tier 1.3 SchemaPhantoms and infer accessors', () => {
     expect(updateCheck).toBeNull()
   })
   test('OrgSchema, SingletonSchema, and BaseSchema infer rows include expected platform fields', () => {
-    const org = makeOrgScoped({ item: object({ name: string() }) }),
-      singleton = makeSingleton({ prefs: object({ theme: string() }) }),
-      base = makeBase({ movie: object({ label: string() }) })
+    const org = makeOrgScoped({ item: object({ name: string() }) })
+    const singleton = makeSingleton({ prefs: object({ theme: string() }) })
+    const base = makeBase({ movie: object({ label: string() }) })
     expect(org).toBeDefined()
     expect(singleton).toBeDefined()
     expect(base).toBeDefined()
@@ -8490,13 +8488,13 @@ describe('Sprint 6 Tier 1.3 SchemaPhantoms and infer accessors', () => {
       ? R
       : never
     type BaseRow = BaseSchemaType extends { readonly $inferRow: infer R } ? R : never
-    const orgRowCheck: { orgId: number | string; userId: string } = null as unknown as OrgRow,
-      singletonRowCheck: { updatedAt: number; userId: string } = null as unknown as SingletonRow,
-      baseRowCheck: {
-        _creationTime: number
-        _id: number | string
-        updatedAt: number
-      } = null as unknown as BaseRow
+    const orgRowCheck: { orgId: number | string; userId: string } = null as unknown as OrgRow
+    const singletonRowCheck: { updatedAt: number; userId: string } = null as unknown as SingletonRow
+    const baseRowCheck: {
+      _creationTime: number
+      _id: number | string
+      updatedAt: number
+    } = null as unknown as BaseRow
     expect(orgRowCheck).toBeNull()
     expect(singletonRowCheck).toBeNull()
     expect(baseRowCheck).toBeNull()
@@ -8512,9 +8510,9 @@ describe('Sprint 6 Tier 1.3 SchemaPhantoms and infer accessors', () => {
     type TypesCreate = Types extends { readonly create: infer C } ? C : never
     type TypesRow = Types extends { readonly row: infer R } ? R : never
     type TypesUpdate = Types extends { readonly update: infer U } ? U : never
-    const createCheck: TypesCreate = null as unknown as Create,
-      rowCheck: TypesRow = null as unknown as Row,
-      updateCheck: TypesUpdate = null as unknown as Update
+    const createCheck: TypesCreate = null as unknown as Create
+    const rowCheck: TypesRow = null as unknown as Row
+    const updateCheck: TypesUpdate = null as unknown as Update
     expect(createCheck).toBeNull()
     expect(rowCheck).toBeNull()
     expect(updateCheck).toBeNull()
@@ -8539,8 +8537,8 @@ describe('Sprint 6 Tier 1.4 and 2.3 SenderError _tag', () => {
     } catch (error) {
       thrown = error
     }
-    const tagged = thrown as Error & { _tag: 'SenderError' },
-      literalTag: 'SenderError' = tagged._tag
+    const tagged = thrown as Error & { _tag: 'SenderError' }
+    const literalTag: 'SenderError' = tagged._tag
     expect(literalTag).toBe('SenderError')
   })
   test('discriminated union pattern narrows on _tag', () => {
@@ -8565,44 +8563,44 @@ describe('Sprint 6 Tier 1.4 and 2.3 SenderError _tag', () => {
 describe('Sprint 6 Tier 2.1 ConflictData code narrowing', () => {
   test('ConflictData code is literal CONFLICT', () => {
     const conflict: ConflictData<{ title: string }> = {
-        code: 'CONFLICT',
-        current: { title: 'before' },
-        incoming: { title: 'after' }
-      },
-      { code } = conflict
+      code: 'CONFLICT',
+      current: { title: 'before' },
+      incoming: { title: 'after' }
+    }
+    const { code } = conflict
     expect(code).toBe('CONFLICT')
   })
 })
 describe('Sprint 6 Tier 2.2 requiredPartial and schemaVariants shape preservation', () => {
   test('requiredPartial preserves ZodObject shape access', () => {
     const schema = object({
-        slug: string(),
-        title: string(),
-        views: number()
-      }),
-      update = requiredPartial(schema, ['slug'])
+      slug: string(),
+      title: string(),
+      views: number()
+    })
+    const update = requiredPartial(schema, ['slug'])
     expect(Object.keys(update.shape)).toEqual(['slug', 'title', 'views'])
     expect(update.safeParse({ slug: 'x', title: 't', views: 1 }).success).toBe(true)
   })
   test('schemaVariants requiredOnUpdate keeps update as shape-accessible object', () => {
     const schema = object({
-        slug: string(),
-        title: string()
-      }),
-      variants = schemaVariants(schema, ['slug'])
+      slug: string(),
+      title: string()
+    })
+    const variants = schemaVariants(schema, ['slug'])
     expect(Object.keys(variants.update.shape)).toEqual(['slug', 'title'])
     expect(variants.update.safeParse({ slug: 'a', title: 't' }).success).toBe(true)
   })
   test('schemaVariants without requiredOnUpdate matches create and partial update return type', () => {
     const schema = object({
-        slug: string(),
-        title: string()
-      }),
-      variants = schemaVariants(schema),
-      typedVariants: {
-        create: typeof schema
-        update: ReturnType<typeof schema.partial>
-      } = variants
+      slug: string(),
+      title: string()
+    })
+    const variants = schemaVariants(schema)
+    const typedVariants: {
+      create: typeof schema
+      update: ReturnType<typeof schema.partial>
+    } = variants
     expect(Object.keys(typedVariants.create.shape)).toEqual(['slug', 'title'])
     expect(Object.keys(typedVariants.update.shape)).toEqual(['slug', 'title'])
   })
@@ -8740,27 +8738,27 @@ describe('Sprint 7 polish: retry error includes attempt count', () => {
 })
 describe('Sprint 7 polish: buildMeta preserves field names', () => {
   test('buildMeta returns typed field names from schema', () => {
-    const schema = object({ content: string(), title: string() }),
-      meta = buildMeta(schema)
+    const schema = object({ content: string(), title: string() })
+    const meta = buildMeta(schema)
     expect(meta.title.kind).toBe('string')
     expect(meta.content.kind).toBe('string')
     type Keys = keyof typeof meta
     type _AssertTitle = 'title' extends Keys ? true : never
     type _AssertContent = 'content' extends Keys ? true : never
-    const _checkTitle: _AssertTitle = true,
-      _checkContent: _AssertContent = true
+    const _checkTitle: _AssertTitle = true
+    const _checkContent: _AssertContent = true
     expect(_checkTitle).toBe(true)
     expect(_checkContent).toBe(true)
   })
 })
 describe('Sprint 7 polish: type exports from @noboil/spacetimedb/react', () => {
   test('SortDirection, SortMap, SortObject types are usable', () => {
-    const dir: SortDirection = 'asc',
-      sortMap: SortMap<{ id: number; name: string }> = { name: 'desc' },
-      sortObj: SortObject<{ id: number; name: string }> = {
-        direction: 'asc',
-        field: 'name'
-      }
+    const dir: SortDirection = 'asc'
+    const sortMap: SortMap<{ id: number; name: string }> = { name: 'desc' }
+    const sortObj: SortObject<{ id: number; name: string }> = {
+      direction: 'asc',
+      field: 'name'
+    }
     expect(dir).toBe('asc')
     expect(sortMap.name).toBe('desc')
     expect(sortObj.field).toBe('name')
@@ -8913,8 +8911,8 @@ describe('unified schema()', () => {
     expect((s.profile as unknown as { __bs?: unknown }).__bs).toBe('singleton')
   })
   test('schema() passes through children without branding', () => {
-    const childDef = child('blog', object({ blogId: string(), body: string() })),
-      s = buildSchema({ children: { comment: childDef } })
+    const childDef = child('blog', object({ blogId: string(), body: string() }))
+    const s = buildSchema({ children: { comment: childDef } })
     expect(s.comment.foreignKey).toBe('blogId')
     expect(s.comment.parent).toBe('blog')
     expect(s.comment.schema).toBeDefined()
@@ -8943,11 +8941,11 @@ describe('unified schema()', () => {
   })
   test('schema() produces same result as individual makers', () => {
     const unified = buildSchema({
-        owned: { blog: object({ published: boolean(), title: string() }) }
-      }),
-      direct = makeOwned({
-        blog: object({ published: boolean(), title: string() })
-      })
+      owned: { blog: object({ published: boolean(), title: string() }) }
+    })
+    const direct = makeOwned({
+      blog: object({ published: boolean(), title: string() })
+    })
     expect((unified.blog as unknown as { __bs?: unknown }).__bs).toBe((direct.blog as unknown as { __bs?: unknown }).__bs)
     expect(unified.blog.shape.title).toBeDefined()
     expect(direct.blog.shape.title).toBeDefined()
@@ -8958,28 +8956,28 @@ describe('unified schema()', () => {
     let category: unknown
     withUniversalTable(table => {
       const s = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(s.blog),
-        { __bs } = blogTable,
-        { category: tableCategory } = __bs
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(s.blog)
+      const { __bs } = blogTable
+      const { category: tableCategory } = __bs
       category = tableCategory
     })
     expect(category).toBe('owned')
   })
   test('schema() rejects non-ZodObject in owned', () => {
-    const acceptsConfig = (config: Parameters<typeof buildSchema>[0]) => config,
-      // @ts-expect-error - owned schemas must be ZodObject values
-      invalid = acceptsConfig({ owned: { blog: 'not-a-zod-object' } })
+    const acceptsConfig = (config: Parameters<typeof buildSchema>[0]) => config
+    // @ts-expect-error - owned schemas must be ZodObject values
+    const invalid = acceptsConfig({ owned: { blog: 'not-a-zod-object' } })
     expect(invalid).toBeDefined()
   })
   test('schema() typed schemas work with table()', () => {
     let category: unknown
     withUniversalTable(table => {
-      const s = buildSchema({ owned: { blog: object({ title: string() }) } }),
-        blogTable = table(s.blog),
-        { __bs } = blogTable,
-        { category: tableCategory } = __bs
+      const s = buildSchema({ owned: { blog: object({ title: string() }) } })
+      const blogTable = table(s.blog)
+      const { __bs } = blogTable
+      const { category: tableCategory } = __bs
       category = tableCategory
     })
     expect(category).toBe('owned')
@@ -8987,8 +8985,8 @@ describe('unified schema()', () => {
 })
 describe('softDelete auto-adds deletedAt column', () => {
   const readSetupSource = async (): Promise<string> => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
     return readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
   }
   test('setup source includes softDelete auto-injection code', async () => {
@@ -8996,26 +8994,28 @@ describe('softDelete auto-adds deletedAt column', () => {
     expect(content.includes('softDelete ? { ...extra, deletedAt: raw.t.timestamp().optional() } : extra')).toBe(true)
   })
   test('softDelete in ownedTable auto-injects deletedAt', async () => {
-    const content = await readSetupSource(),
-      ownedStart = content.indexOf('ownedTable = <F extends TblInput>(fields: F, options?: OwnedOpts<F>): BsTable => {'),
-      injected = content.indexOf('sdExtra = softDelete ? { ...extra, deletedAt:', ownedStart)
+    const content = await readSetupSource()
+    const ownedStart = content.indexOf(
+      'ownedTable = <F extends TblInput>(fields: F, options?: OwnedOpts<F>): BsTable => {'
+    )
+    const injected = content.indexOf('sdExtra = softDelete ? { ...extra, deletedAt:', ownedStart)
     expect(ownedStart !== -1).toBe(true)
     expect(injected > ownedStart).toBe(true)
   })
   test('softDelete in orgScopedTable auto-injects deletedAt', async () => {
-    const content = await readSetupSource(),
-      orgScopedStart = content.indexOf(
-        'orgScopedTable = <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>): BsTable => {'
-      ),
-      injected = content.indexOf('sdExtra = softDelete ? { ...extra, deletedAt:', orgScopedStart)
+    const content = await readSetupSource()
+    const orgScopedStart = content.indexOf(
+      'orgScopedTable = <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>): BsTable => {'
+    )
+    const injected = content.indexOf('sdExtra = softDelete ? { ...extra, deletedAt:', orgScopedStart)
     expect(orgScopedStart !== -1).toBe(true)
     expect(injected > orgScopedStart).toBe(true)
   })
 })
 describe('compoundIndex shorthand', () => {
   const readSetupSource = async (): Promise<string> => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
     return readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
   }
   test('compoundIndexToEntry function exists', async () => {
@@ -9048,11 +9048,11 @@ describe('type-safe column references in table options', () => {
     let category: unknown
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { index: ['published'] }),
-        { __bs } = blogTable,
-        { category: tableCategory } = __bs
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { index: ['published'] })
+      const { __bs } = blogTable
+      const { category: tableCategory } = __bs
       category = tableCategory
     })
     expect(category).toBe('owned')
@@ -9060,10 +9060,10 @@ describe('type-safe column references in table options', () => {
   test('index shorthand rejects misspelled field names', () => {
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        // @ts-expect-error - publishd is not a valid blog field
-        invalid = table(ownedSchema.blog, { index: ['publishd'] })
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      // @ts-expect-error - publishd is not a valid blog field
+      const invalid = table(ownedSchema.blog, { index: ['publishd'] })
       expect(invalid).toBeDefined()
     })
   })
@@ -9071,11 +9071,11 @@ describe('type-safe column references in table options', () => {
     let category: unknown
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { unique: ['title'] }),
-        { __bs } = blogTable,
-        { category: tableCategory } = __bs
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { unique: ['title'] })
+      const { __bs } = blogTable
+      const { category: tableCategory } = __bs
       category = tableCategory
     })
     expect(category).toBe('owned')
@@ -9083,10 +9083,10 @@ describe('type-safe column references in table options', () => {
   test('unique shorthand rejects misspelled field names', () => {
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        // @ts-expect-error - titl is not a valid blog field
-        invalid = table(ownedSchema.blog, { unique: ['titl'] })
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      // @ts-expect-error - titl is not a valid blog field
+      const invalid = table(ownedSchema.blog, { unique: ['titl'] })
       expect(invalid).toBeDefined()
     })
   })
@@ -9094,13 +9094,13 @@ describe('type-safe column references in table options', () => {
     let category: unknown
     withUniversalTable(table => {
       const orgScopedSchema = buildSchema({
-          orgScoped: { wiki: object({ slug: string(), title: string() }) }
-        }),
-        wikiTable = table(orgScopedSchema.wiki, {
-          compoundIndex: ['slug', 'title']
-        }),
-        { __bs } = wikiTable,
-        { category: tableCategory } = __bs
+        orgScoped: { wiki: object({ slug: string(), title: string() }) }
+      })
+      const wikiTable = table(orgScopedSchema.wiki, {
+        compoundIndex: ['slug', 'title']
+      })
+      const { __bs } = wikiTable
+      const { category: tableCategory } = __bs
       category = tableCategory
     })
     expect(category).toBe('orgScoped')
@@ -9109,9 +9109,9 @@ describe('type-safe column references in table options', () => {
     let rl: undefined | { max: number; window: number }
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { rateLimit: 10 })
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { rateLimit: 10 })
       rl = blogTable.__bs.rateLimit
     })
     expect(rl).toEqual({ max: 10, window: 60_000 })
@@ -9119,12 +9119,12 @@ describe('type-safe column references in table options', () => {
   test('compoundIndex rejects misspelled field names', () => {
     withUniversalTable(table => {
       const orgScopedSchema = buildSchema({
-          orgScoped: { wiki: object({ slug: string(), title: string() }) }
-        }),
-        invalid = table(orgScopedSchema.wiki, {
-          // @ts-expect-error - titl is not a valid wiki field
-          compoundIndex: ['slug', 'titl']
-        })
+        orgScoped: { wiki: object({ slug: string(), title: string() }) }
+      })
+      const invalid = table(orgScopedSchema.wiki, {
+        // @ts-expect-error - titl is not a valid wiki field
+        compoundIndex: ['slug', 'titl']
+      })
       expect(invalid).toBeDefined()
     })
   })
@@ -9132,12 +9132,12 @@ describe('type-safe column references in table options', () => {
     let pub: boolean | string | undefined
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { pub: 'published' }),
-        {
-          __bs: { pub: tablePub }
-        } = blogTable
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { pub: 'published' })
+      const {
+        __bs: { pub: tablePub }
+      } = blogTable
       pub = tablePub
     })
     expect(pub).toBe('published')
@@ -9146,12 +9146,12 @@ describe('type-safe column references in table options', () => {
     let pub: boolean | string | undefined
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { chat: object({ isPublic: boolean(), title: string() }) }
-        }),
-        chatTable = table(ownedSchema.chat, { pub: 'isPublic' }),
-        {
-          __bs: { pub: tablePub }
-        } = chatTable
+        owned: { chat: object({ isPublic: boolean(), title: string() }) }
+      })
+      const chatTable = table(ownedSchema.chat, { pub: 'isPublic' })
+      const {
+        __bs: { pub: tablePub }
+      } = chatTable
       pub = tablePub
     })
     expect(pub).toBe('isPublic')
@@ -9160,12 +9160,12 @@ describe('type-safe column references in table options', () => {
     let pub: boolean | string | undefined
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { pub: true }),
-        {
-          __bs: { pub: tablePub }
-        } = blogTable
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { pub: true })
+      const {
+        __bs: { pub: tablePub }
+      } = blogTable
       pub = tablePub
     })
     expect(pub).toBe(true)
@@ -9174,9 +9174,9 @@ describe('type-safe column references in table options', () => {
     let metadata: unknown
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        blogTable = table(ownedSchema.blog, { pub: 'published' })
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      const blogTable = table(ownedSchema.blog, { pub: 'published' })
       metadata = blogTable.__bs
     })
     expect(metadata).toMatchObject({ category: 'owned', pub: 'published' })
@@ -9184,17 +9184,17 @@ describe('type-safe column references in table options', () => {
   test('pub option rejects misspelled field names', () => {
     withUniversalTable(table => {
       const ownedSchema = buildSchema({
-          owned: { blog: object({ published: boolean(), title: string() }) }
-        }),
-        // @ts-expect-error - publishd is not a valid blog field
-        invalid = table(ownedSchema.blog, { pub: 'publishd' })
+        owned: { blog: object({ published: boolean(), title: string() }) }
+      })
+      // @ts-expect-error - publishd is not a valid blog field
+      const invalid = table(ownedSchema.blog, { pub: 'publishd' })
       expect(invalid).toBeDefined()
     })
   })
   test('setup source constrains pub option to typed schema keys', async () => {
-    const { readFileSync } = await import('node:fs'),
-      { join } = await import('node:path'),
-      content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
     expect(content.includes('pub?: boolean | ZodKeys<F>')).toBe(true)
     expect(content.includes('pub?: string')).toBe(false)
   })
@@ -9348,24 +9348,24 @@ describe('enforceRateLimit', () => {
   })
   test('calls within limit pass', () => {
     resetRateLimitState()
-    const sender = mockIdentity('bbb'),
-      cfg = { max: 3, window: 60_000 }
+    const sender = mockIdentity('bbb')
+    const cfg = { max: 3, window: 60_000 }
     enforceRateLimit('posts', sender, cfg)
     enforceRateLimit('posts', sender, cfg)
     expect(() => enforceRateLimit('posts', sender, cfg)).not.toThrow()
   })
   test('exceeding max throws RATE_LIMITED', () => {
     resetRateLimitState()
-    const sender = mockIdentity('ccc'),
-      cfg = { max: 2, window: 60_000 }
+    const sender = mockIdentity('ccc')
+    const cfg = { max: 2, window: 60_000 }
     enforceRateLimit('posts', sender, cfg)
     enforceRateLimit('posts', sender, cfg)
     expect(() => enforceRateLimit('posts', sender, cfg)).toThrow('RATE_LIMITED')
   })
   test('separate tables track independently', () => {
     resetRateLimitState()
-    const sender = mockIdentity('ddd'),
-      cfg = { max: 1, window: 60_000 }
+    const sender = mockIdentity('ddd')
+    const cfg = { max: 1, window: 60_000 }
     enforceRateLimit('posts', sender, cfg)
     expect(() => enforceRateLimit('comments', sender, cfg)).not.toThrow()
   })
@@ -9377,8 +9377,8 @@ describe('enforceRateLimit', () => {
   })
   test('window reset allows new calls', async () => {
     resetRateLimitState()
-    const sender = mockIdentity('ggg'),
-      cfg = { max: 1, window: 50 }
+    const sender = mockIdentity('ggg')
+    const cfg = { max: 1, window: 50 }
     enforceRateLimit('posts', sender, cfg)
     expect(() => enforceRateLimit('posts', sender, cfg)).toThrow('RATE_LIMITED')
     await sleep(60)
@@ -9386,8 +9386,8 @@ describe('enforceRateLimit', () => {
   })
   test('error includes retryAfter and limit metadata', () => {
     resetRateLimitState()
-    const sender = mockIdentity('hhh'),
-      cfg = { max: 1, window: 60_000 }
+    const sender = mockIdentity('hhh')
+    const cfg = { max: 1, window: 60_000 }
     enforceRateLimit('posts', sender, cfg)
     try {
       enforceRateLimit('posts', sender, cfg)
@@ -9436,11 +9436,11 @@ describe('resolveFormToast', () => {
     expect(typeof success).toBe('function')
   })
   test('returns onError unchanged when provided', () => {
-    const handler: (e: unknown) => void = noop,
-      { error } = resolveFormToast({
-        onError: handler,
-        toast: { error: 'Failed' }
-      })
+    const handler: (e: unknown) => void = noop
+    const { error } = resolveFormToast({
+      onError: handler,
+      toast: { error: 'Failed' }
+    })
     expect(error).toBe(handler)
   })
   test('returns false when onError is false (suppress errors)', () => {
@@ -9459,11 +9459,11 @@ describe('resolveFormToast', () => {
     expect(error).toBeUndefined()
   })
   test('onError takes precedence over toast.error', () => {
-    const handler: (e: unknown) => void = noop,
-      { error } = resolveFormToast({
-        onError: handler,
-        toast: { error: 'Ignored' }
-      })
+    const handler: (e: unknown) => void = noop
+    const { error } = resolveFormToast({
+      onError: handler,
+      toast: { error: 'Ignored' }
+    })
     expect(error).toBe(handler)
   })
   test('both toast fields resolve independently', () => {
@@ -9485,12 +9485,12 @@ describe('resolveFormToast', () => {
     expect(called).toBe(true)
   })
   test('empty toast object returns original callbacks', () => {
-    const onE: (e: unknown) => void = noop,
-      { error, success } = resolveFormToast({
-        onError: onE,
-        onSuccess: noop,
-        toast: {}
-      })
+    const onE: (e: unknown) => void = noop
+    const { error, success } = resolveFormToast({
+      onError: onE,
+      onSuccess: noop,
+      toast: {}
+    })
     expect(success).toBe(noop)
     expect(error).toBe(onE)
   })
@@ -9542,8 +9542,8 @@ describe('makeInviteToken', () => {
     expect(uniqueChars.size).toBeGreaterThan(10)
   })
 })
-const jsProto = 'javascript',
-  jsColon = `${jsProto}:`
+const jsProto = 'javascript'
+const jsColon = `${jsProto}:`
 describe('sanitizeString (extended patterns)', () => {
   test('removes javascript protocol', () => {
     expect(sanitizeString(`click ${jsColon} alert(1)`)).toBe('click  alert(1)')
@@ -9597,8 +9597,8 @@ describe('sanitizeString (extended patterns)', () => {
     expect(sanitizeString('&#x003c;script&#x003e;')).toBe('script')
   })
   test('handles combined attack vectors', () => {
-    const input = `<script>x</script><iframe src="y"><img onerror= z>${jsColon} w`,
-      result = sanitizeString(input)
+    const input = `<script>x</script><iframe src="y"><img onerror= z>${jsColon} w`
+    const result = sanitizeString(input)
     expect(result).not.toContain('<script')
     expect(result).not.toContain('<iframe')
     expect(result).not.toContain('onerror=')
@@ -9642,8 +9642,8 @@ describe('UseBulkSelectionOpts rm option type', () => {
     expect(captured).toBe('test-id')
   })
   test('rm with all optional callbacks', () => {
-    let errorCalled = false,
-      successCount = 0
+    let errorCalled = false
+    let successCount = 0
     const opts: ReactIndexTypes.UseBulkSelectionOpts = {
       items: [{ _id: 'a' }],
       onError: () => {

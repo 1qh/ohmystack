@@ -13,20 +13,20 @@ interface InviteDialogProps {
   orgId: Id<'org'>
 }
 const InviteDialog = ({ orgId }: InviteDialogProps) => {
-  const [open, setOpen] = useState(false),
-    sendInvite = useMutation(api.org.invite),
-    form = useForm({
-      onSubmit: async d => {
-        const result = await sendInvite({ ...d, orgId })
-        if (!('token' in result)) return d
-        await navigator.clipboard.writeText(`${globalThis.location.origin}/invite/${result.token}`)
-        toast.success('Invite link copied to clipboard')
-        setOpen(false)
-        return d
-      },
-      resetOnSuccess: true,
-      schema: invite
-    })
+  const [open, setOpen] = useState(false)
+  const sendInvite = useMutation(api.org.invite)
+  const form = useForm({
+    onSubmit: async d => {
+      const result = await sendInvite({ ...d, orgId })
+      if (!('token' in result)) return d
+      await navigator.clipboard.writeText(`${globalThis.location.origin}/invite/${result.token}`)
+      toast.success('Invite link copied to clipboard')
+      setOpen(false)
+      return d
+    },
+    resetOnSuccess: true,
+    schema: invite
+  })
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger render={p => <Button {...p} />}>

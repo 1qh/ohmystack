@@ -16,8 +16,8 @@ const PermissionGuard = ({
   resource: string
   role?: OrgRole
 }) => {
-  const roleAllowed = allowedRoles && role ? allowedRoles.includes(role) : allowedRoles ? false : undefined,
-    resolvedAccess = canAccess ?? roleAllowed ?? true
+  const roleAllowed = allowedRoles && role ? allowedRoles.includes(role) : allowedRoles ? false : undefined
+  const resolvedAccess = canAccess ?? roleAllowed ?? true
   return <SharedPermissionGuard canAccess={resolvedAccess} {...props} />
 }
 export default PermissionGuard

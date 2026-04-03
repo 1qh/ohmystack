@@ -8,45 +8,45 @@ import { usePathname } from 'next/navigation'
 import { useOrg } from '~/hook/use-org'
 import OrgSwitcher from './org-switcher'
 const OrgNav = () => {
-    const { isAdmin } = useOrg(),
-      pathname = usePathname(),
-      links = [
-        { href: '/dashboard', label: 'Dashboard' },
-        { href: '/projects', label: 'Projects' },
-        { href: '/wiki', label: 'Wiki' },
-        { href: '/members', label: 'Members' },
-        ...(isAdmin ? [{ href: '/settings', label: 'Settings' }] : [])
-      ]
-    return (
-      <nav className='flex items-center gap-4 border-b px-4 py-2'>
-        <OrgSwitcher />
-        <div className='flex gap-2'>
-          {links.map(link => (
-            <Link
-              className={`rounded-sm px-3 py-1.5 text-sm ${pathname === link.href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-              href={link.href}
-              key={link.href}>
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-    )
-  },
-  OrgLayoutClient = ({
-    children,
-    membership,
-    org,
-    role
-  }: {
-    children: ReactNode
-    membership: null
-    org: OrgDocLike
-    role: OrgRole
-  }) => (
-    <OrgProvider membership={membership} org={org} role={role}>
-      <OrgNav />
-      <main className='p-4'>{children}</main>
-    </OrgProvider>
+  const { isAdmin } = useOrg()
+  const pathname = usePathname()
+  const links = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/projects', label: 'Projects' },
+    { href: '/wiki', label: 'Wiki' },
+    { href: '/members', label: 'Members' },
+    ...(isAdmin ? [{ href: '/settings', label: 'Settings' }] : [])
+  ]
+  return (
+    <nav className='flex items-center gap-4 border-b px-4 py-2'>
+      <OrgSwitcher />
+      <div className='flex gap-2'>
+        {links.map(link => (
+          <Link
+            className={`rounded-sm px-3 py-1.5 text-sm ${pathname === link.href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            href={link.href}
+            key={link.href}>
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
   )
+}
+const OrgLayoutClient = ({
+  children,
+  membership,
+  org,
+  role
+}: {
+  children: ReactNode
+  membership: null
+  org: OrgDocLike
+  role: OrgRole
+}) => (
+  <OrgProvider membership={membership} org={org} role={role}>
+    <OrgNav />
+    <main className='p-4'>{children}</main>
+  </OrgProvider>
+)
 export default OrgLayoutClient

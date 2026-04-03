@@ -8,19 +8,19 @@ type PlaygroundProps = Omit<
   'endpointsForFactory' | 'extractSchemaFields' | 'labels'
 >
 const labels: ComponentProps<typeof SharedSchemaPlayground>['labels'] = {
-    generatedCountNoun: 'endpoint',
-    generatedEmptyWithSchema: 'No tables detected. Use makeOwned, makeOrgScoped, etc.',
-    generatedEmptyWithoutSchema: 'Enter a schema to preview generated endpoints',
-    generatedTitle: 'Generated Preview',
-    tableItemsLabel: 'Endpoints'
-  },
-  SchemaPlayground = (props: PlaygroundProps) => (
-    <SharedSchemaPlayground
-      {...props}
-      endpointsForFactory={endpointsForFactory}
-      extractSchemaFields={extractSchemaFields}
-      labels={labels}
-    />
-  )
+  generatedCountNoun: 'endpoint',
+  generatedEmptyWithSchema: 'No tables detected. Use makeOwned, makeOrgScoped, etc.',
+  generatedEmptyWithoutSchema: 'Enter a schema to preview generated endpoints',
+  generatedTitle: 'Generated Preview',
+  tableItemsLabel: 'Endpoints'
+}
+const SchemaPlayground = (props: PlaygroundProps) => (
+  <SharedSchemaPlayground
+    {...props}
+    endpointsForFactory={endpointsForFactory}
+    extractSchemaFields={extractSchemaFields}
+    labels={labels}
+  />
+)
 export default SchemaPlayground
 export type { PlaygroundProps }

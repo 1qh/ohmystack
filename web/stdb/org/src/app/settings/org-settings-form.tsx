@@ -20,24 +20,23 @@ interface OrgSettingsFormProps {
   org: Org & { _id: string }
 }
 const OrgSettingsForm = ({ org: o }: OrgSettingsFormProps) => {
-  const router = useRouter(),
-    slugRef = useRef(''),
-    form = useFormMutation({
-      mutate: useReducer(reducers.orgUpdate),
-      onSuccess: () => {
-        if (slugRef.current && slugRef.current !== o.slug)
-          setActiveOrgCookieClient({ orgId: o._id, slug: slugRef.current })
-        router.push('/settings')
-      },
-      schema: orgTeam,
-      toast: { success: 'Settings updated' },
-      transform: d => {
-        slugRef.current = typeof d.slug === 'string' ? d.slug : ''
-        return { ...d, orgId: Number(o._id) }
-      },
-      values: pickValues(orgTeam, o)
-    }),
-    slug = form.watch(orgKeys.slug)
+  const router = useRouter()
+  const slugRef = useRef('')
+  const form = useFormMutation({
+    mutate: useReducer(reducers.orgUpdate),
+    onSuccess: () => {
+      if (slugRef.current && slugRef.current !== o.slug) setActiveOrgCookieClient({ orgId: o._id, slug: slugRef.current })
+      router.push('/settings')
+    },
+    schema: orgTeam,
+    toast: { success: 'Settings updated' },
+    transform: d => {
+      slugRef.current = typeof d.slug === 'string' ? d.slug : ''
+      return { ...d, orgId: Number(o._id) }
+    },
+    values: pickValues(orgTeam, o)
+  })
+  const slug = form.watch(orgKeys.slug)
   return (
     <Card>
       <CardHeader>

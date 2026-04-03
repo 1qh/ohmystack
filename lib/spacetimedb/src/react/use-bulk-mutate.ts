@@ -30,14 +30,14 @@ interface UseBulkMutateOptions {
   toast?: BulkMutateToast
 }
 const resolveBulkError = (opts?: UseBulkMutateOptions): ((error: unknown) => void) | undefined =>
-    resolveSharedBulkError(opts, defaultOnError),
-  useBulkMutate = <A, R = void>(mutate: (args: A) => Promise<R>, options?: UseBulkMutateOptions) =>
-    useSharedBulkMutate({
-      bulkMax: BULK_MAX,
-      defaultOnError,
-      mutate,
-      options,
-      packageName: '@noboil/spacetimedb'
-    })
+  resolveSharedBulkError(opts, defaultOnError)
+const useBulkMutate = <A, R = void>(mutate: (args: A) => Promise<R>, options?: UseBulkMutateOptions) =>
+  useSharedBulkMutate({
+    bulkMax: BULK_MAX,
+    defaultOnError,
+    mutate,
+    options,
+    packageName: '@noboil/spacetimedb'
+  })
 export type { BulkMutateToast, BulkProgress, BulkResult, UseBulkMutateOptions }
 export { collectSettled, resolveBulkError, useBulkMutate }
