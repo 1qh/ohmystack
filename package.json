@@ -12,7 +12,7 @@
     "agent"
   ],
   "scripts": {
-    "build:ts": "turbo run build --output-logs=errors-only",
+    "build": "turbo run build --output-logs=errors-only",
     "check": "lintmax check",
     "clean": "sh clean.sh",
     "convex:reset": "docker compose -f convex.yml down -v && docker compose -f convex.yml up -d --quiet-pull",
@@ -33,7 +33,7 @@
     "test:all:watch": "bash script/watch-test-all.sh",
     "test:web": "bun run test",
     "tsc": "turbo run typecheck --output-logs=errors-only",
-    "verify": "bun run tsc && bun run check && bun run build:ts"
+    "verify": "bun run tsc && bun run check && bun run build"
   },
   "simple-git-hooks": {
     "pre-commit": "sh up.sh && git add -u"
