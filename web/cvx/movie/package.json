@@ -12,7 +12,6 @@
     "with-env": "dotenv -e ../../../.env --"
   },
   "devDependencies": {
-    "@a/e2e": "workspace:*",
-    "@playwright/test": "latest"
+    "@a/e2e": "workspace:*"
   }
 }

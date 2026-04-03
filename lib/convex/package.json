@@ -57,8 +57,7 @@
   "dependencies": {
     "browser-image-compression": "latest",
     "next-navigation-guard": "latest",
-    "react-dropzone": "latest",
-    "sharp": "latest"
+    "react-dropzone": "latest"
   },
   "devDependencies": {
     "@a/shared": "workspace:*",

@@ -35,15 +35,7 @@
     "@ai-sdk/react": "latest",
     "@convex-dev/auth": "latest",
     "@noboil/convex": "workspace:*",
-    "@t3-oss/env-nextjs": "latest",
-    "ai": "latest",
-    "convex": "latest",
-    "lucide-react": "latest",
     "next": "latest",
-    "next-navigation-guard": "latest",
-    "next-themes": "latest",
-    "react-oidc-context": "latest",
-    "sonner": "latest",
-    "streamdown": "latest"
+    "react-oidc-context": "latest"
   }
 }
