@@ -189,24 +189,24 @@ flowchart LR
 
 All major query paths are covered with explicit indexes.
 
-| Query Pattern | Index |
-| --- | --- |
-| list messages by thread | `messages.by_threadId` |
-| read latest message for thread checks | `messages.by_threadId` |
-| resolve session from thread | `session.by_threadId` |
-| resolve owned session by user+thread | `session.by_user_threadId` |
-| list sessions for user | `session.by_user_status` |
-| list tasks by session | `tasks.by_session` |
-| list tasks by parent thread and status | `tasks.by_parentThreadId_status` |
-| resolve task by worker thread | `tasks.by_threadId` |
-| detect completion reminder linkage | `tasks.by_completionReminderMessageId` |
-| list todos ordered in session | `todos.by_session_position` |
-| aggregate token usage by session | `tokenUsage.by_session` |
-| aggregate token usage by thread | `tokenUsage.by_threadId` |
-| list enabled MCP servers by user | `mcpServers.by_user_enabled` |
-| resolve MCP server by user+name | `mcpServers.by_user_name` |
-| resolve run state by thread | `threadRunState.by_threadId` |
-| scan active runs for timeout cleanup | `threadRunState.by_status` |
+| Query Pattern                          | Index                                  |
+| -------------------------------------- | -------------------------------------- |
+| list messages by thread                | `messages.by_threadId`                 |
+| read latest message for thread checks  | `messages.by_threadId`                 |
+| resolve session from thread            | `session.by_threadId`                  |
+| resolve owned session by user+thread   | `session.by_user_threadId`             |
+| list sessions for user                 | `session.by_user_status`               |
+| list tasks by session                  | `tasks.by_session`                     |
+| list tasks by parent thread and status | `tasks.by_parentThreadId_status`       |
+| resolve task by worker thread          | `tasks.by_threadId`                    |
+| detect completion reminder linkage     | `tasks.by_completionReminderMessageId` |
+| list todos ordered in session          | `todos.by_session_position`            |
+| aggregate token usage by session       | `tokenUsage.by_session`                |
+| aggregate token usage by thread        | `tokenUsage.by_threadId`               |
+| list enabled MCP servers by user       | `mcpServers.by_user_enabled`           |
+| resolve MCP server by user+name        | `mcpServers.by_user_name`              |
+| resolve run state by thread            | `threadRunState.by_threadId`           |
+| scan active runs for timeout cleanup   | `threadRunState.by_status`             |
 
 ```mermaid
 flowchart TB

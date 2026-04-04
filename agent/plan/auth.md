@@ -87,45 +87,45 @@ flowchart LR
 
 ## Full Ownership Audit
 
-| Public endpoint | Ownership check |
-| --- | --- |
-| `sessions.list` | Filters by authenticated `userId` via `by_user_status`. |
-| `sessions.createSession` | Writes session row with authenticated `userId`. |
-| `sessions.getSession` | Loads session and verifies `session.userId === authUserId`. |
-| `sessions.submitMessage` | Resolves `sessionId`, verifies ownership, then writes message/enqueue. |
-| `sessions.archiveSession` | Verifies owned session before archive mutation. |
-| `sessions.getRunState` | Resolves owned session by `threadId` before returning run state. |
-| `messages.listMessages` | Resolves ownership via `session.by_user_threadId`; for worker threads resolves `task -> session -> user`. |
-| `tasks.listTasks` | Verifies `sessionId` ownership before listing task rows. |
-| `tasks.getOwnedTaskStatus` | Verifies requester owns `requesterThreadId` session, then verifies `task.sessionId` matches. |
-| `todos.listTodos` | Verifies session ownership before listing todos. |
-| `tokenUsage.getTokenUsage` | Verifies session ownership before aggregation; unauthorized access returns zeroed counters. |
-| `mcp.listMcpServers` | User-scoped row ownership enforced by CRUD ownership layer. |
-| `mcp.addMcpServer` | Create path is user-scoped; server row is owned by authenticated user. |
-| `mcp.updateMcpServer` | Update path is user-scoped by CRUD ownership resolution. |
-| `mcp.deleteMcpServer` | Delete path is user-scoped by CRUD ownership resolution. |
-| `testauth.signInAsTestUser` | Enabled only in test mode; unavailable in production mode. |
+| Public endpoint             | Ownership check                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `sessions.list`             | Filters by authenticated `userId` via `by_user_status`.                                                   |
+| `sessions.createSession`    | Writes session row with authenticated `userId`.                                                           |
+| `sessions.getSession`       | Loads session and verifies `session.userId === authUserId`.                                               |
+| `sessions.submitMessage`    | Resolves `sessionId`, verifies ownership, then writes message/enqueue.                                    |
+| `sessions.archiveSession`   | Verifies owned session before archive mutation.                                                           |
+| `sessions.getRunState`      | Resolves owned session by `threadId` before returning run state.                                          |
+| `messages.listMessages`     | Resolves ownership via `session.by_user_threadId`; for worker threads resolves `task -> session -> user`. |
+| `tasks.listTasks`           | Verifies `sessionId` ownership before listing task rows.                                                  |
+| `tasks.getOwnedTaskStatus`  | Verifies requester owns `requesterThreadId` session, then verifies `task.sessionId` matches.              |
+| `todos.listTodos`           | Verifies session ownership before listing todos.                                                          |
+| `tokenUsage.getTokenUsage`  | Verifies session ownership before aggregation; unauthorized access returns zeroed counters.               |
+| `mcp.listMcpServers`        | User-scoped row ownership enforced by CRUD ownership layer.                                               |
+| `mcp.addMcpServer`          | Create path is user-scoped; server row is owned by authenticated user.                                    |
+| `mcp.updateMcpServer`       | Update path is user-scoped by CRUD ownership resolution.                                                  |
+| `mcp.deleteMcpServer`       | Delete path is user-scoped by CRUD ownership resolution.                                                  |
+| `testauth.signInAsTestUser` | Enabled only in test mode; unavailable in production mode.                                                |
 
 ## Detailed Endpoint Ownership Reference
 
-| Endpoint | Ownership check performed |
-| --- | --- |
-| `sessions.createSession` | Uses authenticated identity from auth context and stamps `session.userId` server-side; never accepts client ownership input. |
-| `sessions.list` | Queries sessions by authenticated `userId` using `by_user_status`, so only caller-owned sessions are returned. |
-| `sessions.getSession` | Loads by `sessionId` and requires `session.userId === authUserId`. |
-| `sessions.submitMessage` | Resolves target session, verifies owner match, then inserts message and enqueues run only for that owned session. |
-| `sessions.archiveSession` | Requires owned session before archive write; also clears queued run payload for that owned thread. |
-| `sessions.getRunState` | Resolves session ownership by `threadId` and caller identity before exposing run-state row. |
-| `messages.listMessages` | Validates ownership via session thread chain (`session.by_user_threadId`); worker threads additionally require `task.threadId -> task.sessionId -> session.userId` match. |
-| `tasks.listTasks` | Requires session ownership on `sessionId` before listing task rows. |
-| `tasks.getOwnedTaskStatus` | Requires caller ownership of requester thread session, then requires `task.sessionId` to match that owned session. |
-| `todos.listTodos` | Requires owned session before listing todos. |
-| `tokenUsage.getTokenUsage` | Requires owned session before aggregation; unauthorized requests return zeroed counters. |
-| `mcp.listMcpServers` | Ownership enforced by user-scoped CRUD layer, returning only caller-owned MCP server rows. |
-| `mcp.addMcpServer` | Creates MCP row under authenticated user scope; ownership is bound at write time. |
-| `mcp.updateMcpServer` | Resolves row through user-scoped CRUD ownership before applying patch. |
-| `mcp.deleteMcpServer` | Resolves row through user-scoped CRUD ownership before delete. |
-| `testauth.signInAsTestUser` | Callable only when test mode gate is active; unavailable in production mode. |
+| Endpoint                    | Ownership check performed                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sessions.createSession`    | Uses authenticated identity from auth context and stamps `session.userId` server-side; never accepts client ownership input.                                              |
+| `sessions.list`             | Queries sessions by authenticated `userId` using `by_user_status`, so only caller-owned sessions are returned.                                                            |
+| `sessions.getSession`       | Loads by `sessionId` and requires `session.userId === authUserId`.                                                                                                        |
+| `sessions.submitMessage`    | Resolves target session, verifies owner match, then inserts message and enqueues run only for that owned session.                                                         |
+| `sessions.archiveSession`   | Requires owned session before archive write; also clears queued run payload for that owned thread.                                                                        |
+| `sessions.getRunState`      | Resolves session ownership by `threadId` and caller identity before exposing run-state row.                                                                               |
+| `messages.listMessages`     | Validates ownership via session thread chain (`session.by_user_threadId`); worker threads additionally require `task.threadId -> task.sessionId -> session.userId` match. |
+| `tasks.listTasks`           | Requires session ownership on `sessionId` before listing task rows.                                                                                                       |
+| `tasks.getOwnedTaskStatus`  | Requires caller ownership of requester thread session, then requires `task.sessionId` to match that owned session.                                                        |
+| `todos.listTodos`           | Requires owned session before listing todos.                                                                                                                              |
+| `tokenUsage.getTokenUsage`  | Requires owned session before aggregation; unauthorized requests return zeroed counters.                                                                                  |
+| `mcp.listMcpServers`        | Ownership enforced by user-scoped CRUD layer, returning only caller-owned MCP server rows.                                                                                |
+| `mcp.addMcpServer`          | Creates MCP row under authenticated user scope; ownership is bound at write time.                                                                                         |
+| `mcp.updateMcpServer`       | Resolves row through user-scoped CRUD ownership before applying patch.                                                                                                    |
+| `mcp.deleteMcpServer`       | Resolves row through user-scoped CRUD ownership before delete.                                                                                                            |
+| `testauth.signInAsTestUser` | Callable only when test mode gate is active; unavailable in production mode.                                                                                              |
 
 ## Production Safety
 

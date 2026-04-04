@@ -120,21 +120,21 @@ File uploads are not included in this product scope. Text input/paste is support
 
 ### Frontend env (`agent/.env.local`)
 
-| Variable | Dev | Test | Prod | Notes |
-| --- | --- | --- | --- | --- |
-| `NEXT_PUBLIC_CONVEX_URL` | optional (falls back to `http://127.0.0.1:4001`) | required | required | Agent app Convex URL, separate from demo apps |
-| `NEXT_PUBLIC_CONVEX_TEST_MODE` | omit | `true` | omit | Enables `TestLoginProvider` bypass of Google OAuth |
+| Variable                       | Dev                                              | Test     | Prod     | Notes                                              |
+| ------------------------------ | ------------------------------------------------ | -------- | -------- | -------------------------------------------------- |
+| `NEXT_PUBLIC_CONVEX_URL`       | optional (falls back to `http://127.0.0.1:4001`) | required | required | Agent app Convex URL, separate from demo apps      |
+| `NEXT_PUBLIC_CONVEX_TEST_MODE` | omit                                             | `true`   | omit     | Enables `TestLoginProvider` bypass of Google OAuth |
 
 ### Backend env (`backend/agent`, set via `convex env set`)
 
-| Variable | Dev | Test | Prod | Notes |
-| --- | --- | --- | --- | --- |
-| `CONVEX_DEPLOYMENT` | local deployment | test deployment | production deployment | Convex target for dev/deploy scripts |
-| `AUTH_SECRET` | required | required | required | Auth.js signing/encryption secret used by Convex auth |
-| `AUTH_GOOGLE_ID` | required when Google auth enabled | optional | required | OAuth client id for `@convex-dev/auth` |
-| `AUTH_GOOGLE_SECRET` | required when Google auth enabled | optional | required | OAuth client secret for `@convex-dev/auth` |
-| `CONVEX_SITE_URL` | optional | optional | optional | Domain value for auth provider configuration |
-| `GOOGLE_VERTEX_API_KEY` | required in non-mock runtime | mock or test key | required | Vertex AI Express mode API key |
+| Variable                | Dev                               | Test             | Prod                  | Notes                                                 |
+| ----------------------- | --------------------------------- | ---------------- | --------------------- | ----------------------------------------------------- |
+| `CONVEX_DEPLOYMENT`     | local deployment                  | test deployment  | production deployment | Convex target for dev/deploy scripts                  |
+| `AUTH_SECRET`           | required                          | required         | required              | Auth.js signing/encryption secret used by Convex auth |
+| `AUTH_GOOGLE_ID`        | required when Google auth enabled | optional         | required              | OAuth client id for `@convex-dev/auth`                |
+| `AUTH_GOOGLE_SECRET`    | required when Google auth enabled | optional         | required              | OAuth client secret for `@convex-dev/auth`            |
+| `CONVEX_SITE_URL`       | optional                          | optional         | optional              | Domain value for auth provider configuration          |
+| `GOOGLE_VERTEX_API_KEY` | required in non-mock runtime      | mock or test key | required              | Vertex AI Express mode API key                        |
 
 Built-in Convex runtime URLs are platform-provided and not set through normal env var commands.
 

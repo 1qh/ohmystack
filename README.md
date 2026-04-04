@@ -215,11 +215,11 @@ noboil/
 
 ## Packages
 
-| Package | Description |
-| --- | --- |
-| `noboil` | CLI — scaffold a new project |
-| `@noboil/convex` | Convex library |
-| `@noboil/spacetimedb` | SpacetimeDB library |
+| Package               | Description                  |
+| --------------------- | ---------------------------- |
+| `noboil`              | CLI — scaffold a new project |
+| `@noboil/convex`      | Convex library               |
+| `@noboil/spacetimedb` | SpacetimeDB library          |
 
 ## Requirements
 
