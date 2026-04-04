@@ -47,6 +47,7 @@
     "jose": "latest",
     "lintmax": "latest",
     "sherif": "latest",
+    "simple-git-hooks": "latest",
     "ts-unused-exports": "latest",
     "tsdown": "latest",
     "turbo": "latest",
