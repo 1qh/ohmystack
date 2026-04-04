@@ -40,7 +40,7 @@ Run `gh auth status` to determine your role:
 
 Use these for project-specific content:
 - `LEARNING.md` — lessons learned, gotchas, known issues
-- `RULES.md` — project-specific rules that don't apply to other projects
+- `RULES.md` — project-specific rules that don’t apply to other projects
 - `PROGRESS.md` — tracking ongoing work
 - `PLAN.md` — planning and architecture decisions
 
@@ -55,7 +55,7 @@ Check states:
 - `check: running...` — wait, do not edit files until complete
 - `check: never run` — run `bunx pm4ai@latest fix` first
 
----
+* * *
 
 ## Package Manager
 
@@ -74,7 +74,7 @@ Check states:
 - Scripts: silent on success, verbose on failure
 - Never use `git clean` — it deletes `.env` and uncommitted files. Use explicit `rm -rf`.
 
----
+* * *
 
 ## Must NOT Do
 
@@ -103,7 +103,7 @@ Before writing any new code, verify:
 4. Am I adding inline styles? Only allowed for truly dynamic values. NEVER for colors or static properties.
 5. Am I copy-pasting from another file? Extract to a shared utility/component
 
----
+* * *
 
 ## Commits
 
@@ -111,7 +111,7 @@ Before writing any new code, verify:
 - No AI tooling in commits
 - Format: `type: description` (fix, feat, docs, chore, refactor, test)
 
----
+* * *
 
 ## Lintmax
 
@@ -120,7 +120,7 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 ### Ignore Syntax
 
 | Linter | File-level | Per-line |
-| ------ | ---------------------------------------------------- | ------------------------------------------------ |
+| --- | --- | --- |
 | oxlint | `/* oxlint-disable rule-name */` | `// oxlint-disable-next-line rule-name` |
 | eslint | `/* eslint-disable rule-name */` | `// eslint-disable-next-line rule-name` |
 | biome | `/** biome-ignore-all lint/category/rule: reason */` | `/** biome-ignore lint/category/rule: reason */` |
@@ -140,7 +140,7 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 ### Cross-linter Rules
 
 - 2 linters with the same rule (biome `noAwaitInLoops` + oxlint `no-await-in-loop`) = double enforcement, NOT a conflict. Never disable one because the other covers it.
-- To suppress a shared eslint/oxlint rule: suppress eslint's version — oxlint auto-picks up eslint rules and is faster.
+- To suppress a shared eslint/oxlint rule: suppress eslint’s version — oxlint auto-picks up eslint rules and is faster.
 - oxlint `eslint/sort-keys` conflicts with perfectionist (ASCII vs natural sort) — disabled in lintmax.
 
 ### Safe-to-ignore Rules
@@ -153,21 +153,21 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 
 ## Playbook Maintenance
 
-- Every new lesson must be merged into the most relevant existing section immediately; do NOT create append-only "recent lessons" buckets.
+- Every new lesson must be merged into the most relevant existing section immediately; do NOT create append-only “recent lessons” buckets.
 - Correct rules in place (single source of truth), then remove superseded guidance.
 
----
+* * *
 
 ## Minimal DOM (React + Tailwind)
 
-Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn't exist.
+Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn’t exist.
 
 A node is allowed only if it provides:
 
 - **Semantics/a11y** — correct elements (`ul/li`, `button`, `label`, `form`, `nav`, `section`), ARIA patterns, focus behavior
 - **Layout constraint** — needs its own containing block / positioning / clipping / scroll / stacking context (`relative`, `overflow-*`, `sticky`, `z-*`, `min-w-0`)
 - **Behavior** — measurement refs, observers, portals, event boundary, virtualization
-- **Component API** — can't pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding)
+- **Component API** — can’t pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding)
 
 Before adding wrappers:
 
@@ -204,7 +204,7 @@ Tailwind selector tools:
 
 Review checklist: Can I delete this node? → delete. Can `gap/space/divide` replace it? → do it. Can I pass `className`? → do it. Can `[&>...]:` remove repetition? → do it.
 
----
+* * *
 
 ## React 19 + Next.js
 
@@ -217,7 +217,7 @@ Review checklist: Can I delete this node? → delete. Can `gap/space/divide` rep
 - `<Suspense>` around `useSearchParams()`
 - No `Date.now()` / `Math.random()` in render
 
----
+* * *
 
 ## shadcn — Native Look, No Overrides
 
@@ -242,7 +242,7 @@ className={cn('base-classes', variant === 'a' ? 'class-a' : 'class-b')}
 
 NEVER use template literals for conditional classNames.
 
----
+* * *
 
 ## Library Publishing
 
@@ -252,7 +252,7 @@ NEVER use template literals for conditional classNames.
 - Never bundle dependencies that consumers should install themselves
 - Export all types used in public API — DTS generation fails on unexported internal types leaking through re-exports
 
----
+* * *
 
 ## Code Style
 

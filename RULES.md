@@ -7,25 +7,25 @@
 
 All services and apps use the 4xxx range so they don’t conflict with common dev ports (3000-3999). All 8 demo apps can run simultaneously.
 
-| Port | Service                |
-| ---- | ---------------------- |
-| 4000 | SpacetimeDB server     |
-| 4001 | Convex backend API     |
-| 4002 | Convex site            |
-| 4100 | cvx/blog               |
-| 4101 | cvx/chat               |
-| 4102 | cvx/movie              |
-| 4103 | cvx/org                |
-| 4200 | stdb/blog              |
-| 4201 | stdb/chat              |
-| 4202 | stdb/movie             |
-| 4203 | stdb/org               |
-| 4300 | doc site               |
-| 4400 | agent                  |
-| 4500 | Convex dashboard       |
+| Port | Service |
+| --- | --- |
+| 4000 | SpacetimeDB server |
+| 4001 | Convex backend API |
+| 4002 | Convex site |
+| 4100 | cvx/blog |
+| 4101 | cvx/chat |
+| 4102 | cvx/movie |
+| 4103 | cvx/org |
+| 4200 | stdb/blog |
+| 4201 | stdb/chat |
+| 4202 | stdb/movie |
+| 4203 | stdb/org |
+| 4300 | doc site |
+| 4400 | agent |
+| 4500 | Convex dashboard |
 | 5432 | Postgres (SpacetimeDB) |
-| 4600 | stdb MinIO API         |
-| 4601 | stdb MinIO console     |
+| 4600 | stdb MinIO API |
+| 4601 | stdb MinIO console |
 
 **Do NOT change these ports** — they are referenced in docker compose files, env files, playwright configs, E2E helpers, library defaults, and documentation. Changing one port requires updating all of them.
 
@@ -82,12 +82,12 @@ const Page = async () => {
 
 ## Testing
 
-| Suite               | Runner      |
-| ------------------- | ----------- |
-| Convex library      | bun:test    |
-| SpacetimeDB library | bun:test    |
-| Convex backend      | convex-test |
-| Web E2E             | Playwright  |
+| Suite | Runner |
+| --- | --- |
+| Convex library | bun:test |
+| SpacetimeDB library | bun:test |
+| Convex backend | convex-test |
+| Web E2E | Playwright |
 
 ### E2E with Real Services
 
