@@ -5,6 +5,7 @@ If `README.md` exists at the repo root, read it first.
 All projects with lintmax in deps are managed by pm4ai (`bunx pm4ai@latest`). The tool syncs configs, generates CLAUDE.md, enforces conventions, and runs maintenance.
 
 Key repos:
+
 - **pm4ai** — the management tool. Rules in `apps/web/content/rules/*.mdx`. Checks in `packages/pm4ai/src/`.
 - **lintmax** — max-strict lint/format orchestrator. All projects depend on it.
 - **cnsync** — canonical source for `readonly/ui` (shadcn + ai-elements components).
@@ -14,6 +15,7 @@ For full documentation: `curl https://pm4ai.vercel.app/llms-full.txt`
 ## Managed Files
 
 These files are auto-generated and synced by pm4ai. Never edit them directly:
+
 - `CLAUDE.md` — generated from rules based on project dependencies
 - `clean.sh` — universal cleanup script
 - `up.sh` — universal maintenance cycle (clean + install + build + fix + check)
@@ -24,6 +26,7 @@ These files are auto-generated and synced by pm4ai. Never edit them directly:
 ## Role Detection
 
 Run `gh auth status` to determine your role:
+
 - If you are the repo owner (`1qh`): you can modify pm4ai rules and checks directly in the pm4ai repo
 - Otherwise: do not edit managed files, only use companion files
 
@@ -39,8 +42,9 @@ Run `gh auth status` to determine your role:
 ## Companion Files
 
 Use these for project-specific content:
+
 - `LEARNING.md` — lessons learned, gotchas, known issues
-- `RULES.md` — project-specific rules that don't apply to other projects
+- `RULES.md` — project-specific rules that don’t apply to other projects
 - `PROGRESS.md` — tracking ongoing work
 - `PLAN.md` — planning and architecture decisions
 
@@ -49,6 +53,7 @@ Use these for project-specific content:
 Run `bunx pm4ai@latest status` to see issues in this project. Run `bunx pm4ai@latest fix` to sync and maintain.
 
 Check states:
+
 - `check: passed 5m ago (current)` — safe to proceed
 - `check: passed 3h ago (before 2 commits)` — stale, run `bunx pm4ai@latest status` again and wait for refresh
 - `check: failed 5m ago (current), 15 violations` — fix violations before proceeding
@@ -119,11 +124,11 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 
 ### Ignore Syntax
 
-| Linter | File-level | Per-line |
+| Linter | File-level                                           | Per-line                                         |
 | ------ | ---------------------------------------------------- | ------------------------------------------------ |
-| oxlint | `/* oxlint-disable rule-name */` | `// oxlint-disable-next-line rule-name` |
-| eslint | `/* eslint-disable rule-name */` | `// eslint-disable-next-line rule-name` |
-| biome | `/** biome-ignore-all lint/category/rule: reason */` | `/** biome-ignore lint/category/rule: reason */` |
+| oxlint | `/* oxlint-disable rule-name */`                     | `// oxlint-disable-next-line rule-name`          |
+| eslint | `/* eslint-disable rule-name */`                     | `// eslint-disable-next-line rule-name`          |
+| biome  | `/** biome-ignore-all lint/category/rule: reason */` | `/** biome-ignore lint/category/rule: reason */` |
 
 ### Ignore Strategy
 
@@ -140,7 +145,7 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 ### Cross-linter Rules
 
 - 2 linters with the same rule (biome `noAwaitInLoops` + oxlint `no-await-in-loop`) = double enforcement, NOT a conflict. Never disable one because the other covers it.
-- To suppress a shared eslint/oxlint rule: suppress eslint's version — oxlint auto-picks up eslint rules and is faster.
+- To suppress a shared eslint/oxlint rule: suppress eslint’s version — oxlint auto-picks up eslint rules and is faster.
 - oxlint `eslint/sort-keys` conflicts with perfectionist (ASCII vs natural sort) — disabled in lintmax.
 
 ### Safe-to-ignore Rules
@@ -153,21 +158,21 @@ lintmax is our own max-strict lint/format orchestrator. We own it — read the s
 
 ## Playbook Maintenance
 
-- Every new lesson must be merged into the most relevant existing section immediately; do NOT create append-only "recent lessons" buckets.
+- Every new lesson must be merged into the most relevant existing section immediately; do NOT create append-only “recent lessons” buckets.
 - Correct rules in place (single source of truth), then remove superseded guidance.
 
 ---
 
 ## Minimal DOM (React + Tailwind)
 
-Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn't exist.
+Same UI, fewest DOM nodes. Every element must earn its place. If you can delete it and nothing breaks (semantics, layout, behavior, required styling) → it shouldn’t exist.
 
 A node is allowed only if it provides:
 
 - **Semantics/a11y** — correct elements (`ul/li`, `button`, `label`, `form`, `nav`, `section`), ARIA patterns, focus behavior
 - **Layout constraint** — needs its own containing block / positioning / clipping / scroll / stacking context (`relative`, `overflow-*`, `sticky`, `z-*`, `min-w-0`)
 - **Behavior** — measurement refs, observers, portals, event boundary, virtualization
-- **Component API** — can't pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding)
+- **Component API** — can’t pass props/classes to the real root (and you tried `as`/`asChild`/prop forwarding)
 
 Before adding wrappers:
 

@@ -34,7 +34,10 @@
   "files": [
     "dist"
   ],
-  "scripts": {},
+  "scripts": {
+    "cleanup-old-versions": "bun script/cleanup-old-versions.ts",
+    "postpublish": "bun run cleanup-old-versions"
+  },
   "dependencies": {
     "@a/be-convex": "workspace:*",
     "@a/ui": "workspace:*",

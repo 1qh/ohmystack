@@ -20,5 +20,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "scripts": {
+    "cleanup-old-versions": "bun script/cleanup-old-versions.ts",
+    "postpublish": "bun run cleanup-old-versions"
+  }
 }
