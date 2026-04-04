@@ -1,5 +1,10 @@
 {
   "name": "@a/fe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1qh/noboil"
+  },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./*": "./src/*.tsx",
@@ -26,9 +31,10 @@
       ]
     }
   },
-  "scripts": {
-    "clean": "rm -rf .cache .turbo node_modules"
-  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {},
   "dependencies": {
     "@a/be-convex": "workspace:*",
     "@a/ui": "workspace:*",

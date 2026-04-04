@@ -1,5 +1,10 @@
 {
   "name": "@a/e2e",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1qh/noboil"
+  },
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./base-chat": "./src/base-chat.ts",
@@ -13,7 +18,7 @@
     "./auth-proxy": "./src/auth-proxy.ts",
     "./playwright-config": "./src/playwright-config.ts"
   },
-  "devDependencies": {
-    "@playwright/test": "latest"
-  }
+  "files": [
+    "dist"
+  ]
 }

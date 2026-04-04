@@ -3,7 +3,6 @@
   "type": "module",
   "scripts": {
     "build": "bun with-env next build --turbo",
-    "clean": "git clean -xdf .cache .next .turbo node_modules",
     "dev": "PORT=4101 bun with-env next dev --turbo",
     "start": "bun with-env next start",
     "test": "CONVEX_TEST_MODE=true bun with-env playwright test --reporter=dot",

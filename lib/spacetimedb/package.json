@@ -52,7 +52,6 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "clean": "rm -rf .cache .turbo dist node_modules",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
@@ -62,8 +61,7 @@
     "react-dropzone": "latest"
   },
   "devDependencies": {
-    "@a/shared": "workspace:*",
-    "tsdown": "latest"
+    "@a/shared": "workspace:*"
   },
   "peerDependencies": {
     "@stepperize/react": "latest",

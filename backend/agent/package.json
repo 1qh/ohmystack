@@ -12,7 +12,6 @@
   "scripts": {
     "build": "tsc",
     "check:schema": "bun ./check-schema.ts",
-    "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "bun with-env convex dev",
     "prod": "bun with-env convex deploy",
     "test": "CONVEX_TEST_MODE=true bun with-env bun test convex/f.test.ts",

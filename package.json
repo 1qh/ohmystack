@@ -39,6 +39,7 @@
     "pre-commit": "sh up.sh && git add -u"
   },
   "devDependencies": {
+    "@playwright/test": "latest",
     "@types/bun": "latest",
     "babel-plugin-react-compiler": "latest",
     "depcheck": "latest",
@@ -47,6 +48,7 @@
     "lintmax": "latest",
     "sherif": "latest",
     "ts-unused-exports": "latest",
+    "tsdown": "latest",
     "turbo": "latest",
     "typescript": "latest"
   },
