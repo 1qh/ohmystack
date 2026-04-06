@@ -12,6 +12,7 @@
     "agent"
   ],
   "scripts": {
+    "action": "sh up.sh && bun run test",
     "build": "turbo run build --output-logs=errors-only",
     "check": "lintmax check",
     "clean": "sh clean.sh",
