@@ -1,54 +1,12 @@
-name: CI
+name: ' '
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      force_full:
-        description: Run all jobs regardless of path filters
-        required: false
-        default: 'false'
-        type: choice
-        options: ['false', 'true']
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  schedule:
+    - cron: '0 0 * * 1'
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    outputs:
-      ts: ${{ steps.filter.outputs.ts }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            ts:
-              - 'lib/**'
-              - 'backend/**'
-              - 'tool/**'
-              - 'web/**'
-              - 'doc/**'
-              - 'agent/**'
-              - 'package.json'
-              - 'bun.lock'
-              - 'tsconfig*.json'
-              - 'turbo.json'
-              - 'lintmax.config.ts'
   ci:
-    needs: changes
-    if: needs.changes.outputs.ts == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_full == 'true')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 'latest'
-      - run: bun i && bun run build && bun --cwd lib/convex test && bun --cwd lib/spacetimedb test && bun --cwd backend/convex test && bun run check
+      - run: bun action
