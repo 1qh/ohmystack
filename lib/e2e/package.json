@@ -1,11 +1,6 @@
 {
   "name": "@a/e2e",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/1qh/noboil"
-  },
-  "license": "MIT",
-  "type": "module",
+  "private": true,
   "exports": {
     "./base-chat": "./src/base-chat.ts",
     "./base-test": "./src/base-test.ts",
@@ -17,12 +12,5 @@
     "./stdb-org-helpers": "./src/stdb-org-helpers.ts",
     "./auth-proxy": "./src/auth-proxy.ts",
     "./playwright-config": "./src/playwright-config.ts"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "cleanup-old-versions": "bun script/cleanup-old-versions.ts",
-    "postpublish": "bun run cleanup-old-versions"
   }
 }

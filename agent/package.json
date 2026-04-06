@@ -1,9 +1,10 @@
 {
   "name": "@a/agent",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "bun with-env next build --turbo",
-    "clean": "git clean -xdf .cache .next .turbo node_modules",
+    "clean": "rm -rf .cache .next .turbo node_modules",
     "dev": "PORT=4400 bun with-env next dev --turbo",
     "start": "bun with-env next start",
     "test": "NEXT_PUBLIC_CONVEX_TEST_MODE=true CONVEX_TEST_MODE=true NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:4001 bun with-env playwright test --reporter=dot",
@@ -18,7 +19,6 @@
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@a/e2e": "workspace:*",
-    "@playwright/test": "latest"
+    "@a/e2e": "workspace:*"
   }
 }

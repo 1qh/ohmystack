@@ -1,5 +1,6 @@
 {
   "name": "@a/convex-chat",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "bun with-env next build --turbo",
