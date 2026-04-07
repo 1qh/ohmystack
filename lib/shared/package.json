@@ -27,10 +27,7 @@
   },
   "dependencies": {
     "@a/ui": "workspace:*",
-    "lucide-react": "latest",
     "next": "latest",
-    "react": "latest",
-    "sharp": "latest",
-    "zod": "latest"
+    "sharp": "latest"
   }
 }
