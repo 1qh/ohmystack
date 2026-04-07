@@ -1,6 +1,7 @@
 /* oxlint-disable eslint/complexity */
 'use client'
 import { useCallback, useMemo, useState } from 'react'
+import { cn } from '../cn'
 interface FactoryCall {
   factory: string
   file: string
@@ -84,7 +85,7 @@ const TableCard = ({
     <div className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
       <div className='flex items-center gap-2'>
         <span className='font-mono font-medium text-zinc-200'>{table.table}</span>
-        <span className={`rounded-sm px-1.5 py-0.5 text-xs font-medium ${colorClass} bg-zinc-800`}>{table.factory}</span>
+        <span className={cn('rounded-sm bg-zinc-800 px-1.5 py-0.5 text-xs font-medium', colorClass)}>{table.factory}</span>
       </div>
       {table.fields.length > 0 ? (
         <div className='mt-2 flex flex-wrap gap-1'>
@@ -142,7 +143,7 @@ const SchemaPlayground = ({
     return count
   }, [endpointsForFactory, tables])
   return (
-    <div className={`flex flex-col gap-4 lg:flex-row ${className ?? ''}`}>
+    <div className={cn('flex flex-col gap-4 lg:flex-row', className)}>
       <div className='flex min-w-0 flex-1 flex-col'>
         <div className='flex items-center justify-between pb-2'>
           <span className='text-sm font-medium text-zinc-300'>Schema Definition</span>
@@ -152,17 +153,20 @@ const SchemaPlayground = ({
           </span>
         </div>
         <textarea
-          className={`min-h-48 w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none ${inputClassName ?? ''}`}
+          className={cn(
+            'min-h-48 w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none',
+            inputClassName
+          )}
           onChange={handleChange}
           placeholder={placeholder}
           readOnly={readOnly}
           value={value}
         />
       </div>
-      <div className={`flex min-w-0 flex-1 flex-col ${tableClassName ?? ''}`}>
+      <div className={cn('flex min-w-0 flex-1 flex-col', tableClassName)}>
         <div className='flex items-center justify-between pb-2'>
           <span className='text-sm font-medium text-zinc-300'>{labels.generatedTitle}</span>
-          <span className={`text-xs text-zinc-500 ${endpointClassName ?? ''}`}>
+          <span className={cn('text-xs text-zinc-500', endpointClassName)}>
             {totalItems} {labels.generatedCountNoun}
             {totalItems === 1 ? '' : 's'}
           </span>
@@ -187,7 +191,7 @@ const SchemaPlayground = ({
               <p className='text-xs text-zinc-500'>
                 Factory types:{' '}
                 {[...new Set(tables.map(t => t.factory))].map(f => (
-                  <span className={`mr-2 ${FACTORY_COLORS[f] ?? ''}`} key={f}>
+                  <span className={cn('mr-2', FACTORY_COLORS[f])} key={f}>
                     {f}
                   </span>
                 ))}

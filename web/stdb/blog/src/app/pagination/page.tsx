@@ -1,5 +1,6 @@
 'use client'
 import { tables } from '@a/be-spacetimedb/spacetimedb'
+import { cn } from '@a/ui'
 import { Spinner } from '@a/ui/spinner'
 import { useInfiniteList, useOwnRows } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
@@ -30,10 +31,14 @@ const Page = () => {
     <div data-testid='crud-pagination-page'>
       <Create />
       <List blogs={data} />
-      <Spinner className={showLoading ? 'm-auto' : 'sr-only'} data-testid='loading-more' />
-      <p className={showLoadMore ? 'h-8' : 'absolute size-0 overflow-hidden'} data-testid='load-more-trigger' ref={ref} />
+      <Spinner className={cn(showLoading ? 'm-auto' : 'sr-only')} data-testid='loading-more' />
+      <p
+        className={cn(showLoadMore ? 'h-8' : 'absolute size-0 overflow-hidden')}
+        data-testid='load-more-trigger'
+        ref={ref}
+      />
       <Check
-        className={showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only'}
+        className={cn(showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only')}
         data-testid='pagination-exhausted'
       />
     </div>

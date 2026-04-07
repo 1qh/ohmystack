@@ -3,6 +3,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { DevCacheEntry, DevSubscription } from './devtools'
+import { cn } from '../cn'
 type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
 const POSITION_CLASSES: Record<Position, string> = {
   'bottom-left': 'left-4 bottom-4',
@@ -21,7 +22,10 @@ const formatTime = (ts: number) => {
 }
 const TabBtn = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
   <button
-    className={`rounded-sm px-2 py-0.5 text-xs ${active ? 'bg-zinc-800 text-zinc-200' : 'text-zinc-400 hover:text-zinc-200'}`}
+    className={cn(
+      'rounded-sm px-2 py-0.5 text-xs',
+      active ? 'bg-zinc-800 text-zinc-200' : 'text-zinc-400 hover:text-zinc-200'
+    )}
     onClick={onClick}
     type='button'>
     {label}
@@ -32,11 +36,14 @@ const CacheRow = ({ entry }: { entry: DevCacheEntry }) => {
   const hitRate = total > 0 ? Math.round((entry.hitCount / total) * 100) : 0
   return (
     <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
-      <span className={`size-1.5 shrink-0 rounded-full ${entry.stale ? 'bg-yellow-400' : 'bg-emerald-400'}`} />
+      <span className={cn('size-1.5 shrink-0 rounded-full', entry.stale ? 'bg-yellow-400' : 'bg-emerald-400')} />
       <span className='shrink-0 font-mono text-zinc-500'>{entry.table}</span>
       <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{entry.key}</span>
       <span
-        className={`shrink-0 font-mono tabular-nums ${hitRate > 80 ? 'text-emerald-400' : hitRate > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+        className={cn(
+          'shrink-0 font-mono tabular-nums',
+          hitRate > 80 ? 'text-emerald-400' : hitRate > 50 ? 'text-yellow-400' : 'text-red-400'
+        )}>
         {hitRate}%
       </span>
       <span className='shrink-0 text-zinc-500 tabular-nums'>
@@ -78,7 +85,7 @@ const WaterfallBar = ({
       <span className='w-28 shrink-0 truncate font-mono text-zinc-400'>{sub.query}</span>
       <span className='relative h-3 min-w-0 flex-1 rounded-sm bg-zinc-800/50'>
         <span
-          className={`absolute top-0 h-full rounded-sm ${barColor}`}
+          className={cn('absolute top-0 h-full rounded-sm', barColor)}
           style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
         />
       </span>

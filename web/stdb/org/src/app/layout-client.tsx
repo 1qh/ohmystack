@@ -2,6 +2,7 @@
 import type { OrgRole } from '@noboil/spacetimedb'
 import type { OrgDoc } from '@noboil/spacetimedb/react'
 import type { ReactNode } from 'react'
+import { cn } from '@a/ui'
 import { OrgProvider } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -23,7 +24,10 @@ const OrgNav = () => {
       <div className='flex gap-2'>
         {links.map(link => (
           <Link
-            className={`rounded-sm px-3 py-1.5 text-sm ${pathname === link.href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            className={cn(
+              'rounded-sm px-3 py-1.5 text-sm',
+              pathname === link.href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            )}
             href={link.href}
             key={link.href}>
             {link.label}

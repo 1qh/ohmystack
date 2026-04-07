@@ -2,6 +2,7 @@
 import type { Project } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { withStringId } from '@a/fe/utils'
+import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { Checkbox } from '@a/ui/checkbox'
@@ -104,7 +105,7 @@ const ProjectsPage = () => {
                 ) : null}
                 <Link href={`/projects/${p.id}`}>
                   <Card className='transition-colors hover:bg-muted'>
-                    <CardHeader className={isAdmin ? 'pl-10' : ''}>
+                    <CardHeader className={cn(isAdmin ? 'pl-10' : '')}>
                       <CardTitle>{p.name}</CardTitle>
                     </CardHeader>
                     <CardContent>

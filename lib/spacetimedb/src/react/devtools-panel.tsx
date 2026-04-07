@@ -4,6 +4,7 @@
 /* oxlint-disable eslint/complexity, react-hooks/refs */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
+import { cn } from '@a/shared/cn'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -28,7 +29,7 @@ const ConnectionBadge = ({ connection }: { connection: DevConnection }) => {
   const status = connection.isActive ? 'connected' : 'disconnected'
   return (
     <div className='flex items-center gap-2 rounded-sm bg-zinc-900/80 px-2 py-1 text-xs'>
-      <span className={`size-1.5 rounded-full ${dotClass}`} />
+      <span className={cn('size-1.5 rounded-full', dotClass)} />
       <span className='font-mono text-zinc-300'>{status}</span>
       {connection.connectionId ? (
         <span className='max-w-20 truncate font-mono text-zinc-500' title={connection.connectionId}>
@@ -90,15 +91,24 @@ const SubRow = ({ sub }: { sub: DevSubscription }) => {
         onClick={() => setExpanded(v => !v)}
         type='button'>
         <span
-          className={`size-1.5 shrink-0 rounded-full ${sub.status === 'loaded' ? (stale ? 'bg-yellow-400' : 'bg-emerald-400') : sub.status === 'error' ? 'bg-red-400' : 'bg-blue-400'}`}
+          className={cn(
+            'size-1.5 shrink-0 rounded-full',
+            sub.status === 'loaded'
+              ? stale
+                ? 'bg-yellow-400'
+                : 'bg-emerald-400'
+              : sub.status === 'error'
+                ? 'bg-red-400'
+                : 'bg-blue-400'
+          )}
         />
         <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{sub.query}</span>
         {latencyLabel ? (
-          <span className={`shrink-0 font-mono tabular-nums ${slow ? 'text-orange-400' : 'text-zinc-500'}`}>
+          <span className={cn('shrink-0 font-mono tabular-nums', slow ? 'text-orange-400' : 'text-zinc-500')}>
             {latencyLabel}
           </span>
         ) : null}
-        <span className={`shrink-0 font-mono ${statusColor}`}>{statusLabel}</span>
+        <span className={cn('shrink-0 font-mono', statusColor)}>{statusLabel}</span>
         <span className='shrink-0 text-zinc-500 tabular-nums'>{sub.updateCount}x</span>
         <span className='shrink-0 text-zinc-500/40'>{expanded ? '^' : 'v'}</span>
       </button>
@@ -124,11 +134,18 @@ const ReducerRow = ({ mutation }: { mutation: DevMutation }) => {
   return (
     <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
       <span
-        className={`size-1.5 shrink-0 rounded-full ${mutation.status === 'success' ? 'bg-emerald-400' : mutation.status === 'error' ? 'bg-red-400' : 'animate-pulse bg-blue-400'}`}
+        className={cn(
+          'size-1.5 shrink-0 rounded-full',
+          mutation.status === 'success'
+            ? 'bg-emerald-400'
+            : mutation.status === 'error'
+              ? 'bg-red-400'
+              : 'animate-pulse bg-blue-400'
+        )}
       />
       <span className='shrink-0 pt-px font-mono text-zinc-500'>{formatTime(mutation.startedAt)}</span>
       <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{mutation.name}</span>
-      <span className={`shrink-0 font-mono tabular-nums ${statusColor}`}>{durationLabel}</span>
+      <span className={cn('shrink-0 font-mono tabular-nums', statusColor)}>{durationLabel}</span>
     </li>
   )
 }
@@ -159,7 +176,18 @@ const NoboilStdbDevtools = ({
   if (!open)
     return (
       <button
-        className={`fixed ${posClass} z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors ${count > 0 || connWarnCount > 0 ? 'bg-red-600 text-white hover:bg-red-700' : staleCount > 0 || pendingCount > 0 ? 'bg-yellow-600 text-white hover:bg-yellow-700' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'} ${className ?? ''} ${buttonClassName ?? ''}`}
+        className={cn(
+          'fixed',
+          posClass,
+          'z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors',
+          count > 0 || connWarnCount > 0
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : staleCount > 0 || pendingCount > 0
+              ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+              : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700',
+          className,
+          buttonClassName
+        )}
         onClick={() => setOpen(v => !v)}
         title='noboil DevTools'
         type='button'>
@@ -178,7 +206,13 @@ const NoboilStdbDevtools = ({
     )
   return (
     <div
-      className={`fixed ${posClass} z-9999 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-2xl ${className ?? ''} ${panelClassName ?? ''}`}>
+      className={cn(
+        'fixed',
+        posClass,
+        'z-9999 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-2xl',
+        className,
+        panelClassName
+      )}>
       <div className='flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2'>
         <div className='flex gap-1'>
           <TabBtn

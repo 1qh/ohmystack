@@ -3,6 +3,7 @@
 import type { Id } from '@a/be-agent/model'
 import type { SyntheticEvent } from 'react'
 import { api } from '@a/be-agent'
+import { cn } from '@a/ui'
 import {
   Conversation,
   ConversationContent,
@@ -101,7 +102,7 @@ const WorkerStreamPanel = ({ taskId }: { taskId: Id<'tasks'> }) => {
     <section className='space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3'>
       <div className='flex items-center justify-between text-xs'>
         <span className='font-medium text-foreground'>{task.description}</span>
-        <span className={`font-mono uppercase ${statusClass}`}>{task.status}</span>
+        <span className={cn('font-mono uppercase', statusClass)}>{task.status}</span>
       </div>
       {workerMessages && workerMessages.length > 0 ? (
         <div className='space-y-3 border-l-2 border-border/40 pl-3'>

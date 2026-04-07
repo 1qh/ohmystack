@@ -6,6 +6,7 @@ import type { output } from 'zod/v4'
 import { api } from '@a/be-convex'
 import { orgScoped } from '@a/be-convex/t'
 import { fail } from '@a/fe/utils'
+import { cn } from '@a/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
@@ -93,7 +94,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
   return (
     <div className='flex items-center gap-3 py-2'>
       <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
-      <span className={t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1'}>{t.title}</span>
+      <span className={cn(t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1')}>{t.title}</span>
       <span className='text-xs text-muted-foreground'>{t.priority}</span>
       {canAssign ? (
         <Select

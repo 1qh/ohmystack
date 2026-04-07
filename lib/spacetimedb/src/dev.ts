@@ -309,6 +309,7 @@ const dev = async (args: string[] = []) => {
     process.exit(code)
   }
   if (flags.watch) {
+    // oxlint-disable-next-line eslint/no-useless-assignment
     watcher = startWatching(moduleDirAbs, scheduleRepublish)
     console.log(`${green('✓')} Watching ${moduleDir} for .ts changes`)
   } else console.log(dim('Watch disabled (--no-watch).'))

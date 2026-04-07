@@ -3,6 +3,7 @@
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { withStringId } from '@a/fe/utils'
+import { cn } from '@a/ui'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
@@ -87,7 +88,7 @@ const WikiPage = () => {
         </div>
         <div className='flex items-center gap-2'>
           <Button
-            className={showDeleted ? 'border-destructive/50 text-destructive' : ''}
+            className={cn(showDeleted ? 'border-destructive/50 text-destructive' : '')}
             data-testid='trash-toggle'
             onClick={() => {
               setShowDeleted(v => !v)
@@ -187,7 +188,7 @@ const WikiPage = () => {
                 ) : null}
                 <Link href={`/wiki/${w.id}`}>
                   <Card className='transition-colors hover:bg-muted'>
-                    <CardHeader className={isAdmin ? 'pl-10' : ''}>
+                    <CardHeader className={cn(isAdmin ? 'pl-10' : '')}>
                       <CardTitle>{w.title}</CardTitle>
                     </CardHeader>
                     <CardContent className='flex items-center gap-2'>

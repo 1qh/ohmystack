@@ -744,7 +744,10 @@ const createFieldsModule = ({
                   </SelectTrigger>
                   <SelectContent>
                     {options.map(o => (
-                      <SelectItem className={selected.includes(o.value) ? 'bg-accent' : ''} key={o.value} value={o.value}>
+                      <SelectItem
+                        className={cn(selected.includes(o.value) ? 'bg-accent' : '')}
+                        key={o.value}
+                        value={o.value}>
                         {o.label}
                       </SelectItem>
                     ))}

@@ -3,6 +3,7 @@
 import type { OrgMember, Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'
+import { cn } from '@a/ui'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
 import { Skeleton } from '@a/ui/skeleton'
@@ -73,7 +74,7 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
       ) : null}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
-          <h1 className={`text-2xl font-bold ${isDeleted ? 'line-through opacity-60' : ''}`}>{wiki.title}</h1>
+          <h1 className={cn('text-2xl font-bold', isDeleted && 'line-through opacity-60')}>{wiki.title}</h1>
           {isDeleted ? (
             <Badge variant='destructive'>deleted</Badge>
           ) : canEditWiki ? null : (

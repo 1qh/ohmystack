@@ -7,6 +7,7 @@ import type { output } from 'zod/v4'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { s } from '@a/be-spacetimedb/t'
 import { sameIdentity } from '@a/fe/utils'
+import { cn } from '@a/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '@a/ui/avatar'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'
@@ -111,7 +112,7 @@ const TaskRow = ({
   return (
     <div className='flex items-center gap-3 py-2'>
       <Checkbox checked={Boolean(t.completed)} disabled={!canEdit} onCheckedChange={onToggle} />
-      <span className={t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1'}>{t.title}</span>
+      <span className={cn(t.completed ? 'flex-1 text-muted-foreground line-through' : 'flex-1')}>{t.title}</span>
       <span className='text-xs text-muted-foreground'>{t.priority}</span>
       {canAssign ? (
         <Select
