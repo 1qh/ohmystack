@@ -22,14 +22,22 @@
   "license": "MIT",
   "author": "1qh",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
   "bin": {
-    "noboil": "./src/index.ts"
+    "noboil": "./dist/index.mjs"
   },
   "files": [
-    "src"
+    "dist"
   ],
   "scripts": {
+    "build": "tsdown",
     "cleanup-old-versions": "bun script/cleanup-old-versions.ts",
+    "prepublishOnly": "bun run build",
     "postpublish": "bun run cleanup-old-versions",
     "typecheck": "tsc --noEmit"
   }
