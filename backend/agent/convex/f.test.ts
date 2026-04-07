@@ -12020,7 +12020,7 @@ describe('omo parity: delegate deep coverage', () => {
         ctx: {
           runMutation: () => ({ taskId: 'x', threadId: 'y' }),
           runQuery: () => ({
-            result: c.result === null ? undefined : c.result,
+            result: c.result ?? undefined,
             status: c.status
           })
         } as never,
