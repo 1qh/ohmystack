@@ -3,8 +3,8 @@
 /* oxlint-disable eslint/complexity */
 /** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
 'use client'
-import { cn } from '@a/shared/cn'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
+import { cn } from '@a/ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { DevError, DevMutation, DevSubscription } from './devtools'

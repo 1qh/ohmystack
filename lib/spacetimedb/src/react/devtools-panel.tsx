@@ -4,8 +4,8 @@
 /* oxlint-disable eslint/complexity, react-hooks/refs */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-import { cn } from '@a/shared/cn'
 import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
+import { cn } from '@a/ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ErrorCode } from '../server/types'

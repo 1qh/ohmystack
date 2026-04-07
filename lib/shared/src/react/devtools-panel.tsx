@@ -1,9 +1,9 @@
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic waterfall positioning */
 'use client'
+import { cn } from '@a/ui'
 import { useEffect, useState } from 'react'
 import type { DevCacheEntry, DevSubscription } from './devtools'
-import { cn } from '../cn'
 type Position = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
 const POSITION_CLASSES: Record<Position, string> = {
   'bottom-left': 'left-4 bottom-4',

@@ -20,19 +20,17 @@
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
     "./react/devtools-panel": "./src/react/devtools-panel.tsx",
-    "./react/schema-playground": "./src/react/schema-playground.tsx",
-    "./cn": "./src/cn.ts"
+    "./react/schema-playground": "./src/react/schema-playground.tsx"
   },
   "scripts": {
     "test": "bun test"
   },
   "dependencies": {
-    "clsx": "latest",
+    "@a/ui": "workspace:*",
     "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
     "sharp": "latest",
-    "tailwind-merge": "latest",
     "zod": "latest"
   }
 }

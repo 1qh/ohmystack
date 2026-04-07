@@ -58,6 +58,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@a/ui": "workspace:*",
     "browser-image-compression": "latest",
     "next-navigation-guard": "latest",
     "react-dropzone": "latest"
