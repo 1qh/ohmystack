@@ -29,7 +29,7 @@
     "spacetime:publish": "bash -lc 'PATH=\"$HOME/.local/bin:$PATH\" spacetime publish noboil --module-path backend/spacetimedb --delete-data=on-conflict -y'",
     "spacetime:reset": "docker compose -f spacetimedb.yml down -v && docker compose -f spacetimedb.yml up -d --quiet-pull",
     "spacetime:up": "docker compose -f spacetimedb.yml up -d --quiet-pull && PATH=\"$HOME/.local/bin:$PATH\" spacetime server add local --url http://localhost:4000 --no-fingerprint --default 2>/dev/null; echo 'SpacetimeDB ready on http://localhost:4000'",
-    "test": "bun --cwd lib/convex test && bun --cwd lib/spacetimedb test",
+    "test": "turbo test --output-logs=errors-only",
     "test:all": "bash script/test-all.sh",
     "test:all:watch": "bash script/watch-test-all.sh",
     "test:web": "bun run test",
