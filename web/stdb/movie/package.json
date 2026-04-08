@@ -6,7 +6,6 @@
     "build": "bun with-env next build --turbo",
     "dev": "PORT=4202 bun with-env next dev --turbo",
     "start": "bun with-env next start",
-    "test:e2e": "SPACETIMEDB_TEST_MODE=true bun with-env playwright test --reporter=dot",
     "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && bun with-env playwright test --reporter=list",
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e ../../../.env --"
