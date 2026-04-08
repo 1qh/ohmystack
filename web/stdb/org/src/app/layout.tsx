@@ -9,7 +9,6 @@ import type { OrgRole } from '@noboil/spacetimedb'
 import type { ReactNode } from 'react'
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
-import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { sameIdentity } from '@a/fe/utils'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
@@ -17,6 +16,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import OrgLayoutClient from './layout-client'
+import { renderSpacetimeProvider } from './providers'
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings']
 const needsOrgLayout = (pathname: string) => {
   for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
@@ -101,7 +101,6 @@ const OrgLayoutInner = ({ children }: { children: ReactNode }) => {
     </OrgLayoutClient>
   )
 }
-const renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider fileApi>{inner}</SpacetimeProvider>
 const LayoutContent = ({ children }: { children: ReactNode }) => (
   <>
     <OfflineIndicator />

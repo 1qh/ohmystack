@@ -2,15 +2,14 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
-import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import Logout from '@a/fe/spacetimedb-user-menu'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { renderSpacetimeProvider } from './providers'
 const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog' }
-const renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider fileApi>{inner}</SpacetimeProvider>
 const Layout = async ({ children }: { children: ReactNode }) => {
   const pathname = (await headers()).get('x-pathname') ?? '/'
   const isLogin = pathname === '/login' || pathname.startsWith('/login/')

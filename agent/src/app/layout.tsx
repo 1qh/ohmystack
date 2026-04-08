@@ -3,16 +3,13 @@ import '@a/ui/globals.css'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server'
-import AgentConvexProvider from './convex-provider'
-import TestLoginProvider from './test-login-provider'
+import { Providers } from './providers'
 const metadata: Metadata = { title: 'Agent' }
 const RootLayout = ({ children }: { children: ReactNode }) => (
   <html lang='en' suppressHydrationWarning>
     <body>
       <ConvexAuthNextjsServerProvider>
-        <AgentConvexProvider>
-          <TestLoginProvider>{children}</TestLoginProvider>
-        </AgentConvexProvider>
+        <Providers>{children}</Providers>
       </ConvexAuthNextjsServerProvider>
     </body>
   </html>

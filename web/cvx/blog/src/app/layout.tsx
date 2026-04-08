@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
-import ConvexProvider from '@a/fe/convex-provider'
 import Logout from '@a/fe/user-menu'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { NoboilConvexDevtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { renderConvexProvider } from './providers'
 const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' }
-const renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>
 const Layout = async ({ children }: { children: ReactNode }) => {
   const requestHeaders = await headers()
   const pathname = requestHeaders.get('x-pathname') ?? '/'

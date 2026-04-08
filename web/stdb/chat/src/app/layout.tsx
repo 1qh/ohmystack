@@ -3,12 +3,12 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
-import SpacetimeProvider from '@a/fe/spacetimedb-provider'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { renderSpacetimeProvider } from './providers'
 import Sidebar from './sidebar'
 const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat' }
 const PUBLIC_PATHS = ['/login', '/public']
@@ -16,7 +16,6 @@ const isPublicPath = (pathname: string) => {
   for (const p of PUBLIC_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
   return false
 }
-const renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider>{inner}</SpacetimeProvider>
 const Layout = async ({ children }: { children: ReactNode }) => {
   const pathname = (await headers()).get('x-pathname') ?? '/'
   const token = (await cookies()).get('spacetimedb_token')?.value

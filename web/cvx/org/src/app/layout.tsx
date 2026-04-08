@@ -5,7 +5,6 @@ import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
 import { api } from '@a/be-convex'
 import AuthLayout from '@a/fe/auth-layout'
-import ConvexProvider from '@a/fe/convex-provider'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { getActiveOrg, getToken, isAuthenticated } from '@noboil/convex/next'
 import { NoboilConvexDevtools } from '@noboil/convex/react'
@@ -16,12 +15,12 @@ import { connection } from 'next/server'
 import { getTestClient } from '~/utils'
 import OrgLayoutClient from './layout-client'
 import OrgRedirect from './org-redirect'
+import { renderConvexProvider } from './providers'
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings']
 const needsOrgLayout = (pathname: string) => {
   for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
   return false
 }
-const renderConvexProvider = (inner: ReactNode): ReactNode => <ConvexProvider fileApi>{inner}</ConvexProvider>
 interface MembershipResult {
   memberId: null | string
   role: OrgRole
