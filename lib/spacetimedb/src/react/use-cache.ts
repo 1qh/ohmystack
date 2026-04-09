@@ -77,7 +77,7 @@ const useCacheEntry = <A extends Record<string, unknown>, T extends Record<strin
     setIsLoading(true)
     fireLoad({ args: argsRef.current, load, loadingRef, setIsLoading, table })
   }, [load, table])
-  const cacheData = data === undefined ? null : data
+  const cacheData = data ?? null
   const isStale = cacheData !== null && cacheData.stale === true
   return { data: cacheData, isLoading: isLoading || data === undefined, isStale, refresh }
 }

@@ -133,7 +133,7 @@ const partialValues = <S extends ZodObject, V extends Partial<input<S>> & Record
   const keys = shapeKeys(schema)
   for (const k of keys) {
     const v = (values as Record<string, unknown>)[k]
-    result[k] = v === null ? undefined : v
+    result[k] = v ?? undefined
   }
   for (const k of Object.keys(values)) if (!(k in result)) result[k] = (values as Record<string, unknown>)[k]
   return result as NullsToUndefined<output<S>> & Omit<V, keyof output<S>>
