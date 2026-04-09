@@ -1,8 +1,8 @@
-import { cn } from '@a/ui'
+import type { Metadata } from 'next'
 // oxlint-disable no-unassigned-import
 import '@a/ui/globals.css'
-import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { cn } from '@a/ui'
 import { mono, sans } from './fonts'
 import Providers from './providers'
 const metadata: Metadata = { title: 'Movie' }
