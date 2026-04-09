@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server'
 import { Providers } from './providers'
 const metadata: Metadata = { title: 'Agent' }
-const RootLayout = ({ children }: { children: ReactNode }) => (
+const Layout = ({ children }: { children: ReactNode }) => (
   <html lang='en' suppressHydrationWarning>
     <body className='antialiased'>
       <ConvexAuthNextjsServerProvider>
@@ -15,4 +15,4 @@ const RootLayout = ({ children }: { children: ReactNode }) => (
   </html>
 )
 export { metadata }
-export default RootLayout
+export default Layout
