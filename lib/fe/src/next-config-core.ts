@@ -48,6 +48,7 @@ const createNextConfigWithCsp = ({
   ],
   images: imageDomains ? { remotePatterns: imageDomains.map(hostname => ({ hostname })) } : undefined,
   reactCompiler: true,
+  reactStrictMode: true,
   serverExternalPackages,
   transpilePackages: ['@a/ui', '@a/be', '@a/fe']
 })
