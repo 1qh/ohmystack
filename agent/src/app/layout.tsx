@@ -7,7 +7,7 @@ import { Providers } from './providers'
 const metadata: Metadata = { title: 'Agent' }
 const RootLayout = ({ children }: { children: ReactNode }) => (
   <html lang='en' suppressHydrationWarning>
-    <body>
+    <body className='antialiased'>
       <ConvexAuthNextjsServerProvider>
         <Providers>{children}</Providers>
       </ConvexAuthNextjsServerProvider>

@@ -4,7 +4,7 @@ import '../app/global.css'
 import Providers from './providers'
 const Layout = ({ children }: { children: ReactNode }) => (
   <html lang='en' suppressHydrationWarning>
-    <body className='flex min-h-screen flex-col'>
+    <body className='flex min-h-screen flex-col antialiased'>
       <Providers>{children}</Providers>
     </body>
   </html>
