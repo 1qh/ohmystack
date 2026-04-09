@@ -7552,7 +7552,7 @@ describe('real-world edge scenarios', () => {
       { asUser } = await createTestContext(ctx),
       { sessionId, threadId } = await asUser(0).mutation(api.sessions.createSession, {}),
       messageId = await ctx.mutation(internal.orchestrator.createAssistantMessage, { sessionId, threadId }),
-      specialContent = '<script>alert("xss")</script> ñ 🎉 **bold** `code`'
+      specialContent = '<script>alert("injection")</script> ñ 🎉 **bold** `code`'
     await ctx.mutation(internal.orchestrator.finalizeMessage, {
       content: specialContent,
       messageId,
