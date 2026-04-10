@@ -1,4 +1,3 @@
-import { strictApi } from '@a/shared/strict-api'
 export { guardApi } from './guard'
 export { identityEquals, identityFromHex, identityToHex, idFromWire, idToWire } from './server/helpers'
 export type {
@@ -58,5 +57,3 @@ export type {
   WithUrls
 } from './server/types'
 export { zodFromTable } from './stdb-zod'
-export type { StrictApi } from '@a/shared/strict-api'
-export { strictApi }

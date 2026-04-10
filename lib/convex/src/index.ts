@@ -1,4 +1,3 @@
-import { strictApi } from '@a/shared/strict-api'
 export { guardApi } from './guard'
 export type { DevError, DevSubscription } from './react/devtools'
 export type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn } from './react/form'
@@ -45,5 +44,3 @@ export type {
   WithUrls
 } from './server/types'
 export type { DefType, FileKind, ZodSchema } from './zod'
-export type { StrictApi } from '@a/shared/strict-api'
-export { strictApi }

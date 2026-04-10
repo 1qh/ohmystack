@@ -33,6 +33,7 @@ class BlogPage extends BasePage {
     if (options?.tags) await this.addTags(options.tags)
     await this.getCreateSubmit().click()
     await this.getCreateDialog().waitFor({ state: 'hidden' })
+    await this.getBlogCards().filter({ hasText: title }).first().waitFor({ state: 'visible', timeout: 10_000 })
   }
   public async deleteBlog(): Promise<void> {
     await this.getDeleteTrigger().click()
