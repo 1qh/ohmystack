@@ -425,10 +425,12 @@ type BaseSchema<T extends ZodRawShape> = SchemaBrand<'base'> & ZodObject<T>
 interface BrandLabelMap {
   base: 'BaseSchema (from makeBase())'
   org: 'OrgSchema (from makeOrgScoped())'
+  orgDef: 'OrgDefSchema (from makeOrg())'
   owned: 'OwnedSchema (from makeOwned())'
   singleton: 'SingletonSchema (from makeSingleton())'
   unbranded: 'plain ZodObject (not branded)'
 }
+type OrgDefSchema<T extends ZodRawShape> = SchemaBrand<'orgDef'> & ZodObject<T>
 /** Detects the brand key from a schema type, returning 'unbranded' for plain ZodObject. */
 type DetectBrand<T> = T extends SchemaBrand<infer K> ? K : 'unbranded'
 type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> & ZodObject<T>
@@ -449,6 +451,7 @@ type SchemaHint<K extends string> = K extends keyof SchemaHintMap ? SchemaHintMa
 interface SchemaHintMap {
   base: 'Created by makeBase() → use cacheCrud() + baseTable()'
   org: 'Created by makeOrgScoped() → use orgCrud() + orgTable()'
+  orgDef: 'Created by makeOrg() → pass to setup({ orgSchema })'
   owned: 'Created by makeOwned() → use crud() + ownedTable()'
   singleton: 'Created by makeSingleton() → use singletonCrud() + singletonTable()'
 }
@@ -551,6 +554,8 @@ export type {
   OrgCascadeTableConfig,
   /** Result type for org CRUD factory with all generated endpoints. */
   OrgCrudResult,
+  /** Schema branded as the org definition (passed to setup({ orgSchema })). */
+  OrgDefSchema,
   /** Org-scoped document enriched with author info and org ID. */
   OrgEnrichedDoc,
   /** Organization role type: admin, member, or owner. */
