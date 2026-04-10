@@ -12,7 +12,7 @@ interface AuthLayoutProps {
   bodyClassName?: string
   bodyProps?: Omit<ComponentProps<'body'>, 'children' | 'className'>
   children: ReactNode
-  convexProvider: (children: ReactNode) => ReactNode
+  ConvexProvider: (props: { children: ReactNode }) => ReactNode
   htmlProps?: Omit<ComponentProps<'html'>, 'children' | 'lang' | 'suppressHydrationWarning'>
   offlineIndicatorProps?: ComponentProps<typeof OfflineIndicator>
   themeProviderProps?: Omit<ComponentProps<typeof ThemeProvider>, 'children'>
@@ -22,7 +22,7 @@ const AuthLayout = ({
   bodyClassName,
   bodyProps,
   children,
-  convexProvider,
+  ConvexProvider,
   htmlProps,
   offlineIndicatorProps,
   themeProviderProps,
@@ -35,11 +35,11 @@ const AuthLayout = ({
       <Suspense>
         <ErrorBoundary>
           <AuthProvider>
-            {convexProvider(
+            <ConvexProvider>
               <ThemeProvider {...themeProviderProps} attribute='class' defaultTheme='system' enableSystem>
                 {children}
               </ThemeProvider>
-            )}
+            </ConvexProvider>
           </AuthProvider>
           <Toaster {...toasterProps} duration={1000} />
           <OfflineIndicator {...offlineIndicatorProps} />

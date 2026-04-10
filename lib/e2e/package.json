@@ -1,6 +1,7 @@
 {
   "name": "@a/e2e",
   "private": true,
+  "type": "module",
   "exports": {
     "./base-chat": "./src/base-chat.ts",
     "./base-test": "./src/base-test.ts",

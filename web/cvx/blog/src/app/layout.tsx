@@ -7,14 +7,14 @@ import { Devtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { renderConvexProvider } from './providers'
+import { ConvexWrapper } from './providers'
 const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' }
 const Layout = async ({ children }: { children: ReactNode }) => {
   const requestHeaders = await headers()
   const pathname = requestHeaders.get('x-pathname') ?? '/'
   const isLogin = pathname === '/login' || pathname.startsWith('/login/')
   return (
-    <AuthLayout convexProvider={renderConvexProvider}>
+    <AuthLayout ConvexProvider={ConvexWrapper}>
       {isLogin ? (
         children
       ) : (

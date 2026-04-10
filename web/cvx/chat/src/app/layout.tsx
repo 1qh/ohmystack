@@ -7,7 +7,7 @@ import { isAuthenticated } from '@noboil/convex/next'
 import { Devtools } from '@noboil/convex/react'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { renderConvexProvider } from './providers'
+import { ConvexWrapper } from './providers'
 import Sidebar from './sidebar'
 const metadata: Metadata = { description: 'noboil chat demo', title: 'Chat' }
 const PUBLIC_PATHS = ['/login', '/public']
@@ -21,7 +21,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   if (!(isPublicPath(pathname) || (await isAuthenticated()))) redirect('/login')
   const showSidebar = !isPublicPath(pathname)
   return (
-    <AuthLayout convexProvider={renderConvexProvider}>
+    <AuthLayout ConvexProvider={ConvexWrapper}>
       <OfflineIndicator />
       <Devtools position='bottom-right' />
       {showSidebar ? (

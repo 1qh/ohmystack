@@ -15,7 +15,7 @@ import { connection } from 'next/server'
 import { getTestClient } from '~/utils'
 import OrgLayoutClient from './layout-client'
 import OrgRedirect from './org-redirect'
-import { renderConvexProvider } from './providers'
+import { ConvexWrapper } from './providers'
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings']
 const needsOrgLayout = (pathname: string) => {
   for (const p of ORG_PATHS) if (pathname === p || pathname.startsWith(`${p}/`)) return true
@@ -66,7 +66,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
     const ctx = await resolveOrgContext(pathname)
     if (ctx.kind === 'redirect')
       return (
-        <AuthLayout convexProvider={renderConvexProvider}>
+        <AuthLayout ConvexProvider={ConvexWrapper}>
           <OrgRedirect orgId={ctx.orgId} slug={ctx.slug} to={ctx.to} />
         </AuthLayout>
       )
@@ -77,7 +77,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
     )
   }
   return (
-    <AuthLayout convexProvider={renderConvexProvider}>
+    <AuthLayout ConvexProvider={ConvexWrapper}>
       <OfflineIndicator />
       <Devtools position='bottom-right' />
       {content}
