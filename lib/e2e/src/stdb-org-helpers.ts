@@ -391,7 +391,15 @@ const buildMutationArgs = (apiPath: string, args: Record<string, unknown>): unkn
     case 'task.rm':
       return [toU32(args.id)]
     case 'task.toggle':
-      return [toU32(args.id), { some: { some: true } }, { none: [] }, { none: [] }, { none: [] }, { none: [] }]
+      return [
+        toU32(args.id),
+        { some: { some: true } },
+        { none: [] },
+        { none: [] },
+        { none: [] },
+        { none: [] },
+        { none: [] }
+      ]
     case 'wiki.create':
       return [
         toU32(args.orgId),
