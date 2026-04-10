@@ -10,7 +10,7 @@ export default noboil(({ t, table }) => ({
   org: table(s.team, { unique: ['slug'] }),
   orgProfile: table(s.orgProfile),
   project: table(s.project, {
-    cascadeTo: { foreignKey: 'projectId', table: 'task' },
+    cascadeTo: { foreignKey: 'projectId', table: s.task.__name },
     extra: { editors: t.array(t.identity()).optional() }
   }),
   task: table(s.task, {

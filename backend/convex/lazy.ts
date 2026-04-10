@@ -18,7 +18,7 @@ const api = noboil(
     internalQuery,
     middleware: [auditLog(), inputSanitize(), slowQueryWarn()],
     mutation,
-    orgCascadeTables: ['task', 'project'],
+    orgCascadeTables: [s.task.__name, s.project.__name],
     orgSchema: s.team,
     query
   },
@@ -26,7 +26,7 @@ const api = noboil(
     blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
     blogProfile: table(s.blogProfile),
     chat: table(s.chat, {
-      cascade: [{ foreignKey: 'chatId', table: 'message' }],
+      cascade: [{ foreignKey: s.message.foreignKey, table: s.message.__name }],
       pub: { where: { isPublic: true } },
       rateLimit: { max: 30, window: 60_000 }
     }),
@@ -38,7 +38,7 @@ const api = noboil(
       rateLimit: { max: 30, window: 60_000 }
     }),
     task: table(s.task, {
-      aclFrom: { field: 'projectId', table: 'project' },
+      aclFrom: { field: 'projectId', table: s.project.__name },
       rateLimit: { max: 30, window: 60_000 }
     }),
     wiki: table(s.wiki, {

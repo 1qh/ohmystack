@@ -353,7 +353,7 @@ describe('typesafe field references', () => {
       projectId: string(),
       title: string()
     }),
-    { __name: 'task' as const }
+    { __name: 'task' } as const
   )
   const movieSchema = object({ title: string(), tmdb_id: number() })
   test('child() accepts valid foreignKey', () => {
@@ -2168,7 +2168,7 @@ describe('Fix #4: ownedCascade helper', () => {
       projectId: string(),
       title: string()
     }),
-    { __name: 'task' as const }
+    { __name: 'task' } as const
   )
   const messageSchema = Object.assign(
     object({
@@ -2176,7 +2176,7 @@ describe('Fix #4: ownedCascade helper', () => {
       content: string(),
       role: string()
     }),
-    { __name: 'message' as const }
+    { __name: 'message' } as const
   )
   test('ownedCascade accepts valid foreignKey', () => {
     const result = ownedCascade(taskSchema, { foreignKey: 'projectId' })
