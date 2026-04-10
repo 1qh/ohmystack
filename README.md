@@ -224,7 +224,7 @@ noboil/
 
 ## Requirements
 
-`bun` for the workspace + a TypeScript bundler in your downstream app (Vite, Next.js, esbuild, etc). Published packages ship pre-bundled ESM with `.ts` type sources colocated, so consumers get full type inference.
+A TypeScript-capable bundler (Vite, Next.js, esbuild, etc.) is required. Library package.json `exports` point directly to `.ts` source files — this is intentional so consumers get full type inference without a separate build step.
 
 ## Docs
 

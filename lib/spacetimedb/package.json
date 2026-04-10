@@ -29,83 +29,42 @@
   "author": "1qh",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./dist/index.mjs"
-    },
-    "./s3": {
-      "types": "./src/s3.ts",
-      "import": "./dist/s3.mjs"
-    },
-    "./server": {
-      "types": "./src/server/index.ts",
-      "import": "./dist/server/index.mjs"
-    },
-    "./zod": {
-      "types": "./src/zod.ts",
-      "import": "./dist/zod.mjs"
-    },
-    "./retry": {
-      "types": "./src/retry.ts",
-      "import": "./dist/retry.mjs"
-    },
-    "./schema": {
-      "types": "./src/schema.ts",
-      "import": "./dist/schema.mjs"
-    },
-    "./react": {
-      "types": "./src/react/index.ts",
-      "import": "./dist/react/index.mjs"
-    },
-    "./components": {
-      "types": "./src/components/index.ts",
-      "import": "./dist/components/index.mjs"
-    },
-    "./eslint": {
-      "types": "./src/eslint.ts",
-      "import": "./dist/eslint.mjs"
-    },
-    "./next": {
-      "types": "./src/next/index.ts",
-      "import": "./dist/next/index.mjs"
-    },
-    "./test": {
-      "types": "./src/server/test.ts",
-      "import": "./dist/server/test.mjs"
-    },
-    "./test/discover": {
-      "types": "./src/server/test-discover.ts",
-      "import": "./dist/server/test-discover.mjs"
-    },
-    "./seed": {
-      "types": "./src/seed.ts",
-      "import": "./dist/seed.mjs"
-    }
+    ".": "./src/index.ts",
+    "./s3": "./src/s3.ts",
+    "./server": "./src/server/index.ts",
+    "./zod": "./src/zod.ts",
+    "./retry": "./src/retry.ts",
+    "./schema": "./src/schema.ts",
+    "./react": "./src/react/index.ts",
+    "./components": "./src/components/index.ts",
+    "./eslint": "./src/eslint.ts",
+    "./next": "./src/next/index.ts",
+    "./test": "./src/server/test.ts",
+    "./test/discover": "./src/server/test-discover.ts",
+    "./seed": "./src/seed.ts"
   },
   "bin": {
-    "noboil-stdb": "./dist/cli.mjs"
+    "noboil-stdb": "./src/cli.ts"
   },
   "files": [
-    "dist",
     "src",
     "!src/__tests__"
   ],
   "scripts": {
     "build": "tsdown",
     "cleanup-old-versions": "bun script/cleanup-old-versions.ts",
-    "prepublishOnly": "bun run build",
     "postpublish": "bun run cleanup-old-versions",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@a/ui": "workspace:*",
     "browser-image-compression": "latest",
     "next-navigation-guard": "latest",
     "react-dropzone": "latest"
   },
   "devDependencies": {
-    "@a/shared": "workspace:*",
-    "@a/ui": "workspace:*"
+    "@a/shared": "workspace:*"
   },
   "peerDependencies": {
     "@stepperize/react": "latest",
