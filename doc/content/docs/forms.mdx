@@ -762,13 +762,13 @@ const form = useFormMutation({
 })
 ```
 
-**Error boundary** — wrap pages with `ConvexErrorBoundary` to catch unhandled errors:
+**Error boundary** — wrap pages with `ErrorBoundary` to catch unhandled errors:
 
 ```tsx
-import { ConvexErrorBoundary } from '@noboil/convex/components'
-;<ConvexErrorBoundary>
+import { ErrorBoundary } from '@noboil/convex/components'
+;<ErrorBoundary>
   <BlogEditor />
-</ConvexErrorBoundary>
+</ErrorBoundary>
 ```
 
 </Tab>

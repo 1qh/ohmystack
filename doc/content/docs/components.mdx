@@ -489,13 +489,13 @@ Catches unhandled errors in the component tree and renders a fallback UI.
 <Tab value="Convex">
 
 ```tsx
-import { ConvexErrorBoundary } from '@noboil/convex/components'
+import { ErrorBoundary } from '@noboil/convex/components'
 
-<ConvexErrorBoundary>
+<ErrorBoundary>
   <BlogEditor />
-</ConvexErrorBoundary>
+</ErrorBoundary>
 
-<ConvexErrorBoundary
+<ErrorBoundary
   fallback={({ error, reset }) => (
     <div>
       <p>Something went wrong: {error.message}</p>
@@ -504,7 +504,7 @@ import { ConvexErrorBoundary } from '@noboil/convex/components'
   )}
 >
   <BlogEditor />
-</ConvexErrorBoundary>
+</ErrorBoundary>
 ```
 
 | Prop | Type | Description |

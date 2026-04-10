@@ -3,8 +3,8 @@
 'use client'
 import { createErrorBoundary } from '@a/shared/components/error-boundary'
 import { extractErrorData, getErrorMessage } from '../server/helpers'
-const ConvexErrorBoundary = createErrorBoundary({
+const ErrorBoundary = createErrorBoundary({
   readErrorCode: error => extractErrorData(error)?.code,
   readErrorMessage: error => getErrorMessage(error)
 })
-export default ConvexErrorBoundary
+export default ErrorBoundary

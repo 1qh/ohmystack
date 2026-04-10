@@ -9,7 +9,7 @@ import type { z } from 'zod/v4'
 import { describe, expect, test } from 'bun:test'
 import { array, boolean, date, globalRegistry, number, object, optional, string, enum as zenum } from 'zod/v4'
 import type { AccessEntry, FactoryCall } from '../check'
-import type { NoboilStdbErrorBoundary as BetterspaceErrorBoundary } from '../components/error-boundary'
+import type ErrorBoundary from '../components/error-boundary'
 // oxlint-disable-next-line import/no-namespace
 import type * as FieldsModule from '../components/fields'
 import type { CheckResult } from '../doctor'
@@ -7356,10 +7356,10 @@ describe('docs-gen', () => {
       expect(result[0]?.isType).toBe(false)
     })
     test('parses default as re-exports', () => {
-      const content = `export { default as BetterspaceDevtools } from './devtools-panel'`
+      const content = `export { default as Devtools } from './devtools-panel'`
       const result = resolveReExports(content)
       expect(result).toHaveLength(1)
-      expect(result[0]?.symbol).toBe('BetterspaceDevtools')
+      expect(result[0]?.symbol).toBe('Devtools')
       expect(result[0]?.isDefault).toBe(true)
     })
     test('parses type re-exports', () => {
@@ -7372,7 +7372,7 @@ describe('docs-gen', () => {
     test('parses multiple re-exports', () => {
       const content = [
         `export { useBulkSelection } from './use-bulk-selection'`,
-        `export { default as BetterspaceDevtools } from './devtools-panel'`,
+        `export { default as Devtools } from './devtools-panel'`,
         `export type { DevtoolsProps } from './devtools-panel'`
       ].join('\n')
       const result = resolveReExports(content)
@@ -7959,7 +7959,7 @@ describe('Sprint 4 Tier 2', () => {
     }
   })
   test('ErrorBoundary props include className', () => {
-    const props: ComponentProps<typeof BetterspaceErrorBoundary> = {
+    const props: ComponentProps<typeof ErrorBoundary> = {
       children: null,
       className: 'boundary-shell'
     }
@@ -8121,7 +8121,7 @@ describe('Sprint 4 Tier 3', () => {
   })
 })
 describe('Sprint 5 getFirstFieldError', () => {
-  test('returns first field error string from Betterspace error', () => {
+  test('returns first field error string from noboil error', () => {
     const error = makeSenderError({
       code: 'VALIDATION_FAILED',
       fieldErrors: { title: 'Title is required' }
@@ -8135,7 +8135,7 @@ describe('Sprint 5 getFirstFieldError', () => {
     })
     expect(getFirstFieldError(error)).toBeUndefined()
   })
-  test('returns undefined for non-Betterspace errors', () => {
+  test('returns undefined for non-noboil errors', () => {
     expect(getFirstFieldError(new Error('plain error'))).toBeUndefined()
   })
   test('returns undefined for null and undefined', () => {
@@ -8176,7 +8176,7 @@ describe('Sprint 5 toastFieldError', () => {
     })
     expect(toasted).toBe(false)
   })
-  test('returns false for non-Betterspace errors', () => {
+  test('returns false for non-noboil errors', () => {
     const messages: string[] = []
     const toasted = toastFieldError(new Error('plain'), (message: string) => {
       messages.push(message)

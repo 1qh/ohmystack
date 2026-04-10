@@ -11,7 +11,7 @@ import { tables } from '@a/be-spacetimedb/spacetimedb'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import { sameIdentity } from '@a/fe/utils'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
-import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
+import { Devtools } from '@noboil/spacetimedb/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
@@ -105,7 +105,7 @@ const LayoutContent = ({ children }: { children: ReactNode }) => (
   <>
     <OfflineIndicator />
     <OrgLayoutInner>{children}</OrgLayoutInner>
-    <NoboilStdbDevtools position='bottom-right' />
+    <Devtools position='bottom-right' />
   </>
 )
 const Layout = ({ children }: { children: ReactNode }) => (

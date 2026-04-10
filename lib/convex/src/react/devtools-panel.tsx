@@ -149,7 +149,7 @@ const MutationRow = ({ mutation }: { mutation: DevMutation }) => {
   )
 }
 /** Development-only floating panel that displays errors, subscriptions, mutations, and cache stats. */
-const NoboilConvexDevtools = ({
+const Devtools = ({
   buttonClassName,
   className,
   defaultOpen = false,
@@ -338,8 +338,8 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     }
   }, [])
   if (!(mounted && containerRef.current)) return null
-  return createPortal(<NoboilConvexDevtools {...props} />, containerRef.current)
+  return createPortal(<Devtools {...props} />, containerRef.current)
 }
-export default NoboilConvexDevtools
-export { DevtoolsAutoMount, NoboilConvexDevtools as LazyConvexDevtools, NoboilConvexDevtools }
+export default Devtools
+export { Devtools, DevtoolsAutoMount }
 export type { DevtoolsProps }

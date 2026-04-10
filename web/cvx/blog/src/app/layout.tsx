@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import Logout from '@a/fe/user-menu'
 import { OfflineIndicator } from '@noboil/convex/components'
-import { NoboilConvexDevtools } from '@noboil/convex/react'
+import { Devtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
@@ -27,7 +27,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
           </Link>
           <Logout className='fixed bottom-2 left-2' />
           <OfflineIndicator />
-          <NoboilConvexDevtools position='bottom-right' />
+          <Devtools position='bottom-right' />
           {children}
         </div>
       )}

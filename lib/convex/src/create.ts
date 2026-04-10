@@ -73,16 +73,16 @@ const PROVIDER_TSX = `'use client'
 import type { ReactNode } from 'react'
 import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexReactClient } from 'convex/react'
-import { ConvexErrorBoundary, FileApiProvider } from '@noboil/convex/components'
+import { ErrorBoundary, FileApiProvider } from '@noboil/convex/components'
 import { api } from '../convex/_generated/api'
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? '')
 const FILE_API = { info: api.file.info, upload: api.file.upload }
 const ConvexProvider = ({ children }: { children: ReactNode }) => (
-  <ConvexErrorBoundary>
+  <ErrorBoundary>
     <ConvexAuthProvider client={convex}>
       <FileApiProvider value={FILE_API}>{children}</FileApiProvider>
     </ConvexAuthProvider>
-  </ConvexErrorBoundary>
+  </ErrorBoundary>
 )
 export default ConvexProvider
 `

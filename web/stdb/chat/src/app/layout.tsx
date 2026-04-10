@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
-import { NoboilStdbDevtools } from '@noboil/spacetimedb/react'
+import { Devtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { renderSpacetimeProvider } from './providers'
@@ -33,7 +33,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
       ) : (
         children
       )}
-      <NoboilStdbDevtools position='bottom-right' />
+      <Devtools position='bottom-right' />
     </AuthLayout>
   )
 }

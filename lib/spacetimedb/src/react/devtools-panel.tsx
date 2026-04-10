@@ -149,7 +149,7 @@ const ReducerRow = ({ mutation }: { mutation: DevMutation }) => {
     </li>
   )
 }
-const NoboilStdbDevtools = ({
+const Devtools = ({
   buttonClassName,
   className,
   defaultOpen = false,
@@ -366,8 +366,8 @@ const DevtoolsAutoMount = (props: DevtoolsProps) => {
     }
   }, [])
   if (!(mounted && containerRef.current)) return null
-  return createPortal(<NoboilStdbDevtools {...props} />, containerRef.current)
+  return createPortal(<Devtools {...props} />, containerRef.current)
 }
-export default NoboilStdbDevtools
-export { NoboilStdbDevtools as BetterspaceDevtools, DevtoolsAutoMount, NoboilStdbDevtools }
+export default Devtools
+export { Devtools, DevtoolsAutoMount }
 export type { DevtoolsProps }

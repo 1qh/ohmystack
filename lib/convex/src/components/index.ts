@@ -1,5 +1,5 @@
 export { default as EditorsSection } from './editors-section'
-export { default as ConvexErrorBoundary } from './error-boundary'
+export { default as ErrorBoundary } from './error-boundary'
 export { deriveLabel, fields, FormContext, ServerFieldError } from './fields'
 export type { Api } from './fields'
 export { FileApiContext, FileApiProvider } from './file-field'

@@ -7,7 +7,7 @@ import { api } from '@a/be-convex'
 import AuthLayout from '@a/fe/auth-layout'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { getActiveOrg, getToken, isAuthenticated } from '@noboil/convex/next'
-import { NoboilConvexDevtools } from '@noboil/convex/react'
+import { Devtools } from '@noboil/convex/react'
 import { fetchQuery } from 'convex/nextjs'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -79,7 +79,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   return (
     <AuthLayout convexProvider={renderConvexProvider}>
       <OfflineIndicator />
-      <NoboilConvexDevtools position='bottom-right' />
+      <Devtools position='bottom-right' />
       {content}
     </AuthLayout>
   )

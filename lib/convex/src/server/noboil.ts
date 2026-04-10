@@ -6,7 +6,6 @@ import type {
   BaseSchema,
   CacheCrudResult,
   CacheHooks,
-  ChildConfig,
   ChildCrudResult,
   CrudOptions,
   CrudResult,
@@ -44,6 +43,13 @@ type CacheCallOpts<S extends ZodRawShape, K extends keyof S & string> = {
   staleWhileRevalidate?: boolean
   ttl?: number
 }
+interface ChildConfigOf<S extends AnyShape> {
+  foreignKey: string
+  index: string
+  parent: string
+  parentSchema?: ZodObject
+  schema: ZodObject<S>
+}
 interface TableFn {
   <S extends ZodRawShape>(schema: OwnedSchema<S>, opts?: CrudOptions<S>): CrudResult<S>
   <S extends ZodRawShape>(schema: OrgSchema<S>, opts?: OrgCrudOptions<S>): OrgCrudResult<S>
@@ -52,7 +58,7 @@ interface TableFn {
     schema: BaseSchema<S>,
     opts: CacheCallOpts<S, K>
   ): CacheCrudResult<S>
-  (child: ChildConfig, opts?: { pub?: { parentField: string } }): ChildCrudResult<AnyShape>
+  <S extends ZodRawShape>(child: ChildConfigOf<S>, opts?: { pub?: { parentField: string } }): ChildCrudResult<S>
 }
 type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
 const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Deferred): unknown => {
@@ -81,13 +87,7 @@ const buildDeferred = (schema: unknown, opts: unknown): Deferred => {
     )
   return { [DEFERRED]: true, brand, opts, schema }
 }
-type AnyTableResult =
-  | CacheCrudResult<AnyShape>
-  | ChildCrudResult<AnyShape>
-  | CrudResult<AnyShape>
-  | OrgCrudResult<AnyShape>
-  | SingletonCrudResult<AnyShape>
-type TableMap = Record<string, AnyTableResult>
+type TableMap = Record<string, unknown>
 /**
  * High-level entry point: registers every table in one place. Mirrors @noboil/spacetimedb's noboil().
  *

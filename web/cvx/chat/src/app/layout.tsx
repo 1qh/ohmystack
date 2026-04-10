@@ -4,7 +4,7 @@ import AuthLayout from '@a/fe/auth-layout'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { OfflineIndicator } from '@noboil/convex/components'
 import { isAuthenticated } from '@noboil/convex/next'
-import { NoboilConvexDevtools } from '@noboil/convex/react'
+import { Devtools } from '@noboil/convex/react'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { renderConvexProvider } from './providers'
@@ -23,7 +23,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   return (
     <AuthLayout convexProvider={renderConvexProvider}>
       <OfflineIndicator />
-      <NoboilConvexDevtools position='bottom-right' />
+      <Devtools position='bottom-right' />
       {showSidebar ? (
         <SidebarProvider>
           <Sidebar />
