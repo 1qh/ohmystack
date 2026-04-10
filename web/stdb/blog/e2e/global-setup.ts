@@ -1,1 +1,1 @@
-export { default } from '@a/e2e/global-setup'
+export { default } from '@a/e2e/stdb-global-setup'

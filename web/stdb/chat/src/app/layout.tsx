@@ -8,7 +8,7 @@ import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { Devtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { renderSpacetimeProvider } from './providers'
+import { SpacetimeWrapper } from './providers'
 import Sidebar from './sidebar'
 const metadata: Metadata = { description: 'spacetimedb chat demo', title: 'Chat' }
 const PUBLIC_PATHS = ['/login', '/public']
@@ -23,7 +23,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   if (!(isPublicPath(pathname) || isPlaywright || (typeof token === 'string' && token.length > 0))) redirect('/login')
   const showSidebar = !isPublicPath(pathname)
   return (
-    <AuthLayout provider={renderSpacetimeProvider}>
+    <AuthLayout Provider={SpacetimeWrapper}>
       <OfflineIndicator />
       {showSidebar ? (
         <SidebarProvider>

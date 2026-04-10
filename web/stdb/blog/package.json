@@ -7,7 +7,7 @@
     "dev": "PORT=4200 bun with-env next dev --turbo",
     "start": "bun with-env next start",
     "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && bun with-env playwright test --reporter=list",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun with-env next typegen && tsc --noEmit",
     "with-env": "dotenv -e ../../../.env --"
   },
   "dependencies": {

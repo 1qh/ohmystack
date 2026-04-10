@@ -7,7 +7,7 @@
     "dev": "PORT=4100 bun with-env next dev --turbo",
     "start": "bun with-env next start",
     "test:e2e": "CONVEX_TEST_MODE=true bun --cwd ../../../backend/convex with-env convex dev --once && bun with-env playwright test --reporter=list",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun with-env next typegen && tsc --noEmit",
     "with-env": "dotenv -e ../../../.env --"
   },
   "dependencies": {

@@ -8,13 +8,13 @@ import { Devtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { renderSpacetimeProvider } from './providers'
+import { SpacetimeWrapper } from './providers'
 const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog' }
 const Layout = async ({ children }: { children: ReactNode }) => {
   const pathname = (await headers()).get('x-pathname') ?? '/'
   const isLogin = pathname === '/login' || pathname.startsWith('/login/')
   return (
-    <AuthLayout provider={renderSpacetimeProvider}>
+    <AuthLayout Provider={SpacetimeWrapper}>
       {isLogin ? (
         children
       ) : (

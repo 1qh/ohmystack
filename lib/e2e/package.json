@@ -8,6 +8,8 @@
     "./base-page": "./src/base-page.ts",
     "./global-setup": "./src/global-setup.ts",
     "./global-teardown": "./src/global-teardown.ts",
+    "./stdb-global-setup": "./src/stdb-global-setup.ts",
+    "./stdb-global-teardown": "./src/stdb-global-teardown.ts",
     "./helpers": "./src/helpers.ts",
     "./org-helpers": "./src/org-helpers.ts",
     "./stdb-org-helpers": "./src/stdb-org-helpers.ts",

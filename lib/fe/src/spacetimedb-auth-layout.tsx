@@ -13,7 +13,7 @@ interface AuthLayoutProps {
   children: ReactNode
   htmlProps?: Omit<ComponentProps<'html'>, 'children' | 'lang' | 'suppressHydrationWarning'>
   offlineIndicatorProps?: ComponentProps<typeof OfflineIndicator>
-  provider: (children: ReactNode) => ReactNode
+  Provider: (props: { children: ReactNode }) => ReactNode
   themeProviderProps?: Omit<ComponentProps<typeof ThemeProvider>, 'children'>
   toasterProps?: ComponentProps<typeof Toaster>
 }
@@ -23,7 +23,7 @@ const AuthLayout = ({
   children,
   htmlProps,
   offlineIndicatorProps,
-  provider,
+  Provider,
   themeProviderProps,
   toasterProps
 }: AuthLayoutProps) => (
@@ -32,12 +32,12 @@ const AuthLayout = ({
       {...bodyProps}
       className={cn('min-h-screen bg-background font-sans tracking-tight text-foreground antialiased', bodyClassName)}>
       <Suspense>
-        {provider(
+        <Provider>
           <ThemeProvider {...themeProviderProps} attribute='class' defaultTheme='system' enableSystem>
             {children}
             <OfflineIndicator {...offlineIndicatorProps} />
           </ThemeProvider>
-        )}
+        </Provider>
         <Toaster {...toasterProps} duration={1000} />
       </Suspense>
     </body>

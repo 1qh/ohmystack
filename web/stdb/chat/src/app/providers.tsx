@@ -1,5 +1,5 @@
 'use client'
 import type { ReactNode } from 'react'
 import SpacetimeProvider from '@a/fe/spacetimedb-provider'
-const renderSpacetimeProvider = (inner: ReactNode): ReactNode => <SpacetimeProvider>{inner}</SpacetimeProvider>
-export { renderSpacetimeProvider }
+const SpacetimeWrapper = ({ children }: { children: ReactNode }) => <SpacetimeProvider>{children}</SpacetimeProvider>
+export { SpacetimeWrapper }
