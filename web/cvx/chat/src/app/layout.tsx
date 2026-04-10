@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
-import { OfflineIndicator } from '@noboil/convex/components'
 import { isAuthenticated } from '@noboil/convex/next'
 import { Devtools } from '@noboil/convex/react'
 import { headers } from 'next/headers'
@@ -22,7 +21,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   const showSidebar = !isPublicPath(pathname)
   return (
     <AuthLayout ConvexProvider={ConvexWrapper}>
-      <OfflineIndicator />
       <Devtools position='bottom-right' />
       {showSidebar ? (
         <SidebarProvider>

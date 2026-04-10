@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import Logout from '@a/fe/user-menu'
-import { OfflineIndicator } from '@noboil/convex/components'
 import { Devtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
@@ -26,7 +25,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
             <UserRound className='size-full' />
           </Link>
           <Logout className='fixed bottom-2 left-2' />
-          <OfflineIndicator />
           <Devtools position='bottom-right' />
           {children}
         </div>

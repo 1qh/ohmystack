@@ -64,9 +64,11 @@ class ProfilePage extends BasePage {
   public async goto(): Promise<void> {
     await this.page.goto('/profile')
     await this.page.locator('[data-testid="profile-page"]').waitFor()
+    await this.waitForConnection()
   }
   public async reload(): Promise<void> {
     await this.page.reload()
+    await this.waitForConnection()
   }
   public async submit(): Promise<void> {
     await this.getSubmitButton().click()

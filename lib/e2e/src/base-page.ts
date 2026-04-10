@@ -5,6 +5,9 @@ class BasePage {
   public constructor(page: Page) {
     this.page = page
   }
+  public async waitForConnection(timeout = 30_000): Promise<void> {
+    await this.page.getByText('You are offline').waitFor({ state: 'hidden', timeout })
+  }
   protected $(testId: string, nested?: string): Locator {
     const loc = this.page.getByTestId(testId)
     return nested ? loc.locator(nested) : loc

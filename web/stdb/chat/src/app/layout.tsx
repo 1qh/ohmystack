@@ -4,7 +4,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
-import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { Devtools } from '@noboil/spacetimedb/react'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -24,7 +23,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   const showSidebar = !isPublicPath(pathname)
   return (
     <AuthLayout Provider={SpacetimeWrapper}>
-      <OfflineIndicator />
       {showSidebar ? (
         <SidebarProvider>
           <Sidebar />

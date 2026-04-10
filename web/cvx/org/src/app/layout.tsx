@@ -5,7 +5,6 @@ import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
 import { api } from '@a/be-convex'
 import AuthLayout from '@a/fe/auth-layout'
-import { OfflineIndicator } from '@noboil/convex/components'
 import { getActiveOrg, getToken, isAuthenticated } from '@noboil/convex/next'
 import { Devtools } from '@noboil/convex/react'
 import { fetchQuery } from 'convex/nextjs'
@@ -78,7 +77,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   }
   return (
     <AuthLayout ConvexProvider={ConvexWrapper}>
-      <OfflineIndicator />
       <Devtools position='bottom-right' />
       {content}
     </AuthLayout>

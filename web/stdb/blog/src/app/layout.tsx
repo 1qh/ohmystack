@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import Logout from '@a/fe/spacetimedb-user-menu'
-import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { Devtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
@@ -26,7 +25,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
             <UserRound className='size-full' />
           </Link>
           <Logout className='fixed bottom-2 left-2' />
-          <OfflineIndicator />
           {children}
           <Devtools position='bottom-right' />
         </div>

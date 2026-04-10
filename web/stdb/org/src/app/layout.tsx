@@ -10,7 +10,6 @@ import type { ReactNode } from 'react'
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import { sameIdentity } from '@a/fe/utils'
-import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { Devtools } from '@noboil/spacetimedb/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -103,7 +102,6 @@ const OrgLayoutInner = ({ children }: { children: ReactNode }) => {
 }
 const LayoutContent = ({ children }: { children: ReactNode }) => (
   <>
-    <OfflineIndicator />
     <OrgLayoutInner>{children}</OrgLayoutInner>
     <Devtools position='bottom-right' />
   </>

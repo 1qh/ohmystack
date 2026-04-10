@@ -106,6 +106,7 @@ class BlogPage extends BasePage {
   public async goto(path: '/' | '/pagination' = '/'): Promise<void> {
     await this.page.goto(path)
     await this.page.locator('[data-testid="blog-list"], [data-testid="empty-state"]').first().waitFor()
+    await this.waitForConnection()
   }
   public async search(query: string): Promise<void> {
     await this.getSearchInput().fill(query)
