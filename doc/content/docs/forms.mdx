@@ -5,89 +5,30 @@ description: Typesafe form components, validation, file uploads, and error handl
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-This guide walks through building a blog post editor, starting simple and adding features incrementally.
+This guide walks through building a blog post editor, starting simple and adding features incrementally. Snippets are written in single voice — pick the import path that matches your backend. The genuinely backend-specific bits (file storage, mutation wiring) are called out inline.
 
 ## A basic create form
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-You have a blog schema and a `crud('blog', owned.blog)` call. Let's build a form to create posts.
+You have a blog schema in `t.ts` and a registered table via `noboil()`. Build a form to create posts:
 
 ```tsx
-import { Form, useForm } from '@noboil/convex/components'
-import { useMutation } from 'convex/react'
-import { api } from '../../convex/_generated/api'
-import { owned } from '../../convex/t'
+import { Form, useFormMutation } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { s } from '@/backend/t'
 
 const CreatePost = () => {
-  const create = useMutation(api.blog.create)
-  const form = useForm({
-    schema: owned.blog,
-    onSubmit: async d => {
-      await create({ ...d, published: false })
-      return d
-    }
-  })
-
-  return (
-    <Form
-      form={form}
-      render={({ Text, Choose, Toggle, Submit }) => (
-        <>
-          <Text name="title" label="Title" />
-          <Text name="content" label="Content" multiline />
-          <Choose name="category" label="Category" />
-          <Toggle name="published" label="Published" />
-          <Submit>Create</Submit>
-        </>
-      )}
-    />
-  )
-}
-```
-
-What's happening:
-
-- `useForm` takes your Zod schema and generates typed field props
-- `name='title'` is checked at compile time — `name='titl'` is a type error
-- `Choose` auto-generates options from the Zod enum
-- `Toggle` knows `published` is a boolean field — using `<Text name='published' />` would be a type error
-- Zod validation runs on submit — `title.min(1)` enforces non-empty
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`zodFromTable` converts SpacetimeDB table column definitions into a Zod validation schema, letting you reuse your table structure for form validation.
-
-```typescript
-import { zodFromTable } from '@noboil/spacetimedb'
-import { tables } from '@/generated/module_bindings'
-
-const postSchema = zodFromTable(tables.post.columns)
-```
-
-Auto-excluded fields (unless explicitly included):
-
-- `identity` columns (e.g., `userId`)
-- `timestamp` columns (e.g., `updatedAt`)
-- Auto-increment primary keys (e.g., `id`)
-
-Then build the form with the same `<Form>` render-prop component as Convex:
-
-```tsx
-import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-import { postSchema } from '@/schema-client'
-
-const CreatePost = () => {
-  const createPost = useReducer(reducers.create_post)
+  // Convex
   const form = useFormMutation({
-    schema: postSchema,
-    mutate: d => createPost({ ...d, published: false }),
-    toast: 'Created'
+    mutation: api.blog.create,
+    schema: s.blog
   })
+
+  // SpacetimeDB
+  // const createBlog = useReducer(reducers.create_blog)
+  // const form = useFormMutation({
+  //   schema: s.blog,
+  //   mutate: d => createBlog(d),
+  //   toast: 'Created'
+  // })
 
   return (
     <Form
@@ -108,59 +49,15 @@ const CreatePost = () => {
 
 What's happening:
 
-- `useFormMutation` takes your Zod schema and wires up the reducer call
+- `useFormMutation` takes your Zod schema and generates typed field props
 - `name='title'` is checked at compile time — `name='titl'` is a type error
 - `Choose` auto-generates options from the Zod enum
 - `Toggle` knows `published` is a boolean field — using `<Text name='published' />` would be a type error
 - Zod validation runs on submit — `title.min(1)` enforces non-empty
-
-</Tab>
-</Tabs>
-
-## zodFromTable options (SpacetimeDB)
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-The Zod schema you pass to `useForm` or `useFormMutation` is the same schema you defined in `convex/t.ts`. No separate derivation step needed.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-zodFromTable(columns, {
-  include: ['title', 'content'],
-  exclude: ['published'],
-  optional: ['content']
-})
-```
-
-Practical example:
-
-```typescript
-import { zodFromTable } from '@noboil/spacetimedb'
-import { tables } from '@/generated/module_bindings'
-
-const createPostSchema = zodFromTable(tables.post.columns, {
-  exclude: ['published']
-})
-
-const editPostSchema = zodFromTable(tables.post.columns).partial()
-
-const profileSchema = zodFromTable(tables.blogProfile.columns)
-
-export { createPostSchema, editPostSchema, profileSchema }
-```
-
-</Tab>
-</Tabs>
 
 ## Add file upload
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Your schema has `coverImage: file().nullable().optional()`. The `File` field handles upload automatically:
+Your schema has `coverImage: file().nullable().optional()`. The `<File>` field handles upload automatically — Convex routes through native storage, SpacetimeDB routes through your S3/MinIO presigned URL endpoint. The component API is the same.
 
 ```tsx
 <Form
@@ -180,166 +77,27 @@ Your schema has `coverImage: file().nullable().optional()`. The `File` field han
 - `<File name='coverImage' />` compiles because `coverImage` is a `file()` field
 - `<File name='title' />` is a compile error — `title` is a string, not a file
 - Upload happens on file selection, form submission sends the storage ID
-- On delete, the uploaded file is auto-cleaned from storage
+- On delete, the uploaded file is auto-cleaned (Convex storage) or marked for cleanup (SpacetimeDB)
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-File uploads go through a Next.js API route that generates S3/MinIO pre-signed URLs.
-
-**API route:**
-
-```typescript
-import { createS3UploadPresignedUrl } from '@noboil/spacetimedb/server'
-import { NextResponse } from 'next/server'
-
-const S3_CONFIG = {
-  accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-  bucket: process.env.S3_BUCKET!,
-  endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:4600',
-  region: process.env.S3_REGION ?? 'us-east-1'
-}
-
-export const POST = async (req: Request) => {
-  const { filename, contentType, size } = (await req.json()) as {
-    filename: string
-    contentType: string
-    size: number
-  }
-
-  const key = `uploads/${Date.now()}-${filename}`
-
-  const presigned = await createS3UploadPresignedUrl({
-    ...S3_CONFIG,
-    key,
-    contentType
-  })
-
-  return NextResponse.json({
-    uploadUrl: presigned.url,
-    storageKey: key,
-    headers: presigned.headers,
-    method: 'PUT'
-  })
-}
-```
-
-**`useUpload` hook:**
-
-```typescript
-'use client'
-
-import { useUpload } from '@noboil/spacetimedb/react'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-
-const FileUploadForm = () => {
-  const registerUpload = useReducer(reducers.register_upload_file)
-
-  const { upload, isUploading, progress, error } = useUpload({
-    apiEndpoint: '/api/upload/presign',
-    registerFile: async ({ contentType, filename, size, storageKey }) => {
-      await registerUpload({ contentType, filename, size, storageKey })
-      return { storageId: storageKey }
-    },
-  })
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const result = await upload(file)
-    if (result.ok) {
-      console.log('Uploaded:', result.storageId)
-    } else {
-      console.error('Upload failed:', result.code)
-    }
-  }
-
-  return (
-    <div>
-      <input type="file" onChange={handleFileChange} disabled={isUploading} />
-      {isUploading && <progress value={progress} max={100} />}
-      {error && <span>Upload failed: {error}</span>}
-    </div>
-  )
-}
-```
-
-**Upload flow:**
-
-1. User selects a file
-2. `useUpload` calls your API route (`/api/upload/presign`) with file metadata
-3. API route generates a pre-signed S3/MinIO URL
-4. `useUpload` uploads the file directly to S3/MinIO using the pre-signed URL
-5. On success, `registerFile` is called to record the upload in SpacetimeDB via a reducer
-6. The file row is now in the database and visible to subscribers
-
-This pattern works in local dev (MinIO) and production (S3, R2, etc.) without changing client code.
-
-</Tab>
-</Tabs>
+For multi-file uploads, use `<Files>` against a `files()` field.
 
 ## Edit an existing record
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Switch to `useFormMutation` which wires up the mutation and pre-fills values:
+`useFormMutation` pre-fills values from an existing record via `pickValues`:
 
 ```tsx
-import { useFormMutation } from '@noboil/convex/react'
-import { pickValues } from '@noboil/convex/zod'
+import { useFormMutation } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { pickValues } from '@noboil/convex/zod'  // or @noboil/spacetimedb/zod
 
-const EditPost = ({ post }: { post: Doc<'blog'> }) => {
+const EditPost = ({ post }: { post: BlogRow }) => {
   const form = useFormMutation({
+    // Convex
     mutation: api.blog.update,
-    schema: owned.blog,
-    values: pickValues(owned.blog, post),
-    transform: d => ({ ...d, id: post._id }),
-    onSuccess: () => toast.success('Saved')
-  })
-
-  return (
-    <Form
-      form={form}
-      render={({ Text, Choose, File, Submit }) => (
-        <>
-          <Text name="title" label="Title" />
-          <Text name="content" label="Content" multiline />
-          <Choose name="category" label="Category" />
-          <File name="coverImage" label="Cover Image" accept="image/*" />
-          <Submit>Save</Submit>
-        </>
-      )}
-    />
-  )
-}
-```
-
-- `pickValues` extracts schema-matching fields from the doc (ignores `_id`, `_creationTime`, `userId`)
-- `transform` adds the `id` field before submitting — the schema doesn't have `id` but the mutation needs it
-- Empty optional strings auto-coerce to `undefined`
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Switch to `useFormMutation` which wires up the reducer and pre-fills values:
-
-```tsx
-import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { pickValues } from '@noboil/spacetimedb/zod'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-import { postSchema } from '@/schema-client'
-
-const EditPost = ({ post }: { post: PostRow }) => {
-  const updatePost = useReducer(reducers.update_post)
-  const form = useFormMutation({
-    schema: postSchema,
-    values: pickValues(postSchema, post),
-    mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+    transform: d => ({ ...d, id: post._id, expectedUpdatedAt: post.updatedAt }),
+    // SpacetimeDB
+    // mutate: d => updateBlog({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+    schema: s.blog,
+    values: pickValues(s.blog, post),
     toast: 'Saved'
   })
 
@@ -360,122 +118,47 @@ const EditPost = ({ post }: { post: PostRow }) => {
 }
 ```
 
-- `pickValues` extracts schema-matching fields from the row (ignores `id`, `userId`, `updatedAt`)
-- `transform` adds the `id` and `expectedUpdatedAt` fields before submitting
+- `pickValues` extracts schema-matching fields from the doc (ignores `_id`, `_creationTime`, `userId`, `updatedAt`)
 - Empty optional strings auto-coerce to `undefined`
-
-</Tab>
-</Tabs>
 
 ## Conflict detection
 
-Both databases support optimistic concurrency control via `expectedUpdatedAt`.
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-const form = useFormMutation({
-  mutation: api.blog.update,
-  schema: owned.blog,
-  values: pickValues(owned.blog, post),
-  transform: d => ({ ...d, id: post._id, expectedUpdatedAt: post.updatedAt }),
-  onSuccess: () => toast.success('Saved')
-})
-```
-
-When the server detects a stale `expectedUpdatedAt`, a `ConflictDialog` appears automatically with three options:
+Both backends support optimistic concurrency control via `expectedUpdatedAt`. When the server detects a stale value, the built-in `ConflictDialog` appears with three options:
 
 - **Cancel** — discard your changes
 - **Reload** — fetch the latest version
 - **Overwrite** — force your changes through
 
-No extra UI code needed — the dialog is built into the `Form` component.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Pass `expectedUpdatedAt` when calling the update reducer. The `Form` component includes a built-in `ConflictDialog` that handles conflicts automatically:
-
-```tsx
-const form = useFormMutation({
-  schema: postSchema,
-  values: pickValues(postSchema, post),
-  mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
-  toast: 'Saved'
-})
-```
-
-When the server detects a stale `expectedUpdatedAt`, a `ConflictDialog` appears automatically with three options:
-
-- **Cancel** -- discard your changes
-- **Reload** -- fetch the latest version
-- **Overwrite** -- force your changes through
-
-No extra UI code needed -- the dialog is built into the `Form` component.
-
-</Tab>
-</Tabs>
+No extra UI code needed — the dialog is built into `Form`. Pass `expectedUpdatedAt: post.updatedAt` in your update call (see the edit example above) and you're done.
 
 ## Auto-save
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-For a document editor experience, enable auto-save with debounce:
-
-```tsx
-const form = useForm({
-  schema: owned.blog,
-  onSubmit: d => update({ id: post._id, ...d }),
-  autoSave: { enabled: true, debounceMs: 1000 }
-})
-```
-
-Add a save indicator:
-
-```tsx
-import { AutoSaveIndicator } from '@noboil/convex/components'
-;<AutoSaveIndicator lastSaved={form.lastSaved} />
-```
-
-This shows "Saved 5s ago" that updates in real-time.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
 For a document editor experience, enable auto-save with debounce:
 
 ```tsx
 const form = useFormMutation({
-  schema: postSchema,
-  values: pickValues(postSchema, post),
-  mutate: d => updatePost({ id: post.id, ...d }),
+  schema: s.blog,
+  values: pickValues(s.blog, post),
+  // Convex: mutation: api.blog.update + transform, or...
+  // SpacetimeDB: mutate: d => updateBlog({ id: post.id, ...d })
   autoSave: { enabled: true, debounceMs: 1000 }
 })
-```
 
-Add a save indicator:
-
-```tsx
-import { AutoSaveIndicator } from '@noboil/spacetimedb/components'
+import { AutoSaveIndicator } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 ;<AutoSaveIndicator lastSaved={form.lastSaved} />
 ```
 
-This shows "Saved" that updates in real-time.
-
-</Tab>
-</Tabs>
+This shows "Saved Xs ago" that updates in real-time.
 
 ## Async validation
+
+Check if a slug is already taken while the user types:
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Check if a slug is already taken while the user types:
-
 ```tsx
-export const isSlugAvailable = uniqueCheck(orgScoped.wiki, 'wiki', 'slug')
+export const isSlugAvailable = uniqueCheck(s.wiki, 'wiki', 'slug')
 
 <Text name='slug' asyncValidate={async v => {
   const ok = await isSlugAvailable({ value: v, exclude: id })
@@ -483,12 +166,10 @@ export const isSlugAvailable = uniqueCheck(orgScoped.wiki, 'wiki', 'slug')
 }} asyncDebounceMs={500} />
 ```
 
-The validation runs 500ms after the user stops typing and shows inline feedback.
+`uniqueCheck` is a Convex-specific helper that generates a server-side query backed by an index.
 
 </Tab>
 <Tab value="SpacetimeDB">
-
-Check if a slug is already taken while the user types:
 
 ```tsx
 <Text name='slug' asyncValidate={async v => {
@@ -498,78 +179,19 @@ Check if a slug is already taken while the user types:
 }} asyncDebounceMs={500} />
 ```
 
-The validation runs 500ms after the user stops typing and shows inline feedback.
+SpacetimeDB queries the in-memory subscription directly — no server roundtrip needed.
 
 </Tab>
 </Tabs>
 
+The `asyncValidate` runs 500ms after the user stops typing and shows inline feedback.
+
 ## Multi-step wizard
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-For complex forms like onboarding, use `defineSteps` to split into typed steps:
+For complex forms like onboarding, use `defineSteps` to split into typed steps. The API is identical on both backends.
 
 ```tsx
-import { defineSteps } from '@noboil/convex/components'
-
-const { StepForm, useStepper } = defineSteps(
-  { id: 'profile', label: 'Profile', schema: profileStep },
-  { id: 'org', label: 'Organization', schema: orgStep },
-  { id: 'preferences', label: 'Preferences', schema: preferencesStep }
-)
-
-const stepper = useStepper({
-  onSubmit: async d => {
-    await upsert({ ...d.profile, ...d.preferences })
-    await createOrg({ name: d.org.name, slug: d.org.slug })
-  },
-  onSuccess: () => toast.success('Done!')
-})
-
-<StepForm stepper={stepper} submitLabel='Complete'>
-  <StepForm.Step id='profile' render={({ Text, File }) => (
-    <>
-      <Text name='displayName' label='Name' />
-      <File name='avatar' label='Avatar' accept='image/*' />
-    </>
-  )} />
-  <StepForm.Step id='org' render={({ Text }) => (
-    <>
-      <Text name='name' label='Org Name' />
-      <Text name='slug' label='URL Slug' />
-    </>
-  )} />
-  <StepForm.Step id='preferences' render={({ Choose }) => (
-    <Choose name='theme' label='Theme' />
-  )} />
-</StepForm>
-```
-
-Customize step indicator styling without forking components:
-
-```tsx
-<StepForm
-  stepIndicatorClassNames={{
-    button: 'size-9',
-    label: 'text-xs tracking-wide',
-    nav: 'gap-3',
-    separator: 'bg-primary/20',
-    step: 'gap-3'
-  }}
-  stepper={stepper}
-/>
-```
-
-Each step has its own Zod schema and independent validation. `name='displayName'` compiles on the profile step but errors on the org step.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-For complex forms like onboarding, use `defineSteps` to split into typed steps:
-
-```tsx
-import { defineSteps } from '@noboil/spacetimedb/components'
+import { defineSteps } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 const { StepForm, useStepper } = defineSteps(
   { id: 'profile', label: 'Profile', schema: profileStep },
@@ -604,14 +226,11 @@ const stepper = useStepper({
 </StepForm>
 ```
 
-Each step has its own Zod schema and independent validation. `name='displayName'` compiles on the profile step but errors on the org step.
-
-</Tab>
-</Tabs>
+Customize step indicator styling without forking components — pass `stepIndicatorClassNames`. Each step has its own Zod schema and independent validation. `name='displayName'` compiles on the profile step but errors on the org step.
 
 ## EditorsSection customization
 
-Both backends expose `EditorsSection` style hooks:
+`EditorsSection` from either lib accepts the same style hooks:
 
 ```tsx
 <EditorsSection
@@ -629,13 +248,10 @@ Both backends expose `EditorsSection` style hooks:
 
 ## Optimistic deletes
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 For instant-feeling delete buttons:
 
 ```tsx
-import { useOptimisticMutation } from '@noboil/convex/react'
+import { useOptimisticMutation } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const { execute, isPending } = useOptimisticMutation({
   mutation: api.blog.rm,
@@ -647,115 +263,64 @@ const { execute, isPending } = useOptimisticMutation({
 
 The item disappears immediately. If the server rejects, it reappears with an error toast.
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB's ~39ms latency makes optimistic updates unnecessary in most cases. The subscription update arrives before the user notices. For higher-latency deployments, use `useOptimisticMutation` from `@noboil/spacetimedb/react`.
-
-</Tab>
-</Tabs>
+> SpacetimeDB's ~39ms local Docker latency makes optimistic updates unnecessary in most cases — the subscription update arrives before the user notices. For higher-latency Maincloud deployments, `useOptimisticMutation` provides the same API.
 
 ## Available field components
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-| Component     | Zod types                      | Renders                          |
-| ------------- | ------------------------------ | -------------------------------- |
-| `Text`        | `string()`, `string().email()` | Input or textarea (`multiline`)  |
-| `Num`         | `number()`                     | Number input                     |
-| `Choose`      | `enum()`                       | Select dropdown                  |
-| `Toggle`      | `boolean()`                    | Checkbox or switch               |
-| `File`        | `file()`                     | File picker with upload          |
-| `Files`       | `files()`                    | Multi-file picker                |
-| `Arr`         | `array(string())`              | Tag input                        |
-| `Datepick`    | `date()`                       | Date picker                      |
-| `Combobox`    | `string()` with options        | Searchable dropdown              |
-| `Colorpick`   | `string()`                     | Color picker                     |
-| `MultiSelect` | `array(string())`              | Multi-select dropdown            |
-| `Rating`      | `number()`                     | Star rating                      |
-| `Slider`      | `number()`                     | Range slider                     |
-| `Timepick`    | `string()`                     | Time picker                      |
-| `Submit`      | --                             | Submit button with loading state |
-| `Err`         | --                             | Field error display              |
-
-All components accept `label`, `placeholder`, `disabled`, and `className` props.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB uses the same field components as Convex, available via `<Form render={...} />`:
-
-| Component     | Zod types                      | Renders                          |
-| ------------- | ------------------------------ | -------------------------------- |
-| `Text`        | `string()`, `string().email()` | Input or textarea (`multiline`)  |
-| `Num`         | `number()`                     | Number input                     |
-| `Choose`      | `enum()`                       | Select dropdown                  |
-| `Toggle`      | `boolean()`                    | Checkbox or switch               |
-| `File`        | `file()`                     | File picker with S3 upload       |
-| `Files`       | `files()`                    | Multi-file picker                |
-| `Arr`         | `array(string())`              | Tag input                        |
-| `Datepick`    | `date()`                       | Date picker                      |
-| `Combobox`    | `string()` with options        | Searchable dropdown              |
-| `Colorpick`   | `string()`                     | Color picker                     |
-| `MultiSelect` | `array(string())`              | Multi-select dropdown            |
-| `Rating`      | `number()`                     | Star rating                      |
-| `Slider`      | `number()`                     | Range slider                     |
-| `Timepick`    | `string()`                     | Time picker                      |
-| `Submit`      | --                             | Submit button with loading state |
-| `Err`         | --                             | Field error display              |
-
-All components accept `label`, `placeholder`, `disabled`, and `className` props.
-
-</Tab>
-</Tabs>
+See the [Components reference](./components#field-components) for the full table. All 16 field components work identically on both backends — only the file-upload backend differs (Convex storage vs S3 presigned URLs), and the `<File>` component handles that automatically.
 
 ## Error handling
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
 
 **Validation errors** — Zod validation runs on submit. Field-level errors appear automatically:
 
 ```tsx
-const form = useForm({
-  schema: owned.blog,
-  onSubmit: async d => {
-    await create(d)
-    return d
-  }
+const form = useFormMutation({
+  schema: s.blog,
+  // Convex: mutation: api.blog.create
+  // SpacetimeDB: mutate: d => createBlog(d)
 })
 ```
 
 When `title.min(1)` fails, the `<Text name='title' />` field shows "Required" inline — no manual error wiring needed.
 
-**Mutation errors** — `useMutate` and `useFormMutation` show error toasts by default:
+**Mutation errors** — `useFormMutation` shows error toasts by default. Override with `onError`:
 
 ```tsx
 const form = useFormMutation({
-  mutation: api.blog.create,
-  schema: owned.blog,
+  schema: s.blog,
+  mutation: api.blog.create,  // or mutate: ...
   onError: e => toast.error(`Failed: ${e.message}`)
 })
 
-const form = useFormMutation({
+// Or suppress the default toast entirely:
+const silent = useFormMutation({
+  schema: s.blog,
   mutation: api.blog.create,
-  schema: owned.blog,
   onError: false
 })
 ```
 
-**Rate limit errors** — when `RATE_LIMITED` is returned, the default error toast shows "Too many requests". For custom UX:
+**Toast shorthand** — pass a string for automatic success messaging:
 
 ```tsx
-import { handleConvexError } from '@noboil/convex/server'
+const form = useFormMutation({
+  schema: s.blog,
+  mutation: api.blog.create,  // or mutate: ...
+  toast: 'Created'
+})
+```
+
+**Rate limit errors** — when a mutation returns `RATE_LIMITED`, the default error toast shows "Too many requests". For custom UX, use `handleError`:
+
+```tsx
+import { handleError } from '@noboil/convex/server'  // or @noboil/spacetimedb/server
 
 const form = useFormMutation({
+  schema: s.blog,
   mutation: api.blog.create,
-  schema: owned.blog,
   onError: e =>
-    handleConvexError(e, {
-      RATE_LIMITED: () => toast.error('Slow down — try again in a minute'),
+    handleError(e, {
+      RATE_LIMITED: ({ retryAfter }) => toast.error(`Slow down — try again in ${retryAfter}ms`),
       CONFLICT: () => toast.error('Someone else edited this'),
       default: () => toast.error('Something went wrong')
     })
@@ -765,52 +330,11 @@ const form = useFormMutation({
 **Error boundary** — wrap pages with `ErrorBoundary` to catch unhandled errors:
 
 ```tsx
-import { ErrorBoundary } from '@noboil/convex/components'
-;<ErrorBoundary>
+import { ErrorBoundary } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+
+<ErrorBoundary>
   <BlogEditor />
 </ErrorBoundary>
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-**Validation errors** -- Zod validation runs on submit. Field-level errors appear automatically:
-
-```tsx
-const form = useFormMutation({
-  schema: postSchema,
-  mutate: d => createPost(d),
-  toast: 'Created'
-})
-```
-
-When `title.min(1)` fails, the `<Text name='title' />` field shows "Required" inline -- no manual error wiring needed.
-
-**Reducer errors** -- `useFormMutation` shows error toasts by default:
-
-```tsx
-const form = useFormMutation({
-  schema: postSchema,
-  mutate: d => createPost(d),
-  onError: e => toast.error(`Failed: ${e.message}`)
-})
-
-const form = useFormMutation({
-  schema: postSchema,
-  mutate: d => createPost(d),
-  onError: false
-})
-```
-
-**Toast shorthand** -- pass a string to `toast` for automatic success/error handling:
-
-```tsx
-const form = useFormMutation({
-  schema: postSchema,
-  mutate: d => createPost(d),
-  toast: 'Created'
-})
-```
-
-</Tab>
-</Tabs>
+See [Convex vs SpacetimeDB](./differences#8-conflict-detection) for the small wire-format differences in error envelopes.
