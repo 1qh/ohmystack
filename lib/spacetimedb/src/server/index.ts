@@ -1,14 +1,7 @@
 export { makeCacheCrud } from './cache-crud'
 export { makeChildCrud } from './child'
 export { makeCrud, ownedCascade } from './crud'
-export {
-  CHUNK_SIZE,
-  createS3DownloadPresignedUrl,
-  createS3UploadPresignedUrl,
-  DEFAULT_ALLOWED_TYPES,
-  DEFAULT_MAX_FILE_SIZE,
-  makeFileUpload
-} from './file'
+export { CHUNK_SIZE, DEFAULT_ALLOWED_TYPES, DEFAULT_MAX_FILE_SIZE, makeFileUpload } from './file'
 export type { ErrorData, ErrorHandler, MutationFail, MutationOk, MutationResult } from './helpers'
 export {
   checkRateLimit,

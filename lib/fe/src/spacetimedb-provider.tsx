@@ -14,10 +14,10 @@ interface SpacetimeDBProviderProps {
   spacetimeUri?: string
 }
 const TOKEN_STORE = createTokenStore()
-const FILE_API = createFileUploader('/api/upload/presign')
 const SpacetimeProvider = ({ children, fileApi, noAuth, spacetimeUri }: SpacetimeDBProviderProps) => {
   const moduleName = env.SPACETIMEDB_MODULE_NAME
   const uri = spacetimeUri ?? env.NEXT_PUBLIC_SPACETIMEDB_URI
+  const FILE_API = createFileUploader({ moduleName, tokenStore: TOKEN_STORE, uri })
   const builder = createSpacetimeClient({ DbConnection, moduleName, tokenStore: TOKEN_STORE, uri })
   const guarded = <NavigationGuardProvider>{children}</NavigationGuardProvider>
   const withFiles = fileApi ? <FileApiProvider value={FILE_API}>{guarded}</FileApiProvider> : guarded

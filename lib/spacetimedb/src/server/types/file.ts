@@ -2,17 +2,17 @@ import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 interface FileRowShape {
   contentType: string
+  data: Uint8Array
   filename: string
   id: number
   size: number
-  storageKey: string
   uploadedAt: Timestamp
   userId: Identity
 }
 type FileUploadBuilder = ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
 interface FileUploadConfig<
   DB,
-  Row extends { contentType: string; filename: string; size: number; storageKey: string; userId: Identity },
+  Row extends { contentType: string; data: Uint8Array; filename: string; size: number; userId: Identity },
   Id,
   Tbl extends FileUploadTableLike<Row>,
   Pk extends FileUploadPkLike<Row, Id>
@@ -39,9 +39,9 @@ interface FileUploadExports {
 }
 interface FileUploadFields {
   contentType: FileUploadBuilder
+  data: FileUploadBuilder
   filename: FileUploadBuilder
   size: FileUploadBuilder
-  storageKey: FileUploadBuilder
 }
 interface FileUploadPkLike<Row, Id> {
   delete: (id: Id) => boolean
@@ -51,7 +51,6 @@ interface FileUploadTableLike<Row> {
   insert: (row: Row) => Row
 }
 type ReducerExportLike = ReducerExport<never, never>
-export type { S3PresignDownloadOptions, S3PresignedUrl, S3PresignUploadOptions } from '../../s3'
 export type {
   FileRowShape,
   FileUploadBuilder,

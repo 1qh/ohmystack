@@ -6,10 +6,10 @@ import { identityEquals, makeError } from './reducer-utils'
 interface FileRowBase<Id> {
   contentType: string
   createdAt: Timestamp
+  data: Uint8Array
   filename: string
   id: Id
   size: number
-  storageKey: string
   uploadedAt: Timestamp
   userId: Identity
 }
@@ -89,16 +89,16 @@ const makeFileUpload = <
     { name: registerName },
     {
       contentType: fields.contentType as TypeBuilder<unknown, AlgebraicTypeType>,
+      data: fields.data as TypeBuilder<unknown, AlgebraicTypeType>,
       filename: fields.filename as TypeBuilder<unknown, AlgebraicTypeType>,
-      size: fields.size as TypeBuilder<unknown, AlgebraicTypeType>,
-      storageKey: fields.storageKey as TypeBuilder<unknown, AlgebraicTypeType>
+      size: fields.size as TypeBuilder<unknown, AlgebraicTypeType>
     },
     (ctx, args) => {
       const typedArgs = args as {
         contentType: string
+        data: Uint8Array
         filename: string
         size: number
-        storageKey: string
       }
       if (!isAuthenticatedSender(ctx.sender)) throw makeError('NOT_AUTHENTICATED', `${namespace}:register`)
       if (!allowedTypes.has(typedArgs.contentType))
@@ -109,10 +109,10 @@ const makeFileUpload = <
       table.insert({
         contentType: typedArgs.contentType,
         createdAt: ctx.timestamp,
+        data: typedArgs.data,
         filename: typedArgs.filename,
         id: 0 as Id,
         size: typedArgs.size,
-        storageKey: typedArgs.storageKey,
         uploadedAt: ctx.timestamp,
         userId: ctx.sender
       } as Row)
@@ -143,5 +143,4 @@ const makeFileUpload = <
     exports: exportsRecord
   }
 }
-export { createS3DownloadPresignedUrl, createS3UploadPresignedUrl } from '../s3'
 export { CHUNK_SIZE, DEFAULT_ALLOWED_TYPES, DEFAULT_MAX_FILE_SIZE, makeFileUpload }

@@ -630,9 +630,9 @@ const regFile = (file: boolean | string, ctx: RegCtx & { spacetimedb: SpacetimeD
   const namespace = typeof file === 'string' ? file : 'file'
   const resolvedFields = {
     contentType: ctx.stdbT.string(),
+    data: t.byteArray(),
     filename: ctx.stdbT.string(),
-    size: ctx.stdbT.number(),
-    storageKey: ctx.stdbT.string()
+    size: ctx.stdbT.number()
   } as FileUploadFields
   const looseConfig: FileUploadConfigLoose = {
     fields: resolvedFields,
@@ -726,9 +726,9 @@ const setupCrud = (spacetimedb: SpacetimeDbLike, defaults: CrudDefaults = {}, co
         fields ??
         ({
           contentType: stdbT.string(),
+          data: t.byteArray(),
           filename: stdbT.string(),
-          size: stdbT.number(),
-          storageKey: stdbT.string()
+          size: stdbT.number()
         } as FileUploadFields)
       const looseConfig: FileUploadConfigLoose = {
         ...options,

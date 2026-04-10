@@ -87,10 +87,7 @@ export type {
   FileUploadConfig,
   FileUploadExports,
   FileUploadPkLike,
-  FileUploadTableLike,
-  S3PresignDownloadOptions,
-  S3PresignedUrl,
-  S3PresignUploadOptions
+  FileUploadTableLike
 } from './file'
 export type { Middleware, MiddlewareCtx } from './middleware'
 export type { CanEditOpts, OrgCascadeTableConfig, OrgCrudOptions, OrgCrudResult } from './org-crud'

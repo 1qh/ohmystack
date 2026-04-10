@@ -13,12 +13,6 @@ interface CreateSpacetimeClientOptions<
   tokenStore?: TokenStore
   uri: string
 }
-interface ParsedPresignPayload {
-  headers: Record<string, string>
-  method?: string
-  storageKey: string
-  uploadUrl: string
-}
 interface SpacetimeConnectionBuilder<TBuilder, TConnection = unknown, TIdentity = unknown> {
   onConnect: (callback: (connection: TConnection, identity: TIdentity, token: string) => void) => TBuilder
   withDatabaseName: (moduleName: string) => TBuilder
@@ -32,59 +26,18 @@ interface TokenStore {
   get: () => string | undefined
   store: (token: string) => void
 }
-const HTTP_OK = 200
-const HTTP_REDIRECT = 300
 const OCTET_STREAM = 'application/octet-stream'
+const WS_TO_HTTP_RE = /^ws/u
 const DEFAULT_SPACETIME_URI = 'ws://localhost:4000'
 const DEFAULT_TOKEN_KEY = 'spacetimedb.token'
 const TOKEN_COOKIE_KEY = 'spacetimedb_token'
 const clientCache = new WeakMap<object, Map<string, unknown>>()
-const toRecord = (value: unknown): null | Record<string, unknown> =>
-  value && typeof value === 'object' ? (value as Record<string, unknown>) : null
-const getString = (record: Record<string, unknown>, key: string): string | undefined => {
-  const value = record[key]
-  return typeof value === 'string' ? value : undefined
-}
-const parseHeaders = (value: unknown): Record<string, string> => {
-  const record = toRecord(value)
-  if (!record) return {}
-  const headers: Record<string, string> = {}
-  for (const key of Object.keys(record)) {
-    const headerValue = record[key]
-    if (typeof headerValue === 'string') headers[key] = headerValue
-  }
-  return headers
-}
-const parsePresignPayload = (payload: unknown): ParsedPresignPayload => {
-  const record = toRecord(payload)
-  if (!record) return err('VALIDATION_FAILED', { message: 'Invalid presign payload' })
-  const uploadUrl = getString(record, 'uploadUrl')
-  const storageKey = getString(record, 'storageKey')
-  const method = getString(record, 'method')
-  if (!(uploadUrl && storageKey)) return err('VALIDATION_FAILED', { message: 'Invalid presign payload' })
-  return {
-    headers: parseHeaders(record.headers),
-    method,
-    storageKey,
-    uploadUrl
-  }
-}
-const hasContentTypeHeader = (headers: Record<string, string>): boolean => {
-  for (const key of Object.keys(headers)) if (key.toLowerCase() === 'content-type') return true
-  return false
-}
 const getBuilderCache = <TBuilder>(factory: object): Map<string, TBuilder> => {
   const existing = clientCache.get(factory)
   if (existing) return existing as Map<string, TBuilder>
   const created = new Map<string, unknown>()
   clientCache.set(factory, created)
   return created as Map<string, TBuilder>
-}
-const applyHeaders = (xhr: XMLHttpRequest, headers: Record<string, string>) => {
-  for (const key of Object.keys(headers)) {
-    const value = headers[key]
-    if (value) xhr.setRequestHeader(key, value)
-  }
 }
 /**
  * Converts HTTP(S) endpoints to WebSocket endpoints used by SpacetimeDB clients.
@@ -117,72 +70,44 @@ const createTokenStore = (key = DEFAULT_TOKEN_KEY): TokenStore => {
   return { get, store }
 }
 /**
- * Creates a generic uploader that requests a presigned URL and streams file bytes via XHR.
- * @param presignEndpoint API endpoint that returns upload URL, storage key, and optional headers.
+ * Creates an inline file uploader that stores bytes directly via SpacetimeDB reducer.
+ * No S3/presign needed — files are stored in the database.
+ * @param config.uri SpacetimeDB HTTP URI (e.g. http://localhost:4000)
+ * @param config.moduleName SpacetimeDB module name
+ * @param config.namespace Upload reducer namespace (default: 'file')
+ * @param config.tokenStore Token store for auth
  * @returns An object implementing the FileApi upload contract.
  */
-const createFileUploader = (
-  presignEndpoint: string
-): { upload: (file: File, options?: UploadOptions) => Promise<UploadResponse> } => {
+const createFileUploader = (config: {
+  moduleName: string
+  namespace?: string
+  tokenStore: TokenStore
+  uri: string
+}): { upload: (file: File, options?: UploadOptions) => Promise<UploadResponse> } => {
+  const { moduleName, namespace = 'file', tokenStore, uri } = config
+  const httpUri = toWsUri(uri).replace(WS_TO_HTTP_RE, 'http')
+  const reducerName = `register_upload_${namespace}`
   const upload = async (file: File, options?: UploadOptions): Promise<UploadResponse> => {
     const contentType = file.type || OCTET_STREAM
-    const response = await fetch(presignEndpoint, {
-      body: JSON.stringify({ contentType, filename: file.name, size: file.size }),
-      headers: { 'content-type': 'application/json' },
+    const buffer = await file.arrayBuffer()
+    const data = [...new Uint8Array(buffer)]
+    options?.onProgress?.(50)
+    const token = tokenStore.get()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers.Authorization = `Bearer ${token}`
+    const response = await fetch(`${httpUri}/v1/database/${moduleName}/call/${reducerName}`, {
+      body: JSON.stringify({ contentType, data, filename: file.name, size: file.size }),
+      headers,
       method: 'POST',
       signal: options?.signal
     })
-    if (!response.ok) err('FILE_NOT_FOUND', { message: `Failed to get presigned URL (HTTP ${response.status})` })
-    const payload = (await response
-      .json()
-      .catch(() => err('VALIDATION_FAILED', { message: 'Presign endpoint returned non-JSON response' }))) as unknown
-    const presigned = parsePresignPayload(payload)
-    return new Promise<UploadResponse>((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
-      const { headers } = presigned
-      const method = presigned.method ?? 'PUT'
-      const signal = options?.signal
-      let settled = false
-      const resolveOnce = (value: UploadResponse) => {
-        if (settled) return
-        settled = true
-        resolve(value)
-      }
-      const rejectOnce = (error: Error) => {
-        if (settled) return
-        settled = true
-        reject(error)
-      }
-      xhr.open(method, presigned.uploadUrl)
-      applyHeaders(xhr, headers)
-      if (!hasContentTypeHeader(headers)) xhr.setRequestHeader('Content-Type', contentType)
-      if (options?.onProgress)
-        xhr.upload.addEventListener('progress', event => {
-          if (event.lengthComputable && options.onProgress)
-            options.onProgress(Math.round((event.loaded / event.total) * 100))
-        })
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= HTTP_OK && xhr.status < HTTP_REDIRECT) {
-          const [url] = presigned.uploadUrl.split('?')
-          resolveOnce({ storageId: presigned.storageKey, url })
-          return
-        }
-        rejectOnce(new Error(`Upload failed with HTTP ${xhr.status} — check endpoint URL and CORS configuration`))
-      })
-      xhr.addEventListener('error', () =>
-        rejectOnce(new Error('Upload network error — check CORS headers, network connectivity, and endpoint availability'))
-      )
-      xhr.addEventListener('abort', () => rejectOnce(new Error('Upload aborted')))
-      if (signal) {
-        if (signal.aborted) {
-          xhr.abort()
-          rejectOnce(new Error('Upload aborted'))
-          return
-        }
-        signal.addEventListener('abort', () => xhr.abort(), { once: true })
-      }
-      xhr.send(file)
-    })
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      err('FILE_NOT_FOUND', { message: `File upload failed (HTTP ${response.status}): ${text}` })
+    }
+    options?.onProgress?.(100)
+    const storageId = `${file.name}:${Date.now()}`
+    return { storageId, url: storageId }
   }
   return { upload }
 }

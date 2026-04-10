@@ -216,10 +216,10 @@ const makeSchema = (deps?: Partial<StdbDeps>) => {
       {
         contentType: t.string(),
         createdAt: t.timestamp(),
+        data: stdbT.byteArray(),
         filename: t.string(),
         id: t.u32().autoInc().primaryKey(),
         size: t.number(),
-        storageKey: t.string(),
         uploadedAt: t.timestamp(),
         userId: t.identity().index()
       }
