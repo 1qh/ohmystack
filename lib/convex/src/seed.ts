@@ -1,5 +1,5 @@
 import { createSeedUtils } from '@a/shared/seed'
-import { cvFileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod } from './zod'
+import { fileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod } from './zod'
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz'
 const DIGITS = '0123456789'
 const randomChars = (len: number, chars: string): string => {
@@ -10,7 +10,7 @@ const randomChars = (len: number, chars: string): string => {
 const randomStorageId = (): string => `_storage:${randomChars(16, ALPHA + DIGITS)}`
 const randomTableId = (table: string): string => `${table}:${randomChars(16, ALPHA + DIGITS)}`
 const { generateFieldValue, generateOne, generateSeed } = createSeedUtils(
-  { cvFileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod },
+  { fileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod },
   { randomFileRef: randomStorageId, randomTableId }
 )
 export { generateFieldValue, generateOne, generateSeed }

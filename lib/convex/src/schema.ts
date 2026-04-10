@@ -4,8 +4,8 @@ import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
 import { typed } from './server/bridge'
 /** Zod schema for a Convex storage file reference. */
-const cvFile = () => zid('_storage').meta({ cv: 'file' as const })
-const cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
+const file = () => zid('_storage').meta({ nb: 'file' as const })
+const files = () => array(file()).meta({ nb: 'files' as const })
 /** Defines a child table with a foreign key relationship to a parent table. */
 const child = <
   const P extends string,
@@ -60,4 +60,4 @@ const makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
   brandSchemas(schemas) as {
     [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
-export { child, cvFile, cvFiles, makeBase, makeOrgScoped, makeOwned, makeSingleton, orgSchema }
+export { child, file, files, makeBase, makeOrgScoped, makeOwned, makeSingleton, orgSchema }

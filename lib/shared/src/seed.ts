@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import type { output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
 interface SeedHelpers<TFieldType, TSchemaInput> {
-  cvFileKindOf: (field: TSchemaInput) => unknown
+  fileKindOf: (field: TSchemaInput) => unknown
   isArrayType: (type: TFieldType) => boolean
   isBooleanType: (type: TFieldType) => boolean
   isNumberType: (type: TFieldType) => boolean
@@ -80,9 +80,9 @@ const createSeedUtils = <TFieldType, TSchemaInput>(
     return items
   }
   const generateFieldValue = (field: ZodType): unknown => {
-    const cv = helpers.cvFileKindOf(field as unknown as TSchemaInput)
-    if (cv === 'file') return options.randomFileRef()
-    if (cv === 'files') return [options.randomFileRef(), options.randomFileRef()]
+    const fk = helpers.fileKindOf(field as unknown as TSchemaInput)
+    if (fk === 'file') return options.randomFileRef()
+    if (fk === 'files') return [options.randomFileRef(), options.randomFileRef()]
     const { schema: base, type } = helpers.unwrapZod(field as unknown as TSchemaInput)
     if (helpers.isBooleanType(type)) return Math.random() > 0.5
     if (helpers.isNumberType(type)) return randomInt(1, 1000)

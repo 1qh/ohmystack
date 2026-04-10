@@ -60,9 +60,9 @@ const getModules = (root: string): string[] => {
 const zodFieldKinds: Record<string, string> = {
   array: 'arr',
   boolean: 'toggle',
-  cvFile: 'file',
-  cvFiles: 'files',
   enum: 'choose',
+  file: 'file',
+  files: 'files',
   number: 'number',
   string: 'text',
   zenum: 'choose'
@@ -664,12 +664,12 @@ const noUnprotectedMutation = {
     type: 'suggestion' as const
   }
 }
-/** ESLint rule to require .max() on cvFile/cvFiles in schema. */
+/** ESLint rule to require .max() on file/files in schema. */
 const noUnlimitedFileSize = {
   create: (context: EslintContext) => {
     const content = findSchemaContent(context.cwd)
     if (!content) return {}
-    const fileCallPattern = /cvFiles?\(\)/gu
+    const fileCallPattern = /\bfiles?\(\)/gu
     let warned = false
     return {
       Program: (node: BaseNode) => {

@@ -140,8 +140,8 @@ All 16 field components are available inside the `Form` render prop. Every field
 | `Combobox` | `string()` | Searchable dropdown | `name`, `label`, `options`, `className` |
 | `MultiSelect` | `array(enum())` | Multi-select | `name`, `label`, `className` |
 | `Arr` | `array(string())` | Tag input | `name`, `label`, `tagClassName`, `containerClassName`, `inputClassName` |
-| `File` | `cvFile()` | File upload | `name`, `label`, `accept`, `className` |
-| `Files` | `cvFiles()` | Multi-file upload | `name`, `label`, `accept`, `maxFiles`, `className` |
+| `File` | `file()` | File upload | `name`, `label`, `accept`, `className` |
+| `Files` | `files()` | Multi-file upload | `name`, `label`, `accept`, `maxFiles`, `className` |
 | `Datepick` | `date()` | Date picker | `name`, `label`, `className` |
 | `Timepick` | time string | Time picker | `name`, `label`, `className` |
 | `Colorpick` | `string()` | Color picker | `name`, `label`, `className` |
@@ -184,7 +184,7 @@ All 16 field components are available inside the `Form` render prop. Every field
 
 `@noboil/spacetimedb/components` ships the same 16 field components as `@noboil/convex/components`. The render-prop `Form` destructures them identically — `Text`, `Num`, `Choose`, `Combobox`, `MultiSelect`, `Arr`, `File`, `Files`, `Datepick`, `Timepick`, `Colorpick`, `Rating`, `Slider`, `Toggle`, `Submit`, `Err`. Same props, same compile-time `name` checking.
 
-The only file-field difference is the upload backend: `File` / `Files` upload to S3 (or MinIO in local dev) via a presigned URL route instead of Convex storage. The schema field type is still `cvFile()` / `cvFiles()` from `@noboil/spacetimedb/schema`.
+The only file-field difference is the upload backend: `File` / `Files` upload to S3 (or MinIO in local dev) via a presigned URL route instead of Convex storage. The schema field type is still `file()` / `files()` from `@noboil/spacetimedb/schema`.
 
 ```tsx
 <Form

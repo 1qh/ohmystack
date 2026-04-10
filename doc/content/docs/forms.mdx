@@ -160,7 +160,7 @@ export { createPostSchema, editPostSchema, profileSchema }
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Your schema has `coverImage: cvFile().nullable().optional()`. The `File` field handles upload automatically:
+Your schema has `coverImage: file().nullable().optional()`. The `File` field handles upload automatically:
 
 ```tsx
 <Form
@@ -177,7 +177,7 @@ Your schema has `coverImage: cvFile().nullable().optional()`. The `File` field h
 />
 ```
 
-- `<File name='coverImage' />` compiles because `coverImage` is a `cvFile()` field
+- `<File name='coverImage' />` compiles because `coverImage` is a `file()` field
 - `<File name='title' />` is a compile error — `title` is a string, not a file
 - Upload happens on file selection, form submission sends the storage ID
 - On delete, the uploaded file is auto-cleaned from storage
@@ -666,8 +666,8 @@ SpacetimeDB's ~39ms latency makes optimistic updates unnecessary in most cases. 
 | `Num`         | `number()`                     | Number input                     |
 | `Choose`      | `enum()`                       | Select dropdown                  |
 | `Toggle`      | `boolean()`                    | Checkbox or switch               |
-| `File`        | `cvFile()`                     | File picker with upload          |
-| `Files`       | `cvFiles()`                    | Multi-file picker                |
+| `File`        | `file()`                     | File picker with upload          |
+| `Files`       | `files()`                    | Multi-file picker                |
 | `Arr`         | `array(string())`              | Tag input                        |
 | `Datepick`    | `date()`                       | Date picker                      |
 | `Combobox`    | `string()` with options        | Searchable dropdown              |
@@ -692,8 +692,8 @@ SpacetimeDB uses the same field components as Convex, available via `<Form rende
 | `Num`         | `number()`                     | Number input                     |
 | `Choose`      | `enum()`                       | Select dropdown                  |
 | `Toggle`      | `boolean()`                    | Checkbox or switch               |
-| `File`        | `cvFile()`                     | File picker with S3 upload       |
-| `Files`       | `cvFiles()`                    | Multi-file picker                |
+| `File`        | `file()`                     | File picker with S3 upload       |
+| `Files`       | `files()`                    | Multi-file picker                |
 | `Arr`         | `array(string())`              | Tag input                        |
 | `Datepick`    | `date()`                       | Date picker                      |
 | `Combobox`    | `string()` with options        | Searchable dropdown              |

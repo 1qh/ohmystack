@@ -1,7 +1,7 @@
 import {
   child,
-  cvFile,
-  cvFiles,
+  file as fileSchema,
+  files as filesSchema,
   makeBase,
   makeOrgScoped,
   makeOwned,
@@ -10,8 +10,8 @@ import {
 } from '@noboil/convex/schema'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
-const file = cvFile()
-const files = cvFiles()
+const file = fileSchema()
+const files = filesSchema()
 const messagePart = union([
   object({ text: string(), type: zenum(['text']) }),
   object({ image: file, type: zenum(['image']) }),

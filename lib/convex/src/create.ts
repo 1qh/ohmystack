@@ -16,7 +16,7 @@ export default defineSchema({
   blog: ownedTable(owned.blog)
 })
 `
-const T_TS = `import { cvFile, makeOwned } from '@noboil/convex/schema'
+const T_TS = `import { file, makeOwned } from '@noboil/convex/schema'
 import { boolean, object, string, enum as zenum } from 'zod/v4'
 const owned = makeOwned({
   blog: object({
@@ -24,7 +24,7 @@ const owned = makeOwned({
     content: string().min(3),
     category: zenum(['tech', 'life', 'tutorial']),
     published: boolean(),
-    coverImage: cvFile().nullable().optional()
+    coverImage: file().nullable().optional()
   })
 })
 export { owned }

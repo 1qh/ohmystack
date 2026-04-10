@@ -145,8 +145,8 @@ import { fetchWithRetry, withRetry } from '../retry'
 import {
   schema as buildSchema,
   child,
-  cvFile,
-  cvFiles,
+  file,
+  files,
   makeBase,
   makeOrg,
   makeOrgScoped,
@@ -377,18 +377,18 @@ describe('groupList', () => {
   })
 })
 describe('detectFiles', () => {
-  test('detects cvFile fields', () => {
-    const shape = { photo: cvFile().nullable(), title: string() }
+  test('detects file fields', () => {
+    const shape = { photo: file().nullable(), title: string() }
     expect(detectFiles(shape)).toEqual(['photo'])
   })
-  test('detects cvFiles fields', () => {
-    const shape = { attachments: cvFiles(), title: string() }
+  test('detects files fields', () => {
+    const shape = { attachments: files(), title: string() }
     expect(detectFiles(shape)).toEqual(['attachments'])
   })
-  test('detects both cvFile and cvFiles', () => {
+  test('detects both file and files', () => {
     const shape = {
-      attachments: cvFiles(),
-      photo: cvFile().nullable(),
+      attachments: files(),
+      photo: file().nullable(),
       title: string()
     }
     const result = detectFiles(shape)
@@ -1668,14 +1668,14 @@ describe('getMeta', () => {
   test('date field returns kind date', () => {
     expect(getMeta(date())).toEqual({ kind: 'date' })
   })
-  test('cvFile returns kind file', () => {
-    expect(getMeta(cvFile())).toEqual({ kind: 'file' })
+  test('file returns kind file', () => {
+    expect(getMeta(file())).toEqual({ kind: 'file' })
   })
-  test('cvFiles returns kind files', () => {
-    expect(getMeta(cvFiles())).toEqual({ kind: 'files' })
+  test('files returns kind files', () => {
+    expect(getMeta(files())).toEqual({ kind: 'files' })
   })
-  test('cvFiles with max returns kind files with max', () => {
-    expect(getMeta(cvFiles().max(5))).toEqual({ kind: 'files', max: 5 })
+  test('files with max returns kind files with max', () => {
+    expect(getMeta(files().max(5))).toEqual({ kind: 'files', max: 5 })
   })
   test('array(string) returns kind stringArray', () => {
     expect(getMeta(array(string()))).toEqual({ kind: 'stringArray' })
@@ -1692,11 +1692,11 @@ describe('getMeta', () => {
   test('optional string returns kind string', () => {
     expect(getMeta(optional(string()))).toEqual({ kind: 'string' })
   })
-  test('nullable cvFile returns kind file', () => {
-    expect(getMeta(cvFile().nullable())).toEqual({ kind: 'file' })
+  test('nullable file returns kind file', () => {
+    expect(getMeta(file().nullable())).toEqual({ kind: 'file' })
   })
-  test('optional nullable cvFile returns kind file', () => {
-    expect(getMeta(cvFile().nullable().optional())).toEqual({ kind: 'file' })
+  test('optional nullable file returns kind file', () => {
+    expect(getMeta(file().nullable().optional())).toEqual({ kind: 'file' })
   })
   test('unknown input returns kind unknown', () => {
     expect(getMeta(42)).toEqual({ kind: 'unknown' })
@@ -1706,10 +1706,10 @@ describe('buildMeta', () => {
   test('builds meta map for all field types', () => {
     const s = object({
       active: boolean(),
-      avatar: cvFile().nullable().optional(),
+      avatar: file().nullable().optional(),
       bio: optional(string()),
       count: number(),
-      photos: cvFiles().max(3),
+      photos: files().max(3),
       tags: array(string()).max(10),
       title: string()
     })
@@ -3106,22 +3106,22 @@ describe('cleanFiles update scenario (next param)', () => {
 describe('detectFiles on child-like schemas', () => {
   test('detects file fields in child schema with foreign key', () => {
     const shape = {
-      avatar: cvFile().nullable(),
+      avatar: file().nullable(),
       chatId: string(),
       content: string()
     }
     expect(detectFiles(shape)).toEqual(['avatar'])
   })
-  test('detects cvFiles in child schema', () => {
-    const shape = { attachments: cvFiles(), chatId: string(), text: string() }
+  test('detects files in child schema', () => {
+    const shape = { attachments: files(), chatId: string(), text: string() }
     expect(detectFiles(shape)).toEqual(['attachments'])
   })
   test('detects multiple file fields in child schema', () => {
     const shape = {
-      attachments: cvFiles(),
+      attachments: files(),
       chatId: string(),
       content: string(),
-      thumbnail: cvFile().nullable().optional()
+      thumbnail: file().nullable().optional()
     }
     const result = detectFiles(shape)
     expect(result).toContain('attachments')
@@ -3254,10 +3254,10 @@ describe('noboil-stdb-viz', () => {
   test('extractFieldType recognizes number', () => {
     expect(extractFieldType('t.f64()')).toBe('number')
   })
-  test('extractFieldType recognizes cvFile', () => {
+  test('extractFieldType recognizes file', () => {
     expect(extractFieldType('t.bytes()')).toBe('bytes')
   })
-  test('extractFieldType recognizes cvFiles', () => {
+  test('extractFieldType recognizes files', () => {
     expect(extractFieldType('t.array(t.string())')).toBe('string')
   })
   test('extractFieldType recognizes zid', () => {
@@ -3862,8 +3862,8 @@ describe('seed data generator', () => {
     const val = generateFieldValue(boolean())
     expect(typeof val).toBe('boolean')
   })
-  test('generateFieldValue handles cvFile', () => {
-    const val = generateFieldValue(cvFile())
+  test('generateFieldValue handles file', () => {
+    const val = generateFieldValue(file())
     expect(typeof val).toBe('string')
     expect(String(val)).toContain('s3://')
   })
@@ -8233,7 +8233,7 @@ describe('Sprint 5 FieldMeta globalRegistry metadata', () => {
     expect(getMeta(input)).toEqual({ kind: 'unknown' })
   })
   test('globalRegistry metadata merges with inferred kind and max', () => {
-    const schema = cvFiles().max(4).meta({ description: 'Attach up to four files', title: 'Attachments' })
+    const schema = files().max(4).meta({ description: 'Attach up to four files', title: 'Attachments' })
     expect(getMeta(schema)).toEqual({
       description: 'Attach up to four files',
       kind: 'files',

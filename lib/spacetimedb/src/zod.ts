@@ -1,12 +1,12 @@
-export type { CvMeta, DefType, UndefinedToOptional, ZodSchema } from '@a/shared/zod'
+export type { DefType, FileKind, UndefinedToOptional, ZodSchema } from '@a/shared/zod'
 export {
   coerceOptionals,
-  cvFileKindOf,
-  cvMetaOf,
   defaultValue,
   defaultValues,
   elementOf,
   enumToOptions,
+  fileKindOf,
+  fileMetaOf,
   isArrayType,
   isBooleanType,
   isDateType,

@@ -181,7 +181,7 @@ const owned = makeOwned({
     content: string().min(3),
     category: zenum(['tech', 'life', 'tutorial']),
     published: boolean(),
-    coverImage: cvFile().nullable().optional(),
+    coverImage: file().nullable().optional(),
     tags: array(string()).max(5).optional()
   })
 })

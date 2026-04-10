@@ -38,11 +38,11 @@ interface ChildFn {
   }
 }
 /** Creates a file-id schema annotated for noboil file inputs. */
-const cvFile = () =>
+const file = () =>
   string()
     .min(1)
-    .meta({ cv: 'file' as const })
-const cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
+    .meta({ nb: 'file' as const })
+const files = () => array(file()).meta({ nb: 'files' as const })
 const child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject) => {
   if (typeof configOrParent === 'string')
     return {
@@ -136,4 +136,4 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
   (NonNullable<T['singleton']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown)
-export { child, cvFile, cvFiles, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }
+export { child, file, files, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }

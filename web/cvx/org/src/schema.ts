@@ -1,5 +1,5 @@
 import { org, singleton } from '@a/be-convex/t'
-import { cvFile } from '@noboil/convex/schema'
+import { file } from '@noboil/convex/schema'
 import { boolean, email, object, string } from 'zod/v4'
 const orgTeam = org.team.omit({ avatarId: true })
 const invite = object({ email: email(), isAdmin: boolean() })
@@ -12,7 +12,7 @@ const orgStep = object({
     .regex(/^[a-z0-9-]+$/u)
 })
 const appearanceStep = object({
-  orgAvatar: cvFile().nullable().optional()
+  orgAvatar: file().nullable().optional()
 })
 const preferencesStep = singleton.orgProfile.pick({ notifications: true, theme: true })
 export { appearanceStep, invite, joinRequest, orgStep, orgTeam, preferencesStep, profileStep }

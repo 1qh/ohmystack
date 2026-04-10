@@ -721,25 +721,25 @@ describe('Zod integration', () => {
       { type } = unwrapZod(arr)
     expect(type).toBe('array')
   })
-  test('cvFileKindOf detects file meta', async () => {
-    const { cvFileKindOf } = await import('@noboil/convex/zod'),
+  test('fileKindOf detects file meta', async () => {
+    const { fileKindOf } = await import('@noboil/convex/zod'),
       { z } = await import('zod/v4'),
-      fileSchema = z.string().meta({ cv: 'file' }),
-      kind = cvFileKindOf(fileSchema)
+      fileSchema = z.string().meta({ nb: 'file' }),
+      kind = fileKindOf(fileSchema)
     expect(kind).toBe('file')
   })
-  test('cvFileKindOf detects array of files as files', async () => {
-    const { cvFileKindOf } = await import('@noboil/convex/zod'),
+  test('fileKindOf detects array of files as files', async () => {
+    const { fileKindOf } = await import('@noboil/convex/zod'),
       { z } = await import('zod/v4'),
-      filesSchema = z.array(z.string().meta({ cv: 'file' })),
-      kind = cvFileKindOf(filesSchema)
+      filesSchema = z.array(z.string().meta({ nb: 'file' })),
+      kind = fileKindOf(filesSchema)
     expect(kind).toBe('files')
   })
-  test('cvFileKindOf returns undefined for non-file schemas', async () => {
-    const { cvFileKindOf } = await import('@noboil/convex/zod'),
+  test('fileKindOf returns undefined for non-file schemas', async () => {
+    const { fileKindOf } = await import('@noboil/convex/zod'),
       { z } = await import('zod/v4'),
       stringSchema = z.string(),
-      kind = cvFileKindOf(stringSchema)
+      kind = fileKindOf(stringSchema)
     expect(kind).toBeUndefined()
   })
   test('type detection for all primitive types', async () => {
@@ -1455,11 +1455,11 @@ describe('Zod introspection snapshots', () => {
       testSchema = z.object({
         active: z.boolean(),
         age: z.number(),
-        avatar: z.string().meta({ cv: 'file' }),
+        avatar: z.string().meta({ nb: 'file' }),
         bio: z.string().optional(),
         createdAt: z.date(),
         name: z.string(),
-        photos: z.array(z.string().meta({ cv: 'file' })),
+        photos: z.array(z.string().meta({ nb: 'file' })),
         role: z.enum(['admin', 'user', 'guest']),
         tags: z.array(z.string())
       }),
@@ -1527,17 +1527,17 @@ describe('Zod introspection snapshots', () => {
     expect(result.name).toBe('Bob')
     expect(result.active).toBe(true)
   })
-  test('cvFileKindOf handles nullable optional file', async () => {
-    const { cvFileKindOf } = await import('@noboil/convex/zod'),
+  test('fileKindOf handles nullable optional file', async () => {
+    const { fileKindOf } = await import('@noboil/convex/zod'),
       { z } = await import('zod/v4'),
-      field = z.string().meta({ cv: 'file' }).nullable().optional()
-    expect(cvFileKindOf(field)).toBe('file')
+      field = z.string().meta({ nb: 'file' }).nullable().optional()
+    expect(fileKindOf(field)).toBe('file')
   })
-  test('cvFileKindOf returns undefined for plain array', async () => {
-    const { cvFileKindOf } = await import('@noboil/convex/zod'),
+  test('fileKindOf returns undefined for plain array', async () => {
+    const { fileKindOf } = await import('@noboil/convex/zod'),
       { z } = await import('zod/v4'),
       field = z.array(z.string())
-    expect(cvFileKindOf(field)).toBeUndefined()
+    expect(fileKindOf(field)).toBeUndefined()
   })
   test('isOptionalField detects optional in nested wrappers', async () => {
     const { isOptionalField } = await import('@noboil/convex/zod'),

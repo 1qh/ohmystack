@@ -30,7 +30,7 @@ import type {
   StorageLike,
   WithUrls
 } from './types'
-import { cvFileKindOf } from '../zod'
+import { fileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { identityEquals } from './reducer-utils'
 import { ERROR_MESSAGES } from './types'
@@ -178,7 +178,7 @@ const pgOpts = object({
 const detectFiles = (s: ZodRawShape) => {
   const keys = Object.keys(s)
   const out: string[] = []
-  for (const k of keys) if (cvFileKindOf(s[k])) out.push(k)
+  for (const k of keys) if (fileKindOf(s[k])) out.push(k)
   return out
 }
 const identityToHex = (identity: Identity): string => identity.toHexString()

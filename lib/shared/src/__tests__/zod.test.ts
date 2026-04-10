@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { array, boolean, date, number, object, optional, string, enum as zenum } from 'zod/v4'
 import {
   coerceOptionals,
-  cvFileKindOf,
+  fileKindOf,
   defaultValues,
   enumToOptions,
   isArrayType,
@@ -15,8 +15,8 @@ import {
   unwrapZod
 } from '../zod'
 const VOID = undefined
-const cvFile = () => string().meta({ cv: 'file' as const })
-const cvFiles = () => array(cvFile()).meta({ cv: 'files' as const })
+const file = () => string().meta({ nb: 'file' as const })
+const files = () => array(file()).meta({ nb: 'files' as const })
 describe('unwrapZod', () => {
   test('plain string', () => {
     const r = unwrapZod(string())
@@ -72,27 +72,27 @@ describe('isOptionalField', () => {
     expect(isOptionalField(VOID)).toBe(false)
   })
 })
-describe('cvFileKindOf', () => {
-  test('cvFile() returns file', () => {
-    expect(cvFileKindOf(cvFile())).toBe('file')
+describe('fileKindOf', () => {
+  test('file() returns file', () => {
+    expect(fileKindOf(file())).toBe('file')
   })
-  test('cvFiles() returns files', () => {
-    expect(cvFileKindOf(cvFiles())).toBe('files')
+  test('files() returns files', () => {
+    expect(fileKindOf(files())).toBe('files')
   })
-  test('optional(cvFile()) returns file', () => {
-    expect(cvFileKindOf(cvFile().optional())).toBe('file')
+  test('optional(file()) returns file', () => {
+    expect(fileKindOf(file().optional())).toBe('file')
   })
-  test('nullable(cvFile()) returns file', () => {
-    expect(cvFileKindOf(cvFile().nullable())).toBe('file')
+  test('nullable(file()) returns file', () => {
+    expect(fileKindOf(file().nullable())).toBe('file')
   })
-  test('array(cvFile()) returns files', () => {
-    expect(cvFileKindOf(array(cvFile()))).toBe('files')
+  test('array(file()) returns files', () => {
+    expect(fileKindOf(array(file()))).toBe('files')
   })
   test('regular string returns undefined', () => {
-    expect(cvFileKindOf(string())).toBeUndefined()
+    expect(fileKindOf(string())).toBeUndefined()
   })
   test('regular number returns undefined', () => {
-    expect(cvFileKindOf(number())).toBeUndefined()
+    expect(fileKindOf(number())).toBeUndefined()
   })
 })
 describe('defaultValues', () => {
@@ -114,11 +114,11 @@ describe('defaultValues', () => {
     })
   })
   test('file fields default to null', () => {
-    const s = object({ photo: cvFile().nullable() })
+    const s = object({ photo: file().nullable() })
     expect(defaultValues(s)).toEqual({ photo: null })
   })
-  test('cvFiles fields default to empty array', () => {
-    const s = object({ attachments: cvFiles() })
+  test('files fields default to empty array', () => {
+    const s = object({ attachments: files() })
     expect(defaultValues(s)).toEqual({ attachments: [] })
   })
   test('date fields default to null', () => {

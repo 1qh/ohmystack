@@ -107,7 +107,7 @@ import { collectSettled, resolveBulkError } from '../react/use-bulk-mutate'
 import { applyOptimistic, DEFAULT_PAGE_SIZE } from '../react/use-list'
 import { DEFAULT_DEBOUNCE_MS, DEFAULT_MIN_LENGTH } from '../react/use-search'
 import { fetchWithRetry, withRetry } from '../retry'
-import { child, cvFile, cvFiles, makeBase, makeOrgScoped, makeOwned, makeSingleton } from '../schema'
+import { child, file, files, makeBase, makeOrgScoped, makeOwned, makeSingleton } from '../schema'
 import { generateFieldValue, generateOne, generateSeed } from '../seed'
 import { flt, idx, indexFields, sch, typed } from '../server/bridge'
 import { ownedCascade } from '../server/crud'
@@ -246,18 +246,18 @@ describe('groupList', () => {
   })
 })
 describe('detectFiles', () => {
-  test('detects cvFile fields', () => {
-    const shape = { photo: cvFile().nullable(), title: string() }
+  test('detects file fields', () => {
+    const shape = { photo: file().nullable(), title: string() }
     expect(detectFiles(shape)).toEqual(['photo'])
   })
-  test('detects cvFiles fields', () => {
-    const shape = { attachments: cvFiles(), title: string() }
+  test('detects files fields', () => {
+    const shape = { attachments: files(), title: string() }
     expect(detectFiles(shape)).toEqual(['attachments'])
   })
-  test('detects both cvFile and cvFiles', () => {
+  test('detects both file and files', () => {
     const shape = {
-      attachments: cvFiles(),
-      photo: cvFile().nullable(),
+      attachments: files(),
+      photo: file().nullable(),
       title: string()
     }
     const result = detectFiles(shape)
@@ -1499,14 +1499,14 @@ describe('getMeta', () => {
   test('date field returns kind date', () => {
     expect(getMeta(date())).toEqual({ kind: 'date' })
   })
-  test('cvFile returns kind file', () => {
-    expect(getMeta(cvFile())).toEqual({ kind: 'file' })
+  test('file returns kind file', () => {
+    expect(getMeta(file())).toEqual({ kind: 'file' })
   })
-  test('cvFiles returns kind files', () => {
-    expect(getMeta(cvFiles())).toEqual({ kind: 'files' })
+  test('files returns kind files', () => {
+    expect(getMeta(files())).toEqual({ kind: 'files' })
   })
-  test('cvFiles with max returns kind files with max', () => {
-    expect(getMeta(cvFiles().max(5))).toEqual({ kind: 'files', max: 5 })
+  test('files with max returns kind files with max', () => {
+    expect(getMeta(files().max(5))).toEqual({ kind: 'files', max: 5 })
   })
   test('array(string) returns kind stringArray', () => {
     expect(getMeta(array(string()))).toEqual({ kind: 'stringArray' })
@@ -1523,11 +1523,11 @@ describe('getMeta', () => {
   test('optional string returns kind string', () => {
     expect(getMeta(optional(string()))).toEqual({ kind: 'string' })
   })
-  test('nullable cvFile returns kind file', () => {
-    expect(getMeta(cvFile().nullable())).toEqual({ kind: 'file' })
+  test('nullable file returns kind file', () => {
+    expect(getMeta(file().nullable())).toEqual({ kind: 'file' })
   })
-  test('optional nullable cvFile returns kind file', () => {
-    expect(getMeta(cvFile().nullable().optional())).toEqual({ kind: 'file' })
+  test('optional nullable file returns kind file', () => {
+    expect(getMeta(file().nullable().optional())).toEqual({ kind: 'file' })
   })
   test('unknown input returns kind unknown', () => {
     expect(getMeta(42)).toEqual({ kind: 'unknown' })
@@ -1537,10 +1537,10 @@ describe('buildMeta', () => {
   test('builds meta map for all field types', () => {
     const s = object({
       active: boolean(),
-      avatar: cvFile().nullable().optional(),
+      avatar: file().nullable().optional(),
       bio: optional(string()),
       count: number(),
-      photos: cvFiles().max(3),
+      photos: files().max(3),
       tags: array(string()).max(10),
       title: string()
     })
@@ -2829,22 +2829,22 @@ describe('cleanFiles update scenario (next param)', () => {
 describe('detectFiles on child-like schemas', () => {
   test('detects file fields in child schema with foreign key', () => {
     const shape = {
-      avatar: cvFile().nullable(),
+      avatar: file().nullable(),
       chatId: string(),
       content: string()
     }
     expect(detectFiles(shape)).toEqual(['avatar'])
   })
-  test('detects cvFiles in child schema', () => {
-    const shape = { attachments: cvFiles(), chatId: string(), text: string() }
+  test('detects files in child schema', () => {
+    const shape = { attachments: files(), chatId: string(), text: string() }
     expect(detectFiles(shape)).toEqual(['attachments'])
   })
   test('detects multiple file fields in child schema', () => {
     const shape = {
-      attachments: cvFiles(),
+      attachments: files(),
       chatId: string(),
       content: string(),
-      thumbnail: cvFile().nullable().optional()
+      thumbnail: file().nullable().optional()
     }
     const result = detectFiles(shape)
     expect(result).toContain('attachments')
@@ -3002,11 +3002,11 @@ describe('noboil-convex-viz', () => {
   test('extractFieldType recognizes number', () => {
     expect(extractFieldType('number()')).toBe('number')
   })
-  test('extractFieldType recognizes cvFile', () => {
-    expect(extractFieldType('cvFile().nullable()')).toBe('file')
+  test('extractFieldType recognizes file', () => {
+    expect(extractFieldType('file().nullable()')).toBe('file')
   })
-  test('extractFieldType recognizes cvFiles', () => {
-    expect(extractFieldType('cvFiles().max(5)')).toBe('file[]')
+  test('extractFieldType recognizes files', () => {
+    expect(extractFieldType('files().max(5)')).toBe('file[]')
   })
   test('extractFieldType recognizes zid', () => {
     expect(extractFieldType("zid('chat')")).toBe('id<chat>')
@@ -3570,8 +3570,8 @@ describe('seed data generator', () => {
     const val = generateFieldValue(boolean())
     expect(typeof val).toBe('boolean')
   })
-  test('generateFieldValue handles cvFile', () => {
-    const val = generateFieldValue(cvFile())
+  test('generateFieldValue handles file', () => {
+    const val = generateFieldValue(file())
     expect(typeof val).toBe('string')
     expect(String(val)).toContain('_storage:')
   })
@@ -4648,13 +4648,13 @@ const orgScoped = makeOrgScoped({
       expect(fields[1]?.optional).toBe(false)
     })
     test('detects nullable fields', () => {
-      const block = 'avatar: cvFile().nullable()'
+      const block = 'avatar: file().nullable()'
       const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.optional).toBe(true)
     })
     test('detects file types', () => {
-      const block = `cover: cvFile(),
-    attachments: cvFiles()`
+      const block = `cover: file(),
+    attachments: files()`
       const fields = parseFieldsFromBlock(block)
       expect(fields[0]?.type).toBe('file')
       expect(fields[1]?.type).toBe('file[]')
@@ -4672,7 +4672,7 @@ const orgScoped = makeOrgScoped({
       expect(isOptionalRaw('string().optional()')).toBe(true)
     })
     test('nullable() is optional', () => {
-      expect(isOptionalRaw('cvFile().nullable()')).toBe(true)
+      expect(isOptionalRaw('file().nullable()')).toBe(true)
     })
     test('required field is not optional', () => {
       expect(isOptionalRaw('string().min(1)')).toBe(false)

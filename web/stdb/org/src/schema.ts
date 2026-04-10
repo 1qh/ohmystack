@@ -1,5 +1,5 @@
 import { s } from '@a/be-spacetimedb/t'
-import { cvFile } from '@noboil/spacetimedb/schema'
+import { file } from '@noboil/spacetimedb/schema'
 import { boolean, email, object, string } from 'zod/v4'
 const { project, wiki: wikiSchema } = s
 const orgTeam = s.team.omit({ avatarId: true })
@@ -14,7 +14,7 @@ const orgStep = object({
     .regex(/^[a-z0-9-]+$/u)
 })
 const appearanceStep = object({
-  orgAvatar: cvFile().nullable().optional()
+  orgAvatar: file().nullable().optional()
 })
 const preferencesStep = s.orgProfile.pick({ notifications: true, theme: true })
 export { appearanceStep, invite, joinRequest, orgStep, orgTeam, preferencesStep, profileStep, project, wiki }

@@ -1,7 +1,7 @@
 /* eslint-disable complexity */
 import type { core, input, output, ZodObject, ZodType } from 'zod/v4'
 import { isRecord } from './server/helpers'
-type CvMeta = 'file' | 'files'
+type FileKind = 'file' | 'files'
 type DefType = core.$ZodTypeDef['type']
 type NullsToUndefined<T> = { [K in keyof T]-?: Exclude<T[K], null> | undefined }
 type ShapeKey<S extends ZodObject> = keyof S['shape'] & string
@@ -43,24 +43,22 @@ const isOptionalField = (schema: unknown): boolean => {
   return false
 }
 const elementOf = (s: undefined | ZodSchema): unknown => (s?.def as undefined | { element?: unknown })?.element
-const cvMetaOf = (schema: undefined | ZodSchema): CvMeta | undefined => {
+const fileMetaOf = (schema: undefined | ZodSchema): FileKind | undefined => {
   if (!schema || typeof schema.meta !== 'function') return
-  const m = schema.meta() as undefined | { cv?: unknown; file?: unknown; files?: unknown; storage?: unknown }
+  const m = schema.meta() as undefined | { nb?: unknown }
   if (!m || typeof m !== 'object') return
-  if (m.file === true || m.storage === 'file') return 'file'
-  if (m.files === true || m.storage === 'files') return 'files'
-  if (m.cv === 'file' || m.cv === 'files') return m.cv
+  if (m.nb === 'file' || m.nb === 'files') return m.nb
 }
 const isArrayType = (t: '' | DefType) => t === 'array'
 const isBooleanType = (t: '' | DefType) => t === 'boolean'
 const isDateType = (t: '' | DefType) => t === 'date'
 const isNumberType = (t: '' | DefType) => t === 'number'
 const isStringType = (t: '' | DefType) => t === 'string' || t === 'enum'
-const cvFileKindOf = (schema: unknown): CvMeta | undefined => {
+const fileKindOf = (schema: unknown): FileKind | undefined => {
   const { schema: s, type } = unwrapZod(schema)
-  const cv = cvMetaOf(s)
-  if (cv) return cv
-  if (isArrayType(type) && cvMetaOf(elementOf(s) as undefined | ZodSchema) === 'file') return 'files'
+  const meta = fileMetaOf(s)
+  if (meta) return meta
+  if (isArrayType(type) && fileMetaOf(elementOf(s) as undefined | ZodSchema) === 'file') return 'files'
 }
 const enumToOptions = <T extends string>(
   schema: { options: readonly T[] },
@@ -95,7 +93,7 @@ const defaultValue = (schema: unknown): unknown => {
     cur = (cur.def as { innerType?: ZodSchema }).innerType
   }
   const { schema: base, type } = unwrapZod(schema)
-  const fk = cvFileKindOf(schema)
+  const fk = fileKindOf(schema)
   if (fk === 'file') return null
   if (fk === 'files') return []
   if (isArrayType(type)) return []
@@ -187,16 +185,16 @@ const checkSchema = (schemas: Record<string, ZodObject>) => {
     process.exitCode = 1
   }
 }
-export type { CheckSchemaOutput, CvMeta, DefType, NullsToUndefined, ShapeKey, UndefinedToOptional, ZodSchema }
+export type { CheckSchemaOutput, DefType, FileKind, NullsToUndefined, ShapeKey, UndefinedToOptional, ZodSchema }
 export {
   checkSchema,
   coerceOptionals,
-  cvFileKindOf,
-  cvMetaOf,
   defaultValue,
   defaultValues,
   elementOf,
   enumToOptions,
+  fileKindOf,
+  fileMetaOf,
   isArrayType,
   isBooleanType,
   isDateType,

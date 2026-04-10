@@ -34,7 +34,7 @@ import type {
   StorageLike,
   WithUrls
 } from './types'
-import { cvFileKindOf } from '../zod'
+import { fileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
 import { ERROR_MESSAGES } from './types'
 type ConvexErrorData = ErrorData
@@ -140,7 +140,7 @@ const pgOpts = object({
   numItems: number()
 } satisfies PaginationOptsShape)
 const detectFiles = <S extends ZodRawShape>(s: S) =>
-  (Object.keys(s) as (keyof S & string)[]).filter(k => cvFileKindOf(s[k]))
+  (Object.keys(s) as (keyof S & string)[]).filter(k => fileKindOf(s[k]))
 const getUser = async ({
   ctx,
   db,

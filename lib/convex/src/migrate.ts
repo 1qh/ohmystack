@@ -54,8 +54,8 @@ const isSchemaFile = (content: string): boolean => {
 }
 const detectFieldType = (raw: string): string => {
   const t = raw.trim()
-  if (t.includes('cvFile()')) return 'file'
-  if (t.includes('cvFiles()')) return 'file[]'
+  if (t.includes('file()')) return 'file'
+  if (t.includes('files()')) return 'file[]'
   if (t.includes('zid(')) return 'id'
   if (t.includes('array(')) return 'array'
   if (t.includes('boolean()') || t.startsWith('boolean')) return 'boolean'

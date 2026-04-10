@@ -10,8 +10,8 @@ import { globalRegistry } from 'zod/v4'
 import type { ZodSchema } from '../zod'
 import {
   coerceOptionals,
-  cvFileKindOf,
   defaultValues as dv,
+  fileKindOf,
   elementOf,
   isArrayType,
   isBooleanType,
@@ -129,7 +129,7 @@ const readRegistryMeta = (schema: unknown): { description?: string; max?: number
 }
 const getMeta = (schema: unknown): FieldMeta => {
   const { schema: base, type } = unwrapZod(schema)
-  const fileKind = cvFileKindOf(schema)
+  const fileKind = fileKindOf(schema)
   const reg = readRegistryMeta(schema)
   if (fileKind === 'file') return { kind: 'file', ...reg }
   if (fileKind === 'files') return { kind: 'files', max: reg.max ?? getMax(base), ...reg }

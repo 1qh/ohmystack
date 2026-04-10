@@ -42,8 +42,8 @@ const findSchemaFile = (convexDir: string): undefined | { content: string; path:
 }
 const extractFieldType = (raw: string): string => {
   const t = raw.trim()
-  if (t.includes('cvFile()')) return 'file'
-  if (t.includes('cvFiles()')) return 'file[]'
+  if (t.includes('file()')) return 'file'
+  if (t.includes('files()')) return 'file[]'
   if (t.includes('zid(')) {
     const m = ZID_PAT.exec(t)
     return m ? `id<${m[1]}>` : 'id'

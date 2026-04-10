@@ -44,6 +44,6 @@ export type {
   WhereOf,
   WithUrls
 } from './server/types'
-export type { CvMeta, DefType, ZodSchema } from './zod'
+export type { DefType, FileKind, ZodSchema } from './zod'
 export type { StrictApi } from '@a/shared/strict-api'
 export { strictApi }

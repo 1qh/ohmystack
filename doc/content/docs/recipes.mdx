@@ -15,7 +15,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 ### Schema
 
 ```tsx
-import { cvFile, makeOwned } from '@noboil/convex/schema'
+import { file, makeOwned } from '@noboil/convex/schema'
 import { boolean, object, string, enum as zenum } from 'zod/v4'
 
 const owned = makeOwned({
@@ -24,7 +24,7 @@ const owned = makeOwned({
     content: string().min(3),
     category: zenum(['tech', 'life', 'tutorial']),
     published: boolean(),
-    coverImage: cvFile().nullable().optional()
+    coverImage: file().nullable().optional()
   })
 })
 ```
@@ -103,7 +103,7 @@ const CreateBlog = () => {
 ### Schema
 
 ```typescript
-import { cvFile, schema } from '@noboil/spacetimedb/schema'
+import { file, schema } from '@noboil/spacetimedb/schema'
 import { boolean, object, string, enum as zenum } from 'zod/v4'
 
 const s = schema({
@@ -113,7 +113,7 @@ const s = schema({
       content: string().min(3),
       category: zenum(['tech', 'life', 'tutorial']),
       published: boolean(),
-      coverImage: cvFile().nullable().optional()
+      coverImage: file().nullable().optional()
     })
   }
 })
@@ -847,7 +847,7 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
 
 ## File Upload with S3 Pre-Signed URLs (SpacetimeDB)
 
-Convex uses its built-in file storage via `cvFile()` in the schema — no presigned URL flow is needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. Both backends accept `cvFile()` in the Zod schema, but the wiring on the SpacetimeDB side is shown here.
+Convex uses its built-in file storage via `file()` in the schema — no presigned URL flow is needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. Both backends accept `file()` in the Zod schema, but the wiring on the SpacetimeDB side is shown here.
 
 ### API route
 
@@ -931,12 +931,12 @@ const FileUploader = () => {
 ### Schema
 
 ```tsx
-import { cvFile } from '@noboil/convex/schema'
+import { file } from '@noboil/convex/schema'
 import { object, string, enum as zenum } from 'zod/v4'
 
 const profileStep = object({
   displayName: string().min(1),
-  avatar: cvFile().nullable().optional()
+  avatar: file().nullable().optional()
 })
 
 const orgStep = object({
@@ -1032,19 +1032,19 @@ const Onboarding = () => {
 
 **Features:** singletonCrud · 1:1 per-user · file upload · upsert
 
-Both libraries support singleton tables. The Convex version uses `singletonCrud()` and `cvFile()` (Convex storage); the SpacetimeDB version uses the same `singleton: { profile }` schema and `cvFile()` (S3 storage). The Convex flow is shown below.
+Both libraries support singleton tables. The Convex version uses `singletonCrud()` and `file()` (Convex storage); the SpacetimeDB version uses the same `singleton: { profile }` schema and `file()` (S3 storage). The Convex flow is shown below.
 
 ### Schema
 
 ```tsx
-import { cvFile, makeSingleton } from '@noboil/convex/schema'
+import { file, makeSingleton } from '@noboil/convex/schema'
 import { object, string, enum as zenum } from 'zod/v4'
 
 const singleton = makeSingleton({
   profile: object({
     displayName: string().min(1),
     bio: string().optional(),
-    avatar: cvFile().nullable().optional(),
+    avatar: file().nullable().optional(),
     theme: zenum(['light', 'dark', 'system'])
   })
 })
