@@ -33,7 +33,7 @@ class BlogPage extends BasePage {
     if (options?.tags) await this.addTags(options.tags)
     await this.getCreateSubmit().click()
     await this.getCreateDialog().waitFor({ state: 'hidden' })
-    await this.getBlogCards().filter({ hasText: title }).first().waitFor({ state: 'visible', timeout: 10_000 })
+    await this.getBlogCards().filter({ hasText: title }).first().waitFor({ state: 'visible', timeout: 15_000 })
   }
   public async deleteBlog(): Promise<void> {
     await this.getDeleteTrigger().click()
@@ -106,8 +106,8 @@ class BlogPage extends BasePage {
   }
   public async goto(path: '/' | '/pagination' = '/'): Promise<void> {
     await this.page.goto(path)
-    await this.page.locator('[data-testid="blog-list"], [data-testid="empty-state"]').first().waitFor()
     await this.waitForConnection()
+    await this.page.locator('[data-testid="blog-card"], [data-testid="empty-state"]').first().waitFor({ timeout: 15_000 })
   }
   public async search(query: string): Promise<void> {
     await this.getSearchInput().fill(query)

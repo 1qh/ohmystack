@@ -1,8 +1,5 @@
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */
-/** biome-ignore-all lint/nursery/noContinue: test helper */
 // biome-ignore-all lint/nursery/useGlobalThis: test helper
-/* eslint-disable no-await-in-loop, no-continue */
 import type { Page } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -63,46 +60,13 @@ const login = async (page?: Page): Promise<void> => {
 }
 const cleanupTestData = async () => {
   const data = await ensureToken()
-  const tables = ['blog', 'blog_profile']
-  for (const table of tables) {
-    const response = await fetch(`${DEFAULT_HTTP_URL}/v1/database/${DEFAULT_MODULE}/sql`, {
-      body: `SELECT * FROM ${table}`,
-      headers: {
-        Authorization: `Bearer ${data.token}`,
-        'Content-Type': 'text/plain'
-      },
-      method: 'POST'
-    })
-    if (!response.ok) continue
-    const results = (await response.json()) as {
-      rows?: unknown[]
-      schema?: { elements?: { name?: { some?: string } }[] }
-    }[]
-    if (!Array.isArray(results) || results.length === 0) continue
-    const rows = results[0]?.rows ?? []
-    const elements = results[0]?.schema?.elements ?? []
-    const idIdx = elements.findIndex(e => e.name?.some === 'id')
-    if (idIdx === -1) continue
-    for (const row of rows) {
-      if (!Array.isArray(row)) continue
-      const typedRow = row as unknown[]
-      const id = typedRow[idIdx]
-      if (typeof id !== 'number') continue
-      try {
-        const reducerName = table === 'blog_profile' ? 'upsert_blogProfile' : `rm_${table}`
-        if (table === 'blog_profile') continue
-        await fetch(`${DEFAULT_HTTP_URL}/v1/database/${DEFAULT_MODULE}/call/${reducerName}`, {
-          body: JSON.stringify([id]),
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        })
-      } catch {
-        /* Ignore */
-      }
-    }
-  }
+  await fetch(`${DEFAULT_HTTP_URL}/v1/database/${DEFAULT_MODULE}/call/cleanup_test_data`, {
+    body: JSON.stringify([]),
+    headers: {
+      Authorization: `Bearer ${data.token}`,
+      'Content-Type': 'application/json'
+    },
+    method: 'POST'
+  })
 }
 export { cleanupTestData, login }

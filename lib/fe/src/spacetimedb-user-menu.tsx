@@ -36,10 +36,10 @@ const readUserFromSql = async (token: string): Promise<UserInfo> => {
   const baseUri = toHttpUri(env.NEXT_PUBLIC_SPACETIMEDB_URI)
   const moduleName = env.SPACETIMEDB_MODULE_NAME
   const response = await fetch(`${baseUri}/v1/database/${moduleName}/sql`, {
-    body: JSON.stringify({ query: 'select email, image, name from user_profile limit 1' }),
+    body: 'SELECT email, image, name FROM user_profile LIMIT 1',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'text/plain'
     },
     method: 'POST'
   })

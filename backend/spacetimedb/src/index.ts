@@ -1,6 +1,6 @@
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
-export default noboil(({ t, table }) => ({
+const spacetimedb = noboil(({ t, table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 }),
   blogProfile: table(s.blogProfile),
   chat: table(s.chat, { pub: 'isPublic', rateLimit: 10 }),
@@ -22,3 +22,18 @@ export default noboil(({ t, table }) => ({
     softDelete: true
   })
 }))
+type DbLike = Record<string, TableLike>
+interface TableLike {
+  delete: (row: unknown) => void
+  iter: () => Iterable<unknown>
+}
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const cleanup_test_data = (
+  spacetimedb as unknown as { reducer: (o: { name: string }, f: (c: { db: DbLike }) => void) => unknown }
+).reducer({ name: 'cleanup_test_data' }, ctx => {
+  for (const name of ['blog', 'blog_profile']) {
+    const tbl = ctx.db[name]
+    if (tbl) for (const row of tbl.iter()) tbl.delete(row)
+  }
+})
+export default spacetimedb
