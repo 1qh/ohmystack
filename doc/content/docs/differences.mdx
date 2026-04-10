@@ -1,0 +1,136 @@
+---
+title: Convex vs SpacetimeDB
+description: Where the @noboil/convex and @noboil/spacetimedb APIs diverge — and why.
+---
+
+The rest of the docs cover the noboil API as one thing, because almost every component, hook, schema helper, and convention works the same on both backends. The handful of places where the libraries genuinely differ live here.
+
+If you're switching between the two, this page is the only one you need to re-read.
+
+## TL;DR — switching backends
+
+Almost every snippet in the docs is the same code on both backends. The only thing you usually have to change is the import path:
+
+```ts
+// before
+import { noboil } from '@noboil/convex/server'
+import { useFormMutation, Form } from '@noboil/convex/components'
+
+// after
+import { noboil } from '@noboil/spacetimedb/server'
+import { useFormMutation, Form } from '@noboil/spacetimedb/components'
+```
+
+`useForm`, `useFormMutation`, `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OrgAvatar`, `RoleBadge`, `OfflineIndicator`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `Devtools`, `useList`, `useSearch`, `useBulkSelection`, `useBulkMutate`, `useSoftDelete`, `useUpload`, `useOwnRows`, `useInfiniteList`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgMutation`, `useOrgQuery`, `OrgProvider`, `createOrgHooks`, `usePresence`, `useOptimisticMutation`, `singletonCrud` results, `child()`, `file()`, `files()`, `makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`, `makeOrg`, `schema()`, `noboil()` — all symmetric.
+
+## The actual differences
+
+### 1. `noboil()` config
+
+Convex needs its `query`/`mutation`/`action`/etc. builders and `getAuthUserId` as the first argument because it has to wire into the Convex framework. SpacetimeDB doesn't.
+
+```ts
+// Convex
+import { noboil } from '@noboil/convex/server'
+import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { s } from './t'
+
+export const api = noboil(
+  { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
+  ({ table }) => ({
+    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
+  })
+)
+
+// SpacetimeDB
+import { noboil } from '@noboil/spacetimedb/server'
+import { s } from '../t'
+
+export default noboil(({ table }) => ({
+  blog: table(s.blog, { pub: 'published', rateLimit: 10 })
+}))
+```
+
+The `define` callback (`({ table }) => ({...})`) is identical. Only the outer call differs.
+
+### 2. Where filters and the `pub` option
+
+Both backends accept the same `where` clause shape (`$gt`, `$gte`, `$lt`, `$lte`, `$between`, `or`, `own: true`, field equality), but they enforce visibility differently.
+
+| | Convex | SpacetimeDB |
+|---|---|---|
+| Read endpoint shape | `crud(...)` returns `{ pub, auth }` — destructure to expose either tier | `table(s.blog, { pub: 'published' })` generates a `clientVisibilityFilter` SQL rule |
+| `pub: 'fieldName'` | Default `where` clause for the `pub` tier | Generates `WHERE fieldName = true OR userId = :sender`, indexed automatically |
+| Filter execution | `.filter()` after fetch (good up to ~1,000 docs) — set `strictFilter: true` to throw past the limit | Server-enforced subscription rule, runs in SpacetimeDB Rust core |
+| Custom indexes | `pubIndexed` / `authIndexed` query helpers | Add an index on the table; subscriptions use it automatically |
+
+### 3. File storage
+
+Both libs accept the same `file()` and `files()` schema helpers. The upload backend differs:
+
+| | Convex | SpacetimeDB |
+|---|---|---|
+| Storage | Convex native (`_storage` IDs) | S3 / MinIO via presigned URLs |
+| Setup | `makeFileUpload()` in your `lazy.ts` + `FileApiProvider` in providers.tsx | `createS3UploadPresignedUrl()` from a Next.js API route + `useUpload()` on the client |
+| Cleanup on delete | Automatic via cascade hooks | Manual or via a scheduled reducer |
+| Defaults | 10MB per file, image compression to 1920px, 10 uploads/min rate limit | Configurable in your presign route |
+
+The `<File>` and `<Files>` form components from `/components` work identically — they just hand the upload off to the right backend underneath.
+
+### 4. Custom server logic
+
+Both libs let you write custom queries/mutations alongside generated CRUD, but the building blocks differ.
+
+| | Convex | SpacetimeDB |
+|---|---|---|
+| Public query | `pq({ args, handler })` — no auth required, viewer info available | Custom reducer with no `ctx.sender` check |
+| Auth query | `q({ args, handler })` — `ctx.user` guaranteed | Custom reducer that validates `ctx.sender` |
+| Mutation | `m({ args, handler })` — `ctx.create`/`patch`/`delete` with conflict detection | Custom reducer with `ctx.db.<table>.insert/update/delete` |
+| Long-running / external API | `action({ ... })` (raw Convex action) | Procedure or scheduled reducer |
+| Background jobs | Convex cron / scheduled functions | `scheduledReducer: true` on a reducer |
+
+### 5. SSR
+
+| | Convex | SpacetimeDB |
+|---|---|---|
+| Server Component data | `preloadQuery(api.blog.list, args, { token })` after `await connection()` | HTTP SQL endpoint: `POST /v1/database/<module>/sql` with raw SQL |
+| Latency | RPC roundtrip | ~0.27ms local Docker, varies on Maincloud |
+| Setup | `convexAuthNextjsToken()` from `@convex-dev/auth/nextjs/server` | Plain `fetch` to the SQL endpoint |
+
+### 6. Bulk operations
+
+Both libs support bulk create / update / delete via `useBulkMutate` on the client. On the server side:
+
+- **Convex**: `crud()` accepts a single call with `items: [...]` (create) or `ids: [...]` (delete). Capped at `BULK_MAX = 100` per call, enforced server-side.
+- **SpacetimeDB**: reducers are fire-and-forget. The client loops and the reducer processes one item per call. `useBulkMutate` handles the loop.
+
+### 7. Auth provider
+
+| | Convex | SpacetimeDB |
+|---|---|---|
+| Identity source | `@convex-dev/auth` (`getAuthUserId(ctx)` returns user `_id`) | SpacetimeDB cryptographic `Identity` injected by the runtime as `ctx.sender` |
+| Login providers | OAuth (Google, GitHub, etc), email, password — configured per Convex deployment | Anonymous by default; OIDC providers on Maincloud, custom JWT for self-hosted |
+| Test mode | `getAuthUserIdOrTest` swap when `CONVEX_TEST_MODE=true` | `connectAsTestUser(name)` reuses the same Identity by saving the token |
+
+### 8. Conflict detection
+
+Both backends accept `expectedUpdatedAt` on update calls and throw `CONFLICT` when the row was modified since the client read it. The error code and the built-in `ConflictDialog` UI work the same way. The only difference is the wire format of the error envelope, which `extractErrorData()` normalizes.
+
+### 9. Cache tables
+
+Both libs support a `base` schema brand for cache tables. Convex's `cacheCrud()` accepts a `fetcher` function for transparent load-on-miss. SpacetimeDB doesn't run external `fetch()` reliably from inside the module, so the SpacetimeDB pattern is to populate cache tables from a Next.js API route or a scheduled reducer.
+
+## Things that look like differences but aren't
+
+These trip up new users — they look DB-specific but they aren't:
+
+- **`file()` / `files()`** — same name, same schema, both libs
+- **`schema({...})`** — same call shape, same slot names (`owned`, `orgScoped`, `base`, `singleton`, `org`, `children`)
+- **Org system** (invites, join requests, roles, ACL with `editors[]`) — identical API and identical reducer/endpoint names
+- **Presence** — same `usePresence` hook, same heartbeat shape
+- **Soft delete** — same `softDelete: true` table option, same `restore` endpoint, same `useSoftDelete` hook
+- **Rate limiting** — both accept `rateLimit: { max, window }` (Convex) or `rateLimit: 10` shorthand (SpacetimeDB) on the table options
+- **Error codes** — both libs use the same `ErrorCode` enum (`NOT_AUTHENTICATED`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `RATE_LIMITED`, `VALIDATION_FAILED`, etc.) and `extractErrorData()` returns the same shape
+
+If a doc page has `<Tabs>` between Convex and SpacetimeDB, it's because the snippet differs by something on this page. Otherwise the snippet is shown once and works on both.
