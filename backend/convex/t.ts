@@ -1,13 +1,4 @@
-import {
-  child,
-  file as fileSchema,
-  files as filesSchema,
-  makeBase,
-  makeOrgScoped,
-  makeOwned,
-  makeSingleton,
-  orgSchema
-} from '@noboil/convex/schema'
+import { child, file as fileSchema, files as filesSchema, orgSchema, schema } from '@noboil/convex/schema'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, object, string, union, enum as zenum } from 'zod/v4'
 const file = fileSchema()
@@ -17,79 +8,6 @@ const messagePart = union([
   object({ image: file, type: zenum(['image']) }),
   object({ file, name: string(), type: zenum(['file']) })
 ])
-const owned = makeOwned({
-  blog: object({
-    attachments: files.max(5).optional(),
-    category: zenum(['tech', 'life', 'tutorial'], { error: 'Select a category' }),
-    content: string().min(3, 'At least 3 characters'),
-    coverImage: file.nullable().optional(),
-    published: boolean(),
-    tags: array(string()).max(5, 'Max 5 tags').optional(),
-    title: string().min(1, 'Required')
-  }),
-  chat: object({
-    isPublic: boolean(),
-    title: string().min(1)
-  })
-})
-const children = {
-  message: child({
-    foreignKey: 'chatId',
-    parent: 'chat',
-    parentSchema: owned.chat,
-    schema: object({
-      chatId: zid('chat'),
-      parts: array(messagePart),
-      role: zenum(['user', 'assistant', 'system'])
-    })
-  })
-}
-const base = makeBase({
-  movie: object({
-    backdrop_path: string().nullable(),
-    budget: number().nullable(),
-    genres: array(object({ id: number(), name: string() })),
-    original_title: string(),
-    overview: string(),
-    poster_path: string().nullable(),
-    release_date: string(),
-    revenue: number().nullable(),
-    runtime: number().nullable(),
-    tagline: string().nullable(),
-    title: string(),
-    tmdb_id: number(),
-    vote_average: number(),
-    vote_count: number()
-  })
-})
-const org = {
-  team: orgSchema
-}
-const orgScoped = makeOrgScoped({
-  project: object({
-    description: string().optional(),
-    editors: array(zid('users')).max(100).optional(),
-    name: string().min(1),
-    status: zenum(['active', 'archived', 'completed']).optional()
-  }),
-  task: object({
-    assigneeId: zid('users').nullable().optional(),
-    completed: boolean().optional(),
-    priority: zenum(['low', 'medium', 'high']).optional(),
-    projectId: zid('project'),
-    title: string().min(1)
-  }),
-  wiki: object({
-    content: string().optional(),
-    deletedAt: number().optional(),
-    editors: array(zid('users')).max(100).optional(),
-    slug: string()
-      .min(1)
-      .regex(/^[a-z0-9-]+$/u),
-    status: zenum(['draft', 'published']),
-    title: string().min(1)
-  })
-})
 const profileShape = {
   avatar: file.nullable().optional(),
   bio: string().max(500).optional(),
@@ -97,8 +15,89 @@ const profileShape = {
   notifications: boolean(),
   theme: zenum(['light', 'dark', 'system'])
 }
-const singleton = makeSingleton({
-  blogProfile: object(profileShape),
-  orgProfile: object(profileShape)
+const s = schema({
+  base: {
+    movie: object({
+      backdrop_path: string().nullable(),
+      budget: number().nullable(),
+      genres: array(object({ id: number(), name: string() })),
+      original_title: string(),
+      overview: string(),
+      poster_path: string().nullable(),
+      release_date: string(),
+      revenue: number().nullable(),
+      runtime: number().nullable(),
+      tagline: string().nullable(),
+      title: string(),
+      tmdb_id: number(),
+      vote_average: number(),
+      vote_count: number()
+    })
+  },
+  children: {
+    message: child({
+      foreignKey: 'chatId',
+      parent: 'chat',
+      schema: object({
+        chatId: zid('chat'),
+        parts: array(messagePart),
+        role: zenum(['user', 'assistant', 'system'])
+      })
+    })
+  },
+  org: {
+    team: orgSchema
+  },
+  orgScoped: {
+    project: object({
+      description: string().optional(),
+      editors: array(zid('users')).max(100).optional(),
+      name: string().min(1),
+      status: zenum(['active', 'archived', 'completed']).optional()
+    }),
+    task: object({
+      assigneeId: zid('users').nullable().optional(),
+      completed: boolean().optional(),
+      priority: zenum(['low', 'medium', 'high']).optional(),
+      projectId: zid('project'),
+      title: string().min(1)
+    }),
+    wiki: object({
+      content: string().optional(),
+      deletedAt: number().optional(),
+      editors: array(zid('users')).max(100).optional(),
+      slug: string()
+        .min(1)
+        .regex(/^[a-z0-9-]+$/u),
+      status: zenum(['draft', 'published']),
+      title: string().min(1)
+    })
+  },
+  owned: {
+    blog: object({
+      attachments: files.max(5).optional(),
+      category: zenum(['tech', 'life', 'tutorial'], { error: 'Select a category' }),
+      content: string().min(3, 'At least 3 characters'),
+      coverImage: file.nullable().optional(),
+      published: boolean(),
+      tags: array(string()).max(5, 'Max 5 tags').optional(),
+      title: string().min(1, 'Required')
+    }),
+    chat: object({
+      isPublic: boolean(),
+      title: string().min(1)
+    })
+  },
+  singleton: {
+    blogProfile: object(profileShape),
+    orgProfile: object(profileShape)
+  }
 })
-export { base, children, org, orgScoped, owned, singleton }
+// Granular re-exports for files that consume one slot at a time.
+const owned = { blog: s.blog, chat: s.chat }
+const orgScoped = { project: s.project, task: s.task, wiki: s.wiki }
+const base = { movie: s.movie }
+const singleton = { blogProfile: s.blogProfile, orgProfile: s.orgProfile }
+const org = { team: s.team }
+const children = { message: s.message }
+export { base, children, org, orgScoped, owned, s, singleton }

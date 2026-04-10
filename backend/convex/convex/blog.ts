@@ -1,15 +1,12 @@
-import { getAuthUserId } from '@convex-dev/auth/server'
 import { time } from '@noboil/convex/server'
-/* oxlint-disable eslint/max-statements */
 import { zid } from 'convex-helpers/server/zod4'
-import { crud, m, pq } from '../lazy'
-import { owned } from '../t'
+import { api, m, pq } from '../lazy'
 const {
   create,
   pub: { list, read, search },
   rm,
   update
-} = crud('blog', owned.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
+} = api.blog
 const postStats = pq({
   args: {},
   handler: async ctx => {
@@ -19,12 +16,11 @@ const postStats = pq({
       .collect()
     const counts: Record<string, { count: number; latestTitle: string }> = {}
     for (const p of posts) {
-      const cat = p.category as string
-      const existing = counts[cat]
+      const existing = counts[p.category]
       if (existing) {
         existing.count += 1
         existing.latestTitle = p.title
-      } else counts[cat] = { count: 1, latestTitle: p.title }
+      } else counts[p.category] = { count: 1, latestTitle: p.title }
     }
     const result: { category: string; count: number; latestTitle: string }[] = []
     for (const [category, data] of Object.entries(counts))
@@ -39,19 +35,15 @@ const authorPosts = pq({
       .query('blog')
       .withIndex('by_user', q => q.eq('userId', userId))
       .collect()
-    return posts.filter(p => (p as Record<string, unknown>).published === true)
+    return posts.filter(p => p.published === true)
   }
 })
 const togglePublish = m({
   args: { id: zid('blog') },
   handler: async (ctx, { id }) => {
-    await getAuthUserId(ctx as never)
-    const doc = await ctx.db.get(id)
-    if (!doc) throw new Error('NOT_FOUND')
-    if ((doc as Record<string, unknown>).userId !== ctx.user._id) throw new Error('NOT_OWNER')
-    const current = (doc as Record<string, unknown>).published as boolean
-    await ctx.db.patch(id, { published: !current, ...time() } as never)
-    return { published: !current }
+    const doc = await ctx.get(id)
+    await ctx.patch(id, { published: !doc.published, ...time() })
+    return { published: !doc.published }
   }
 })
 export { authorPosts, create, list, postStats, read, rm, search, togglePublish, update }
