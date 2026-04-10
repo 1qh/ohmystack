@@ -303,8 +303,8 @@ const makeOrgCrud = <
   }
 }
 /** Defines a cascade delete relation for org-scoped tables. */
-const orgCascade = <S extends ZodRawShape>(
-  _schema: ZodObject<S>,
-  config: { foreignKey: keyof S & string; table: string }
-): { foreignKey: string; table: string } => config
+const orgCascade = <S extends ZodRawShape, N extends string>(
+  schema: ZodObject<S> & { readonly __name: N },
+  config: { foreignKey: keyof S & string }
+): { foreignKey: string; table: N } => ({ foreignKey: config.foreignKey, table: schema.__name })
 export { checkMembership, makeOrgCrud, orgCascade }

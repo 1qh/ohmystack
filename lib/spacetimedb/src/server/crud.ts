@@ -138,8 +138,8 @@ const makeCrud = <
   }
 }
 /** Defines a cascade delete relation for owned-table helpers. */
-const ownedCascade = <S extends ZodRawShape>(
-  _schema: ZodObject<S>,
-  config: { foreignKey: keyof S & string; table: string }
-): { foreignKey: string; table: string } => config
+const ownedCascade = <S extends ZodRawShape, N extends string>(
+  schema: ZodObject<S> & { readonly __name: N },
+  config: { foreignKey: keyof S & string }
+): { foreignKey: string; table: N } => ({ foreignKey: config.foreignKey, table: schema.__name })
 export { makeCrud, ownedCascade }

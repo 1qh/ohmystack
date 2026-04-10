@@ -110,7 +110,17 @@ const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
   if (config.base) mergeInto(result, makeBase(config.base))
   if (config.singleton) mergeInto(result, makeSingleton(config.singleton))
   if (config.children) mergeInto(result, config.children)
+  for (const name of Object.keys(result))
+    Object.defineProperty(result[name] as object, '__name', {
+      configurable: false,
+      enumerable: false,
+      value: name,
+      writable: false
+    })
   return typed(result)
+}
+interface Named<N extends string> {
+  readonly __name: N
 }
 interface SchemaConfig {
   base?: Record<string, ZodObject>
@@ -121,19 +131,21 @@ interface SchemaConfig {
   singleton?: Record<string, ZodObject>
 }
 type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infer O extends Record<string, ZodObject>
-  ? { [K in keyof O]: BaseSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> & O[K] }
+  ? { [K in keyof O]: BaseSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> & Named<K & string> & O[K] }
   : unknown) &
-  (NonNullable<T['children']> extends infer C extends Record<string, ChildEntry> ? C : unknown) &
+  (NonNullable<T['children']> extends infer C extends Record<string, ChildEntry>
+    ? { [K in keyof C]: C[K] & Named<K & string> }
+    : unknown) &
   (NonNullable<T['org']> extends infer O extends Record<string, ZodObject>
-    ? { [K in keyof O]: O[K] & OrgDefSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
+    ? { [K in keyof O]: Named<K & string> & O[K] & OrgDefSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown) &
   (NonNullable<T['orgScoped']> extends infer O extends Record<string, ZodObject>
-    ? { [K in keyof O]: O[K] & OrgSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
+    ? { [K in keyof O]: Named<K & string> & O[K] & OrgSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown) &
   (NonNullable<T['owned']> extends infer O extends Record<string, ZodObject>
-    ? { [K in keyof O]: O[K] & OwnedSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
+    ? { [K in keyof O]: Named<K & string> & O[K] & OwnedSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown) &
   (NonNullable<T['singleton']> extends infer O extends Record<string, ZodObject>
-    ? { [K in keyof O]: O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
+    ? { [K in keyof O]: Named<K & string> & O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown)
 export { child, file, files, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }

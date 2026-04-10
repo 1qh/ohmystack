@@ -460,17 +460,23 @@ describe('CrudOptions search config', () => {
 })
 describe('typesafe field references', () => {
   const chatSchema = object({ isPublic: boolean(), title: string().min(1) })
-  const messageSchema = object({
-    chatId: string(),
-    content: string(),
-    role: string()
-  })
-  const taskSchema = object({
-    completed: boolean(),
-    priority: string(),
-    projectId: string(),
-    title: string()
-  })
+  const messageSchema = Object.assign(
+    object({
+      chatId: string(),
+      content: string(),
+      role: string()
+    }),
+    { __name: 'message' as const }
+  )
+  const taskSchema = Object.assign(
+    object({
+      completed: boolean(),
+      priority: string(),
+      projectId: string(),
+      title: string()
+    }),
+    { __name: 'task' as const }
+  )
   const movieSchema = object({ title: string(), tmdb_id: number() })
   test('child() accepts valid foreignKey', () => {
     const result = child({
@@ -559,18 +565,14 @@ describe('typesafe field references', () => {
     expect(opts.acl).toBe(true)
   })
   test('orgCascade accepts valid foreignKey', () => {
-    const result = orgCascade(taskSchema, {
-      foreignKey: 'projectId',
-      table: 'task'
-    })
+    const result = orgCascade(taskSchema, { foreignKey: 'projectId' })
     expect(result.foreignKey).toBe('projectId')
     expect(result.table).toBe('task')
   })
   test('orgCascade rejects invalid foreignKey', () => {
     const result = orgCascade(taskSchema, {
       // @ts-expect-error - 'projctId' is not a key of taskSchema
-      foreignKey: 'projctId',
-      table: 'task'
+      foreignKey: 'projctId'
     })
     expect(result).toBeDefined()
   })
@@ -2336,62 +2338,56 @@ describe('Fix #3: factory table names typed as keyof DM & string', () => {
   })
 })
 describe('Fix #4: ownedCascade helper', () => {
-  const taskSchema = object({
-    completed: boolean(),
-    priority: string(),
-    projectId: string(),
-    title: string()
-  })
-  const messageSchema = object({
-    chatId: string(),
-    content: string(),
-    role: string()
-  })
+  const taskSchema = Object.assign(
+    object({
+      completed: boolean(),
+      priority: string(),
+      projectId: string(),
+      title: string()
+    }),
+    { __name: 'task' as const }
+  )
+  const messageSchema = Object.assign(
+    object({
+      chatId: string(),
+      content: string(),
+      role: string()
+    }),
+    { __name: 'message' as const }
+  )
   test('ownedCascade accepts valid foreignKey', () => {
-    const result = ownedCascade(taskSchema, {
-      foreignKey: 'projectId',
-      table: 'task'
-    })
+    const result = ownedCascade(taskSchema, { foreignKey: 'projectId' })
     expect(result.foreignKey).toBe('projectId')
     expect(result.table).toBe('task')
   })
   test('ownedCascade accepts another valid foreignKey', () => {
-    const result = ownedCascade(messageSchema, {
-      foreignKey: 'chatId',
-      table: 'message'
-    })
+    const result = ownedCascade(messageSchema, { foreignKey: 'chatId' })
     expect(result.foreignKey).toBe('chatId')
     expect(result.table).toBe('message')
   })
   test('ownedCascade rejects invalid foreignKey', () => {
     const _invalid = ownedCascade(taskSchema, {
       // @ts-expect-error — 'projctId' is not a key of taskSchema
-      foreignKey: 'projctId',
-      table: 'task'
+      foreignKey: 'projctId'
     })
     expect(_invalid).toBeDefined()
   })
   test('ownedCascade rejects completely wrong foreignKey', () => {
     const _invalid = ownedCascade(taskSchema, {
       // @ts-expect-error — 'nonExistentField' is not a key of taskSchema
-      foreignKey: 'nonExistentField',
-      table: 'task'
+      foreignKey: 'nonExistentField'
     })
     expect(_invalid).toBeDefined()
   })
   test('ownedCascade rejects misspelled foreignKey on messageSchema', () => {
     const _invalid = ownedCascade(messageSchema, {
       // @ts-expect-error — 'chatI' is not a key of messageSchema
-      foreignKey: 'chatI',
-      table: 'message'
+      foreignKey: 'chatI'
     })
     expect(_invalid).toBeDefined()
   })
   test('ownedCascade returns object with foreignKey and table', () => {
-    const result = ownedCascade(taskSchema, {
-      foreignKey: 'title',
-      table: 'subtask'
-    })
+    const result = ownedCascade(taskSchema, { foreignKey: 'title' })
     expect(typeof result.foreignKey).toBe('string')
     expect(typeof result.table).toBe('string')
   })
@@ -2402,11 +2398,8 @@ describe('Fix #4: ownedCascade helper', () => {
     expect(content.includes('ownedCascade')).toBe(true)
   })
   test('ownedCascade mirrors orgCascade behavior', () => {
-    const owned = ownedCascade(taskSchema, {
-      foreignKey: 'projectId',
-      table: 'task'
-    })
-    const org = orgCascade(taskSchema, { foreignKey: 'projectId', table: 'task' })
+    const owned = ownedCascade(taskSchema, { foreignKey: 'projectId' })
+    const org = orgCascade(taskSchema, { foreignKey: 'projectId' })
     expect(owned.foreignKey).toBe(org.foreignKey)
     expect(owned.table).toBe(org.table)
   })

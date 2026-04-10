@@ -420,8 +420,8 @@ const makeCrud = <S extends ZodRawShape>({
  * @param config - Object with foreignKey and table name
  * @returns Cascade config object with foreignKey and table
  */
-const ownedCascade = <S extends ZodRawShape>(
-  _schema: ZodObject<S>,
-  config: { foreignKey: keyof S & string; table: string }
-): { foreignKey: string; table: string } => config
+const ownedCascade = <S extends ZodRawShape, N extends string>(
+  schema: ZodObject<S> & { readonly __name: N },
+  config: { foreignKey: keyof S & string }
+): { foreignKey: string; table: N } => ({ foreignKey: config.foreignKey, table: schema.__name })
 export { makeCrud, ownedCascade }

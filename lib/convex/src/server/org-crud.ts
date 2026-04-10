@@ -477,9 +477,9 @@ const makeOrgCrud = <S extends ZodRawShape>({
  * @param config - Object with foreignKey and table name
  * @returns CascadeOption config object
  */
-const orgCascade = <S extends ZodRawShape>(
-  _schema: ZodObject<S>,
-  config: { foreignKey: keyof S & string; table: string }
-): CascadeOption => config
+const orgCascade = <S extends ZodRawShape, N extends string>(
+  schema: ZodObject<S> & { readonly __name: N },
+  config: { foreignKey: keyof S & string }
+): CascadeOption<N> => ({ foreignKey: config.foreignKey, table: schema.__name })
 export type { OrgCrudOptions }
 export { canEdit, getOrgMember, getOrgRole, makeOrgCrud, orgCascade, requireOrgMember, requireOrgRole }

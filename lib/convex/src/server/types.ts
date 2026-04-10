@@ -48,9 +48,9 @@ interface CacheOptions<S extends ZodRawShape, K extends keyof _.output<ZodObject
   table: string
   ttl?: number
 }
-interface CascadeOption {
+interface CascadeOption<T extends string = string> {
   foreignKey: string
-  table: string
+  table: T
 }
 interface ChildConfig {
   foreignKey: string

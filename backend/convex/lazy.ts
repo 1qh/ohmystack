@@ -34,7 +34,7 @@ const api = noboil(
     orgProfile: table(s.orgProfile),
     project: table(s.project, {
       acl: true,
-      cascade: orgCascade(s.task, { foreignKey: 'projectId', table: 'task' }),
+      cascade: orgCascade(s.task, { foreignKey: 'projectId' }),
       rateLimit: { max: 30, window: 60_000 }
     }),
     task: table(s.task, {
