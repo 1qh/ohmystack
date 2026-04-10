@@ -12,6 +12,7 @@ export default __t.row({
   notifications: __t.bool(),
   theme: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
+  id: __t.u32().primaryKey(),
   updatedAt: __t.timestamp().name("updated_at"),
   userId: __t.identity().name("user_id"),
 });

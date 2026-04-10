@@ -367,7 +367,7 @@ const buildMutationArgs = (apiPath: string, args: Record<string, unknown>): unkn
         toOption(data.theme)
       ]
     case 'project.create':
-      return [toU32(args.orgId), toOption(args.description), str(args.name), toOption(args.status)]
+      return [toU32(args.orgId), toOption(args.description), str(args.name), toOption(args.status), toOption(undefined)]
     case 'project.rm':
       return [toU32(args.id)]
     case 'project.update':
@@ -376,6 +376,7 @@ const buildMutationArgs = (apiPath: string, args: Record<string, unknown>): unkn
         toDoubleOption(args.description),
         toOption(args.name),
         toDoubleOption(args.status),
+        toOption(undefined),
         toOption(args.expectedUpdatedAt)
       ]
     case 'task.create':
@@ -384,14 +385,22 @@ const buildMutationArgs = (apiPath: string, args: Record<string, unknown>): unkn
         toOption(args.completed),
         toOption(args.priority),
         toU32(args.projectId ?? 0),
-        str(args.title)
+        str(args.title),
+        toOption(undefined)
       ]
     case 'task.rm':
       return [toU32(args.id)]
     case 'task.toggle':
       return [toU32(args.id), { some: { some: true } }, { none: [] }, { none: [] }, { none: [] }, { none: [] }]
     case 'wiki.create':
-      return [toU32(args.orgId), toOption(args.content), str(args.slug), str(args.status) || 'draft', str(args.title)]
+      return [
+        toU32(args.orgId),
+        toOption(args.content),
+        str(args.slug),
+        str(args.status) || 'draft',
+        str(args.title),
+        toOption(undefined)
+      ]
     case 'wiki.rm':
       return [toU32(args.id)]
     case 'wiki.update':
@@ -401,6 +410,7 @@ const buildMutationArgs = (apiPath: string, args: Record<string, unknown>): unkn
         toOption(args.slug),
         toOption(args.status),
         toOption(args.title),
+        toOption(undefined),
         toOption(args.expectedUpdatedAt)
       ]
     default:

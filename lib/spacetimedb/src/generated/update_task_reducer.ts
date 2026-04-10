@@ -11,5 +11,6 @@ export default {
   priority: __t.option(__t.option(__t.string())),
   projectId: __t.option(__t.f64()),
   title: __t.option(__t.string()),
+  assigneeId: __t.option(__t.option(__t.identity())),
   expectedUpdatedAt: __t.option(__t.timestamp()),
 };

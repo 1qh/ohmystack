@@ -8,10 +8,10 @@ import {
 export default __t.row({
   contentType: __t.string().name("content_type"),
   createdAt: __t.timestamp().name("created_at"),
+  data: __t.byteArray(),
   filename: __t.string(),
   id: __t.u32().primaryKey(),
   size: __t.f64(),
-  storageKey: __t.string().name("storage_key"),
   uploadedAt: __t.timestamp().name("uploaded_at"),
   userId: __t.identity().name("user_id"),
 });

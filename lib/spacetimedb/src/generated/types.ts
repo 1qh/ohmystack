@@ -26,6 +26,7 @@ export const BlogProfile = __t.object("BlogProfile", {
   notifications: __t.bool(),
   theme: __t.string(),
   createdAt: __t.timestamp(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });
@@ -55,10 +56,10 @@ export type ChildPartsItem = __Infer<typeof ChildPartsItem>;
 export const File = __t.object("File", {
   contentType: __t.string(),
   createdAt: __t.timestamp(),
+  data: __t.byteArray(),
   filename: __t.string(),
   id: __t.u32(),
   size: __t.f64(),
-  storageKey: __t.string(),
   uploadedAt: __t.timestamp(),
   userId: __t.identity(),
 });
@@ -158,6 +159,7 @@ export const OrgProfile = __t.object("OrgProfile", {
   notifications: __t.bool(),
   theme: __t.string(),
   createdAt: __t.timestamp(),
+  id: __t.u32(),
   updatedAt: __t.timestamp(),
   userId: __t.identity(),
 });

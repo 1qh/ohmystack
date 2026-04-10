@@ -69,6 +69,7 @@ import OrgApproveJoinReducer from "./org_approve_join_reducer";
 import OrgCancelJoinReducer from "./org_cancel_join_reducer";
 import OrgRejectJoinReducer from "./org_reject_join_reducer";
 import OrgRequestJoinReducer from "./org_request_join_reducer";
+import CleanupTestDataReducer from "./cleanup_test_data_reducer";
 import BlogRow from "./blog_table";
 import BlogProfileRow from "./blog_profile_table";
 import ChatRow from "./chat_table";
@@ -106,11 +107,15 @@ const tablesSchema = __schema({
   blogProfile: __table({
     name: 'blog_profile',
     indexes: [
+      { accessor: 'id', name: 'blog_profile_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
       { accessor: 'userId', name: 'blog_profile_user_id_idx_btree', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
     constraints: [
+      { name: 'blog_profile_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, BlogProfileRow),
   chat: __table({
@@ -252,11 +257,15 @@ const tablesSchema = __schema({
   orgProfile: __table({
     name: 'org_profile',
     indexes: [
+      { accessor: 'id', name: 'org_profile_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
       { accessor: 'userId', name: 'org_profile_user_id_idx_btree', algorithm: 'btree', columns: [
         'userId',
       ] },
     ],
     constraints: [
+      { name: 'org_profile_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, OrgProfileRow),
   project: __table({
@@ -360,6 +369,7 @@ const reducersSchema = __reducers(
   __reducerSchema("org_cancel_join", OrgCancelJoinReducer),
   __reducerSchema("org_reject_join", OrgRejectJoinReducer),
   __reducerSchema("org_request_join", OrgRequestJoinReducer),
+  __reducerSchema("cleanup_test_data", CleanupTestDataReducer),
 );
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
 const proceduresSchema = __procedures(
@@ -367,7 +377,7 @@ const proceduresSchema = __procedures(
 /** The remote SpacetimeDB module schema, both runtime and type information. */
 const REMOTE_MODULE = {
   versionInfo: {
-    cliVersion: "2.0.5" as const,
+    cliVersion: "2.1.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
   reducers: reducersSchema.reducersType.reducers,
