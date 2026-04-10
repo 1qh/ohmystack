@@ -175,23 +175,30 @@ spacetimedb.reducer('delete_blog', { id: t.u32() }, (ctx, { id }) => {
 With noboil — one Zod schema, same code for both databases:
 
 ```ts
-const owned = makeOwned({
-  blog: object({
-    title: string().min(1, 'Required'),
-    content: string().min(3),
-    category: zenum(['tech', 'life', 'tutorial']),
-    published: boolean(),
-    coverImage: file().nullable().optional(),
-    tags: array(string()).max(5).optional()
-  })
+const s = schema({
+  owned: {
+    blog: object({
+      title: string().min(1, 'Required'),
+      content: string().min(3),
+      category: zenum(['tech', 'life', 'tutorial']),
+      published: boolean(),
+      coverImage: file().nullable().optional(),
+      tags: array(string()).max(5).optional()
+    })
+  }
 })
 ```
 
 ```ts
-export const { create, list, read, rm, update } = crud(owned, 'blog')
+const api = noboil(config, ({ table }) => ({
+  blog: table(s.blog, {
+    rateLimit: { max: 10, window: 60_000 },
+    search: 'content'
+  })
+}))
 ```
 
-5 endpoints. Auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, conflict detection — all included. Same API across databases. `create`, `update`, and `rm` each accept single or bulk input (up to 100 items).
+Auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, conflict detection — all included. Same API across databases. `create`, `update`, and `rm` each accept single or bulk input (up to 100 items).
 
 ## Monorepo Structure
 
