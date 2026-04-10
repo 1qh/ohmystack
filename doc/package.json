@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "bun scripts/gen-api-imports.ts && next build",
     "dev": "next dev --turbopack --port 4300",
     "typecheck": "next typegen && bun -e \"import { existsSync, mkdirSync, writeFileSync } from 'node:fs'; if (!existsSync('.next/types/cache-life.d.ts')) { mkdirSync('.next/types', { recursive: true }); writeFileSync('.next/types/cache-life.d.ts', 'export {}\\n'); }\" && tsc --noEmit"
   },
