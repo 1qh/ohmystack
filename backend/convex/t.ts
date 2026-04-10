@@ -93,7 +93,6 @@ const s = schema({
     orgProfile: object(profileShape)
   }
 })
-// Granular re-exports for files that consume one slot at a time.
 const owned = { blog: s.blog, chat: s.chat }
 const orgScoped = { project: s.project, task: s.task, wiki: s.wiki }
 const base = { movie: s.movie }

@@ -430,9 +430,9 @@ interface BrandLabelMap {
   singleton: 'SingletonSchema (from makeSingleton())'
   unbranded: 'plain ZodObject (not branded)'
 }
-type OrgDefSchema<T extends ZodRawShape> = SchemaBrand<'orgDef'> & ZodObject<T>
 /** Detects the brand key from a schema type, returning 'unbranded' for plain ZodObject. */
 type DetectBrand<T> = T extends SchemaBrand<infer K> ? K : 'unbranded'
+type OrgDefSchema<T extends ZodRawShape> = SchemaBrand<'orgDef'> & ZodObject<T>
 type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> & ZodObject<T>
 /** Minimal user shape used across org operations, containing id, name, email, and image. */
 interface OrgUserLike {

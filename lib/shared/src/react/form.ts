@@ -11,8 +11,8 @@ import type { ZodSchema } from '../zod'
 import {
   coerceOptionals,
   defaultValues as dv,
-  fileKindOf,
   elementOf,
+  fileKindOf,
   isArrayType,
   isBooleanType,
   isDateType,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import type { GenericDataModel } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import type { OrgCrudOptions } from './org-crud'
@@ -26,8 +25,8 @@ const readBrand = (schema: unknown): Brand | undefined => {
 }
 const DEFERRED = Symbol('noboil.deferred')
 interface Deferred {
-  [DEFERRED]: true
   brand: 'child' | Brand
+  [DEFERRED]: true
   opts: unknown
   schema: unknown
 }
@@ -35,7 +34,7 @@ const isDeferred = (v: unknown): v is Deferred =>
   typeof v === 'object' && v !== null && (v as Record<symbol, unknown>)[DEFERRED] === true
 const isChildConfig = (v: unknown): v is { foreignKey: string; index: string; parent: string; schema: ZodObject } =>
   typeof v === 'object' && v !== null && 'foreignKey' in v && 'parent' in v && 'schema' in v
-type CacheCallOpts<S extends ZodRawShape, K extends keyof S & string> = {
+interface CacheCallOpts<S extends ZodRawShape, K extends keyof S & string> {
   fetcher?: (c: unknown, key: unknown) => Promise<unknown>
   hooks?: CacheHooks
   key: K
@@ -50,28 +49,19 @@ interface ChildConfigOf<S extends AnyShape> {
   parentSchema?: ZodObject
   schema: ZodObject<S>
 }
+type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
 interface TableFn {
   <S extends ZodRawShape>(schema: OwnedSchema<S>, opts?: CrudOptions<S>): CrudResult<S>
   <S extends ZodRawShape>(schema: OrgSchema<S>, opts?: OrgCrudOptions<S>): OrgCrudResult<S>
   <S extends ZodRawShape>(schema: SingletonSchema<S>, opts?: SingletonOptions): SingletonCrudResult<S>
-  <S extends ZodRawShape, K extends keyof S & string>(
-    schema: BaseSchema<S>,
-    opts: CacheCallOpts<S, K>
-  ): CacheCrudResult<S>
+  <S extends ZodRawShape, K extends keyof S & string>(schema: BaseSchema<S>, opts: CacheCallOpts<S, K>): CacheCrudResult<S>
   <S extends ZodRawShape>(child: ChildConfigOf<S>, opts?: { pub?: { parentField: string } }): ChildCrudResult<S>
 }
-type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
 const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Deferred): unknown => {
-  // The setup result is parameterized by DM. At dispatch time we erase DM via `as never` casts —
-  // this is safe because the user-supplied schema brand was already verified by TableFn overloads.
-  if (def.brand === 'child')
-    return s.childCrud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'owned')
-    return s.crud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'org')
-    return s.orgCrud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'singleton')
-    return s.singletonCrud(name as never, def.schema as never, def.opts as never)
+  if (def.brand === 'child') return s.childCrud(name as never, def.schema as never, def.opts as never)
+  if (def.brand === 'owned') return s.crud(name as never, def.schema as never, def.opts as never)
+  if (def.brand === 'org') return s.orgCrud(name as never, def.schema as never, def.opts as never)
+  if (def.brand === 'singleton') return s.singletonCrud(name as never, def.schema as never, def.opts as never)
   if (def.brand === 'base') {
     const opts = (def.opts ?? {}) as Record<string, unknown>
     return s.cacheCrud({ ...opts, schema: def.schema, table: name } as never)
@@ -127,10 +117,8 @@ const noboil = <DM extends GenericDataModel, T extends TableMap>(
   const table = ((schema: unknown, opts?: unknown) => buildDeferred(schema, opts) as never) as TableFn
   const draft = define({ setup: s, table })
   const result: Record<string, unknown> = {}
-  for (const [name, value] of Object.entries(draft)) {
-    if (isDeferred(value)) result[name] = dispatchTable(s as unknown as SetupResult<GenericDataModel>, name, value)
-    else result[name] = value
-  }
+  for (const [name, value] of Object.entries(draft))
+    result[name] = isDeferred(value) ? dispatchTable(s as unknown as SetupResult<GenericDataModel>, name, value) : value
   return Object.assign(result, { setup: s }) as T & { setup: SetupResult<DM> }
 }
 export { noboil }

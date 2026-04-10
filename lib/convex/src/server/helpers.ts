@@ -139,8 +139,7 @@ const pgOpts = object({
   maximumRowsRead: number().optional(),
   numItems: number()
 } satisfies PaginationOptsShape)
-const detectFiles = <S extends ZodRawShape>(s: S) =>
-  (Object.keys(s) as (keyof S & string)[]).filter(k => fileKindOf(s[k]))
+const detectFiles = <S extends ZodRawShape>(s: S) => (Object.keys(s) as (keyof S & string)[]).filter(k => fileKindOf(s[k]))
 const getUser = async ({
   ctx,
   db,

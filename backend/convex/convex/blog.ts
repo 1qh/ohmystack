@@ -35,7 +35,7 @@ const authorPosts = pq({
       .query('blog')
       .withIndex('by_user', q => q.eq('userId', userId))
       .collect()
-    return posts.filter(p => p.published === true)
+    return posts.filter(p => p.published)
   }
 })
 const togglePublish = m({

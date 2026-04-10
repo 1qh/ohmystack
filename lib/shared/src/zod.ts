@@ -1,8 +1,8 @@
 /* eslint-disable complexity */
 import type { core, input, output, ZodObject, ZodType } from 'zod/v4'
 import { isRecord } from './server/helpers'
-type FileKind = 'file' | 'files'
 type DefType = core.$ZodTypeDef['type']
+type FileKind = 'file' | 'files'
 type NullsToUndefined<T> = { [K in keyof T]-?: Exclude<T[K], null> | undefined }
 type ShapeKey<S extends ZodObject> = keyof S['shape'] & string
 type UndefinedToOptional<T> = { [K in keyof T as undefined extends T[K] ? K : never]?: null | T[K] } & {

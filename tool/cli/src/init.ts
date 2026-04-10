@@ -33,7 +33,7 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
 const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`
-const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', 'lib/shared', '.github']
+const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', '.github']
 /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
 const ask = async (question: string) => {
   const rl = createInterface({
@@ -88,7 +88,7 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
     val.includes(otherDb)
   pkg.name = 'my-app'
   pkg.private = true
-  const workspaces: string[] = ['lib/*', 'backend/*']
+  const workspaces: string[] = ['lib/*', 'backend/*', 'readonly/*']
   if (includeDemos)
     if (db === 'convex') workspaces.push('web/cvx/*')
     else workspaces.push('web/stdb/*')

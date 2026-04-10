@@ -27,7 +27,7 @@ const REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO
 const REPO_GIT_URL =
   REPO_SPEC.includes('://') || REPO_SPEC.startsWith('/') ? REPO_SPEC : `https://github.com/${REPO_SPEC}.git`
 const REPO = REPO_SPEC
-const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', 'lib/shared', '.github']
+const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', '.github']
 const ROOT_CONFIG_FILES = new Set([
   'biome.jsonc',
   'convex.yml',
@@ -113,7 +113,7 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; 
     val.includes(otherDb)
   pkg.name = 'my-app'
   pkg.private = true
-  const workspaces: string[] = ['lib/*', 'backend/*']
+  const workspaces: string[] = ['lib/*', 'backend/*', 'readonly/*']
   if (includeDemos)
     if (db === 'convex') workspaces.push('web/cvx/*')
     else workspaces.push('web/stdb/*')

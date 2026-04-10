@@ -19,6 +19,7 @@ export {
   time
 } from './helpers'
 export { auditLog, composeMiddleware, inputSanitize, slowQueryWarn } from './middleware'
+export { noboil } from './noboil'
 export { makeOrg } from './org'
 export type { InviteDocLike, JoinRequestItem, OrgDocLike, OrgMemberItem, OrgUserLike } from './org'
 export { canEdit, getOrgMember, getOrgRole, orgCascade, requireOrgMember, requireOrgRole } from './org-crud'
@@ -35,5 +36,4 @@ export {
   singletonTable,
   uploadTables
 } from './schema-helpers'
-export { noboil } from './noboil'
 export { setup } from './setup'

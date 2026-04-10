@@ -651,7 +651,11 @@ const noUnprotectedMutation = {
         if (!isIdent(node.callee, 'm')) return
         const handlerBody = getHandlerBody(node)
         if (!handlerBody) return
-        if (bodyContainsIdent(handlerBody, 'getAuthUserId') || bodyContainsIdent(handlerBody, 'requireAuth')) return
+        const hasAuth = ['getAuthUserId', 'requireAuth', 'requireOrgMember', 'requireOrgRole'].some(id =>
+          bodyContainsIdent(handlerBody, id)
+        )
+        if (hasAuth) return
+        if (!bodyContainsIdent(handlerBody, 'db')) return
         context.report({ messageId: 'unprotectedMutation', node })
       }
     }

@@ -20,7 +20,7 @@ const toggle = m({
   handler: async (ctx, { id, orgId }) => {
     const { role } = await requireOrgMember({ db: ctx.db, orgId, userId: ctx.user._id })
     const task = await ctx.db.get(id)
-    if (!task || task.orgId !== orgId) return err('NOT_FOUND')
+    if (task?.orgId !== orgId) return err('NOT_FOUND')
     const projectId = task.projectId as Id<'project'>
     const project = projectId ? await ctx.db.get(projectId) : null
     const pEditors = project?.editors ?? []
@@ -39,7 +39,7 @@ const assign = m({
   handler: async (ctx, { assigneeId, id, orgId }) => {
     await requireOrgRole({ db: ctx.db, minRole: 'admin', orgId, userId: ctx.user._id })
     const task = await ctx.db.get(id)
-    if (!task || task.orgId !== orgId) return err('NOT_FOUND')
+    if (task?.orgId !== orgId) return err('NOT_FOUND')
     if (assigneeId) await requireOrgMember({ db: ctx.db, orgId, userId: assigneeId })
     await ctx.db.patch(id, { assigneeId: assigneeId ?? null, ...time() })
     return ctx.db.get(id)
