@@ -1,6 +1,6 @@
 ---
 title: Testing
-description: Unit tests, integration tests, and E2E testing for both Convex and SpacetimeDB backends.
+description: Unit tests, integration tests, and E2E testing strategies.
 ---
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
@@ -700,7 +700,7 @@ describe('useList search', () => {
 
 ## Testing conflict detection
 
-Both databases support `expectedUpdatedAt` for optimistic concurrency control.
+`expectedUpdatedAt` enables optimistic concurrency control.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
@@ -785,7 +785,7 @@ it('concurrent edit triggers conflict', async () => {
 
 ## E2E tests with Playwright
 
-Both databases support E2E testing against the full stack.
+E2E tests run against the full stack.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">

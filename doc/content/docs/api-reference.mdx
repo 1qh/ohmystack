@@ -36,13 +36,13 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 | Module                          | Key Exports |
 | ------------------------------- | ----------- |
 | `@noboil/convex`             | `guardApi`, `strictApi` |
-| `@noboil/convex/server`      | `setup`, `ownedTable`, `orgTable`, `baseTable`, `singletonTable`, `childTable`, `orgChildTable`, `orgTables`, `uploadTables`, `rateLimitTable`, `orgCascade`, `ownedCascade`, `canEdit`, `getOrgMember`, `getOrgRole`, `requireOrgMember`, `requireOrgRole`, `handleConvexError`, `getErrorCode`, `getErrorMessage`, `getErrorDetail`, `extractErrorData`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `checkRateLimit`, `checkSchema`, `makeOrg`, `makeFileUpload`, `makePresence`, `presenceTable`, `err`, `ok`, `fail`, `time`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn` |
+| `@noboil/convex/server`      | `noboil`, `setup`, `ownedTable`, `orgTable`, `baseTable`, `singletonTable`, `childTable`, `orgChildTable`, `orgTables`, `uploadTables`, `rateLimitTable`, `orgCascade`, `ownedCascade`, `canEdit`, `getOrgMember`, `getOrgRole`, `requireOrgMember`, `requireOrgRole`, `handleConvexError`, `getErrorCode`, `getErrorMessage`, `getErrorDetail`, `extractErrorData`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `checkRateLimit`, `checkSchema`, `makeOrg`, `makeFileUpload`, `makePresence`, `presenceTable`, `err`, `ok`, `fail`, `time`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn` |
 | `@noboil/convex/test`        | `makeTestAuth`, `makeOrgTestCrud`, `getOrgMembership`, `createTestContext`, `isTestMode`, `TEST_EMAIL` |
 | `@noboil/convex/test/discover` | `discoverModules` |
 | `@noboil/convex/seed`        | `generateFieldValue`, `generateOne`, `generateSeed` |
 | `@noboil/convex/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `toastFieldError`, `OrgProvider`, `OptimisticProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `canEditResource`, `setActiveOrgCookieClient`, `buildMeta`, `getMeta`, `useDevErrors`, `Devtools`, `SchemaPlayground`, `usePendingMutations`, `defaultOnError` |
 | `@noboil/convex/components`  | `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OfflineIndicator`, `OrgAvatar`, `RoleBadge`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `FileApiProvider` |
-| `@noboil/convex/schema`      | `child`, `file`, `files`, `makeBase`, `makeOrgScoped`, `makeOwned`, `makeSingleton`, `orgSchema` |
+| `@noboil/convex/schema`      | `schema`, `child`, `file`, `files`, `makeBase`, `makeOrg`, `makeOrgScoped`, `makeOwned`, `makeSingleton`, `orgSchema` |
 | `@noboil/convex/zod`         | `unwrapZod`, `fileKindOf`, `fileMetaOf`, `defaultValue`, `defaultValues`, `elementOf`, `enumToOptions`, `isArrayType`, `isBooleanType`, `isDateType`, `isNumberType`, `isOptionalField`, `isStringType`, `pickValues`, `coerceOptionals`, `requiredPartial` |
 | `@noboil/convex/next`        | `getActiveOrg`, `setActiveOrgCookie`, `clearActiveOrgCookie`, `getToken`, `isAuthenticated`, `makeImageRoute` |
 | `@noboil/convex/retry`       | `withRetry`, `fetchWithRetry` |
@@ -73,9 +73,36 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
+### noboil()
+
+The high-level entry point. Wraps `setup()` and provides a `table()` helper that dispatches to the correct factory based on schema brand:
+
+```typescript
+import { noboil } from '@noboil/convex/server'
+import { s } from './t'
+
+const api = noboil(
+  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
+  ({ table }) => ({
+    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
+    profile: table(s.blogProfile),
+    project: table(s.project, { acl: true }),
+    message: table(s.message, { pub: { parentField: 'isPublic' } })
+  })
+)
+```
+
+`table()` detects the schema brand (`owned`, `org`, `singleton`, `base`, `child`) and calls the correct factory. The result object (`api.blog`, `api.profile`, etc.) contains the generated endpoints.
+
+Access lower-level builders via `api.setup`:
+
+```typescript
+const { pq, q, m } = api.setup
+```
+
 ### setup()
 
-The entry point. Call once in a shared file and destructure `crud`, `orgCrud`, `pq`, `q`, `m`, and other builders:
+Lower-level entry point. Call once in a shared file and destructure `crud`, `orgCrud`, `pq`, `q`, `m`, and other builders:
 
 ```typescript
 import { setup } from '@noboil/convex/server'
