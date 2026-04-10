@@ -3,122 +3,49 @@ title: Security
 description: Auth enforcement, access control, rate limiting, input sanitization, and scalability guidance.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+Security is enforced server-side on every read and every write. Clients never touch the database directly.
 
-## How security works
+## How it works
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Read filters and write checks both run on the server, before any data is read or written. The client receives a result or an error code — nothing else. Visibility is enforced at the subscription / query layer, ownership is enforced at the mutation layer, and both are derived from your schema brand (`makeOwned` / `makeOrgScoped` / `makeBase` / `makeSingleton`).
 
-Convex runs all query and mutation functions on the server. Clients call named functions and receive results — they never touch the database directly. There's no client-side query language to bypass, no network-accessible DB port, no way to craft a raw query from the browser.
-
-Every security check runs inside these server functions. If a check fails, the function throws before any data is read or written. The client gets an error code, nothing else.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB enforces security at two layers:
-
-1. **Read-side**: `clientVisibilityFilter` rules control which rows each client can see via their subscription. These rules run inside SpacetimeDB — clients cannot bypass or modify them. The `:sender` token in each rule is the connected client's cryptographic Identity, injected server-side. It cannot be spoofed.
-
-2. **Write-side**: All generated CRUD reducers enforce access control via `ctx.sender`. If a check fails, the reducer throws before any data is written.
-
-</Tab>
-</Tabs>
+For the platform-specific details (Convex's auth/pub destructure vs SpacetimeDB's `clientVisibilityFilter` SQL), see [Convex vs SpacetimeDB](./differences#2-where-filters-and-the-pub-option).
 
 ## Auth enforcement
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Every factory (`crud`, `orgCrud`, `childCrud`, `singletonCrud`) wires auth through `@convex-dev/auth`'s `getAuthUserId`. The `m` (authenticated mutation) and `q` (authenticated query) builders call `getAuthUserId` on every invocation and throw `NOT_AUTHENTICATED` if no session exists.
+Every generated `create`, `update`, `rm` enforces authentication. There's no way to call a write endpoint without a valid session — `NOT_AUTHENTICATED` is thrown before the handler runs.
 
 ```ts
-const { crud, orgCrud, m, q } = setup({
-  query,
-  mutation,
-  action,
-  internalQuery,
-  internalMutation,
-  getAuthUserId
-})
+const api = noboil(
+  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
+  ({ table }) => ({
+    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 } })
+  })
+)
 ```
 
-The `pq` builder (public query) skips auth — it's for endpoints that genuinely need no login. All write endpoints (`create`, `update`, `rm`) use `m` exclusively, including bulk calls. There's no way to call a write endpoint without a valid session.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB uses cryptographic Identity for authentication. Every connection has a unique `Identity` derived from a token. Reconnecting with the same token gives the same `Identity`.
-
-All generated reducers check `ctx.sender` before any write. If the caller is not authenticated (no `ctx.sender`), the reducer throws `NOT_AUTHENTICATED`.
-
-</Tab>
-</Tabs>
+`getAuthUserId` is the integration point with `@convex-dev/auth`. SpacetimeDB injects identity automatically via `ctx.sender`.
 
 ## Row-level security
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Every `crud()` call generates two read APIs: `pub` (no auth required) and `auth` (requires login). Both have identical shape — `list`, `read`, and optionally `search`.
+Pass `pub` on a table to control what unauthenticated callers see.
 
 ```ts
-const { pub, auth, create, update, rm } = crud('blog', owned.blog)
-
-export const { list, read } = pub
-export const { list, read } = auth
+table(s.blog, { pub: { where: { published: true } } })  // Convex
+table(s.blog, { pub: 'published' })                      // SpacetimeDB
 ```
 
-Switch access control by changing one destructure. Default where clauses can be set per-factory to restrict what each tier sees:
-
-```ts
-const { pub, auth } = crud('blog', owned.blog, {
-  pub: { where: { published: true } },
-  auth: { where: { own: true } }
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`@noboil/spacetimedb` auto-generates server-enforced `clientVisibilityFilter` rules from the `pub` option on each table:
-
-| Consumer config      | Generated filter                                                     |
-| -------------------- | -------------------------------------------------------------------- |
-| `pub: true`          | No filter — table is fully public                                    |
-| `pub: 'published'`   | `WHERE published = true OR userId = :sender`                         |
-| No `pub` (owned)     | `WHERE userId = :sender`                                             |
-| No `pub` (singleton) | `WHERE userId = :sender` — per-user isolation                        |
-| No `pub` (orgScoped) | `JOIN orgMember ON orgId WHERE orgMember.userId = :sender`           |
-| `base` / `cache`     | No filter — cache tables are public by design                        |
-
-When `pub: 'fieldName'` is specified, an index on that field is created automatically.
-
-```typescript
-export default noboil(({ table }) => ({
-  blog: table(s.blog, { pub: 'published' }),
-  chat: table(s.chat, { pub: 'isPublic' }),
-  message: table(s.message),
-  project: table(s.project),
-  wiki: table(s.wiki, { softDelete: true }),
-}))
-```
-
-This generates:
-
-- `blog`: clients see published posts OR their own drafts
-- `chat`: clients see public chats OR their own private chats
-- `message`: children of `chat` — inherits chat's RLS
-- `project`: orgScoped — clients see projects only in orgs they belong to
-- `wiki`: orgScoped — same org-membership check
-
-</Tab>
-</Tabs>
+| Configuration | Behavior |
+|---|---|
+| `pub: true` | No filter — table is fully public |
+| `pub: 'fieldName'` | Indexed filter `WHERE fieldName = true OR userId = :sender` |
+| `pub: { where: {...} }` | Default `where` clause for the public read tier (Convex) |
+| No `pub` (owned) | Owner-only: `WHERE userId = :sender` |
+| No `pub` (singleton) | Per-user: `WHERE userId = :sender` |
+| No `pub` (orgScoped) | Org membership: `JOIN orgMember WHERE userId = :sender` |
+| `base` / `cache` | No filter — cache tables are public by design |
 
 ## Ownership enforcement
-
-Both databases enforce the same ownership model:
 
 | Table type  | Who can create         | Who can update/delete          |
 | ----------- | ---------------------- | ------------------------------ |
@@ -127,52 +54,17 @@ Both databases enforce the same ownership model:
 | `children`  | Parent row owner only  | Parent row owner only          |
 | `singleton` | Any authenticated user | Owner only (1:1 per user)      |
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 A user who doesn't own a row gets `NOT_FOUND`, not `FORBIDDEN`. This prevents enumeration — callers can't distinguish "doesn't exist" from "exists but not yours".
-
-```ts
-get: async id => {
-  const d = await db.get(id)
-  return d && d.userId === user._id ? d : err('NOT_FOUND')
-}
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-All generated CRUD reducers enforce access control via `ctx.sender`. The `update_*` and `rm_*` reducers check that the caller is either the row owner or an org admin before proceeding.
-
-</Tab>
-</Tabs>
 
 ## Conflict detection
 
-Both databases support optimistic concurrency control. Update endpoints accept an optional `expectedUpdatedAt` parameter. If the row was modified since the client last read it, the update throws `CONFLICT`. This prevents lost-update races in collaborative editing without requiring transactions.
+Update endpoints accept an optional `expectedUpdatedAt` parameter. If the row was modified since the client last read it, the update throws `CONFLICT`. This prevents lost-update races in collaborative editing without requiring transactions. The built-in `ConflictDialog` (see [Components](./components#conflictdialog)) handles the resolution UI.
 
 ## Organization security
 
 ### Membership checks
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Every `orgCrud` endpoint calls `requireOrgMember` before doing anything:
-
-```ts
-await requireOrgMember({ db, orgId, userId })
-```
-
-This fetches the org and the `orgMember` row, computes the caller's role, and throws `NOT_ORG_MEMBER` if they're not in the org. The check runs on every `list`, `read`, `create`, `update`, and `rm` call — there's no way to skip it.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-The `create_*` reducer for org-scoped tables checks that the caller is a member of the org before inserting. The `update_*` and `rm_*` reducers check that the caller is either an org admin or the original creator of the row.
-
-</Tab>
-</Tabs>
+Every org-scoped endpoint checks org membership before any read or write — there's no way to skip it. The `create_*` reducer requires `orgId` in addition to the fields and verifies the caller belongs to that org. `update_*` and `rm_*` check that the caller is either an org admin or the original creator.
 
 ### Roles
 
@@ -182,52 +74,17 @@ The `create_*` reducer for org-scoped tables checks that the caller is a member 
 | `admin`  | Manage members. Invite/remove. Approve join requests. Full CRUD. |
 | `member` | CRUD own resources within the org. Leave org.                    |
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Role levels are compared numerically (`owner: 3`, `admin: 2`, `member: 1`). Bulk calls to `update` or `rm` (passing `items` or `ids`) require at least `admin`.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Role checks run inside each reducer. Bulk operations require at least `admin` role.
-
-</Tab>
-</Tabs>
+Role levels are compared numerically (`owner: 3`, `admin: 2`, `member: 1`). Bulk operations require at least `admin`.
 
 ### Editor ACL
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-For per-item permissions beyond role-based access, enable `acl: true` on `orgCrud`:
+For per-item permissions beyond role-based access, enable `acl: true`:
 
 ```ts
-orgCrud('wiki', orgScoped.wiki, { acl: true, softDelete: true })
+table(s.wiki, { acl: true, softDelete: true })
 ```
 
-This generates `addEditor`, `removeEditor`, `setEditors`, and `editors` endpoints. The `editors` field stores an array of user IDs. The `canEdit` check runs on every update and delete:
-
-```ts
-canEdit({ acl: true, doc, role, userId })
-```
-
-Owners and admins can always edit. Members can edit their own rows. If `acl: true`, members listed in `editors` can also edit. Adding an editor requires `admin` role and verifies the target is an org member — you can't grant access to outsiders.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-wiki: table(s.wiki, {
-  extra: { editors: t.array(t.identity()).optional() },
-  softDelete: true
-})
-```
-
-The `editors` field stores Identity arrays. Consumer code checks `canEditResource(resource, org)` to gate UI and server-side logic.
-
-</Tab>
-</Tabs>
+This generates `addEditor`, `removeEditor`, `setEditors`, and `editors` endpoints. The `editors` field stores an array of user IDs (or Identity arrays on SpacetimeDB). Owners and admins can always edit. Members can edit their own rows. Members listed in `editors` can also edit. Adding an editor requires `admin` role and verifies the target is an org member — you can't grant access to outsiders.
 
 ### Membership flow
 
@@ -236,40 +93,24 @@ The `editors` field stores Identity arrays. Consumer code checks `canEditResourc
 - **Leave**: any member can leave (except sole owner, who must transfer first)
 - **Remove**: admin can remove members, owner can remove admins
 
-Invite tokens are generated with `crypto.getRandomValues()` — 24 random bytes encoded as a 32-character base-36 string. No `Math.random()`, no `Date.now()`.
+Invite tokens are 24 random bytes (`crypto.getRandomValues()`) encoded as a 32-character base-36 string. No `Math.random()`, no `Date.now()`.
 
 ## Rate limiting
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
 
 Built-in sliding window rate limiting on mutations:
 
 ```ts
-crud('blog', owned.blog, { rateLimit: { max: 10, window: 60_000 } })
-orgCrud('wiki', orgScoped.wiki, { rateLimit: { max: 5, window: 30_000 } })
+table(s.blog, { rateLimit: { max: 10, window: 60_000 } })
+table(s.blog, { rateLimit: 10 })  // shorthand: max 10/min
 ```
 
-`max` requests per `window` (ms) per authenticated user per table. Uses a single-row counter in the `rateLimit` table — no write amplification. When the window expires, the counter resets. Exceeding the limit throws `RATE_LIMITED` with a `retryAfter` value in milliseconds.
+`max` requests per `window` (ms) per authenticated user per table. Uses a single-row counter — no write amplification. When the window expires, the counter resets. Exceeding the limit throws `RATE_LIMITED` with a `retryAfter` value in milliseconds.
 
-Requires `...rateLimitTable()` in your Convex schema. Rate limiting is skipped in test mode so tests don't need to mock it.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-blog: table(s.blog, { rateLimit: 10 })
-blog: table(s.blog, { rateLimit: { max: 10, window: 30_000 } })
-```
-
-A number means "max N per minute" (60s window). Pass an object for custom windows. Exceeding the limit returns `RATE_LIMITED` with a `retryAfter` value in milliseconds.
-
-</Tab>
-</Tabs>
+Rate limiting is skipped in test mode so tests don't need to mock it.
 
 ## Input sanitization
 
-Both databases strip dangerous content from every string field before any database write.
+Every string field is stripped of dangerous content before any database write.
 
 | Attack vector           | Pattern removed                                                             |
 | ----------------------- | --------------------------------------------------------------------------- |
@@ -280,64 +121,39 @@ Both databases strip dangerous content from every string field before any databa
 | Dangerous HTML elements | `<iframe>`, `<object>`, `<embed>`, `<applet>`, `<form>`, `<base>`, `<meta>` |
 | HTML entity obfuscation | Encoded angle brackets (`&#x3c;`, `&#60;`, `&#x3e;`, `&#62;`)               |
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 The `inputSanitize` middleware runs on `beforeCreate` and `beforeUpdate`. Pass `fields` to target specific fields only:
 
 ```ts
 inputSanitize({ fields: ['title', 'content'] })
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-The `inputSanitize` middleware is applied to all generated CRUD reducers by default — no consumer configuration required. For custom reducers, apply it manually:
-
-```typescript
-import { inputSanitize } from '@noboil/spacetimedb/server'
-
-const myReducer = composeMiddleware(
-  inputSanitize({ fields: ['title', 'content'] }),
-  handler
-)
-```
-
 Sanitization is applied recursively to all string values in nested objects and arrays.
-
-</Tab>
-</Tabs>
 
 ## Middleware system
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Middleware is a composable security pipeline that runs around every CRUD operation. Configure it once in `setup()` and it applies to all factories:
+Middleware is a composable security pipeline that runs around every CRUD operation. Configure it once in `noboil()` config and it applies to all tables:
 
 ```ts
 import { auditLog, inputSanitize, slowQueryWarn } from '@noboil/convex/server'
 
-const { crud, orgCrud } = setup({
-  query,
-  mutation,
-  action,
-  internalQuery,
-  internalMutation,
-  getAuthUserId,
-  middleware: [
-    inputSanitize(),
-    auditLog({ logLevel: 'info', verbose: true }),
-    slowQueryWarn({ threshold: 300 })
-  ]
-})
+noboil(
+  {
+    query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+    middleware: [
+      inputSanitize(),
+      auditLog({ logLevel: 'info', verbose: true }),
+      slowQueryWarn({ threshold: 300 })
+    ]
+  },
+  ({ table }) => ({ /* ... */ })
+)
 ```
 
 **Built-in middleware:**
 
-- **`inputSanitize(opts?)`** — strips XSS patterns from string fields on create and update. Runs before the write.
-- **`auditLog(opts?)`** — logs every create, update, and delete with `userId`, `table`, and `id`. Set `verbose: true` to include the data payload. Runs after the write.
-- **`slowQueryWarn(opts?)`** — measures time between `beforeCreate`/`beforeUpdate`/`beforeDelete` and their `after*` counterparts. Logs a warning when the operation exceeds `threshold` ms (default: 500ms).
+- **`inputSanitize(opts?)`** — strips XSS patterns from string fields on create and update
+- **`auditLog(opts?)`** — logs every create, update, and delete with `userId`, `table`, and `id`. Set `verbose: true` to include the data payload
+- **`slowQueryWarn(opts?)`** — logs a warning when an operation exceeds `threshold` ms (default: 500)
 
 **Custom middleware:**
 
@@ -350,36 +166,11 @@ const notifyOnCreate: Middleware = {
     await sendWebhook({ table: ctx.table, id, userId: ctx.userId })
   }
 }
-
-setup({ middleware: [inputSanitize(), notifyOnCreate] })
 ```
 
-Middleware can also be applied per-table via `hooks` on individual factories, which compose with global middleware.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Middleware composes around reducers using `composeMiddleware`:
-
-```typescript
-import { auditLog, inputSanitize } from '@noboil/spacetimedb/server'
-
-const myReducer = composeMiddleware(
-  inputSanitize(),
-  auditLog({ verbose: true }),
-  handler
-)
-```
-
-</Tab>
-</Tabs>
+Middleware can also be applied per-table via `hooks` on individual table options, which compose with global middleware.
 
 ## Error codes
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-All errors use discriminated `ConvexError` with a structured `code` field:
 
 | Code                    | Meaning                                                      |
 | ----------------------- | ------------------------------------------------------------ |
@@ -393,8 +184,9 @@ All errors use discriminated `ConvexError` with a structured `code` field:
 | `CONFLICT`              | Row was modified since `expectedUpdatedAt`                   |
 | `RATE_LIMITED`          | Too many mutations — includes `retryAfter` (ms)              |
 | `LIMIT_EXCEEDED`        | Bulk operation exceeds 100-item cap                          |
+| `DUPLICATE`             | Unique constraint violation                                  |
 
-On the client, use `matchError`, `getErrorCode`, or `handleConvexError` to handle these by code:
+On the client, use `matchError` or `handleError`:
 
 ```ts
 import { matchError } from '@noboil/convex/server'
@@ -406,58 +198,19 @@ const msg = matchError(error, {
 })
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-All errors use discriminated error codes:
-
-| Code                | Meaning                                                      |
-| ------------------- | ------------------------------------------------------------ |
-| `NOT_AUTHENTICATED` | No `ctx.sender` — client not connected                       |
-| `NOT_FOUND`         | Row does not exist or caller lacks access                    |
-| `FORBIDDEN`         | Caller lacks permission (non-owner write, insufficient role) |
-| `NOT_AUTHORIZED`    | Caller is not authorized to access the resource              |
-| `VALIDATION_FAILED` | Input failed Zod validation — includes field-level errors    |
-| `CONFLICT`          | Row was modified since `expectedUpdatedAt`                   |
-| `RATE_LIMITED`      | Too many mutations — includes `retryAfter` (ms)              |
-| `DUPLICATE`         | Unique constraint violation                                  |
-
-Errors include structured `ErrorData`:
-
-```typescript
-interface ErrorData {
-  code: ErrorCode
-  message: string
-  detail?: Record<string, string>
-  retryAfter?: number
-}
-```
-
-`useMut` and `useFormMutation` from `@noboil/spacetimedb/react` automatically parse these errors and surface them as toasts or field-level validation messages.
-
-</Tab>
-</Tabs>
-
-## Scalability guidance
-
-### Indexed queries
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Where clauses (`$gt`, `$lt`, `$between`, `or`) use Convex's `.filter()` — they scan all rows then filter in memory. This works fine up to ~1,000 documents per table.
+## Scalability
 
 | Query pattern                | Uses index?         | Scales to   |
 | ---------------------------- | ------------------- | ----------- |
 | `{ own: true }`              | Yes (`by_user`)     | Millions    |
 | `{ category: 'tech' }`       | No (runtime filter) | ~1,000 docs |
 | `{ price: { $gte: 100 } }`   | No (runtime filter) | ~1,000 docs |
-| `pubIndexed` / `authIndexed` | Yes (custom index)  | Millions    |
+| Custom-indexed query         | Yes                 | Millions    |
 
-For high-volume tables, add Convex indexes and use `pubIndexed`/`authIndexed`:
+For high-volume tables, add a custom index and use `pubIndexed`/`authIndexed`:
 
 ```ts
-blog: ownedTable(owned.blog).index('by_category', ['category'])
+blog: ownedTable(s.blog).index('by_category', ['category'])
 
 const techPosts = useQuery(api.blog.pubIndexed, {
   index: 'by_category',
@@ -466,126 +219,38 @@ const techPosts = useQuery(api.blog.pubIndexed, {
 })
 ```
 
-Enable `strictFilter: true` in `setup()` to throw instead of warn when a filter set exceeds 1,000 docs. Recommended in production.
-
-Use `warnLargeFilterSet` in custom queries to catch unbounded data patterns during development:
+Enable `strictFilter: true` in `noboil()` config to throw instead of warn when a filter set exceeds 1,000 docs. Recommended in production.
 
 ```ts
 import { warnLargeFilterSet } from '@noboil/convex/server'
 
 const docs = await ctx.db.query('post').collect()
 warnLargeFilterSet(docs.length, 'post', 'home-feed')
-warnLargeFilterSet(docs.length, 'post', 'home-feed', true)
+warnLargeFilterSet(docs.length, 'post', 'home-feed', true)  // strict mode
 ```
 
-The fourth argument enables strict mode — throws instead of warns.
+For SpacetimeDB-specific scaling guidance (chunk pattern, in-memory bounds), see [Convex vs SpacetimeDB](./differences#9-cache-tables) and [Data fetching](./data-fetching#performance-and-scaling).
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB is an in-memory real-time database designed for MMO game servers. BitCraft, a massively multiplayer game, runs its entire backend on a single SpacetimeDB instance, handling tens of thousands of concurrent players.
-
-A single SpacetimeDB instance on 512GB RAM handles:
-
-| Metric                | Capacity                           |
-| --------------------- | ---------------------------------- |
-| Registered users      | 100M+                              |
-| Concurrent users (1%) | 1M                                 |
-| Active data (30 days) | ~350GB                             |
-| Write throughput      | 100K+ TPS                          |
-| Per-client row count  | ~200 rows (bounded by RLS + views) |
-
-SpacetimeDB subscriptions do not support `LIMIT`, `OFFSET`, or `ORDER BY`. This is intentional. Use the chunk pattern:
-
-| MMO concept      | App equivalent                                    |
-| ---------------- | ------------------------------------------------- |
-| Spatial chunk    | Time window (last 24h, last 7d)                   |
-| Entities near me | Posts from my orgs / tasks in my project          |
-| Chunk loading    | Subscribe to next time window on scroll           |
-| Chunk unloading  | Unsubscribe from old window to free client memory |
-
-</Tab>
-</Tabs>
-
-### Pagination
+## Pagination
 
 Always paginate. Never call `.collect()` on large tables in custom queries.
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```ts
-const { items, loadMore, isDone } = useList(api.blog.list, {
-  where: { own: true }
-})
+const { items, hasMore, loadMore } = useList(api.blog.list, { where: { own: true } })
 ```
 
-Start with small page sizes (`numItems: 20`). `useList` handles cursor management and `loadMore` automatically.
+`useList` handles cursor management automatically. Start with small page sizes (`pageSize: 20`).
 
-</Tab>
-<Tab value="SpacetimeDB">
+## Data lifecycle
 
-```typescript
-const { data, hasMore, loadMore } = useList(posts, isReady, {
-  pageSize: 20
-})
-```
-
-</Tab>
-</Tabs>
-
-### Data lifecycle
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Soft delete (`softDelete: true`) sets `deletedAt` instead of removing the row. This gives users an undo window and preserves audit history. Hard delete is the default and removes the row immediately, cleaning up any associated storage files.
-
-For org-scoped tables, soft delete filters out deleted rows from `list` queries automatically. The `restore` endpoint is generated when `softDelete: true`.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB holds all data in RAM. Tables must stay bounded:
-
-- **TTL**: scheduled reducers hard-delete data older than N days
-- **Archive**: move cold data to external storage (S3/Postgres) before deletion
-- **Soft delete**: `deletedAt` column with grace period before hard delete
-
-Hot data (last 30 days) stays in SpacetimeDB for real-time access. Cold data moves to external storage for historical queries.
-
-When external services are needed at scale:
-
-| Need                                | Service                 |
-| ----------------------------------- | ----------------------- |
-| Full-text search across all content | Meilisearch / Typesense |
-| Cross-instance aggregation          | Redis + worker          |
-| Analytics / reporting               | ClickHouse / BigQuery   |
-| Cold storage for archived data      | S3 / Postgres           |
-
-</Tab>
-</Tabs>
+`softDelete: true` sets `deletedAt` instead of removing the row. This gives users an undo window and preserves audit history. Hard delete is the default and removes the row immediately, cleaning up any associated storage files. Soft delete filters out deleted rows from `list` queries automatically. The `restore` endpoint is generated when `softDelete: true`.
 
 ## Anti-patterns
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-- **Exporting `pub` endpoints for data that should require login.** `pub` uses `pq` which skips `getAuthUserId`. If the data is user-specific, export `auth` instead.
-- **Skipping `requireOrgMember` in custom org queries.** If you write a custom `q` endpoint that reads org data, call `requireOrgMember` yourself. The factory does it automatically; custom functions don't.
-- **Using `.collect()` on large tables.** Convex loads all matching rows into memory. Use `.paginate()` or index-based queries for tables that grow unboundedly.
+- **Exporting public reads for data that should require login.** If the data is user-specific, use the `auth` tier or omit `pub` entirely.
+- **Skipping `requireOrgMember` in custom org queries.** If you write a custom query that reads org data, call `requireOrgMember` yourself. Generated endpoints do it automatically; custom code doesn't.
+- **Using `.collect()` on large tables.** Use `.paginate()` or index-based queries for tables that grow unboundedly.
 - **Storing unbounded data without pagination or TTL.** Tables that grow forever slow down queries proportionally.
-- **Client-side access control.** Don't hide UI elements and call it security. The server function is the only enforcement point.
-- **Passing user IDs from the client.** The `m` builder injects `user._id` from the server-side session. Never accept a `userId` argument from the client for ownership purposes.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-- **Subscribing to entire large tables without WHERE or view filtering.** Every subscribed row is held in client memory.
-- **Storing unbounded historical data without TTL.** Tables grow forever, RAM runs out.
-- **Using procedures for data the client needs in real-time.** Use subscriptions instead.
-- **Thinking in REST pagination mental model.** Think in subscription windows/chunks.
-- **Client-side access control.** The reducer is the only enforcement point. A user who calls the reducer directly bypasses any client-side check.
-
-</Tab>
-</Tabs>
+- **Client-side access control.** Don't hide UI elements and call it security. The server is the only enforcement point.
+- **Passing user IDs from the client.** Ownership comes from the server-side session. Never accept a `userId` argument from the client for ownership purposes.
+- **Subscribing to entire large tables without filtering** (SpacetimeDB). Every subscribed row is held in client memory.
