@@ -6,6 +6,7 @@ import { Toaster } from '@a/ui/sonner'
 import { OfflineIndicator } from '@noboil/spacetimedb/components'
 import { ThemeProvider } from 'next-themes'
 import { Suspense } from 'react'
+import ErrorBoundary from './error-boundary'
 import LoginLayout from './login-layout'
 interface AuthLayoutProps {
   bodyClassName?: string
@@ -32,12 +33,14 @@ const AuthLayout = ({
       {...bodyProps}
       className={cn('min-h-screen bg-background font-sans tracking-tight text-foreground antialiased', bodyClassName)}>
       <Suspense>
-        <Provider>
-          <ThemeProvider {...themeProviderProps} attribute='class' defaultTheme='system' enableSystem>
-            {children}
-            <OfflineIndicator {...offlineIndicatorProps} />
-          </ThemeProvider>
-        </Provider>
+        <ErrorBoundary>
+          <Provider>
+            <ThemeProvider {...themeProviderProps} attribute='class' defaultTheme='system' enableSystem>
+              {children}
+              <OfflineIndicator {...offlineIndicatorProps} />
+            </ThemeProvider>
+          </Provider>
+        </ErrorBoundary>
         <Toaster {...toasterProps} duration={1000} />
       </Suspense>
     </body>

@@ -98,7 +98,11 @@ const matchW = <WG extends Record<string, unknown> & { own?: boolean }>(
     const entries = Object.entries(g)
     let ok = true
     for (const [k, vl] of entries) if (!(k === 'own' || vl === undefined || matchField(doc[k], vl))) ok = false
-    if (ok && (!g.own || vid === (doc as { userId?: string }).userId)) return true
+    const isOwn =
+      'own' in doc
+        ? (doc as { own: boolean }).own
+        : vid !== undefined && vid !== null && vid === (doc as { userId?: string }).userId
+    if (ok && (!g.own || isOwn)) return true
   }
   return false
 }
