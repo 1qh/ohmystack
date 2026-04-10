@@ -1,12 +1,8 @@
 import { requireOrgMember } from '@noboil/convex/server'
 import { zid } from 'convex-helpers/server/zod4'
-import { orgCrud, q, uniqueCheck } from '../lazy'
+import { api, q, uniqueCheck } from '../lazy'
 import { orgScoped } from '../t'
-export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = orgCrud(
-  'wiki',
-  orgScoped.wiki,
-  { acl: true, rateLimit: { max: 30, window: 60_000 }, softDelete: true }
-)
+export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = api.wiki
 export const listDeleted = q({
   args: { orgId: zid('org') },
   handler: async (c, { orgId }: { orgId: string }) => {

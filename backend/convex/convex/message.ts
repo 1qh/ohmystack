@@ -1,6 +1,5 @@
-import { childCrud } from '../lazy'
-import { children } from '../t'
-const ops = childCrud('message', children.message, { pub: { parentField: 'isPublic' } })
+import { api } from '../lazy'
+const ops = api.message
 const pub =
   ops.pub ??
   (() => {

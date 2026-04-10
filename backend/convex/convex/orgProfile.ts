@@ -1,3 +1,2 @@
-import { singletonCrud } from '../lazy'
-import { singleton } from '../t'
-export const { get, upsert } = singletonCrud('orgProfile', singleton.orgProfile)
+import { api } from '../lazy'
+export const { get, upsert } = api.orgProfile

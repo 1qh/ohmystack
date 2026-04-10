@@ -1,4 +1,12 @@
-import { auditLog, inputSanitize, makeFileUpload, makePresence, noboil, slowQueryWarn } from '@noboil/convex/server'
+import {
+  auditLog,
+  inputSanitize,
+  makeFileUpload,
+  makePresence,
+  noboil,
+  orgCascade,
+  slowQueryWarn
+} from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { s } from './t'
@@ -22,9 +30,11 @@ const api = noboil(
       pub: { where: { isPublic: true } },
       rateLimit: { max: 30, window: 60_000 }
     }),
+    message: table(s.message, { pub: { parentField: 'isPublic' } }),
     orgProfile: table(s.orgProfile),
     project: table(s.project, {
       acl: true,
+      cascade: orgCascade(s.task, { foreignKey: 'projectId', table: 'task' }),
       rateLimit: { max: 30, window: 60_000 }
     }),
     task: table(s.task, {

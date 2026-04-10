@@ -1,3 +1,2 @@
-import { singletonCrud } from '../lazy'
-import { singleton } from '../t'
-export const { get, upsert } = singletonCrud('blogProfile', singleton.blogProfile)
+import { api } from '../lazy'
+export const { get, upsert } = api.blogProfile
