@@ -847,7 +847,7 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
 
 ## File Upload with S3 Pre-Signed URLs (SpacetimeDB)
 
-Convex uses its built-in file storage via `file()` in the schema — no presigned URL flow is needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. Both backends accept `file()` in the Zod schema, but the wiring on the SpacetimeDB side is shown here.
+Convex uses native storage via `file()` — no presigned URL flow needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. The schema field is `file()` either way; this section shows the SpacetimeDB wiring.
 
 ### API route
 
@@ -1032,7 +1032,7 @@ const Onboarding = () => {
 
 **Features:** singletonCrud · 1:1 per-user · file upload · upsert
 
-Both libraries support singleton tables. The Convex version uses `singletonCrud()` and `file()` (Convex storage); the SpacetimeDB version uses the same `singleton: { profile }` schema and `file()` (S3 storage). The Convex flow is shown below.
+`singletonCrud` from a `singleton: { profile }` schema slot. The Convex flow is shown below; the SpacetimeDB version uses the same schema with S3 storage instead of native.
 
 ### Schema
 

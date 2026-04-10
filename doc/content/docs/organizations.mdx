@@ -3,567 +3,215 @@ title: Organizations
 description: Multi-tenant apps with roles, invites, join requests, and per-item ACL.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-
-Both databases provide a full multi-tenant system with roles, invites, join requests, and per-item ACL. The APIs differ but the concepts are the same.
+A complete multi-tenant system: orgs, members, roles, invites, join requests, per-item ACL — generated from one schema.
 
 ## Schema setup
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Define org-scoped tables in `convex/t.ts`:
-
-```tsx
-import { makeOrgScoped } from '@noboil/convex/schema'
+```ts
+import { schema, orgSchema } from '@noboil/convex/schema'
 import { object, string } from 'zod/v4'
 
-const orgScoped = makeOrgScoped({
-  wiki: object({
-    title: string().min(1),
-    slug: string(),
-    status: string()
-  }),
-  project: object({
-    name: string().min(1),
-    description: string().optional()
-  })
-})
-
-export { orgScoped }
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Define org and org-scoped tables in `t.ts`:
-
-```typescript
-import { schema } from '@noboil/spacetimedb/schema'
-import { object, string } from 'zod/v4'
-
-const s = schema({
+export const s = schema({
   org: {
-    team: object({
-      name: string().min(1),
-      slug: string().regex(/^[a-z0-9-]+$/u)
-    })
+    team: orgSchema
   },
   orgScoped: {
-    project: object({ description: string().optional(), name: string().min(1) })
+    project: object({ description: string().optional(), name: string().min(1) }),
+    wiki: object({ title: string().min(1), slug: string(), status: string() })
   }
 })
-
-export { s }
 ```
 
-Wire it up in `index.ts`:
+`org.team` is the org definition (name, slug, avatar). `orgScoped` schemas auto-get `userId`, `orgId`, and `updatedAt` system fields.
 
-```typescript
-import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../../t'
+## Wire it up
 
-export default noboil(({ table }) => ({
-  org: table(s.team, { unique: ['slug'] }),
-  project: table(s.project)
-}))
+```ts
+const api = noboil(
+  { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team, orgCascadeTables: ['project', 'wiki'] },
+  ({ table }) => ({
+    project: table(s.project, { acl: true }),
+    wiki: table(s.wiki, { acl: true, softDelete: true })
+  })
+)
 ```
 
-`table(org.x)` auto-creates the `orgMember`, `orgInvite`, and `orgJoinRequest` sub-tables. Org-scoped tables cascade-delete by default when an org is removed. Opt out with `cascade: false` if needed.
-
-</Tab>
-</Tabs>
+`noboil()` auto-creates the `orgMember`, `orgInvite`, and `orgJoinRequest` sub-tables. Org-scoped tables cascade-delete when an org is removed.
 
 ## One-line org-scoped CRUD
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Each `orgScoped` table generates:
 
-```tsx
-export const {
-  addEditor,
-  create,
-  editors,
-  list,
-  read,
-  removeEditor,
-  restore,
-  rm,
-  setEditors,
-  update
-} = orgCrud('wiki', orgScoped.wiki, { acl: true, softDelete: true })
-```
+- `create_X`, `update_X`, `rm_X` — auth + org membership + ownership checks
+- `list`, `read` — scoped to the active org
+- `addEditor`, `removeEditor`, `setEditors`, `editors` — when `acl: true`
+- `restore` — when `softDelete: true`
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-`table(s.orgScopedEntry)` registers a table that belongs to an org and enforces org membership before any write:
-
-```typescript
-export default noboil(({ table }) => ({
-  project: table(s.project)
-}))
-```
-
-Generated reducers: `create_project`, `update_project`, `rm_project`.
-
-The `create_project` reducer requires `orgId` in addition to the fields. It checks that the caller is a member of that org before inserting. The `update_project` and `rm_project` reducers check that the caller is either an org admin or the original creator of the row.
-
-</Tab>
-</Tabs>
+The `create` reducer checks org membership before inserting. `update` and `rm` check that the caller is either an org admin or the original creator.
 
 ## Generated org API
 
-Both databases generate the same set of org management operations:
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Management: `create`, `update`, `get`, `getBySlug`, `myOrgs`, `remove`
-
-Membership: `membership`, `members`, `setAdmin`, `removeMember`, `leave`, `transferOwnership`
-
-Invites: `invite`, `acceptInvite`, `revokeInvite`, `pendingInvites`
-
-Join requests: `requestJoin`, `approveJoinRequest`, `rejectJoinRequest`, `pendingJoinRequests`
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-| Reducer                 | Description                                      |
-| ----------------------- | ------------------------------------------------ |
-| `create_org`            | Create a new org (caller becomes owner + member) |
-| `update_org`            | Update org name/slug/avatar (owner only)         |
-| `remove_org`            | Delete org and cascade-delete all resources      |
-| `get_org`               | Fetch org by ID                                  |
-| `get_org_by_slug`       | Fetch org by slug                                |
-| `my_orgs`               | List orgs the caller belongs to                  |
-| `add_member`            | Add a user as member (admin only)                |
-| `remove_member`         | Remove a member (admin only)                     |
-| `set_admin`             | Toggle admin status for a member                 |
-| `leave_org`             | Leave an org (cannot leave if sole owner)        |
-| `transfer_ownership`    | Transfer ownership to another member             |
-| `invite`                | Create an invite link (admin only)               |
-| `accept_invite`         | Accept an invite by token                        |
-| `revoke_invite`         | Delete an invite (admin only)                    |
-| `pending_invites`       | List pending invites for an org                  |
-| `request_join`          | Submit a join request                            |
-| `approve_join_request`  | Approve a pending join request (admin only)      |
-| `reject_join_request`   | Reject a pending join request (admin only)       |
-| `pending_join_requests` | List pending join requests for an org            |
-| `membership`            | Get caller's membership in an org                |
-| `members`               | List all members of an org                       |
-
-</Tab>
-</Tabs>
+| Operation | Endpoint |
+|---|---|
+| Create org | `api.org.create` |
+| Update org | `api.org.update` |
+| Delete org | `api.org.remove` |
+| Get by ID | `api.org.get` |
+| Get by slug | `api.org.getBySlug` |
+| List my orgs | `api.org.myOrgs` |
+| Membership info | `api.org.membership` |
+| List members | `api.org.members` |
+| Set admin | `api.org.setAdmin` |
+| Remove member | `api.org.removeMember` |
+| Leave | `api.org.leave` |
+| Transfer ownership | `api.org.transferOwnership` |
+| Invite | `api.org.invite` |
+| Accept invite | `api.org.acceptInvite` |
+| Revoke invite | `api.org.revokeInvite` |
+| Pending invites | `api.org.pendingInvites` |
+| Request to join | `api.org.requestJoin` |
+| Approve join | `api.org.approveJoinRequest` |
+| Reject join | `api.org.rejectJoinRequest` |
+| Pending join requests | `api.org.pendingJoinRequests` |
 
 ## Client-side org context
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Wrap your layout with `OrgProvider`. Components inside read the active org via `useOrg`, scope queries with `useOrgQuery`, and call mutations with `useOrgMutation` — `orgId` is injected automatically.
 
 ```tsx
-const { useOrg, useActiveOrg, useMyOrgs } = createOrgHooks(api.org)
+import { OrgProvider, useOrg, useOrgQuery, useOrgMutation, useActiveOrg, useMyOrgs } from '@noboil/convex/react'
 
-<OrgProvider membership={membership} org={org} role={role}>
+<OrgProvider org={org} role={role} membership={membership}>
   {children}
 </OrgProvider>
 
 const { org, role, isAdmin, isOwner } = useOrg()
+const { activeOrg, setActiveOrg } = useActiveOrg()
+const { orgs } = useMyOrgs()
+
 const projects = useOrgQuery(api.project.list, { paginationOpts: { cursor: null, numItems: 20 } })
 const remove = useOrgMutation(api.project.rm)
 await remove({ id: projectId })
 ```
 
-`useOrgQuery` and `useOrgMutation` automatically inject `orgId` from the `OrgProvider` context — no manual passing required.
+### Typed bindings with createOrgHooks
 
-</Tab>
-<Tab value="SpacetimeDB">
+```ts
+import { createOrgHooks } from '@noboil/convex/react'
 
-Use `OrgProvider` to make org data available throughout your component tree:
-
-```typescript
-'use client'
-
-import { OrgProvider } from '@noboil/spacetimedb/react'
-import { useTable } from 'spacetimedb/react'
-import { tables } from '@/generated/module_bindings'
-
-const OrgLayout = ({
-  children,
-  orgSlug,
-}: {
-  children: React.ReactNode
-  orgSlug: string
-}) => {
-  const [orgs] = useTable(tables.org)
-  const [members] = useTable(tables.orgMember)
-
-  const org = orgs.find(o => o.slug === orgSlug)
-  if (!org) return <div>Org not found</div>
-
-  const myMembership = members.find(
-    m => m.orgId === org.id && m.userId === currentIdentity
-  )
-  const role = org.userId === currentIdentity
-    ? 'owner'
-    : myMembership?.isAdmin
-    ? 'admin'
-    : 'member'
-
-  return (
-    <OrgProvider org={org} role={role} membership={myMembership ?? null}>
-      {children}
-    </OrgProvider>
-  )
-}
-```
-
-</Tab>
-</Tabs>
-
-## Org hooks
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-const { org, role, isAdmin, isOwner } = useOrg()
-const { activeOrg } = useActiveOrg()
-const { orgs } = useMyOrgs()
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-'use client'
-
-import { useOrg, useActiveOrg, useMyOrgs } from '@noboil/spacetimedb/react'
-
-const OrgHeader = () => {
-  const { org, role, isAdmin, isOwner, canManageMembers } = useOrg()
-  const { activeOrg, setActiveOrg } = useActiveOrg()
-  const { orgs } = useMyOrgs()
-
-  return (
-    <header>
-      <h1>{org.name}</h1>
-      <span>{role}</span>
-      {isAdmin && <a href="/members">Manage members</a>}
-    </header>
-  )
-}
-```
-
-</Tab>
-</Tabs>
-
-## Org-scoped mutations
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-`useOrgMutation` automatically injects `orgId` from the `OrgProvider` context:
-
-```tsx
-const remove = useOrgMutation(api.project.rm)
-await remove({ id: projectId })
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`useOrgMutation` automatically injects `orgId` into reducer calls:
-
-```typescript
-'use client'
-
-import { useOrgMutation } from '@noboil/spacetimedb/react'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-
-const CreateProject = () => {
-  const createProject = useOrgMutation(useReducer(reducers.create_project))
-
-  const handleSubmit = async (name: string) => {
-    await createProject({ name })
-  }
-}
-```
-
-</Tab>
-</Tabs>
-
-## createOrgHooks
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-`createOrgHooks` is a factory that returns typed org hooks bound to your org API:
-
-```tsx
 const { useOrg, useActiveOrg, useMyOrgs, useOrgQuery, useOrgMutation } = createOrgHooks(api.org)
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
+## ACL — per-item editor permissions
 
-`createOrgHooks` returns typed org hooks bound to your org type. Use it when your org has extra fields or when you need `orgId` coerced to a specific type before being injected into mutations:
+`acl: true` adds `addEditor`, `removeEditor`, `setEditors`, `editors` endpoints, plus an `editors[]` field on each row.
 
-```typescript
-import { createOrgHooks } from '@noboil/spacetimedb/react'
+| Role | Can edit? |
+|---|---|
+| Org owner / admin | Always |
+| Item creator | Always (own docs) |
+| In `editors[]` | Yes |
+| Regular member | View only |
 
-const { useActiveOrg, useMyOrgs, useOrg, useOrgMutation } = createOrgHooks<
-  Org & { _id: string }
->({
-  orgIdForMutation: Number
-})
+```ts
+table(s.wiki, { acl: true, softDelete: true })
 ```
 
-The `orgIdForMutation` option accepts a function that transforms the org's `_id` string before injecting it as `orgId` into mutation calls. In the example above, `Number` converts the string ID to a number, matching a `u32` reducer argument.
+Use `canEditResource` to gate UI:
 
-```typescript
-const update = useOrgMutation(useReducer(reducers.orgUpdate))
-await update(d)
-```
-
-When `orgIdForMutation` is omitted, `orgId` is passed as-is.
-
-</Tab>
-</Tabs>
-
-## Org-scoped queries
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-const projects = useOrgQuery(api.project.list, {
-  paginationOpts: { cursor: null, numItems: 20 }
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`useOrgQuery` automatically injects `orgId` into query arguments:
-
-```typescript
-'use client'
-
-import { useOrgQuery } from '@noboil/spacetimedb/react'
-
-const ProjectList = () => {
-  const projects = useOrgQuery(queryProject, { status: 'active' })
-}
-```
-
-Pass `'skip'` to skip the query when required data isn't ready:
-
-```typescript
-const details = useOrgQuery(
-  queryProject,
-  selectedId ? { id: selectedId } : 'skip'
-)
-```
-
-</Tab>
-</Tabs>
-
-## ACL (per-item editor permissions)
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Pass `acl: true` to get `addEditor`, `removeEditor`, `setEditors`, `editors` endpoints. Add `editors: array(zid('users')).optional()` to schema.
-
-| Role            | Can edit?         |
-| --------------- | ----------------- |
-| Org owner/admin | Always            |
-| Item creator    | Always (own docs) |
-| In `editors[]`  | Yes               |
-| Regular member  | View only         |
-
-Child tables inherit ACL from parents:
-
-```tsx
-orgCrud('task', orgScoped.task, {
-  aclFrom: { field: 'projectId', table: 'project' }
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-For per-item permissions beyond role-based access:
-
-```typescript
-wiki: table(s.wiki, {
-  extra: { editors: t.array(t.identity()).optional() },
-  softDelete: true
-})
-```
-
-The `editors` field stores Identity arrays. Use `canEditResource` to gate UI and server-side logic:
-
-```typescript
-import { canEditResource } from '@noboil/spacetimedb/react'
+```ts
+import { canEditResource } from '@noboil/convex/react'
 
 const canEdit = canEditResource({
   resource: wiki,
   editorsList: wiki.editors ?? [],
   isAdmin: org.isAdmin,
-  userId: currentIdentity.toHexString()
+  userId: currentUserId
 })
 ```
 
-</Tab>
-</Tabs>
+Child tables can inherit ACL from their parent:
+
+```ts
+table(s.task, { aclFrom: { field: 'projectId', table: 'project' } })
+```
 
 ## Cascade delete
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+```ts
+import { orgCascade } from '@noboil/convex/server'
 
-```tsx
-orgCrud('project', orgScoped.project, {
+table(s.project, {
   acl: true,
-  cascade: orgCascade(orgScoped.task, {
-    foreignKey: 'projectId',
-    table: 'task'
-  })
+  cascade: orgCascade(s.task, { foreignKey: 'projectId', table: 'task' })
 })
 ```
 
-Both `foreignKey` and `table` are type-checked — typos are compile errors.
+Configure org-level cascade with file cleanup in `noboil()` config:
 
-Configure org-level cascade in `setup()`:
-
-```tsx
-setup({
-  orgCascadeTables: [
-    'project',
-    'wiki',
-    { table: 'attachment', fileFields: ['fileId'] }
-  ]
-})
+```ts
+noboil(
+  {
+    // ...
+    orgSchema: s.team,
+    orgCascadeTables: [
+      'project',
+      'wiki',
+      { table: 'attachment', fileFields: ['fileId'] }
+    ]
+  },
+  ({ table }) => ({ /* ... */ })
+)
 ```
 
-File fields are cleaned from storage before rows are deleted. Members, invites, and join requests are also purged. The org document is deleted last.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Org-scoped tables cascade-delete by default when an org is deleted. All rows belonging to the deleted org are automatically removed. Opt out with `cascade: false`:
-
-```typescript
-project: table(s.project, { cascade: false })
-```
-
-</Tab>
-</Tabs>
+File fields are cleaned from storage before rows are deleted. Members, invites, and join requests are purged. The org document is deleted last.
 
 ## Invite and join lifecycle
 
-Two paths for adding members to an org. Both databases implement the same flows.
-
-**Path 1: Admin invites a user**
+**Path 1 — admin invites a user:**
 
 ```
-Admin calls invite(email, orgId)
-  → Invite record created with expiration token
-  → Invited user calls acceptInvite(token)
-    → orgMember record created
-    → Invite marked as used
+admin → invite(email, orgId)
+  → Invite record created with token
+  → user → acceptInvite(token)
+    → orgMember row created
+    → invite marked used
 ```
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-await invite({ email: 'alice@company.com', orgId: org._id })
-
-const pending = await pendingInvites({ orgId: org._id })
-
-await revokeInvite({ inviteId: pending[0]._id, orgId: org._id })
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-const invite = useReducer(reducers.invite)
-const pendingInvites = useReducer(reducers.pending_invites)
-const revokeInvite = useReducer(reducers.revoke_invite)
-
+```ts
 await invite({ email: 'alice@company.com', orgId: org.id })
+const pending = await pendingInvites({ orgId: org.id })
 await revokeInvite({ inviteId: pending[0].id, orgId: org.id })
 ```
 
-</Tab>
-</Tabs>
-
-**Path 2: User requests to join**
+**Path 2 — user requests to join:**
 
 ```
-User calls requestJoin(orgId, message?)
-  → Join request created (status: 'pending')
-  → Admin sees request in pendingJoinRequests(orgId)
-  → Admin calls approveJoinRequest(requestId, orgId)
-    → orgMember record created
-    → Request status → 'approved'
-  OR rejectJoinRequest(requestId, orgId)
-    → Request status → 'rejected'
+user → requestJoin(orgId, message?)
+  → JoinRequest created (status: 'pending')
+  → admin → approveJoinRequest(requestId, orgId)  OR  rejectJoinRequest(...)
+    → orgMember row created (on approve)
 ```
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-await requestJoin({ orgId: org._id, message: 'I work on the frontend team' })
-
-const requests = await pendingJoinRequests({ orgId: org._id })
-
-await approveJoinRequest({ orgId: org._id, requestId: requests[0]._id })
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-const requestJoin = useReducer(reducers.request_join)
-const approveJoinRequest = useReducer(reducers.approve_join_request)
-
+```ts
 await requestJoin({ orgId: org.id, message: 'I work on the frontend team' })
+const requests = await pendingJoinRequests({ orgId: org.id })
 await approveJoinRequest({ orgId: org.id, requestId: requests[0].id })
 ```
 
-</Tab>
-</Tabs>
+Invite tokens are 24 random bytes (`crypto.getRandomValues()`) encoded as a 32-char base-36 string.
 
 ## Org switching
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-The active org is stored as a cookie so server components can read it:
+The active org is stored as a cookie so server components can read it.
 
 ```tsx
-import {
-  setActiveOrgCookie,
-  getActiveOrg,
-  clearActiveOrgCookie
-} from '@noboil/convex/next'
+import { setActiveOrgCookie, getActiveOrg, clearActiveOrgCookie } from '@noboil/convex/next'
 
 await setActiveOrgCookie(orgId)
-
 const activeOrg = await getActiveOrg()
-
 await clearActiveOrgCookie()
 ```
-
-Client-side:
 
 ```tsx
 import { setActiveOrgCookieClient } from '@noboil/convex/react'
@@ -571,119 +219,33 @@ import { setActiveOrgCookieClient } from '@noboil/convex/react'
 setActiveOrgCookieClient(orgId)
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
+## Roles
 
-```typescript
-import { useActiveOrg } from '@noboil/spacetimedb/react'
-
-const { activeOrg, setActiveOrg } = useActiveOrg()
-
-setActiveOrg(org.id)
-```
-
-</Tab>
-</Tabs>
-
-## Read-side ACL with views
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-For data that should only be visible to org members, use the `auth` read endpoint with `requireOrgMember` in custom queries:
-
-```tsx
-export const orgData = q({
-  args: { orgId: v.id('org') },
-  handler: async (c, { orgId }) => {
-    await requireOrgMember({ db: c.db, orgId, userId: c.user._id })
-    return c.db.query('project').filter(q => q.eq(q.field('orgId'), orgId)).collect()
-  }
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-For data that should only be visible to org members, use private tables with public views filtered by `ctx.sender`:
-
-```sql
-CREATE VIEW my_org_data AS
-  SELECT d.* FROM private_data d
-  JOIN org_member m ON m.org_id = d.org_id
-  WHERE m.user_id = ctx_sender()
-```
-
-Clients subscribe to the view, not the base table. SpacetimeDB enforces this at the subscription level.
-
-</Tab>
-</Tabs>
-
-## Role escalation
-
-Both databases use the same three-tier role model:
-
-| Role     | Permissions                                                      |
-| -------- | ---------------------------------------------------------------- |
-| `owner`  | All permissions. Transfer ownership. Delete org.                 |
-| `admin`  | Manage members. Invite/remove. Approve join requests. Full CRUD. |
-| `member` | CRUD own resources within the org. Leave org.                    |
+| Role | Permissions |
+|---|---|
+| `owner` | All permissions. Transfer ownership. Delete org. |
+| `admin` | Manage members. Invite/remove. Approve join requests. Full CRUD. |
+| `member` | CRUD own resources within the org. Leave org. |
 
 ## Handling permission errors
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```tsx
-import { handleConvexError } from '@noboil/convex/server'
-
-handleConvexError(error, {
-  NOT_ORG_MEMBER: () => router.push('/orgs'),
-  INSUFFICIENT_ORG_ROLE: () => toast.error('Admin access required'),
-  EDITOR_REQUIRED: () => toast.error('You need editor permission'),
-  ALREADY_ORG_MEMBER: () => toast.info('Already a member'),
-  INVITE_EXPIRED: () => toast.error('This invite has expired'),
-  MUST_TRANSFER_OWNERSHIP: () =>
-    toast.error('Transfer ownership before leaving'),
-  default: () => toast.error('Something went wrong')
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-import { extractErrorData } from '@noboil/spacetimedb/server'
+import { handleError } from '@noboil/convex/server'
 
 try {
   await createProject({ name, orgId: org.id })
-} catch (error) {
-  const data = extractErrorData(error)
-  switch (data?.code) {
-    case 'NOT_ORG_MEMBER':
-      router.push('/orgs')
-      break
-    case 'FORBIDDEN':
-      toast.error('Admin access required')
-      break
-    case 'RATE_LIMITED':
-      toast.error(`Slow down — retry in ${data.retryAfter}ms`)
-      break
-    default:
-      toast.error('Something went wrong')
-  }
+} catch (e) {
+  handleError(e, {
+    NOT_ORG_MEMBER: () => router.push('/orgs'),
+    INSUFFICIENT_ORG_ROLE: () => toast.error('Admin access required'),
+    EDITOR_REQUIRED: () => toast.error('You need editor permission'),
+    RATE_LIMITED: ({ retryAfter }) => toast.error(`Slow down — retry in ${retryAfter}ms`),
+    default: () => toast.error('Something went wrong')
+  })
 }
 ```
 
-</Tab>
-</Tabs>
-
 ## Pre-built components
-
-Both libraries ship the same set of org UI components.
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
 
 ```tsx
 import {
@@ -695,18 +257,4 @@ import {
 } from '@noboil/convex/components'
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-```tsx
-import {
-  EditorsSection,
-  PermissionGuard,
-  OrgAvatar,
-  RoleBadge,
-  OfflineIndicator
-} from '@noboil/spacetimedb/components'
-```
-
-</Tab>
-</Tabs>
+See [Components](./components) for the full reference.

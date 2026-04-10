@@ -5,30 +5,21 @@ description: Typesafe form components, validation, file uploads, and error handl
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-This guide walks through building a blog post editor, starting simple and adding features incrementally. Snippets are written in single voice — pick the import path that matches your backend. The genuinely backend-specific bits (file storage, mutation wiring) are called out inline.
+This guide walks through building a blog post editor, starting simple and adding features incrementally.
 
 ## A basic create form
 
 You have a blog schema in `t.ts` and a registered table via `noboil()`. Build a form to create posts:
 
 ```tsx
-import { Form, useFormMutation } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { Form, useFormMutation } from '@noboil/convex/components'
 import { s } from '@/backend/t'
 
 const CreatePost = () => {
-  // Convex
   const form = useFormMutation({
     mutation: api.blog.create,
     schema: s.blog
   })
-
-  // SpacetimeDB
-  // const createBlog = useReducer(reducers.create_blog)
-  // const form = useFormMutation({
-  //   schema: s.blog,
-  //   mutate: d => createBlog(d),
-  //   toast: 'Created'
-  // })
 
   return (
     <Form
@@ -86,18 +77,15 @@ For multi-file uploads, use `<Files>` against a `files()` field.
 `useFormMutation` pre-fills values from an existing record via `pickValues`:
 
 ```tsx
-import { useFormMutation } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
-import { pickValues } from '@noboil/convex/zod'  // or @noboil/spacetimedb/zod
+import { useFormMutation } from '@noboil/convex/components'
+import { pickValues } from '@noboil/convex/zod'
 
 const EditPost = ({ post }: { post: BlogRow }) => {
   const form = useFormMutation({
-    // Convex
     mutation: api.blog.update,
-    transform: d => ({ ...d, id: post._id, expectedUpdatedAt: post.updatedAt }),
-    // SpacetimeDB
-    // mutate: d => updateBlog({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
     schema: s.blog,
     values: pickValues(s.blog, post),
+    transform: d => ({ ...d, id: post._id, expectedUpdatedAt: post.updatedAt }),
     toast: 'Saved'
   })
 
@@ -123,7 +111,7 @@ const EditPost = ({ post }: { post: BlogRow }) => {
 
 ## Conflict detection
 
-Both backends support optimistic concurrency control via `expectedUpdatedAt`. When the server detects a stale value, the built-in `ConflictDialog` appears with three options:
+Optimistic concurrency control via `expectedUpdatedAt`. When the server detects a stale value, the built-in `ConflictDialog` appears with three options:
 
 - **Cancel** — discard your changes
 - **Reload** — fetch the latest version
@@ -137,14 +125,14 @@ For a document editor experience, enable auto-save with debounce:
 
 ```tsx
 const form = useFormMutation({
+  mutation: api.blog.update,
   schema: s.blog,
   values: pickValues(s.blog, post),
-  // Convex: mutation: api.blog.update + transform, or...
-  // SpacetimeDB: mutate: d => updateBlog({ id: post.id, ...d })
+  transform: d => ({ ...d, id: post._id }),
   autoSave: { enabled: true, debounceMs: 1000 }
 })
 
-import { AutoSaveIndicator } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { AutoSaveIndicator } from '@noboil/convex/components'
 ;<AutoSaveIndicator lastSaved={form.lastSaved} />
 ```
 
@@ -188,10 +176,10 @@ The `asyncValidate` runs 500ms after the user stops typing and shows inline feed
 
 ## Multi-step wizard
 
-For complex forms like onboarding, use `defineSteps` to split into typed steps. The API is identical on both backends.
+For complex forms like onboarding, use `defineSteps` to split into typed steps.
 
 ```tsx
-import { defineSteps } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { defineSteps } from '@noboil/convex/components'
 
 const { StepForm, useStepper } = defineSteps(
   { id: 'profile', label: 'Profile', schema: profileStep },
@@ -251,7 +239,7 @@ Customize step indicator styling without forking components — pass `stepIndica
 For instant-feeling delete buttons:
 
 ```tsx
-import { useOptimisticMutation } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { useOptimisticMutation } from '@noboil/convex/react'
 
 const { execute, isPending } = useOptimisticMutation({
   mutation: api.blog.rm,
@@ -263,11 +251,9 @@ const { execute, isPending } = useOptimisticMutation({
 
 The item disappears immediately. If the server rejects, it reappears with an error toast.
 
-> SpacetimeDB's ~39ms local Docker latency makes optimistic updates unnecessary in most cases — the subscription update arrives before the user notices. For higher-latency Maincloud deployments, `useOptimisticMutation` provides the same API.
-
 ## Available field components
 
-See the [Components reference](./components#field-components) for the full table. All 16 field components work identically on both backends — only the file-upload backend differs (Convex storage vs S3 presigned URLs), and the `<File>` component handles that automatically.
+See the [Components reference](./components#field-components) for the full 16-field table.
 
 ## Error handling
 
@@ -288,7 +274,7 @@ When `title.min(1)` fails, the `<Text name='title' />` field shows "Required" in
 ```tsx
 const form = useFormMutation({
   schema: s.blog,
-  mutation: api.blog.create,  // or mutate: ...
+  mutation: api.blog.create,
   onError: e => toast.error(`Failed: ${e.message}`)
 })
 
@@ -305,7 +291,7 @@ const silent = useFormMutation({
 ```tsx
 const form = useFormMutation({
   schema: s.blog,
-  mutation: api.blog.create,  // or mutate: ...
+  mutation: api.blog.create,
   toast: 'Created'
 })
 ```
@@ -313,7 +299,7 @@ const form = useFormMutation({
 **Rate limit errors** — when a mutation returns `RATE_LIMITED`, the default error toast shows "Too many requests". For custom UX, use `handleError`:
 
 ```tsx
-import { handleError } from '@noboil/convex/server'  // or @noboil/spacetimedb/server
+import { handleError } from '@noboil/convex/server'
 
 const form = useFormMutation({
   schema: s.blog,
@@ -330,11 +316,10 @@ const form = useFormMutation({
 **Error boundary** — wrap pages with `ErrorBoundary` to catch unhandled errors:
 
 ```tsx
-import { ErrorBoundary } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { ErrorBoundary } from '@noboil/convex/components'
 
 <ErrorBoundary>
   <BlogEditor />
 </ErrorBoundary>
 ```
 
-See [Convex vs SpacetimeDB](./differences#8-conflict-detection) for the small wire-format differences in error envelopes.

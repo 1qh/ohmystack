@@ -5,11 +5,11 @@ description: Queries, subscriptions, pagination, filtering, and SSR patterns.
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-Both backends are reactive: subscribed components re-render whenever underlying data changes. The user-facing API for filtering, sorting, paginating, and searching is the same on both libs — `useList` from `/react`. Where they differ is the underlying transport (Convex query subscription vs SpacetimeDB WebSocket subscription) and the visibility model (`pub`/`auth` destructure vs `clientVisibilityFilter` SQL). See [Convex vs SpacetimeDB](./differences#2-where-filters-and-the-pub-option) for the details.
+Reactive subscriptions out of the box. Filter, sort, paginate, and search through one hook: `useList`.
 
 ## Access control on read endpoints
 
-Both libs accept the same `pub` table option, but apply it differently. Convex generates two read endpoints (`pub.list` and `auth.list`); SpacetimeDB generates a server-enforced `clientVisibilityFilter` SQL rule.
+Pass `pub` on a table to control what unauthenticated callers can see.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
@@ -51,11 +51,11 @@ export default noboil(({ table }) => ({
 
 ## Basic subscriptions
 
-`useList` is the high-level hook on both backends — it handles filtering, sorting, search, pagination. The lower-level `useQuery` (Convex) / `useTable` (SpacetimeDB) hooks are also available for direct access.
+`useList` handles filtering, sorting, search, and pagination from one call.
 
 ```tsx
 'use client'
-import { useList } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { useList } from '@noboil/convex/react'
 
 const Posts = () => {
   const { items, hasMore, loadMore, isLoading } = useList(api.blog.list, {
@@ -86,7 +86,7 @@ const { data, hasMore, loadMore } = useList(posts, isReady, { pageSize: 20 })
 
 ## Where clauses and filtering
 
-Both backends accept the same where-clause shape: field equality, comparison operators (`$gt`, `$gte`, `$lt`, `$lte`, `$between`), the `own: true` shorthand, and `or` groups.
+`where` accepts field equality, comparison operators (`$gt`, `$gte`, `$lt`, `$lte`, `$between`), the `own: true` shorthand, and `or` groups.
 
 ```tsx
 useList(api.blog.list, { where: { own: true } })
@@ -288,18 +288,18 @@ Latency is ~0.27ms for simple queries on local Docker.
 
 ## File uploads
 
-`file()` for single file, `files()` for arrays — same name, same schema, both backends. The form components handle the upload backend automatically. See [File storage](./differences#3-file-storage) for the Convex storage vs S3/MinIO presigned URL differences.
+`file()` for single file, `files()` for arrays. The form components handle the upload backend automatically — see [File storage](./differences#3-file-storage).
 
 ## Soft delete and undo
 
-Enable on any table by adding `softDelete: true` to the table options. Both backends generate a `restore` endpoint alongside `rm`, and `useSoftDelete` provides the undo-toast UX.
+Add `softDelete: true` to any table option to get a `restore` endpoint alongside `rm`. `useSoftDelete` wraps it in an undo-toast UX.
 
 ```ts
 table(s.task, { softDelete: true })
 ```
 
 ```tsx
-import { useSoftDelete } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { useSoftDelete } from '@noboil/convex/react'
 
 const { softDelete } = useSoftDelete({
   deleteMutation: api.task.rm,
@@ -320,7 +320,7 @@ const { items: deleted } = useList(api.task.list, { where: { deletedAt: { $gt: 0
 `useBulkMutate` runs a list of mutations concurrently with progress tracking:
 
 ```tsx
-import { useBulkMutate } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { useBulkMutate } from '@noboil/convex/react'
 
 const { execute, progress, isPending } = useBulkMutate({
   mutation: api.blog.rm,  // or mutate: id => removeBlog({ id })
@@ -362,7 +362,7 @@ const ownedPosts = useOwnRows(posts, identity ? p => p.userId.isEqual(identity) 
 
 ## Singleton CRUD
 
-For 1:1 per-user data — profiles, settings, preferences. Each user gets exactly one record. Same API on both backends.
+For 1:1 per-user data — profiles, settings, preferences. Each user gets exactly one record.
 
 ```ts
 // schema (t.ts)
@@ -388,7 +388,7 @@ await upsert({ bio: 'Updated bio' })
 
 ## Child CRUD
 
-Same API on both backends. Child tables inherit access control from their parent.
+Child tables inherit access control from their parent.
 
 ```ts
 schema({
@@ -446,7 +446,7 @@ Cache tables are public by design — no RLS filter is applied. Populate the cac
 
 ## Rate limiting
 
-Both backends accept `rateLimit` on table options. See [Security](./security#rate-limiting) for the full reference.
+Pass `rateLimit` on table options. See [Security](./security#rate-limiting) for the full reference.
 
 ```ts
 table(s.blog, { rateLimit: { max: 10, window: 60_000 } })  // Convex full form
@@ -508,10 +508,10 @@ warnLargeFilterSet(rows.length, 'posts', 'home-feed', true) // strict mode (thro
 
 ## Devtools
 
-Both libs export `Devtools` from `/react`. In dev mode it auto-mounts; you can also render it standalone:
+In dev mode, `Devtools` auto-mounts inside `<Form>`. To render it standalone:
 
 ```tsx
-import { Devtools } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { Devtools } from '@noboil/convex/react'
 
 <Devtools position='bottom-right' defaultTab='subs' />
 ```
