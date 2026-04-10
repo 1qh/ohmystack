@@ -100,7 +100,90 @@ const CreateBlog = () => {
 </Tab>
 <Tab value="SpacetimeDB">
 
-SpacetimeDB doesn't have a direct equivalent for this recipe. For blog-style owned CRUD with file upload, see the [File Upload](#file-upload-with-s3-pre-signed-urls) and [Org-scoped Data](#org-scoped-data-access) recipes, then combine them with `useList` filtering.
+### Schema
+
+```typescript
+import { cvFile, schema } from '@noboil/spacetimedb/schema'
+import { boolean, object, string, enum as zenum } from 'zod/v4'
+
+const s = schema({
+  owned: {
+    blog: object({
+      title: string().min(1),
+      content: string().min(3),
+      category: zenum(['tech', 'life', 'tutorial']),
+      published: boolean(),
+      coverImage: cvFile().nullable().optional()
+    })
+  }
+})
+
+export { s }
+```
+
+### Backend module
+
+```typescript
+import { noboilStdb } from '@noboil/spacetimedb/server'
+import { s } from '../t'
+
+export default noboilStdb(({ table }) => ({
+  blog: table(s.blog, { pub: 'published', rateLimit: 10 })
+}))
+```
+
+This generates `create_blog`, `update_blog`, and `rm_blog` reducers with auth, ownership, conflict detection, and rate limiting. `pub: 'published'` lets every client see published posts plus their own drafts.
+
+### Frontend
+
+```tsx
+import { Form, useForm, useFormMutation } from '@noboil/spacetimedb/components'
+import { useList } from '@noboil/spacetimedb/react'
+import { useTable, useReducer } from 'spacetimedb/react'
+import { reducers, tables } from '@/generated/module_bindings'
+import { s } from '../../t'
+
+const BlogPage = () => {
+  const [allBlogs, isReady] = useTable(tables.blog)
+  const { data, hasMore, loadMore } = useList(allBlogs, isReady, {
+    where: { published: true },
+    sort: { field: 'updatedAt', direction: 'desc' },
+    pageSize: 20
+  })
+
+  return (
+    <ul>
+      {data.map(b => <li key={b.id}>{b.title}</li>)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </ul>
+  )
+}
+
+const CreateBlog = () => {
+  const createBlog = useReducer(reducers.create_blog)
+  const form = useFormMutation({
+    schema: s.blog,
+    mutate: d => createBlog(d),
+    toast: 'Created'
+  })
+
+  return (
+    <Form
+      form={form}
+      render={({ Text, Choose, Toggle, File, Submit }) => (
+        <>
+          <Text name="title" />
+          <Text name="content" multiline />
+          <Choose name="category" />
+          <Toggle name="published" />
+          <File name="coverImage" accept="image/*" />
+          <Submit>Publish</Submit>
+        </>
+      )}
+    />
+  )
+}
+```
 
 </Tab>
 </Tabs>
@@ -386,7 +469,7 @@ Since `ctx.http.fetch()` panics in local Docker, use a Next.js API route to fetc
 ```typescript
 import { NextResponse } from 'next/server'
 
-const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:4000'
+const STDB_URI = process.env.SPACETIMEDB_URI ?? 'http://localhost:4000'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 
@@ -396,7 +479,7 @@ export const GET = async (
 ) => {
   const tmdbId = Number(params.tmdbId)
 
-  const cacheRes = await fetch(`${STDB_URL}/v1/database/${MODULE}/sql`, {
+  const cacheRes = await fetch(`${STDB_URI}/v1/database/${MODULE}/sql`, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: `SELECT * FROM movie WHERE tmdb_id = ${tmdbId} AND invalidated_at IS NULL LIMIT 1`
@@ -668,9 +751,9 @@ const CollaborativeRoom = ({ roomId }: { roomId: string }) => {
 
 ## Real-Time Chat
 
-> Available for SpacetimeDB only. Convex users can build a similar pattern with `crud` + `useList` + presence.
-
 **Features:** rooms · messages · live presence
+
+Both demo apps ship a working chat implementation — see `web/cvx/chat` and `web/stdb/chat`. The SpacetimeDB version is shown below; the Convex version uses `crud('chat', owned.chat)` + `childCrud('message', children.message)` + `usePresence`.
 
 ### Schema
 
@@ -762,11 +845,9 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
 
 ---
 
-## File Upload with S3 Pre-Signed URLs
+## File Upload with S3 Pre-Signed URLs (SpacetimeDB)
 
-> Available for SpacetimeDB only. Convex users get native file storage via `cvFile()` in the schema.
-
-Upload files to MinIO/S3 and register them in SpacetimeDB.
+Convex uses its built-in file storage via `cvFile()` in the schema — no presigned URL flow is needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. Both backends accept `cvFile()` in the Zod schema, but the wiring on the SpacetimeDB side is shown here.
 
 ### API route
 
@@ -843,9 +924,9 @@ const FileUploader = () => {
 
 ## Multi-Step Onboarding Form
 
-> Available for Convex only. SpacetimeDB users can compose `useMut` calls across steps manually.
-
 **Features:** defineSteps · per-step validation · typed merged data · step navigation
+
+`defineSteps` is exported from both `@noboil/convex/components` and `@noboil/spacetimedb/components` with an identical API — only the import path and the mutation wiring inside `onSubmit` differ. The Convex version is shown below.
 
 ### Schema
 
@@ -949,9 +1030,9 @@ const Onboarding = () => {
 
 ## Singleton Profile with File Upload
 
-> Available for Convex only. SpacetimeDB users can use `orgScoped` with a single-member org or a `base` table with a unique user constraint.
-
 **Features:** singletonCrud · 1:1 per-user · file upload · upsert
+
+Both libraries support singleton tables. The Convex version uses `singletonCrud()` and `cvFile()` (Convex storage); the SpacetimeDB version uses the same `singleton: { profile }` schema and `cvFile()` (S3 storage). The Convex flow is shown below.
 
 ### Schema
 
@@ -1014,9 +1095,9 @@ const ProfilePage = () => {
 
 ---
 
-## Custom Queries Alongside CRUD
+## Custom Queries Alongside CRUD (Convex)
 
-> Available for Convex only. SpacetimeDB users write custom reducers and queries directly in Rust.
+The `pq` / `q` / `m` builders are part of the Convex setup flow. SpacetimeDB users write custom reducers directly in their module file alongside the `noboilStdb()` call — see [Custom Queries](./custom-queries) for the SpacetimeDB equivalents.
 
 **Features:** pq/q/m escape hatches · typed args · coexistence with CRUD
 
@@ -1087,9 +1168,9 @@ const Dashboard = () => {
 
 ## Bulk Operations with Progress
 
-> Available for Convex only. SpacetimeDB reducers run server-side, so bulk operations are handled in a single reducer call.
-
 **Features:** useBulkMutate · toast feedback · progress tracking · error collection
+
+`useBulkMutate` is available from both `@noboil/convex/react` and `@noboil/spacetimedb/react`. The Convex version is shown below; on SpacetimeDB, pass `useReducer(reducers.rm_blog)` instead of a Convex mutation.
 
 Uses `rm` from any `crud()` call — pass `{ ids: [...] }` for bulk deletion. No extra backend code needed.
 
@@ -1134,9 +1215,9 @@ const BulkActions = ({ selectedIds }: { selectedIds: string[] }) => {
 
 ## Ownership Flags with useOwnRows
 
-> Available for Convex only. SpacetimeDB users can filter rows client-side using `useList` with a `where` clause on `userId`.
-
 **Features:** useOwnRows · per-row ownership · conditional UI
+
+`useOwnRows` is exported from both `@noboil/convex/react` and `@noboil/spacetimedb/react`. See the [Data Fetching](./data-fetching) page for the SpacetimeDB variant which compares `userId` against the connected Identity. The Convex version is shown below.
 
 ### Frontend
 

@@ -85,65 +85,40 @@ import { Form } from '@noboil/convex/components'
 </Tab>
 <Tab value="SpacetimeDB">
 
-SpacetimeDB uses `@tanstack/react-form` directly with `zodFromTable` for validation. There are no prebuilt field components. Build fields with the `form.Field` render prop.
+`@noboil/spacetimedb/components` exports the same `useForm`, `useFormMutation`, and `Form` as `@noboil/convex/components`. The only differences are: `useFormMutation` takes a `mutate` callback (you wire up the reducer call yourself) instead of a Convex mutation reference, and the schema is a plain Zod object — typically derived from your generated table columns via `zodFromTable`.
 
 ```tsx
-import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
+import { Form, useFormMutation } from '@noboil/spacetimedb/components'
 import { zodFromTable } from '@noboil/spacetimedb'
-import { tables } from '@/generated/module_bindings'
+import { useReducer } from 'spacetimedb/react'
+import { reducers, tables } from '@/generated/module_bindings'
 
-const postSchema = zodFromTable(tables.post.columns)
+const postSchema = zodFromTable(tables.post.columns, { exclude: ['published'] })
 
 const CreatePost = () => {
-  const form = useForm({
-    defaultValues: { title: '', content: '' },
-    validatorAdapter: zodValidator(),
-    validators: { onChange: postSchema },
-    onSubmit: async ({ value }) => {
-      await createPost(value)
-      form.reset()
-    },
+  const createPost = useReducer(reducers.create_post)
+  const form = useFormMutation({
+    schema: postSchema,
+    mutate: d => createPost({ ...d, published: false }),
+    toast: 'Created'
   })
 
   return (
-    <form onSubmit={e => { e.preventDefault(); form.handleSubmit() }}>
-      <form.Field
-        name="title"
-        children={field => (
-          <div>
-            <label>Title</label>
-            <input
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-            {field.state.meta.errors.map(err => (
-              <span key={err}>{err}</span>
-            ))}
-          </div>
-        )}
-      />
-      <form.Field
-        name="content"
-        children={field => (
-          <div>
-            <label>Content</label>
-            <textarea
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </div>
-        )}
-      />
-      <button type="submit" disabled={form.state.isSubmitting}>
-        {form.state.isSubmitting ? 'Saving...' : 'Create'}
-      </button>
-    </form>
+    <Form
+      form={form}
+      render={({ Text, Submit }) => (
+        <>
+          <Text name="title" label="Title" />
+          <Text name="content" label="Content" multiline />
+          <Submit>Create</Submit>
+        </>
+      )}
+    />
   )
 }
 ```
+
+`name='title'` is checked at compile time. `name='titl'` is a type error. Field component / type mismatch (`<Toggle name='title' />` for a string field) is also a type error.
 
 </Tab>
 </Tabs>
@@ -207,30 +182,22 @@ All 16 field components are available inside the `Form` render prop. Every field
 </Tab>
 <Tab value="SpacetimeDB">
 
-SpacetimeDB doesn't ship prebuilt field components. Build fields with `form.Field` from `@tanstack/react-form`. The `zodFromTable` schema drives validation. Field types come from your SpacetimeDB column definitions.
+`@noboil/spacetimedb/components` ships the same 16 field components as `@noboil/convex/components`. The render-prop `Form` destructures them identically — `Text`, `Num`, `Choose`, `Combobox`, `MultiSelect`, `Arr`, `File`, `Files`, `Datepick`, `Timepick`, `Colorpick`, `Rating`, `Slider`, `Toggle`, `Submit`, `Err`. Same props, same compile-time `name` checking.
+
+The only file-field difference is the upload backend: `File` / `Files` upload to S3 (or MinIO in local dev) via a presigned URL route instead of Convex storage. The schema field type is still `cvFile()` / `cvFiles()` from `@noboil/spacetimedb/schema`.
 
 ```tsx
-<form.Field
-  name="category"
-  children={field => (
-    <div>
-      <label>Category</label>
-      <select
-        value={field.state.value}
-        onChange={e => field.handleChange(e.target.value)}
-      >
-        <option value="news">News</option>
-        <option value="tutorial">Tutorial</option>
-      </select>
-    </div>
+<Form
+  form={form}
+  render={({ Text, Choose, File, Submit }) => (
+    <>
+      <Text name="title" label="Title" />
+      <Choose name="category" label="Category" />
+      <File name="coverImage" label="Cover" accept="image/*" />
+      <Submit>Save</Submit>
+    </>
   )}
 />
-```
-
-Lower-level utilities are available from `@noboil/spacetimedb/react`:
-
-```tsx
-import { buildMeta, getMeta } from '@noboil/spacetimedb/react'
 ```
 
 </Tab>
@@ -308,20 +275,18 @@ import { ConflictDialog } from '@noboil/convex/components'
 </Tab>
 <Tab value="SpacetimeDB">
 
-Handle conflicts manually in `onSubmit`. The reducer returns `CONFLICT` when the row was modified since the client last read it.
+Identical behavior. Pass `expectedUpdatedAt` in your update call and `Form` renders the same built-in `ConflictDialog` automatically when the reducer returns `CONFLICT`.
 
 ```tsx
-onSubmit: async ({ value }) => {
-  try {
-    await updatePost({ id: post.id, ...value, expectedUpdatedAt: post.updatedAt })
-  } catch (error) {
-    const data = extractErrorData(error)
-    if (data?.code === 'CONFLICT') {
-      toast.error('Someone else edited this. Reload to see the latest version.')
-    }
-  }
-}
+const form = useFormMutation({
+  schema: postSchema,
+  values: pickValues(postSchema, post),
+  mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+  toast: 'Saved'
+})
 ```
+
+`ConflictDialog` is also exported standalone from `@noboil/spacetimedb/components`.
 
 </Tab>
 </Tabs>
@@ -438,36 +403,16 @@ Customize without forking the component:
 </Tab>
 <Tab value="SpacetimeDB">
 
-Implement multi-step forms with local state and separate `useForm` instances per step.
+Identical API — import `defineSteps` from `@noboil/spacetimedb/components` and use the returned `StepForm` and `useStepper` exactly as in the Convex tab. Each step gets its own Zod schema, per-step compile-time `name` checking, and the same `stepIndicatorClassNames` styling hooks.
 
 ```tsx
-import { useState } from 'react'
-import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
+import { defineSteps } from '@noboil/spacetimedb/components'
 
-const [step, setStep] = useState<'profile' | 'org' | 'preferences'>('profile')
-const [profileData, setProfileData] = useState<ProfileData | null>(null)
-const [orgData, setOrgData] = useState<OrgData | null>(null)
-
-const profileForm = useForm({
-  defaultValues: { displayName: '', bio: '' },
-  validatorAdapter: zodValidator(),
-  validators: { onChange: profileSchema },
-  onSubmit: async ({ value }) => {
-    setProfileData(value)
-    setStep('org')
-  },
-})
-
-const orgForm = useForm({
-  defaultValues: { name: '', slug: '' },
-  validatorAdapter: zodValidator(),
-  validators: { onChange: orgSchema },
-  onSubmit: async ({ value }) => {
-    setOrgData(value)
-    setStep('preferences')
-  },
-})
+const { StepForm, useStepper } = defineSteps(
+  { id: 'profile', label: 'Profile', schema: profileStep },
+  { id: 'org', label: 'Organization', schema: orgStep },
+  { id: 'preferences', label: 'Preferences', schema: preferencesStep }
+)
 ```
 
 </Tab>

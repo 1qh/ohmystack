@@ -11,7 +11,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 | --- | --- | --- |
 | `bun install` fails with workspace resolution errors | Package references use incorrect protocol | Verify `package.json` uses `workspace:*` not relative paths |
 | `noboil init` hangs | Network timeout cloning from GitHub | Pass `--skip-install`, then run `bun install` separately from the project root |
-| Docker Compose fails to start | Port conflicts on 9000/9001 (MinIO) or 3000 (SpacetimeDB) | Run `docker compose ps` to identify conflicts, then stop the conflicting service |
+| Docker Compose fails to start | Port conflicts on 4000 (SpacetimeDB) or 4600/4601 (MinIO) | Run `docker compose ps` to identify conflicts, then stop the conflicting service |
 | Missing environment variables | `.env` incomplete or not generated | Run `noboil doctor` to check project health and see which vars are missing |
 
 ## TypeScript & Type Errors

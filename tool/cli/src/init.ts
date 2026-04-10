@@ -172,6 +172,7 @@ const init = async (args: string[]) => {
     console.log(bold('Options:'))
     console.log(`  --db=convex|spacetimedb    ${dim('Skip database prompt')}`)
     console.log(`  --no-demos                 ${dim('Skip demo apps')}`)
+    console.log(`  --skip-install             ${dim('Skip bun install after scaffolding')}`)
     console.log(`  --help, -h                 ${dim('Show this help')}\n`)
     return
   }

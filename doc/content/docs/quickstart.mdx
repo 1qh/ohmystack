@@ -32,13 +32,15 @@ curl -sSf https://install.spacetimedb.com | sh
 </Tab>
 </Tabs>
 
-## 1. Create your app
+## 1. Scaffold the project
+
+`noboil init` clones a fully-wired template, removes the parts you don't need, patches `package.json`, and runs `bun install`. It must target an empty directory.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
 ```bash
-bunx create-next-app@latest my-app --ts --tailwind --app --src-dir --use-bun
+bunx noboil@latest init my-app --db=convex
 cd my-app
 ```
 
@@ -46,107 +48,42 @@ cd my-app
 <Tab value="SpacetimeDB">
 
 ```bash
-mkdir my-app && cd my-app
 bunx noboil@latest init my-app --db=spacetimedb
-```
-
-`noboil init` auto-installs all required dependencies and creates a `tsconfig.json` with the right settings. No manual `bun add` step needed.
-
-</Tab>
-</Tabs>
-
-## 2. Install dependencies
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```bash
-bun add @noboil/convex convex @convex-dev/auth zod
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Dependencies are installed automatically by `noboil init`. To add them manually:
-
-```bash
-bun add @noboil/spacetimedb spacetimedb zod
+cd my-app
 ```
 
 </Tab>
 </Tabs>
 
-## 3. Set up the backend
+Pass `--no-demos` to skip the demo apps, or `--skip-install` to skip `bun install`. With both flags plus a target directory, `init` runs non-interactively.
+
+## 2. Start the backend
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Initialize Convex — this creates the `convex/` directory with `_generated/` files:
+The template includes a `backend/convex` workspace with `t.ts` (Zod schemas), `schema.ts` (`defineSchema` registrations), `lazy.ts` (your `setup()` call), and one example module per table (`blog.ts`, `chat.ts`, …) that exports CRUD endpoints from a single `crud()` call.
+
+Boot Convex:
 
 ```bash
-bunx convex dev --once
+bunx convex dev
 ```
 
-Then scaffold the noboil files:
-
-```bash
-bunx noboil@latest init my-app --db=convex
-```
-
-This generates four files:
-
-| File               | Purpose                                 |
-| ------------------ | --------------------------------------- |
-| `convex/t.ts`      | Zod schemas wrapped with `makeOwned`    |
-| `convex/schema.ts` | `defineSchema` with table registrations |
-| `convex/lazy.ts`   | `setup()` call that creates factories   |
-| `convex/blog.ts`   | CRUD endpoints from one `crud()` call   |
-
-Follow the [Convex Auth guide](https://docs.convex.dev/auth) to configure authentication. Every factory enforces auth by default.
+Authentication is wired through `@convex-dev/auth`. See the [Convex Auth guide](https://docs.convex.dev/auth) to configure providers — every CRUD factory enforces auth by default.
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-Start the local backend with Docker Compose:
+The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `t.ts` (Zod schemas wrapped with `schema()`) and `src/index.ts` (the `noboilStdb()` module definition). Boot SpacetimeDB + MinIO and publish the module:
 
 ```bash
-cat > docker-compose.yml << 'EOF'
-services:
-  spacetimedb:
-    image: clockworklabs/spacetime:latest
-    command: start --listen-addr 0.0.0.0:4000
-    ports:
-      - "4000:4000"
-    volumes:
-      - spacetimedb_data:/stdb
-    restart: unless-stopped
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":4601"
-    ports:
-      - "4600:9000"
-      - "4601:4601"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    restart: unless-stopped
-
-volumes:
-  spacetimedb_data:
-  minio_data:
-EOF
-
-docker compose up -d
+bun spacetime:up           # Docker Compose: SpacetimeDB on :4000, MinIO on :4600
+bun spacetime:publish      # publish module
+bun spacetime:generate     # generate TypeScript bindings
 ```
 
-Wait for SpacetimeDB to be healthy:
-
-```bash
-docker compose ps
-```
+Re-run `spacetime:generate` after any schema change.
 
 </Tab>
 </Tabs>
@@ -214,47 +151,13 @@ export default noboilStdb(({ table }) => ({
 </Tab>
 </Tabs>
 
-## 5. Publish and generate bindings
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Start the dev server — Convex watches for changes and redeploys automatically:
+## 5. Run the dev server
 
 ```bash
-bunx convex dev &
 bun dev
 ```
 
-Open `http://localhost:3000`. Your backend is live.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Publish the module:
-
-```bash
-spacetime publish my-app --module-path backend/spacetimedb/
-```
-
-Generate TypeScript bindings:
-
-```bash
-spacetime generate \
-  --lang typescript \
-  --module-path backend/spacetimedb/ \
-  --out-dir backend/spacetimedb/module_bindings/
-```
-
-Re-run `spacetime generate` whenever you change the schema. The generated output includes:
-
-- `DbConnection` class for connecting
-- `tables` object with typed table accessors
-- `reducers` object with typed reducer callers
-- Row types matching your table definitions
-
-</Tab>
-</Tabs>
+Open the demo app on the port printed in the terminal. The backend is already live from step 2.
 
 ## 6. Connect from React
 
@@ -286,20 +189,20 @@ import { SpacetimeDBProvider } from 'spacetimedb/react'
 import { createSpacetimeClient, createTokenStore } from '@noboil/spacetimedb/react'
 import { DbConnection } from '@/generated/module_bindings'
 
-const SPACETIMEDB_URL = process.env.NEXT_PUBLIC_SPACETIMEDB_URL ?? 'ws://localhost:4000'
+const SPACETIMEDB_URI = process.env.NEXT_PUBLIC_SPACETIMEDB_URI ?? 'ws://localhost:4000'
 const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME ?? 'my-app'
 const tokenStore = createTokenStore()
 
 export const Providers = ({ children }: { children: React.ReactNode }) => (
   <SpacetimeDBProvider
-    uri={SPACETIMEDB_URL}
+    uri={SPACETIMEDB_URI}
     module={MODULE_NAME}
     createConnection={() =>
       createSpacetimeClient({
         DbConnection,
         moduleName: MODULE_NAME,
         tokenStore,
-        uri: SPACETIMEDB_URL,
+        uri: SPACETIMEDB_URI,
       })
     }
   >

@@ -202,15 +202,16 @@ noboil/
     stdb/             4 SpacetimeDB demo web apps
   doc/                Documentation site (fumadocs)
   lib/
-    convex/           @noboil/convex library
-    spacetimedb/      @noboil/spacetimedb library
-    ui/               Shared shadcn components
-    fe/               Shared frontend utilities
-    e2e/              Shared Playwright utilities
+    convex/           @noboil/convex library (published)
+    spacetimedb/      @noboil/spacetimedb library (published)
+    shared/           internal shared code (not published)
+    fe/               shared frontend utilities (Next.js + auth shells)
+    e2e/              shared Playwright utilities
   backend/
     convex/           Convex backend (schema + functions)
     spacetimedb/      SpacetimeDB backend (module + bindings)
-  tool/cli/           CLI — bun noboil@latest init
+  readonly/ui/        shared shadcn components (synced from cnsync, read-only)
+  tool/cli/           CLI — bunx noboil@latest init
 ```
 
 ## Packages

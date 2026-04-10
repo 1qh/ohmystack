@@ -52,9 +52,9 @@ bun dev
 ### Environment variables (local)
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:4000
+NEXT_PUBLIC_SPACETIMEDB_URI=ws://localhost:4000
 NEXT_PUBLIC_MODULE_NAME=my-app
-SPACETIMEDB_URL=http://localhost:4000
+SPACETIMEDB_URI=http://localhost:4000
 MODULE_NAME=my-app
 
 S3_ENDPOINT=http://localhost:4600
@@ -101,7 +101,7 @@ The module is now available at `wss://maincloud.spacetimedb.com/my-app`.
 ### Environment variables (Maincloud)
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URL=wss://maincloud.spacetimedb.com
+NEXT_PUBLIC_SPACETIMEDB_URI=wss://maincloud.spacetimedb.com
 NEXT_PUBLIC_MODULE_NAME=my-app
 ```
 
@@ -220,7 +220,7 @@ spacetime publish my-app --server myserver --module-path backend/spacetimedb/
 ### Environment variables (self-hosted)
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URL=wss://stdb.yourdomain.com
+NEXT_PUBLIC_SPACETIMEDB_URI=wss://stdb.yourdomain.com
 NEXT_PUBLIC_MODULE_NAME=my-app
 ```
 
@@ -275,7 +275,7 @@ CMD ["bun", "start"]
 ### Environment variables for production
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URL=wss://stdb.yourdomain.com
+NEXT_PUBLIC_SPACETIMEDB_URI=wss://stdb.yourdomain.com
 NEXT_PUBLIC_MODULE_NAME=my-app
 
 S3_ENDPOINT=https://s3.amazonaws.com
@@ -327,7 +327,7 @@ run: spacetime publish my-app --server maincloud --module-path backend/spacetime
       - name: Build Next.js
         run: bun run build
         env:
-          NEXT_PUBLIC_SPACETIMEDB_URL: wss://maincloud.spacetimedb.com
+          NEXT_PUBLIC_SPACETIMEDB_URI: wss://maincloud.spacetimedb.com
           NEXT_PUBLIC_MODULE_NAME: my-app
 
       - name: Deploy to Vercel

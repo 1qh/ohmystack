@@ -424,7 +424,7 @@ const STDB_URL = 'http://localhost:4000'
 const MODULE = 'my-app'
 
 const query = async (sql: string) => {
-  const res = await fetch(`${STDB_URL}/v1/database/${MODULE}/sql`, {
+  const res = await fetch(`${STDB_URI}/v1/database/${MODULE}/sql`, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: sql
@@ -454,7 +454,7 @@ const postsWithAuthors = await query(`
 ### Typed SQL helper
 
 ```typescript
-const STDB_URL = process.env.SPACETIMEDB_URL ?? 'http://localhost:4000'
+const STDB_URI = process.env.SPACETIMEDB_URI ?? 'http://localhost:4000'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
 
 interface SqlResult<T> {
@@ -463,7 +463,7 @@ interface SqlResult<T> {
 }
 
 const sql = async <T>(query: string): Promise<SqlResult<T>> => {
-  const res = await fetch(`${STDB_URL}/v1/database/${MODULE}/sql`, {
+  const res = await fetch(`${STDB_URI}/v1/database/${MODULE}/sql`, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: query,

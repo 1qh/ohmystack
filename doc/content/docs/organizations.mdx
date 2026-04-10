@@ -15,7 +15,7 @@ Both databases provide a full multi-tenant system with roles, invites, join requ
 Define org-scoped tables in `convex/t.ts`:
 
 ```tsx
-import { makeOrgScoped } from '@noboil/convex/server'
+import { makeOrgScoped } from '@noboil/convex/schema'
 import { object, string } from 'zod/v4'
 
 const orgScoped = makeOrgScoped({
@@ -678,7 +678,9 @@ try {
 </Tab>
 </Tabs>
 
-## Pre-built components (Convex)
+## Pre-built components
+
+Both libraries ship the same set of org UI components.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
@@ -696,7 +698,15 @@ import {
 </Tab>
 <Tab value="SpacetimeDB">
 
-Build your own org UI components using the hooks from `@noboil/spacetimedb/react`. The `useOrg`, `useActiveOrg`, and `useMyOrgs` hooks provide all the data you need.
+```tsx
+import {
+  EditorsSection,
+  PermissionGuard,
+  OrgAvatar,
+  RoleBadge,
+  OfflineIndicator
+} from '@noboil/spacetimedb/components'
+```
 
 </Tab>
 </Tabs>

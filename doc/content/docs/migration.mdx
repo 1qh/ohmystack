@@ -293,7 +293,7 @@ import { SpacetimeDBProvider } from 'spacetimedb/react'
 import { DbConnection } from '@/generated/module_bindings'
 
 <SpacetimeDBProvider
-  uri={process.env.NEXT_PUBLIC_SPACETIMEDB_URL!}
+  uri={process.env.NEXT_PUBLIC_SPACETIMEDB_URI!}
   module={process.env.NEXT_PUBLIC_MODULE_NAME!}
   createConnection={() => DbConnection.builder()}
 >
