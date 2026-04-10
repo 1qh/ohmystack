@@ -83,7 +83,7 @@ The high-level entry point. Wraps `setup()` and provides a `table()` helper that
 
 ```typescript
 import { noboil } from '@noboil/convex/server'
-import { s } from './t'
+import { s } from './s'
 
 const api = noboil(
   { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
@@ -211,7 +211,7 @@ The primary entry point. Pass a factory function that receives `table` and `t` h
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),

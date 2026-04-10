@@ -13,7 +13,7 @@ import {
 import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
-import { base, children, orgScoped, owned, singleton } from '../t'
+import { base, children, orgScoped, owned, singleton } from '../s'
 export default defineSchema({
   ...authTables,
   ...orgTables(),

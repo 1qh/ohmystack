@@ -8,7 +8,7 @@
     "./lazy": "./lazy.ts",
     "./model": "./convex/_generated/dataModel.d.ts",
     "./server": "./convex/_generated/server.js",
-    "./t": "./t.ts"
+    "./s": "./s.ts"
   },
   "scripts": {
     "build": "tsc",

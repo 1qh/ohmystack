@@ -3,7 +3,7 @@
 'use client'
 import type { Id } from '@a/be-convex/model'
 import { api } from '@a/be-convex'
-import { orgScoped } from '@a/be-convex/t'
+import { orgScoped } from '@a/be-convex/s'
 import { fail } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'

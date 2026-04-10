@@ -1,7 +1,7 @@
 import { requireOrgMember } from '@noboil/convex/server'
 import { zid } from 'convex-helpers/server/zod4'
 import { api, q, uniqueCheck } from '../lazy'
-import { orgScoped } from '../t'
+import { s } from '../s'
 export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = api.wiki
 export const listDeleted = q({
   args: { orgId: zid('org') },
@@ -17,4 +17,4 @@ export const listDeleted = q({
     return deleted
   }
 })
-export const isSlugAvailable = uniqueCheck(orgScoped.wiki, 'wiki', 'slug')
+export const isSlugAvailable = uniqueCheck(s.wiki, 'wiki', 'slug')

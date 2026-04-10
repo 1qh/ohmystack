@@ -93,7 +93,7 @@ type TableMap = Record<string, unknown>
  * import { noboil } from '@noboil/convex/server'
  * import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
  * import { getAuthUserId } from '@convex-dev/auth/server'
- * import { s } from './t'
+ * import { s } from './s'
  *
  * export const api = noboil(
  *   { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },

@@ -8,7 +8,7 @@ const { bold, dim, green, yellow } = createCliTheme()
 const SCHEMA_TS = `import { authTables } from '@convex-dev/auth/server'
 import { defineSchema } from 'convex/server'
 import { ownedTable, rateLimitTable, uploadTables } from '@noboil/convex/server'
-import { owned } from './t'
+import { owned } from './s'
 export default defineSchema({
   ...authTables,
   ...uploadTables(),
@@ -54,7 +54,7 @@ const file = makeFileUpload({
 export { crud, file, m, pq, q }
 `
 const BLOG_TS = `import { crud } from './lazy'
-import { owned } from './t'
+import { owned } from './s'
 export const {
   create,
   pub: { list, read },

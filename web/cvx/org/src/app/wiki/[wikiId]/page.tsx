@@ -27,8 +27,7 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: Id<'wiki'> }> })
   const removeEditorMut = useOrgMutation(api.wiki.removeEditor)
   const restoreMut = useOrgMutation(wikiRestore)
   if (!(wiki && me && members && editorsList)) return <Skeleton className='h-40' />
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const isDeleted = wiki.deletedAt !== null
+  const isDeleted = wiki.deletedAt !== undefined
   const canEditWiki = canEditResource({ editorsList, isAdmin, resource: wiki, userId: me._id })
   const handleAddEditor = (userId: string) => {
     addEditorMut({ editorId: userId, wikiId })

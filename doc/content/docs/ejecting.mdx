@@ -118,7 +118,7 @@ Don't replace everything at once. Replace one endpoint, verify the frontend stil
 
 ```tsx
 import { crud } from './lazy'
-import { owned } from './t'
+import { owned } from './s'
 
 export const {
     create,
@@ -144,7 +144,7 @@ If you eject all factories for a table, you can also replace the branded schema 
 
 ```tsx
 import { ownedTable } from '@noboil/convex/server'
-import { owned } from './t'
+import { owned } from './s'
 blog: ownedTable(owned.blog)
 ```
 
@@ -194,7 +194,7 @@ Replace React hooks with Convex equivalents:
 - Your data stays exactly the same — no migration needed
 - Other tables using `crud()` keep working
 - Frontend code that imports from `api.blog.*` doesn't change (same export names)
-- Schema definitions in `t.ts` can stay as documentation even if unused
+- Schema definitions in `s.ts` can stay as documentation even if unused
 
 </Tab>
 
@@ -210,7 +210,7 @@ For a setup like:
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   post: table(s.post, { pub: 'published' })
@@ -273,7 +273,7 @@ Replace:
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   post: table(s.post)

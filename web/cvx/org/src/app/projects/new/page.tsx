@@ -1,6 +1,6 @@
 'use client'
 import { api } from '@a/be-convex'
-import { orgScoped } from '@a/be-convex/t'
+import { orgScoped } from '@a/be-convex/s'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
 import { Form, useFormMutation } from '@noboil/convex/components'

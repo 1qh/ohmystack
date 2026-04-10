@@ -3,7 +3,7 @@ import { zid } from 'convex-helpers/server/zod4'
 import { v } from 'convex/values'
 import { URL } from 'node:url'
 import { crud, q } from '../lazy'
-import { owned } from '../t'
+import { owned } from '../s'
 import { internalMutation } from './_generated/server'
 import { enforceRateLimit } from './rateLimit'
 const PRIVATE_172_RE = /^172\.(?<oct>\d+)\./u

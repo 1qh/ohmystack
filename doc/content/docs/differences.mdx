@@ -34,7 +34,7 @@ Convex needs its `query`/`mutation`/`action`/etc. builders and `getAuthUserId` a
 import { noboil } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
-import { s } from './t'
+import { s } from './s'
 
 export const api = noboil(
   { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
@@ -45,7 +45,7 @@ export const api = noboil(
 
 // SpacetimeDB
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })

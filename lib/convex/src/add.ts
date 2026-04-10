@@ -164,33 +164,33 @@ const genEndpointContent = (name: string, type: TableType): string => {
   const wrapper = schemaWrapper(type)
   if (type === 'child')
     return `import { ${factory} } from './lazy'
-import { ${name}Child } from './t'
+import { ${name}Child } from './s'
 export const {
   create, get, list, rm, update
 } = ${factory}('${name}', ${name}Child)
 `
   if (type === 'singleton')
     return `import { ${factory} } from './lazy'
-import { ${wrapper} } from './t'
+import { ${wrapper} } from './s'
 export const { get, upsert } = ${factory}('${name}', ${wrapper}.${name})
 `
   if (type === 'cache')
     return `import { ${factory} } from './lazy'
-import { ${wrapper} } from './t'
+import { ${wrapper} } from './s'
 export const {
   create, get, list, rm, update, invalidate, purge, load, refresh
 } = ${factory}({ key: '${name}', schema: ${wrapper}.${name}, table: '${name}' })
 `
   if (type === 'org')
     return `import { ${factory} } from './lazy'
-import { ${wrapper} } from './t'
+import { ${wrapper} } from './s'
 export const {
   addEditor, create, editors, list, read,
   removeEditor, rm, setEditors, update
 } = ${factory}('${name}', ${wrapper}.${name})
 `
   return `import { ${factory} } from './lazy'
-import { ${wrapper} } from './t'
+import { ${wrapper} } from './s'
 export const {
   create,
   pub: { list, read },

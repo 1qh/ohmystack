@@ -84,7 +84,7 @@ export const s = schema({
 import { noboil } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
-import { s } from './t'
+import { s } from './s'
 
 export const api = noboil(
   { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
@@ -107,7 +107,7 @@ export const { create, update, rm, pub: { list, read, search } } = api.blog
 ```ts
 // backend/spacetimedb/src/index.ts
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })

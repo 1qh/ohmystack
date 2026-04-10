@@ -4,9 +4,9 @@ import { v } from 'convex/values'
 import ky from 'ky'
 import env from '../env'
 import { cacheCrud } from '../lazy'
-import { base } from '../t'
+import { s } from '../s'
 import { action } from './_generated/server'
-type TmdbMovie = Omit<output<typeof base.movie>, 'tmdb_id'> & { id: number }
+type TmdbMovie = Omit<output<typeof s.movie>, 'tmdb_id'> & { id: number }
 const apiKey = env.TMDB_KEY
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 const tmdb = (path: string, params: Record<string, unknown>) =>
@@ -18,7 +18,7 @@ const c = cacheCrud({
   },
   key: 'tmdb_id',
   rateLimit: { max: 30, window: 60_000 },
-  schema: base.movie,
+  schema: s.movie,
   table: 'movie'
 })
 export const search = action({

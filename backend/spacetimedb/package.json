@@ -4,7 +4,7 @@
   "exports": {
     "./spacetimedb": "./module_bindings/index.ts",
     "./spacetimedb/types": "./module_bindings/types.ts",
-    "./t": "./t.ts"
+    "./s": "./s.ts"
   },
   "scripts": {
     "build": "tsc",

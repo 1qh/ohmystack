@@ -125,7 +125,7 @@ export { s }
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })
@@ -141,7 +141,7 @@ import { Form, useForm, useFormMutation } from '@noboil/spacetimedb/components'
 import { useList } from '@noboil/spacetimedb/react'
 import { useTable, useReducer } from 'spacetimedb/react'
 import { reducers, tables } from '@/generated/module_bindings'
-import { s } from '../../t'
+import { s } from '../../s'
 
 const BlogPage = () => {
   const [allBlogs, isReady] = useTable(tables.blog)
@@ -308,7 +308,7 @@ export { s }
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   project: table(s.project)
@@ -455,7 +455,7 @@ export { s }
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   movie: table(s.movie, { key: 'tmdbId' })
@@ -590,7 +590,7 @@ export { s }
 
 ```typescript
 import { noboil } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table }) => ({
   wiki: table(s.wiki, { softDelete: true })
@@ -699,7 +699,7 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
 
 ```typescript
 import { noboil, makePresence } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table, t }) => {
   const presence = makePresence({
@@ -779,7 +779,7 @@ export { s }
 
 ```typescript
 import { noboil, makePresence } from '@noboil/spacetimedb/server'
-import { s } from '../t'
+import { s } from '../s'
 
 export default noboil(({ table, t }) => {
   const presence = makePresence({

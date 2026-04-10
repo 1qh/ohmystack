@@ -4,7 +4,7 @@
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/performance/noImgElement: external images
 'use client'
-import type { s } from '@a/be-spacetimedb/t'
+import type { s } from '@a/be-spacetimedb/s'
 import type { InferCreate } from '@noboil/spacetimedb'
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Badge } from '@a/ui/badge'
