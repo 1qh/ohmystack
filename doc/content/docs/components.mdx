@@ -3,22 +3,19 @@ title: Components
 description: Prebuilt UI components for forms, access control, editors, and multi-step wizards.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+Both `@noboil/convex/components` and `@noboil/spacetimedb/components` export the same component set. Snippets are written in single voice — pick the import path that matches your backend. The only file-field difference (Convex storage vs S3 presigned URLs) is documented in [Convex vs SpacetimeDB](./differences#3-file-storage).
 
 ## Form System
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
 
 ### useForm
 
 Takes a Zod schema and returns typed form state. Field `name` props are checked at compile time. A typo is a type error.
 
 ```tsx
-import { useForm } from '@noboil/convex/components'
+import { useForm } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 const form = useForm({
-  schema: owned.blog,
+  schema: s.blog,
   onSubmit: async d => {
     await create(d)
     return d
@@ -34,37 +31,52 @@ const form = useForm({
 
 ### useFormMutation
 
-Connects a form directly to a Convex mutation. Pre-fills values from an existing record.
+Wires a form directly to a server mutation, pre-fills values from an existing record, and surfaces server errors as field-level validation. The Convex shape takes a `mutation` reference; the SpacetimeDB shape takes a `mutate` callback (because reducers are called explicitly via `useReducer`).
 
 ```tsx
-import { useFormMutation } from '@noboil/convex/react'
+// Convex
+import { useFormMutation } from '@noboil/convex/components'
 import { pickValues } from '@noboil/convex/zod'
 
 const form = useFormMutation({
   mutation: api.blog.update,
-  schema: owned.blog,
-  values: pickValues(owned.blog, post),
+  schema: s.blog,
+  values: pickValues(s.blog, post),
   transform: d => ({ ...d, id: post._id }),
-  onSuccess: () => toast.success('Saved'),
-  onError: e => toast.error(e.message)
+  onSuccess: () => toast.success('Saved')
+})
+```
+
+```tsx
+// SpacetimeDB
+import { useFormMutation } from '@noboil/spacetimedb/components'
+import { pickValues } from '@noboil/spacetimedb/zod'
+
+const form = useFormMutation({
+  schema: s.blog,
+  values: pickValues(s.blog, post),
+  mutate: d => updateBlog({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
+  toast: 'Saved'
 })
 ```
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `mutation` | `MutationReference` | Convex mutation to call on submit |
+| `mutation` (Convex) | `MutationReference` | Convex mutation to call on submit |
+| `mutate` (SpacetimeDB) | `(data) => Promise<unknown>` | Reducer wrapper to call on submit |
 | `schema` | `ZodObject` | Zod schema for field types and validation |
 | `values` | `object` | Initial field values (use `pickValues` to extract from a doc) |
 | `transform` | `(data) => object` | Transform validated data before calling the mutation |
 | `onSuccess` | `() => void` | Called after successful mutation |
 | `onError` | `(error) => void \| false` | Called on error. Pass `false` to suppress default toast |
+| `toast` | `string \| { success?, error? }` | Toast shorthand — pass a string for the success message |
 
 ### Form
 
-Render prop component. Destructures typed field components from the render prop. Using the wrong field type for a field is a compile error.
+Render-prop component. Destructures typed field components from the render prop. Using the wrong field type for a field is a compile error.
 
 ```tsx
-import { Form } from '@noboil/convex/components'
+import { Form } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <Form
   form={form}
@@ -82,55 +94,11 @@ import { Form } from '@noboil/convex/components'
 
 `name` is checked against the schema at compile time. `name='titl'` is a type error. `<Text name='published' />` is a type error when `published` is a boolean field.
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-`@noboil/spacetimedb/components` exports the same `useForm`, `useFormMutation`, and `Form` as `@noboil/convex/components`. The only differences are: `useFormMutation` takes a `mutate` callback (you wire up the reducer call yourself) instead of a Convex mutation reference, and the schema is a plain Zod object — typically derived from your generated table columns via `zodFromTable`.
-
-```tsx
-import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { zodFromTable } from '@noboil/spacetimedb'
-import { useReducer } from 'spacetimedb/react'
-import { reducers, tables } from '@/generated/module_bindings'
-
-const postSchema = zodFromTable(tables.post.columns, { exclude: ['published'] })
-
-const CreatePost = () => {
-  const createPost = useReducer(reducers.create_post)
-  const form = useFormMutation({
-    schema: postSchema,
-    mutate: d => createPost({ ...d, published: false }),
-    toast: 'Created'
-  })
-
-  return (
-    <Form
-      form={form}
-      render={({ Text, Submit }) => (
-        <>
-          <Text name="title" label="Title" />
-          <Text name="content" label="Content" multiline />
-          <Submit>Create</Submit>
-        </>
-      )}
-    />
-  )
-}
-```
-
-`name='title'` is checked at compile time. `name='titl'` is a type error. Field component / type mismatch (`<Toggle name='title' />` for a string field) is also a type error.
-
-</Tab>
-</Tabs>
-
 ---
 
 ## Field Components
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-All 16 field components are available inside the `Form` render prop. Every field accepts `label`, `placeholder`, `disabled`, and `className`.
+All 16 field components are available inside the `Form` render prop on both backends. Every field accepts `label`, `placeholder`, `disabled`, and `className`.
 
 | Component | Zod Type | Renders | Key Props |
 |-----------|----------|---------|-----------|
@@ -179,29 +147,7 @@ All 16 field components are available inside the `Form` render prop. Every field
 />
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-`@noboil/spacetimedb/components` ships the same 16 field components as `@noboil/convex/components`. The render-prop `Form` destructures them identically — `Text`, `Num`, `Choose`, `Combobox`, `MultiSelect`, `Arr`, `File`, `Files`, `Datepick`, `Timepick`, `Colorpick`, `Rating`, `Slider`, `Toggle`, `Submit`, `Err`. Same props, same compile-time `name` checking.
-
-The only file-field difference is the upload backend: `File` / `Files` upload to S3 (or MinIO in local dev) via a presigned URL route instead of Convex storage. The schema field type is still `file()` / `files()` from `@noboil/spacetimedb/schema`.
-
-```tsx
-<Form
-  form={form}
-  render={({ Text, Choose, File, Submit }) => (
-    <>
-      <Text name="title" label="Title" />
-      <Choose name="category" label="Category" />
-      <File name="coverImage" label="Cover" accept="image/*" />
-      <Submit>Save</Submit>
-    </>
-  )}
-/>
-```
-
-</Tab>
-</Tabs>
+The `<File>` and `<Files>` components handle the upload backend automatically — Convex storage on `@noboil/convex`, S3/MinIO presigned URLs on `@noboil/spacetimedb`. Schema field type is `file()` / `files()` from the matching `/schema` import on both.
 
 ---
 
@@ -210,10 +156,10 @@ The only file-field difference is the upload backend: `File` / `Files` upload to
 Shows "Saved Xs ago" and updates in real time. Pass `form.lastSaved` from a `useForm` call with `autoSave` enabled.
 
 ```tsx
-import { AutoSaveIndicator } from '@noboil/convex/components'
+import { AutoSaveIndicator } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 const form = useForm({
-  schema: owned.blog,
+  schema: s.blog,
   onSubmit: d => update({ id: post._id, ...d }),
   autoSave: { enabled: true, debounceMs: 1000 }
 })
@@ -230,17 +176,17 @@ const form = useForm({
 
 ## ConflictDialog
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Automatic conflict resolution. When a mutation returns a conflict (stale `expectedUpdatedAt`), the dialog appears with three options: overwrite, reload, or cancel. No extra UI code needed. It's built into `Form`.
+Automatic conflict resolution. When an update returns `CONFLICT` (stale `expectedUpdatedAt`), `Form` renders a built-in dialog with three options: overwrite, reload, or cancel. No extra UI code needed.
 
 ```tsx
 const form = useFormMutation({
+  // Convex
   mutation: api.blog.update,
-  schema: owned.blog,
-  values: pickValues(owned.blog, post),
+  schema: s.blog,
+  values: pickValues(s.blog, post),
   transform: d => ({ ...d, id: post._id, expectedUpdatedAt: post.updatedAt }),
+  // SpacetimeDB
+  // mutate: d => updateBlog({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
   onSuccess: () => toast.success('Saved')
 })
 
@@ -252,10 +198,10 @@ const form = useFormMutation({
 )} />
 ```
 
-The `ConflictDialog` is rendered automatically inside `Form`. You can also render it standalone:
+You can also render `ConflictDialog` standalone:
 
 ```tsx
-import { ConflictDialog } from '@noboil/convex/components'
+import { ConflictDialog } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <ConflictDialog
   open={hasConflict}
@@ -272,38 +218,14 @@ import { ConflictDialog } from '@noboil/convex/components'
 | `onReload` | `() => void` | Fetch the latest version |
 | `onCancel` | `() => void` | Discard changes and close |
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-Identical behavior. Pass `expectedUpdatedAt` in your update call and `Form` renders the same built-in `ConflictDialog` automatically when the reducer returns `CONFLICT`.
-
-```tsx
-const form = useFormMutation({
-  schema: postSchema,
-  values: pickValues(postSchema, post),
-  mutate: d => updatePost({ ...d, id: post.id, expectedUpdatedAt: post.updatedAt }),
-  toast: 'Saved'
-})
-```
-
-`ConflictDialog` is also exported standalone from `@noboil/spacetimedb/components`.
-
-</Tab>
-</Tabs>
-
 ---
 
 ## StepForm
 
-Multi-step wizard with per-step Zod schemas and compile-time field checking.
-
-`defineSteps()` returns a `StepForm` component and a `useStepper` hook bound to those steps.
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Multi-step wizard with per-step Zod schemas and compile-time field checking. `defineSteps()` returns a `StepForm` component and a `useStepper` hook bound to those steps.
 
 ```tsx
-import { defineSteps } from '@noboil/convex/components'
+import { defineSteps } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 import { z } from 'zod/v4'
 
 const profileStep = z.object({
@@ -392,32 +314,6 @@ Customize without forking the component:
 | `label` | The step label text |
 | `separator` | The line between steps |
 
-**useStepper params**
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `onSubmit` | `(data) => Promise<void>` | Called with all step data on final submit |
-| `onSuccess` | `() => void` | Called after successful submit |
-| `onError` | `(error) => void` | Called on submit error |
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Identical API — import `defineSteps` from `@noboil/spacetimedb/components` and use the returned `StepForm` and `useStepper` exactly as in the Convex tab. Each step gets its own Zod schema, per-step compile-time `name` checking, and the same `stepIndicatorClassNames` styling hooks.
-
-```tsx
-import { defineSteps } from '@noboil/spacetimedb/components'
-
-const { StepForm, useStepper } = defineSteps(
-  { id: 'profile', label: 'Profile', schema: profileStep },
-  { id: 'org', label: 'Organization', schema: orgStep },
-  { id: 'preferences', label: 'Preferences', schema: preferencesStep }
-)
-```
-
-</Tab>
-</Tabs>
-
 ---
 
 ## EditorsSection
@@ -425,7 +321,7 @@ const { StepForm, useStepper } = defineSteps(
 Manages a list of editors for a resource. Shows current editors, lets you add members, and remove existing editors.
 
 ```tsx
-import { EditorsSection } from '@noboil/convex/components'
+import { EditorsSection } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <EditorsSection
   editorsList={editors}
@@ -456,17 +352,17 @@ import { EditorsSection } from '@noboil/convex/components'
 
 ## PermissionGuard
 
-Wraps content that requires edit access. Renders children when `canEdit` is true, otherwise shows a "View only" fallback or a custom `fallback` node.
+Wraps content that requires edit access. Renders children when `canAccess` is true, otherwise shows a "View only" fallback or a custom `fallback` node.
 
 ```tsx
-import { PermissionGuard } from '@noboil/convex/components'
+import { PermissionGuard } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
-<PermissionGuard canEdit={isOwner || isEditor}>
+<PermissionGuard canAccess={isOwner || isEditor}>
   <EditForm post={post} />
 </PermissionGuard>
 
 <PermissionGuard
-  canEdit={isOwner}
+  canAccess={isOwner}
   fallback={<p className="text-muted-foreground text-sm">Only owners can change this setting.</p>}
 >
   <DangerZone />
@@ -475,9 +371,9 @@ import { PermissionGuard } from '@noboil/convex/components'
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `canEdit` | `boolean` | Whether the current user has edit permission |
+| `canAccess` | `boolean` | Whether the current user has access |
 | `fallback` | `ReactNode` | Optional custom fallback. Defaults to a "View only" badge |
-| `children` | `ReactNode` | Content to render when `canEdit` is true |
+| `children` | `ReactNode` | Content to render when `canAccess` is true |
 
 ---
 
@@ -485,11 +381,8 @@ import { PermissionGuard } from '@noboil/convex/components'
 
 Catches unhandled errors in the component tree and renders a fallback UI.
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```tsx
-import { ErrorBoundary } from '@noboil/convex/components'
+import { ErrorBoundary } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <ErrorBoundary>
   <BlogEditor />
@@ -512,37 +405,6 @@ import { ErrorBoundary } from '@noboil/convex/components'
 | `fallback` | `({ error, reset }) => ReactNode` | Optional render prop for custom error UI |
 | `className` | `string` | Class for the default error container |
 | `children` | `ReactNode` | Content to render normally |
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```tsx
-import { ErrorBoundary } from '@noboil/spacetimedb/components'
-
-<ErrorBoundary>
-  <PostList />
-</ErrorBoundary>
-
-<ErrorBoundary
-  fallback={({ error, reset }) => (
-    <div>
-      <p>Something went wrong: {error.message}</p>
-      <button onClick={reset}>Try again</button>
-    </div>
-  )}
->
-  <PostList />
-</ErrorBoundary>
-```
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `fallback` | `({ error, reset }) => ReactNode` | Optional render prop for custom error UI |
-| `className` | `string` | Class for the default error container |
-| `children` | `ReactNode` | Content to render normally |
-
-</Tab>
-</Tabs>
 
 ---
 
@@ -553,7 +415,7 @@ import { ErrorBoundary } from '@noboil/spacetimedb/components'
 Org avatar with an initials fallback when no image is available.
 
 ```tsx
-import { OrgAvatar } from '@noboil/convex/components'
+import { OrgAvatar } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <OrgAvatar name="Acme Corp" imageUrl={org.logoUrl} size="md" />
 ```
@@ -570,7 +432,7 @@ import { OrgAvatar } from '@noboil/convex/components'
 Role badge with automatic variant based on role value.
 
 ```tsx
-import { RoleBadge } from '@noboil/convex/components'
+import { RoleBadge } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <RoleBadge role={member.role} />
 <RoleBadge role="admin" className="ml-2" />
@@ -586,7 +448,7 @@ import { RoleBadge } from '@noboil/convex/components'
 Fixed bottom-left indicator that appears when the user loses network connectivity. No props.
 
 ```tsx
-import { OfflineIndicator } from '@noboil/convex/components'
+import { OfflineIndicator } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
 
 <OfflineIndicator />
 ```
@@ -596,6 +458,8 @@ Add it once at the root layout. It renders nothing when the user is online.
 ---
 
 ## Headless Hooks
+
+Every component's logic is also exported as a standalone hook from `/react`. Use these when you want to bring your own design system.
 
 ### useStepper
 
@@ -623,40 +487,24 @@ const { step, next, prev, isFirst, isLast, setStep } = stepper
 
 ### useList
 
-Paginated data fetching with cursor-based or offset-based pagination.
+Paginated data fetching with cursor-based or offset-based pagination. See [Data fetching](./data-fetching) for the full options reference and the SpacetimeDB-specific shape.
 
 ```tsx
-import { useList } from '@noboil/convex/react'
+import { useList } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
-const { data, loadMore, isLoading, hasMore } = useList(api.blog.list, {
-  pageSize: 20,
-  filter: { category: 'news' }
+const { items, loadMore, isLoading, hasMore } = useList(api.blog.list, {
+  where: { published: true }
 })
 ```
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `query` | `QueryReference` | Convex query to paginate |
-| `options.pageSize` | `number` | Items per page |
-| `options.filter` | `object` | Optional filter args passed to the query |
-
-| Return | Type | Description |
-|--------|------|-------------|
-| `data` | `T[]` | Current page of items |
-| `loadMore` | `() => void` | Load the next page |
-| `isLoading` | `boolean` | Whether a page is loading |
-| `hasMore` | `boolean` | Whether more pages exist |
 
 ### useInfiniteList
 
 Infinite scroll with automatic intersection observer. Loads the next page when the sentinel element enters the viewport.
 
 ```tsx
-import { useInfiniteList } from '@noboil/convex/react'
+import { useInfiniteList } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
-const { data, sentinelRef, isLoading } = useInfiniteList(api.blog.list, {
-  pageSize: 20
-})
+const { data, sentinelRef, isLoading } = useInfiniteList(api.blog.list, { pageSize: 20 })
 
 return (
   <ul>
@@ -667,19 +515,12 @@ return (
 )
 ```
 
-| Return | Type | Description |
-|--------|------|-------------|
-| `data` | `T[]` | All loaded items |
-| `sentinelRef` | `RefObject` | Attach to the last element to trigger loading |
-| `isLoading` | `boolean` | Whether the next page is loading |
-| `hasMore` | `boolean` | Whether more pages exist |
-
 ### useBulkSelection
 
 Multi-select state for lists. Tracks selected IDs and provides toggle helpers.
 
 ```tsx
-import { useBulkSelection } from '@noboil/convex/react'
+import { useBulkSelection } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const { selectedIds, toggleOne, toggleAll, clear, isSelected } = useBulkSelection(items)
 
@@ -688,24 +529,12 @@ const { selectedIds, toggleOne, toggleAll, clear, isSelected } = useBulkSelectio
 <button onClick={clear}>Clear</button>
 ```
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `items` | `{ _id: string }[]` | The full list of items |
-
-| Return | Type | Description |
-|--------|------|-------------|
-| `selectedIds` | `Set<string>` | Currently selected IDs |
-| `toggleOne` | `(id: string) => void` | Toggle a single item |
-| `toggleAll` | `() => void` | Select all or deselect all |
-| `clear` | `() => void` | Deselect all |
-| `isSelected` | `(id: string) => boolean` | Check if an item is selected |
-
 ### useBulkMutate
 
 Batch mutation execution with progress tracking. Runs mutations for all selected items and reports progress.
 
 ```tsx
-import { useBulkMutate } from '@noboil/convex/react'
+import { useBulkMutate } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const { execute, progress, isPending } = useBulkMutate({
   mutation: api.blog.rm,
@@ -721,24 +550,12 @@ const { execute, progress, isPending } = useBulkMutate({
 </button>
 ```
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `mutation` | `MutationReference` | Mutation to call for each item |
-| `onSuccess` | `() => void` | Called after all mutations complete |
-| `onError` | `(error) => void` | Called if any mutation fails |
-
-| Return | Type | Description |
-|--------|------|-------------|
-| `execute` | `(args: object[]) => Promise<void>` | Run the mutation for each args object |
-| `progress` | `{ done: number, total: number }` | Current progress |
-| `isPending` | `boolean` | Whether any mutations are in flight |
-
 ### useSearch
 
 Debounced search with configurable delay. Returns the debounced value to pass to a query.
 
 ```tsx
-import { useSearch } from '@noboil/convex/react'
+import { useSearch } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const { query, setQuery, debouncedQuery } = useSearch({ debounceMs: 300 })
 
@@ -747,23 +564,12 @@ const results = useQuery(api.blog.search, { q: debouncedQuery })
 <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search..." />
 ```
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `debounceMs` | `number` | Delay before `debouncedQuery` updates. Defaults to `300` |
-| `initialValue` | `string` | Optional initial search value |
-
-| Return | Type | Description |
-|--------|------|-------------|
-| `query` | `string` | Current input value (unthrottled) |
-| `setQuery` | `(v: string) => void` | Update the search input |
-| `debouncedQuery` | `string` | Debounced value safe to pass to queries |
-
 ### useSoftDelete
 
 Soft delete with undo toast and automatic restore. Marks a record as deleted and shows a toast with an undo action. If the user doesn't undo within the timeout, the record is permanently deleted.
 
 ```tsx
-import { useSoftDelete } from '@noboil/convex/react'
+import { useSoftDelete } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const { softDelete, isDeleting } = useSoftDelete({
   deleteMutation: api.blog.rm,
@@ -776,15 +582,3 @@ const { softDelete, isDeleting } = useSoftDelete({
   Delete
 </button>
 ```
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `deleteMutation` | `MutationReference` | Mutation to call for soft delete |
-| `restoreMutation` | `MutationReference` | Mutation to call on undo |
-| `undoMs` | `number` | How long the undo toast stays visible. Defaults to `5000` |
-| `onDeleted` | `() => void` | Called after the undo window expires |
-
-| Return | Type | Description |
-|--------|------|-------------|
-| `softDelete` | `(args: object) => void` | Trigger the soft delete flow |
-| `isDeleting` | `boolean` | Whether a delete is pending |
