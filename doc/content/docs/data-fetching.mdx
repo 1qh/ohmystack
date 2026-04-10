@@ -5,357 +5,165 @@ description: Queries, subscriptions, pagination, filtering, and SSR patterns.
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-Convex runs all queries as server functions. Clients call named query functions and receive results — they never touch the database directly. Queries are reactive: when underlying data changes, subscribed components re-render automatically.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB uses subscriptions, not queries. When you subscribe to a table, you receive the current state and all future changes over a WebSocket. There's no separate "fetch" step.
-
-</Tab>
-</Tabs>
+Both backends are reactive: subscribed components re-render whenever underlying data changes. The user-facing API for filtering, sorting, paginating, and searching is the same on both libs — `useList` from `/react`. Where they differ is the underlying transport (Convex query subscription vs SpacetimeDB WebSocket subscription) and the visibility model (`pub`/`auth` destructure vs `clientVisibilityFilter` SQL). See [Convex vs SpacetimeDB](./differences#2-where-filters-and-the-pub-option) for the details.
 
 ## Access control on read endpoints
 
+Both libs accept the same `pub` table option, but apply it differently. Convex generates two read endpoints (`pub.list` and `auth.list`); SpacetimeDB generates a server-enforced `clientVisibilityFilter` SQL rule.
+
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Every `crud()` call generates two sets of read endpoints: `pub` (public, no auth required) and `auth` (requires authentication). Both have the same API — `list`, `read`, and optionally `search`.
-
-```tsx
-const { pub, auth, create, rm, update } = crud('blog', owned.blog)
-
-export const { list, read } = pub
-export const { list, read } = auth
+```ts
+const api = noboil(config, ({ table }) => ({
+  blog: table(s.blog, {
+    pub: { where: { published: true } }
+  })
+}))
 ```
 
-Change access control by changing one destructure line — no endpoint rewriting, no middleware changes. Both support the same `where` clauses:
+The `crud()`-style returns destructure into `{ pub, auth }`:
 
-```tsx
-const { pub, auth } = crud('blog', owned.blog, {
-  pub: { where: { published: true } },
-  auth: { where: { published: false } }
-})
+```ts
+// convex/blog.ts
+import { api } from '../lazy'
+const { create, update, rm, pub: { list, read } } = api.blog
+export { create, list, read, rm, update }
 ```
+
+- `pub.list` / `pub.read` — public, no auth required
+- `auth.list` / `auth.read` — auth required, scoped to the caller's rows
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-Access control is handled at the subscription level via `clientVisibilityFilter` rules generated from the `pub` option on each table. These rules run inside SpacetimeDB — clients cannot bypass them.
-
-```typescript
+```ts
 export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
-  project: table(s.project),
+  project: table(s.project)
 }))
 ```
 
-- `pub: 'published'` — clients see published posts OR their own drafts
-- No `pub` — clients see only their own rows (`WHERE userId = :sender`)
+`pub: 'published'` generates `WHERE published = true OR userId = :sender` and indexes the `published` column. No `pub` means owner-only (`WHERE userId = :sender`).
 
 </Tab>
 </Tabs>
 
 ## Basic subscriptions
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+`useList` is the high-level hook on both backends — it handles filtering, sorting, search, pagination. The lower-level `useQuery` (Convex) / `useTable` (SpacetimeDB) hooks are also available for direct access.
 
 ```tsx
-import { useQuery } from 'convex/react'
-import { api } from '../convex/_generated/api'
+'use client'
+import { useList } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
 const Posts = () => {
-  const posts = useQuery(api.blog.list, { paginationOpts: { cursor: null, numItems: 20 } })
-  if (posts === undefined) return <div>Loading...</div>
+  const { items, hasMore, loadMore, isLoading } = useList(api.blog.list, {
+    where: { published: true },
+    pageSize: 20
+  })
+
+  if (isLoading) return <div>Loading...</div>
   return (
     <ul>
-      {posts.page.map(p => (
-        <li key={p._id}>{p.title}</li>
-      ))}
+      {items.map(p => <li key={p._id}>{p.title}</li>)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
     </ul>
   )
 }
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
+The shape is the same on both. SpacetimeDB users can also drop down to `useTable` directly for unbounded subscriptions:
 
-```typescript
-'use client'
-
+```tsx
 import { useTable } from 'spacetimedb/react'
 import { tables } from '@/generated/module_bindings'
+import { useList } from '@noboil/spacetimedb/react'
 
-const Posts = () => {
-  const [posts, isReady] = useTable(tables.post)
-  if (!isReady) return <div>Loading...</div>
-  return (
-    <ul>
-      {posts.map(p => (
-        <li key={p.id}>{p.title}</li>
-      ))}
-    </ul>
-  )
-}
+const [posts, isReady] = useTable(tables.post)
+const { data, hasMore, loadMore } = useList(posts, isReady, { pageSize: 20 })
 ```
-
-`isReady` is `false` until the initial subscription sync finishes. After that, `posts` updates automatically whenever any client calls a reducer that modifies the `post` table.
-
-</Tab>
-</Tabs>
 
 ## Where clauses and filtering
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Both backends accept the same where-clause shape: field equality, comparison operators (`$gt`, `$gte`, `$lt`, `$lte`, `$between`), the `own: true` shorthand, and `or` groups.
 
 ```tsx
-const {
-  items: mine,
-  loadMore,
-  isDone
-} = useList(api.blog.list, { where: { own: true } })
-
-const published = usePaginatedQuery(
-  api.blog.list,
-  { where: { published: true } },
-  { initialNumItems: 20 }
-)
-
-const expensive = usePaginatedQuery(
-  api.product.list,
-  { where: { price: { $gte: 100 } } },
-  { initialNumItems: 20 }
-)
-
-const either = usePaginatedQuery(
-  api.blog.list,
-  { where: { or: [{ category: 'tech' }, { category: 'life' }] } },
-  { initialNumItems: 20 }
-)
-```
-
-`{ own: true }` uses the `by_user` index automatically. Default where clauses can be set at the factory level:
-
-```tsx
-crud('blog', owned.blog, { pub: { where: { published: true } } })
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB subscriptions support SQL WHERE clauses. Use `tables.post.where(...)` to subscribe to a filtered subset:
-
-```typescript
-const [published, isReady] = useTable(
-  tables.post.where(r => r.published.eq(true))
-)
-
-const [myPosts, isReady] = useTable(
-  tables.post.where(r => r.userId.eq(currentIdentity))
-)
-```
-
-`.eq()`, `.gt()`, `.lt()` etc. are typed query methods on each column — they are not JavaScript equality operators. Multiple WHERE subscriptions on the same table work independently.
-
-For filtering that doesn't map cleanly to a single WHERE clause, subscribe to the full table and filter client-side with `useList`:
-
-```typescript
-'use client'
-
-import { useTable } from 'spacetimedb/react'
-import { useList } from '@noboil/spacetimedb/react'
-import { tables } from '@/generated/module_bindings'
-
-const PostList = ({ category }: { category: string }) => {
-  const [posts, isReady] = useTable(tables.post)
-
-  const { data, hasMore, loadMore, totalCount } = useList(posts, isReady, {
-    where: { category, published: true },
-    sort: { field: 'updatedAt', direction: 'desc' },
-    pageSize: 20,
-  })
-
-  return (
-    <div>
-      <p>{totalCount} posts</p>
-      <ul>
-        {data.map(post => (
-          <li key={post.id}>{post.title}</li>
-        ))}
-      </ul>
-      {hasMore && <button onClick={loadMore}>Load more</button>}
-    </div>
-  )
-}
-```
-
-</Tab>
-</Tabs>
-
-## useList options
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-`useList` wraps `usePaginatedQuery` with cursor management and a `loadMore` helper:
-
-```tsx
-import { useList } from '@noboil/convex/react'
-
-const { items, loadMore, isDone, status } = useList(api.blog.list, {
-  where: { own: true }
+useList(api.blog.list, { where: { own: true } })
+useList(api.blog.list, { where: { published: true, category: 'tech' } })
+useList(api.blog.list, { where: { price: { $gte: 100 } } })
+useList(api.blog.list, {
+  where: { or: [{ category: 'tech' }, { category: 'science' }] }
 })
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
+`{ own: true }` uses an indexed query — it scales to millions of rows. Other where clauses are runtime filters that work well up to ~1,000 docs (Convex) / unbounded subscription size (SpacetimeDB).
 
-`useList` takes the data array from `useTable`, the ready boolean, and an options object:
+Default where clauses can be set per-factory:
 
-```typescript
-useList(data, isReady, {
+```ts
+table(s.blog, { pub: { where: { published: true } } })  // Convex
+table(s.blog, { pub: 'published' })                      // SpacetimeDB
+```
+
+For complex client-side filtering on SpacetimeDB, subscribe to a wider set with `tables.post.where(r => r.published.eq(true))` and refine with `useList`'s `where`.
+
+## useList options
+
+```ts
+useList(query, {
   where: {
     published: true,
     category: 'tech',
     or: [{ category: 'news' }]
   },
-
   sort: { field: 'updatedAt', direction: 'desc' },
-
   search: { query: 'draft', fields: ['title', 'content'] },
-
   pageSize: 20,
   page: 1
 })
 ```
 
-The return value:
+Returns:
 
-```typescript
+```ts
 {
-  data: T[]
-  hasMore: boolean
-  isLoading: boolean
-  loadMore: () => void
-  page: number
+  items: T[],       // current page
+  data: T[],        // alias for items (SpacetimeDB convention)
+  hasMore: boolean,
+  isLoading: boolean,
+  loadMore: () => void,
+  page: number,
   totalCount: number
 }
 ```
 
-`useList` is purely client-side. All filtering and sorting happens over the in-memory subscription data.
-
-</Tab>
-</Tabs>
-
-## Comparison operators
-
-Both databases support range operators in where clauses:
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-usePaginatedQuery(
-  api.product.list,
-  { where: { price: { $gte: 100 }, year: { $between: [2020, 2024] } } },
-  { initialNumItems: 20 }
-)
-```
-
-Supported: `$gt`, `$gte`, `$lt`, `$lte`, `$between`.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-useList(posts, isReady, {
-  where: {
-    voteCount: { $gte: 100 },
-    releaseYear: { $between: [2020, 2024] }
-  }
-})
-```
-
-Supported: `$gt`, `$gte`, `$lt`, `$lte`, `$between`.
-
-</Tab>
-</Tabs>
+On Convex this is a thin wrapper around `usePaginatedQuery` with cursor management. On SpacetimeDB it's pure client-side filtering over the subscription data.
 
 ## Pagination patterns
 
 ### Infinite scroll
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```tsx
-const { items, loadMore, status } = useList(api.blog.list, {
-  where: { published: true }
-})
+const { items, hasMore, loadMore } = useList(api.blog.list, { where: { published: true } })
 
 return (
   <div>
-    <ul>
-      {items.map(p => <li key={p._id}>{p.title}</li>)}
-    </ul>
-    {status === 'CanLoadMore' && (
-      <button onClick={loadMore}>Load more</button>
-    )}
-  </div>
-)
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-const { data, hasMore, loadMore } = useList(posts, isReady, {
-  pageSize: 20
-})
-
-return (
-  <div>
-    <ul>
-      {data.map(p => <li key={p.id}>{p.title}</li>)}
-    </ul>
+    <ul>{items.map(p => <li key={p._id}>{p.title}</li>)}</ul>
     {hasMore && <button onClick={loadMore}>Load more</button>}
   </div>
 )
 ```
 
-</Tab>
-</Tabs>
+For sentinel-driven infinite scroll, use `useInfiniteList` instead — it auto-loads when a sentinel element scrolls into view.
 
 ### Controlled page
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```tsx
-import { useState } from 'react'
-import { usePaginatedQuery } from 'convex/react'
-
-const [cursor, setCursor] = useState<string | null>(null)
-
-const { page, continueCursor, isDone } = usePaginatedQuery(
-  api.blog.list,
-  { where: { published: true } },
-  { initialNumItems: 20 }
-)
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
 const [page, setPage] = useState(1)
 
-const { data, totalCount } = useList(posts, isReady, {
+const { items, totalCount } = useList(api.blog.list, {
+  where: { published: true },
   pageSize: 20,
   page
 })
@@ -363,45 +171,63 @@ const { data, totalCount } = useList(posts, isReady, {
 const totalPages = Math.ceil(totalCount / 20)
 ```
 
-</Tab>
-</Tabs>
+## Comparison operators
+
+Same syntax on both:
+
+```tsx
+useList(api.product.list, {
+  where: {
+    price: { $gte: 100 },
+    year: { $between: [2020, 2024] }
+  }
+})
+```
+
+Supported: `$gt`, `$gte`, `$lt`, `$lte`, `$between`.
 
 ## Search
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Search is generated only when `search` is configured on `crud(...)`. Three forms:
+Server-side search via Convex search indexes. Generated only when `search` is configured on the table:
 
-```tsx
-crud('blog', owned.blog, { search: true })
-crud('blog', owned.blog, { search: 'content' })
-crud('blog', owned.blog, { search: { field: 'content', index: 'my_index' } })
+```ts
+table(s.blog, { search: true })
+table(s.blog, { search: 'content' })
+table(s.blog, { search: { field: 'content', index: 'my_index' } })
 ```
 
-The string shorthand is typesafe — `search: 'conten'` is a compile error if `conten` is not a field in your schema. You must add a matching `searchIndex` to your schema table.
+The string shorthand is typesafe — `search: 'conten'` is a compile error if `conten` isn't a field in your schema.
+
+```tsx
+const results = useList(api.blog.search, { query: 'react hooks' })
+```
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-Text search is handled client-side via `useList`:
+Client-side search via `useList`:
 
-```typescript
+```tsx
 const [query, setQuery] = useState('')
 
-const { data, totalCount } = useList(posts, isReady, {
+const { items, totalCount } = useList(posts, isReady, {
   search: { query, fields: ['title', 'content'], debounceMs: 300 },
   where: { published: true },
   sort: { field: 'updatedAt', direction: 'desc' },
 })
 ```
 
-`debounceMs: 300` delays the search filter until the user stops typing for 300ms, avoiding unnecessary re-renders on every keystroke.
+`debounceMs: 300` delays the search filter until the user stops typing.
 
 </Tab>
 </Tabs>
 
 ## SSR
+
+Server Components need a different transport on each backend. See [Convex vs SpacetimeDB](./differences#5-ssr) for the full breakdown.
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
@@ -431,13 +257,11 @@ const PostsPage = async () => {
 </Tab>
 <Tab value="SpacetimeDB">
 
-SpacetimeDB exposes an HTTP endpoint for SQL queries. This is ideal for Next.js Server Components where you can't use WebSockets:
+SpacetimeDB exposes an HTTP SQL endpoint. Ideal for Next.js Server Components where you can't use WebSockets:
 
-```typescript
+```tsx
 const STDB_URI = process.env.SPACETIMEDB_URI ?? 'http://localhost:4000'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
-
-type SqlRow = [number, string, string, boolean]
 
 const fetchPosts = async () => {
   const res = await fetch(`${STDB_URI}/v1/database/${MODULE}/sql`, {
@@ -446,30 +270,15 @@ const fetchPosts = async () => {
     body: 'SELECT id, title, content, published FROM post WHERE published = true ORDER BY id DESC LIMIT 20',
     cache: 'no-store',
   })
-
   if (!res.ok) throw new Error('Failed to fetch posts')
-
-  const [result] = await res.json() as [{ rows: SqlRow[] }]
-  return result.rows.map(([id, title, content, published]) => ({
-    id,
-    title,
-    content,
-    published,
-  }))
+  const [result] = await res.json() as [{ rows: [number, string, string, boolean][] }]
+  return result.rows.map(([id, title, content, published]) => ({ id, title, content, published }))
 }
 
 const PostsPage = async () => {
   const posts = await fetchPosts()
-  return (
-    <ul>
-      {posts.map(post => (
-        <li key={post.id}>{post.title}</li>
-      ))}
-    </ul>
-  )
+  return <ul>{posts.map(p => <li key={p.id}>{p.title}</li>)}</ul>
 }
-
-export default PostsPage
 ```
 
 Latency is ~0.27ms for simple queries on local Docker.
@@ -479,126 +288,57 @@ Latency is ~0.27ms for simple queries on local Docker.
 
 ## File uploads
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-`file()` for single file, `files()` for arrays. Everything is automatic:
-
-- Image compression (max 1920px, auto quality) — disable with `compressImg={false}`
-- Auto-cleanup on doc update/delete (orphaned files removed)
-- URL resolution — `photo` (storage ID) becomes `photoUrl` (URL string) in query results
-- Rate limited (10 uploads/min), max 10MB per file
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-File uploads go through a Next.js API route that generates S3/MinIO pre-signed URLs. See [Forms](./forms) for the full `useUpload` pattern.
-
-</Tab>
-</Tabs>
+`file()` for single file, `files()` for arrays — same name, same schema, both backends. The form components handle the upload backend automatically. See [File storage](./differences#3-file-storage) for the Convex storage vs S3/MinIO presigned URL differences.
 
 ## Soft delete and undo
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Enable on any table by adding `softDelete: true` to the table options. Both backends generate a `restore` endpoint alongside `rm`, and `useSoftDelete` provides the undo-toast UX.
 
-```tsx
-const { remove } = useSoftDelete({
-  rm: useOrgMutation(api.wiki.rm),
-  restore: useOrgMutation(api.wiki.restore),
-  toast,
-  label: 'wiki page'
-})
-await remove({ id: wikiId })
+```ts
+table(s.task, { softDelete: true })
 ```
 
-Bulk version:
-
 ```tsx
-const { handleBulkDelete, selected, toggleSelect } = useBulkSelection({
-  rm: useMutation(api.wiki.rm),
-  items: wikis?.page ?? [],
-  orgId: org._id,
-  restore: useOrgMutation(api.wiki.restore),
-  toast,
-  undoLabel: 'wiki page'
+import { useSoftDelete } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+
+const { softDelete } = useSoftDelete({
+  deleteMutation: api.task.rm,
+  restoreMutation: api.task.restore,
+  undoMs: 5000
 })
 ```
 
-`rm` accepts `{ ids: [...] }` for bulk deletion (up to 100 items). Pass it directly — no separate endpoint needed:
+Filter active vs deleted rows using `where`:
 
 ```tsx
-const { handleBulkDelete, selected } = useBulkSelection({
-  rm: id => remove({ id }),
-  items: posts ?? [],
-  orgId: org._id
-})
+const { items: active } = useList(api.task.list, { where: { deletedAt: undefined } })
+const { items: deleted } = useList(api.task.list, { where: { deletedAt: { $gt: 0 } } })
 ```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Enable soft delete on any table by adding `softDelete: true` to the factory:
-
-```typescript
-wiki: table(s.wiki, { softDelete: true })
-```
-
-This generates a `restore_wiki` reducer alongside `rm_wiki`. Soft-deleted rows have a `deletedAt` timestamp and are filtered from subscription results automatically.
-
-</Tab>
-</Tabs>
 
 ## Bulk mutations with progress
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-`useBulkMutate` executes a list of mutations with progress tracking, error collection, and optional toast notifications. Caps at 100 items per batch (`BULK_MAX`).
+`useBulkMutate` runs a list of mutations concurrently with progress tracking:
 
 ```tsx
-import { useBulkMutate } from '@noboil/convex/react'
+import { useBulkMutate } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
 
-const { execute, progress, isRunning } = useBulkMutate({
-  toast: { success: n => `${n} updated`, error: n => `${n} failed` }
+const { execute, progress, isPending } = useBulkMutate({
+  mutation: api.blog.rm,  // or mutate: id => removeBlog({ id })
+  onSuccess: () => toast.success('Deleted'),
+  onError: e => toast.error(e.message)
 })
 
-const handleBulkComplete = async () => {
-  const ops = selectedIds.map(id => () => updateTask({ id, done: true }))
-  const result = await execute(ops)
-  if (result.failCount > 0) console.error(result.errors)
-}
+execute(selectedIds.map(id => ({ id })))
 ```
 
-`progress` updates after each mutation resolves, enabling progress bars. Errors are collected (not thrown) so the batch always completes.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB reducers are fire-and-forget. For bulk operations, call reducers in a loop and track progress manually:
-
-```typescript
-const updateTask = useReducer(reducers.update_task)
-
-const handleBulkComplete = async () => {
-  let completed = 0
-  for (const id of selectedIds) {
-    await updateTask({ id, done: true })
-    completed++
-    setProgress(completed / selectedIds.length)
-  }
-}
-```
-
-</Tab>
-</Tabs>
+Convex's bulk endpoints accept an `items` or `ids` array directly (capped at `BULK_MAX = 100`). SpacetimeDB processes one item per reducer call — `useBulkMutate` handles the loop.
 
 ## Ownership-aware lists
 
+`useOwnRows` annotates each row with an `own: boolean` flag. Useful for showing edit/delete buttons only on owned items.
+
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
-
-`useOwnRows` annotates each row with an `own` boolean — `true` when the row belongs to the current user. Useful for showing edit/delete buttons only on owned items.
 
 ```tsx
 import { useOwnRows } from '@noboil/convex/react'
@@ -610,9 +350,7 @@ rows.map(r => (r.own ? <EditButton id={r._id} /> : null))
 </Tab>
 <Tab value="SpacetimeDB">
 
-`useOwnRows` filters rows by the current user's identity:
-
-```typescript
+```ts
 import { useOwnRows } from '@noboil/spacetimedb/react'
 
 const { identity } = useSpacetimeDB()
@@ -624,17 +362,23 @@ const ownedPosts = useOwnRows(posts, identity ? p => p.userId.isEqual(identity) 
 
 ## Singleton CRUD
 
-For 1:1 per-user data — profiles, settings, preferences. Each user gets exactly one record.
+For 1:1 per-user data — profiles, settings, preferences. Each user gets exactly one record. Same API on both backends.
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+```ts
+// schema (t.ts)
+schema({
+  singleton: {
+    profile: object({ displayName: string(), bio: string().optional() })
+  }
+})
 
-```tsx
-const { get, upsert } = singletonCrud('blogProfile', singleton.blogProfile)
-export { get, upsert }
+// register
+table(s.profile)
 ```
 
-- `get` — returns the current user's record (or `null`), with file URLs resolved
+Generated endpoints:
+
+- `get` — returns the current user's record (or `null`)
 - `upsert` — creates on first call, partial-updates on subsequent calls
 
 ```tsx
@@ -642,83 +386,48 @@ await upsert({ displayName: 'Jane', theme: 'dark' })
 await upsert({ bio: 'Updated bio' })
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
-
-Define a singleton table in your schema:
-
-```typescript
-const s = schema({
-  singleton: {
-    profile: object({ displayName: string(), bio: string().optional() })
-  }
-})
-```
-
-`noboil()` generates `get_profile` and `upsert_profile` reducers automatically.
-
-</Tab>
-</Tabs>
-
 ## Child CRUD
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Same API on both backends. Child tables inherit access control from their parent.
 
-```tsx
-export const { create, list, update } = childCrud('message', children.message)
+```ts
+schema({
+  children: {
+    message: child('chat', object({ text: string() }))
+  }
+})
+
+table(s.message, { pub: { parentField: 'isPublic' } })
 ```
 
 Parent ownership is verified automatically. Add `cascade` on the parent to cascade deletes:
 
-```tsx
-crud('chat', owned.chat, {
+```ts
+table(s.chat, {
   cascade: [{ foreignKey: 'chatId', table: 'message' }]
 })
 ```
 
-For public access to child resources:
-
-```tsx
-const ops = childCrud('message', children.message, {
-  pub: { parentField: 'isPublic' }
-})
-export const { list: pubList, get: pubGet } = ops.pub
-```
-
-`pub.list` and `pub.get` check the parent document's `isPublic` field before returning data.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Child tables inherit their parent's RLS automatically. Messages in a public chat are visible to everyone; messages in a private chat are only visible to the message sender:
-
-```sql
-SELECT "message".* FROM "message"
-JOIN "chat" ON "message"."chatId" = "chat"."id"
-WHERE "chat"."isPublic" = true OR "message"."userId" = :sender
-```
-
-</Tab>
-</Tabs>
+For public access to child resources via the parent's pub field, see [Recipes](./recipes#real-time-chat).
 
 ## External API cache
+
+`base` schemas + the `cacheCrud` factory (Convex) or `key:` table option (SpacetimeDB).
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-```tsx
+```ts
 const c = cacheCrud({
   table: 'movie',
-  schema: base.movie,
+  schema: s.movie,
   key: 'tmdb_id',
   fetcher: async (_, tmdbId) => {
-    const { id, ...rest } = await tmdb(`/movie/${tmdbId}`, {}).json<TmdbMovie>()
+    const { id, ...rest } = await tmdb(`/movie/${tmdbId}`).json<TmdbMovie>()
     return { ...rest, tmdb_id: id }
   },
   rateLimit: { max: 30, window: 60_000 }
 })
-export const { all, get, load, refresh, invalidate, purge } = c
 ```
 
 `load` returns cached or fetches. `refresh` force-refreshes. `purge` cleans expired entries.
@@ -726,42 +435,25 @@ export const { all, get, load, refresh, invalidate, purge } = c
 </Tab>
 <Tab value="SpacetimeDB">
 
-Cache tables are public by design — no RLS filter is applied. Define a cache table with `key`:
-
-```typescript
-movie: table(s.movie, { key: 'tmdbId' })
+```ts
+table(s.movie, { key: 'tmdbId' })
 ```
 
-Populate it from a Next.js API route or a scheduled reducer that calls an external API and inserts rows.
+Cache tables are public by design — no RLS filter is applied. Populate the cache from a Next.js API route or a scheduled reducer that calls the external API and inserts rows. SpacetimeDB doesn't run external `fetch()` reliably from inside the module.
 
 </Tab>
 </Tabs>
 
 ## Rate limiting
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Both backends accept `rateLimit` on table options. See [Security](./security#rate-limiting) for the full reference.
 
-Built-in sliding window rate limiting on mutations:
-
-```tsx
-crud('blog', owned.blog, { rateLimit: { max: 10, window: 60_000 } })
+```ts
+table(s.blog, { rateLimit: { max: 10, window: 60_000 } })  // Convex full form
+table(s.blog, { rateLimit: 10 })                            // SpacetimeDB shorthand
 ```
 
-`max` requests per `window` (ms) per authenticated user. Uses a single-row sliding window counter per user+table (no write amplification). Returns `RATE_LIMITED` error code when exceeded. Requires `...rateLimitTable()` in schema.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```typescript
-blog: table(s.blog, { rateLimit: 10 })
-blog: table(s.blog, { rateLimit: { max: 10, window: 30_000 } })
-```
-
-A number means "max N per minute" (60s window). Pass an object for custom windows. Exceeding the limit returns `RATE_LIMITED` with a `retryAfter` value in milliseconds.
-
-</Tab>
-</Tabs>
+Exceeding the limit returns `RATE_LIMITED` with a `retryAfter` value in milliseconds.
 
 ## Performance and scaling
 
@@ -777,10 +469,10 @@ Where clauses (`$gt`, `$lt`, `$between`, `or`) use `.filter()` at the applicatio
 | `{ price: { $gte: 100 } }`   | No (runtime filter) | ~1,000 docs |
 | `pubIndexed` / `authIndexed` | Yes (custom index)  | Millions    |
 
-For high-volume tables, add Convex indexes and use `pubIndexed`/`authIndexed`:
+Add Convex indexes and use `pubIndexed`/`authIndexed`:
 
-```tsx
-blog: ownedTable(owned.blog).index('by_category', ['category'])
+```ts
+blog: ownedTable(s.blog).index('by_category', ['category'])
 
 const techPosts = useQuery(api.blog.pubIndexed, {
   index: 'by_category',
@@ -789,14 +481,12 @@ const techPosts = useQuery(api.blog.pubIndexed, {
 })
 ```
 
-Enable `strictFilter: true` in `setup()` to throw instead of warn when a filter set exceeds 1,000 docs. Recommended in production.
+Enable `strictFilter: true` in `setup()` to throw instead of warn when a filter set exceeds 1,000 docs.
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-SpacetimeDB subscriptions do not support `ORDER BY` or `LIMIT`. Sort and paginate client-side with `useList`.
-
-The chunk pattern keeps client memory bounded:
+SpacetimeDB is an in-memory database. Subscriptions don't support `LIMIT`, `OFFSET`, or `ORDER BY` server-side — sort and paginate client-side with `useList`. The chunk pattern keeps client memory bounded:
 
 | MMO concept   | App equivalent                                    |
 | ------------- | ------------------------------------------------- |
@@ -804,81 +494,24 @@ The chunk pattern keeps client memory bounded:
 | Chunk loading | Subscribe to next time window on scroll           |
 | Chunk unloading | Unsubscribe from old window to free client memory |
 
-In practice:
-
-1. View subscribes to "recent posts, last 24h" — 200 posts
-2. `useList` paginates client-side (show 20, scroll for more)
-3. User scrolls past 200 — subscribe to next window (1-7 days ago)
-4. Old window unsubscribes — client memory stays bounded
-
 Use `warnLargeFilterSet` to catch unbounded data patterns during development:
 
-```typescript
+```ts
 import { warnLargeFilterSet } from '@noboil/spacetimedb/server'
 
 warnLargeFilterSet(rows.length, 'posts', 'home-feed')
-warnLargeFilterSet(rows.length, 'posts', 'home-feed', true)
+warnLargeFilterSet(rows.length, 'posts', 'home-feed', true) // strict mode (throw)
 ```
-
-</Tab>
-</Tabs>
-
-## Views for computed/joined data
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-For computed or joined data, write a custom query function:
-
-```tsx
-export const postsWithAuthors = q({
-  args: {},
-  handler: async c => {
-    const posts = await c.db.query('blog').collect()
-    return Promise.all(
-      posts.map(async post => {
-        const author = await c.db.get(post.userId)
-        return { ...post, authorName: author?.name ?? 'Unknown' }
-      })
-    )
-  }
-})
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-SpacetimeDB views are subscribable. Define a view in your module and subscribe to it like any table:
-
-```typescript
-const [postsWithAuthors, isReady] = useTable(tables.post_with_author)
-```
-
-Views are useful for joining tables (post + user profile), filtering by `ctx.sender` for per-user data, and computing derived fields. They update automatically when underlying tables change.
 
 </Tab>
 </Tabs>
 
 ## Devtools
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-In dev mode, the devtools panel auto-mounts inside `<Form>` components. It tracks subscriptions, mutations, cache, and errors in real time.
-
-For standalone usage:
+Both libs export `Devtools` from `/react`. In dev mode it auto-mounts; you can also render it standalone:
 
 ```tsx
-import { Devtools } from '@noboil/convex/react'
-;<Devtools position="bottom-right" defaultTab="subs" />
+import { Devtools } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+
+<Devtools position='bottom-right' defaultTab='subs' />
 ```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Because subscriptions push deltas, you don't need to show a loading state when a reducer runs. The UI updates within ~39ms (local Docker). Optimistic updates are unnecessary at this latency.
-
-If you're deploying to Maincloud and latency is higher, you can add optimistic updates later. The `useOptimisticMutation` hook from `@noboil/spacetimedb/react` provides a placeholder API for this.
-
-</Tab>
-</Tabs>
