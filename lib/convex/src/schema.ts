@@ -62,33 +62,46 @@ const orgSchema = object({
     .min(1)
     .regex(/^[a-z0-9-]+$/u)
 })
-/** Brands schemas with a type marker for compile-time safety. */
-const brandSchemas = <T extends Record<string, ZodObject>>(
+/** Brands schemas with a type marker for compile-time safety AND a runtime `__bs` marker for noboil() dispatch. */
+const brandSchemas = <B extends string, T extends Record<string, ZodObject>>(
+  brand: B,
   schemas: T
-): { [K in keyof T]: SchemaBrand<string> & T[K] } => typed(schemas)
+): { [K in keyof T]: SchemaBrand<B> & T[K] } => {
+  const keys = Object.keys(schemas)
+  for (const key of keys) {
+    const s = schemas[key]
+    if (s)
+      Object.defineProperty(s as unknown as { __bs?: B }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: brand
+      })
+  }
+  return typed(schemas)
+}
 /** Creates owned schemas branded for use with crud(). */
 const makeOwned = <T extends Record<string, ZodObject>>(schemas: T) =>
-  brandSchemas(schemas) as {
+  brandSchemas('owned', schemas) as {
     [K in keyof T]: OwnedSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
 /** Creates org-scoped schemas branded for use with orgCrud(). */
 const makeOrgScoped = <T extends Record<string, ZodObject>>(schemas: T) =>
-  brandSchemas(schemas) as {
+  brandSchemas('org', schemas) as {
     [K in keyof T]: OrgSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
 /** Creates org-definition schemas (the org metadata) branded for use with setup({ orgSchema }). */
 const makeOrg = <T extends Record<string, ZodObject>>(schemas: T) =>
-  brandSchemas(schemas) as {
+  brandSchemas('orgDef', schemas) as {
     [K in keyof T]: OrgDefSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
 /** Creates base schemas branded for use with cacheCrud(). */
 const makeBase = <T extends Record<string, ZodObject>>(schemas: T) =>
-  brandSchemas(schemas) as {
+  brandSchemas('base', schemas) as {
     [K in keyof T]: BaseSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
 /** Creates singleton schemas branded for use with singletonCrud(). */
 const makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
-  brandSchemas(schemas) as {
+  brandSchemas('singleton', schemas) as {
     [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
 const mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {

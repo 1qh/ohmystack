@@ -35,4 +35,5 @@ export {
   singletonTable,
   uploadTables
 } from './schema-helpers'
+export { noboil } from './noboil'
 export { setup } from './setup'
