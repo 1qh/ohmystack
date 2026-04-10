@@ -1217,7 +1217,7 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     table
   }
 }
-const noboilStdb = (
+const noboil = (
   define: (helpers: {
     cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
     childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
@@ -1310,4 +1310,4 @@ const noboilStdb = (
   return spacetimedb as never
 }
 export type { CrudDefaults, OrgTypeBuilders }
-export { noboilStdb, setup, setupCrud }
+export { noboil, setup, setupCrud }

@@ -7,7 +7,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 This page explains how noboil thinks so you can predict its behavior instead of memorizing its API.
 
-The mental model below is described through `@noboil/convex`. `@noboil/spacetimedb` enforces the same model — branded schemas, lifecycle hooks, `where`-style filtering — but exposes a single high-level entry point (`noboilStdb`) instead of separate `setup()` + `crud()` calls. Schemas are wrapped with `schema({ owned, orgScoped, base, singleton, org, children })` rather than calling each `make*` factory individually. The vocabulary (`makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`) is identical and lives in `@noboil/spacetimedb/schema`.
+The mental model below is described through `@noboil/convex`. `@noboil/spacetimedb` enforces the same model — branded schemas, lifecycle hooks, `where`-style filtering — but exposes a single high-level entry point (`noboil`) instead of separate `setup()` + `crud()` calls. Schemas are wrapped with `schema({ owned, orgScoped, base, singleton, org, children })` rather than calling each `make*` factory individually. The vocabulary (`makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`) is identical and lives in `@noboil/spacetimedb/schema`.
 
 ## Schema-first design
 

@@ -53,7 +53,7 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 | Module                               | Key Exports |
 | ------------------------------------ | ----------- |
 | `@noboil/spacetimedb`             | `guardApi`, `strictApi`, `zodFromTable`, `idToWire`, `idFromWire`, `identityToHex`, `identityFromHex`, `identityEquals`, `InferRow`, `InferCreate`, `InferUpdate`, `InferRows`, `InferReducerArgs`, `InferReducerReturn` |
-| `@noboil/spacetimedb/server`      | `noboilStdb`, `setup`, `setupCrud`, `makeCrud`, `makeSingletonCrud`, `makeCacheCrud`, `makeChildCrud`, `makeOrg`, `makeOrgTables`, `makeOrgCrud`, `checkMembership`, `canEdit`, `requireOrgMember`, `makePresence`, `presenceTable`, `makeFileUpload`, `makeSchema`, `zodToStdbFields`, `ownedTable`, `orgTable`, `orgChildTable`, `singletonTable`, `baseTable`, `childTable`, `rateLimitTable`, `uploadTables`, `orgTables`, `checkSchema`, `ownedCascade`, `orgCascade`, `err`, `errValidation`, `extractErrorData`, `fail`, `ok`, `time`, `getErrorCode`, `getErrorDetail`, `getErrorMessage`, `handleError`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `makeUnique`, `checkRateLimit`, `warnLargeFilterSet`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn`, `createS3UploadPresignedUrl`, `createS3DownloadPresignedUrl` |
+| `@noboil/spacetimedb/server`      | `noboil`, `setup`, `setupCrud`, `makeCrud`, `makeSingletonCrud`, `makeCacheCrud`, `makeChildCrud`, `makeOrg`, `makeOrgTables`, `makeOrgCrud`, `checkMembership`, `canEdit`, `requireOrgMember`, `makePresence`, `presenceTable`, `makeFileUpload`, `makeSchema`, `zodToStdbFields`, `ownedTable`, `orgTable`, `orgChildTable`, `singletonTable`, `baseTable`, `childTable`, `rateLimitTable`, `uploadTables`, `orgTables`, `checkSchema`, `ownedCascade`, `orgCascade`, `err`, `errValidation`, `extractErrorData`, `fail`, `ok`, `time`, `getErrorCode`, `getErrorDetail`, `getErrorMessage`, `handleError`, `isErrorCode`, `isMutationError`, `isRecord`, `matchError`, `makeUnique`, `checkRateLimit`, `warnLargeFilterSet`, `composeMiddleware`, `auditLog`, `inputSanitize`, `slowQueryWarn`, `createS3UploadPresignedUrl`, `createS3DownloadPresignedUrl` |
 | `@noboil/spacetimedb/react`       | `createOrgHooks`, `useForm`, `useFormMutation`, `useList`, `useOwnRows`, `useSearch`, `useInfiniteList`, `usePresence`, `useOptimisticMutation`, `useSoftDelete`, `useUpload`, `useBulkSelection`, `useBulkMutate`, `useCacheEntry`, `useMutate`, `useMutation`, `useMut`, `useOnlineStatus`, `useErrorToast`, `makeErrorHandler`, `OrgProvider`, `OptimisticProvider`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgQuery`, `useOrgMutation`, `toastFieldError`, `defaultOnError`, `NoboilStdbDevtools`, `SchemaPlayground`, `buildMeta`, `getMeta`, `injectError`, `useDevErrors`, `usePendingMutations`, `canEditResource`, `setActiveOrgCookieClient`, `createFileUploader`, `createSpacetimeClient`, `createTokenStore`, `toWsUri`, `noop`, `TypedFieldErrors`, `getFirstFieldError`, `getFieldErrors` |
 | `@noboil/spacetimedb/components`  | `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OfflineIndicator`, `OrgAvatar`, `RoleBadge`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `FileApiProvider`, `fields` |
 | `@noboil/spacetimedb/schema`      | `schema`, `child`, `file`, `files`, `makeOwned`, `makeOrgScoped`, `makeOrg`, `makeBase`, `makeSingleton`, `orgSchema` |
@@ -174,15 +174,15 @@ export const { all, get, load, refresh, invalidate, purge } = cacheCrud({
 </Tab>
 <Tab value="SpacetimeDB">
 
-### noboilStdb()
+### noboil()
 
 The primary entry point. Pass a factory function that receives `table` and `t` helpers:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
   profile: table(s.profile),
   project: table(s.project),
@@ -1131,9 +1131,9 @@ const { crud } = setup({
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { noboilStdb, auditLog, inputSanitize, slowQueryWarn } from '@noboil/spacetimedb/server'
+import { noboil, auditLog, inputSanitize, slowQueryWarn } from '@noboil/spacetimedb/server'
 
-export default noboilStdb(
+export default noboil(
   ({ table }) => ({ blog: table(s.blog, { pub: 'published' }) }),
   { middleware: [inputSanitize(), auditLog(), slowQueryWarn({ threshold: 200 })] }
 )

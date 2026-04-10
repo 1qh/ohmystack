@@ -60,10 +60,10 @@ export { s }
 Wire it up in `index.ts`:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   org: table(s.team, { unique: ['slug'] }),
   project: table(s.project)
 }))
@@ -100,7 +100,7 @@ export const {
 `table(s.orgScopedEntry)` registers a table that belongs to an org and enforces org membership before any write:
 
 ```typescript
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   project: table(s.project)
 }))
 ```

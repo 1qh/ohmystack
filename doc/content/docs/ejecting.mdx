@@ -200,7 +200,7 @@ Replace React hooks with Convex equivalents:
 
 <Tab value="SpacetimeDB">
 
-The factories (`noboilStdb()` and `table()`) generate reducer definitions. Ejecting means writing those reducers manually instead of using the factories.
+The factories (`noboil()` and `table()`) generate reducer definitions. Ejecting means writing those reducers manually instead of using the factories.
 
 The client-side hooks (`useList`, `usePresence`, `useUpload`) are independent utilities. You can keep using them after ejecting from the server factories.
 
@@ -209,10 +209,10 @@ The client-side hooks (`useList`, `usePresence`, `useUpload`) are independent ut
 For a setup like:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   post: table(s.post, { pub: 'published' })
 }))
 ```
@@ -272,10 +272,10 @@ spacetimedb.reducer({ name: 'rm_post' }, { id: t.u32() }, (ctx, { id }) => {
 Replace:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   post: table(s.post)
 }))
 ```

@@ -124,10 +124,10 @@ export { s }
 ### Backend module
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })
 }))
 ```
@@ -307,10 +307,10 @@ export { s }
 `index.ts`:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   project: table(s.project)
 }))
 ```
@@ -454,10 +454,10 @@ export { s }
 `index.ts`:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   movie: table(s.movie, { key: 'tmdbId' })
 }))
 ```
@@ -589,10 +589,10 @@ export { s }
 `index.ts`:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   wiki: table(s.wiki, { softDelete: true })
 }))
 ```
@@ -698,10 +698,10 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
 `index.ts`:
 
 ```typescript
-import { noboilStdb, makePresence } from '@noboil/spacetimedb/server'
+import { noboil, makePresence } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table, t }) => {
+export default noboil(({ table, t }) => {
   const presence = makePresence({
     dataField: t.string(),
     roomIdField: t.string()
@@ -778,10 +778,10 @@ export { s }
 `index.ts`:
 
 ```typescript
-import { noboilStdb, makePresence } from '@noboil/spacetimedb/server'
+import { noboil, makePresence } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table, t }) => {
+export default noboil(({ table, t }) => {
   const presence = makePresence({
     dataField: t.string(),
     roomIdField: t.string()
@@ -1097,7 +1097,7 @@ const ProfilePage = () => {
 
 ## Custom Queries Alongside CRUD (Convex)
 
-The `pq` / `q` / `m` builders are part of the Convex setup flow. SpacetimeDB users write custom reducers directly in their module file alongside the `noboilStdb()` call — see [Custom Queries](./custom-queries) for the SpacetimeDB equivalents.
+The `pq` / `q` / `m` builders are part of the Convex setup flow. SpacetimeDB users write custom reducers directly in their module file alongside the `noboil()` call — see [Custom Queries](./custom-queries) for the SpacetimeDB equivalents.
 
 **Features:** pq/q/m escape hatches · typed args · coexistence with CRUD
 

@@ -96,7 +96,7 @@ const { pub, auth } = crud('blog', owned.blog, {
 When `pub: 'fieldName'` is specified, an index on that field is created automatically.
 
 ```typescript
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
   chat: table(s.chat, { pub: 'isPublic' }),
   message: table(s.message),

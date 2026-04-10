@@ -201,7 +201,7 @@ import { makeInviteToken } from '../server/org-invites'
 import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '../server/presence'
 import { rlsChildSql, rlsSql } from '../server/rls'
 import { baseTable, orgTable, ownedTable, singletonTable } from '../server/schema-helpers'
-import { noboilStdb } from '../server/setup'
+import { noboil } from '../server/setup'
 import { isTestMode } from '../server/test'
 import { ERROR_MESSAGES } from '../server/types'
 import { extractChildren, extractFieldType, extractWrapperTables, generateMermaid } from '../viz'
@@ -900,7 +900,7 @@ describe('universal table()', () => {
     const typedOrgSchema: OrgDefSchema<typeof orgSchemas.team.shape> = orgSchemas.team
     expect(typedOrgSchema).toBeDefined()
   })
-  test('noboilStdb define helpers include table helper', async () => {
+  test('noboil define helpers include table helper', async () => {
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
     const content = readFileSync(join(import.meta.dir, '..', 'server', 'setup.ts'), 'utf8')
@@ -8874,8 +8874,8 @@ describe('Sprint 8 polish: useList skip returns isLoading false', () => {
   })
 })
 describe('unified schema()', () => {
-  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboilStdb>[0]>[0]['table']) => void): void => {
-    noboilStdb(({ table }) => {
+  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboil>[0]>[0]['table']) => void): void => {
+    noboil(({ table }) => {
       run(table)
       return {}
     })
@@ -9038,8 +9038,8 @@ describe('compoundIndex shorthand', () => {
   })
 })
 describe('type-safe column references in table options', () => {
-  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboilStdb>[0]>[0]['table']) => void): void => {
-    noboilStdb(({ table }) => {
+  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboil>[0]>[0]['table']) => void): void => {
+    noboil(({ table }) => {
       run(table)
       return {}
     })

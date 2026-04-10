@@ -75,7 +75,7 @@ Authentication is wired through `@convex-dev/auth`. See the [Convex Auth guide](
 </Tab>
 <Tab value="SpacetimeDB">
 
-The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `t.ts` (Zod schemas wrapped with `schema()`) and `src/index.ts` (the `noboilStdb()` module definition). Boot SpacetimeDB + MinIO and publish the module:
+The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `t.ts` (Zod schemas wrapped with `schema()`) and `src/index.ts` (the `noboil()` module definition). Boot SpacetimeDB + MinIO and publish the module:
 
 ```bash
 bun spacetime:up           # Docker Compose: SpacetimeDB on :4000, MinIO on :4600
@@ -114,7 +114,7 @@ export { owned }
 </Tab>
 <Tab value="SpacetimeDB">
 
-Define shared Zod schemas in `t.ts`, then wire everything together with `noboilStdb()` in `src/index.ts`.
+Define shared Zod schemas in `t.ts`, then wire everything together with `noboil()` in `src/index.ts`.
 
 **`t.ts`** — field definitions:
 
@@ -137,16 +137,16 @@ export { s }
 **`src/index.ts`** — backend module:
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   post: table(s.post, { pub: 'published' }),
   profile: table(s.profile)
 }))
 ```
 
-`noboilStdb()` builds the schema, registers CRUD reducers, and exports the module. System fields (`id`, `updatedAt`, `userId`) are added automatically.
+`noboil()` builds the schema, registers CRUD reducers, and exports the module. System fields (`id`, `updatedAt`, `userId`) are added automatically.
 
 </Tab>
 </Tabs>
@@ -458,7 +458,7 @@ From a single `crud('blog', owned.blog)` call:
 </Tab>
 <Tab value="SpacetimeDB">
 
-From a single `table(s.post)` call, `noboilStdb()` generates:
+From a single `table(s.post)` call, `noboil()` generates:
 
 - `create_post` — validated insert with auth check
 - `update_post` — partial update with conflict detection via `expectedUpdatedAt`

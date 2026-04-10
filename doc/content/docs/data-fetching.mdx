@@ -47,7 +47,7 @@ const { pub, auth } = crud('blog', owned.blog, {
 Access control is handled at the subscription level via `clientVisibilityFilter` rules generated from the `pub` option on each table. These rules run inside SpacetimeDB — clients cannot bypass them.
 
 ```typescript
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
   project: table(s.project),
 }))
@@ -655,7 +655,7 @@ const s = schema({
 })
 ```
 
-`noboilStdb()` generates `get_profile` and `upsert_profile` reducers automatically.
+`noboil()` generates `get_profile` and `upsert_profile` reducers automatically.
 
 </Tab>
 </Tabs>

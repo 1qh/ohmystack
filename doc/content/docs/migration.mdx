@@ -494,10 +494,10 @@ export { s }
 ```
 
 ```typescript
-import { noboilStdb } from '@noboil/spacetimedb/server'
+import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
-export default noboilStdb(({ table }) => ({
+export default noboil(({ table }) => ({
   post: table(s.post, { pub: 'published' })
 }))
 ```
