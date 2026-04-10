@@ -3,40 +3,43 @@ title: Architecture
 description: The mental model behind noboil — schema-first CRUD generation, branded types, lifecycle hooks, and escape hatches.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
-
-This page explains how noboil thinks so you can predict its behavior instead of memorizing its API.
-
-The mental model below is described through `@noboil/convex`. `@noboil/spacetimedb` enforces the same model — branded schemas, lifecycle hooks, `where`-style filtering — but exposes a single high-level entry point (`noboil`) instead of separate `setup()` + `crud()` calls. Schemas are wrapped with `schema({ owned, orgScoped, base, singleton, org, children })` rather than calling each `make*` factory individually. The vocabulary (`makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`) is identical and lives in `@noboil/spacetimedb/schema`.
+The mental model. Read this once and you can predict noboil's behavior instead of memorizing its API.
 
 ## Schema-first design
 
-You define a Zod schema once. Everything else — the Convex table definition, the CRUD endpoints, the TypeScript types for input validation and query results — is derived from that single source of truth.
+You define a Zod schema once. Everything else — the database table definition, the CRUD endpoints, the TypeScript types for input validation and query results — is derived from that single source of truth.
 
 ```ts
-const owned = makeOwned({
-  blog: z.object({
-    title: z.string().min(1),
-    body: z.string(),
-    published: z.boolean().default(false),
-  }),
+import { schema } from '@noboil/convex/schema'
+import { boolean, object, string } from 'zod/v4'
+
+export const s = schema({
+  owned: {
+    blog: object({
+      title: string().min(1),
+      body: string(),
+      published: boolean().default(false)
+    })
+  }
 })
 ```
 
-The schema is the contract. Change it, and the table shape, validators, and endpoint signatures all update. There is no separate Convex `v.object(...)` definition to keep in sync.
+The schema is the contract. Change it, and the table shape, validators, and endpoint signatures all update. There is no separate `v.object(...)` definition to keep in sync.
 
 ## Schema branding
 
-Noboil uses TypeScript's structural type system against you (in a good way). Each schema-creation function stamps the Zod object with an opaque brand that the CRUD factories check at the type level:
+noboil uses TypeScript's structural type system against you (in a good way). Each schema slot stamps the Zod object with an opaque brand that the table factory checks at the type level:
 
-| Function | Brand | Automatic fields | Indexes | Use with |
+| Slot | Brand | Automatic fields | Indexes | What it generates |
 |---|---|---|---|---|
-| `makeOwned` | `owned` | `userId`, `updatedAt` | `by_user` | `crud()` + `ownedTable()` |
-| `makeOrgScoped` | `org` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | `orgCrud()` + `orgTable()` |
-| `makeBase` | `base` | `updatedAt` (optional) | none | `cacheCrud()` + `baseTable()` |
-| `makeSingleton` | `singleton` | `userId`, `updatedAt` | `by_user` | `singletonCrud()` + `singletonTable()` |
+| `owned` | `owned` | `userId`, `updatedAt` | `by_user` | User-owned CRUD |
+| `orgScoped` | `org` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | Org-scoped CRUD with membership + role checks |
+| `base` | `base` | `updatedAt` (optional) | none | External-data cache (TTL, refresh, invalidate) |
+| `singleton` | `singleton` | `userId`, `updatedAt` | `by_user` | One row per user (`get` + `upsert`) |
+| `children` | n/a | `parentId`, `updatedAt` | `by_parent` | Child-of-parent CRUD with cascade options |
+| `org` | `orgDef` | n/a | n/a | The org definition itself (passed as `orgSchema`) |
 
-Passing an `owned`-branded schema to `orgCrud()` is a compile-time error. The `SchemaTypeError` type produces a message like:
+Passing an `owned`-branded schema where the factory expects `orgScoped` is a compile-time error. The `SchemaTypeError` type produces a message like:
 
 ```
 Schema mismatch: expected org-scoped (makeOrgScoped), got user-owned (makeOwned).
@@ -45,24 +48,63 @@ Created by makeOrgScoped() -> use orgCrud() + orgTable()
 
 **When to use which:**
 
-- **`makeOwned`** — most tables. Each row belongs to one user. The generated `list` endpoint filters by the authenticated user automatically.
-- **`makeOrgScoped`** — rows belong to an organization. Queries scope by `orgId`; mutations verify org membership and role.
-- **`makeBase`** — shared/global data with no ownership (e.g., a cache of external API responses). No auth required on reads or writes.
-- **`makeSingleton`** — exactly one row per user (e.g., user profile, user preferences). `singletonCrud()` returns `get` and `upsert` instead of the full CRUD set.
+- **`owned`** — most tables. Each row belongs to one user.
+- **`orgScoped`** — rows belong to an organization. Queries scope by `orgId`; mutations verify org membership and role.
+- **`base`** — shared/global data with no ownership (e.g., a cache of external API responses). No auth required on reads or writes.
+- **`singleton`** — exactly one row per user (e.g., user profile, user preferences).
+- **`children`** — rows that have a foreign key to a parent table; access control inherits from the parent.
 
-## The `setup()` function
+## The `noboil()` entry point
 
-`setup()` is the single entry point. You call it once with your Convex builders and auth function, and it returns factory functions and custom query/mutation builders:
+`noboil()` is the single entry point. Call it once with your config, then pass a `define` callback that maps each table name to a registered table:
+
+```ts
+import { noboil } from '@noboil/convex/server'
+import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { s } from './t'
+
+export const api = noboil(
+  {
+    query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+    orgSchema: s.team,
+    hooks: { /* global hooks */ },
+    middleware: [auditLog(), inputSanitize()]
+  },
+  ({ table }) => ({
+    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
+    wiki: table(s.wiki, { acl: true, softDelete: true }),
+    profile: table(s.profile),
+    movie: table(s.movie, { key: 'tmdbId', ttl: 86_400 })
+  })
+)
+```
+
+The `table()` helper detects each schema's brand at runtime (via a `__bs` marker written by `schema()`) and dispatches to the matching factory under the hood. The table name comes from the object key — no need to repeat it.
+
+`api` is then used by per-module files to expose endpoints:
+
+```ts
+// convex/blog.ts
+import { api } from '../lazy'
+export const { create, update, rm, pub: { list, read, search } } = api.blog
+```
+
+### Lower-level path: `setup() + crud()`
+
+If you want explicit control over which factories are called, use `setup()` directly:
 
 ```ts
 const { crud, orgCrud, childCrud, cacheCrud, singletonCrud, pq, q, m, cq, cm } = setup({
-  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
-  hooks: { /* global hooks */ },
-  middleware: [auditLog(), inputSanitize()],
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId
 })
+
+const { create, update, rm, pub: { list, read } } = crud('blog', s.blog, { rateLimit: { max: 10, window: 60_000 } })
 ```
 
-### CRUD factories
+`noboil()` is built on top of this. Use whichever style you prefer.
+
+### Factories
 
 | Factory | Input | Returns | Purpose |
 |---|---|---|---|
