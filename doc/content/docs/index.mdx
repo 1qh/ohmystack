@@ -8,12 +8,12 @@ description: One schema. Typed backend. Auto forms. Zero boilerplate.
 noboil is a fullstack framework that generates your entire backend from a Zod schema.
 Define your tables once — get CRUD, real-time subscriptions, file uploads, typesafe forms, multi-tenancy, and more. All type-safe, all zero-config.
 
-Currently supports:
+It ships as two libraries with **the same public API** and almost identical call sites:
 
-- **Convex** — Document store with automatic caching, optimistic updates, and serverless functions
-- **SpacetimeDB** — Relational database with WebSocket subscriptions and Rust-powered modules
+- **`@noboil/convex`** — Convex backend (document store, automatic caching, optimistic updates)
+- **`@noboil/spacetimedb`** — SpacetimeDB backend (relational, WebSocket subscriptions, in-memory)
 
-The consumer code is nearly identical across databases — switch by changing one import.
+The two libraries export the same `noboil()`, `schema()`, `useForm`, `Form`, `useList`, `defineSteps`, `EditorsSection`, and so on. The handful of places where they genuinely differ live in [Convex vs SpacetimeDB](./differences). The rest of the docs are written in single voice — what works on one library works on the other.
 
 ## From zero to CRUD in 60 seconds
 
@@ -22,15 +22,47 @@ bunx noboil@latest init my-app
 cd my-app
 ```
 
-That's it. Pick your database, choose whether to include demo apps, and you have a working app with auth, typed CRUD, real-time subscriptions, and file uploads.
+Pick your database, choose whether to include demo apps, and you have a working app with auth, typed CRUD, real-time subscriptions, and file uploads.
+
+## Define a schema, get an API
+
+```ts
+import { schema, file, files } from '@noboil/convex/schema'  // or @noboil/spacetimedb/schema
+import { array, boolean, object, string, enum as zenum } from 'zod/v4'
+
+export const s = schema({
+  owned: {
+    blog: object({
+      title: string().min(1, 'Required'),
+      content: string().min(3),
+      category: zenum(['tech', 'life', 'tutorial']),
+      published: boolean(),
+      coverImage: file().nullable().optional(),
+      tags: array(string()).max(5).optional()
+    })
+  }
+})
+```
+
+```ts
+import { noboil } from '@noboil/convex/server'  // or @noboil/spacetimedb/server
+// ...
+export const api = noboil(config, ({ table }) => ({
+  blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
+}))
+```
+
+That's it. Five endpoints (`create`, `update`, `rm`, `list`, `read`) with auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, and conflict detection — all generated. `create`, `update`, and `rm` accept single or bulk input (up to 100 items).
 
 ## Add a table in one command
 
 ```bash
 noboil-convex add todo --fields="title:string,done:boolean"
+# or
+noboil-stdb add todo --fields="title:string,done:boolean"
 ```
 
-This generates a Zod schema, CRUD endpoints (list, create, update, delete), and a React page component. Every field name is type-checked — misspell `title` and TypeScript catches it.
+This generates a Zod schema, CRUD endpoints, and a React page component. Every field name is type-checked — misspell `title` and TypeScript catches it.
 
 Table types: `owned` (user-scoped), `org` (multi-tenant), `singleton` (one per user), `cache` (external API), `child` (nested under parent).
 
@@ -39,7 +71,9 @@ Table types: `owned` (user-scoped), `org` (multi-tenant), `singleton` (one per u
 **Prebuilt UI** — 16 typed form fields, multi-step wizards, editor management, error boundaries, and access control guards. Pass a Zod schema and get a working form:
 
 ```tsx
-const form = useForm({ schema: owned.blog, onSubmit: create })
+import { Form, useFormMutation } from '@noboil/convex/components'
+
+const form = useFormMutation({ mutation: api.blog.create, schema: s.blog })
 
 <Form form={form} render={({ Text, Choose, Toggle, Submit }) => (
   <>
@@ -72,7 +106,7 @@ Three CLIs ship with noboil:
 
 | CLI | Purpose |
 | --- | --- |
-| `noboil` | Project scaffolding (`init`), health checks (`doctor`) |
+| `noboil` | Project scaffolding (`init`), health checks (`doctor`), upstream sync (`sync`), eject (`eject`) |
 | `noboil-convex` | Add tables, validate schema, migrate, visualize, generate docs |
 | `noboil-stdb` | Add tables, validate schema, local dev workflow, switch targets, generate docs |
 

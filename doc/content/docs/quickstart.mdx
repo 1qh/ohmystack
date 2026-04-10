@@ -5,55 +5,22 @@ description: From zero to a running app with authenticated CRUD in minutes.
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-This guide takes you from zero to a working app with real-time CRUD and authentication.
+This guide takes you from zero to a working app with real-time CRUD and authentication. Snippets are written in single voice — pick the import path that matches your backend. The handful of places where the two backends genuinely differ live in [Convex vs SpacetimeDB](./differences).
 
 ## Prerequisites
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 - [Bun](https://bun.sh) installed
-- A [Convex](https://convex.dev) account (free tier works)
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-- [Docker](https://docs.docker.com/get-docker/) (for SpacetimeDB + MinIO)
-- [Bun](https://bun.sh) >= 1.1
-- [SpacetimeDB CLI](https://spacetimedb.com/install) v2.0+
-- Node.js >= 20 (for Next.js)
-
-Install the CLI:
-
-```bash
-curl -sSf https://install.spacetimedb.com | sh
-```
-
-</Tab>
-</Tabs>
+- For Convex: a [Convex account](https://convex.dev) (free tier works) — or use the bundled self-hosted Docker Compose
+- For SpacetimeDB: [Docker](https://docs.docker.com/get-docker/) and the [SpacetimeDB CLI](https://spacetimedb.com/install) v2.0+
 
 ## 1. Scaffold the project
 
 `noboil init` clones a fully-wired template, removes the parts you don't need, patches `package.json`, and runs `bun install`. It must target an empty directory.
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
 ```bash
-bunx noboil@latest init my-app --db=convex
+bunx noboil@latest init my-app --db=convex      # or --db=spacetimedb
 cd my-app
 ```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-```bash
-bunx noboil@latest init my-app --db=spacetimedb
-cd my-app
-```
-
-</Tab>
-</Tabs>
 
 Pass `--no-demos` to skip the demo apps, or `--skip-install` to skip `bun install`. With both flags plus a target directory, `init` runs non-interactively.
 
@@ -62,20 +29,18 @@ Pass `--no-demos` to skip the demo apps, or `--skip-install` to skip `bun instal
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-The template includes a `backend/convex` workspace with `t.ts` (Zod schemas), `schema.ts` (`defineSchema` registrations), `lazy.ts` (your `setup()` call), and one example module per table (`blog.ts`, `chat.ts`, …) that exports CRUD endpoints from a single `crud()` call.
-
-Boot Convex:
+The template includes a `backend/convex` workspace with `t.ts` (Zod schemas), `lazy.ts` (your `noboil()` call), and one example module per table. Boot Convex:
 
 ```bash
 bunx convex dev
 ```
 
-Authentication is wired through `@convex-dev/auth`. See the [Convex Auth guide](https://docs.convex.dev/auth) to configure providers — every CRUD factory enforces auth by default.
+Authentication is wired through `@convex-dev/auth`. See the [Convex Auth guide](https://docs.convex.dev/auth) to configure providers — every CRUD endpoint enforces auth by default.
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `t.ts` (Zod schemas wrapped with `schema()`) and `src/index.ts` (the `noboil()` module definition). Boot SpacetimeDB + MinIO and publish the module:
+The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `t.ts` (Zod schemas) and `src/index.ts` (the `noboil()` module). Boot SpacetimeDB + MinIO and publish:
 
 ```bash
 bun spacetime:up           # Docker Compose: SpacetimeDB on :4000, MinIO on :4600
@@ -88,65 +53,72 @@ Re-run `spacetime:generate` after any schema change.
 </Tab>
 </Tabs>
 
-## 4. Define your schema
+## 3. Define your schema
+
+Edit `t.ts` to define your tables. The `schema()` wrapper accepts the same slot names on both backends — `owned`, `orgScoped`, `base`, `singleton`, `org`, `children`.
+
+```ts
+import { schema } from '@noboil/convex/schema'  // or @noboil/spacetimedb/schema
+import { boolean, object, string } from 'zod/v4'
+
+export const s = schema({
+  owned: {
+    blog: object({
+      title: string().min(1),
+      content: string().min(3),
+      published: boolean()
+    })
+  }
+})
+```
+
+## 4. Wire it up with `noboil()`
+
+`noboil()` registers every table in one call. The `define` callback is identical on both backends — only the outer config arg differs (Convex needs its builders + auth function, SpacetimeDB doesn't).
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-`noboil init` generates `convex/t.ts` with your Zod schemas. Edit it to define your tables:
+```ts
+// backend/convex/lazy.ts
+import { noboil } from '@noboil/convex/server'
+import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { s } from './t'
 
-```typescript
-import { makeOwned } from '@noboil/convex/schema'
-import { boolean, object, string } from 'zod/v4'
-
-const owned = makeOwned({
-  blog: object({
-    title: string().min(1),
-    content: string().min(3),
-    category: string(),
-    published: boolean()
+export const api = noboil(
+  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
+  ({ table }) => ({
+    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
   })
-})
+)
+```
 
-export { owned }
+Then in `convex/blog.ts`, re-export the generated endpoints so Convex picks them up:
+
+```ts
+import { api } from '../lazy'
+export const { create, update, rm, pub: { list, read, search } } = api.blog
 ```
 
 </Tab>
 <Tab value="SpacetimeDB">
 
-Define shared Zod schemas in `t.ts`, then wire everything together with `noboil()` in `src/index.ts`.
-
-**`t.ts`** — field definitions:
-
-```typescript
-import { schema } from '@noboil/spacetimedb/schema'
-import { boolean, object, string } from 'zod/v4'
-
-const s = schema({
-  owned: {
-    post: object({ title: string(), content: string() })
-  },
-  singleton: {
-    profile: object({ displayName: string(), bio: string().optional() })
-  }
-})
-
-export { s }
-```
-
-**`src/index.ts`** — backend module:
-
-```typescript
+```ts
+// backend/spacetimedb/src/index.ts
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../t'
 
 export default noboil(({ table }) => ({
-  post: table(s.post, { pub: 'published' }),
-  profile: table(s.profile)
+  blog: table(s.blog, { pub: 'published', rateLimit: 10 })
 }))
 ```
 
-`noboil()` builds the schema, registers CRUD reducers, and exports the module. System fields (`id`, `updatedAt`, `userId`) are added automatically.
+`noboil()` builds the schema, registers reducers (`create_blog`, `update_blog`, `rm_blog`), and adds row-level subscription filters from the `pub` option. Republish + regenerate after any change:
+
+```bash
+bun spacetime:publish && bun spacetime:generate
+```
 
 </Tab>
 </Tabs>
@@ -157,359 +129,75 @@ export default noboil(({ table }) => ({
 bun dev
 ```
 
-Open the demo app on the port printed in the terminal. The backend is already live from step 2.
+Open the demo app on the port printed in the terminal.
 
 ## 6. Connect from React
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+The `Providers` component is generated by `noboil init` — you usually don't need to touch it. The template wires `@convex-dev/auth` for Convex, and `SpacetimeDBProvider` + `createSpacetimeClient` for SpacetimeDB. See the demo `app/providers.tsx` if you need to customize.
 
-Wrap your app with `ConvexProvider` in `app/providers.tsx`:
+## 7. Query and write data
 
-```tsx
-'use client'
-import { ConvexProvider, ConvexReactClient } from 'convex/react'
-
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
-
-export const Providers = ({ children }: { children: React.ReactNode }) => (
-  <ConvexProvider client={convex}>{children}</ConvexProvider>
-)
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-Wrap your app with `SpacetimeDBProvider` in `app/providers.tsx`:
-
-```typescript
-'use client'
-
-import { SpacetimeDBProvider } from 'spacetimedb/react'
-import { createSpacetimeClient, createTokenStore } from '@noboil/spacetimedb/react'
-import { DbConnection } from '@/generated/module_bindings'
-
-const SPACETIMEDB_URI = process.env.NEXT_PUBLIC_SPACETIMEDB_URI ?? 'ws://localhost:4000'
-const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME ?? 'my-app'
-const tokenStore = createTokenStore()
-
-export const Providers = ({ children }: { children: React.ReactNode }) => (
-  <SpacetimeDBProvider
-    uri={SPACETIMEDB_URI}
-    module={MODULE_NAME}
-    createConnection={() =>
-      createSpacetimeClient({
-        DbConnection,
-        moduleName: MODULE_NAME,
-        tokenStore,
-        uri: SPACETIMEDB_URI,
-      })
-    }
-  >
-    {children}
-  </SpacetimeDBProvider>
-)
-```
-
-</Tab>
-</Tabs>
-
-## 7. Query data
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+`useList`, `useFormMutation`, and `Form` are exported from both `@noboil/convex/components` (and `/react`) and `@noboil/spacetimedb/components` (and `/react`) with identical signatures. Switching backends is one import path:
 
 ```tsx
 'use client'
-import { useList } from '@noboil/convex/react'
-import { api } from '../convex/_generated/api'
+import { useList } from '@noboil/convex/react'  // or @noboil/spacetimedb/react
+import { Form, useFormMutation } from '@noboil/convex/components'  // or @noboil/spacetimedb/components
+import { s } from '@/backend/t'
 
-const BlogList = () => {
-  const { items, loadMore, status } = useList(api.blog.list)
-  return (
-    <ul>
-      {items.map(b => (
-        <li key={b._id}>{b.title}</li>
-      ))}
-      {status === 'CanLoadMore' && (
-        <button onClick={loadMore}>Load more</button>
-      )}
-    </ul>
-  )
-}
-
-export default BlogList
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`useTable` subscribes to a table and returns all rows in real-time:
-
-```typescript
-'use client'
-
-import { useTable } from 'spacetimedb/react'
-import { tables } from '@/generated/module_bindings'
-import { useList } from '@noboil/spacetimedb/react'
-
-const PostList = () => {
-  const [posts, isReady] = useTable(tables.post)
-  const { data, hasMore, loadMore } = useList(posts, isReady, {
-    sort: { field: 'updatedAt', direction: 'desc' },
-    pageSize: 20,
-  })
-
-  if (!isReady) return <div>Loading...</div>
+const BlogPage = () => {
+  const { items, loadMore, hasMore } = useList(api.blog.list, { where: { published: true } })
+  const form = useFormMutation({ mutation: api.blog.create, schema: s.blog })
 
   return (
-    <ul>
-      {data.map(post => (
-        <li key={post.id}>{post.title}</li>
-      ))}
+    <>
+      <ul>{items.map(b => <li key={b._id}>{b.title}</li>)}</ul>
       {hasMore && <button onClick={loadMore}>Load more</button>}
-    </ul>
-  )
-}
-
-export default PostList
-```
-
-</Tab>
-</Tabs>
-
-## 8. Write data
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-import { useMutation } from 'convex/react'
-import { api } from '../convex/_generated/api'
-
-const CreateBlog = () => {
-  const create = useMutation(api.blog.create)
-  return (
-    <button
-      onClick={() =>
-        create({
-          title: 'Hello',
-          content: 'World',
-          category: 'tech',
-          published: true
-        })
-      }
-    >
-      New post
-    </button>
-  )
-}
-```
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`useReducer` returns a function that calls a server-side reducer:
-
-```typescript
-'use client'
-
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-
-const CreatePost = () => {
-  const createPost = useReducer(reducers.create_post)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    await createPost({
-      title: form.get('title') as string,
-      content: form.get('content') as string,
-      published: false,
-    })
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input name="title" placeholder="Title" required />
-      <textarea name="content" placeholder="Content" required />
-      <button type="submit">Create post</button>
-    </form>
-  )
-}
-
-export default CreatePost
-```
-
-</Tab>
-</Tabs>
-
-## 9. Typesafe forms
-
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
-
-```tsx
-import { Form } from '@noboil/convex/components'
-import { useFormMutation } from '@noboil/convex/react'
-import { api } from '../convex/_generated/api'
-import { owned } from '../convex/t'
-
-const BlogForm = () => {
-  const form = useFormMutation(api.blog.create, owned.blog)
-  return (
-    <Form {...form}>
-      {({ Text, Toggle, Choose }) => (
+      <Form form={form} render={({ Text, Toggle, Submit }) => (
         <>
           <Text name="title" />
-          <Text name="content" />
-          <Choose name="category" />
+          <Text name="content" multiline />
           <Toggle name="published" />
-          <button type="submit">Create</button>
+          <Submit>Publish</Submit>
         </>
-      )}
-    </Form>
+      )} />
+    </>
   )
 }
 ```
 
-</Tab>
-<Tab value="SpacetimeDB">
+`name='title'` is checked at compile time. `<Toggle name='title' />` is a type error because `title` is a string, not a boolean.
 
-```typescript
-'use client'
-
-import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
-import { useReducer } from 'spacetimedb/react'
-import { reducers, tables } from '@/generated/module_bindings'
-import { zodFromTable } from '@noboil/spacetimedb'
-
-const createPostSchema = zodFromTable(tables.post.columns, {
-  exclude: ['published']
-})
-
-const BlogForm = () => {
-  const createPost = useReducer(reducers.create_post)
-
-  const form = useForm({
-    defaultValues: { title: '', content: '' },
-    validatorAdapter: zodValidator(),
-    validators: { onChange: createPostSchema },
-    onSubmit: async ({ value }) => {
-      await createPost({ ...value, published: false })
-      form.reset()
-    },
-  })
-
-  return (
-    <form onSubmit={e => { e.preventDefault(); form.handleSubmit() }}>
-      <form.Field
-        name="title"
-        children={field => (
-          <div>
-            <label>Title</label>
-            <input
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </div>
-        )}
-      />
-      <form.Field
-        name="content"
-        children={field => (
-          <div>
-            <label>Content</label>
-            <textarea
-              value={field.state.value}
-              onChange={e => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </div>
-        )}
-      />
-      <button type="submit" disabled={form.state.isSubmitting}>
-        {form.state.isSubmitting ? 'Creating...' : 'Create'}
-      </button>
-    </form>
-  )
-}
-```
-
-</Tab>
-</Tabs>
+For the SpacetimeDB-specific subscription primitives (`useTable`, `useReducer`) and the differences in mutation wiring, see [Data fetching](./data-fetching) and [Convex vs SpacetimeDB](./differences).
 
 ## What you get for free
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+From a single `table(s.blog, opts)` call:
 
-From a single `crud('blog', owned.blog)` call:
+- `create`, `update`, `rm` — validated mutations with auth + rate limiting + conflict detection
+- `list`, `read`, `search` — paginated queries with `where` clause support
+- File upload, image compression, automatic cleanup on delete
+- Soft delete with `restore` endpoint (when `softDelete: true`)
+- Per-item ACL via `editors[]` (when `acl: true`)
+- Org membership checks (for `orgScoped` tables)
 
-- `list` — paginated query with `where` clause support
-- `read` — single doc by ID with ownership check
-- `create` — validated insert with auth + rate limiting
-- `update` — partial patch with conflict detection
-- `rm` — ownership-checked delete with file cleanup
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-From a single `table(s.post)` call, `noboil()` generates:
-
-- `create_post` — validated insert with auth check
-- `update_post` — partial update with conflict detection via `expectedUpdatedAt`
-- `rm_post` — ownership-checked delete
-- `get_profile` / `upsert_profile` — for singleton tables
-
-Updates from any client appear in all connected clients within ~39ms (local Docker).
-
-</Tab>
-</Tabs>
+Updates from any client appear in all connected clients in real time. Local Docker SpacetimeDB roundtrip is ~39ms.
 
 ## TypeScript type inference
 
-<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
-<Tab value="Convex">
+Field names are checked at compile time. Pass the wrong type to a field and TypeScript catches it. The `s` namespace returned by `schema()` carries the brand, so `api.blog.create({ title: 1 })` is a compile error. On SpacetimeDB you can also derive component prop types directly:
 
-The generated `api` object is fully typed. `api.blog.create` knows exactly which fields are required and their types — passing a wrong field name is a compile error.
-
-</Tab>
-<Tab value="SpacetimeDB">
-
-`@noboil/spacetimedb` exports utility types that derive TypeScript types directly from your schema. No manual type duplication needed:
-
-```typescript
+```ts
 import type { InferRow, InferCreate, InferUpdate } from '@noboil/spacetimedb'
-
-type PostRow = InferRow<typeof postSchema>
-type PostCreate = InferCreate<typeof postSchema>
-type PostUpdate = InferUpdate<typeof postSchema>
-
-const PostCard = ({ post }: { post: PostRow }) => <h2>{post.title}</h2>
+type BlogRow = InferRow<typeof s.blog>
 ```
-
-For reducer types:
-
-```typescript
-import type { InferReducerArgs, InferReducerReturn } from '@noboil/spacetimedb'
-import { reducers } from '@/generated/module_bindings'
-
-type CreateArgs = InferReducerArgs<typeof reducers.create_post>
-type CreateReturn = InferReducerReturn<typeof reducers.create_post>
-```
-
-</Tab>
-</Tabs>
 
 ## Next steps
 
-- [Data fetching](./data-fetching) — filtering, pagination, and SSR
+- [Data fetching](./data-fetching) — filtering, pagination, SSR
 - [Forms](./forms) — typesafe form components and validation
 - [Organizations](./organizations) — multi-tenant apps
-- [Security](./security) — auth enforcement, RLS, and rate limiting
+- [Security](./security) — auth enforcement, RLS, rate limiting
 - [Schema evolution](./schema-evolution) — safe field changes in production
 - [Testing](./testing) — test helpers and integration tests
+- [Convex vs SpacetimeDB](./differences) — every place the libs diverge
