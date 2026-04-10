@@ -107,7 +107,8 @@ const createFileUploader = (config: {
     }
     options?.onProgress?.(100)
     const storageId = `${file.name}:${Date.now()}`
-    return { storageId, url: storageId }
+    const blobUrl = typeof Blob === 'undefined' ? storageId : URL.createObjectURL(new Blob([file], { type: contentType }))
+    return { storageId, url: blobUrl }
   }
   return { upload }
 }

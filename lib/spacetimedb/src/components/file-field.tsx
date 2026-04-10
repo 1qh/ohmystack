@@ -75,7 +75,7 @@ const fmt = (n: number) =>
 const isImgType = (t: string) => t.startsWith('image/')
 const isImgUrl = (url: string) => {
   const lower = url.toLowerCase()
-  if (lower.startsWith('data:image/')) return true
+  if (lower.startsWith('data:image/') || lower.startsWith('blob:')) return true
   return (
     lower.includes('.png') ||
     lower.includes('.jpg') ||
