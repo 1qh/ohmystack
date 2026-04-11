@@ -10,7 +10,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-Convex is schemaless at the storage layer — documents can have any shape. Your Zod schema in `convex/t.ts` is a TypeScript-level contract, not a database constraint. This means:
+Convex is schemaless at the storage layer — documents can have any shape. Your Zod schema in `convex/s.ts` is a TypeScript-level contract, not a database constraint. This means:
 
 - Adding an optional field: deploy immediately, no migration needed
 - Removing a field: old documents keep the field in the database but it's ignored

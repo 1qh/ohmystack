@@ -365,7 +365,7 @@ const ownedPosts = useOwnRows(posts, identity ? p => p.userId.isEqual(identity) 
 For 1:1 per-user data — profiles, settings, preferences. Each user gets exactly one record.
 
 ```ts
-// schema (t.ts)
+// schema (s.ts)
 schema({
   singleton: {
     profile: object({ displayName: string(), bio: string().optional() })
