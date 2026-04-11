@@ -152,7 +152,13 @@ const stripHexPrefix = (v: unknown): unknown => {
   if (typeof v === 'string' && v.startsWith('0x')) return v.slice(2)
   return v
 }
-const str = (v: unknown): string => (typeof v === 'string' ? v : typeof v === 'number' ? `${v}` : '')
+const str = (v: unknown): string => {
+  if (typeof v === 'string') return v
+  if (typeof v === 'number') return `${v}`
+  if (typeof v === 'object' && v !== null && '__identity__' in v)
+    return String((v as { __identity__: unknown }).__identity__)
+  return ''
+}
 const normalizeRow = (row: Record<string, unknown>): NormalizedRow => {
   const out: NormalizedRow = {}
   for (const key of Object.keys(row)) {
