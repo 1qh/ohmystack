@@ -1,13 +1,16 @@
 import type { GenericDataModel } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
+import type { OrgCrudOptions } from './org-crud'
 import type {
   CacheCrudResult,
   ChildCrudResult,
+  CrudOptions,
   CrudResult,
   DetectBrand,
   OrgCrudResult,
   SetupConfig,
-  SingletonCrudResult
+  SingletonCrudResult,
+  SingletonOptions
 } from './types'
 import { setup } from './setup'
 type AnyShape = ZodRawShape
@@ -27,6 +30,14 @@ const isDeferred = (v: unknown): v is Deferred =>
   typeof v === 'object' && v !== null && (v as Record<symbol, unknown>)[DEFERRED] === true
 const isChildConfig = (v: unknown): v is { foreignKey: string; index: string; parent: string; schema: ZodObject } =>
   typeof v === 'object' && v !== null && 'foreignKey' in v && 'parent' in v && 'schema' in v
+interface CacheTableOpts {
+  fetcher?: (c: unknown, key: unknown) => Promise<unknown>
+  hooks?: { onFetch?: (data: Record<string, unknown>) => Promise<Record<string, unknown>> | Record<string, unknown> }
+  key: string
+  rateLimit?: { max: number; window: number }
+  staleWhileRevalidate?: boolean
+  ttl?: number
+}
 interface ChildConfigOf<S extends AnyShape> {
   foreignKey: string
   index: string
@@ -36,7 +47,19 @@ interface ChildConfigOf<S extends AnyShape> {
 }
 type InferShape<T> = T extends ZodObject<infer S> ? S : ZodRawShape
 type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
-type TableFn = <T extends ChildConfigOf<ZodRawShape> | ZodObject>(schema: T, opts?: unknown) => TableResult<T>
+type TableFn = <T extends ChildConfigOf<ZodRawShape> | ZodObject>(schema: T, opts?: TableOpts<T>) => TableResult<T>
+type TableOpts<T> =
+  DetectBrand<T> extends 'owned'
+    ? CrudOptions<InferShape<T>>
+    : DetectBrand<T> extends 'org'
+      ? OrgCrudOptions<InferShape<T>>
+      : DetectBrand<T> extends 'singleton'
+        ? SingletonOptions
+        : DetectBrand<T> extends 'base'
+          ? CacheTableOpts
+          : T extends ChildConfigOf<ZodRawShape>
+            ? { pub?: { parentField: string } }
+            : Record<string, unknown>
 type TableResult<T> =
   DetectBrand<T> extends 'owned'
     ? CrudResult<InferShape<T>>
