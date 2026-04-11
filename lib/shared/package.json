@@ -17,6 +17,7 @@
     "./zod": "./src/zod.ts",
     "./components/fields": "./src/components/fields.tsx",
     "./server/*": "./src/server/*.ts",
+    "./components/file-utils": "./src/components/file-utils.ts",
     "./components/*": "./src/components/*.tsx",
     "./react/*": "./src/react/*.ts",
     "./react/devtools-panel": "./src/react/devtools-panel.tsx",

@@ -3,15 +3,14 @@
 'use client'
 import type { AnyFieldApi } from '@tanstack/react-form'
 import type { ComponentProps, ReactNode } from 'react'
+import { compress, fileLabel, fmt, isImgUrl, parseAccept } from '@a/shared/components/file-utils'
 import { cn } from '@a/ui'
 import { Field, FieldError, FieldLabel } from '@a/ui/field'
-import imageCompression from 'browser-image-compression'
 import { FileIcon, ImageIcon, Upload, X } from 'lucide-react'
 import Image from 'next/image'
 import { createContext, use, useCallback, useMemo, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
-import { BYTES_PER_KB, BYTES_PER_MB } from '../constants'
 import { noop } from '../react/list-utils'
 interface DropSlotProps {
   accept?: string
@@ -66,54 +65,6 @@ const useFileApi = () => {
   const ctx = use(FileApiContext)
   if (!ctx) throw new Error('FileApiProvider is required')
   return ctx
-}
-const fmt = (n: number) =>
-  n < BYTES_PER_KB
-    ? `${n} B`
-    : n < BYTES_PER_MB
-      ? `${(n / BYTES_PER_KB).toFixed(1)} KB`
-      : `${(n / BYTES_PER_MB).toFixed(1)} MB`
-const isImgType = (t: string) => t.startsWith('image/')
-const isImgUrl = (url: string) => {
-  const lower = url.toLowerCase()
-  if (lower.startsWith('data:image/') || lower.startsWith('blob:')) return true
-  return (
-    lower.includes('.png') ||
-    lower.includes('.jpg') ||
-    lower.includes('.jpeg') ||
-    lower.includes('.gif') ||
-    lower.includes('.webp') ||
-    lower.includes('.svg') ||
-    lower.includes('.bmp') ||
-    lower.includes('.avif')
-  )
-}
-const getLastPath = (pathname: string): string => {
-  const parts = pathname.split('/')
-  for (let i = parts.length - 1; i >= 0; i -= 1) {
-    const part = parts[i]
-    if (part) return part
-  }
-  return ''
-}
-const fileLabel = (url: string) => {
-  try {
-    const parsed = new URL(url)
-    const part = getLastPath(parsed.pathname)
-    return decodeURIComponent(part || 'File')
-  } catch {
-    return 'File'
-  }
-}
-const parseAccept = (a?: string): Record<string, string[]> | undefined =>
-  a ? Object.fromEntries(a.split(',').map(t => [t.trim(), []])) : undefined
-const compress = async (f: File, on: boolean) => {
-  if (!(on && isImgType(f.type))) return f
-  try {
-    return await imageCompression(f, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true })
-  } catch {
-    return f
-  }
 }
 const getUploadedValue = (result: UploadResponse): null | string => {
   if (typeof result === 'string') return result

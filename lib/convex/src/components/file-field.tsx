@@ -10,15 +10,14 @@
 import type { AnyFieldApi } from '@tanstack/react-form'
 import type { FunctionReference } from 'convex/server'
 import type { ComponentProps, ReactNode } from 'react'
+import { compress, fmt, isImgType, parseAccept } from '@a/shared/components/file-utils'
 import { cn } from '@a/ui'
 import { Field, FieldError, FieldLabel } from '@a/ui/field'
-import imageCompression from 'browser-image-compression'
 import { useQuery } from 'convex/react'
 import { FileIcon, ImageIcon, Upload, X } from 'lucide-react'
 import { createContext, use, useCallback, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
-import { BYTES_PER_KB, BYTES_PER_MB } from '../constants'
 import useUpload from '../react/use-upload'
 interface FileApi {
   info: FunctionReference<'query'>
@@ -33,26 +32,13 @@ const useFileApi = () => {
   if (!ctx) throw new Error('FileApiProvider is required')
   return ctx
 }
-const fmt = (n: number) =>
-  n < BYTES_PER_KB
-    ? `${n} B`
-    : n < BYTES_PER_MB
-      ? `${(n / BYTES_PER_KB).toFixed(1)} KB`
-      : `${(n / BYTES_PER_MB).toFixed(1)} MB`
-const isImg = (t: string) => t.startsWith('image/')
-const parseAccept = (a?: string): Record<string, string[]> | undefined =>
-  a ? Object.fromEntries(a.split(',').map(t => [t.trim(), []])) : undefined
-const compress = async (f: File, on: boolean) =>
-  on && f.type.startsWith('image/')
-    ? imageCompression(f, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true }).catch(() => f)
-    : f
 const Preview = ({ id, onRemove }: { id: string; onRemove?: () => void }) => {
   const { info } = useFileApi()
   const d = useQuery(info, { id }) as null | undefined | { contentType: string; size: number; url: null | string }
   if (!d) return <p className='size-16 animate-pulse rounded-lg bg-muted' />
   return (
     <div className='relative'>
-      {d.contentType && isImg(d.contentType) && d.url ? (
+      {d.contentType && isImgType(d.contentType) && d.url ? (
         <img alt='' className='size-16 rounded-lg object-cover' height={64} src={d.url} width={64} />
       ) : (
         <div className='flex size-16 flex-col items-center justify-center rounded-lg bg-muted text-xs'>
