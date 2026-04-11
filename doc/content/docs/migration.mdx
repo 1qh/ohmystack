@@ -564,10 +564,9 @@ await ctx.storage.getUrl(storageId)
 import { useUpload } from '@noboil/spacetimedb/react'
 
 const { upload } = useUpload({
-  apiEndpoint: '/api/upload/presign',
-  registerFile: async ({ storageKey, ...meta }) => {
-    await registerUpload({ storageKey, ...meta })
-    return { storageId: storageKey }
+  registerFile: async ({ data, ...meta }) => {
+    await registerUpload({ data, ...meta })
+    return { storageId: `${meta.filename}:${Date.now()}` }
   }
 })
 ```

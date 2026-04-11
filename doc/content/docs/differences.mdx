@@ -71,12 +71,12 @@ Both libs accept the same `file()` and `files()` schema helpers. The upload back
 
 | | Convex | SpacetimeDB |
 |---|---|---|
-| Storage | Convex native (`_storage` IDs) | S3 / MinIO via presigned URLs |
-| Setup | `makeFileUpload()` in your `lazy.ts` + `FileApiProvider` in providers.tsx | `createS3UploadPresignedUrl()` from a Next.js API route + `useUpload()` on the client |
-| Cleanup on delete | Automatic via cascade hooks | Manual or via a scheduled reducer |
-| Defaults | 10MB per file, image compression to 1920px, 10 uploads/min rate limit | Configurable in your presign route |
+| Storage | Convex native (`_storage` IDs) | Inline byte arrays (`t.byteArray()`) |
+| Setup | `makeFileUpload()` + `FileApiProvider` | `table.file()` in `noboil()` + `FileApiProvider` |
+| Max size | Convex storage limits | ~100MB per file |
+| Cleanup on delete | Automatic via cascade hooks | Automatic via delete reducer |
 
-The `<File>` and `<Files>` form components from `/components` work identically — they just hand the upload off to the right backend underneath.
+The `<File>` and `<Files>` form components from `/components` work identically — they just hand the upload off to the right backend underneath. No API routes or external storage setup needed for either.
 
 ### 4. Custom server logic
 
