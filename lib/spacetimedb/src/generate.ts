@@ -19,27 +19,8 @@ const DOCKER_COMPOSE = `services:
       timeout: 3s
       retries: 10
       start_period: 10s
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9003"
-    ports:
-      - "4600:9000"
-      - "4601:9003"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
 volumes:
   spacetimedb_data:
-  minio_data:
 `
 const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`

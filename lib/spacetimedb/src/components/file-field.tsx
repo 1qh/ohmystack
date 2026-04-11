@@ -57,7 +57,7 @@ interface UploadState {
 }
 /** React context for the file upload API configuration. */
 const FileApiContext = createContext<FileApi | null>(null)
-/** Provides file upload API config (presign endpoint, callbacks) to nested components. */
+/** Provides file upload API config to nested components. */
 const FileApiProvider = ({ children, value }: { children: ReactNode; value: FileApi }) => (
   <FileApiContext value={value}>{children}</FileApiContext>
 )
