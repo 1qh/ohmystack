@@ -1,4 +1,5 @@
 'use client'
+import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import {
   DropdownMenu,
@@ -9,15 +10,17 @@ import {
 } from '@a/ui/dropdown-menu'
 import { Skeleton } from '@a/ui/skeleton'
 import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
-import { setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useTable } from 'spacetimedb/react'
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
-const toAvatarSrc = (avatarId: string) => `/api/image?id=${avatarId}`
 const OrgSwitcher = () => {
   const router = useRouter()
   const { activeOrg, isLoading: activeLoading } = useActiveOrg()
   const { isLoading: orgsLoading, orgs } = useMyOrgs()
+  const [files] = useTable(tables.file)
+  const resolve = (id: string | undefined) => (id ? (resolveFileUrl(files as never, id) ?? undefined) : undefined)
   if (activeLoading || orgsLoading) return <Skeleton className='h-9 w-32' />
   const handleSwitch = (org: (typeof orgs)[number]) => {
     setActiveOrgCookieClient({ orgId: org.org._id, slug: org.org.slug })
@@ -31,7 +34,7 @@ const OrgSwitcher = () => {
             <OrgAvatar
               name={activeOrg.name}
               size='sm'
-              src={activeOrg.avatarId ? toAvatarSrc(activeOrg.avatarId) : undefined}
+              src={activeOrg.avatarId ? resolve(activeOrg.avatarId) : undefined}
             />
             <span className='max-w-24 truncate'>{activeOrg.name}</span>
           </>
@@ -43,11 +46,7 @@ const OrgSwitcher = () => {
       <DropdownMenuContent align='start'>
         {orgs.map(item => (
           <DropdownMenuItem className='gap-2' key={item.org._id} onSelect={() => handleSwitch(item)}>
-            <OrgAvatar
-              name={item.org.name}
-              size='sm'
-              src={item.org.avatarId ? toAvatarSrc(item.org.avatarId) : undefined}
-            />
+            <OrgAvatar name={item.org.name} size='sm' src={item.org.avatarId ? resolve(item.org.avatarId) : undefined} />
             <span className='flex-1 truncate'>{item.org.name}</span>
             <RoleBadge role={item.role} />
           </DropdownMenuItem>

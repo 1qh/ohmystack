@@ -5,7 +5,7 @@ import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { Skeleton } from '@a/ui/skeleton'
 import { Form, OrgAvatar, useForm } from '@noboil/spacetimedb/components'
-import { setActiveOrgCookieClient, useMut } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, setActiveOrgCookieClient, useMut } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
@@ -15,6 +15,7 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const router = useRouter()
   const { identity } = useSpacetimeDB()
   const [orgs] = useTable(tables.org)
+  const [files] = useTable(tables.file)
   const [requests] = useTable(tables.orgJoinRequest)
   const [members] = useTable(tables.orgMember)
   const org = orgs.find(o => o.slug === slug)
@@ -53,7 +54,11 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
     <div className='mx-auto max-w-md py-12'>
       <Card>
         <CardHeader className='items-center text-center'>
-          <OrgAvatar name={org.name} size='lg' src={org.avatarId ? `/api/image?id=${org.avatarId}` : undefined} />
+          <OrgAvatar
+            name={org.name}
+            size='lg'
+            src={org.avatarId ? (resolveFileUrl(files as never, org.avatarId) ?? undefined) : undefined}
+          />
           <CardTitle className='mt-4'>{org.name}</CardTitle>
           <CardDescription>Request to join this organization</CardDescription>
         </CardHeader>

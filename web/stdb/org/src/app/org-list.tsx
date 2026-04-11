@@ -1,13 +1,16 @@
 'use client'
 import type { OrgListGridItem } from '@a/fe/org-list-grid'
 import type { OrgRole } from '@noboil/spacetimedb'
+import { tables } from '@a/be-spacetimedb/spacetimedb'
 import OrgListGrid from '@a/fe/org-list-grid'
 import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
-import { setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
+import { useTable } from 'spacetimedb/react'
 type OrgItem = OrgListGridItem<OrgRole>
 const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
   const router = useRouter()
+  const [files] = useTable(tables.file)
   const onSelect = (o: OrgItem) => {
     setActiveOrgCookieClient({ orgId: o.id, slug: o.slug })
     router.push('/dashboard')
@@ -17,7 +20,11 @@ const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
       onSelect={onSelect}
       orgs={orgs}
       renderAvatar={o => (
-        <OrgAvatar name={o.name} size='lg' src={o.avatarId ? `/api/image?id=${o.avatarId}` : undefined} />
+        <OrgAvatar
+          name={o.name}
+          size='lg'
+          src={o.avatarId ? (resolveFileUrl(files as never, o.avatarId) ?? undefined) : undefined}
+        />
       )}
       renderRole={role => <RoleBadge role={role} />}
     />
