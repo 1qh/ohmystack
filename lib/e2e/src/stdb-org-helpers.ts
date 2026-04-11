@@ -270,12 +270,14 @@ const addTestOrgMember = async (orgId: string, _userId: string, isAdmin: boolean
   const inviteToken = typeof invite.token === 'string' ? invite.token : String(invite.token)
   const memberToken = userTokens.get(_userId)
   if (!memberToken) return ''
+  const membersBefore = await httpQuery('org_member', ctx.token)
+  const beforeIds = new Set(membersBefore.filter(m => Number(m.org_id) === toU32(orgId)).map(m => Number(m.id)))
   await httpReducer('org_accept_invite', [inviteToken], memberToken)
   await delay(300)
-  const members = await httpQuery('org_member', ctx.token)
-  const orgMembers = members.filter(m => Number(m.org_id) === toU32(orgId))
-  const member = orgMembers.find(m => str(m.user_id).includes(_userId.slice(0, 20))) ?? orgMembers.at(-1)
-  return member ? str(member.id) : ''
+  const membersAfter = await httpQuery('org_member', ctx.token)
+  const orgMembers = membersAfter.filter(m => Number(m.org_id) === toU32(orgId))
+  const newMember = orgMembers.find(m => !beforeIds.has(Number(m.id)))
+  return newMember ? str(newMember.id) : orgMembers.at(-1) ? str(orgMembers.at(-1)?.id) : ''
 }
 const removeTestOrgMember = async (orgId: string, _userId: string): Promise<void> => {
   const ctx = getHttpCtx()
