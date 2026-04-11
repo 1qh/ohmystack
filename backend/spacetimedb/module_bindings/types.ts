@@ -56,10 +56,10 @@ export type ChildPartsItem = __Infer<typeof ChildPartsItem>;
 export const File = __t.object("File", {
   contentType: __t.string(),
   createdAt: __t.timestamp(),
+  data: __t.byteArray(),
   filename: __t.string(),
   id: __t.u32(),
   size: __t.f64(),
-  storageKey: __t.string(),
   uploadedAt: __t.timestamp(),
   userId: __t.identity(),
 });

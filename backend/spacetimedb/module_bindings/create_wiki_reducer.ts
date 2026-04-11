@@ -11,4 +11,5 @@ export default {
   slug: __t.string(),
   status: __t.string(),
   title: __t.string(),
+  editors: __t.option(__t.array(__t.identity())),
 };

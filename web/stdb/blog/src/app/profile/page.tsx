@@ -18,7 +18,13 @@ import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { profileSchema } from '~/schema'
 const AvatarUpload = () => {
-  const { isUploading, progress, upload } = useUpload()
+  const registerUpload = useReducer(reducers.registerUploadFile)
+  const { isUploading, progress, upload } = useUpload({
+    registerFile: async ({ data, ...meta }) => {
+      await registerUpload({ ...meta, data })
+      return { storageId: `${meta.filename}:${Date.now()}` }
+    }
+  })
   const upsertProfile = useReducer(reducers.upsertBlogProfile)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)

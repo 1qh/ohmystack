@@ -33,6 +33,7 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
       if (target)
         updateWikiReducer({
           content: target.content,
+          editors: undefined,
           expectedUpdatedAt: undefined,
           id: target.id,
           slug: target.slug,
