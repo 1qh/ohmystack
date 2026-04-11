@@ -280,6 +280,11 @@ const addTestOrgMember = async (orgId: string, _userId: string, isAdmin: boolean
   return newMember ? str(newMember.id) : orgMembers.at(-1) ? str(orgMembers.at(-1)?.id) : ''
 }
 const removeTestOrgMember = async (orgId: string, _userId: string): Promise<void> => {
+  const memberToken = userTokens.get(_userId)
+  if (memberToken) {
+    await httpReducer('org_leave', [toU32(orgId)], memberToken)
+    return
+  }
   const ctx = getHttpCtx()
   const members = await httpQuery('org_member', ctx.token)
   const filtered = members.filter(m => Number(m.org_id) === toU32(orgId))

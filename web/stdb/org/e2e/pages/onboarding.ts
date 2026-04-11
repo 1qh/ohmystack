@@ -47,7 +47,7 @@ class OnboardingPage extends BasePage {
     return this.page.getByLabel('Display Name')
   }
   public getErrorAlert(): Locator {
-    return this.page.locator('[role="alert"]')
+    return this.page.locator('[role="alert"]:not(#__next-route-announcer__)')
   }
   public getFieldError(): Locator {
     return this.page.locator('[data-slot="field-error"]').first()

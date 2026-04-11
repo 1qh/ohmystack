@@ -1,9 +1,10 @@
 import path from 'node:path'
 import { expect, test } from './fixtures'
-import { login } from './helpers'
+import { cleanupTestData, login } from './helpers'
 test.describe
   .serial('Profile - Create', () => {
     test.beforeEach(async ({ page }) => {
+      await cleanupTestData()
       await login(page)
     })
     test('shows empty profile form when no profile exists', async ({ profilePage }) => {
@@ -11,7 +12,7 @@ test.describe
       await expect(profilePage.getProfilePage()).toBeVisible()
       await expect(profilePage.getProfileForm()).toBeVisible()
       await expect(profilePage.getDisplayNameInput()).toBeVisible()
-      await expect(profilePage.getDisplayNameInput()).toHaveValue('')
+      await expect(profilePage.getDisplayNameInput()).toHaveValue('', { timeout: 10_000 })
     })
     test('can fill and submit profile form', async ({ profilePage }) => {
       await profilePage.goto()

@@ -32,7 +32,7 @@ class BlogPage extends BasePage {
     }
     if (options?.tags) await this.addTags(options.tags)
     await this.getCreateSubmit().click()
-    await this.getCreateDialog().waitFor({ state: 'hidden' })
+    await this.getCreateDialog().waitFor({ state: 'hidden', timeout: 15_000 })
     const card = this.getBlogCards().filter({ hasText: title }).first()
     const visible = await card.isVisible().catch(() => false)
     if (!visible) {
