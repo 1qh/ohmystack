@@ -5,7 +5,6 @@ interface PlaywrightOptions {
   webServerUrl?: string
 }
 const createPlaywrightConfig = ({ port, webServerUrl }: PlaywrightOptions) => {
-  // biome-ignore lint/style/noProcessEnv: CI detection
   const baseURL = `http://localhost:${port}`
   const isCI = Boolean(process.env.CI)
   return defineConfig({
@@ -32,7 +31,7 @@ const createPlaywrightConfig = ({ port, webServerUrl }: PlaywrightOptions) => {
     timeout: 30_000,
     use: { baseURL },
     webServer: {
-      command: `dotenv -e ../../.env -- env PLAYWRIGHT=1 CONVEX_TEST_MODE=true next dev --turbo --port ${port}`,
+      command: `dotenv -e ../../../.env -- env PLAYWRIGHT=1 CONVEX_TEST_MODE=true next dev --turbo --port ${port}`,
       env: { CONVEX_TEST_MODE: 'true', NEXT_PUBLIC_PLAYWRIGHT: '1', PLAYWRIGHT: '1' },
       reuseExistingServer: !isCI,
       stdout: 'pipe',

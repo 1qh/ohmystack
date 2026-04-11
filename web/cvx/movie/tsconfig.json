@@ -4,7 +4,7 @@
       "~/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "playwright-report", "test-results"],
   "extends": "lintmax/tsconfig",
   "include": [".", ".next/types/**/*.ts"]
 }
