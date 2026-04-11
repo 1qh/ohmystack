@@ -27,6 +27,7 @@ interface DropSlotProps {
   rootProps: ReturnType<ReturnType<typeof useDropzone>['getRootProps']>
 }
 interface FileApi {
+  resolveUrl?: (ref: null | string | undefined) => null | string
   upload: (file: File, options?: UploadOptions) => Promise<UploadResponse>
 }
 interface MultipleValueProps extends DropSlotProps {
@@ -129,26 +130,37 @@ const Progress = ({ v }: { v: number }) => (
     <span className='text-sm text-muted-foreground'>{v}%</span>
   </div>
 )
-const Preview = ({ id, onRemove }: { id: string; onRemove?: () => void }) => (
-  <div className='relative'>
-    {isImgUrl(id) ? (
-      <Image alt='' className='size-16 rounded-lg object-cover' height={64} src={id} unoptimized width={64} />
-    ) : (
-      <div className='flex size-16 flex-col items-center justify-center rounded-lg bg-muted text-xs'>
-        <FileIcon className='size-6 text-muted-foreground' />
-        <span className='mt-1 line-clamp-1 max-w-14 px-0.5 text-center'>{fileLabel(id)}</span>
-      </div>
-    )}
-    {onRemove ? (
-      <button
-        className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-white transition-transform hover:scale-110'
-        onClick={onRemove}
-        type='button'>
-        <X className='size-3' />
-      </button>
-    ) : null}
-  </div>
-)
+const Preview = ({
+  id,
+  onRemove,
+  resolveUrl
+}: {
+  id: string
+  onRemove?: () => void
+  resolveUrl?: (ref: null | string | undefined) => null | string
+}) => {
+  const resolved = resolveUrl?.(id) ?? id
+  return (
+    <div className='relative'>
+      {isImgUrl(resolved) ? (
+        <Image alt='' className='size-16 rounded-lg object-cover' height={64} src={resolved} unoptimized width={64} />
+      ) : (
+        <div className='flex size-16 flex-col items-center justify-center rounded-lg bg-muted text-xs'>
+          <FileIcon className='size-6 text-muted-foreground' />
+          <span className='mt-1 line-clamp-1 max-w-14 px-0.5 text-center'>{fileLabel(id)}</span>
+        </div>
+      )}
+      {onRemove ? (
+        <button
+          className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-white transition-transform hover:scale-110'
+          onClick={onRemove}
+          type='button'>
+          <X className='size-3' />
+        </button>
+      ) : null}
+    </div>
+  )
+}
 const DropSlot = ({
   accept,
   compact,
@@ -197,15 +209,27 @@ const DropSlot = ({
     )}
   </div>
 )
-const MultipleValue = ({ canAdd, f, vals, ...drop }: MultipleValueProps) => (
+const MultipleValue = ({
+  canAdd,
+  f,
+  resolveUrl,
+  vals,
+  ...drop
+}: MultipleValueProps & { resolveUrl?: FileApi['resolveUrl'] }) => (
   <div className='flex flex-wrap gap-2'>
     {vals.map((id, i) => (
-      <Preview id={id} key={id} onRemove={() => f.handleChange(vals.filter((_, j) => j !== i))} />
+      <Preview id={id} key={id} onRemove={() => f.handleChange(vals.filter((_, j) => j !== i))} resolveUrl={resolveUrl} />
     ))}
     {canAdd ? <DropSlot compact {...drop} /> : null}
   </div>
 )
-const SingleValue = ({ f, onReset, vals, ...drop }: SingleValueProps) =>
+const SingleValue = ({
+  f,
+  onReset,
+  resolveUrl,
+  vals,
+  ...drop
+}: SingleValueProps & { resolveUrl?: FileApi['resolveUrl'] }) =>
   vals[0] ? (
     <Preview
       id={vals[0]}
@@ -213,6 +237,7 @@ const SingleValue = ({ f, onReset, vals, ...drop }: SingleValueProps) =>
         f.handleChange(null)
         onReset()
       }}
+      resolveUrl={resolveUrl}
     />
   ) : (
     <DropSlot {...drop} />
@@ -331,7 +356,7 @@ const FileFieldImpl = ({
   maxSize?: number
   multiple?: boolean
 }) => {
-  const { upload: uploadFile } = useFileApi()
+  const { resolveUrl, upload: uploadFile } = useFileApi()
   const raw: unknown = f.state.value as unknown
   const vals = useMemo(() => (multiple ? ((raw ?? []) as string[]) : raw ? [raw as string] : []), [multiple, raw])
   const inv = f.state.meta.isTouched && !f.state.meta.isValid
@@ -389,9 +414,9 @@ const FileFieldImpl = ({
         </FieldLabel>
       ) : null}
       {multiple ? (
-        <MultipleValue canAdd={canAdd} f={f} vals={vals} {...dropProps} />
+        <MultipleValue canAdd={canAdd} f={f} resolveUrl={resolveUrl} vals={vals} {...dropProps} />
       ) : (
-        <SingleValue f={f} onReset={reset} vals={vals} {...dropProps} />
+        <SingleValue f={f} onReset={reset} resolveUrl={resolveUrl} vals={vals} {...dropProps} />
       )}
       {inv ? <FieldError errors={f.state.meta.errors} id={errorId} /> : null}
     </Field>

@@ -75,6 +75,8 @@ export type { UseBulkSelectionOpts } from './use-bulk-selection'
 export { useBulkSelection } from './use-bulk-selection'
 export type { UseCacheEntryOptions, UseCacheEntryResult } from './use-cache'
 export { useCacheEntry } from './use-cache'
+export type { FileRow } from './use-file-url'
+export { resolveFileUrl, useFileUrl } from './use-file-url'
 export type {
   InfiniteListOptions,
   InfiniteListResult,
