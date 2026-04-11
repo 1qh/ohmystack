@@ -1,20 +1,13 @@
 import type { GenericDataModel } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import type { OrgCrudOptions } from './org-crud'
 import type {
-  BaseSchema,
   CacheCrudResult,
-  CacheHooks,
   ChildCrudResult,
-  CrudOptions,
   CrudResult,
+  DetectBrand,
   OrgCrudResult,
-  OrgSchema,
-  OwnedSchema,
   SetupConfig,
-  SingletonCrudResult,
-  SingletonOptions,
-  SingletonSchema
+  SingletonCrudResult
 } from './types'
 import { setup } from './setup'
 type AnyShape = ZodRawShape
@@ -34,14 +27,6 @@ const isDeferred = (v: unknown): v is Deferred =>
   typeof v === 'object' && v !== null && (v as Record<symbol, unknown>)[DEFERRED] === true
 const isChildConfig = (v: unknown): v is { foreignKey: string; index: string; parent: string; schema: ZodObject } =>
   typeof v === 'object' && v !== null && 'foreignKey' in v && 'parent' in v && 'schema' in v
-interface CacheCallOpts<S extends ZodRawShape, K extends keyof S & string> {
-  fetcher?: (c: unknown, key: unknown) => Promise<unknown>
-  hooks?: CacheHooks
-  key: K
-  rateLimit?: { max: number; window: number }
-  staleWhileRevalidate?: boolean
-  ttl?: number
-}
 interface ChildConfigOf<S extends AnyShape> {
   foreignKey: string
   index: string
@@ -49,14 +34,21 @@ interface ChildConfigOf<S extends AnyShape> {
   parentSchema?: ZodObject
   schema: ZodObject<S>
 }
+type InferShape<T> = T extends ZodObject<infer S> ? S : ZodRawShape
 type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
-interface TableFn {
-  <S extends ZodRawShape>(schema: OwnedSchema<S>, opts?: CrudOptions<S>): CrudResult<S>
-  <S extends ZodRawShape>(schema: OrgSchema<S>, opts?: OrgCrudOptions<S>): OrgCrudResult<S>
-  <S extends ZodRawShape>(schema: SingletonSchema<S>, opts?: SingletonOptions): SingletonCrudResult<S>
-  <S extends ZodRawShape, K extends keyof S & string>(schema: BaseSchema<S>, opts: CacheCallOpts<S, K>): CacheCrudResult<S>
-  <S extends ZodRawShape>(child: ChildConfigOf<S>, opts?: { pub?: { parentField: string } }): ChildCrudResult<S>
-}
+type TableFn = <T extends ChildConfigOf<ZodRawShape> | ZodObject>(schema: T, opts?: unknown) => TableResult<T>
+type TableResult<T> =
+  DetectBrand<T> extends 'owned'
+    ? CrudResult<InferShape<T>>
+    : DetectBrand<T> extends 'org'
+      ? OrgCrudResult<InferShape<T>>
+      : DetectBrand<T> extends 'singleton'
+        ? SingletonCrudResult<InferShape<T>>
+        : DetectBrand<T> extends 'base'
+          ? CacheCrudResult<InferShape<T>>
+          : T extends ChildConfigOf<infer CS>
+            ? ChildCrudResult<CS>
+            : CrudResult<InferShape<T>>
 const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Deferred): unknown => {
   if (def.brand === 'child') return s.childCrud(name as never, def.schema as never, def.opts as never)
   if (def.brand === 'owned') return s.crud(name as never, def.schema as never, def.opts as never)

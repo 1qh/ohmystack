@@ -112,6 +112,11 @@ const createFileUploader = (config: {
   }
   return { upload }
 }
+const fileBlobUrl = (data: ArrayLike<number> | Uint8Array, contentType = 'application/octet-stream'): string => {
+  if (typeof Blob === 'undefined') return ''
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
+  return URL.createObjectURL(new Blob([new Uint8Array(bytes).buffer], { type: contentType }))
+}
 /**
  * Builds or reuses a cached SpacetimeDB connection builder for a URI and module pair.
  * @param options Factory options containing builder source, module metadata, URI, and optional token store.
@@ -147,4 +152,4 @@ const createSpacetimeClient = <
   return builder
 }
 export type { CreateSpacetimeClientOptions, SpacetimeConnectionBuilder, SpacetimeConnectionFactory, TokenStore }
-export { createFileUploader, createSpacetimeClient, createTokenStore, toWsUri }
+export { createFileUploader, createSpacetimeClient, createTokenStore, fileBlobUrl, toWsUri }

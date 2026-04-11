@@ -70,21 +70,14 @@ const queryActiveOrgSql = async <T>({
   if (!(wsUri && moduleName)) return null
   const parsed = Number.parseInt(orgId, 10)
   if (Number.isNaN(parsed) || parsed < 1) return null
-  const endpoint = `${toHttpUri(wsUri)}/v1/database/${moduleName}/sql`
   const statement = sql.replace(':orgId', `'${String(parsed)}'`)
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${toHttpUri(wsUri)}/v1/database/${moduleName}/sql`, {
     body: statement,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'text/plain'
-    },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/plain' },
     method: 'POST'
   })
   if (!response.ok) return null
-  const body = (await response.json().catch((parseError: unknown) => {
-    console.error('[@noboil/spacetimedb] Failed to parse SQL response as JSON (module=%s):', moduleName, parseError) // eslint-disable-line no-console
-    return null
-  })) as unknown
+  const body = (await response.json().catch(() => null)) as unknown
   if (body === null) return null
   return firstRow(body) as null | T
 }

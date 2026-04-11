@@ -66,7 +66,7 @@ export type {
   SpacetimeConnectionFactory,
   TokenStore
 } from './provider'
-export { createFileUploader, createSpacetimeClient, createTokenStore, toWsUri } from './provider'
+export { createFileUploader, createSpacetimeClient, createTokenStore, fileBlobUrl, toWsUri } from './provider'
 export type { PlaygroundProps } from './schema-playground'
 export { default as SchemaPlayground } from './schema-playground'
 export type { BulkMutateToast, BulkProgress, BulkResult, UseBulkMutateOptions } from './use-bulk-mutate'

@@ -1,5 +1,6 @@
 import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
+import { queryTable } from '@noboil/spacetimedb/next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import env from './env'
@@ -20,37 +21,21 @@ const toHttpUri = (uri: string) => {
   if (uri.startsWith('ws://')) return uri.replace('ws://', 'http://')
   return uri
 }
-const isObject = (val: unknown): val is Record<string, unknown> => typeof val === 'object' && val !== null
-const readString = (val: unknown) => (typeof val === 'string' && val.length > 0 ? val : undefined)
-const getFirstRow = (payload: unknown): UserInfo => {
-  if (!Array.isArray(payload)) return {}
-  const first: unknown = payload.length > 0 ? payload[0] : undefined
-  if (!isObject(first)) return {}
-  return {
-    email: readString(first.email),
-    image: readString(first.image),
-    name: readString(first.name)
-  }
-}
-const readUserFromSql = async (token: string): Promise<UserInfo> => {
-  const baseUri = toHttpUri(env.NEXT_PUBLIC_SPACETIMEDB_URI)
-  const moduleName = env.SPACETIMEDB_MODULE_NAME
-  const response = await fetch(`${baseUri}/v1/database/${moduleName}/sql`, {
-    body: 'SELECT email, image, name FROM user_profile LIMIT 1',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'text/plain'
-    },
-    method: 'POST'
+const readUserProfile = async (token: string): Promise<UserInfo> => {
+  const { rows } = await queryTable<UserInfo>({
+    columns: ['email', 'image', 'name'],
+    limit: 1,
+    moduleName: env.SPACETIMEDB_MODULE_NAME,
+    table: 'user_profile',
+    token,
+    uri: toHttpUri(env.NEXT_PUBLIC_SPACETIMEDB_URI)
   })
-  if (!response.ok) return {}
-  const body = (await response.json()) as unknown
-  return getFirstRow(body)
+  return rows[0] ?? {}
 }
 const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
   const cookieStore = await cookies()
   const token = cookieStore.get('spacetimedb_token')?.value
-  const profile = token ? await readUserFromSql(token) : null
+  const profile = token ? await readUserProfile(token) : null
   const email = profile?.email
   const image = profile?.image
   const name = profile?.name
