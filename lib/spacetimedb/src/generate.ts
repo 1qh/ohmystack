@@ -30,7 +30,7 @@ const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
 const GENERATORS: Record<GenerateTarget, { content: string; description: string; filename: string }> = {
   docker: {
     content: DOCKER_COMPOSE,
-    description: 'Docker Compose (SpacetimeDB + MinIO)',
+    description: 'Docker Compose (SpacetimeDB)',
     filename: 'docker-compose.yml'
   }
 }

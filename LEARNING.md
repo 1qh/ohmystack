@@ -20,11 +20,9 @@
 ## SpacetimeDB E2E
 
 - Republish module before running tests (`bun spacetime:publish`). Stale module state causes “fatal error” on reducers.
-- stdb blog avatar upload test requires working MinIO presign endpoint. Check MinIO container health.
 - Test helpers (`lib/e2e/src/stdb-org-helpers.ts`) share identity with browser via `addInitScript` + `activeOrgId` cookie. Run `spacetime publish --delete-data` before test runs. The `cleanupOrgTestData` deletes ALL orgs (not prefix-filtered) to handle browser-created orgs.
-- `removeTestOrgMember` finds the member by identity substring match (`String(m.user_id).includes(userId.slice(0, 20))`). SpacetimeDB serializes Identity as `[["0xHEX"]]` in SQL responses.
-- stdb blog avatar E2E: requires MinIO with public-read bucket. Setup: `docker exec noboil-stdb-minio-1 mc mb --ignore-existing local/mybucket && docker exec noboil-stdb-minio-1 mc anonymous set download local/mybucket`. Set `.env`: `S3_ACCESS_KEY_ID=minioadmin S3_SECRET_ACCESS_KEY=minioadmin S3_ENDPOINT=http://localhost:4600 S3_BUCKET=mybucket`.
-- Remaining flaky tests (4 of 440): `blog.test.ts:75` (edit form subscription stale in long suites), `blog-pagination.test.ts:17` (pagination status flip-flop), `org.test.ts:203` (removeMember invite token flow). These pass individually but occasionally fail in full suite due to SpacetimeDB connection caching.
+- `removeTestOrgMember` uses `org_leave` with the member's own token when available, falls back to `org_remove_member` via owner.
+- SpacetimeDB file uploads use inline byte storage (`t.byteArray()`). No S3/MinIO needed. Files up to ~100MB stored directly in the database.
 
 ## react-doctor False Positives
 

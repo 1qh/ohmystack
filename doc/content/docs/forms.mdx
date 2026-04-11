@@ -48,7 +48,7 @@ What's happening:
 
 ## Add file upload
 
-Your schema has `coverImage: file().nullable().optional()`. The `<File>` field handles upload automatically — Convex routes through native storage, SpacetimeDB routes through your S3/MinIO presigned URL endpoint. The component API is the same.
+Your schema has `coverImage: file().nullable().optional()`. The `<File>` field handles upload automatically — Convex routes through native storage, SpacetimeDB stores files inline as byte arrays. The component API is the same.
 
 ```tsx
 <Form

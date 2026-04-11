@@ -868,7 +868,7 @@ const owned = makeOwned({
 )} />
 ```
 
-No API routes, no presigned URLs, no S3 configuration. The `<File>` component handles upload, preview, and storage registration.
+No API routes, no presigned URLs, no external storage. The `<File>` component handles upload, preview, and storage registration.
 
 ---
 
@@ -982,7 +982,7 @@ const Onboarding = () => {
 
 **Features:** singletonCrud · 1:1 per-user · file upload · upsert
 
-`singletonCrud` from a `singleton: { profile }` schema slot. The Convex flow is shown below; the SpacetimeDB version uses the same schema with S3 storage instead of native.
+`singletonCrud` from a `singleton: { profile }` schema slot. The Convex flow is shown below; the SpacetimeDB version uses the same schema with inline byte storage.
 
 ### Schema
 

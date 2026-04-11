@@ -24,8 +24,6 @@ All services and apps use the 4xxx range so they don’t conflict with common de
 | 4400 | agent                  |
 | 4500 | Convex dashboard       |
 | 5432 | Postgres (SpacetimeDB) |
-| 4600 | stdb MinIO API         |
-| 4601 | stdb MinIO console     |
 
 **Do NOT change these ports** — they are referenced in docker compose files, env files, playwright configs, E2E helpers, library defaults, and documentation. Changing one port requires updating all of them.
 

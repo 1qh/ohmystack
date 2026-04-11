@@ -412,4 +412,4 @@ const makeFileUpload = <DM extends GenericDataModel>(config: FileUploadConfig<DM
     validate
   }
 }
-export { makeFileUpload }
+export { CHUNK_SIZE, DEFAULT_ALLOWED_TYPES, DEFAULT_MAX_FILE_SIZE, makeFileUpload }
