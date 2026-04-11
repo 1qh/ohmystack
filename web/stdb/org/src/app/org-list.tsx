@@ -23,7 +23,7 @@ const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
         <OrgAvatar
           name={o.name}
           size='lg'
-          src={o.avatarId ? (resolveFileUrl(files as never, o.avatarId) ?? undefined) : undefined}
+          src={o.avatarId ? (resolveFileUrl(files, o.avatarId) ?? undefined) : undefined}
         />
       )}
       renderRole={role => <RoleBadge role={role} />}

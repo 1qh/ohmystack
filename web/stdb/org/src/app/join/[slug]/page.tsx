@@ -57,7 +57,7 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
           <OrgAvatar
             name={org.name}
             size='lg'
-            src={org.avatarId ? (resolveFileUrl(files as never, org.avatarId) ?? undefined) : undefined}
+            src={org.avatarId ? (resolveFileUrl(files, org.avatarId) ?? undefined) : undefined}
           />
           <CardTitle className='mt-4'>{org.name}</CardTitle>
           <CardDescription>Request to join this organization</CardDescription>

@@ -870,6 +870,23 @@ const owned = makeOwned({
 
 No API routes, no presigned URLs, no external storage. The `<File>` component handles upload, preview, and storage registration.
 
+### Displaying uploaded files after reload
+
+Blob URLs created during upload are session-scoped — they die on page reload. Use `resolveFileUrl` to resolve file references from the subscribed file table:
+
+```tsx
+import { resolveFileUrl } from '@noboil/spacetimedb/react'
+import { useTable } from 'spacetimedb/react'
+
+const Avatar = ({ fileRef }: { fileRef: string | null }) => {
+  const [files] = useTable(tables.file)
+  const src = fileRef ? resolveFileUrl(files, fileRef) : null
+  return src ? <img src={src} /> : null
+}
+```
+
+`resolveFileUrl` matches the reference against file rows by filename or id, converts the stored bytes to a blob URL, and caches the result. Works with any value stored by `useUpload`.
+
 ---
 
 ## Multi-Step Onboarding Form

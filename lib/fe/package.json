@@ -9,14 +9,12 @@
     "./proxy": "./src/proxy.ts",
     "./spacetimedb-auth-layout": "./src/spacetimedb-auth-layout.tsx",
     "./spacetimedb-email-login-page": "./src/spacetimedb-email-login-page.tsx",
-    "./spacetimedb-image-route": "./src/spacetimedb-image-route.ts",
     "./spacetimedb-login-page": "./src/spacetimedb-login-page.tsx",
     "./spacetimedb-next-config": "./src/spacetimedb-next-config.ts",
     "./spacetimedb-provider": "./src/spacetimedb-provider.tsx",
     "./spacetimedb-user-menu": "./src/spacetimedb-user-menu.tsx",
     "./theme-toggle": "./src/theme-toggle.tsx",
     "./ui-message": "./src/ui-message.ts",
-    "./upload-presign-route": "./src/upload-presign-route.ts",
     "./utils": "./src/utils.ts"
   },
   "typesVersions": {

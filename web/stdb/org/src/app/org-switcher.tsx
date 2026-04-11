@@ -20,7 +20,7 @@ const OrgSwitcher = () => {
   const { activeOrg, isLoading: activeLoading } = useActiveOrg()
   const { isLoading: orgsLoading, orgs } = useMyOrgs()
   const [files] = useTable(tables.file)
-  const resolve = (id: string | undefined) => (id ? (resolveFileUrl(files as never, id) ?? undefined) : undefined)
+  const resolve = (id: string | undefined) => (id ? (resolveFileUrl(files, id) ?? undefined) : undefined)
   if (activeLoading || orgsLoading) return <Skeleton className='h-9 w-32' />
   const handleSwitch = (org: (typeof orgs)[number]) => {
     setActiveOrgCookieClient({ orgId: org.org._id, slug: org.org.slug })

@@ -190,9 +190,7 @@ const Author = ({
   const [files] = useTable(tables.file)
   const authorProfile = profiles.find(p => p.userId.isEqual(userId))
   const authorName = authorProfile?.displayName ?? 'Author'
-  const avatarUrl = authorProfile?.avatar
-    ? (resolveFileUrl(files as never, authorProfile.avatar) ?? authorProfile.avatar)
-    : null
+  const avatarUrl = authorProfile?.avatar ? (resolveFileUrl(files, authorProfile.avatar) ?? authorProfile.avatar) : null
   const own = isPlaywrightTest || (identity ? userId.isEqual(identity) : false)
   const updatedAtDate = updatedAt.toDate()
   return (
@@ -247,7 +245,7 @@ const Card = ({
   ...rest
 }: Blog & { onOptimisticRemove?: () => void }) => {
   const [files] = useTable(tables.file)
-  const resolvedCover = coverImage ? (resolveFileUrl(files as never, coverImage) ?? coverImage) : null
+  const resolvedCover = coverImage ? (resolveFileUrl(files, coverImage) ?? coverImage) : null
   return (
     <div
       className='group -mt-0.5 w-full rounded-xs border-2 border-transparent px-2.5 pt-2 transition-all duration-300 hover:rounded-3xl hover:border-border'

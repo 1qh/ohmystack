@@ -85,7 +85,7 @@ const Page = () => {
   const isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
   const profile = profiles.find(p => identity && p.userId.isEqual(identity)) ?? null
   const shouldShowContent = isReady || isPlaywright
-  const resolvedAvatar = profile?.avatar ? (resolveFileUrl(files as never, profile.avatar) ?? profile.avatar) : null
+  const resolvedAvatar = profile?.avatar ? (resolveFileUrl(files, profile.avatar) ?? profile.avatar) : null
   const form = useFormMutation({
     mutate: useReducer(reducers.upsertBlogProfile),
     resetOnSuccess: false,

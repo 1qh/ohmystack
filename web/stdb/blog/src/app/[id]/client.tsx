@@ -32,7 +32,7 @@ const Client = ({ blog }: { blog: Blog | null }) => {
           className='mt-3 w-full rounded-lg object-cover'
           data-testid='blog-detail-cover'
           height={1000}
-          src={resolveFileUrl(files as never, blog.coverImage) ?? blog.coverImage}
+          src={resolveFileUrl(files, blog.coverImage) ?? blog.coverImage}
           width={1000}
         />
       ) : null}
