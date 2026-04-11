@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import type { ActiveOrgQuery } from './active-org-types'
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
+import { queryTable } from './query'
 /** Detects whether auth helpers are running in test mode. */
 const isTestMode = () =>
   Boolean(
@@ -93,6 +94,19 @@ const resolveActiveOrg = async <T>({
   const activeToken = token ?? (await getToken())
   if (!activeToken) return null
   if (typeof query === 'function') return query({ orgId })
+  if ('table' in query) {
+    const wsUri = process.env.NEXT_PUBLIC_SPACETIMEDB_URI ?? process.env.SPACETIMEDB_URI
+    const moduleName = process.env.SPACETIMEDB_MODULE_NAME
+    if (!(wsUri && moduleName)) return null
+    const { rows } = await queryTable<T>({
+      moduleName,
+      table: query.table,
+      token: activeToken,
+      uri: toHttpUri(wsUri),
+      where: `id = ${Number.parseInt(orgId, 10)}`
+    })
+    return rows[0] ?? null
+  }
   return queryActiveOrgSql<T>({ orgId, sql: query.sql, token: activeToken })
 }
 /** Resolves the active organization document from cookie state.

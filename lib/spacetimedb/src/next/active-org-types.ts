@@ -1,5 +1,8 @@
-type ActiveOrgQuery<T> = ((args: { orgId: string }) => Promise<null | T>) | SqlQueryConfig
+type ActiveOrgQuery<T> = ((args: { orgId: string }) => Promise<null | T>) | SqlQueryConfig | TableQueryConfig
 interface SqlQueryConfig {
   sql: string
 }
-export type { ActiveOrgQuery, SqlQueryConfig }
+interface TableQueryConfig {
+  table: string
+}
+export type { ActiveOrgQuery, SqlQueryConfig, TableQueryConfig }
