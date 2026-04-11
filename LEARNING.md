@@ -22,7 +22,7 @@
 - Republish module before running tests (`bun spacetime:publish`). Stale module state causes “fatal error” on reducers.
 - Test helpers (`lib/e2e/src/stdb-org-helpers.ts`) share identity with browser via `addInitScript` + `activeOrgId` cookie. Run `spacetime publish --delete-data` before test runs. The `cleanupOrgTestData` deletes ALL orgs (not prefix-filtered) to handle browser-created orgs.
 - `removeTestOrgMember` uses `org_leave` with the member’s own token when available, falls back to `org_remove_member` via owner.
-- SpacetimeDB file uploads use inline byte storage (`t.byteArray()`). No S3/MinIO needed. Files up to ~100MB stored directly in the database.
+- SpacetimeDB file uploads use inline byte storage (`t.byteArray()`), up to ~100MB per file.
 
 ## react-doctor False Positives
 

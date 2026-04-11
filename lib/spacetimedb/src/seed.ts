@@ -7,7 +7,7 @@ const randomChars = (len: number, chars: string): string => {
   for (let i = 0; i < len; i += 1) result += chars[Math.floor(Math.random() * chars.length)]
   return result
 }
-const randomFileRef = (): string => `s3://uploads/${randomChars(24, ALPHA + DIGITS)}`
+const randomFileRef = (): string => `file://${randomChars(24, ALPHA + DIGITS)}`
 const randomTableId = (): number => Math.floor(Math.random() * 1_000_000) + 1
 const { generateFieldValue, generateOne, generateSeed } = createSeedUtils(
   { fileKindOf, isArrayType, isBooleanType, isNumberType, isOptionalField, isStringType, unwrapZod },

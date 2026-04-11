@@ -78,7 +78,7 @@ Both libs accept the same `file()` and `files()` schema helpers. The upload back
 
 The `<File>` and `<Files>` form components from `/components` work identically — they just hand the upload off to the right backend underneath. No API routes or external storage setup needed for either.
 
-SpacetimeDB inline files produce blob URLs that expire on reload. Use `resolveFileUrl(files, ref)` from `/react` to reconstruct URLs from the subscribed file table — Convex storage URLs are permanent and don't need this step.
+SpacetimeDB inline files produce blob URLs that expire on reload. Use `resolveFileUrl(files, ref)` from `/react` to reconstruct URLs from the subscribed file table. Convex storage URLs are permanent.
 
 ### 4. Custom server logic
 

@@ -3858,7 +3858,7 @@ describe('seed data generator', () => {
   test('generateFieldValue handles file', () => {
     const val = generateFieldValue(file())
     expect(typeof val).toBe('string')
-    expect(String(val)).toContain('s3://')
+    expect(String(val)).toContain('file://')
   })
   test('generateFieldValue handles array', () => {
     const val = generateFieldValue(array(string()))

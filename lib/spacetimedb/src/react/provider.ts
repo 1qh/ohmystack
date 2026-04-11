@@ -71,7 +71,6 @@ const createTokenStore = (key = DEFAULT_TOKEN_KEY): TokenStore => {
 }
 /**
  * Creates an inline file uploader that stores bytes directly via SpacetimeDB reducer.
- * No S3/presign needed — files are stored in the database.
  * @param config.uri SpacetimeDB HTTP URI (e.g. http://localhost:4000)
  * @param config.moduleName SpacetimeDB module name
  * @param config.namespace Upload reducer namespace (default: 'file')
