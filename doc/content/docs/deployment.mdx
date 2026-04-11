@@ -17,16 +17,13 @@ Convex handles hosting, scaling, and backups automatically. Deploy to Convex Clo
 
 ## Local development
 
-Start SpacetimeDB and MinIO with Docker Compose:
+Start SpacetimeDB with Docker Compose:
 
 ```bash
 docker compose up -d
 ```
 
-This starts:
-
-- SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP SQL API)
-- MinIO at `http://localhost:4600` (S3 API) and `http://localhost:4601` (console)
+This starts SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP API). File uploads are stored inline — no separate object storage needed.
 
 Publish your module (replace `my-app` with your SpacetimeDB module name):
 
@@ -53,33 +50,7 @@ bun dev
 
 ```bash
 NEXT_PUBLIC_SPACETIMEDB_URI=ws://localhost:4000
-NEXT_PUBLIC_MODULE_NAME=my-app
-SPACETIMEDB_URI=http://localhost:4000
-MODULE_NAME=my-app
-
-S3_ENDPOINT=http://localhost:4600
-S3_ACCESS_KEY_ID=minioadmin
-S3_SECRET_ACCESS_KEY=minioadmin
-S3_BUCKET=my-bucket
-S3_REGION=us-east-1
-```
-
-### Create the MinIO bucket
-
-**macOS:**
-
-```bash
-brew install minio/stable/mc
-```
-
-For Linux, download the mc binary from https://min.io/docs/minio/linux/reference/minio-mc.html
-
-```bash
-mc alias set local http://localhost:4600 minioadmin minioadmin
-
-mc mb local/my-bucket
-
-mc anonymous set download local/my-bucket
+SPACETIMEDB_MODULE_NAME=my-app
 ```
 
 ---
@@ -276,13 +247,7 @@ CMD ["bun", "start"]
 
 ```bash
 NEXT_PUBLIC_SPACETIMEDB_URI=wss://stdb.yourdomain.com
-NEXT_PUBLIC_MODULE_NAME=my-app
-
-S3_ENDPOINT=https://s3.amazonaws.com
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_BUCKET=my-production-bucket
-S3_REGION=us-east-1
+SPACETIMEDB_MODULE_NAME=my-app
 ```
 
 ---

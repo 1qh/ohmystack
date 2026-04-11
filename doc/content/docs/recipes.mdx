@@ -845,80 +845,30 @@ const ChatRoom = ({ chatId }: { chatId: number }) => {
 
 ---
 
-## File Upload with S3 Pre-Signed URLs (SpacetimeDB)
+## File Upload
 
-Convex uses native storage via `file()` — no presigned URL flow needed. SpacetimeDB stores files in S3 / MinIO via a presigned upload route. The schema field is `file()` either way; this section shows the SpacetimeDB wiring.
+Use `file()` in your schema — file storage works automatically on both backends. Convex uses built-in storage; SpacetimeDB stores files inline as byte arrays (up to ~100MB).
 
-### API route
-
-```typescript
-import { createS3UploadPresignedUrl } from '@noboil/spacetimedb/server'
-import { NextResponse } from 'next/server'
-
-export const POST = async (req: Request) => {
-  const { filename, contentType } = (await req.json()) as {
-    filename: string
-    contentType: string
-    size: number
-  }
-
-  const key = `uploads/${crypto.randomUUID()}-${filename}`
-
-  const presigned = await createS3UploadPresignedUrl({
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-    bucket: process.env.S3_BUCKET,
-    endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:4600',
-    region: process.env.S3_REGION ?? 'us-east-1',
-    key,
-    contentType,
-    expiresInSeconds: 900
+```tsx
+const owned = makeOwned({
+  post: object({
+    title: string().min(1),
+    coverImage: file().nullable().optional()
   })
-
-  return NextResponse.json({
-    uploadUrl: presigned.url,
-    storageKey: key,
-    headers: presigned.headers,
-    method: 'PUT'
-  })
-}
+})
 ```
 
-### Upload component
-
-```typescript
-'use client'
-
-import { useUpload } from '@noboil/spacetimedb/react'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '@/generated/module_bindings'
-
-const FileUploader = () => {
-  const registerUpload = useReducer(reducers.register_upload_file)
-
-  const { upload, isUploading, progress, error } = useUpload({
-    registerFile: async ({ contentType, filename, size, storageKey }) => {
-      await registerUpload({ contentType, filename, size, storageKey })
-      return { storageId: storageKey }
-    },
-  })
-
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const result = await upload(file)
-    if (!result.ok) console.error('Upload failed:', result.code)
-  }
-
-  return (
-    <div>
-      <input type="file" onChange={handleChange} disabled={isUploading} />
-      {isUploading && <span>{progress}%</span>}
-      {error && <span>Error: {error}</span>}
-    </div>
-  )
-}
+```tsx
+<Form form={form} render={({ Text, File, Submit }) => (
+  <>
+    <Text name="title" />
+    <File name="coverImage" accept="image/*" />
+    <Submit>Save</Submit>
+  </>
+)} />
 ```
+
+No API routes, no presigned URLs, no S3 configuration. The `<File>` component handles upload, preview, and storage registration.
 
 ---
 
