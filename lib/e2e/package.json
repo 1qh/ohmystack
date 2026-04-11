@@ -10,6 +10,7 @@
     "./global-teardown": "./src/global-teardown.ts",
     "./stdb-global-setup": "./src/stdb-global-setup.ts",
     "./stdb-global-teardown": "./src/stdb-global-teardown.ts",
+    "./stdb-helpers": "./src/stdb-helpers.ts",
     "./helpers": "./src/helpers.ts",
     "./org-helpers": "./src/org-helpers.ts",
     "./stdb-org-helpers": "./src/stdb-org-helpers.ts",
