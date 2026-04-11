@@ -52,7 +52,6 @@
     "babel-plugin-react-compiler": "latest",
     "depcheck": "latest",
     "dotenv-cli": "latest",
-    "jose": "latest",
     "lintmax": "latest",
     "sherif": "latest",
     "simple-git-hooks": "latest",
