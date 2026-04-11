@@ -23,7 +23,7 @@ import { FieldGroup } from '@a/ui/field'
 import { Separator } from '@a/ui/separator'
 import { Spinner } from '@a/ui/spinner'
 import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { useMut, useOptimisticMutation } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, useMut, useOptimisticMutation } from '@noboil/spacetimedb/react'
 import { format, formatDistance } from 'date-fns'
 import { Pencil, Plus, Send, Trash, UserRound } from 'lucide-react'
 import Link from 'next/link'
@@ -187,18 +187,22 @@ const Author = ({
 }: Blog & { className?: string; onOptimisticRemove?: () => void }) => {
   const { identity } = useSpacetimeDB()
   const [profiles] = useTable(tables.blogProfile)
+  const [files] = useTable(tables.file)
   const authorProfile = profiles.find(p => p.userId.isEqual(userId))
   const authorName = authorProfile?.displayName ?? 'Author'
+  const avatarUrl = authorProfile?.avatar
+    ? (resolveFileUrl(files as never, authorProfile.avatar) ?? authorProfile.avatar)
+    : null
   const own = isPlaywrightTest || (identity ? userId.isEqual(identity) : false)
   const updatedAtDate = updatedAt.toDate()
   return (
     <div className={cn('flex items-center', className)}>
-      {authorProfile?.avatar ? (
+      {avatarUrl ? (
         <img
           alt={authorName}
           className='size-8 shrink-0 rounded-full object-cover'
           height={32}
-          src={authorProfile.avatar}
+          src={avatarUrl}
           width={32}
         />
       ) : (
@@ -241,39 +245,43 @@ const Card = ({
   onOptimisticRemove,
   title,
   ...rest
-}: Blog & { onOptimisticRemove?: () => void }) => (
-  <div
-    className='group -mt-0.5 w-full rounded-xs border-2 border-transparent px-2.5 pt-2 transition-all duration-300 hover:rounded-3xl hover:border-border'
-    data-testid='blog-card'>
-    <Author
-      content={content}
-      coverImage={coverImage}
-      id={id}
-      onOptimisticRemove={onOptimisticRemove}
-      title={title}
-      {...rest}
-    />
-    <Link className='mt-1 block' data-testid='blog-card-link' href={`/${id}`}>
-      {coverImage ? (
-        <img
-          alt={title}
-          className='my-1 w-full rounded-lg object-cover'
-          data-testid='blog-cover-image'
-          height={1000}
-          src={coverImage}
-          width={1000}
-        />
-      ) : null}
-      <p className='text-xl font-medium' data-testid='blog-card-title'>
-        {title}
-      </p>
-      <p className='line-clamp-3 text-xs text-muted-foreground' data-testid='blog-card-content'>
-        {content}
-      </p>
-    </Link>
-    <Separator className='mx-3 mt-2.5 translate-y-px transition-all duration-500 group-hover:opacity-0' />
-  </div>
-)
+}: Blog & { onOptimisticRemove?: () => void }) => {
+  const [files] = useTable(tables.file)
+  const resolvedCover = coverImage ? (resolveFileUrl(files as never, coverImage) ?? coverImage) : null
+  return (
+    <div
+      className='group -mt-0.5 w-full rounded-xs border-2 border-transparent px-2.5 pt-2 transition-all duration-300 hover:rounded-3xl hover:border-border'
+      data-testid='blog-card'>
+      <Author
+        content={content}
+        coverImage={coverImage}
+        id={id}
+        onOptimisticRemove={onOptimisticRemove}
+        title={title}
+        {...rest}
+      />
+      <Link className='mt-1 block' data-testid='blog-card-link' href={`/${id}`}>
+        {resolvedCover ? (
+          <img
+            alt={title}
+            className='my-1 w-full rounded-lg object-cover'
+            data-testid='blog-cover-image'
+            height={1000}
+            src={resolvedCover}
+            width={1000}
+          />
+        ) : null}
+        <p className='text-xl font-medium' data-testid='blog-card-title'>
+          {title}
+        </p>
+        <p className='line-clamp-3 text-xs text-muted-foreground' data-testid='blog-card-content'>
+          {content}
+        </p>
+      </Link>
+      <Separator className='mx-3 mt-2.5 translate-y-px transition-all duration-500 group-hover:opacity-0' />
+    </div>
+  )
+}
 const List = ({ blogs, onRemove }: { blogs: Blog[]; onRemove?: (id: number) => void }) =>
   blogs.length > 0 ? (
     <div data-testid='blog-list'>
