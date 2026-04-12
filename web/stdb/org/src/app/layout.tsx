@@ -1,5 +1,5 @@
 /* eslint-disable @eslint-react/dom/no-dangerously-set-innerhtml, react/no-danger, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-/* oxlint-disable react-perf/jsx-no-new-array-as-prop */
+/* oxlint-disable jsx-no-new-array-as-prop */
 // biome-ignore-all lint/security/noDangerouslySetInnerHtml: controlled redirect
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
@@ -24,7 +24,7 @@ const needsOrgLayout = (pathname: string) => {
 const toOrgId = (id: number) => `${id}`
 const OrgRedirect = ({ orgId, slug, to }: { orgId: string; slug: string; to: string }) => (
   <script
-    // oxlint-disable-next-line react/no-danger, react-perf/jsx-no-new-object-as-prop
+    // oxlint-disable-next-line react/no-danger, jsx-no-new-object-as-prop
     dangerouslySetInnerHTML={{
       __html: `window.location.href="/api/set-org?orgId=${encodeURIComponent(orgId)}&slug=${encodeURIComponent(slug)}&to=${encodeURIComponent(to)}"`
     }}
@@ -61,7 +61,7 @@ const OrgLayoutInner = ({ children }: { children: ReactNode }) => {
   if (!needsOrgLayout(pathname)) return children
   if (!(identity || isPlaywright)) return null
   if (!((orgsReady && membersReady) || playwrightWaitExpired)) return null
-  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+  // oxlint-disable-next-line jsx-no-new-array-as-prop
   const ownedOrgs = identity ? orgs.filter((o: Org) => sameIdentity(o.userId, identity)) : []
   const memberOrgs = identity
     ? members

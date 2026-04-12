@@ -1,4 +1,4 @@
-/* eslint-disable no-await-in-loop, @typescript-eslint/no-magic-numbers */
+/* eslint-disable no-await-in-loop */
 /* oxlint-disable unicorn/consistent-function-scoping */
 /** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures
  * biome-ignore-all lint/performance/noDelete: test cleanup

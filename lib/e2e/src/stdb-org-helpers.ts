@@ -1,5 +1,4 @@
 /* eslint-disable no-await-in-loop, complexity */
-/* oxlint-disable max-statements */
 /** biome-ignore-all lint/suspicious/useAwait: test helper */
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */

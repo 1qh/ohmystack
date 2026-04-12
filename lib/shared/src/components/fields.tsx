@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* oxlint-disable react-perf/jsx-no-jsx-as-prop */
+/* oxlint-disable jsx-no-jsx-as-prop */
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 // oxlint-disable promise/prefer-await-to-then
 // biome-ignore-all lint/performance/noImgElement: x
@@ -948,7 +948,7 @@ const createFieldsModule = ({
                   onBlur={f.handleBlur}
                   onValueChange={v => f.handleChange(Array.isArray(v) ? v[0] : v)}
                   step={step}
-                  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+                  // oxlint-disable-next-line jsx-no-new-array-as-prop
                   value={[val]}
                 />
                 {helpText ? <p className='text-sm text-muted-foreground'>{helpText}</p> : null}
@@ -1009,7 +1009,7 @@ const createFieldsModule = ({
       required?: boolean
     }) => {
       const { form } = useField(name, 'string')
-      // oxlint-disable-next-line react-perf/jsx-no-new-object-as-prop
+      // oxlint-disable-next-line jsx-no-new-object-as-prop
       const validators = asyncValidate
         ? {
             onChangeAsync: async ({ value }: { value: string }) => {

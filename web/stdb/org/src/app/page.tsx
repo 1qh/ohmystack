@@ -44,7 +44,7 @@ const Page = () => {
     <div className='container py-8'>
       <h1 className='mb-6 text-2xl font-bold'>Your Organizations</h1>
       <OrgList
-        // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+        // oxlint-disable-next-line jsx-no-new-array-as-prop
         orgs={myOrgs.map((o: MyOrgsItem) => ({
           avatarId: o.org.avatarId,
           id: o.org._id,

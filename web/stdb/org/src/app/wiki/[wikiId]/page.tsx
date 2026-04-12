@@ -42,7 +42,7 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
   }
   if (!(wiki && identity)) return <Skeleton className='h-40' />
   const isDeleted = wiki.deletedAt !== undefined
-  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+  // oxlint-disable-next-line jsx-no-new-array-as-prop
   const editorsList = (wiki.editors ?? []).map(e => {
     const userId = e.toHexString()
     const profile = profileByUserId.get(userId)
@@ -96,7 +96,7 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
       {isAdmin && !isDeleted ? (
         <EditorsSection
           editorsList={editorsList}
-          // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+          // oxlint-disable-next-line jsx-no-new-array-as-prop
           members={members.map(m => {
             const userId = m.userId.toHexString()
             const profile = profileByUserId.get(userId)

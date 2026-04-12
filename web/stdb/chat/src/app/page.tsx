@@ -58,7 +58,7 @@ const Page = () => {
           <ConversationEmptyState
             data-testid='empty-state'
             description='Ask me about the weather anywhere in the world'
-            // oxlint-disable-next-line react-perf/jsx-no-jsx-as-prop
+            // oxlint-disable-next-line jsx-no-jsx-as-prop
             icon={<SparklesIcon className='size-8' />}
             title='How can I help you today?'
           />

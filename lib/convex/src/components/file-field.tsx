@@ -1,4 +1,4 @@
-/* oxlint-disable eslint/no-await-in-loop, react-perf/jsx-no-new-object-as-prop, jsx-a11y/prefer-tag-over-role */
+/* oxlint-disable eslint/no-await-in-loop, jsx-no-new-object-as-prop, jsx-a11y/prefer-tag-over-role */
 /** biome-ignore-all lint/a11y/useSemanticElements: dropzone requires div role button */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 // oxlint-disable promise/prefer-await-to-then, next/no-img-element

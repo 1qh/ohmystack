@@ -1,4 +1,4 @@
-/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react/jsx-handler-names */
+/* oxlint-disable jsx-no-new-object-as-prop, react/jsx-handler-names */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
 'use client'
 import type { Stepper as CoreStepper, Step } from '@stepperize/core'

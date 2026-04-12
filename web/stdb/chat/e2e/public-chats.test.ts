@@ -1,4 +1,3 @@
-// oxlint-disable max-statements
 // biome-ignore-all lint/performance/useTopLevelRegex: x
 import { expect, test } from './fixtures'
 import { login } from './helpers'

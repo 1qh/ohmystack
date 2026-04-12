@@ -26,7 +26,7 @@ const Page = async () => {
     const [first] = orgs
     if (first) return <OrgRedirect orgId={first.org._id} slug={first.org.slug} to='/dashboard' />
   }
-  // oxlint-disable-next-line react-perf/jsx-no-new-array-as-prop
+  // oxlint-disable-next-line jsx-no-new-array-as-prop
   const orgList = orgs.map((o: MyOrgsItem) => ({
     avatarId: o.org.avatarId,
     id: o.org._id,

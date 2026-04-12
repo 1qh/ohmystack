@@ -1,4 +1,4 @@
-/* oxlint-disable react-perf/jsx-no-new-object-as-prop */
+/* oxlint-disable jsx-no-new-object-as-prop */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 /* eslint-disable @typescript-eslint/strict-void-return */
 'use client'

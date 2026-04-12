@@ -2054,7 +2054,6 @@ describe('withRetry', () => {
     const result = await withRetry(
       async () => {
         calls += 1
-        // oxlint-disable-next-line no-conditional-in-test
         if (calls < 2) throw new Error('fail')
         return 'ok'
       },
@@ -2173,7 +2172,6 @@ describe('fetchWithRetry', () => {
     let calls = 0
     mockFetch(async () => {
       calls += 1
-      // oxlint-disable-next-line no-conditional-in-test
       if (calls < 3)
         return new Response('error', {
           status: 500,

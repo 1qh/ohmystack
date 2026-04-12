@@ -1,4 +1,4 @@
-/* oxlint-disable react-perf/jsx-no-new-object-as-prop, react-hooks/refs */
+/* oxlint-disable jsx-no-new-object-as-prop, react-hooks/refs */
 /* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 /* oxlint-disable eslint/complexity */
 /** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
