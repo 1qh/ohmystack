@@ -1,5 +1,4 @@
 'use client'
-import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import {
   DropdownMenu,
@@ -10,16 +9,15 @@ import {
 } from '@a/ui/dropdown-menu'
 import { Skeleton } from '@a/ui/skeleton'
 import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, setActiveOrgCookieClient } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, setActiveOrgCookieClient, useFiles } from '@noboil/spacetimedb/react'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTable } from 'spacetimedb/react'
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
 const OrgSwitcher = () => {
   const router = useRouter()
   const { activeOrg, isLoading: activeLoading } = useActiveOrg()
   const { isLoading: orgsLoading, orgs } = useMyOrgs()
-  const [files] = useTable(tables.file)
+  const files = useFiles()
   const resolve = (id: string | undefined) => (id ? (resolveFileUrl(files, id) ?? undefined) : undefined)
   if (activeLoading || orgsLoading) return <Skeleton className='h-9 w-32' />
   const handleSwitch = (org: (typeof orgs)[number]) => {

@@ -23,7 +23,7 @@ import { FieldGroup } from '@a/ui/field'
 import { Separator } from '@a/ui/separator'
 import { Spinner } from '@a/ui/spinner'
 import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, useMut, useOptimisticMutation } from '@noboil/spacetimedb/react'
+import { useMut, useOptimisticMutation, useResolveFileUrl } from '@noboil/spacetimedb/react'
 import { format, formatDistance } from 'date-fns'
 import { Pencil, Plus, Send, Trash, UserRound } from 'lucide-react'
 import Link from 'next/link'
@@ -187,10 +187,9 @@ const Author = ({
 }: Blog & { className?: string; onOptimisticRemove?: () => void }) => {
   const { identity } = useSpacetimeDB()
   const [profiles] = useTable(tables.blogProfile)
-  const [files] = useTable(tables.file)
   const authorProfile = profiles.find(p => p.userId.isEqual(userId))
   const authorName = authorProfile?.displayName ?? 'Author'
-  const avatarUrl = authorProfile?.avatar ? (resolveFileUrl(files, authorProfile.avatar) ?? authorProfile.avatar) : null
+  const avatarUrl = useResolveFileUrl(authorProfile?.avatar)
   const own = isPlaywrightTest || (identity ? userId.isEqual(identity) : false)
   const updatedAtDate = updatedAt.toDate()
   return (
@@ -244,8 +243,7 @@ const Card = ({
   title,
   ...rest
 }: Blog & { onOptimisticRemove?: () => void }) => {
-  const [files] = useTable(tables.file)
-  const resolvedCover = coverImage ? (resolveFileUrl(files, coverImage) ?? coverImage) : null
+  const resolvedCover = useResolveFileUrl(coverImage)
   return (
     <div
       className='group -mt-0.5 w-full rounded-xs border-2 border-transparent px-2.5 pt-2 transition-all duration-300 hover:rounded-3xl hover:border-border'

@@ -1,5 +1,6 @@
 'use client'
-import { useMemo } from 'react'
+import type { ReactNode } from 'react'
+import { createContext, use, useMemo } from 'react'
 import { fileBlobUrl } from './provider'
 interface FileRow {
   contentType: string
@@ -31,5 +32,14 @@ const resolveFileUrl = (files: readonly FileRow[], ref: null | string | undefine
 }
 const useFileUrl = (files: readonly FileRow[], ref: null | string | undefined): null | string =>
   useMemo(() => resolveFileUrl(files, ref), [files, ref])
+const FileContext = createContext<readonly FileRow[]>([])
+const FileProvider = ({ children, files }: { children: ReactNode; files: readonly FileRow[] }) => (
+  <FileContext value={files}>{children}</FileContext>
+)
+const useFiles = (): readonly FileRow[] => use(FileContext)
+const useResolveFileUrl = (ref: null | string | undefined): null | string => {
+  const files = useFiles()
+  return useMemo(() => resolveFileUrl(files, ref), [files, ref])
+}
 export type { FileRow }
-export { resolveFileUrl, useFileUrl }
+export { FileProvider, resolveFileUrl, useFiles, useFileUrl, useResolveFileUrl }

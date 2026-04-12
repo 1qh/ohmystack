@@ -5,7 +5,7 @@ import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { Skeleton } from '@a/ui/skeleton'
 import { Form, OrgAvatar, useForm } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, setActiveOrgCookieClient, useMut } from '@noboil/spacetimedb/react'
+import { resolveFileUrl, setActiveOrgCookieClient, useFiles, useMut } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
@@ -15,7 +15,7 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const router = useRouter()
   const { identity } = useSpacetimeDB()
   const [orgs] = useTable(tables.org)
-  const [files] = useTable(tables.file)
+  const files = useFiles()
   const [requests] = useTable(tables.orgJoinRequest)
   const [members] = useTable(tables.orgMember)
   const org = orgs.find(o => o.slug === slug)

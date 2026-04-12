@@ -10,7 +10,7 @@ import { Button } from '@a/ui/button'
 import { FieldGroup } from '@a/ui/field'
 import { Spinner } from '@a/ui/spinner'
 import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, useUpload } from '@noboil/spacetimedb/react'
+import { useResolveFileUrl, useUpload } from '@noboil/spacetimedb/react'
 import { Upload } from 'lucide-react'
 import Link from 'next/link'
 import { useRef } from 'react'
@@ -80,12 +80,11 @@ const AvatarUpload = () => {
 }
 const Page = () => {
   const [profiles, isReady] = useTable(tables.blogProfile)
-  const [files] = useTable(tables.file)
   const { identity } = useSpacetimeDB()
   const isPlaywright = process.env.NEXT_PUBLIC_PLAYWRIGHT === '1'
   const profile = profiles.find(p => identity && p.userId.isEqual(identity)) ?? null
   const shouldShowContent = isReady || isPlaywright
-  const resolvedAvatar = profile?.avatar ? (resolveFileUrl(files, profile.avatar) ?? profile.avatar) : null
+  const resolvedAvatar = useResolveFileUrl(profile?.avatar)
   const form = useFormMutation({
     mutate: useReducer(reducers.upsertBlogProfile),
     resetOnSuccess: false,

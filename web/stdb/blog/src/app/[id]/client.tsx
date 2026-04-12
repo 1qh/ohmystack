@@ -3,14 +3,13 @@
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
-import { tables } from '@a/be-spacetimedb/spacetimedb'
-import { resolveFileUrl } from '@noboil/spacetimedb/react'
+import { useResolveFileUrl } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
-import { useSpacetimeDB, useTable } from 'spacetimedb/react'
+import { useSpacetimeDB } from 'spacetimedb/react'
 import { Author } from '../common'
 const Client = ({ blog }: { blog: Blog | null }) => {
   const { identity } = useSpacetimeDB()
-  const [files] = useTable(tables.file)
+  const resolvedCover = useResolveFileUrl(blog?.coverImage)
   if (!blog)
     return (
       <p className='text-muted-foreground' data-testid='blog-not-found'>
@@ -26,13 +25,13 @@ const Client = ({ blog }: { blog: Blog | null }) => {
   return (
     <div data-testid='blog-detail-page'>
       <Author {...blog} />
-      {blog.coverImage ? (
+      {resolvedCover ? (
         <img
           alt=''
           className='mt-3 w-full rounded-lg object-cover'
           data-testid='blog-detail-cover'
           height={1000}
-          src={resolveFileUrl(files, blog.coverImage) ?? blog.coverImage}
+          src={resolvedCover}
           width={1000}
         />
       ) : null}
