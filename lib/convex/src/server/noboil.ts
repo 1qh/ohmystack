@@ -81,14 +81,16 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
     const opts = (def.opts ?? {}) as Record<string, unknown>
     return s.cacheCrud({ ...opts, schema: def.schema, table: name } as never)
   }
-  throw new Error(`noboil(): unknown brand '${def.brand}' on table '${name}'`)
+  throw new Error(
+    `noboil(): unknown brand '${def.brand}' on table '${name}'. Valid brands: base, org, owned, singleton, child`
+  )
 }
 const buildDeferred = (schema: unknown, opts: unknown): Deferred => {
   if (isChildConfig(schema)) return { [DEFERRED]: true, brand: 'child', opts, schema }
   const brand = readBrand(schema)
   if (!brand)
     throw new Error(
-      'noboil(): table() called with an unbranded schema. Use makeOwned/makeOrgScoped/makeBase/makeSingleton or a child() entry.'
+      'noboil(): table() called with an unbranded schema. Use schema() from @noboil/convex/schema with makeOwned/makeOrgScoped/makeBase/makeSingleton or a child() entry.'
     )
   return { [DEFERRED]: true, brand, opts, schema }
 }

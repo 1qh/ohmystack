@@ -29,7 +29,8 @@ const FileApiProvider = ({ children, value }: { children: ReactNode; value: File
 )
 const useFileApi = () => {
   const ctx = use(FileApiContext)
-  if (!ctx) throw new Error('FileApiProvider is required')
+  if (!ctx)
+    throw new Error('<File /> requires <FileApiProvider />. Wrap your layout with it or pass fileApi to your providers.')
   return ctx
 }
 const Preview = ({ id, onRemove }: { id: string; onRemove?: () => void }) => {

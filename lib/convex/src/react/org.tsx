@@ -58,7 +58,7 @@ const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: O
 /** Returns the current org context; throws if used outside OrgProvider. */
 const useOrg = <O extends OrgDoc = OrgDoc, M = unknown>() => {
   const ctx = use(OrgContext)
-  if (!ctx) throw new Error('useOrg must be used inside OrgProvider')
+  if (!ctx) throw new Error('useOrg must be used inside <OrgProvider />. Wrap your org layout with it.')
   return ctx as OrgContextValue<O, M>
 }
 /**
