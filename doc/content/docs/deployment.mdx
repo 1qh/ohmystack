@@ -23,7 +23,7 @@ Start SpacetimeDB with Docker Compose:
 docker compose up -d
 ```
 
-This starts SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP API). File uploads are stored inline — no separate object storage needed.
+This starts SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP API). File uploads are stored inline as byte arrays.
 
 Publish your module (replace `my-app` with your SpacetimeDB module name):
 

@@ -300,7 +300,7 @@ const fileCrud = makeFileUpload(spacetimedb, {
     contentType: t.string(),
     filename: t.string(),
     size: t.number(),
-    storageKey: t.string()
+    data: t.byteArray()
   },
   idField: t.u32(),
   namespace: 'file',
