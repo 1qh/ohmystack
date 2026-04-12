@@ -1,4 +1,4 @@
-/* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
+/* oxlint-disable eslint/complexity, max-depth */
 /* eslint-disable complexity, max-depth */
 interface CreateSchemaUtilsOptions {
   baseTables?: (content: string) => SchemaTable[]

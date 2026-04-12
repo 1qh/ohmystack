@@ -133,7 +133,6 @@ const makeCrud = <S extends ZodRawShape>({
       : c.db.query(table)
   const applyW = (qr: ReturnType<ReadCtx['db']['query']>, w: undefined | W, vid: null | string) => {
     let qry = qr
-    // oxlint-disable-next-line unicorn/no-useless-undefined
     if (opt?.softDelete) qry = qry.filter((fb: FilterLike) => fb.eq(fb.field('deletedAt'), undefined))
     const gs = groupList(w)
     if (gs.length === 0) return qry

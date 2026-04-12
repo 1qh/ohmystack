@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-// oxlint-disable-next-line import/no-unassigned-import
 import '@a/ui/globals.css'
 import type { ReactNode } from 'react'
 import { cn } from '@a/ui'

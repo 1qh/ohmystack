@@ -40,7 +40,6 @@ const ask = async (question: string) => {
     input: process.stdin,
     output: process.stdout
   })
-  // oxlint-disable-next-line promise/avoid-new
   return new Promise<string>(resolve => {
     rl.question(question, answer => {
       rl.close()

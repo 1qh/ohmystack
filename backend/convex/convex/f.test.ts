@@ -679,7 +679,6 @@ describe('cacheCrud factory', () => {
       const ttl = 7 * 24 * 60 * 60 * 1000,
         updatedAt = movie?.updatedAt
       expect(updatedAt).toBeDefined()
-      // oxlint-disable-next-line no-conditional-in-test
       const isExpired = (updatedAt ?? 0) + ttl < Date.now()
       expect(isExpired).toBe(true)
     })

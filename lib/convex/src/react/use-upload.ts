@@ -35,7 +35,7 @@ const useUpload = (uploadMutation: FunctionReference<'mutation'>, options?: Uplo
   const uploadOnce = async (file: File): Promise<UploadResult> => {
     try {
       const url = (await getUrl()) as string
-      // oxlint-disable-next-line promise/avoid-new, promise/param-names
+      // oxlint-disable-next-line promise/param-names
       return await new Promise(res => {
         const x = new XMLHttpRequest()
         xhrRef.current = x
