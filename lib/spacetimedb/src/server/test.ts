@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/noProcessEnv: test env
 // biome-ignore-all lint/suspicious/useAwait: test async
+// oxlint-disable promise/avoid-new
 import { DbConnectionBuilder, DbConnectionImpl } from 'spacetimedb/sdk'
 interface CreateTestContextOptions {
   httpUrl?: string

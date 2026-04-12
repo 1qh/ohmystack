@@ -2,7 +2,7 @@
 /* eslint-disable complexity */
 /* eslint-disable no-console */
 import { createCliTheme } from '@a/shared/cli'
-/* oxlint-disable eslint/complexity, max-depth */
+/* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'

@@ -219,6 +219,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
           idx(o => o.eq('orgId', orgId))
         )
         .order('desc')
+      // oxlint-disable-next-line unicorn/no-useless-undefined
       const filtered = softDel ? qry.filter((f: FilterLike) => f.eq(f.field('deletedAt'), undefined)) : qry
       const { page, ...rest } = await filtered.paginate(paginationOpts)
       return { ...rest, page: await enrich(c, page) }

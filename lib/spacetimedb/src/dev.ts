@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/suspicious/useAwait: async without await
+// oxlint-disable promise/avoid-new
 import type { ChildProcess, SpawnSyncReturns } from 'node:child_process'
 import type { FSWatcher } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'

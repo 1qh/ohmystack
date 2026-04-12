@@ -1,4 +1,4 @@
-/* oxlint-disable eslint/complexity, max-depth */
+/* oxlint-disable eslint/max-statements, eslint/complexity, max-depth */
 import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
 import {
   CACHE_BASE,

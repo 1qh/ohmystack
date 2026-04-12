@@ -6,6 +6,7 @@ const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
 const UNDO_MS = 5000
 const sleep = async (ms: number) =>
+  // oxlint-disable-next-line promise/avoid-new
   new Promise<void>(resolve => {
     setTimeout(resolve, ms)
   })

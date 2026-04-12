@@ -1,3 +1,4 @@
+// oxlint-disable-next-line import/no-unassigned-import
 import '@a/ui/globals.css'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@a/ui'

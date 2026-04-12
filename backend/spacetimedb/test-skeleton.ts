@@ -1,3 +1,4 @@
+// oxlint-disable promise/avoid-new
 /* eslint-disable no-console */
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/server'
 interface BlogRow {

@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
 import type { LanguageModel } from 'ai'
+// oxlint-disable-next-line import/no-unassigned-import
 import './env'
 import { mockModel } from './models.mock'
 const isEnabled = (value: string | undefined) => value === 'true'
