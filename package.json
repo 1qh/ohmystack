@@ -43,7 +43,6 @@
     "pre-commit": "sh up.sh && git add -u"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11",
     "@playwright/test": "latest",
     "@tailwindcss/postcss": "latest",
     "@tailwindcss/typography": "latest",
