@@ -163,9 +163,8 @@ Workspace scripts remain the primary entry points: `agent:convex:dev`, `agent:co
 
 ### First-Time Setup
 
-1. Generate auth/encryption material with `bash script/genkey.sh`.
-2. Set required backend environment variables with `convex env set` in the be-agent backend project.
-3. Push initial schema and functions with `convex dev --once` from `backend/agent`.
+1. Run `bun setup:convex` to generate keys, start Docker, and deploy.
+2. Push initial schema and functions with `convex dev --once` from `backend/agent`.
 
 ### Incremental Deploys
 

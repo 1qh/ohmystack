@@ -56,7 +56,7 @@ Library packages (`lib/convex/`, `lib/spacetimedb/`) are published to npm. `lib/
 
 **`anyApi` trap**: Runtime is a Proxy accepting any property name — `api.blogprofile.get` (wrong casing) won’t type-error. Always match `api.<module>` to exact filenames. Rely on E2E tests.
 
-**Setup**: `bun convex:up && bash script/genkey.sh && bun script/genenv.ts` → `convex env set` (JWT key needs `--` separator)
+**Setup**: `bun setup:convex`
 
 ## SpacetimeDB
 
