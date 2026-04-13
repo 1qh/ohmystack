@@ -41,6 +41,7 @@ import type {
   OrgSchema,
   OwnedSchema,
   RateLimitConfig,
+  RateLimitInput,
   Rec,
   SchemaTypeError,
   SetupConfig,
@@ -130,6 +131,7 @@ import {
   makeUnique,
   matchError,
   matchW,
+  normalizeRateLimit,
   ok,
   RUNTIME_FILTER_WARN_THRESHOLD,
   SEVEN_DAYS_MS,
@@ -282,6 +284,30 @@ describe('RateLimitConfig', () => {
     expect(config.window).toBeGreaterThan(0)
   })
 })
+describe('RateLimitInput shorthand', () => {
+  test('normalizeRateLimit converts number to object with 60s window', () => {
+    const result = normalizeRateLimit(10)
+    expect(result).toEqual({ max: 10, window: 60_000 })
+  })
+  test('normalizeRateLimit passes through object unchanged', () => {
+    const input = { max: 5, window: 30_000 }
+    expect(normalizeRateLimit(input)).toEqual(input)
+  })
+  test('number shorthand accepted in CrudOptions', () => {
+    const rlOpts = { rateLimit: 10 }
+    expect(rlOpts.rateLimit).toBe(10)
+  })
+  test('object form still accepted in CrudOptions', () => {
+    const rlOpts = { rateLimit: { max: 10, window: 30_000 } }
+    expect(rlOpts.rateLimit).toEqual({ max: 10, window: 30_000 })
+  })
+  test('RateLimitInput type accepts both forms', () => {
+    const a: RateLimitInput = 10
+    const b: RateLimitInput = { max: 10, window: 60_000 }
+    expect(typeof a).toBe('number')
+    expect(typeof b).toBe('object')
+  })
+})
 describe('CrudOptions search config', () => {
   const blogSchema = object({
     category: string(),
@@ -290,6 +316,33 @@ describe('CrudOptions search config', () => {
     title: string()
   })
   type BlogShape = typeof blogSchema.shape
+  test('pub: string shorthand accepted', () => {
+    const opts: CrudOptions<BlogShape> = { pub: 'published' }
+    expect(opts.pub).toBe('published')
+  })
+  test('pub: boolean shorthand accepted', () => {
+    const opts: CrudOptions<BlogShape> = { pub: true }
+    expect(opts.pub).toBe(true)
+  })
+  test('pub: object form still accepted', () => {
+    const opts: CrudOptions<BlogShape> = { pub: { where: { published: true } } }
+    expect(opts.pub).toEqual({ where: { published: true } })
+  })
+  test('pub: string shorthand only accepts valid field names', () => {
+    const opts: CrudOptions<BlogShape> = { pub: 'category' }
+    expect(opts.pub).toBe('category')
+  })
+  test('normalizeRateLimit with 1 request per minute', () => {
+    expect(normalizeRateLimit(1)).toEqual({ max: 1, window: 60_000 })
+  })
+  test('normalizeRateLimit with custom window preserved', () => {
+    const custom = { max: 100, window: 3_600_000 }
+    expect(normalizeRateLimit(custom)).toBe(custom)
+  })
+  test('normalizeRateLimit object identity preserved', () => {
+    const cfg = { max: 5, window: 10_000 }
+    expect(normalizeRateLimit(cfg)).toBe(cfg)
+  })
   test('search: true enables search with defaults', () => {
     expect(Object.keys(blogSchema.shape)).toHaveLength(4)
     const opts: CrudOptions<BlogShape> = { search: true }
@@ -3353,7 +3406,7 @@ describe('lifecycle hooks in orgCrud and childCrud', () => {
     }
     expect(opts.hooks).toBeDefined()
     expect(opts.acl).toBe(true)
-    expect(opts.rateLimit?.max).toBe(10)
+    expect(typeof opts.rateLimit === 'object' && opts.rateLimit.max).toBe(10)
   })
   test('OrgCrudOptions hooks can be async', () => {
     const opts: OrgCrudOptions<{ title: ReturnType<typeof string> }> = {

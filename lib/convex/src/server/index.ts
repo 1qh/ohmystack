@@ -15,6 +15,7 @@ export {
   isMutationError,
   isRecord,
   matchError,
+  normalizeRateLimit,
   ok,
   time
 } from './helpers'

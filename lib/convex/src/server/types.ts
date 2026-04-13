@@ -83,8 +83,8 @@ interface CrudOptions<S extends ZodRawShape> {
   auth?: { where?: WhereOf<S> }
   cascade?: CascadeOption[] | false
   hooks?: CrudHooks
-  pub?: { where?: WhereOf<S> }
-  rateLimit?: RateLimitConfig
+  pub?: boolean | (keyof S & string) | { where?: WhereOf<S> }
+  rateLimit?: RateLimitInput
   search?: (keyof S & string) | true | { field?: keyof S & string; index?: string }
   softDelete?: boolean
 }
@@ -129,6 +129,7 @@ interface RateLimitConfig {
   max: number
   window: number
 }
+type RateLimitInput = number | RateLimitConfig
 type Rec = Record<string, unknown>
 interface UserCtx extends DbCtx {
   user: Rec
@@ -466,7 +467,7 @@ interface SingletonCrudResult<S extends ZodRawShape> {
 }
 type SingletonDoc<S extends ZodRawShape> = WithUrls<DocBase<S> & { userId: string }>
 interface SingletonOptions {
-  rateLimit?: RateLimitConfig
+  rateLimit?: RateLimitInput
 }
 type SingletonSchema<T extends ZodRawShape> = SchemaBrand<'singleton'> & ZodObject<T>
 export type {
@@ -578,6 +579,7 @@ export type {
   QueryLike,
   /** Configuration for sliding window rate limiting. */
   RateLimitConfig,
+  RateLimitInput,
   /** Context for read operations with author enrichment. */
   ReadCtx,
   /** Generic record type for flexible data structures. */

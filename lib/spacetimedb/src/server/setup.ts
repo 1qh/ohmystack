@@ -908,7 +908,7 @@ interface ChildLike {
 type OrgDefBranded = OrgDefSchema<ZodRawShape>
 type OrgScopedBranded = OrgSchema<ZodRawShape>
 interface OrgScopedOpts<F = unknown> extends OwnedOpts<F> {
-  cascade?: boolean
+  cascade?: boolean | { foreignKey: string; table: string }
   cascadeTo?: { foreignKey: string; table: string }
   compoundIndex?: ('orgId' | ZodKeys<F>)[]
   indexes?: {
@@ -1115,8 +1115,8 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
   const fileTable = (): BsTable => bsOf({ category: 'file' }, raw.fileTable())
   const orgScopedTable = <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>): BsTable => {
     const {
-      cascade = true,
-      cascadeTo,
+      cascade: cascadeInput = true,
+      cascadeTo: cascadeToLegacy,
       compoundIndex,
       extra,
       index,
@@ -1127,6 +1127,8 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
       unique
     } = options ?? {}
     const rateLimit = rlInput ? normalizeRateLimit(rlInput) : undefined
+    const cascade = typeof cascadeInput === 'boolean' ? cascadeInput : true
+    const cascadeTo = typeof cascadeInput === 'object' ? cascadeInput : cascadeToLegacy
     const sdExtra = softDelete ? { ...extra, deletedAt: raw.t.timestamp().optional() } : extra
     const mergedExtra = mergeModifierExtra(fields, raw.t, {
       extra: sdExtra,

@@ -8,7 +8,7 @@ import { zodOutputToConvexFields as z2c, zid } from 'convex-helpers/server/zod4'
 import { anyApi } from 'convex/server'
 import { v } from 'convex/values'
 import { boolean, number } from 'zod/v4'
-import type { ActionCtxLike, CacheBuilders, CacheCrudResult, CacheHooks, DbCtx, RateLimitConfig, Rec } from './types'
+import type { ActionCtxLike, CacheBuilders, CacheCrudResult, CacheHooks, DbCtx, RateLimitInput, Rec } from './types'
 import { BULK_MAX } from '../constants'
 import { flt, idx as idxBridge, typed } from './bridge'
 import { isTestMode } from './env'
@@ -19,6 +19,7 @@ import {
   dbPatch,
   err,
   noFetcher,
+  normalizeRateLimit,
   pgOpts,
   pickFields,
   SEVEN_DAYS_MS,
@@ -30,7 +31,7 @@ const makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends Gener
   fetcher,
   hooks,
   key,
-  rateLimit: rl,
+  rateLimit: rlInput,
   schema,
   staleWhileRevalidate: swr,
   table,
@@ -40,12 +41,13 @@ const makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends Gener
   fetcher?: (c: unknown, key: unknown) => Promise<unknown>
   hooks?: CacheHooks
   key: K
-  rateLimit?: RateLimitConfig
+  rateLimit?: RateLimitInput
   schema: ZodObject<S>
   staleWhileRevalidate?: boolean
   table: string
   ttl?: number
 }): CacheCrudResult<S> => {
+  const rl = rlInput ? normalizeRateLimit(rlInput) : undefined
   const keys = Object.keys(schema.shape)
   const pick = (d: Rec) => pickFields(d, keys)
   const valid = (d: Rec) => ((d.updatedAt as number | undefined) ?? (d._creationTime as number)) + ttl > Date.now()

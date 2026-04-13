@@ -17,7 +17,7 @@ import type {
   OrgCrudResult,
   OrgEnrichedDoc,
   OrgRole,
-  RateLimitConfig,
+  RateLimitInput,
   ReadCtx,
   Rec
 } from './types'
@@ -35,6 +35,7 @@ import {
   err,
   errValidation,
   log,
+  normalizeRateLimit,
   pgOpts,
   time
 } from './helpers'
@@ -116,7 +117,7 @@ interface OrgCrudOptions<S extends ZodRawShape = ZodRawShape> {
   aclFrom?: { field: keyof S & string; table: string }
   cascade?: CascadeOption
   hooks?: CrudHooks
-  rateLimit?: RateLimitConfig
+  rateLimit?: RateLimitInput
   softDelete?: boolean
 }
 const getEditors = (doc: Rec): string[] => (doc.editors as string[] | undefined) ?? []
@@ -155,6 +156,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
   table: string
 }): OrgCrudResult<S> => {
   const { m, q } = builders
+  const rl = opt?.rateLimit ? normalizeRateLimit(opt.rateLimit) : undefined
   const hooks = opt?.hooks
   const partial = schema.partial()
   const bulkIdsSchema = array(zid(table)).max(BULK_MAX)
@@ -185,8 +187,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
       const { items, orgId } = a as { items?: Rec[]; orgId: string }
       await requireOrgMember({ db: c.db, orgId, userId: c.user._id as string })
       if (items) {
-        if (opt?.rateLimit && !isTestMode())
-          await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+        if (rl && !isTestMode()) await checkRateLimit(c.db, { config: rl, key: c.user._id as string, table })
         const ids: string[] = []
         for (const item of items) {
           const parsed = schema.safeParse(item)
@@ -199,8 +200,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
         }
         return ids
       }
-      if (opt?.rateLimit && !isTestMode())
-        await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+      if (rl && !isTestMode()) await checkRateLimit(c.db, { config: rl, key: c.user._id as string, table })
       let data = schema.parse(a) as Rec
       if (hooks?.beforeCreate) data = await hooks.beforeCreate(ohk(c), { data })
       const id = await dbInsert(c.db, table, { ...data, orgId, userId: c.user._id, ...time() })

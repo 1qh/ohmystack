@@ -9023,6 +9023,10 @@ describe('compoundIndex shorthand', () => {
     const content = await readSetupSource()
     expect(content.includes("compoundIndex?: ('orgId' | ZodKeys<F>)[]")).toBe(true)
   })
+  test('OrgScopedOpts accepts cascade as object (unified with Convex)', async () => {
+    const content = await readSetupSource()
+    expect(content.includes('cascade?: boolean | { foreignKey: string; table: string }')).toBe(true)
+  })
   test('algorithm type is union not string', async () => {
     const content = await readSetupSource()
     expect(content.includes("algorithm: 'btree' | 'hash'")).toBe(true)

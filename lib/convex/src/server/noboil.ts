@@ -34,7 +34,7 @@ interface CacheTableOpts {
   fetcher?: (c: unknown, key: unknown) => Promise<unknown>
   hooks?: { onFetch?: (data: Record<string, unknown>) => Promise<Record<string, unknown>> | Record<string, unknown> }
   key: string
-  rateLimit?: { max: number; window: number }
+  rateLimit?: number | { max: number; window: number }
   staleWhileRevalidate?: boolean
   ttl?: number
 }
@@ -115,7 +115,7 @@ type TableMap = Record<string, unknown>
  * export const api = noboil(
  *   { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
  *   ({ table }) => ({
- *     blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
+ *     blog: table(s.blog, { rateLimit: 10, search: 'content' }),
  *     wiki: table(s.wiki, { acl: true, softDelete: true }),
  *     profile: table(s.profile),
  *     movie: table(s.movie, { key: 'tmdbId', ttl: 86_400 })

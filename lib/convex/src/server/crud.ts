@@ -38,6 +38,7 @@ import {
   isComparisonOp,
   log,
   matchW,
+  normalizeRateLimit,
   pgOpts,
   warnLargeFilterSet
 } from './helpers'
@@ -64,6 +65,7 @@ const makeCrud = <S extends ZodRawShape>({
   type WG = Rec & { own?: boolean }
   type W = WG & { or?: WG[] }
   const { m, pq, q } = builders
+  const rl = opt?.rateLimit ? normalizeRateLimit(opt.rateLimit) : undefined
   const hooks = opt?.hooks
   const searchCfg =
     opt?.search === true
@@ -87,7 +89,9 @@ const makeCrud = <S extends ZodRawShape>({
     const r = wSchema.safeParse(i)
     return r.success ? (r.data as W) : errValidation('INVALID_WHERE', r.error)
   }
-  const defaults = { auth: parseW(opt?.auth?.where), pub: parseW(opt?.pub?.where) }
+  const pubWhere =
+    typeof opt?.pub === 'string' ? { [opt.pub]: true } : typeof opt?.pub === 'boolean' ? undefined : opt?.pub?.where
+  const defaults = { auth: parseW(opt?.auth?.where), pub: parseW(pubWhere) }
   const enrich = async (c: ReadCtx, docs: Rec[]) => {
     const withAuthorDocs = await c.withAuthor(docs as { userId: string }[])
     return Promise.all(
@@ -318,8 +322,7 @@ const makeCrud = <S extends ZodRawShape>({
       handler: typed(async (c: CrudMCtx, a: Rec) => {
         const items = a.items as Rec[] | undefined
         if (items) {
-          if (opt?.rateLimit && !isTestMode())
-            await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+          if (rl && !isTestMode()) await checkRateLimit(c.db, { config: rl, key: c.user._id as string, table })
           const ids: string[] = []
           for (const item of items) {
             const parsed = schema.safeParse(item)
@@ -332,8 +335,7 @@ const makeCrud = <S extends ZodRawShape>({
           }
           return ids
         }
-        if (opt?.rateLimit && !isTestMode())
-          await checkRateLimit(c.db, { config: opt.rateLimit, key: c.user._id as string, table })
+        if (rl && !isTestMode()) await checkRateLimit(c.db, { config: rl, key: c.user._id as string, table })
         const parsed = schema.safeParse(a)
         if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
         let data = parsed.data as Rec

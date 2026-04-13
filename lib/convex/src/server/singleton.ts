@@ -3,7 +3,18 @@ import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { number } from 'zod/v4'
 import type { DbLike, Mb, MutCtx, Qb, Rec, SingletonCrudResult, SingletonOptions } from './types'
 import { idx, typed } from './bridge'
-import { addUrls, checkRateLimit, cleanFiles, dbInsert, dbPatch, detectFiles, err, errValidation, time } from './helpers'
+import {
+  addUrls,
+  checkRateLimit,
+  cleanFiles,
+  dbInsert,
+  dbPatch,
+  detectFiles,
+  err,
+  errValidation,
+  normalizeRateLimit,
+  time
+} from './helpers'
 const makeSingletonCrud = <S extends ZodRawShape>({
   builders,
   options,
@@ -34,7 +45,8 @@ const makeSingletonCrud = <S extends ZodRawShape>({
   const upsert = builders.m({
     args: schema.partial().extend({ expectedUpdatedAt: number().optional() }),
     handler: typed(async (c: MutCtx, { expectedUpdatedAt, ...data }: Rec & { expectedUpdatedAt?: number }) => {
-      if (options?.rateLimit) await checkRateLimit(c.db, { config: options.rateLimit, key: c.user._id as string, table })
+      const rl = options?.rateLimit ? normalizeRateLimit(options.rateLimit) : undefined
+      if (rl) await checkRateLimit(c.db, { config: rl, key: c.user._id as string, table })
       const existing = await byUser(c.db, c.user._id as string)
       if (existing) {
         if (expectedUpdatedAt !== undefined && existing.updatedAt !== expectedUpdatedAt) return err('CONFLICT')

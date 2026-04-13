@@ -23,27 +23,27 @@ const api = noboil(
     query
   },
   ({ table }) => ({
-    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
+    blog: table(s.blog, { rateLimit: 10, search: 'content' }),
     blogProfile: table(s.blogProfile),
     chat: table(s.chat, {
       cascade: [{ foreignKey: s.message.foreignKey, table: s.message.__name }],
-      pub: { where: { isPublic: true } },
-      rateLimit: { max: 30, window: 60_000 }
+      pub: 'isPublic',
+      rateLimit: 30
     }),
     message: table(s.message, { pub: { parentField: 'isPublic' } }),
     orgProfile: table(s.orgProfile),
     project: table(s.project, {
       acl: true,
       cascade: orgCascade(s.task, { foreignKey: 'projectId' }),
-      rateLimit: { max: 30, window: 60_000 }
+      rateLimit: 30
     }),
     task: table(s.task, {
       aclFrom: { field: 'projectId', table: s.project.__name },
-      rateLimit: { max: 30, window: 60_000 }
+      rateLimit: 30
     }),
     wiki: table(s.wiki, {
       acl: true,
-      rateLimit: { max: 30, window: 60_000 },
+      rateLimit: 30,
       softDelete: true
     })
   })

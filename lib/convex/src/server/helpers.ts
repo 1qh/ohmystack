@@ -31,6 +31,7 @@ import type {
   Qb,
   QueryCtxLike,
   RateLimitConfig,
+  RateLimitInput,
   StorageLike,
   WithUrls
 } from './types'
@@ -241,6 +242,9 @@ const addUrls = async <D extends Record<string, unknown>>({
 const dbInsert = async (db: DbLike, table: string, data: Record<string, unknown>) => db.insert(table, data)
 const dbPatch = async (db: DbLike, id: string, data: Record<string, unknown>) => db.patch(id, data)
 const dbDelete = async (db: DbLike, id: string) => db.delete(id)
+const RATE_LIMIT_DEFAULT_WINDOW = 60_000
+const normalizeRateLimit = (input: RateLimitInput): RateLimitConfig =>
+  typeof input === 'number' ? { max: input, window: RATE_LIMIT_DEFAULT_WINDOW } : input
 const checkRateLimit = async (db: DbLike, opts: { config: RateLimitConfig; key: string; table: string }) => {
   const { config, key, table } = opts
   const now = Date.now()
@@ -335,6 +339,7 @@ export {
   matchError,
   matchW,
   noFetcher,
+  normalizeRateLimit,
   ok,
   ownGet,
   pgOpts,
