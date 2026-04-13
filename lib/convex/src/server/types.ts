@@ -192,6 +192,7 @@ interface AuthorInfo {
   image?: string
   name?: string
 }
+type BuiltinErrorCode = keyof typeof ERROR_MESSAGES
 interface CacheCrudResult<S extends ZodRawShape> {
   all: RegisteredQuery<'public', Rec, DocBase<S>[]>
   checkRL?: RegisteredMutation<'internal', Rec, void>
@@ -281,7 +282,8 @@ type EnrichedDoc<S extends ZodRawShape> = WithUrls<
     userId: string
   }
 >
-type ErrorCode = keyof typeof ERROR_MESSAGES
+// oxlint-disable-next-line typescript-eslint(ban-types)
+type ErrorCode = BuiltinErrorCode | (string & {})
 type FID = GenericId<'_storage'>
 interface FilterLike {
   and: (a: unknown, b: unknown) => unknown
@@ -485,6 +487,8 @@ export type {
   BaseSchema,
   /** Readable brand labels for error messages. */
   BrandLabelMap,
+  /** Built-in error codes only (no custom codes). */
+  BuiltinErrorCode,
   /** Builders for cache CRUD operations. */
   CacheBuilders,
   /** Result type for cache CRUD factory with all generated endpoints. */
@@ -527,7 +531,7 @@ export type {
   DocBase,
   /** Document enriched with author info, ownership flag, and file URLs. */
   EnrichedDoc,
-  /** Union type of all possible error codes. */
+  /** Union type of all error codes (built-in + custom strings). */
   ErrorCode,
   /** File ID type for storage references. */
   FID,

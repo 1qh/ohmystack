@@ -17,7 +17,7 @@
 - [ ] D2. Compile-time where clause field validation (TypeScript)
 - [ ] D3. Compile-time field kind checking (`<f.Num name="title" />` = TS error)
 - [x] D4. Auto-pass `expectedUpdatedAt` in updates — conflict detection by default
-- [ ] D5. Allow custom error codes — extend `ErrorCode` union
+- [x] D5. Allow custom error codes — extend `ErrorCode` union
 - [ ] D6. Remove redundant `items`/`data` dual return from `useList()` (breaking change)
 - [x] D7. Schema validation at definition time (reject pipe/transform immediately)
 - [x] D8. File size/type constraints in Zod schema (`file({ maxSize, accept })`)

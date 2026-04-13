@@ -6,7 +6,7 @@ import { extractErrorData, getErrorMessage, handleError } from '../server/helper
 const { makeErrorHandler, toastFieldError, useErrorToast } = createErrorToastHooks<ErrorData>({
   extractErrorData,
   getErrorMessage,
-  handleError
+  handleError: handleError as (error: unknown, handlers: Record<string, unknown>) => void
 })
 export type { ErrorHandler, ErrorToastOptions, ToastFn }
 export { makeErrorHandler, toastFieldError, useErrorToast }

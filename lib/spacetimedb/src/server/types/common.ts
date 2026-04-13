@@ -274,7 +274,9 @@ const ERROR_MESSAGES = {
   USER_NOT_FOUND: 'User not found',
   VALIDATION_FAILED: 'One or more fields failed validation — check your input'
 } as const
-type ErrorCode = keyof typeof ERROR_MESSAGES
+type BuiltinErrorCode = keyof typeof ERROR_MESSAGES
+// oxlint-disable-next-line typescript-eslint(ban-types)
+type ErrorCode = BuiltinErrorCode | (string & {})
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __brand: unique symbol
 type AssertSchema<T, Expected extends keyof BrandLabelMap> =
@@ -377,6 +379,7 @@ export type {
   BaseBuilders,
   BaseSchema,
   BrandLabelMap,
+  BuiltinErrorCode,
   ComparisonOp,
   DbCtx,
   DbLike,

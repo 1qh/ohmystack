@@ -23,6 +23,7 @@ import type {
   AssertSchema,
   BaseSchema,
   BrandLabelMap,
+  BuiltinErrorCode,
   CacheCrudResult,
   CacheHookCtx,
   CacheHooks,
@@ -2560,9 +2561,9 @@ describe('VALIDATION_FAILED error code', () => {
     })
     expect(called).toBe(true)
   })
-  test('typo in ErrorCode is caught at compile time', () => {
-    // @ts-expect-error - VALIDATION_FAILEDD is not a valid ErrorCode (typo)
-    const _invalidCode: ErrorCode = 'VALIDATION_FAILEDD' as const
+  test('typo in BuiltinErrorCode is caught at compile time', () => {
+    // @ts-expect-error - VALIDATION_FAILEDD is not a valid BuiltinErrorCode (typo)
+    const _invalidCode: BuiltinErrorCode = 'VALIDATION_FAILEDD' as const
     expect(_invalidCode).toBeDefined()
   })
 })
@@ -2928,7 +2929,7 @@ describe('makeUnique optional index param', () => {
 describe('ERROR_MESSAGES completeness', () => {
   test('all error codes have non-empty string messages', () => {
     for (const key of Object.keys(ERROR_MESSAGES)) {
-      const msg = ERROR_MESSAGES[key as ErrorCode]
+      const msg = ERROR_MESSAGES[key as keyof typeof ERROR_MESSAGES]
       expect(typeof msg).toBe('string')
       expect(msg.length).toBeGreaterThan(0)
     }
@@ -2937,7 +2938,7 @@ describe('ERROR_MESSAGES completeness', () => {
     const keys = Object.keys(ERROR_MESSAGES)
     expect(keys.length).toBeGreaterThan(0)
     for (const k of keys) {
-      const code = k as ErrorCode
+      const code = k as keyof typeof ERROR_MESSAGES
       expect(ERROR_MESSAGES[code]).toBeDefined()
     }
   })

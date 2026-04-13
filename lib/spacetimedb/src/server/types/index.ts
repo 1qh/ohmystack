@@ -18,6 +18,7 @@ export type {
   BaseBuilders,
   BaseSchema,
   BrandLabelMap,
+  BuiltinErrorCode,
   ComparisonOp,
   DbLike,
   DbReadLike,
