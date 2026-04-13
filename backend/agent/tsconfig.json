@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "jsx": "preserve",
-    "types": ["bun-types"]
-  },
-  "exclude": ["node_modules", "convex/f.test.ts"],
-  "extends": "lintmax/tsconfig",
-  "include": ["."]
-}

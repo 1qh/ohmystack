@@ -8,8 +8,7 @@
     "lib/*",
     "readonly/*",
     "backend/*",
-    "tool/*",
-    "agent"
+    "tool/*"
   ],
   "scripts": {
     "action": "sh up.sh && bun run test",

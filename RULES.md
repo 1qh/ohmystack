@@ -21,7 +21,6 @@ All services and apps use the 4xxx range so they don’t conflict with common de
 | 4202 | stdb/movie             |
 | 4203 | stdb/org               |
 | 4300 | doc site               |
-| 4400 | agent                  |
 | 4500 | Convex dashboard       |
 | 5432 | Postgres (SpacetimeDB) |
 
