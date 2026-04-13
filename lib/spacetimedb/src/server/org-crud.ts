@@ -318,7 +318,7 @@ const makeOrgCrud = <
     const setEditorsName = `set_editors_${tableName}`
     exportsRecord[addEditorName] = spacetimedb.reducer(
       { name: addEditorName },
-      { editorId: config.fields.userId, id: idField },
+      { editorId: config.fields.userId as TypeBuilder<unknown, AlgebraicTypeType>, id: idField },
       (ctx, args) => {
         const { editorId, id } = args as { editorId: Identity; id: Id }
         const table = tableAccessor(ctx.db)
@@ -343,7 +343,7 @@ const makeOrgCrud = <
     )
     exportsRecord[removeEditorName] = spacetimedb.reducer(
       { name: removeEditorName },
-      { editorId: config.fields.userId, id: idField },
+      { editorId: config.fields.userId as TypeBuilder<unknown, AlgebraicTypeType>, id: idField },
       (ctx, args) => {
         const { editorId, id } = args as { editorId: Identity; id: Id }
         const table = tableAccessor(ctx.db)
@@ -371,7 +371,7 @@ const makeOrgCrud = <
     )
     exportsRecord[setEditorsName] = spacetimedb.reducer(
       { name: setEditorsName },
-      { editorIds: config.fields.userId, id: idField },
+      { editorIds: config.fields.userId as TypeBuilder<unknown, AlgebraicTypeType>, id: idField },
       (ctx, args) => {
         const { editorIds, id } = args as { editorIds: Identity[]; id: Id }
         const table = tableAccessor(ctx.db)
