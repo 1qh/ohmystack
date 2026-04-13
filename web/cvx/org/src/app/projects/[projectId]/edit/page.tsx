@@ -23,6 +23,7 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
   const project = useOrgQuery(api.project.read, { id: projectId })
   const remove = useOrgMutation(api.project.rm)
   const form = useFormMutation({
+    doc: project,
     mutation: api.project.update,
     onSuccess: () => {
       toast.success('Project updated')
@@ -30,7 +31,7 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: Id<'project'>; t
     },
     resetOnSuccess: true,
     schema: orgScoped.project,
-    transform: d => ({ ...d, expectedUpdatedAt: project?.updatedAt, id: projectId, orgId: org._id }),
+    transform: d => ({ ...d, id: projectId, orgId: org._id }),
     values: project ? pickValues(orgScoped.project, project) : undefined
   })
   const handleDelete = () => {

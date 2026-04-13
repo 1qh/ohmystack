@@ -79,6 +79,7 @@ const useForm = <S extends ZodObject>(opts: {
 }) => useWithGuard(useBaseForm(opts))
 const useFormMutation = <S extends ZodObject, M = zinfer<S>>(opts: {
   autoSave?: { debounceMs: number; enabled: boolean }
+  doc?: { updatedAt?: unknown }
   mutate: (args: M) => Promise<void> | void
   onConflict?: (data: ConflictData) => void
   onError?: ((e: unknown) => void) | false
@@ -100,7 +101,8 @@ const useFormMutation = <S extends ZodObject, M = zinfer<S>>(opts: {
       onConflict: opts.onConflict,
       onError: resolvedError,
       onSubmit: async d => {
-        const args = (opts.transform ? opts.transform(d) : d) as unknown as M
+        const base = opts.transform ? opts.transform(d) : (d as Record<string, unknown>)
+        const args = (opts.doc ? { ...base, expectedUpdatedAt: opts.doc.updatedAt } : base) as unknown as M
         /** biome-ignore lint/nursery/useAwaitThenable: mutate may be async */
         await opts.mutate(args)
         return d

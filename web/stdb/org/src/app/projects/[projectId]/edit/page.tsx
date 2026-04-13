@@ -26,12 +26,13 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
     toast: { success: 'Project deleted' }
   })
   const form = useFormMutation({
+    doc: project,
     mutate: useReducer(reducers.updateProject),
     onSuccess: () => router.push(`/projects/${projectId}`),
     resetOnSuccess: true,
     schema: projectSchema,
     toast: { success: 'Project updated' },
-    transform: d => ({ ...d, expectedUpdatedAt: project?.updatedAt, id: projectId }),
+    transform: d => ({ ...d, id: projectId }),
     values: project ? pickValues(projectSchema, project) : undefined
   })
   const handleDelete = () => {

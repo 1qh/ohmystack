@@ -29,9 +29,10 @@ const EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {
   })
   const form = useFormMutation({
     autoSave: { debounceMs: 2000, enabled: true },
+    doc: wiki,
     mutation: api.wiki.update,
     schema: orgScoped.wiki,
-    transform: d => ({ ...d, expectedUpdatedAt: wiki?.updatedAt, id: wikiId, orgId: org._id }),
+    transform: d => ({ ...d, id: wikiId, orgId: org._id }),
     values: wiki ? pickValues(orgScoped.wiki, wiki) : undefined
   })
   const handleDelete = async () => {

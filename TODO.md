@@ -16,7 +16,7 @@
 - [x] D1. `<AutoForm schema={s.blog} />` — auto-render all fields from schema
 - [ ] D2. Compile-time where clause field validation (TypeScript)
 - [ ] D3. Compile-time field kind checking (`<f.Num name="title" />` = TS error)
-- [ ] D4. Auto-pass `expectedUpdatedAt` in updates — conflict detection by default
+- [x] D4. Auto-pass `expectedUpdatedAt` in updates — conflict detection by default
 - [ ] D5. Allow custom error codes — extend `ErrorCode` union
 - [ ] D6. Remove redundant `items`/`data` dual return from `useList()`
 - [x] D7. Schema validation at definition time (reject pipe/transform immediately)
@@ -43,7 +43,7 @@
 - [ ] T16. Middleware: compose ordering, beforeCreate can mutate data
 - [ ] T17. Input sanitize: XSS stripping, script tags, event handlers
 - [ ] T18. Optimistic store: overlay creates/updates/deletes, reconciliation
-- [ ] T19. Symmetry tests: same schema produces same API shape on both backends
+- [x] T19. Symmetry tests: same schema produces same API shape on both backends
 - [ ] T20. Guard API: typo suggestions, production bypass
 
 ## Docs — gaps to fill

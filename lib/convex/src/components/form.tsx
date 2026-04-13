@@ -67,6 +67,7 @@ const useForm = <S extends ZodObject>(opts: {
 }) => useWithGuard(useBaseForm(opts))
 const useFormMutation = <S extends ZodObject>(opts: {
   autoSave?: { debounceMs: number; enabled: boolean }
+  doc?: { updatedAt?: unknown }
   mutation: FunctionReference<'mutation'>
   onConflict?: (data: ConflictData) => void
   onError?: ((e: unknown) => void) | false
@@ -75,7 +76,16 @@ const useFormMutation = <S extends ZodObject>(opts: {
   schema: S
   transform?: (d: zinfer<S>) => Record<string, unknown>
   values?: zinfer<S>
-}) => useWithGuard(useBaseFormMutation(opts))
+}) => {
+  const { doc, transform, ...rest } = opts
+  const wrappedTransform = doc
+    ? (d: zinfer<S>) => {
+        const base = transform ? transform(d) : (d as Record<string, unknown>)
+        return { ...base, expectedUpdatedAt: doc.updatedAt }
+      }
+    : transform
+  return useWithGuard(useBaseFormMutation({ ...rest, transform: wrappedTransform }))
+}
 const Form = <T extends Record<string, unknown>, S extends ZodObject>({
   form: { conflict, error, fieldErrors, guard, instance, meta, resolveConflict, schema },
   render,
