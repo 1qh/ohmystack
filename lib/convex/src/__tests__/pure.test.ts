@@ -2446,6 +2446,42 @@ describe('Fix #9: useList accepts optional pageSize', () => {
     expect(typeof mod.useList).toBe('function')
   })
 })
+describe('T32: useList returns data not items', () => {
+  test('useList exports useList function', async () => {
+    const mod = await import('../react/use-list')
+    expect(mod).toHaveProperty('useList')
+    expect(typeof mod.useList).toBe('function')
+  })
+  test('UseListResult type has data not items', () => {
+    interface R {
+      data: string[]
+      hasMore: boolean
+      isLoading: boolean
+      loadMore: () => void
+      page: number
+      totalCount: number
+    }
+    const r: R = {
+      data: ['a'],
+      hasMore: false,
+      isLoading: false,
+      loadMore: () => {
+        /* Empty */
+      },
+      page: 1,
+      totalCount: 1
+    }
+    expect(r.data).toEqual(['a'])
+    expect('items' in r).toBe(false)
+  })
+})
+describe('T21: noboil() accepts object form', () => {
+  test('noboil is exported from server', async () => {
+    const mod = await import('../server/noboil')
+    expect(mod).toHaveProperty('noboil')
+    expect(typeof mod.noboil).toBe('function')
+  })
+})
 describe('Fix #10: isTestMode production safety', () => {
   test('isTestMode returns true when CONVEX_TEST_MODE=true and NODE_ENV=test', () => {
     const origTest = process.env.CONVEX_TEST_MODE

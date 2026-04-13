@@ -9668,3 +9668,61 @@ describe('UseBulkSelectionOpts rm option type', () => {
     expect(opts.rm).toBeDefined()
   })
 })
+describe('T28: ACL permission checks', () => {
+  test('canEdit grants admin access', async () => {
+    const { canEdit } = await import('../server/org-crud')
+    const id = { isEqual: (o: unknown) => o === 'admin' } as never
+    expect(canEdit({ member: { isAdmin: true }, row: { userId: id }, sender: 'other' as never })).toBe(true)
+  })
+  test('canEdit grants owner access', async () => {
+    const { canEdit } = await import('../server/org-crud')
+    const id = { isEqual: (o: unknown) => o === id } as never
+    expect(canEdit({ member: { isAdmin: false }, row: { userId: id }, sender: id })).toBe(true)
+  })
+  test('canEdit denies member without acl', async () => {
+    const { canEdit } = await import('../server/org-crud')
+    const owner = { isEqual: () => false } as never
+    const member = { isEqual: () => false } as never
+    expect(canEdit({ member: { isAdmin: false }, row: { userId: owner }, sender: member })).toBe(false)
+  })
+  test('canEdit grants editor access when acl: true', async () => {
+    const { canEdit } = await import('../server/org-crud')
+    const owner = { isEqual: () => false } as never
+    const editor = { isEqual: (o: unknown) => o === editor } as never
+    expect(
+      canEdit({ acl: true, member: { isAdmin: false }, row: { editors: [editor], userId: owner }, sender: editor })
+    ).toBe(true)
+  })
+  test('canEdit denies non-editor when acl: true', async () => {
+    const { canEdit } = await import('../server/org-crud')
+    const owner = { isEqual: () => false } as never
+    const editor = { isEqual: () => false } as never
+    const stranger = { isEqual: () => false } as never
+    expect(
+      canEdit({ acl: true, member: { isAdmin: false }, row: { editors: [editor], userId: owner }, sender: stranger })
+    ).toBe(false)
+  })
+})
+describe('T26: ACL editor reducers generated', () => {
+  test('org-crud exports canEdit', async () => {
+    const mod = await import('../server/org-crud')
+    expect(mod).toHaveProperty('canEdit')
+    expect(typeof mod.canEdit).toBe('function')
+  })
+  test('makeOrgCrud exports canEdit with acl support', async () => {
+    const mod = await import('../server/org-crud')
+    expect(typeof mod.canEdit).toBe('function')
+    const owner = { isEqual: () => false } as never
+    const editor = { isEqual: (o: unknown) => o === editor } as never
+    expect(
+      mod.canEdit({ acl: true, member: { isAdmin: false }, row: { editors: [editor], userId: owner }, sender: editor })
+    ).toBe(true)
+  })
+})
+describe('T21: noboil() object form', () => {
+  test('noboil is exported', async () => {
+    const mod = await import('../server/setup')
+    expect(mod).toHaveProperty('noboil')
+    expect(typeof mod.noboil).toBe('function')
+  })
+})
