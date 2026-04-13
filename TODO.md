@@ -1,9 +1,9 @@
 ## Symmetry — unify API across Convex & SpacetimeDB
 
 - [ ] S1. Unify `noboil()` signature — both accept same config shape
-- [ ] S2. Unify `pub:` syntax — both accept `{ where }` object AND field name shorthand
-- [ ] S3. Unify `cascade`/`cascadeTo` — one key name for both
-- [ ] S4. Unify `rateLimit` shorthand — both accept `number` or `{ max, window }`
+- [x] S2. Unify `pub:` syntax — both accept `{ where }` object AND field name shorthand
+- [x] S3. Unify `cascade`/`cascadeTo` — one key name for both
+- [x] S4. Unify `rateLimit` shorthand — both accept `number` or `{ max, window }`
 - [ ] S5. Abstract file upload — same `useUpload()` return shape regardless of storage
 - [ ] S6. Unify file URL resolution — enriched docs always have `{field}Url` on both backends
 - [ ] S7. Unify identity comparison — abstract behind `idEquals()` helper on both
@@ -13,13 +13,13 @@
 
 ## DX — developer experience improvements
 
-- [ ] D1. `<AutoForm schema={s.blog} />` — auto-render all fields from schema
+- [x] D1. `<AutoForm schema={s.blog} />` — auto-render all fields from schema
 - [ ] D2. Compile-time where clause field validation (TypeScript)
 - [ ] D3. Compile-time field kind checking (`<f.Num name="title" />` = TS error)
 - [ ] D4. Auto-pass `expectedUpdatedAt` in updates — conflict detection by default
 - [ ] D5. Allow custom error codes — extend `ErrorCode` union
 - [ ] D6. Remove redundant `items`/`data` dual return from `useList()`
-- [ ] D7. Schema validation at definition time (reject pipe/transform immediately)
+- [x] D7. Schema validation at definition time (reject pipe/transform immediately)
 - [ ] D8. File size/type constraints in Zod schema (`file({ maxSize, accept })`)
 - [ ] D9. `<DeleteButton>` component — reusable delete + confirm + toast + undo
 
