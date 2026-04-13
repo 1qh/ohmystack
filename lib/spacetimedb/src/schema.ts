@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
+import { validateSchemas } from '@a/shared/zod'
 import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgDefSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
 import { typed } from './server/bridge'
@@ -103,6 +104,11 @@ const mergeInto = (target: Record<string, unknown>, source: Record<string, unkno
   for (const key of keys) target[key] = source[key]
 }
 const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
+  const all: Record<string, unknown> = {}
+  for (const cat of [config.owned, config.orgScoped, config.org, config.base, config.singleton])
+    if (cat) for (const [k, v] of Object.entries(cat)) all[k] = v
+  if (config.children) for (const [k, v] of Object.entries(config.children)) all[k] = v
+  validateSchemas(all)
   const result: Record<string, unknown> = {}
   if (config.owned) mergeInto(result, makeOwned(config.owned))
   if (config.orgScoped) mergeInto(result, makeOrgScoped(config.orgScoped))

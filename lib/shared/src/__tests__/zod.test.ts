@@ -12,7 +12,8 @@ import {
   isOptionalField,
   isStringType,
   pickValues,
-  unwrapZod
+  unwrapZod,
+  validateSchemas
 } from '../zod'
 const VOID = undefined
 const file = () => string().meta({ nb: 'file' as const })
@@ -218,5 +219,29 @@ describe('type checks', () => {
   test('isDateType', () => {
     expect(isDateType('date')).toBe(true)
     expect(isDateType('string')).toBe(false)
+  })
+})
+describe('validateSchemas', () => {
+  test('passes for plain types', () => {
+    expect(() =>
+      validateSchemas({
+        blog: object({ published: boolean(), tags: array(string()), title: string() })
+      })
+    ).not.toThrow()
+  })
+  test('throws for pipe type', () => {
+    const s = object({ val: string().pipe(string()) })
+    expect(() => validateSchemas({ bad: s })).toThrow('Unsupported Zod types')
+  })
+  test('throws for transform type', () => {
+    const s = object({ val: string().transform(v => v.toUpperCase()) })
+    expect(() => validateSchemas({ bad: s })).toThrow('Unsupported Zod types')
+  })
+  test('error message includes field path', () => {
+    const s = object({ nested: object({ deep: string().pipe(string()) }) })
+    expect(() => validateSchemas({ tbl: s })).toThrow('tbl.nested.deep')
+  })
+  test('skips non-schema entries', () => {
+    expect(() => validateSchemas({ child: { foreignKey: 'blogId', parent: 'blog' } })).not.toThrow()
   })
 })

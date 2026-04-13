@@ -6,7 +6,13 @@
 import type { useNavigationGuard } from 'next-navigation-guard'
 import type { ComponentProps, ReactNode } from 'react'
 import type { infer as zinfer, ZodObject } from 'zod/v4'
-import { AutoSaveIndicator, ConflictDialog, createFileFieldWarning, useWithGuard } from '@a/shared/components/form'
+import {
+  autoRender,
+  AutoSaveIndicator,
+  ConflictDialog,
+  createFileFieldWarning,
+  useWithGuard
+} from '@a/shared/components/form'
 import { Button } from '@a/ui/button'
 import { Dialog, DialogContent } from '@a/ui/dialog'
 import { useMemo } from 'react'
@@ -158,5 +164,30 @@ const Form = <T extends Record<string, unknown>, S extends ZodObject>({
     </FormContext>
   )
 }
+const AutoForm = <T extends Record<string, unknown>, S extends ZodObject>({
+  exclude,
+  form,
+  submitLabel = 'Submit',
+  ...props
+}: Omit<ComponentProps<'form'>, 'children' | 'onSubmit'> & {
+  exclude?: (keyof T & string)[]
+  form: FormReturn<T, S>
+  submitLabel?: string
+}) => (
+  <Form
+    form={form}
+    render={f => (
+      <>
+        {autoRender(
+          f as unknown as Record<string, (p: Record<string, unknown>) => unknown>,
+          form.meta,
+          exclude ? new Set(exclude) : undefined
+        )}
+        <f.Submit>{submitLabel}</f.Submit>
+      </>
+    )}
+    {...props}
+  />
+)
 export type { TypedFields }
-export { AutoSaveIndicator, ConflictDialog, Form, useForm, useFormMutation }
+export { AutoForm, AutoSaveIndicator, ConflictDialog, Form, useForm, useFormMutation }

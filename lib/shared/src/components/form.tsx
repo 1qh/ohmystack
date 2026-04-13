@@ -110,5 +110,30 @@ const AutoSaveIndicator = ({ className, lastSaved, ...props }: ComponentProps<'s
     </span>
   )
 }
-export { AutoSaveIndicator, ConflictDialog, createFileFieldWarning, hasFileFields, useWithGuard }
+interface AutoRenderMeta {
+  kind: FieldKind
+  title?: string
+}
+type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
+type FieldsLike = Record<string, (props: Record<string, unknown>) => unknown>
+const autoRender = (f: FieldsLike, meta: Record<string, AutoRenderMeta>, exclude?: Set<string>) => {
+  const kindToField: Record<FieldKind, string> = {
+    boolean: 'Toggle',
+    date: 'Datepick',
+    file: 'File',
+    files: 'Files',
+    number: 'Num',
+    string: 'Text',
+    stringArray: 'Arr',
+    unknown: 'Text'
+  }
+  const elements: unknown[] = []
+  for (const [name, info] of Object.entries(meta))
+    if (!exclude?.has(name)) {
+      const component = f[kindToField[info.kind]]
+      if (component) elements.push(component({ key: name, name }))
+    }
+  return elements
+}
+export { autoRender, AutoSaveIndicator, ConflictDialog, createFileFieldWarning, hasFileFields, useWithGuard }
 export type { ConflictData }

@@ -1,4 +1,5 @@
 import type { ZodObject, ZodRawShape } from 'zod/v4'
+import { validateSchemas } from '@a/shared/zod'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgDefSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
@@ -139,6 +140,11 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
     : unknown)
 /** Combines all branded schemas into a single namespace, mirroring @noboil/spacetimedb/schema. */
 const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
+  const all: Record<string, unknown> = {}
+  for (const cat of [config.owned, config.orgScoped, config.org, config.base, config.singleton])
+    if (cat) for (const [k, v] of Object.entries(cat)) all[k] = v
+  if (config.children) for (const [k, v] of Object.entries(config.children)) all[k] = v
+  validateSchemas(all)
   const result: Record<string, unknown> = {}
   if (config.owned) mergeInto(result, makeOwned(config.owned))
   if (config.orgScoped) mergeInto(result, makeOrgScoped(config.orgScoped))

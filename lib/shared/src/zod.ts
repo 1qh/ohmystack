@@ -177,6 +177,15 @@ const scanSchema = (schema: unknown, path: string, out: CheckSchemaOutput[]) => 
     for (const [k, vl] of Object.entries((b.schema as unknown as { shape: Record<string, unknown> }).shape))
       scanSchema(vl, path ? `${path}.${k}` : k, out)
 }
+const validateSchemas = (schemas: Record<string, unknown>) => {
+  const res: CheckSchemaOutput[] = []
+  for (const [table, s] of Object.entries(schemas))
+    if (s && typeof s === 'object' && 'shape' in s) scanSchema(s, table, res)
+  if (res.length > 0)
+    throw new Error(
+      `Unsupported Zod types in schema:\n${res.map(f => `  ${f.path}: "${f.zodType}" — use plain types instead`).join('\n')}`
+    )
+}
 const checkSchema = (schemas: Record<string, ZodObject>) => {
   const res: CheckSchemaOutput[] = []
   for (const [table, schema] of Object.entries(schemas)) scanSchema(schema, table, res)
@@ -206,5 +215,6 @@ export {
   requiredPartial,
   schemaVariants,
   shapeKeys,
-  unwrapZod
+  unwrapZod,
+  validateSchemas
 }
