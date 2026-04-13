@@ -27,28 +27,37 @@ const checkMembership = <OrgId, Member extends OrgCrudMemberLike<OrgId>>(
   return null
 }
 const canEdit = ({
+  acl,
   member,
   row,
   sender
 }: {
+  acl?: boolean
   member: { isAdmin: boolean }
-  row: { userId: Identity }
+  row: { editors?: Identity[]; userId: Identity }
   sender: Identity
-}): boolean => member.isAdmin || identityEquals(row.userId, sender)
+}): boolean => {
+  if (member.isAdmin) return true
+  if (identityEquals(row.userId, sender)) return true
+  if (acl && row.editors) for (const e of row.editors) if (identityEquals(e, sender)) return true
+  return false
+}
 const requireCanMutate = ({
+  acl,
   member,
   operation,
   row,
   sender,
   tableName
 }: {
+  acl?: boolean
   member: { isAdmin: boolean }
   operation: string
-  row: { userId: Identity }
+  row: { editors?: Identity[]; userId: Identity }
   sender: Identity
   tableName: string
 }) => {
-  if (!canEdit({ member, row, sender })) throw makeError('FORBIDDEN', `${tableName}:${operation}`)
+  if (!canEdit({ acl, member, row, sender })) throw makeError('FORBIDDEN', `${tableName}:${operation}`)
 }
 const getOrgOwnedRow = <
   OrgId,
@@ -58,6 +67,7 @@ const getOrgOwnedRow = <
   Pk extends OrgCrudPkLike<Row, Id>,
   Member extends OrgCrudMemberLike<OrgId>
 >({
+  acl,
   id,
   isOwner,
   operation,
@@ -67,6 +77,7 @@ const getOrgOwnedRow = <
   table,
   tableName
 }: {
+  acl?: boolean
   id: Id
   isOwner?: (orgId: OrgId) => boolean
   operation: string
@@ -87,7 +98,7 @@ const getOrgOwnedRow = <
       userId: sender
     } as unknown as Member
   if (!member) throw makeError('NOT_ORG_MEMBER', `${tableName}:${operation}`)
-  requireCanMutate({ member, operation, row, sender, tableName })
+  requireCanMutate({ acl, member, operation, row: row as { editors?: Identity[]; userId: Identity }, sender, tableName })
   return { member, pk, row }
 }
 const deleteCascadeChildren = (
@@ -143,6 +154,7 @@ const makeOrgCrud = <
     table: tableAccessor,
     tableName
   } = config
+  const useAcl = Boolean(options?.acl)
   const hooks = options?.hooks
   const requireMembershipOrOwner = ({
     db,
@@ -224,6 +236,7 @@ const makeOrgCrud = <
     const table = tableAccessor(ctx.db)
     const orgMemberTable = orgMemberTableAccessor(ctx.db)
     const { pk, row } = getOrgOwnedRow({
+      acl: useAcl,
       id: typedArgs.id,
       isOwner: isOrgOwnerFn ? (oid: unknown) => isOrgOwnerFn(ctx.db, oid as OrgId, ctx.sender) : undefined,
       operation: 'update',
@@ -263,6 +276,7 @@ const makeOrgCrud = <
     const table = tableAccessor(ctx.db)
     const orgMemberTable = orgMemberTableAccessor(ctx.db)
     const { pk, row } = getOrgOwnedRow({
+      acl: useAcl,
       id,
       isOwner: isOrgOwnerFn ? (oid: unknown) => isOrgOwnerFn(ctx.db, oid as OrgId, ctx.sender) : undefined,
       operation: 'rm',
@@ -293,13 +307,94 @@ const makeOrgCrud = <
       /** biome-ignore lint/nursery/noFloatingPromises: SpacetimeDB reducers are synchronous */
       hooks.afterDelete(hookCtx, { row: row as unknown as Row })
   })
-  const exportsRecord = {
+  const exportsRecord: Record<string, unknown> = {
     [createName]: createReducer,
     [rmName]: rmReducer,
     [updateName]: updateReducer
-  } as unknown as OrgCrudExports['exports']
+  }
+  if (useAcl) {
+    const addEditorName = `add_editor_${tableName}`
+    const removeEditorName = `remove_editor_${tableName}`
+    const setEditorsName = `set_editors_${tableName}`
+    exportsRecord[addEditorName] = spacetimedb.reducer(
+      { name: addEditorName },
+      { editorId: config.fields.userId, id: idField },
+      (ctx, args) => {
+        const { editorId, id } = args as { editorId: Identity; id: Id }
+        const table = tableAccessor(ctx.db)
+        const orgMemberTable = orgMemberTableAccessor(ctx.db)
+        const { member, pk, row } = getOrgOwnedRow({
+          acl: true,
+          id,
+          isOwner: isOrgOwnerFn ? (oid: unknown) => isOrgOwnerFn(ctx.db, oid as OrgId, ctx.sender) : undefined,
+          operation: 'addEditor',
+          orgMemberTable,
+          pkAccessor: pkAccessor as never,
+          sender: ctx.sender,
+          table: table as never,
+          tableName
+        })
+        if (!(member.isAdmin || identityEquals(row.userId, ctx.sender)))
+          throw makeError('FORBIDDEN', `${tableName}:addEditor`)
+        const editors = ((row as Record<string, unknown>).editors as Identity[] | undefined) ?? []
+        for (const e of editors) if (identityEquals(e, editorId)) return
+        pk.update({ ...row, editors: [...editors, editorId], updatedAt: ctx.timestamp } as never)
+      }
+    )
+    exportsRecord[removeEditorName] = spacetimedb.reducer(
+      { name: removeEditorName },
+      { editorId: config.fields.userId, id: idField },
+      (ctx, args) => {
+        const { editorId, id } = args as { editorId: Identity; id: Id }
+        const table = tableAccessor(ctx.db)
+        const orgMemberTable = orgMemberTableAccessor(ctx.db)
+        const { member, pk, row } = getOrgOwnedRow({
+          acl: true,
+          id,
+          isOwner: isOrgOwnerFn ? (oid: unknown) => isOrgOwnerFn(ctx.db, oid as OrgId, ctx.sender) : undefined,
+          operation: 'removeEditor',
+          orgMemberTable,
+          pkAccessor: pkAccessor as never,
+          sender: ctx.sender,
+          table: table as never,
+          tableName
+        })
+        if (!(member.isAdmin || identityEquals(row.userId, ctx.sender)))
+          throw makeError('FORBIDDEN', `${tableName}:removeEditor`)
+        const editors = ((row as Record<string, unknown>).editors as Identity[] | undefined) ?? []
+        pk.update({
+          ...row,
+          editors: editors.filter(e => !identityEquals(e, editorId)),
+          updatedAt: ctx.timestamp
+        } as never)
+      }
+    )
+    exportsRecord[setEditorsName] = spacetimedb.reducer(
+      { name: setEditorsName },
+      { editorIds: config.fields.userId, id: idField },
+      (ctx, args) => {
+        const { editorIds, id } = args as { editorIds: Identity[]; id: Id }
+        const table = tableAccessor(ctx.db)
+        const orgMemberTable = orgMemberTableAccessor(ctx.db)
+        const { member, pk, row } = getOrgOwnedRow({
+          acl: true,
+          id,
+          isOwner: isOrgOwnerFn ? (oid: unknown) => isOrgOwnerFn(ctx.db, oid as OrgId, ctx.sender) : undefined,
+          operation: 'setEditors',
+          orgMemberTable,
+          pkAccessor: pkAccessor as never,
+          sender: ctx.sender,
+          table: table as never,
+          tableName
+        })
+        if (!(member.isAdmin || identityEquals(row.userId, ctx.sender)))
+          throw makeError('FORBIDDEN', `${tableName}:setEditors`)
+        pk.update({ ...row, editors: editorIds, updatedAt: ctx.timestamp } as never)
+      }
+    )
+  }
   return {
-    exports: exportsRecord
+    exports: exportsRecord as unknown as OrgCrudExports['exports']
   }
 }
 /** Defines a cascade delete relation for org-scoped tables. */

@@ -1,0 +1,90 @@
+---
+title: File Uploads
+description: Schema constraints, upload hooks, form fields, and storage differences between backends.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Schema
+
+Define file fields with optional constraints:
+
+```ts
+import { file, files, schema } from '@noboil/convex/schema' // or @noboil/spacetimedb/schema
+import { object, string } from 'zod/v4'
+
+const s = schema({
+  owned: {
+    post: object({
+      title: string().min(1),
+      cover: file({ accept: 'image/*', maxSize: 5 * 1024 * 1024 }).nullable().optional(),
+      attachments: files({ accept: 'image/*,application/pdf', maxSize: 10 * 1024 * 1024 }).optional()
+    })
+  }
+})
+```
+
+`accept` and `maxSize` flow through to form fields automatically — no need to pass them as props.
+
+## Upload hook
+
+```tsx
+const upload = useUpload()
+const handleFile = async (f: File) => {
+  const result = await upload(f)
+  // result.storageId — use in mutations
+}
+```
+
+## Form fields
+
+File constraints from the schema auto-apply:
+
+```tsx
+<Form form={form} render={f => (
+  <>
+    <f.File name='cover' />
+    <f.Files name='attachments' />
+    <f.Submit>Save</f.Submit>
+  </>
+)} />
+```
+
+Or with AutoForm — fields auto-render with correct accept/maxSize:
+
+```tsx
+<AutoForm form={form} submitLabel='Save' />
+```
+
+Override schema constraints with explicit props when needed:
+
+```tsx
+<f.File name='cover' accept='image/png' maxSize={2 * 1024 * 1024} />
+```
+
+## Storage differences
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+Files upload to Convex Storage (S3-compatible). Enriched documents automatically include `{field}Url` with a CDN URL:
+
+```ts
+const blog = await api.blog.read({ id })
+blog.coverUrl  // "https://cdn.convex.cloud/..."
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+Files upload via HTTP and are served from the SpacetimeDB module. Enriched documents include `{field}Url` with an HTTP URL:
+
+```ts
+const blog = useTable(tables.blog)
+blog.coverUrl  // "http://localhost:4000/..."
+```
+
+</Tab>
+</Tabs>
+
+Both backends resolve file references to URLs — the only difference is CDN vs direct HTTP, which is a deployment concern.
