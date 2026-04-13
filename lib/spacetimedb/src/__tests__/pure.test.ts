@@ -2739,7 +2739,9 @@ describe('Fix #10: isTestMode production safety', () => {
 describe('VALIDATION_FAILED error code', () => {
   test('VALIDATION_FAILED exists in ERROR_MESSAGES', () => {
     expect(ERROR_MESSAGES).toHaveProperty('VALIDATION_FAILED')
-    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe('One or more fields failed validation — check your input')
+    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe(
+      'Some fields are invalid — check the highlighted fields and fix the errors'
+    )
   })
   test('VALIDATION_FAILED is a valid ErrorCode', () => {
     const code: ErrorCode = 'VALIDATION_FAILED'
@@ -2766,7 +2768,7 @@ describe('VALIDATION_FAILED error code', () => {
   })
   test('getErrorMessage falls back to ERROR_MESSAGES for VALIDATION_FAILED', () => {
     const msg = getErrorMessage(makeSenderError({ code: 'VALIDATION_FAILED' }))
-    expect(msg).toBe('One or more fields failed validation — check your input')
+    expect(msg).toBe('Some fields are invalid — check the highlighted fields and fix the errors')
   })
   test('handleError routes VALIDATION_FAILED', () => {
     let called = false
@@ -2990,10 +2992,10 @@ describe('field-level error routing (R9.3)', () => {
       code: 'VALIDATION_FAILED',
       fieldErrors: { title: 'Too long' },
       fields: ['title'],
-      message: 'Validation failed'
+      message: 'Some fields are invalid — check the highlighted fields and fix the errors'
     })
     const d = extractErrorData(e)
-    expect(d?.message).toBe('Validation failed')
+    expect(d?.message).toBe('Some fields are invalid — check the highlighted fields and fix the errors')
     expect(d?.fieldErrors).toEqual({ title: 'Too long' })
   })
 })
@@ -3152,8 +3154,10 @@ describe('ERROR_MESSAGES completeness', () => {
   })
   test('VALIDATION_FAILED is distinct from INVALID_WHERE', () => {
     expect(ERROR_MESSAGES.VALIDATION_FAILED).not.toBe(ERROR_MESSAGES.INVALID_WHERE)
-    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe('One or more fields failed validation — check your input')
-    expect(ERROR_MESSAGES.INVALID_WHERE).toBe('Invalid filter parameters — check field names and values')
+    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe(
+      'Some fields are invalid — check the highlighted fields and fix the errors'
+    )
+    expect(ERROR_MESSAGES.INVALID_WHERE).toBe('Invalid filter — check that field names and values match the schema')
   })
 })
 describe('guardApi', () => {
@@ -8123,7 +8127,7 @@ describe('Sprint 5 getFirstFieldError', () => {
   test('returns undefined when no field errors', () => {
     const error = makeSenderError({
       code: 'VALIDATION_FAILED',
-      message: 'Validation failed'
+      message: 'Some fields are invalid — check the highlighted fields and fix the errors'
     })
     expect(getFirstFieldError(error)).toBeUndefined()
   })
@@ -8609,9 +8613,9 @@ describe('Sprint 6 Tier 2.4 ERROR_MESSAGES enhancements', () => {
     expect(Object.keys(ERROR_MESSAGES)).toHaveLength(36)
   })
   test('specific improved messages contain required wording', () => {
-    expect(ERROR_MESSAGES.NOT_FOUND.includes('could not be found')).toBe(true)
+    expect(ERROR_MESSAGES.NOT_FOUND.includes('deleted')).toBe(true)
     expect(ERROR_MESSAGES.RATE_LIMITED.includes('wait')).toBe(true)
-    expect(ERROR_MESSAGES.VALIDATION_FAILED.toLowerCase().includes('validation')).toBe(true)
+    expect(ERROR_MESSAGES.VALIDATION_FAILED.includes('fields')).toBe(true)
   })
 })
 describe('Sprint 6 Tier 3.1 defaultValue with prefault/default wrappers', () => {

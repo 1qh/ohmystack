@@ -1,0 +1,99 @@
+---
+title: DevTools
+description: Built-in development tools for inspecting queries, mutations, cache, and errors in real time.
+---
+
+noboil ships a built-in DevTools panel that shows real-time state of your app during development. It's included automatically — no extra install needed.
+
+## Enabling DevTools
+
+DevTools activate when `NODE_ENV !== 'production'`. In development, a floating button appears in the bottom-right corner of your app.
+
+The DevTools panel is already mounted by `Form` and `AutoForm`. For pages without forms, mount it explicitly:
+
+```tsx
+import { DevtoolsAutoMount } from '@noboil/convex/react'
+// or
+import { DevtoolsAutoMount } from '@noboil/spacetimedb/react'
+
+const Layout = ({ children }) => (
+  <>
+    {children}
+    <DevtoolsAutoMount />
+  </>
+)
+```
+
+## Panels
+
+### Subscriptions
+
+Live view of all active query subscriptions:
+
+- **Name** — the query function (e.g., `blog:list`)
+- **Status** — `active`, `loading`, `error`
+- **Data preview** — first few rows of results
+- **Stale detection** — highlights subscriptions older than 30s without updates
+
+### Mutations
+
+Timeline of all mutations with:
+
+- **Name** — the mutation function (e.g., `blog:create`)
+- **Status** — `pending`, `success`, `error`
+- **Duration** — time from call to completion
+- **Args** — the arguments passed to the mutation
+- **Error details** — full error data including field errors
+
+### Cache
+
+For `base` (cache) tables:
+
+- **Hits / misses** — cache access counts
+- **Stale entries** — entries past TTL
+- **Last refresh** — when each entry was last fetched
+
+### Errors
+
+Aggregated error log:
+
+- **Code** — the `ErrorCode` (e.g., `VALIDATION_FAILED`)
+- **Message** — the actionable error message
+- **Field errors** — per-field validation failures
+- **Stack** — where the error originated
+
+## Tracking custom operations
+
+Track your own operations in DevTools:
+
+```tsx
+import { trackMutation, completeMutation, pushError } from '@noboil/convex/react'
+
+const devId = trackMutation('customOp', { key: 'value' })
+try {
+  await doSomething()
+  completeMutation(devId, 'success')
+} catch (error) {
+  completeMutation(devId, 'error')
+  pushError(error)
+}
+```
+
+## Performance thresholds
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Slow mutation | > 500ms | Highlighted in yellow |
+| Stale subscription | > 30s | Marked as stale |
+
+Adjust thresholds:
+
+```tsx
+import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@noboil/convex/react'
+// SLOW_THRESHOLD_MS = 500
+// STALE_THRESHOLD_MS = 30000
+```
+
+## Production
+
+DevTools are tree-shaken in production builds. The `DevtoolsAutoMount` component renders nothing when `NODE_ENV === 'production'`. Zero runtime cost.

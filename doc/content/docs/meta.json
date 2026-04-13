@@ -12,6 +12,7 @@
     "forms",
     "organizations",
     "security",
+    "devtools",
     "testing",
     "schema-evolution",
     "api-reference",

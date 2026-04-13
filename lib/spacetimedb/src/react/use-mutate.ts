@@ -45,7 +45,9 @@ const defaultOnError = (error: unknown) => {
       )
     },
     default: () => {
-      toast.error(getErrorMessage(error))
+      const data = extractErrorData(error)
+      const fieldErr = data?.fieldErrors ? Object.entries(data.fieldErrors)[0] : undefined
+      toast.error(fieldErr ? `${fieldErr[0]}: ${fieldErr[1]}` : getErrorMessage(error))
     }
   })
 }

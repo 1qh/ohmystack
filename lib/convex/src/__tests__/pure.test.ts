@@ -2558,7 +2558,9 @@ describe('Fix #10: isTestMode production safety', () => {
 describe('VALIDATION_FAILED error code', () => {
   test('VALIDATION_FAILED exists in ERROR_MESSAGES', () => {
     expect(ERROR_MESSAGES).toHaveProperty('VALIDATION_FAILED')
-    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe('Validation failed')
+    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe(
+      'Some fields are invalid — check the highlighted fields and fix the errors'
+    )
   })
   test('VALIDATION_FAILED is a valid ErrorCode', () => {
     const code: ErrorCode = 'VALIDATION_FAILED'
@@ -2586,7 +2588,7 @@ describe('VALIDATION_FAILED error code', () => {
   })
   test('getErrorMessage falls back to ERROR_MESSAGES for VALIDATION_FAILED', () => {
     const msg = getErrorMessage(new ConvexError({ code: 'VALIDATION_FAILED' }))
-    expect(msg).toBe('Validation failed')
+    expect(msg).toBe('Some fields are invalid — check the highlighted fields and fix the errors')
   })
   test('handleConvexError routes VALIDATION_FAILED', () => {
     let called = false
@@ -2637,7 +2639,7 @@ describe('errValidation with VALIDATION_FAILED', () => {
       }
       expect(e.data.code).toBe('VALIDATION_FAILED')
       expect(e.data.fields).toEqual([])
-      expect(e.data.message).toBe('Validation failed')
+      expect(e.data.message).toBe('Some fields are invalid — check the highlighted fields and fix the errors')
     }
   })
   test('errValidation return type is never', () => {
@@ -2818,10 +2820,10 @@ describe('field-level error routing (R9.3)', () => {
       code: 'VALIDATION_FAILED',
       fieldErrors: { title: 'Too long' },
       fields: ['title'],
-      message: 'Validation failed'
+      message: 'Some fields are invalid — check the highlighted fields and fix the errors'
     })
     const d = extractErrorData(e)
-    expect(d?.message).toBe('Validation failed')
+    expect(d?.message).toBe('Some fields are invalid — check the highlighted fields and fix the errors')
     expect(d?.fieldErrors).toEqual({ title: 'Too long' })
   })
 })
@@ -2980,8 +2982,10 @@ describe('ERROR_MESSAGES completeness', () => {
   })
   test('VALIDATION_FAILED is distinct from INVALID_WHERE', () => {
     expect(ERROR_MESSAGES.VALIDATION_FAILED).not.toBe(ERROR_MESSAGES.INVALID_WHERE)
-    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe('Validation failed')
-    expect(ERROR_MESSAGES.INVALID_WHERE).toBe('Invalid filters')
+    expect(ERROR_MESSAGES.VALIDATION_FAILED).toBe(
+      'Some fields are invalid — check the highlighted fields and fix the errors'
+    )
+    expect(ERROR_MESSAGES.INVALID_WHERE).toBe('Invalid filter — check that field names and values match the schema')
   })
 })
 describe('guardApi', () => {
@@ -6061,7 +6065,7 @@ describe('typed error handling (R10.5)', () => {
       expect(result.ok).toBe(false)
       const { error } = result as MutationFail
       expect(error.code).toBe('NOT_FOUND')
-      expect(error.message).toBe('Not found')
+      expect(error.message).toBe("This record doesn't exist — it may have been deleted")
     })
     test('creates failure result with code and custom message', () => {
       const result = fail('CONFLICT', { message: 'Stale data detected' })
@@ -6101,7 +6105,7 @@ describe('typed error handling (R10.5)', () => {
     test('default message comes from ERROR_MESSAGES', () => {
       const result = fail('RATE_LIMITED')
       expect(result.ok).toBe(false)
-      expect((result as MutationFail).error.message).toBe('Too many requests')
+      expect((result as MutationFail).error.message).toBe('Too many requests — please wait before trying again')
     })
     test('every ErrorCode produces a valid fail result', () => {
       const codes: ErrorCode[] = [
@@ -6356,7 +6360,7 @@ describe('typed error handling (R10.5)', () => {
         NOT_FOUND: d => `Item not found: ${d.message}`,
         _: () => 'Unknown error'
       })
-      expect(msg).toBe('Item not found: Not found')
+      expect(msg).toContain('Item not found:')
     })
     test('ok result does not need error handling', () => {
       const result = ok({ id: '123' })
@@ -6507,7 +6511,7 @@ describe('rich error metadata (R11.2)', () => {
     test('detail without table or retryAfter returns base message', () => {
       const e = new ConvexError({ code: 'NOT_FOUND' })
       const detail = getErrorDetail(e)
-      expect(detail).toBe('Not found')
+      expect(detail).toBe("This record doesn't exist — it may have been deleted")
     })
   })
   describe('fail() with rich metadata', () => {
