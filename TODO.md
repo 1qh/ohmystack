@@ -14,8 +14,8 @@
 ## DX — developer experience improvements
 
 - [x] D1. `<AutoForm schema={s.blog} />` — auto-render all fields from schema
-- [ ] D2. Compile-time where clause field validation (TypeScript)
-- [ ] D3. Compile-time field kind checking (`<f.Num name="title" />` = TS error)
+- [x] D2. Compile-time where clause field validation (TypeScript)
+- [x] D3. Compile-time field kind checking (`<f.Num name="title" />` = TS error)
 - [x] D4. Auto-pass `expectedUpdatedAt` in updates — conflict detection by default
 - [x] D5. Allow custom error codes — extend `ErrorCode` union
 - [ ] D6. Remove redundant `items`/`data` dual return from `useList()` (breaking change)
@@ -53,8 +53,8 @@ Most T-items already covered by existing tests:
 - [ ] Doc1. Architecture diagram (schema → CRUD → endpoints → hooks)
 - [ ] Doc2. “First 10 minutes” walkthrough with screenshots
 - [ ] Doc3. Dedicated file upload guide
-- [ ] Doc4. Schema slot system explained before quickstart
-- [ ] Doc5. Common patterns cookbook (soft delete, pagination+search, rate limit UI)
+- [x] Doc4. Schema slot system explained before quickstart
+- [x] Doc5. Common patterns cookbook (soft delete, pagination+search, rate limit UI)
 - [ ] Doc6. CLI `noboil init` terminal walkthrough
 - [ ] Doc7. `.noboilrc.json` documentation
 - [ ] Doc8. SpacetimeDB dev loop diagram (module → bindings → client)

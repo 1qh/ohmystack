@@ -1672,3 +1672,95 @@ try {
 ```
 
 For most cases, `handleError` or `matchError` is simpler. They parse the error internally without the `_tag` check. Use `_tag` when you need to re-throw non-`@noboil/spacetimedb` errors or integrate with an external error boundary that inspects error shape.
+
+## AutoForm — Zero-Layout Forms
+
+`AutoForm` auto-renders all fields from your schema. No manual field layout needed.
+
+```tsx
+import { AutoForm, useFormMutation } from '@noboil/convex/components'
+
+const CreateBlog = () => {
+  const form = useFormMutation({
+    mutation: api.blog.create,
+    schema: s.blog
+  })
+  return <AutoForm form={form} submitLabel='Create Blog' />
+}
+```
+
+All field types are auto-detected from the schema: strings render as `Text`, booleans as `Toggle`, files as `File`, arrays as `Arr`, etc. Use `exclude` to hide specific fields:
+
+```tsx
+<AutoForm form={form} exclude={['published']} submitLabel='Save Draft' />
+```
+
+For full control over field layout, use `Form` with the render prop instead:
+
+```tsx
+<Form form={form} render={f => (
+  <>
+    <f.Text name='title' required />
+    <f.Text name='content' multiline />
+    <f.Submit>Create</f.Submit>
+  </>
+)} />
+```
+
+## File Constraints in Schema
+
+Specify `accept` and `maxSize` directly in the schema — they auto-apply to form fields:
+
+```tsx
+import { file, files } from '@noboil/convex/schema'
+
+const s = schema({
+  owned: {
+    post: object({
+      title: string().min(1),
+      cover: file({ accept: 'image/*', maxSize: 5 * 1024 * 1024 }).nullable().optional(),
+      attachments: files({ accept: 'image/*,application/pdf', maxSize: 10 * 1024 * 1024 }).optional()
+    })
+  }
+})
+```
+
+No need to pass `accept` or `maxSize` props to `<f.File>` or `<f.Files>` — they read from schema meta automatically. Props still override if needed.
+
+## Auto Conflict Detection
+
+Pass `doc` to `useFormMutation` to auto-inject `expectedUpdatedAt`:
+
+```tsx
+const form = useFormMutation({
+  doc: blog,
+  mutation: api.blog.update,
+  schema: s.blog,
+  transform: d => ({ ...d, id: blog._id }),
+  values: pickValues(s.blog, blog)
+})
+```
+
+If another user edits the same document, the server returns `CONFLICT` and the `ConflictDialog` lets the user choose: cancel, reload, or overwrite.
+
+## Custom Error Codes
+
+`ErrorCode` accepts any string while keeping autocomplete for built-in codes:
+
+```tsx
+import { err } from '@noboil/convex/server'
+
+err('EMAIL_TAKEN', { message: 'This email is already registered' })
+```
+
+Handle custom codes with `matchError`:
+
+```tsx
+import { matchError } from '@noboil/convex/server'
+
+matchError(error, {
+  EMAIL_TAKEN: data => toast.error(data.message),
+  VALIDATION_FAILED: data => showFieldErrors(data.fieldErrors),
+  default: () => toast.error('Something went wrong')
+})
+```

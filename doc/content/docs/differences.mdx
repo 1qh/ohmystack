@@ -39,7 +39,7 @@ import { s } from './s'
 export const api = noboil(
   { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
   ({ table }) => ({
-    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
+    blog: table(s.blog, { rateLimit: 10, search: 'content' })
   })
 )
 
@@ -132,7 +132,7 @@ These trip up new users — they look DB-specific but they aren't:
 - **Org system** (invites, join requests, roles, ACL with `editors[]`) — identical API and identical reducer/endpoint names
 - **Presence** — same `usePresence` hook, same heartbeat shape
 - **Soft delete** — same `softDelete: true` table option, same `restore` endpoint, same `useSoftDelete` hook
-- **Rate limiting** — both accept `rateLimit: { max, window }` (Convex) or `rateLimit: 10` shorthand (SpacetimeDB) on the table options
+- **Rate limiting** — both accept `rateLimit: { max, window }` or `rateLimit: 10` shorthand (10 requests per minute)
 - **Error codes** — both libs use the same `ErrorCode` enum (`NOT_AUTHENTICATED`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `RATE_LIMITED`, `VALIDATION_FAILED`, etc.) and `extractErrorData()` returns the same shape
 
 If a doc page has `<Tabs>` between Convex and SpacetimeDB, it's because the snippet differs by something on this page. Otherwise the snippet is shown once and works on both.

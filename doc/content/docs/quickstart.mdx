@@ -89,7 +89,7 @@ import { s } from './s'
 export const api = noboil(
   { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
   ({ table }) => ({
-    blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
+    blog: table(s.blog, { rateLimit: 10, search: 'content' })
   })
 )
 ```
