@@ -359,7 +359,7 @@ test.describe
           // biome-ignore lint/performance/noAwaitInLoops: sequential restore
           await tc.mutation(wikiRestore, { id, orgId })
         } catch {
-          // biome-ignore lint/suspicious/noEmptyBlockStatements: intentional
+          /* Ignore restore errors */
         }
     }
     const gotoWikiListAndWait = async (pg: Page) => {

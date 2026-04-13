@@ -2,7 +2,6 @@
 /* eslint-disable no-console, max-depth */
 import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/complexity */
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'

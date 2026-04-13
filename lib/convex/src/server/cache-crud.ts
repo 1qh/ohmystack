@@ -187,7 +187,6 @@ const makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends Gener
         .query(table)
         .filter(flt(qr => qr.lt(qr.field('_creationTime'), cut)))
         .take(limit)
-      // biome-ignore lint/performance/noAwaitInLoops: x
       for (const d of exp) await dbDelete(c.db, d._id as string)
       return exp.length
     })

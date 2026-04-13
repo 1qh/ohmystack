@@ -70,7 +70,6 @@ const makePost =
         pipeline: sharp(buffer),
         thumbnail: thumbnail ?? false
       })
-      // biome-ignore lint/nursery/useAwaitThenable: sharp pipeline.toBuffer() returns a thenable
       const outputBuffer = await pipeline.toBuffer()
       const outputMime = thumbnail ? 'image/webp' : options?.format ? formatToMime[options.format] : contentType
       return new NextResponse(new Uint8Array(outputBuffer), {

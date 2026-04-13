@@ -166,7 +166,6 @@ const FileFieldImpl = ({
                   inputRef.current.click()
                 }
               }}
-              // biome-ignore lint/a11y/useSemanticElements: dropzone requires div
               role='button'
               tabIndex={0}>
               <input {...getInputProps()} aria-describedby={inv ? errorId : undefined} aria-invalid={inv} />
@@ -197,7 +196,6 @@ const FileFieldImpl = ({
               inputRef.current.click()
             }
           }}
-          // biome-ignore lint/a11y/useSemanticElements: dropzone requires div
           role='button'
           tabIndex={0}>
           <input {...getInputProps()} aria-describedby={inv ? errorId : undefined} aria-invalid={inv} />

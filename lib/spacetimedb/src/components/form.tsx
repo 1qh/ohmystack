@@ -103,7 +103,6 @@ const useFormMutation = <S extends ZodObject, M = zinfer<S>>(opts: {
       onSubmit: async d => {
         const base = opts.transform ? opts.transform(d) : (d as Record<string, unknown>)
         const args = (opts.doc ? { ...base, expectedUpdatedAt: opts.doc.updatedAt } : base) as unknown as M
-        /** biome-ignore lint/nursery/useAwaitThenable: mutate may be async */
         await opts.mutate(args)
         return d
       },

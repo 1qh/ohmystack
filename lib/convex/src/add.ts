@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '@a/shared/cli'
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 import { join } from 'node:path'
 interface AddFlags {
   appDir: string

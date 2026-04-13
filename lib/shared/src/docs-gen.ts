@@ -44,7 +44,6 @@ const extractSignature = (fileContent: string, symbolName: string): string => {
   const escaped = symbolName.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`)
   const constPat = new RegExp(`const\\s+${escaped}\\s*(?::\\s*([^=]+))?=\\s*(.+)`, 'u')
   const constMatch = constPat.exec(fileContent)
-  /** biome-ignore lint/nursery/noUnnecessaryConditions: exec returns null */
   if (constMatch) {
     const annotation = constMatch[1]?.trim()
     if (annotation) return annotation

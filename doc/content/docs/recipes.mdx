@@ -1764,3 +1764,41 @@ matchError(error, {
   default: () => toast.error('Something went wrong')
 })
 ```
+
+## Unified CRUD with useCrud
+
+`useCrud` gives you data + mutations in one hook call — same API on both backends:
+
+```tsx
+// Convex
+import { useCrud } from '@noboil/convex/react'
+import { api } from '@a/be-convex'
+
+const BlogList = () => {
+  const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud({
+    create: api.blog.create,
+    list: api.blog.pub.list,
+    rm: api.blog.rm,
+    update: api.blog.update
+  })
+  return <>{data.map(b => <div key={b._id}>{b.title}</div>)}</>
+}
+```
+
+```tsx
+// SpacetimeDB — same shape, different refs
+import { useCrud } from '@noboil/spacetimedb/react'
+import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
+
+const BlogList = () => {
+  const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud({
+    create: reducers.createBlog,
+    rm: reducers.rmBlog,
+    table: tables.blog,
+    update: reducers.updateBlog
+  })
+  return <>{data.map(b => <div key={b.id}>{b.title}</div>)}</>
+}
+```
+
+Both return the same `{ data, create, update, rm, hasMore, isLoading, loadMore }`. The only difference is refs: Convex passes `api.*` functions, SpacetimeDB passes `reducers.*` + `tables.*`.

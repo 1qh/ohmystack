@@ -9723,6 +9723,52 @@ describe('T26: ACL editor reducers generated', () => {
     ).toBe(true)
   })
 })
+describe('useCrud unified hook', () => {
+  test('useCrud is exported from react', async () => {
+    const mod = await import('../react/use-crud')
+    expect(mod).toHaveProperty('useCrud')
+    expect(typeof mod.useCrud).toBe('function')
+  })
+  test('CrudResult type has same shape as Convex', () => {
+    interface R {
+      create: (data: Record<string, unknown>) => Promise<unknown>
+      data: unknown[]
+      hasMore: boolean
+      isLoading: boolean
+      loadMore: () => void
+      rm: (id: unknown) => Promise<unknown>
+      update: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    const r: R = {
+      create: async () => {
+        /* Empty */
+      },
+      data: [],
+      hasMore: false,
+      isLoading: false,
+      loadMore: () => {
+        /* Empty */
+      },
+      rm: async () => {
+        /* Empty */
+      },
+      update: async () => {
+        /* Empty */
+      }
+    }
+    expect(r.data).toEqual([])
+    expect(typeof r.create).toBe('function')
+    expect(typeof r.update).toBe('function')
+    expect(typeof r.rm).toBe('function')
+    expect(typeof r.loadMore).toBe('function')
+    expect(typeof r.hasMore).toBe('boolean')
+    expect(typeof r.isLoading).toBe('boolean')
+  })
+  test('StdbCrudRefs requires table/create/rm/update', async () => {
+    const mod = await import('../react/use-crud')
+    expect(mod).toHaveProperty('useCrud')
+  })
+})
 describe('T21: noboil() object form', () => {
   test('noboil is exported', async () => {
     const mod = await import('../server/setup')

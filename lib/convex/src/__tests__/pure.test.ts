@@ -2475,6 +2475,52 @@ describe('T32: useList returns data not items', () => {
     expect('items' in r).toBe(false)
   })
 })
+describe('useCrud unified hook', () => {
+  test('useCrud is exported from react', async () => {
+    const mod = await import('../react/use-crud')
+    expect(mod).toHaveProperty('useCrud')
+    expect(typeof mod.useCrud).toBe('function')
+  })
+  test('CrudResult type has required fields', () => {
+    interface R {
+      create: (data: Record<string, unknown>) => Promise<unknown>
+      data: unknown[]
+      hasMore: boolean
+      isLoading: boolean
+      loadMore: () => void
+      rm: (id: unknown) => Promise<unknown>
+      update: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    const r: R = {
+      create: async () => {
+        /* Empty */
+      },
+      data: [],
+      hasMore: false,
+      isLoading: false,
+      loadMore: () => {
+        /* Empty */
+      },
+      rm: async () => {
+        /* Empty */
+      },
+      update: async () => {
+        /* Empty */
+      }
+    }
+    expect(r.data).toEqual([])
+    expect(typeof r.create).toBe('function')
+    expect(typeof r.update).toBe('function')
+    expect(typeof r.rm).toBe('function')
+    expect(typeof r.loadMore).toBe('function')
+    expect(typeof r.hasMore).toBe('boolean')
+    expect(typeof r.isLoading).toBe('boolean')
+  })
+  test('ConvexCrudRefs type requires create/list/rm/update', async () => {
+    const mod = await import('../react/use-crud')
+    expect(mod).toHaveProperty('useCrud')
+  })
+})
 describe('T21: noboil() accepts object form', () => {
   test('noboil is exported from server', async () => {
     const mod = await import('../server/noboil')
@@ -2513,7 +2559,6 @@ describe('Fix #10: isTestMode production safety', () => {
   test('isTestMode returns false when CONVEX_TEST_MODE is undefined', () => {
     const origTest = process.env.CONVEX_TEST_MODE
     const origNode = process.env.NODE_ENV
-    /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
     delete process.env.CONVEX_TEST_MODE
     process.env.NODE_ENV = 'test'
     expect(isTestMode()).toBe(false)
@@ -2523,9 +2568,7 @@ describe('Fix #10: isTestMode production safety', () => {
   test('isTestMode returns false when both are undefined', () => {
     const origTest = process.env.CONVEX_TEST_MODE
     const origNode = process.env.NODE_ENV
-    /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
     delete process.env.CONVEX_TEST_MODE
-    /** biome-ignore lint/performance/noDelete: process.env requires delete to truly unset */
     delete process.env.NODE_ENV
     expect(isTestMode()).toBe(false)
     process.env.CONVEX_TEST_MODE = origTest

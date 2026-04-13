@@ -2,8 +2,6 @@
 /* eslint-disable no-console, max-depth, complexity */
 import { createCliTheme } from '@a/shared/cli'
 /* oxlint-disable eslint/complexity, max-depth */
-/** biome-ignore-all lint/style/noProcessEnv: cli */
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 const { bold, dim, green, red, yellow } = createCliTheme()

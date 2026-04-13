@@ -2,8 +2,6 @@
 /* eslint-disable no-console */
 import type { ChildInfo, TableInfo } from '@a/shared/viz'
 import { bold, dim, findBracketEnd, isSchemaFile, printSummary, red } from '@a/shared/viz'
-/** biome-ignore-all lint/style/noProcessEnv: cli */
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']

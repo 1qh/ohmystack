@@ -456,7 +456,6 @@ const makeUnique = ({ field, index, pq, table }: { field: string; index?: string
       args: { exclude: string().optional(), value: string() },
       handler: typed(async (c: QueryCtxLike, { exclude, value }: { exclude?: string; value: string }) => {
         const q = c.db.query(table)
-        /** biome-ignore lint/nursery/useAwaitThenable: query result is async */
         const existing = await (index
           ? q
               .withIndex(

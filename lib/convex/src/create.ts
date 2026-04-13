@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '@a/shared/cli'
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 const { bold, dim, green, yellow } = createCliTheme()

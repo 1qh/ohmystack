@@ -51,27 +51,23 @@ const usePresence = (refs: PresenceRefs, roomId: string, options?: UsePresenceOp
     const sendHeartbeat = () => {
       const args: Record<string, unknown> = { roomId: roomIdRef.current }
       if (dataRef.current !== undefined) args.data = dataRef.current
-      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget heartbeat
       heartbeatMut(args)
     }
     sendHeartbeat()
     const id = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS)
     return () => {
       clearInterval(id)
-      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget leave on cleanup
       leaveMut({ roomId: roomIdRef.current })
     }
   }, [enabled, heartbeatMut, leaveMut])
   const updatePresence = useCallback(
     (data: Record<string, unknown>) => {
       dataRef.current = data
-      // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget heartbeat
       heartbeatMut({ data, roomId: roomIdRef.current })
     },
     [heartbeatMut]
   )
   const leave = useCallback(() => {
-    // biome-ignore lint/nursery/noFloatingPromises: fire-and-forget leave
     leaveMut({ roomId: roomIdRef.current })
   }, [leaveMut])
   return {

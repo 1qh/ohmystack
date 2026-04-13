@@ -594,7 +594,6 @@ const makeTestAuth = <DM extends GenericDataModel>(config: TestAuthConfig<DM>) =
   })
   const getJoinRequest = query({
     args: { requestId: v.id('orgJoinRequest') },
-    // biome-ignore lint/suspicious/useAwait: convex handler interface requires async
     handler: async (ctx: { db: DbLike }, { requestId }: { requestId: string }) => {
       if (!isTestMode()) return null
       return ctx.db.get(requestId)
@@ -682,10 +681,8 @@ const makeOrgTestCrud = <DM extends GenericDataModel>(config: OrgTestCrudConfig<
   const { acl, aclFrom, cascade, mutation: rawMut, query: rawQry, table } = config
   const mutation = rawMut as unknown as (opts: Rec) => Rec
   const query = rawQry as unknown as (opts: Rec) => Rec
-  /** biome-ignore lint/nursery/useNullishCoalescing: boolean OR */
   const hasAcl = acl || Boolean(aclFrom)
   const createAsUser = mutation({
-    /** biome-ignore lint/suspicious/noExplicitAny: test generic */
     args: { data: v.any(), orgId: v.id('org'), userId: v.id('users') },
     handler: async (ctx: { db: DbLike }, { data, orgId, userId }: { data: Rec; orgId: string; userId: string }) => {
       if (!isTestMode()) return null
@@ -695,7 +692,6 @@ const makeOrgTestCrud = <DM extends GenericDataModel>(config: OrgTestCrudConfig<
     }
   })
   const updateAsUser = mutation({
-    /** biome-ignore lint/suspicious/noExplicitAny: test generic */
     args: { data: v.any(), id: v.string(), orgId: v.id('org'), userId: v.id('users') },
     handler: async (
       ctx: { db: DbLike },

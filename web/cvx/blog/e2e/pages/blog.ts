@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Playwright actions */
 // biome-ignore-all lint/style/useConsistentMemberAccessibility: x
 import type { Locator } from '@playwright/test'
 import BasePage from '@a/e2e/base-page'
@@ -8,9 +9,7 @@ class BlogPage extends BasePage {
     await tagsInput.scrollIntoViewIfNeeded()
     await tagsInput.waitFor({ state: 'visible', timeout: 5000 })
     for (const tag of tags) {
-      // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
       await tagsInput.fill(tag)
-      // biome-ignore lint/performance/noAwaitInLoops: sequential tag input
       await tagsInput.press('Enter')
     }
   }

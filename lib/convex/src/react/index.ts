@@ -39,6 +39,8 @@ export type { BulkMutateToast, BulkProgress, BulkResult, UseBulkMutateOptions } 
 export { useBulkMutate } from './use-bulk-mutate'
 export { useBulkSelection } from './use-bulk-selection'
 export { useCacheEntry } from './use-cache'
+export type { ConvexCrudRefs } from './use-crud'
+export { useCrud } from './use-crud'
 export { useInfiniteList } from './use-infinite-list'
 export { useList, useOwnRows } from './use-list'
 export type { MutateOptions, MutateToast } from './use-mutate'

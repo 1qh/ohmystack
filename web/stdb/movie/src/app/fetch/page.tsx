@@ -191,7 +191,6 @@ const Page = () => {
               setMovie(loadedMovie)
               setCacheStatus(lastTmdbId === n ? 'Cache Hit' : 'Cache Miss')
               setLastTmdbId(n)
-              /** biome-ignore lint/nursery/noFloatingPromises: fire-and-forget cache, useMutation handles errors via toast */
               createMovie(loadedMovie)
             } catch {
               setFetchError('Movie not found')
