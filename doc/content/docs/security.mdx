@@ -16,12 +16,12 @@ For the platform-specific details (Convex's auth/pub destructure vs SpacetimeDB'
 Every generated `create`, `update`, `rm` enforces authentication. There's no way to call a write endpoint without a valid session — `NOT_AUTHENTICATED` is thrown before the handler runs.
 
 ```ts
-const api = noboil(
-  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
-  ({ table }) => ({
+const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 } })
   })
-)
+})
 ```
 
 `getAuthUserId` is the integration point with `@convex-dev/auth`. SpacetimeDB injects identity automatically via `ctx.sender`.
@@ -136,17 +136,15 @@ Middleware is a composable security pipeline that runs around every CRUD operati
 ```ts
 import { auditLog, inputSanitize, slowQueryWarn } from '@noboil/convex/server'
 
-noboil(
-  {
-    query, mutation, action, internalQuery, internalMutation, getAuthUserId,
-    middleware: [
-      inputSanitize(),
-      auditLog({ logLevel: 'info', verbose: true }),
-      slowQueryWarn({ threshold: 300 })
-    ]
-  },
-  ({ table }) => ({ /* ... */ })
-)
+noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  middleware: [
+    inputSanitize(),
+    auditLog({ logLevel: 'info', verbose: true }),
+    slowQueryWarn({ threshold: 300 })
+  ],
+  tables: ({ table }) => ({ /* ... */ })
+})
 ```
 
 **Built-in middleware:**

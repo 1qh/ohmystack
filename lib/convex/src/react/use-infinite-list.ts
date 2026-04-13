@@ -16,7 +16,7 @@ type ListItems<F extends PaginatedQueryReference> = FunctionReturnType<F>['page'
 /** Wraps useList with an IntersectionObserver sentinel for automatic infinite scroll pagination. */
 const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: InfiniteListRest<F>) => {
   const [args, opts] = rest as [PaginatedQueryArgs<F> | undefined, InfiniteListOptions | undefined]
-  const { data, isDone, items, loadMore, status } = (useList as (...a: unknown[]) => ReturnType<typeof useList>)(
+  const { data, isDone, loadMore, status } = (useList as (...a: unknown[]) => ReturnType<typeof useList>)(
     query,
     args ?? {},
     {
@@ -52,7 +52,6 @@ const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: I
     hasMore: !isDone,
     isLoading: isLoadingMore,
     isLoadingMore,
-    items: items as ListItems<F>,
     loadMore: (n?: number) => loadMore(n ?? pageSize),
     sentinelRef,
     status

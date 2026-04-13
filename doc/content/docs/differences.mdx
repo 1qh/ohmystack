@@ -36,23 +36,23 @@ import { action, internalMutation, internalQuery, mutation, query } from './_gen
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { s } from './s'
 
-export const api = noboil(
-  { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
-  ({ table }) => ({
+export const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team,
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: 10, search: 'content' })
   })
-)
+})
 
 // SpacetimeDB
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })
-}))
+}) })
 ```
 
-The `define` callback (`({ table }) => ({...})`) is identical. Only the outer call differs.
+The `tables` callback (`({ table }) => ({...})`) is identical. Only the outer config object differs.
 
 ### 2. Where filters and the `pub` option
 

@@ -41,9 +41,9 @@ export const s = schema({
 ```ts
 import { noboil } from '@noboil/convex/server'
 // ...
-export const api = noboil(config, ({ table }) => ({
+export const api = noboil({ ...config, tables: ({ table }) => ({
   blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
-}))
+}) })
 ```
 
 That's it. Five endpoints (`create`, `update`, `rm`, `list`, `read`) with auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, and conflict detection — all generated. `create`, `update`, and `rm` accept single or bulk input (up to 100 items).

@@ -190,12 +190,15 @@ const s = schema({
 ```
 
 ```ts
-const api = noboil(config, ({ table }) => ({
-  blog: table(s.blog, {
-    rateLimit: { max: 10, window: 60_000 },
-    search: 'content'
+const api = noboil({
+  ...config,
+  tables: ({ table }) => ({
+    blog: table(s.blog, {
+      rateLimit: { max: 10, window: 60_000 },
+      search: 'content'
+    })
   })
-}))
+})
 ```
 
 Auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, conflict detection — all included. Same API across databases. `create`, `update`, and `rm` each accept single or bulk input (up to 100 items).

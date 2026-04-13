@@ -8866,10 +8866,14 @@ describe('Sprint 8 polish: useList skip returns isLoading false', () => {
   })
 })
 describe('unified schema()', () => {
-  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboil>[0]>[0]['table']) => void): void => {
-    noboil(({ table }) => {
-      run(table)
-      return {}
+  const withUniversalTable = (
+    run: (table: Parameters<Parameters<typeof noboil>[0]['tables']>[0]['table']) => void
+  ): void => {
+    noboil({
+      tables: ({ table }) => {
+        run(table)
+        return {}
+      }
     })
   }
   test('schema() brands owned schemas correctly', () => {
@@ -9034,10 +9038,14 @@ describe('compoundIndex shorthand', () => {
   })
 })
 describe('type-safe column references in table options', () => {
-  const withUniversalTable = (run: (table: Parameters<Parameters<typeof noboil>[0]>[0]['table']) => void): void => {
-    noboil(({ table }) => {
-      run(table)
-      return {}
+  const withUniversalTable = (
+    run: (table: Parameters<Parameters<typeof noboil>[0]['tables']>[0]['table']) => void
+  ): void => {
+    noboil({
+      tables: ({ table }) => {
+        run(table)
+        return {}
+      }
     })
   }
   test('index shorthand accepts valid field names', () => {

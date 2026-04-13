@@ -60,6 +60,55 @@ bunx noboil@latest init my-app
 bunx noboil@latest init my-app --db=spacetimedb --no-demos --skip-install
 ```
 
+**Terminal walkthrough:**
+
+```
+$ bunx noboil@latest init my-app
+
+  Pick your database:
+    1. Convex (hosted, reactive queries, server functions)
+    2. SpacetimeDB (self-hosted, subscriptions, Rust module)
+
+  Choice (1/2): 1
+  Include demo apps? (Y/n): Y
+  Project directory: my-app
+
+  ✓ scaffolding...
+  ✓ cleaning up unused files...
+  ✓ patching package.json...
+  ✓ installing dependencies...
+
+  Done! Project created at my-app
+
+  $ cd my-app
+  $ bun setup:convex     # or bun setup:spacetimedb
+  $ bun dev
+
+  Docs: https://noboil.dev/docs
+```
+
+After init, the project contains a `.noboilrc.json` manifest:
+
+```json
+{
+  "db": "convex",
+  "includeDemos": true,
+  "scaffoldedAt": "2026-04-13T...",
+  "scaffoldedFrom": "abc1234",
+  "version": 1
+}
+```
+
+| Field | Purpose |
+|-------|---------|
+| `db` | Selected database backend |
+| `includeDemos` | Whether demo apps were included |
+| `scaffoldedAt` | Timestamp of project creation |
+| `scaffoldedFrom` | Git commit hash of the template used |
+| `version` | Manifest schema version |
+
+Don't edit this file manually — `noboil sync` and `noboil doctor` read it to understand your project. If you need to switch databases, run `noboil init` again in a fresh directory.
+
 ---
 
 ### doctor

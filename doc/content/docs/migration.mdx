@@ -497,9 +497,9 @@ export { s }
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   post: table(s.post, { pub: 'published' })
-}))
+}) })
 ```
 
 Key differences:

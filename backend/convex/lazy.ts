@@ -10,19 +10,17 @@ import {
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { s } from './s'
-const api = noboil(
-  {
-    action,
-    getAuthUserId: getAuthUserIdOrTest,
-    internalMutation,
-    internalQuery,
-    middleware: [auditLog(), inputSanitize(), slowQueryWarn()],
-    mutation,
-    orgCascadeTables: [s.task.__name, s.project.__name],
-    orgSchema: s.team,
-    query
-  },
-  ({ table }) => ({
+const api = noboil({
+  action,
+  getAuthUserId: getAuthUserIdOrTest,
+  internalMutation,
+  internalQuery,
+  middleware: [auditLog(), inputSanitize(), slowQueryWarn()],
+  mutation,
+  orgCascadeTables: [s.task.__name, s.project.__name],
+  orgSchema: s.team,
+  query,
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: 10, search: 'content' }),
     blogProfile: table(s.blogProfile),
     chat: table(s.chat, {
@@ -47,7 +45,7 @@ const api = noboil(
       softDelete: true
     })
   })
-)
+})
 const { cacheCrud, childCrud, crud, m, orgCrud, pq, q, singletonCrud, uniqueCheck } = api.setup
 const file = makeFileUpload({
   action,

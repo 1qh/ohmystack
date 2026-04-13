@@ -127,9 +127,9 @@ export { s }
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })
-}))
+}) })
 ```
 
 This generates `create_blog`, `update_blog`, and `rm_blog` reducers with auth, ownership, conflict detection, and rate limiting. `pub: 'published'` lets every client see published posts plus their own drafts.
@@ -310,9 +310,9 @@ export { s }
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   project: table(s.project)
-}))
+}) })
 ```
 
 ### Client
@@ -457,9 +457,9 @@ export { s }
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   movie: table(s.movie, { key: 'tmdbId' })
-}))
+}) })
 ```
 
 ### Next.js API route for cache population
@@ -592,9 +592,9 @@ export { s }
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   wiki: table(s.wiki, { softDelete: true })
-}))
+}) })
 ```
 
 ### Client
@@ -701,7 +701,7 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
 import { noboil, makePresence } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table, t }) => {
+export default noboil({ tables: ({ table, t }) => {
   const presence = makePresence({
     dataField: t.string(),
     roomIdField: t.string()
@@ -712,7 +712,7 @@ export default noboil(({ table, t }) => {
     message: table(s.message),
     ...presence.tables
   }
-})
+} })
 ```
 
 ### Frontend
@@ -781,7 +781,7 @@ export { s }
 import { noboil, makePresence } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table, t }) => {
+export default noboil({ tables: ({ table, t }) => {
   const presence = makePresence({
     dataField: t.string(),
     roomIdField: t.string()
@@ -792,7 +792,7 @@ export default noboil(({ table, t }) => {
     message: table(s.message),
     ...presence.tables
   }
-})
+} })
 ```
 
 ### Chat component

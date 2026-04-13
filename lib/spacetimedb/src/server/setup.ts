@@ -1219,21 +1219,26 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     table
   }
 }
-const noboil = (
-  define: (helpers: {
-    cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
-    childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
-    fileTable: () => BsTable
-    orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
-    orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
-    ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
-    singletonTable: (fields: TblInput) => BsTable
-    t: SchemaHelpers['t']
-    table: TableFn
-  }) => Record<string, BsTable>
-) => {
+interface NoboilHelpers {
+  cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
+  childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
+  fileTable: () => BsTable
+  orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
+  orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
+  ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
+  singletonTable: (fields: TblInput) => BsTable
+  t: SchemaHelpers['t']
+  table: TableFn
+}
+const noboil = ({
+  tables
+}: {
+  hooks?: GlobalHooks
+  middleware?: Middleware[]
+  tables: (helpers: NoboilHelpers) => Record<string, BsTable>
+}) => {
   const raw = makeSchema()
-  const result = define(makeBsHelpers(raw) as never)
+  const result = tables(makeBsHelpers(raw) as never)
   const rawTables: Record<string, unknown> = {}
   const ctx: BsCtx = {
     baseZ: {},

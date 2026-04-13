@@ -112,27 +112,30 @@ type TableMap = Record<string, unknown>
  * import { getAuthUserId } from '@convex-dev/auth/server'
  * import { s } from './s'
  *
- * export const api = noboil(
- *   { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team },
- *   ({ table }) => ({
+ * export const api = noboil({
+ *   query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+ *   orgSchema: s.team,
+ *   tables: ({ table }) => ({
  *     blog: table(s.blog, { rateLimit: 10, search: 'content' }),
  *     wiki: table(s.wiki, { acl: true, softDelete: true }),
  *     profile: table(s.profile),
  *     movie: table(s.movie, { key: 'tmdbId', ttl: 86_400 })
  *   })
- * )
+ * })
  *
  * // Then in convex/blog.ts:
  * import { api } from './lazy'
  * export const { create, update, rm, pub: { list, read, search } } = api.blog
  */
-const noboil = <DM extends GenericDataModel, T extends TableMap>(
-  config: SetupConfig<DM>,
-  define: (helpers: { setup: SetupResult<DM>; table: TableFn }) => T
-): T & { setup: SetupResult<DM> } => {
+const noboil = <DM extends GenericDataModel, T extends TableMap>({
+  tables,
+  ...config
+}: SetupConfig<DM> & {
+  tables: (helpers: { setup: SetupResult<DM>; table: TableFn }) => T
+}): T & { setup: SetupResult<DM> } => {
   const s = setup<DM>(config)
   const table = ((schema: unknown, opts?: unknown) => buildDeferred(schema, opts) as never) as TableFn
-  const draft = define({ setup: s, table })
+  const draft = tables({ setup: s, table })
   const result: Record<string, unknown> = {}
   for (const [name, value] of Object.entries(draft))
     result[name] = isDeferred(value) ? dispatchTable(s as unknown as SetupResult<GenericDataModel>, name, value) : value

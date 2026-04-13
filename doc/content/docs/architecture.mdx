@@ -56,7 +56,7 @@ Created by makeOrgScoped() -> use orgCrud() + orgTable()
 
 ## The `noboil()` entry point
 
-`noboil()` is the single entry point. Call it once with your config, then pass a `define` callback that maps each table name to a registered table:
+`noboil()` is the single entry point. Call it once with a config object that includes a `tables` callback mapping each table name to a registered table:
 
 ```ts
 import { noboil } from '@noboil/convex/server'
@@ -64,20 +64,18 @@ import { action, internalMutation, internalQuery, mutation, query } from './_gen
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { s } from './s'
 
-export const api = noboil(
-  {
-    query, mutation, action, internalQuery, internalMutation, getAuthUserId,
-    orgSchema: s.team,
-    hooks: { /* global hooks */ },
-    middleware: [auditLog(), inputSanitize()]
-  },
-  ({ table }) => ({
+export const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  orgSchema: s.team,
+  hooks: { /* global hooks */ },
+  middleware: [auditLog(), inputSanitize()],
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
     wiki: table(s.wiki, { acl: true, softDelete: true }),
     profile: table(s.profile),
     movie: table(s.movie, { key: 'tmdbId', ttl: 86_400 })
   })
-)
+})
 ```
 
 The `table()` helper detects each schema's brand at runtime (via a `__bs` marker written by `schema()`) and dispatches to the matching factory under the hood. The table name comes from the object key — no need to repeat it.
@@ -284,3 +282,36 @@ export const trending = pq({
 ### Ejecting individual tables
 
 If a table outgrows the CRUD pattern, stop calling the factory for that table and write raw Convex functions using `pq`/`q`/`m`. The schema branding and table definitions are independent of the CRUD layer — you keep `ownedTable(owned.blog)` in your schema even after ejecting the CRUD for `blog`. See the [ejecting guide](/docs/ejecting) for a full walkthrough.
+
+## Architecture overview
+
+```mermaid
+graph TD
+  S[schema] -->|brands with __bs| N[noboil]
+  N -->|dispatches by brand| F[crud / orgCrud / cacheCrud / singletonCrud / childCrud]
+  F -->|generates| E[create / list / read / update / rm endpoints]
+  E -->|consumed by| H[useList / useMutate / useForm hooks]
+  H -->|renders| C[Form / AutoForm / typed fields]
+```
+
+## SpacetimeDB dev loop
+
+After editing your schema or reducer logic:
+
+```mermaid
+sequenceDiagram
+  participant Dev as Developer
+  participant CLI as SpacetimeDB CLI
+  participant Mod as SpacetimeDB Module
+  participant Gen as spacetime generate
+  participant App as Next.js App
+  Dev->>CLI: bun spacetime:publish
+  CLI->>Mod: Compile + deploy module
+  Mod-->>CLI: Module published
+  Dev->>Gen: bun spacetime:generate
+  Gen-->>Dev: TypeScript bindings updated
+  Dev->>App: bun dev
+  App-->>Dev: Client reconnects with new schema
+```
+
+Schema changes require both steps. If you only `publish`, the module updates but the client TypeScript types are stale. If you only `generate`, you get updated types but the server module doesn't match.

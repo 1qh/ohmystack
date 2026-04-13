@@ -84,15 +84,15 @@ The high-level entry point. Wraps `setup()` and provides a `table()` helper that
 import { noboil } from '@noboil/convex/server'
 import { s } from './s'
 
-const api = noboil(
-  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
-  ({ table }) => ({
+const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' }),
     profile: table(s.blogProfile),
     project: table(s.project, { acl: true }),
     message: table(s.message, { pub: { parentField: 'isPublic' } })
   })
-)
+})
 ```
 
 `table()` detects the schema brand (`owned`, `org`, `singleton`, `base`, `child`) and calls the correct factory. The result object (`api.blog`, `api.profile`, etc.) contains the generated endpoints.
@@ -212,14 +212,14 @@ The primary entry point. Pass a factory function that receives `table` and `t` h
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
   profile: table(s.profile),
   project: table(s.project),
   team: table(s.team, { unique: ['slug'] }),
   movie: table(s.movie, { key: 'tmdbId' }),
   message: table(s.message)
-}))
+}) })
 ```
 
 ### table() — universal interface
@@ -1163,10 +1163,10 @@ const { crud } = setup({
 ```typescript
 import { noboil, auditLog, inputSanitize, slowQueryWarn } from '@noboil/spacetimedb/server'
 
-export default noboil(
-  ({ table }) => ({ blog: table(s.blog, { pub: 'published' }) }),
-  { middleware: [inputSanitize(), auditLog(), slowQueryWarn({ threshold: 200 })] }
-)
+export default noboil({
+  middleware: [inputSanitize(), auditLog(), slowQueryWarn({ threshold: 200 })],
+  tables: ({ table }) => ({ blog: table(s.blog, { pub: 'published' }) })
+})
 ```
 
 </Tab>

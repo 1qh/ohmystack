@@ -86,12 +86,12 @@ import { action, internalMutation, internalQuery, mutation, query } from './conv
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { s } from './s'
 
-export const api = noboil(
-  { query, mutation, action, internalQuery, internalMutation, getAuthUserId },
-  ({ table }) => ({
+export const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  tables: ({ table }) => ({
     blog: table(s.blog, { rateLimit: 10, search: 'content' })
   })
-)
+})
 ```
 
 Then in `convex/blog.ts`, re-export the generated endpoints so Convex picks them up:
@@ -109,9 +109,9 @@ export const { create, update, rm, pub: { list, read, search } } = api.blog
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   blog: table(s.blog, { pub: 'published', rateLimit: 10 })
-}))
+}) })
 ```
 
 `noboil()` builds the schema, registers reducers (`create_blog`, `update_blog`, `rm_blog`), and adds row-level subscription filters from the `pub` option. Republish + regenerate after any change:
@@ -187,6 +187,54 @@ Updates from any client appear in all connected clients in real time.
 ## TypeScript type inference
 
 Field names are checked at compile time. Pass the wrong type to a field and TypeScript catches it. The `s` namespace returned by `schema()` carries the brand, so `api.blog.create({ title: 1 })` is a compile error.
+
+## Your first 10 minutes
+
+After `noboil init my-app` completes, here's what you have:
+
+```
+my-app/
+  backend/convex/     or  backend/spacetimedb/
+  lib/convex/         or  lib/spacetimedb/
+  web/cvx/blog/       or  web/stdb/blog/
+  doc/
+  readonly/ui/
+  package.json
+  .noboilrc.json      ← project manifest (don't edit)
+```
+
+**Start the backend:**
+
+```bash
+# Convex
+bun setup:convex        # generates keys, deploys backend
+bun dev                 # starts Next.js
+
+# SpacetimeDB
+bun setup:spacetimedb   # starts Docker, publishes module
+bun spacetime:generate  # generates TypeScript bindings
+bun dev                 # starts Next.js
+```
+
+**Open the app** at `http://localhost:4100`. You'll see the blog demo with:
+- Login (email or Google)
+- Create / edit / delete posts (owned CRUD)
+- Public vs private toggle (`pub` option)
+- File upload (cover image)
+- Pagination and search
+- Real-time updates (try two browser tabs)
+
+**Make a change:** edit `s.ts` to add a field, then:
+
+```bash
+# Convex: deploy + restart
+cd backend/convex && bun with-env npx convex dev --once
+
+# SpacetimeDB: publish + generate + restart
+bun spacetime:publish && bun spacetime:generate
+```
+
+The new field appears in forms (AutoForm) and queries automatically.
 
 ## Next steps
 

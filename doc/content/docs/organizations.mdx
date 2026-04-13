@@ -27,13 +27,13 @@ export const s = schema({
 ## Wire it up
 
 ```ts
-const api = noboil(
-  { query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team, orgCascadeTables: ['project', 'wiki'] },
-  ({ table }) => ({
+const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId, orgSchema: s.team, orgCascadeTables: ['project', 'wiki'],
+  tables: ({ table }) => ({
     project: table(s.project, { acl: true }),
     wiki: table(s.wiki, { acl: true, softDelete: true })
   })
-)
+})
 ```
 
 `noboil()` auto-creates the `orgMember`, `orgInvite`, and `orgJoinRequest` sub-tables. Org-scoped tables cascade-delete when an org is removed.
@@ -150,18 +150,16 @@ table(s.project, {
 Configure org-level cascade with file cleanup in `noboil()` config:
 
 ```ts
-noboil(
-  {
-    // ...
-    orgSchema: s.team,
-    orgCascadeTables: [
-      'project',
-      'wiki',
-      { table: 'attachment', fileFields: ['fileId'] }
-    ]
-  },
-  ({ table }) => ({ /* ... */ })
-)
+noboil({
+  // ...
+  orgSchema: s.team,
+  orgCascadeTables: [
+    'project',
+    'wiki',
+    { table: 'attachment', fileFields: ['fileId'] }
+  ],
+  tables: ({ table }) => ({ /* ... */ })
+})
 ```
 
 File fields are cleaned from storage before rows are deleted. Members, invites, and join requests are purged. The org document is deleted last.

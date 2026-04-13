@@ -57,7 +57,7 @@ const applyOptimistic = <T extends Rec>(items: T[], pending: PendingMutation[]):
  * @param query A paginated Convex query reference
  * @example
  * ```tsx
- * const { items, loadMore, isDone } = useList(api.blog.list, { where: { published: true } })
+ * const { data, loadMore, isDone } = useList(api.blog.list, { where: { published: true } })
  * ```
  */
 const useList = <F extends PaginatedQueryReference>(query: F, ...rest: ListRest<F>) => {
@@ -97,7 +97,6 @@ const useList = <F extends PaginatedQueryReference>(query: F, ...rest: ListRest<
     hasMore: status === 'CanLoadMore' || status === 'LoadingMore',
     isDone: status === 'Exhausted',
     isLoading: status === 'LoadingFirstPage' || status === 'LoadingMore',
-    items: items as ListItems<F>,
     loadMore: (n?: number) => loadMore(n ?? pageSize),
     status
   }

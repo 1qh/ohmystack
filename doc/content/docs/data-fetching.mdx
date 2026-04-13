@@ -15,11 +15,11 @@ Pass `pub` on a table to control what unauthenticated callers can see.
 <Tab value="Convex">
 
 ```ts
-const api = noboil(config, ({ table }) => ({
+const api = noboil({ ...config, tables: ({ table }) => ({
   blog: table(s.blog, {
     pub: { where: { published: true } }
   })
-}))
+}) })
 ```
 
 The `crud()`-style returns destructure into `{ pub, auth }`:
@@ -38,10 +38,10 @@ export { create, list, read, rm, update }
 <Tab value="SpacetimeDB">
 
 ```ts
-export default noboil(({ table }) => ({
+export default noboil({ tables: ({ table }) => ({
   blog: table(s.blog, { pub: 'published' }),
   project: table(s.project)
-}))
+}) })
 ```
 
 `pub: 'published'` generates `WHERE published = true OR userId = :sender` and indexes the `published` column. No `pub` means owner-only (`WHERE userId = :sender`).
