@@ -1581,6 +1581,25 @@ describe('getMeta', () => {
   test('optional nullable file returns kind file', () => {
     expect(getMeta(file().nullable().optional())).toEqual({ kind: 'file' })
   })
+  test('file with constraints returns accept and maxSize', () => {
+    expect(getMeta(file({ accept: 'image/*', maxSize: 5_242_880 }))).toEqual({
+      accept: 'image/*',
+      kind: 'file',
+      maxSize: 5_242_880
+    })
+  })
+  test('files with constraints returns accept and maxSize', () => {
+    expect(getMeta(files({ accept: 'image/*', maxSize: 10_485_760 }))).toEqual({
+      accept: 'image/*',
+      kind: 'files',
+      maxSize: 10_485_760
+    })
+  })
+  test('file without constraints returns no accept or maxSize', () => {
+    const m = getMeta(file())
+    expect(m.accept).toBeUndefined()
+    expect(m.maxSize).toBeUndefined()
+  })
   test('unknown input returns kind unknown', () => {
     expect(getMeta(42)).toEqual({ kind: 'unknown' })
   })

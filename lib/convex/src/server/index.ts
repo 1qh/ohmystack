@@ -11,6 +11,7 @@ export {
   getErrorMessage,
   handleConvexError,
   handleError,
+  idEquals,
   isErrorCode,
   isMutationError,
   isRecord,

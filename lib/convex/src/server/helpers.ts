@@ -242,6 +242,7 @@ const addUrls = async <D extends Record<string, unknown>>({
 const dbInsert = async (db: DbLike, table: string, data: Record<string, unknown>) => db.insert(table, data)
 const dbPatch = async (db: DbLike, id: string, data: Record<string, unknown>) => db.patch(id, data)
 const dbDelete = async (db: DbLike, id: string) => db.delete(id)
+const idEquals = (a: string, b: string): boolean => a === b
 const RATE_LIMIT_DEFAULT_WINDOW = 60_000
 const normalizeRateLimit = (input: RateLimitInput): RateLimitConfig =>
   typeof input === 'number' ? { max: input, window: RATE_LIMIT_DEFAULT_WINDOW } : input
@@ -330,6 +331,7 @@ export {
   groupList,
   handleConvexError,
   handleError,
+  idEquals,
   isComparisonOp,
   isErrorCode,
   isMutationError,

@@ -4,9 +4,15 @@ import { zid } from 'convex-helpers/server/zod4'
 import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgDefSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'
 import { typed } from './server/bridge'
-/** Zod schema for a Convex storage file reference. */
-const file = () => zid('_storage').meta({ nb: 'file' as const })
-const files = () => array(file()).meta({ nb: 'files' as const })
+interface FileOpts {
+  accept?: string
+  maxSize?: number
+}
+/** Zod schema for a Convex storage file reference. Optionally specify constraints. */
+const file = (opts?: FileOpts) =>
+  zid('_storage').meta({ accept: opts?.accept, maxSize: opts?.maxSize, nb: 'file' as const })
+const files = (opts?: FileOpts) =>
+  array(file(opts)).meta({ accept: opts?.accept, maxSize: opts?.maxSize, nb: 'files' as const })
 interface ChildEntry {
   foreignKey: string
   index: string

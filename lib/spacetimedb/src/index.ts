@@ -1,5 +1,5 @@
 export { guardApi } from './guard'
-export { identityEquals, identityFromHex, identityToHex, idFromWire, idToWire } from './server/helpers'
+export { identityEquals, identityFromHex, identityToHex, idEquals, idFromWire, idToWire } from './server/helpers'
 export type {
   Ab,
   ActionCtxLike,

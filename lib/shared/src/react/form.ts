@@ -41,9 +41,11 @@ interface ConflictData<T = unknown> {
 }
 type FieldKind = 'boolean' | 'date' | 'file' | 'files' | 'number' | 'string' | 'stringArray' | 'unknown'
 interface FieldMeta {
+  accept?: string
   description?: string
   kind: FieldKind
   max?: number
+  maxSize?: number
   title?: string
 }
 type FieldMetaMap = Record<string, FieldMeta>
@@ -131,8 +133,15 @@ const getMeta = (schema: unknown): FieldMeta => {
   const { schema: base, type } = unwrapZod(schema)
   const fileKind = fileKindOf(schema)
   const reg = readRegistryMeta(schema)
-  if (fileKind === 'file') return { kind: 'file', ...reg }
-  if (fileKind === 'files') return { kind: 'files', max: reg.max ?? getMax(base), ...reg }
+  if (fileKind === 'file' || fileKind === 'files') {
+    const metaFn = (schema as { meta?: () => unknown }).meta
+    const m = metaFn ? (metaFn() as undefined | { accept?: string; maxSize?: number }) : undefined
+    const fileMeta: FieldMeta = { kind: fileKind, ...reg }
+    if (m?.accept) fileMeta.accept = m.accept
+    if (m?.maxSize) fileMeta.maxSize = m.maxSize
+    if (fileKind === 'files') fileMeta.max = reg.max ?? getMax(base)
+    return fileMeta
+  }
   if (isArrayType(type)) {
     const el = unwrapZod(elementOf(base))
     return { kind: isStringType(el.type) ? 'stringArray' : 'unknown', max: reg.max ?? getMax(base), ...reg }

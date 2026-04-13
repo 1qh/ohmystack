@@ -53,7 +53,7 @@ interface CreateFieldsModuleOptions {
   unwrapZod: (schema: unknown) => { schema: unknown; type?: string }
 }
 type FieldKind = string
-type FieldMetaMap = Record<string, { kind: FieldKind; max?: number }>
+type FieldMetaMap = Record<string, { accept?: string; kind: FieldKind; max?: number; maxSize?: number }>
 type FileFieldComponent = (props: {
   accept?: string
   compressImg?: boolean
@@ -608,20 +608,20 @@ const createFieldsModule = ({
       name: string
       required?: boolean
     }) => {
-      const { form } = useField(name, 'file')
+      const { form, info } = useField(name, 'file')
       return (
         <form.Field name={name}>
           {(f: AnyFieldApi) => (
             <>
               <DynamicFileField
-                accept={accept}
+                accept={accept ?? info.accept}
                 compressImg={compressImg}
                 data-testid={testId}
                 disabled={disabled}
                 dropClassName={dropClassName}
                 field={f}
                 label={label === false ? undefined : `${label ?? deriveLabel(name)}${required ? ' *' : ''}`}
-                maxSize={maxSize}
+                maxSize={maxSize ?? info.maxSize}
                 {...props}
               />
               {helpText ? <p className='text-sm text-muted-foreground'>{helpText}</p> : null}
@@ -663,7 +663,7 @@ const createFieldsModule = ({
           {(f: AnyFieldApi) => (
             <>
               <DynamicFileField
-                accept={accept}
+                accept={accept ?? info.accept}
                 compressImg={compressImg}
                 data-testid={testId}
                 disabled={disabled}
@@ -671,7 +671,7 @@ const createFieldsModule = ({
                 field={f}
                 label={label === false ? undefined : `${label ?? deriveLabel(name)}${required ? ' *' : ''}`}
                 max={max ?? info.max}
-                maxSize={maxSize}
+                maxSize={maxSize ?? info.maxSize}
                 multiple
                 {...props}
               />

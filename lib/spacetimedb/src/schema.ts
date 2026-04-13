@@ -39,11 +39,16 @@ interface ChildFn {
   }
 }
 /** Creates a file-id schema annotated for noboil file inputs. */
-const file = () =>
+interface FileOpts {
+  accept?: string
+  maxSize?: number
+}
+const file = (opts?: FileOpts) =>
   string()
     .min(1)
-    .meta({ nb: 'file' as const })
-const files = () => array(file()).meta({ nb: 'files' as const })
+    .meta({ accept: opts?.accept, maxSize: opts?.maxSize, nb: 'file' as const })
+const files = (opts?: FileOpts) =>
+  array(file(opts)).meta({ accept: opts?.accept, maxSize: opts?.maxSize, nb: 'files' as const })
 const child: ChildFn = (configOrParent: Record<string, unknown> | string, childSchema?: ZodObject) => {
   if (typeof configOrParent === 'string')
     return {

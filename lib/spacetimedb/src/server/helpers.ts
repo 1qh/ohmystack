@@ -32,7 +32,7 @@ import type {
 } from './types'
 import { fileKindOf } from '../zod'
 import { flt, idx, typed } from './bridge'
-import { identityEquals } from './reducer-utils'
+import { identityEquals, idEquals } from './reducer-utils'
 import { ERROR_MESSAGES } from './types'
 interface ErrorData extends SharedErrorData {
   code: ErrorCode
@@ -504,6 +504,7 @@ export {
   identityEquals,
   identityFromHex,
   identityToHex,
+  idEquals,
   idFromWire,
   idToWire,
   isComparisonOp,

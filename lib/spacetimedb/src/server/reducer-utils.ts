@@ -78,5 +78,6 @@ const getOwnedRow = <Row extends OwnedRow, Id, Tbl extends TableLike<Row>, Pk ex
   if (!identityEquals(row.userId, ctxSender)) throw makeError('FORBIDDEN', `${tableName}:${operation}`)
   return { pk, row }
 }
+const idEquals = identityEquals
 export type { FieldBuilders, OwnedRow, PkLike, TableLike }
-export { applyPatch, getOwnedRow, identityEquals, makeError, makeOptionalFields, pickPatch, timestampEquals }
+export { applyPatch, getOwnedRow, identityEquals, idEquals, makeError, makeOptionalFields, pickPatch, timestampEquals }

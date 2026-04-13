@@ -6,7 +6,7 @@
 - [x] S4. Unify `rateLimit` shorthand — both accept `number` or `{ max, window }`
 - [ ] S5. Abstract file upload — architectural gap (Convex storage URLs vs STDB inline bytes)
 - [ ] S6. Unify file URL resolution — requires architecture decision
-- [ ] S7. Unify identity comparison — abstract behind `idEquals()` helper on both
+- [x] S7. Unify identity comparison — abstract behind `idEquals()` helper on both
 - [ ] S8. Unify ACL endpoints — `EditorsSection` works identically on both
 - [ ] S9. Unify custom query/mutation patterns — shared builder abstraction or docs
 - [ ] S10. Unify pagination semantics — document server vs client, or add server pagination to STDB
@@ -20,7 +20,7 @@
 - [ ] D5. Allow custom error codes — extend `ErrorCode` union
 - [ ] D6. Remove redundant `items`/`data` dual return from `useList()` (breaking change)
 - [x] D7. Schema validation at definition time (reject pipe/transform immediately)
-- [ ] D8. File size/type constraints in Zod schema (`file({ maxSize, accept })`)
+- [x] D8. File size/type constraints in Zod schema (`file({ maxSize, accept })`)
 - [ ] D9. `<DeleteButton>` component — low priority, demo apps use native confirm
 
 ## Tests — 2066 passing (913 Convex + 1108 SpacetimeDB + 45 shared)
