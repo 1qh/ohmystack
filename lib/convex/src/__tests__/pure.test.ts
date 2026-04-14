@@ -2520,6 +2520,28 @@ describe('useCrud unified hook', () => {
     const mod = await import('../react/use-crud')
     expect(mod).toHaveProperty('useCrud')
   })
+  test('createApi is exported', async () => {
+    const mod = await import('../react/create-api')
+    expect(mod).toHaveProperty('createApi')
+    expect(typeof mod.createApi).toBe('function')
+  })
+  test('createApi builds refs from endpoints', async () => {
+    const { createApi } = await import('../react/create-api')
+    const endpoints = {
+      blog: {
+        create: 'create' as never,
+        pub: { list: 'list' as never, read: 'read' as never },
+        rm: 'rm' as never,
+        update: 'update' as never
+      }
+    }
+    const api = createApi(endpoints)
+    expect(api).toHaveProperty('blog')
+    expect(api.blog).toHaveProperty('create')
+    expect(api.blog).toHaveProperty('list')
+    expect(api.blog).toHaveProperty('rm')
+    expect(api.blog).toHaveProperty('update')
+  })
 })
 describe('T21: noboil() accepts object form', () => {
   test('noboil is exported from server', async () => {

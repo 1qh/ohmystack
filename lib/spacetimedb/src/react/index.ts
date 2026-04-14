@@ -20,6 +20,7 @@ export {
   matchError,
   ok
 } from '../server/helpers'
+export { createApi } from './create-api'
 export {
   clearErrors,
   clearMutations,

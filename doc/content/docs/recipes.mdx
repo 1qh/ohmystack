@@ -1765,36 +1765,55 @@ matchError(error, {
 })
 ```
 
-## Unified CRUD with useCrud
+## Unified CRUD with useCrud + createApi
 
-`useCrud` gives you data + mutations in one hook call — same API on both backends:
+`createApi` builds typed refs from your backend exports. `useCrud` consumes them — same code on both backends:
 
 ```tsx
-// Convex
-import { useCrud } from '@noboil/convex/react'
-import { api } from '@a/be-convex'
+// Convex — create api once
+import { createApi } from '@noboil/convex/react'
+import { api as raw } from '@a/be-convex'
+
+export const api = createApi({ blog: raw.blog, chat: raw.chat })
+```
+
+```tsx
+// SpacetimeDB — create api once
+import { createApi } from '@noboil/spacetimedb/react'
+import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
+
+export const api = createApi(tables, reducers)
+```
+
+Then in any component — identical on both backends:
+
+```tsx
+import { useCrud } from '@noboil/convex/react' // or @noboil/spacetimedb/react
 
 const BlogList = () => {
-  const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud({
-    create: api.blog.create,
-    list: api.blog.pub.list,
-    rm: api.blog.rm,
-    update: api.blog.update
-  })
+  const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud(api.blog)
   return <>{data.map(b => <div key={b._id}>{b.title}</div>)}</>
 }
 ```
 
-```tsx
-// SpacetimeDB — same shape, different refs
-import { useCrud } from '@noboil/spacetimedb/react'
-import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
+`useCrud(api.blog)` returns `{ data, create, update, rm, hasMore, isLoading, loadMore }` on both backends. The only backend-specific code is the one-time `createApi` call.
 
-const BlogList = () => {
-  const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud({
-    create: reducers.createBlog,
-    rm: reducers.rmBlog,
-    table: tables.blog,
+You can also pass refs directly without `createApi`:
+
+```tsx
+// Convex — inline refs
+useCrud({
+  create: api.blog.create,
+  list: api.blog.pub.list,
+  rm: api.blog.rm,
+  update: api.blog.update
+})
+
+// SpacetimeDB — inline refs
+useCrud({
+  create: reducers.createBlog,
+  rm: reducers.rmBlog,
+  table: tables.blog,
     update: reducers.updateBlog
   })
   return <>{data.map(b => <div key={b.id}>{b.title}</div>)}</>

@@ -1,3 +1,4 @@
+export { createApi } from './create-api'
 export {
   clearErrors,
   clearMutations,

@@ -9768,6 +9768,34 @@ describe('useCrud unified hook', () => {
     const mod = await import('../react/use-crud')
     expect(mod).toHaveProperty('useCrud')
   })
+  test('createApi is exported', async () => {
+    const mod = await import('../react/create-api')
+    expect(mod).toHaveProperty('createApi')
+    expect(typeof mod.createApi).toBe('function')
+  })
+  test('createApi builds refs from tables and reducers', async () => {
+    const { createApi } = await import('../react/create-api')
+    const tables = { blog: { tableName: 'blog' }, chat: { tableName: 'chat' } }
+    const reducers = {
+      createBlog: 'cb',
+      createChat: 'cc',
+      rmBlog: 'rb',
+      rmChat: 'rc',
+      updateBlog: 'ub',
+      updateChat: 'uc'
+    }
+    const api = createApi(tables, reducers)
+    expect(api.blog).toEqual({ create: 'cb', rm: 'rb', table: { tableName: 'blog' }, update: 'ub' })
+    expect(api.chat).toEqual({ create: 'cc', rm: 'rc', table: { tableName: 'chat' }, update: 'uc' })
+  })
+  test('createApi with explicit table names', async () => {
+    const { createApi } = await import('../react/create-api')
+    const tables = { blog: { tableName: 'blog' }, chat: { tableName: 'chat' } }
+    const reducers = { createBlog: 'cb', rmBlog: 'rb', updateBlog: 'ub' }
+    const api = createApi(tables, reducers, ['blog'])
+    expect(api.blog).toBeDefined()
+    expect(api.chat).toBeUndefined()
+  })
 })
 describe('T21: noboil() object form', () => {
   test('noboil is exported', async () => {
