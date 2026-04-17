@@ -19,12 +19,13 @@ const Layout = async ({ children }: { children: ReactNode }) => {
       ) : (
         <div className='mx-auto max-w-3xl py-2.5'>
           <Link
+            aria-label='Profile'
             className='fixed bottom-12 left-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
             data-testid='profile-link'
             href='/profile'>
             <UserRound className='size-full' />
           </Link>
-          <Logout className='fixed bottom-2 left-2' />
+          <Logout className='fixed right-2 bottom-12 z-20' />
           {children}
           <Devtools position='bottom-right' />
         </div>

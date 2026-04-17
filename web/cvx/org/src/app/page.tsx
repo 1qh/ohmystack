@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTestClient } from '~/utils'
 import OrgList from './org-list'
-import OrgRedirect from './org-redirect'
 interface MyOrgsItem {
   org: { _id: string; avatarId?: string; name: string; slug: string }
   role: OrgRole
@@ -24,7 +23,10 @@ const Page = async () => {
   if (orgs.length === 0) redirect('/onboarding')
   if (orgs.length === 1) {
     const [first] = orgs
-    if (first) return <OrgRedirect orgId={first.org._id} slug={first.org.slug} to='/dashboard' />
+    if (first) {
+      const params = new URLSearchParams({ orgId: first.org._id, slug: first.org.slug, to: '/dashboard' })
+      redirect(`/api/set-org?${params.toString()}`)
+    }
   }
   // oxlint-disable-next-line jsx-no-new-array-as-prop
   const orgList = orgs.map((o: MyOrgsItem) => ({

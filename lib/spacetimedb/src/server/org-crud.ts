@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'

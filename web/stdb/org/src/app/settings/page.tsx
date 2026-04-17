@@ -124,7 +124,10 @@ const OrgSettingsPage = () => {
             <CardDescription>Permanently delete this organization and all its data.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleDelete} variant='destructive'>
+            <Button
+              className='!text-destructive-foreground border-destructive! bg-destructive! hover:bg-destructive/90! focus-visible:border-destructive! focus-visible:ring-destructive! dark:bg-destructive! dark:hover:bg-destructive/90!'
+              onClick={handleDelete}
+              variant='destructive'>
               Delete organization
             </Button>
           </CardContent>

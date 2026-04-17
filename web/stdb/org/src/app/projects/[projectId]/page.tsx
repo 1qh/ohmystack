@@ -102,10 +102,10 @@ const TaskRow = ({
           }}
           size='icon'
           variant='ghost'>
-          <Check className='size-4 text-green-600' />
+          <Check className='size-4 text-primary' />
         </Button>
         <Button onClick={handleCancel} size='icon' variant='ghost'>
-          <X className='size-4 text-red-600' />
+          <X className='size-4 text-destructive' />
         </Button>
       </div>
     )
@@ -134,7 +134,7 @@ const TaskRow = ({
         <div className='flex items-center gap-1'>
           <Avatar className='size-5'>
             <AvatarImage src={undefined} />
-            <AvatarFallback className='text-xs'>
+            <AvatarFallback className='bg-foreground text-xs text-background'>
               {displayName(profileByUserId, assignee.userId.toHexString()).slice(0, 2)}
             </AvatarFallback>
           </Avatar>
@@ -262,7 +262,10 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: string }> 
           {canEditProject ? null : <Badge variant='secondary'>View only</Badge>}
         </div>
         {canEditProject ? (
-          <Button render={p => <Link {...p} href={`/projects/${projectId}/edit`} />} variant='outline'>
+          <Button
+            nativeButton={false}
+            render={p => <Link {...p} href={`/projects/${projectId}/edit`} />}
+            variant='outline'>
             <Pencil className='mr-2 size-4' />
             Edit
           </Button>
@@ -281,7 +284,11 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: string }> 
               <Button onClick={() => handleBulkComplete(false)} size='sm' variant='outline'>
                 Mark Incomplete
               </Button>
-              <Button onClick={handleBulkDelete} size='sm' variant='destructive'>
+              <Button
+                className='!text-destructive-foreground border-destructive! bg-destructive! hover:bg-destructive/90! focus-visible:border-destructive! focus-visible:ring-destructive! dark:bg-destructive! dark:hover:bg-destructive/90!'
+                onClick={handleBulkDelete}
+                size='sm'
+                variant='destructive'>
                 Delete
               </Button>
             </div>

@@ -44,7 +44,7 @@ const Client = ({ blog }: { blog: Blog | null }) => {
       <div className='flex flex-col' data-testid='blog-detail-attachments'>
         {blog.attachments?.map(url => (
           <Link
-            className='hover:text-blue-500 hover:underline'
+            className='hover:text-primary hover:underline'
             href={url}
             key={url}
             rel='noopener noreferrer'

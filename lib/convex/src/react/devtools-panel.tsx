@@ -34,26 +34,28 @@ const ErrorRow = ({ error }: { error: DevError }) => {
   const table = error.data?.table
   const op = error.data?.op
   return (
-    <li className='border-b border-red-900/30 last:border-b-0'>
+    <li className='border-b border-destructive/30 last:border-b-0'>
       <button
-        className='flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-red-950/30'
+        className='flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-destructive/30'
         onClick={() => setExpanded(v => !v)}
         type='button'>
-        <span className='shrink-0 pt-px font-mono text-red-400/60'>{formatTime(error.timestamp)}</span>
-        {code ? <span className='shrink-0 rounded-sm bg-red-900/50 px-1 font-mono text-red-300'>{code}</span> : null}
-        <span className='min-w-0 flex-1 truncate text-red-200'>{error.message}</span>
-        <span className='shrink-0 text-red-400/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
+        <span className='shrink-0 pt-px font-mono text-destructive/60'>{formatTime(error.timestamp)}</span>
+        {code ? (
+          <span className='shrink-0 rounded-sm bg-destructive/50 px-1 font-mono text-destructive'>{code}</span>
+        ) : null}
+        <span className='min-w-0 flex-1 truncate text-destructive'>{error.message}</span>
+        <span className='shrink-0 text-destructive/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
       </button>
       {expanded ? (
-        <div className='space-y-1 bg-red-950/20 px-3 py-2 text-xs'>
+        <div className='space-y-1 bg-destructive/20 px-3 py-2 text-xs'>
           {table || op ? (
-            <p className='font-mono text-red-400/80'>
+            <p className='font-mono text-destructive/80'>
               {table ? `table: ${table}` : ''}
               {table && op ? ' \u00B7 ' : ''}
               {op ? `op: ${op}` : ''}
             </p>
           ) : null}
-          <p className='break-all whitespace-pre-wrap text-red-300/90'>{error.detail}</p>
+          <p className='break-all whitespace-pre-wrap text-destructive/90'>{error.detail}</p>
         </div>
       ) : null}
     </li>
@@ -66,17 +68,17 @@ const SubRow = ({ sub }: { sub: DevSubscription }) => {
   const statusColor =
     sub.status === 'loaded'
       ? stale
-        ? 'text-yellow-400'
-        : 'text-emerald-400'
+        ? 'text-foreground'
+        : 'text-primary'
       : sub.status === 'error'
-        ? 'text-red-400'
-        : 'text-blue-400'
+        ? 'text-destructive'
+        : 'text-primary'
   const statusLabel = stale ? 'stale' : sub.status
   const latencyLabel = sub.latencyMs > 0 ? `${sub.latencyMs}ms` : ''
   return (
-    <li className='border-b border-zinc-800 last:border-b-0'>
+    <li className='border-b border-border last:border-b-0'>
       <button
-        className='flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-zinc-800/50'
+        className='flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50'
         onClick={() => setExpanded(v => !v)}
         type='button'>
         <span
@@ -84,42 +86,42 @@ const SubRow = ({ sub }: { sub: DevSubscription }) => {
             'size-1.5 shrink-0 rounded-full',
             sub.status === 'loaded'
               ? stale
-                ? 'bg-yellow-400'
-                : 'bg-emerald-400'
+                ? 'bg-destructive'
+                : 'bg-primary'
               : sub.status === 'error'
-                ? 'bg-red-400'
-                : 'bg-blue-400'
+                ? 'bg-destructive'
+                : 'bg-primary'
           )}
         />
-        <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{sub.query}</span>
+        <span className='min-w-0 flex-1 truncate font-mono text-foreground'>{sub.query}</span>
         {latencyLabel ? (
-          <span className={cn('shrink-0 font-mono tabular-nums', slow ? 'text-orange-400' : 'text-zinc-500')}>
+          <span className={cn('shrink-0 font-mono tabular-nums', slow ? 'text-foreground' : 'text-muted-foreground')}>
             {latencyLabel}
           </span>
         ) : null}
         <span className={cn('shrink-0 font-mono', statusColor)}>{statusLabel}</span>
-        <span className='shrink-0 text-zinc-500 tabular-nums'>{sub.updateCount}x</span>
+        <span className='shrink-0 text-muted-foreground tabular-nums'>{sub.updateCount}x</span>
         {sub.renderCount > 0 ? (
-          <span className='shrink-0 font-mono text-zinc-600' title='Render count'>
+          <span className='shrink-0 font-mono text-muted-foreground' title='Render count'>
             R{sub.renderCount}
           </span>
         ) : null}
         {sub.resultCount > 0 ? (
-          <span className='shrink-0 font-mono text-zinc-600' title='Result count'>
+          <span className='shrink-0 font-mono text-muted-foreground' title='Result count'>
             {sub.resultCount} items
           </span>
         ) : null}
-        <span className='shrink-0 text-zinc-500/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
+        <span className='shrink-0 text-muted-foreground/40'>{expanded ? '\u25B2' : '\u25BC'}</span>
       </button>
       {expanded ? (
-        <div className='space-y-1 bg-zinc-900/50 px-3 py-2 text-xs'>
-          <p className='font-mono text-zinc-500'>args: {sub.args}</p>
+        <div className='space-y-1 bg-background/50 px-3 py-2 text-xs'>
+          <p className='font-mono text-muted-foreground'>args: {sub.args}</p>
           {sub.dataPreview ? (
-            <p className='max-h-32 overflow-y-auto font-mono break-all whitespace-pre-wrap text-zinc-400'>
+            <p className='max-h-32 overflow-y-auto font-mono break-all whitespace-pre-wrap text-muted-foreground'>
               {sub.dataPreview}...
             </p>
           ) : (
-            <p className='font-mono text-zinc-600'>No data yet</p>
+            <p className='font-mono text-muted-foreground'>No data yet</p>
           )}
         </div>
       ) : null}
@@ -128,22 +130,22 @@ const SubRow = ({ sub }: { sub: DevSubscription }) => {
 }
 const MutationRow = ({ mutation }: { mutation: DevMutation }) => {
   const statusColor =
-    mutation.status === 'success' ? 'text-emerald-400' : mutation.status === 'error' ? 'text-red-400' : 'text-blue-400'
+    mutation.status === 'success' ? 'text-primary' : mutation.status === 'error' ? 'text-destructive' : 'text-primary'
   const durationLabel = mutation.durationMs > 0 ? `${mutation.durationMs}ms` : 'pending'
   return (
-    <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
+    <li className='flex items-center gap-2 border-b border-border px-3 py-2 text-xs last:border-b-0'>
       <span
         className={cn(
           'size-1.5 shrink-0 rounded-full',
           mutation.status === 'success'
-            ? 'bg-emerald-400'
+            ? 'bg-primary'
             : mutation.status === 'error'
-              ? 'bg-red-400'
-              : 'animate-pulse bg-blue-400'
+              ? 'bg-destructive'
+              : 'animate-pulse bg-primary'
         )}
       />
-      <span className='shrink-0 pt-px font-mono text-zinc-500'>{formatTime(mutation.startedAt)}</span>
-      <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{mutation.name}</span>
+      <span className='shrink-0 pt-px font-mono text-muted-foreground'>{formatTime(mutation.startedAt)}</span>
+      <span className='min-w-0 flex-1 truncate font-mono text-foreground'>{mutation.name}</span>
       <span className={cn('shrink-0 font-mono tabular-nums', statusColor)}>{durationLabel}</span>
     </li>
   )
@@ -181,10 +183,10 @@ const Devtools = ({
           posClass,
           'z-9999 flex size-10 items-center justify-center rounded-full shadow-lg transition-colors',
           count > 0
-            ? 'bg-red-600 text-white hover:bg-red-700'
+            ? 'bg-destructive text-foreground hover:bg-destructive'
             : staleCount > 0 || pendingCount > 0
-              ? 'bg-yellow-600 text-white hover:bg-yellow-700'
-              : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700',
+              ? 'bg-destructive text-foreground hover:bg-destructive'
+              : 'bg-muted text-muted-foreground hover:bg-muted',
           className,
           buttonClassName
         )}
@@ -207,11 +209,11 @@ const Devtools = ({
       className={cn(
         'fixed',
         posClass,
-        'z-9999 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-2xl',
+        'z-9999 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl',
         className,
         panelClassName
       )}>
-      <div className='flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2'>
+      <div className='flex items-center justify-between border-b border-border bg-background px-3 py-2'>
         <div className='flex gap-1'>
           <TabBtn
             active={tab === 'errors'}
@@ -237,7 +239,7 @@ const Devtools = ({
         <div className='flex gap-1'>
           {tab === 'errors' && errorCount > 0 ? (
             <button
-              className='rounded-sm px-2 py-0.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              className='rounded-sm px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground'
               onClick={clear}
               type='button'>
               Clear
@@ -245,7 +247,7 @@ const Devtools = ({
           ) : null}
           {tab === 'mutations' && mutCount > 0 ? (
             <button
-              className='rounded-sm px-2 py-0.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              className='rounded-sm px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground'
               onClick={clearMutations}
               type='button'>
               Clear
@@ -253,14 +255,14 @@ const Devtools = ({
           ) : null}
           {tab === 'subs' && subCount > 0 ? (
             <button
-              className='rounded-sm px-2 py-0.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              className='rounded-sm px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground'
               onClick={() => setShowWaterfall(v => !v)}
               type='button'>
               {showWaterfall ? 'List' : 'Waterfall'}
             </button>
           ) : null}
           <button
-            className='rounded-sm px-2 py-0.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+            className='rounded-sm px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground'
             onClick={() => setOpen(v => !v)}
             type='button'>
             ✕
@@ -270,7 +272,7 @@ const Devtools = ({
       <div className='max-h-80 overflow-y-auto'>
         {tab === 'errors' ? (
           errorCount === 0 ? (
-            <p className='px-3 py-6 text-center text-xs text-zinc-500'>No errors</p>
+            <p className='px-3 py-6 text-center text-xs text-muted-foreground'>No errors</p>
           ) : (
             <ul>
               {errors.map(e => (
@@ -280,7 +282,7 @@ const Devtools = ({
           )
         ) : tab === 'subs' ? (
           subCount === 0 ? (
-            <p className='px-3 py-6 text-center text-xs text-zinc-500'>No active subscriptions</p>
+            <p className='px-3 py-6 text-center text-xs text-muted-foreground'>No active subscriptions</p>
           ) : showWaterfall ? (
             <ul>
               {subscriptions.map(s => (
@@ -296,7 +298,7 @@ const Devtools = ({
           )
         ) : tab === 'mutations' ? (
           mutCount === 0 ? (
-            <p className='px-3 py-6 text-center text-xs text-zinc-500'>No mutations tracked</p>
+            <p className='px-3 py-6 text-center text-xs text-muted-foreground'>No mutations tracked</p>
           ) : (
             <ul>
               {mutations.map(m => (
@@ -305,7 +307,7 @@ const Devtools = ({
             </ul>
           )
         ) : cacheCount === 0 ? (
-          <p className='px-3 py-6 text-center text-xs text-zinc-500'>No cache entries</p>
+          <p className='px-3 py-6 text-center text-xs text-muted-foreground'>No cache entries</p>
         ) : (
           <ul>
             {cache.map(c => (

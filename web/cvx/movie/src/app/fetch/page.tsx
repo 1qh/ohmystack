@@ -79,7 +79,7 @@ const Page = () => {
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-4 p-4' data-testid='movie-fetch-page'>
       <div className='flex items-center gap-2'>
-        <Link className='rounded-lg p-1 hover:bg-muted' href='/'>
+        <Link aria-label='Back' className='rounded-lg p-1 hover:bg-muted' href='/'>
           <ArrowLeft className='size-5' />
         </Link>
         <h1 className='text-xl font-semibold'>Fetch by ID</h1>

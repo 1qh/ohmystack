@@ -38,7 +38,7 @@ const Page = () => {
         ref={ref}
       />
       <Check
-        className={cn(showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-green-500' : 'sr-only')}
+        className={cn(showExhausted ? 'm-auto animate-[fadeOut_2s_forwards] text-primary' : 'sr-only')}
         data-testid='pagination-exhausted'
       />
     </div>

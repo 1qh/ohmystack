@@ -40,6 +40,8 @@ const setEnv = async (k: string, v: string) => {
   await run(`cd backend/convex && bun with-env npx convex env set ${k} -- "$(cat ${tmpFile})"`)
 }
 if (existing.TMDB_KEY) await setEnv('TMDB_KEY', existing.TMDB_KEY)
+if (existing.AUTH_GOOGLE_ID) await setEnv('AUTH_GOOGLE_ID', existing.AUTH_GOOGLE_ID)
+if (existing.AUTH_GOOGLE_SECRET) await setEnv('AUTH_GOOGLE_SECRET', existing.AUTH_GOOGLE_SECRET)
 await setEnv('CONVEX_TEST_MODE', 'true')
 await setEnv('CI', '')
 await setEnv('SITE_URL', 'http://localhost:4100')

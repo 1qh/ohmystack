@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 'use client'
 import { useEffect, useReducer } from 'react'
 interface CreateDevtoolsCoreOptions {

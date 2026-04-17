@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 'use client'
 import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
@@ -6,7 +7,7 @@ import { Badge } from '@a/ui/badge'
 const OrgAvatar = ({ name, src, ...props }: ComponentProps<typeof Avatar> & { name: string; src?: string }) => (
   <Avatar {...props}>
     {src ? <AvatarImage src={src} /> : null}
-    <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+    <AvatarFallback className='bg-foreground text-background'>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
   </Avatar>
 )
 const variantByRole: Record<string, 'default' | 'outline' | 'secondary'> = {

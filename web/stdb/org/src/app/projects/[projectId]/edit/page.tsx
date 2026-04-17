@@ -56,7 +56,11 @@ const EditProjectForm = ({ projectId, taskCount }: { projectId: number; taskCoun
           </FieldGroup>
           <div className='flex gap-2'>
             <Submit className='flex-1'>Save changes</Submit>
-            <Button onClick={handleDelete} type='button' variant='destructive'>
+            <Button
+              className='!text-destructive-foreground border-destructive! bg-destructive! hover:bg-destructive/90! focus-visible:border-destructive! focus-visible:ring-destructive! dark:bg-destructive! dark:hover:bg-destructive/90!'
+              onClick={handleDelete}
+              type='button'
+              variant='destructive'>
               Delete
             </Button>
           </div>

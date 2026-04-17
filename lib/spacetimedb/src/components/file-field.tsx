@@ -104,7 +104,7 @@ const Preview = ({
       )}
       {onRemove ? (
         <button
-          className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-white transition-transform hover:scale-110'
+          className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-foreground transition-transform hover:scale-110'
           onClick={onRemove}
           type='button'>
           <X className='size-3' />
@@ -126,40 +126,49 @@ const DropSlot = ({
   progress,
   rootProps
 }: DropSlotProps) => (
-  <div
-    {...rootProps}
-    aria-label='Upload file'
-    className={dropCls}
-    onKeyDown={e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        inputRef.current?.click()
-      }
-    }}
-    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-    role='button'
-    tabIndex={0}>
-    <input {...inputProps} aria-describedby={inv ? errorId : undefined} aria-invalid={inv} />
-    {isUploading ? (
-      compact ? (
-        <span className='text-xs'>{progress}%</span>
-      ) : (
-        <Progress v={progress} />
-      )
-    ) : compact ? (
-      <Upload className='size-5 text-muted-foreground' />
-    ) : (
-      <>
-        {accept?.includes('image') ? (
-          <ImageIcon className='mb-2 size-8 text-muted-foreground' />
+  <>
+    <input
+      {...inputProps}
+      aria-describedby={inv ? errorId : undefined}
+      aria-hidden='true'
+      aria-invalid={inv}
+      aria-label='File upload'
+      tabIndex={-1}
+    />
+    <div
+      {...rootProps}
+      aria-label='Upload file'
+      className={dropCls}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          inputRef.current?.click()
+        }
+      }}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+      role='button'
+      tabIndex={0}>
+      {isUploading ? (
+        compact ? (
+          <span className='text-xs'>{progress}%</span>
         ) : (
-          <Upload className='mb-2 size-8 text-muted-foreground' />
-        )}
-        <span className='text-sm text-muted-foreground'>Click or drag</span>
-        {maxSize ? <span className='mt-1 text-xs text-muted-foreground'>Max {fmt(maxSize)}</span> : null}
-      </>
-    )}
-  </div>
+          <Progress v={progress} />
+        )
+      ) : compact ? (
+        <Upload className='size-5 text-muted-foreground' />
+      ) : (
+        <>
+          {accept?.includes('image') ? (
+            <ImageIcon className='mb-2 size-8 text-muted-foreground' />
+          ) : (
+            <Upload className='mb-2 size-8 text-muted-foreground' />
+          )}
+          <span className='text-sm text-muted-foreground'>Click or drag</span>
+          {maxSize ? <span className='mt-1 text-xs text-muted-foreground'>Max {fmt(maxSize)}</span> : null}
+        </>
+      )}
+    </div>
+  </>
 )
 const MultipleValue = ({
   canAdd,

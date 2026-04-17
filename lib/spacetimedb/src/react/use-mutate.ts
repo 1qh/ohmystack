@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 /* eslint-disable complexity */
 'use client'

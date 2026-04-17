@@ -25,7 +25,7 @@ const PermissionGuard = ({
       <div className={cn('flex flex-col items-center gap-4 py-12', className)} {...props}>
         <Badge variant='secondary'>View only</Badge>
         <p className='text-muted-foreground'>You don&apos;t have edit permission for this {resource}.</p>
-        <Button render={p => <Link {...p} href={backHref} />} variant='outline'>
+        <Button nativeButton={false} render={p => <Link {...p} href={backHref} />} variant='outline'>
           Back to {backLabel}
         </Button>
       </div>

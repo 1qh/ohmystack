@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* eslint-disable one-var */
 import { createEslintPluginBundle } from '@a/shared/eslint'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 import type { Id, TableNames } from '@a/be-convex/model'
 import { getErrorMessage, handleConvexError } from '@noboil/convex/server'
 import { toast } from 'sonner'

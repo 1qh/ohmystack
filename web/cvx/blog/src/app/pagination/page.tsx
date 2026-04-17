@@ -23,7 +23,7 @@ const Page = () => {
           }}
         />
       ) : status === 'Exhausted' ? (
-        <Check className='m-auto animate-[fadeOut_2s_forwards] text-green-500' data-testid='pagination-exhausted' />
+        <Check className='m-auto animate-[fadeOut_2s_forwards] text-primary' data-testid='pagination-exhausted' />
       ) : null}
     </div>
   )

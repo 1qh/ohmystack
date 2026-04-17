@@ -18,7 +18,9 @@ const tailwindUnknownClassIgnore = [
   'animated',
   'node-container',
   'origin-top-center',
-  'toaster'
+  'toaster',
+  'text-destructive-foreground',
+  'bg-destructive-foreground'
 ]
 export default defineConfig({
   eslint: {

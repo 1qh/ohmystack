@@ -108,6 +108,7 @@ const LayoutContent = ({ children }: { children: ReactNode }) => (
 )
 const Layout = ({ children }: { children: ReactNode }) => (
   <AuthLayout Provider={SpacetimeWrapper}>
+    <title>Org</title>
     <LayoutContent>{children}</LayoutContent>
   </AuthLayout>
 )

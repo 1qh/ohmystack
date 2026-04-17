@@ -86,10 +86,13 @@ const EditorsSection = ({
                 data-testid={`editor-item-${e.userId}`}
                 key={e.userId}>
                 <Avatar className='size-7'>
-                  <AvatarFallback className='text-xs'>{e.name.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
+                  <AvatarFallback className='bg-foreground text-xs text-background'>
+                    {(e.name || e.email || '??').slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <span className='flex-1 text-sm'>{e.name || e.email}</span>
                 <Button
+                  aria-label='Remove editor'
                   data-testid={`remove-editor-${e.userId}`}
                   onClick={() => onRemove(e.userId)}
                   size='icon'

@@ -18,7 +18,7 @@ const FALLBACK_CONVEX_URL = 'http://127.0.0.1:4001'
 const getClient = (url: string) => {
   let c = clients.get(url)
   if (!c) {
-    c = new Client(url, { verbose: true })
+    c = new Client(url)
     clients.set(url, c)
   }
   return c

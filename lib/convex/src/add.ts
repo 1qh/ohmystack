@@ -212,9 +212,9 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
       {data ? (
-        <pre className='rounded bg-zinc-100 p-4 text-sm'>{JSON.stringify(data, null, 2)}</pre>
+        <pre className='rounded bg-background p-4 text-sm'>{JSON.stringify(data, null, 2)}</pre>
       ) : (
-        <p className='text-zinc-400'>No data yet.</p>
+        <p className='text-muted-foreground'>No data yet.</p>
       )}
     </main>
   )
@@ -237,11 +237,11 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
         ))}
       </ul>
       {status === 'CanLoadMore' ? (
-        <button className='mt-4 text-sm text-zinc-500 hover:text-zinc-900' onClick={loadMore} type='button'>
+        <button className='mt-4 text-sm text-muted-foreground hover:text-foreground' onClick={loadMore} type='button'>
           Load more
         </button>
       ) : null}
-      {items.length === 0 ? <p className='text-zinc-400'>No items yet.</p> : null}
+      {items.length === 0 ? <p className='text-muted-foreground'>No items yet.</p> : null}
     </main>
   )
 }

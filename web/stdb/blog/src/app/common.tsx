@@ -104,7 +104,7 @@ const Create = () => {
           <Button
             {...p}
             aria-label='Create blog post'
-            className='fixed top-2 right-2 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
+            className='fixed top-2 right-2 z-10 size-10 rounded-full bg-muted p-2 transition-all duration-300 hover:scale-110 hover:bg-border active:scale-75'
             data-testid='create-blog-trigger'
             size='icon'
             type='button'

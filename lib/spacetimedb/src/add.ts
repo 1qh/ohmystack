@@ -207,7 +207,7 @@ const ${component}Page = () => {
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
-      <button className='rounded bg-zinc-900 px-4 py-2 text-white hover:bg-zinc-700' onClick={refresh} type='button'>
+      <button className='rounded bg-background px-4 py-2 text-foreground hover:bg-muted' onClick={refresh} type='button'>
         {loading ? 'Loading...' : 'Refresh'}
       </button>
     </main>
@@ -229,7 +229,7 @@ const ${component}Page = () => {
   return (
     <main className='mx-auto max-w-2xl p-8'>
       <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
-      <button className='rounded bg-zinc-900 px-4 py-2 text-white hover:bg-zinc-700' onClick={refresh} type='button'>
+      <button className='rounded bg-background px-4 py-2 text-foreground hover:bg-muted' onClick={refresh} type='button'>
         {loading ? 'Loading...' : 'Load ${title}'}
       </button>
     </main>

@@ -82,7 +82,7 @@ const WikiDetailPage = ({ params }: { params: Promise<{ wikiId: string }> }) => 
           )}
         </div>
         {canEditWiki && !isDeleted ? (
-          <Button render={p => <Link {...p} href={`/wiki/${wikiId}/edit`} />} variant='outline'>
+          <Button nativeButton={false} render={p => <Link {...p} href={`/wiki/${wikiId}/edit`} />} variant='outline'>
             <Pencil className='mr-2 size-4' />
             Edit
           </Button>

@@ -70,7 +70,7 @@ const ProjectsPage = () => {
             </div>
           ) : null}
         </div>
-        <Button render={p => <Link {...p} href='/projects/new' />}>
+        <Button nativeButton={false} render={p => <Link {...p} href='/projects/new' />}>
           <Plus className='mr-2 size-4' />
           New project
         </Button>

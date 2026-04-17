@@ -37,7 +37,7 @@ const JoinRequests = () => {
             <TableRow key={r.id}>
               <TableCell className='flex items-center gap-2'>
                 <Avatar className='size-6'>
-                  <AvatarFallback className='text-xs'>
+                  <AvatarFallback className='bg-foreground text-xs text-background'>
                     {(profileByUserId.get(r.userId.toHexString())?.displayName ?? '?').slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
@@ -60,7 +60,7 @@ const JoinRequests = () => {
                   }}
                   size='icon'
                   variant='ghost'>
-                  <Check className='size-4 text-green-600' />
+                  <Check className='size-4 text-primary' />
                 </Button>
                 <Button
                   onClick={() => {
@@ -68,7 +68,7 @@ const JoinRequests = () => {
                   }}
                   size='icon'
                   variant='ghost'>
-                  <X className='size-4 text-red-600' />
+                  <X className='size-4 text-destructive' />
                 </Button>
               </TableCell>
             </TableRow>

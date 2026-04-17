@@ -26,7 +26,7 @@ const Sb = () => {
         ) : status === 'CanLoadMore' ? (
           <p className='h-4' ref={ref} />
         ) : status === 'Exhausted' && data.length > 20 ? (
-          <Check className='animate-[fadeOut_2s_forwards] text-green-500' />
+          <Check className='animate-[fadeOut_2s_forwards] text-primary' />
         ) : null}
       </div>
     </>

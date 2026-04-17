@@ -37,7 +37,7 @@ const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) =>
       <div className='container flex justify-center py-16'>
         <Card className='w-full max-w-md text-center'>
           <CardContent className='py-8'>
-            <CheckCircle className='mx-auto mb-4 size-16 text-green-500' />
+            <CheckCircle className='mx-auto mb-4 size-16 text-primary' />
             <h2 className='text-xl font-bold'>You&apos;re in!</h2>
             <p className='text-muted-foreground'>Redirecting to organization...</p>
           </CardContent>

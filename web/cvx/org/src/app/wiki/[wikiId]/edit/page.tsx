@@ -55,7 +55,11 @@ const EditWikiForm = ({ wikiId }: { wikiId: Id<'wiki'> }) => {
           <div className='flex items-center gap-2'>
             <AutoSaveIndicator data-testid='auto-save-indicator' lastSaved={form.lastSaved} />
             <span className='flex-1' />
-            <Button onClick={handleDelete} type='button' variant='destructive'>
+            <Button
+              className='!text-destructive-foreground border-destructive! bg-destructive! hover:bg-destructive/90! focus-visible:border-destructive! focus-visible:ring-destructive! dark:bg-destructive! dark:hover:bg-destructive/90!'
+              onClick={handleDelete}
+              type='button'
+              variant='destructive'>
               Delete
             </Button>
           </div>

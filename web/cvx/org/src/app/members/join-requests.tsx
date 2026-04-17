@@ -49,7 +49,7 @@ const JoinRequests = () => {
               <TableCell className='flex items-center gap-2'>
                 <Avatar className='size-6'>
                   {u?.image ? <AvatarImage src={u.image} /> : null}
-                  <AvatarFallback className='text-xs'>{u?.name?.[0] ?? '?'}</AvatarFallback>
+                  <AvatarFallback className='bg-foreground text-xs text-background'>{u?.name?.[0] ?? '?'}</AvatarFallback>
                 </Avatar>
                 <span>{u?.name ?? 'Unknown'}</span>
               </TableCell>
@@ -63,10 +63,10 @@ const JoinRequests = () => {
               </TableCell>
               <TableCell className='flex gap-1'>
                 <Button onClick={() => handleApprove(r._id, asAdmin[r._id] ?? false)} size='icon' variant='ghost'>
-                  <Check className='size-4 text-green-600' />
+                  <Check className='size-4 text-primary' />
                 </Button>
                 <Button onClick={() => handleReject(r._id)} size='icon' variant='ghost'>
-                  <X className='size-4 text-red-600' />
+                  <X className='size-4 text-destructive' />
                 </Button>
               </TableCell>
             </TableRow>

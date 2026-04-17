@@ -44,7 +44,7 @@ const Client = ({ preloaded }: { preloaded: Preloaded<typeof api.blog.read> }) =
           (url: null | string) =>
             url && (
               <Link
-                className='hover:text-blue-500 hover:underline'
+                className='hover:text-primary hover:underline'
                 href={url}
                 key={url}
                 rel='noopener noreferrer'

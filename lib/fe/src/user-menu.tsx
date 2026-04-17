@@ -2,9 +2,9 @@ import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
 import { api } from '@a/be-convex'
 import { convexAuthNextjsToken as tok } from '@convex-dev/auth/nextjs/server'
-import { fetchAction, fetchQuery } from 'convex/nextjs'
-import { redirect } from 'next/navigation'
+import { fetchQuery } from 'convex/nextjs'
 import { connection } from 'next/server'
+import { logoutAction } from './logout-action'
 import UserMenuShell from './user-menu-shell'
 interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
   shellProps?: Omit<
@@ -22,11 +22,6 @@ const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
   const email = profile?.email
   const image = profile?.image
   const name = profile?.name
-  const onLogout = async () => {
-    'use server'
-    await fetchAction(api.auth.signOut, undefined, { token })
-    redirect('/login')
-  }
   return (
     <UserMenuShell
       {...shellProps}
@@ -34,7 +29,7 @@ const UserMenu = async ({ shellProps, ...triggerProps }: UserMenuProps) => {
       image={image}
       isSignedIn={Boolean(token)}
       name={name}
-      onLogout={onLogout}
+      onLogout={logoutAction}
       triggerProps={triggerProps}
     />
   )

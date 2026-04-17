@@ -91,7 +91,7 @@ const BlogPage = () => {
           placeholder='New post title...'
           value={title}
         />
-        <button className='rounded bg-zinc-900 px-4 py-2 text-white hover:bg-zinc-700' onClick={handleCreate} type='button'>
+        <button className='rounded bg-background px-4 py-2 text-foreground hover:bg-muted' onClick={handleCreate} type='button'>
           Create
         </button>
       </div>

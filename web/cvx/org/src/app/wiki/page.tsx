@@ -94,7 +94,7 @@ const WikiPage = () => {
             Trash
           </Button>
           {showDeleted ? null : (
-            <Button render={p => <Link {...p} href='/wiki/new' />}>
+            <Button nativeButton={false} render={p => <Link {...p} href='/wiki/new' />}>
               <Plus className='mr-2 size-4' />
               New wiki
             </Button>

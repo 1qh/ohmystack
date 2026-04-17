@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
 /* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp, @typescript-eslint/promise-function-async */
 'use client'
@@ -40,11 +41,13 @@ const createErrorBoundary = ({ readErrorCode, readErrorMessage }: CreateErrorBou
       return (
         <div className={cn('flex min-h-[200px] items-center justify-center p-6', className)}>
           <div className='max-w-md space-y-3 text-center'>
-            {code ? <span className='rounded-sm bg-red-100 px-2 py-1 font-mono text-xs text-red-700'>{code}</span> : null}
-            <h2 className='text-lg font-semibold text-zinc-900 dark:text-zinc-100'>Something went wrong</h2>
-            <p className='text-sm text-zinc-600 dark:text-zinc-400'>{message}</p>
+            {code ? (
+              <span className='rounded-sm bg-destructive/10 px-2 py-1 font-mono text-xs text-destructive'>{code}</span>
+            ) : null}
+            <h2 className='text-lg font-semibold text-foreground dark:text-foreground'>Something went wrong</h2>
+            <p className='text-sm text-muted-foreground dark:text-muted-foreground'>{message}</p>
             <button
-              className='rounded-md bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300'
+              className='rounded-md bg-background px-4 py-2 text-sm text-foreground hover:bg-muted dark:bg-background dark:text-foreground dark:hover:bg-muted'
               onClick={() => this.setState({ error: null })}
               type='button'>
               Try again

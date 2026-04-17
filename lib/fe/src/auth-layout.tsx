@@ -1,4 +1,5 @@
 import '@a/ui/globals.css'
+import './overrides.css'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@a/ui'
 import { Toaster } from '@a/ui/sonner'

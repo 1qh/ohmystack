@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* oxlint-disable jsx-no-jsx-as-prop */
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
@@ -879,7 +880,7 @@ const createFieldsModule = ({
                     <Star
                       className={cn(
                         'size-6 cursor-pointer transition-all',
-                        i <= val ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
+                        i <= val ? 'fill-foreground text-foreground' : 'text-muted-foreground hover:text-foreground'
                       )}
                       key={i}
                       onBlur={f.handleBlur}

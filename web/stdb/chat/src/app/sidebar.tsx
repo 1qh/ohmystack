@@ -27,7 +27,7 @@ const Sb = () => {
       <div className='flex justify-center p-2'>
         {isReady ? (
           chats.length > 20 ? (
-            <Check className='animate-[fadeOut_2s_forwards] text-green-500' />
+            <Check className='animate-[fadeOut_2s_forwards] text-primary' />
           ) : null
         ) : (
           <Spinner />

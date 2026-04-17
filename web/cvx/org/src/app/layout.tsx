@@ -2,6 +2,7 @@
 import type { Doc } from '@a/be-convex/model'
 import type { OrgRole } from '@noboil/convex'
 import type { FunctionReference } from 'convex/server'
+import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { api } from '@a/be-convex'
 import AuthLayout from '@a/fe/auth-layout'
@@ -13,7 +14,6 @@ import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { getTestClient } from '~/utils'
 import OrgLayoutClient from './layout-client'
-import OrgRedirect from './org-redirect'
 import { ConvexWrapper } from './providers'
 const ORG_PATHS = ['/dashboard', '/members', '/projects', '/wiki', '/settings']
 const needsOrgLayout = (pathname: string) => {
@@ -63,12 +63,10 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   let content: ReactNode = children
   if (needsOrgLayout(pathname)) {
     const ctx = await resolveOrgContext(pathname)
-    if (ctx.kind === 'redirect')
-      return (
-        <AuthLayout ConvexProvider={ConvexWrapper}>
-          <OrgRedirect orgId={ctx.orgId} slug={ctx.slug} to={ctx.to} />
-        </AuthLayout>
-      )
+    if (ctx.kind === 'redirect') {
+      const params = new URLSearchParams({ orgId: ctx.orgId, slug: ctx.slug, to: ctx.to })
+      redirect(`/api/set-org?${params.toString()}`)
+    }
     content = (
       <OrgLayoutClient membership={null} org={ctx.org} role={ctx.membership.role}>
         {children}
@@ -82,4 +80,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
     </AuthLayout>
   )
 }
+const metadata: Metadata = { description: 'noboil org demo', title: 'Org' }
+export { metadata }
 export default Layout

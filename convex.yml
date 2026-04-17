@@ -77,6 +77,14 @@ services:
       start_period: 30s
     networks:
       - convex-net
+  backend-loopback:
+    image: alpine/socat
+    restart: unless-stopped
+    command: "tcp-listen:4002,fork,reuseaddr tcp-connect:localhost:3211"
+    network_mode: "service:backend"
+    depends_on:
+      backend:
+        condition: service_healthy
   dashboard:
     image: ghcr.io/get-convex/convex-dashboard:latest
     restart: unless-stopped

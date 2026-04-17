@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable eslint/no-await-in-loop */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 /* eslint-disable no-await-in-loop */

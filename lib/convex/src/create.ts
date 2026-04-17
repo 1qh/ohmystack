@@ -123,7 +123,7 @@ const BlogPage = () => {
           value={title}
         />
         <button
-          className='rounded bg-zinc-900 px-4 py-2 text-white hover:bg-zinc-700'
+          className='rounded bg-background px-4 py-2 text-foreground hover:bg-muted'
           onClick={handleCreate}
           type='button'>
           Create
@@ -133,16 +133,16 @@ const BlogPage = () => {
         {items.map(b => (
           <li className='py-3' key={b._id}>
             <span className='font-medium'>{b.title}</span>
-            <span className='ml-2 text-sm text-zinc-500'>{b.category}</span>
+            <span className='ml-2 text-sm text-muted-foreground'>{b.category}</span>
           </li>
         ))}
       </ul>
       {status === 'CanLoadMore' && (
-        <button className='mt-4 text-sm text-zinc-500 hover:text-zinc-900' onClick={loadMore} type='button'>
+        <button className='mt-4 text-sm text-muted-foreground hover:text-foreground' onClick={loadMore} type='button'>
           Load more
         </button>
       )}
-      {items.length === 0 && <p className='text-zinc-400'>No posts yet. Create one above.</p>}
+      {items.length === 0 && <p className='text-muted-foreground'>No posts yet. Create one above.</p>}
     </main>
   )
 }

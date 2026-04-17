@@ -152,7 +152,7 @@ const MessageItem = ({
   if (isUser)
     return (
       <div className='is-user flex w-full items-start justify-end gap-3' data-role='user' data-testid='message'>
-        <div className='max-w-[80%] rounded-2xl bg-[#006cff] px-4 py-2 text-white'>
+        <div className='max-w-[80%] rounded-2xl bg-[#006cff] px-4 py-2 text-foreground'>
           <span className='whitespace-pre-wrap'>{text}</span>
         </div>
       </div>

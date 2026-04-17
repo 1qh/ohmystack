@@ -35,7 +35,7 @@ const PrioritySelect = ({ onValueChange, value }: { onValueChange: (v: Priority)
       if (v) onValueChange(asPriority(v))
     }}
     value={value}>
-    <SelectTrigger className='w-28'>
+    <SelectTrigger aria-label='Priority' className='w-28'>
       <SelectValue />
     </SelectTrigger>
     <SelectContent>
@@ -83,11 +83,11 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
       <div className='flex items-center gap-2 py-2'>
         <Input className='flex-1' onChange={e => setEditTitle(e.target.value)} value={editTitle} />
         <PrioritySelect onValueChange={setEditPriority} value={editPriority} />
-        <Button onClick={handleSave} size='icon' variant='ghost'>
-          <Check className='size-4 text-green-600' />
+        <Button aria-label='Save' onClick={handleSave} size='icon' variant='ghost'>
+          <Check className='size-4 text-primary' />
         </Button>
-        <Button onClick={handleCancel} size='icon' variant='ghost'>
-          <X className='size-4 text-red-600' />
+        <Button aria-label='Cancel' onClick={handleCancel} size='icon' variant='ghost'>
+          <X className='size-4 text-destructive' />
         </Button>
       </div>
     )
@@ -100,7 +100,7 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
         <Select
           onValueChange={v => onAssign(members.find(m => m.userId === v)?.userId ?? null)}
           value={assigneeId ?? 'none'}>
-          <SelectTrigger className='w-32'>
+          <SelectTrigger aria-label='Assignee' className='w-32'>
             <SelectValue placeholder='Unassigned' />
           </SelectTrigger>
           <SelectContent>
@@ -116,17 +116,19 @@ const TaskRow = ({ canAssign, canEdit, members, onAssign, onDelete, onToggle, on
         <div className='flex items-center gap-1'>
           <Avatar className='size-5'>
             {assignee.user?.image ? <AvatarImage src={assignee.user.image} /> : null}
-            <AvatarFallback className='text-xs'>{assignee.user?.name?.[0] ?? '?'}</AvatarFallback>
+            <AvatarFallback className='bg-foreground text-xs text-background'>
+              {assignee.user?.name?.[0] ?? '?'}
+            </AvatarFallback>
           </Avatar>
           <span className='text-xs text-muted-foreground'>{assignee.user?.name}</span>
         </div>
       ) : null}
       {canEdit ? (
         <>
-          <Button onClick={() => setEditing(true)} size='icon' variant='ghost'>
+          <Button aria-label='Edit task' onClick={() => setEditing(true)} size='icon' variant='ghost'>
             <Pencil className='size-4' />
           </Button>
-          <Button onClick={onDelete} size='icon' variant='ghost'>
+          <Button aria-label='Delete task' onClick={onDelete} size='icon' variant='ghost'>
             <Trash className='size-4' />
           </Button>
         </>
@@ -235,7 +237,10 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: Id<'projec
           {canEditProject ? null : <Badge variant='secondary'>View only</Badge>}
         </div>
         {canEditProject ? (
-          <Button render={p => <Link {...p} href={`/projects/${projectId}/edit`} />} variant='outline'>
+          <Button
+            nativeButton={false}
+            render={p => <Link {...p} href={`/projects/${projectId}/edit`} />}
+            variant='outline'>
             <Pencil className='mr-2 size-4' />
             Edit
           </Button>
@@ -254,7 +259,11 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: Id<'projec
               <Button onClick={() => handleBulkComplete(false)} size='sm' variant='outline'>
                 Mark Incomplete
               </Button>
-              <Button onClick={handleBulkDelete} size='sm' variant='destructive'>
+              <Button
+                className='!text-destructive-foreground border-destructive! bg-destructive! hover:bg-destructive/90! focus-visible:border-destructive! focus-visible:ring-destructive! dark:bg-destructive! dark:hover:bg-destructive/90!'
+                onClick={handleBulkDelete}
+                size='sm'
+                variant='destructive'>
                 Delete
               </Button>
             </div>
@@ -265,7 +274,7 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: Id<'projec
             <form className='flex gap-2' onSubmit={handleAddTask}>
               <Input className='flex-1' onChange={e => setTitle(e.target.value)} placeholder='New task...' value={title} />
               <PrioritySelect onValueChange={setPriority} value={priority} />
-              <Button type='submit'>
+              <Button aria-label='Add task' type='submit'>
                 <Plus className='size-4' />
               </Button>
             </form>

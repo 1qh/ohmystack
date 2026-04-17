@@ -24,7 +24,7 @@ const TabBtn = ({ active, label, onClick }: { active: boolean; label: string; on
   <button
     className={cn(
       'rounded-sm px-2 py-0.5 text-xs',
-      active ? 'bg-zinc-800 text-zinc-200' : 'text-zinc-400 hover:text-zinc-200'
+      active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
     )}
     onClick={onClick}
     type='button'>
@@ -35,21 +35,21 @@ const CacheRow = ({ entry }: { entry: DevCacheEntry }) => {
   const total = entry.hitCount + entry.missCount
   const hitRate = total > 0 ? Math.round((entry.hitCount / total) * 100) : 0
   return (
-    <li className='flex items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs last:border-b-0'>
-      <span className={cn('size-1.5 shrink-0 rounded-full', entry.stale ? 'bg-yellow-400' : 'bg-emerald-400')} />
-      <span className='shrink-0 font-mono text-zinc-500'>{entry.table}</span>
-      <span className='min-w-0 flex-1 truncate font-mono text-zinc-300'>{entry.key}</span>
+    <li className='flex items-center gap-2 border-b border-border px-3 py-2 text-xs last:border-b-0'>
+      <span className={cn('size-1.5 shrink-0 rounded-full', entry.stale ? 'bg-destructive' : 'bg-primary')} />
+      <span className='shrink-0 font-mono text-muted-foreground'>{entry.table}</span>
+      <span className='min-w-0 flex-1 truncate font-mono text-foreground'>{entry.key}</span>
       <span
         className={cn(
           'shrink-0 font-mono tabular-nums',
-          hitRate > 80 ? 'text-emerald-400' : hitRate > 50 ? 'text-yellow-400' : 'text-red-400'
+          hitRate > 80 ? 'text-primary' : hitRate > 50 ? 'text-foreground' : 'text-destructive'
         )}>
         {hitRate}%
       </span>
-      <span className='shrink-0 text-zinc-500 tabular-nums'>
+      <span className='shrink-0 text-muted-foreground tabular-nums'>
         {entry.hitCount}h/{entry.missCount}m
       </span>
-      {entry.stale ? <span className='shrink-0 font-mono text-yellow-400'>stale</span> : null}
+      {entry.stale ? <span className='shrink-0 font-mono text-foreground'>stale</span> : null}
     </li>
   )
 }
@@ -75,21 +75,21 @@ const WaterfallBar = ({
   const barColor =
     sub.status === 'loaded'
       ? isSlow(sub)
-        ? 'bg-orange-500'
-        : 'bg-emerald-500'
+        ? 'bg-destructive'
+        : 'bg-primary'
       : sub.status === 'error'
-        ? 'bg-red-500'
-        : 'bg-blue-500'
+        ? 'bg-destructive'
+        : 'bg-primary'
   return (
-    <li className='flex items-center gap-2 border-b border-zinc-800 px-2 py-1.5 text-xs last:border-b-0'>
-      <span className='w-28 shrink-0 truncate font-mono text-zinc-400'>{sub.query}</span>
-      <span className='relative h-3 min-w-0 flex-1 rounded-sm bg-zinc-800/50'>
+    <li className='flex items-center gap-2 border-b border-border px-2 py-1.5 text-xs last:border-b-0'>
+      <span className='w-28 shrink-0 truncate font-mono text-muted-foreground'>{sub.query}</span>
+      <span className='relative h-3 min-w-0 flex-1 rounded-sm bg-muted/50'>
         <span
           className={cn('absolute top-0 h-full rounded-sm', barColor)}
           style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
         />
       </span>
-      <span className='w-12 shrink-0 text-right font-mono text-zinc-500 tabular-nums'>
+      <span className='w-12 shrink-0 text-right font-mono text-muted-foreground tabular-nums'>
         {sub.latencyMs > 0 ? `${sub.latencyMs}ms` : '...'}
       </span>
     </li>

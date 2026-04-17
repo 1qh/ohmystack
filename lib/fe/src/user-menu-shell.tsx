@@ -1,3 +1,4 @@
+'use client'
 import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
 import {
@@ -158,6 +159,7 @@ const UserMenuShell = ({
           <Button
             {...loginButtonProps}
             className={cn('w-full', loginButtonProps?.className)}
+            nativeButton={false}
             render={p => <Link {...p} {...loginLinkProps} href={loginHref} />}
             variant={loginButtonProps?.variant ?? 'ghost'}>
             {loginLabel}

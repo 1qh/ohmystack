@@ -111,6 +111,7 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
                     {...menuButtonProps}
                     className={cn('group/item', menuButtonClassName, menuButtonProps?.className)}
                     isActive={params.id === String(id)}
+                    key='btn'
                     onClick={() => router.push(`${basePath}/${id}`)}>
                     <MessageSquareIcon className='size-4' />
                     <span className='flex-1 truncate'>{getTitle ? getTitle(t) : (t.title ?? untitledThreadLabel)}</span>
@@ -118,6 +119,7 @@ const ChatSidebar = <TThread extends ThreadBase, TId extends number | string>({
                   <SidebarMenuAction
                     {...deleteActionProps}
                     data-testid='delete-thread-button'
+                    key='action'
                     onClick={e => {
                       const deletingThread = handleDelete(e, id)
                       deletingThread.catch(() => undefined)

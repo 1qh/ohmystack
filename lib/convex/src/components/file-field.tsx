@@ -49,7 +49,7 @@ const Preview = ({ id, onRemove }: { id: string; onRemove?: () => void }) => {
       )}
       {onRemove ? (
         <button
-          className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-white transition-transform hover:scale-110'
+          className='absolute -top-2 -right-2 rounded-full bg-destructive p-1 text-foreground transition-transform hover:scale-110'
           onClick={onRemove}
           type='button'>
           <X className='size-3' />
@@ -156,25 +156,34 @@ const FileFieldImpl = ({
             <Preview id={id} key={id} onRemove={() => f.handleChange(vals.filter((_, j) => j !== i))} />
           ))}
           {canAdd ? (
-            <div
-              {...getRootProps()}
-              aria-label='Upload file'
-              className={dropCls}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  inputRef.current.click()
-                }
-              }}
-              role='button'
-              tabIndex={0}>
-              <input {...getInputProps()} aria-describedby={inv ? errorId : undefined} aria-invalid={inv} />
-              {isUploading ? (
-                <span className='text-xs'>{progress}%</span>
-              ) : (
-                <Upload className='size-5 text-muted-foreground' />
-              )}
-            </div>
+            <>
+              <input
+                {...getInputProps()}
+                aria-describedby={inv ? errorId : undefined}
+                aria-hidden='true'
+                aria-invalid={inv}
+                aria-label={label ?? 'File upload'}
+                tabIndex={-1}
+              />
+              <div
+                {...getRootProps()}
+                aria-label='Upload file'
+                className={dropCls}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    inputRef.current.click()
+                  }
+                }}
+                role='button'
+                tabIndex={0}>
+                {isUploading ? (
+                  <span className='text-xs'>{progress}%</span>
+                ) : (
+                  <Upload className='size-5 text-muted-foreground' />
+                )}
+              </div>
+            </>
           ) : null}
         </div>
       ) : vals[0] ? (
@@ -186,33 +195,42 @@ const FileFieldImpl = ({
           }}
         />
       ) : (
-        <div
-          {...getRootProps()}
-          aria-label='Upload file'
-          className={dropCls}
-          onKeyDown={e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              inputRef.current.click()
-            }
-          }}
-          role='button'
-          tabIndex={0}>
-          <input {...getInputProps()} aria-describedby={inv ? errorId : undefined} aria-invalid={inv} />
-          {isUploading ? (
-            <Progress v={progress} />
-          ) : (
-            <>
-              {accept?.includes('image') ? (
-                <ImageIcon className='mb-2 size-8 text-muted-foreground' />
-              ) : (
-                <Upload className='mb-2 size-8 text-muted-foreground' />
-              )}
-              <span className='text-sm text-muted-foreground'>Click or drag</span>
-              {maxSize ? <span className='mt-1 text-xs text-muted-foreground'>Max {fmt(maxSize)}</span> : null}
-            </>
-          )}
-        </div>
+        <>
+          <input
+            {...getInputProps()}
+            aria-describedby={inv ? errorId : undefined}
+            aria-hidden='true'
+            aria-invalid={inv}
+            aria-label={label ?? 'File upload'}
+            tabIndex={-1}
+          />
+          <div
+            {...getRootProps()}
+            aria-label='Upload file'
+            className={dropCls}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                inputRef.current.click()
+              }
+            }}
+            role='button'
+            tabIndex={0}>
+            {isUploading ? (
+              <Progress v={progress} />
+            ) : (
+              <>
+                {accept?.includes('image') ? (
+                  <ImageIcon className='mb-2 size-8 text-muted-foreground' />
+                ) : (
+                  <Upload className='mb-2 size-8 text-muted-foreground' />
+                )}
+                <span className='text-sm text-muted-foreground'>Click or drag</span>
+                {maxSize ? <span className='mt-1 text-xs text-muted-foreground'>Max {fmt(maxSize)}</span> : null}
+              </>
+            )}
+          </div>
+        </>
       )}
       {inv ? <FieldError errors={f.state.meta.errors} id={errorId} /> : null}
     </Field>

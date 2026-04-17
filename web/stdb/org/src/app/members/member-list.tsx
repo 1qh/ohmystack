@@ -71,7 +71,9 @@ const MemberList = () => {
                 <TableCell className='flex items-center gap-2'>
                   <Avatar className='size-8'>
                     {m.user?.image ? <AvatarImage src={m.user.image} /> : null}
-                    <AvatarFallback>{m.user ? m.user.name.slice(0, 2).toUpperCase() : '??'}</AvatarFallback>
+                    <AvatarFallback className='bg-foreground text-background'>
+                      {m.user ? m.user.name.slice(0, 2).toUpperCase() : '??'}
+                    </AvatarFallback>
                   </Avatar>
                   <span>{m.user?.name ?? 'Unknown'}</span>
                 </TableCell>

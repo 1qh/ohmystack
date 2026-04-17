@@ -1,5 +1,6 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable jsx-no-new-object-as-prop, react/jsx-handler-names, react-hooks/refs */
-/* eslint-disable complexity, react-hooks/refs */
+/* eslint-disable complexity */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 'use client'
 import { useCallback } from 'react'
 interface ErrorHelpers<D extends { code: string; message?: string }> {

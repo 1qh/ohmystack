@@ -38,11 +38,11 @@ interface SchemaTable {
   table: string
 }
 const FACTORY_COLORS: Record<string, string> = {
-  cacheCrud: 'text-purple-400',
-  childCrud: 'text-cyan-400',
-  crud: 'text-emerald-400',
-  orgCrud: 'text-blue-400',
-  singletonCrud: 'text-orange-400'
+  cacheCrud: 'text-primary',
+  childCrud: 'text-primary',
+  crud: 'text-primary',
+  orgCrud: 'text-primary',
+  singletonCrud: 'text-foreground'
 }
 const FACTORY_DESCRIPTIONS: Record<string, string> = {
   cacheCrud: 'Cache with TTL, SWR, purge',
@@ -65,9 +65,9 @@ const orgScoped = makeOrgScoped({
   }),
 })`
 const FieldBadge = ({ field }: { field: SchemaField }) => (
-  <span className='inline-flex items-center gap-1 rounded-sm bg-zinc-800 px-1.5 py-0.5 text-xs'>
-    <span className='font-mono text-zinc-300'>{field.field}</span>
-    <span className='text-zinc-500'>{field.type}</span>
+  <span className='inline-flex items-center gap-1 rounded-sm bg-muted px-1.5 py-0.5 text-xs'>
+    <span className='font-mono text-foreground'>{field.field}</span>
+    <span className='text-foreground/70'>{field.type}</span>
   </span>
 )
 const TableCard = ({
@@ -79,13 +79,13 @@ const TableCard = ({
   labels: PlaygroundLabels
   table: SchemaTable
 }) => {
-  const colorClass = FACTORY_COLORS[table.factory] ?? 'text-zinc-400'
+  const colorClass = FACTORY_COLORS[table.factory] ?? 'text-muted-foreground'
   const items = endpointsForFactory({ factory: table.factory, file: '', options: '', table: table.table })
   return (
-    <div className='rounded-lg border border-zinc-800 bg-zinc-900/50 p-3'>
+    <div className='rounded-lg border border-border bg-background/50 p-3'>
       <div className='flex items-center gap-2'>
-        <span className='font-mono font-medium text-zinc-200'>{table.table}</span>
-        <span className={cn('rounded-sm bg-zinc-800 px-1.5 py-0.5 text-xs font-medium', colorClass)}>{table.factory}</span>
+        <span className='font-mono font-medium text-foreground'>{table.table}</span>
+        <span className={cn('rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium', colorClass)}>{table.factory}</span>
       </div>
       {table.fields.length > 0 ? (
         <div className='mt-2 flex flex-wrap gap-1'>
@@ -94,13 +94,13 @@ const TableCard = ({
           ))}
         </div>
       ) : null}
-      <div className='mt-2 border-t border-zinc-800 pt-2'>
-        <p className='mb-1 text-xs text-zinc-500'>
+      <div className='mt-2 border-t border-border pt-2'>
+        <p className='mb-1 text-xs text-muted-foreground'>
           {labels.tableItemsLabel} ({items.length})
         </p>
         <div className='flex flex-wrap gap-1'>
           {items.map(item => (
-            <span className='rounded-sm bg-zinc-800/80 px-1.5 py-0.5 font-mono text-xs text-zinc-400' key={item}>
+            <span className='rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground' key={item}>
               {item}
             </span>
           ))}
@@ -146,15 +146,15 @@ const SchemaPlayground = ({
     <div className={cn('flex flex-col gap-4 lg:flex-row', className)}>
       <div className='flex min-w-0 flex-1 flex-col'>
         <div className='flex items-center justify-between pb-2'>
-          <span className='text-sm font-medium text-zinc-300'>Schema Definition</span>
-          <span className='text-xs text-zinc-500'>
+          <span className='text-sm font-medium text-foreground'>Schema Definition</span>
+          <span className='text-xs text-muted-foreground'>
             {tables.length} table{tables.length === 1 ? '' : 's'} · {totalFields} field
             {totalFields === 1 ? '' : 's'}
           </span>
         </div>
         <textarea
           className={cn(
-            'min-h-48 w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none',
+            'min-h-48 w-full resize-y rounded-lg border border-border bg-background p-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-border focus:outline-none',
             inputClassName
           )}
           onChange={handleChange}
@@ -165,15 +165,15 @@ const SchemaPlayground = ({
       </div>
       <div className={cn('flex min-w-0 flex-1 flex-col', tableClassName)}>
         <div className='flex items-center justify-between pb-2'>
-          <span className='text-sm font-medium text-zinc-300'>{labels.generatedTitle}</span>
-          <span className={cn('text-xs text-zinc-500', endpointClassName)}>
+          <span className='text-sm font-medium text-foreground'>{labels.generatedTitle}</span>
+          <span className={cn('text-xs text-muted-foreground', endpointClassName)}>
             {totalItems} {labels.generatedCountNoun}
             {totalItems === 1 ? '' : 's'}
           </span>
         </div>
         {tables.length === 0 ? (
-          <div className='flex flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-800 p-8'>
-            <p className='text-sm text-zinc-500'>
+          <div className='flex flex-1 items-center justify-center rounded-lg border border-dashed border-border p-8'>
+            <p className='text-sm text-muted-foreground'>
               {value.trim() ? labels.generatedEmptyWithSchema : labels.generatedEmptyWithoutSchema}
             </p>
           </div>
@@ -187,8 +187,8 @@ const SchemaPlayground = ({
                 table={t}
               />
             ))}
-            <div className='rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-3'>
-              <p className='text-xs text-zinc-500'>
+            <div className='rounded-lg border border-border/50 bg-background/30 p-3'>
+              <p className='text-xs text-muted-foreground'>
                 Factory types:{' '}
                 {[...new Set(tables.map(t => t.factory))].map(f => (
                   <span className={cn('mr-2', FACTORY_COLORS[f])} key={f}>
@@ -196,7 +196,7 @@ const SchemaPlayground = ({
                   </span>
                 ))}
               </p>
-              <p className='mt-1 text-xs text-zinc-600'>
+              <p className='mt-1 text-xs text-muted-foreground'>
                 {[...new Set(tables.map(t => t.factory))].map(f => (
                   <span className='mr-3' key={f}>
                     {f}: {FACTORY_DESCRIPTIONS[f] ?? ''}
