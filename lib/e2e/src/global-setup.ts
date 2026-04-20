@@ -34,7 +34,7 @@ interface CleanupResult {
 const setConvexTestMode = (enabled: boolean) => {
   const cmd = enabled ? 'convex env set CONVEX_TEST_MODE true' : 'convex env remove CONVEX_TEST_MODE'
   try {
-    execSync(`bun with-env ${cmd}`, { cwd: BACKEND_CWD, stdio: 'pipe' })
+    execSync(`nb-env ${cmd}`, { cwd: BACKEND_CWD, stdio: 'pipe' })
     console.log(`CONVEX_TEST_MODE ${enabled ? 'enabled' : 'disabled'} on server`)
   } catch (error) {
     if (enabled) throw new Error('Failed to set CONVEX_TEST_MODE on Convex server', { cause: error })

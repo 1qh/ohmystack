@@ -3,12 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun with-env next build --turbo",
+    "build": "nb-env next build --turbo",
     "dev": "bun ../../../script/dev-app.ts",
-    "start": "bun with-env next start",
-    "test:e2e": "CONVEX_TEST_MODE=true bun --cwd ../../../backend/convex with-env convex dev --once && bun with-env playwright test --reporter=list",
-    "typecheck": "bun with-env next typegen && tsc --noEmit",
-    "with-env": "dotenv -e ../../../.env --"
+    "start": "nb-env next start",
+    "test:e2e": "CONVEX_TEST_MODE=true nb-env --cwd=../../../backend/convex convex dev --once && nb-env playwright test --reporter=list",
+    "typecheck": "nb-env next typegen && tsc --noEmit"
   },
   "devDependencies": {
     "@a/e2e": "workspace:*"

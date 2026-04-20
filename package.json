@@ -54,7 +54,6 @@
     "axe-core": "latest",
     "babel-plugin-react-compiler": "latest",
     "depcheck": "latest",
-    "dotenv-cli": "latest",
     "lintmax": "latest",
     "sherif": "latest",
     "simple-git-hooks": "latest",

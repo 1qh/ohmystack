@@ -8,14 +8,16 @@
   },
   "scripts": {
     "build": "tsc",
-    "test:integration": "bun with-env bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
-    "typecheck": "tsc --noEmit",
-    "with-env": "dotenv -e ../../.env --"
+    "test:integration": "nb-env bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@noboil/spacetimedb": "workspace:*",
     "@t3-oss/env-core": "latest",
     "ky": "latest",
     "spacetimedb": "latest"
+  },
+  "devDependencies": {
+    "@a/e2e": "workspace:*"
   }
 }

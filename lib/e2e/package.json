@@ -16,5 +16,8 @@
     "./stdb-org-helpers": "./src/stdb-org-helpers.ts",
     "./auth-proxy": "./src/auth-proxy.ts",
     "./playwright-config": "./src/playwright-config.ts"
+  },
+  "bin": {
+    "nb-env": "./src/bin/nb-env.ts"
   }
 }

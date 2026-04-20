@@ -13,11 +13,10 @@
   "scripts": {
     "build": "tsc",
     "check:schema": "bun ./check-schema.ts",
-    "dev": "bun with-env convex dev",
-    "prod": "bun with-env convex deploy",
-    "test:integration": "CONVEX_TEST_MODE=true bun with-env bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
-    "typecheck": "bun check:schema && tsc --noEmit",
-    "with-env": "dotenv -e ../../.env --"
+    "dev": "nb-env convex dev",
+    "prod": "nb-env convex deploy",
+    "test:integration": "CONVEX_TEST_MODE=true nb-env bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
+    "typecheck": "bun check:schema && tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "latest",
@@ -27,5 +26,8 @@
     "convex-helpers": "latest",
     "convex-test": "latest",
     "ky": "latest"
+  },
+  "devDependencies": {
+    "@a/e2e": "workspace:*"
   }
 }

@@ -1,4 +1,15 @@
 const config = {
+  containerPorts: {
+    convexApi: 3210,
+    convexDashboard: 6791,
+    convexSite: 3211,
+    minio: 9000,
+    minioConsole: 9001,
+    postgres: 5432,
+    socatTarget: 3211,
+    stdb: 3000
+  },
+  convex: { adminKeyPrefix: 'convex-self-hosted' },
   credentials: {
     minio: { password: 'minioadmin', user: 'sss' },
     postgres: 'postgres'
@@ -90,6 +101,13 @@ const portVars = (): Record<string, string> => {
   return vars
 }
 const infraVars = (): Record<string, string> => ({
+  CONTAINER_PORT_CONVEX_API: String(config.containerPorts.convexApi),
+  CONTAINER_PORT_CONVEX_DASHBOARD: String(config.containerPorts.convexDashboard),
+  CONTAINER_PORT_CONVEX_SITE: String(config.containerPorts.convexSite),
+  CONTAINER_PORT_MINIO: String(config.containerPorts.minio),
+  CONTAINER_PORT_MINIO_CONSOLE: String(config.containerPorts.minioConsole),
+  CONTAINER_PORT_POSTGRES: String(config.containerPorts.postgres),
+  CONTAINER_PORT_STDB: String(config.containerPorts.stdb),
   POSTGRES_DB: config.postgres.db,
   S3_BUCKET_EXPORTS: config.minio.buckets.exports,
   S3_BUCKET_FILES: config.minio.buckets.files,

@@ -3,12 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun with-env next build --turbo",
+    "build": "nb-env next build --turbo",
     "dev": "bun ../../../script/dev-app.ts",
-    "start": "bun with-env next start",
-    "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && bun with-env playwright test --reporter=list",
-    "typecheck": "bun with-env next typegen && tsc --noEmit",
-    "with-env": "dotenv -e ../../../.env --"
+    "start": "nb-env next start",
+    "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && nb-env playwright test --reporter=list",
+    "typecheck": "nb-env next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@sindresorhus/slugify": "latest"

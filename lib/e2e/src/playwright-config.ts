@@ -40,7 +40,7 @@ const createPlaywrightConfig = (opts: PlaywrightOptions = {}) => {
     timeout: 30_000,
     use: { baseURL },
     webServer: {
-      command: `dotenv -e ../../../.env -- env PLAYWRIGHT=1 CONVEX_TEST_MODE=true next dev --turbo --port ${port}`,
+      command: `nb-env env PLAYWRIGHT=1 CONVEX_TEST_MODE=true next dev --turbo --port ${port}`,
       env: { CONVEX_TEST_MODE: 'true', NEXT_PUBLIC_PLAYWRIGHT: '1', PLAYWRIGHT: '1' },
       reuseExistingServer: !isCI,
       stdout: 'pipe',

@@ -7,7 +7,7 @@ const BACKEND_CWD = join(resolve(import.meta.dirname, '../../..'), config.paths.
 const globalTeardown = () => {
   if (process.env.SKIP_CONVEX_ENV_TOGGLE) return
   try {
-    execSync('bun with-env convex env remove CONVEX_TEST_MODE', { cwd: BACKEND_CWD, stdio: 'pipe' })
+    execSync('nb-env convex env remove CONVEX_TEST_MODE', { cwd: BACKEND_CWD, stdio: 'pipe' })
     console.log('CONVEX_TEST_MODE disabled on server')
   } catch {
     console.log('CONVEX_TEST_MODE was not set (already clean)')

@@ -71,7 +71,8 @@ if (!ready) {
 ok('Convex backend healthy')
 step(4, TOTAL, 'Generating admin key')
 const adminKeyRaw = await run('docker compose -f convex.yml exec -T backend ./generate_admin_key.sh')
-const adminKeyMatch = /convex-self-hosted\|[a-f0-9]+/u.exec(adminKeyRaw)
+const adminKeyRe = new RegExp(`${config.convex.adminKeyPrefix}\\|[a-f0-9]+`, 'u')
+const adminKeyMatch = adminKeyRe.exec(adminKeyRaw)
 if (!adminKeyMatch) throw new Error(`Failed to parse admin key: ${adminKeyRaw.slice(0, 200)}`)
 const adminKey = adminKeyMatch[0]
 patchEnv([['CONVEX_SELF_HOSTED_ADMIN_KEY', adminKey]])
@@ -83,7 +84,7 @@ if (skipDeploy) {
 step(5, TOTAL, 'Pushing backend env + deploying functions')
 const reread = readEnv()
 const setEnv = async (k: string, v: string) => {
-  const proc = await $`cd ${config.paths.backendConvex} && bun with-env npx convex env set ${k} -- ${v}`
+  const proc = await $`cd ${config.paths.backendConvex} && nb-env npx convex env set ${k} -- ${v}`
     .cwd(root)
     .quiet()
     .nothrow()
@@ -103,7 +104,7 @@ if (needsKeygen) {
   await setEnv('JWKS', jwks)
   await setEnv('JWT_PRIVATE_KEY', pem.trimEnd())
 }
-await run(`cd ${config.paths.backendConvex} && bun with-env npx convex dev --once`, { quiet: false })
+await run(`cd ${config.paths.backendConvex} && nb-env npx convex dev --once`, { quiet: false })
 const feat = [
   reread.AUTH_GOOGLE_ID
     ? `${c.green('✓')} Google OAuth`
