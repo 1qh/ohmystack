@@ -1,5 +1,4 @@
 /** biome-ignore-all lint/performance/useTopLevelRegex: script */
-
 /* oxlint-disable no-process-exit, no-await-expression-member */
 import { $ } from 'bun'
 import { existsSync, readFileSync } from 'node:fs'

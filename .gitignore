@@ -1,7 +1,6 @@
 *.pem
 *.tsbuildinfo
 .cache/
-.dev/
 .DS_Store
 .env
 .env.local

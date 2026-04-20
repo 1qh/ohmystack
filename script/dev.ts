@@ -46,7 +46,7 @@ if (all.length === 0) {
   warn('No apps found. Expected web/cvx/*, web/stdb/*, or doc/.')
   process.exit(1)
 }
-const logDir = join(root, '.dev/logs')
+const logDir = join(root, '.cache/dev-logs')
 mkdirSync(logDir, { recursive: true })
 log(c.bold(`\nStarting ${all.length} app${all.length > 1 ? 's' : ''}\n`))
 const procs: { app: App; proc: ReturnType<typeof spawn> }[] = []
