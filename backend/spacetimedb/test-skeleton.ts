@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/server'
+import { config } from '../../noboil.config'
 interface BlogRow {
   content: string
   id: number
@@ -64,7 +65,7 @@ const testDelete = async (ctx: Ctx, blogId: number) => {
 }
 const run = async () => {
   console.log('[1/6] Creating test context...')
-  const ctx = await createTestContext({ moduleName: 'noboil', userCount: 2 })
+  const ctx = await createTestContext({ moduleName: config.module, userCount: 2 })
   const [, user2] = ctx.users
   if (!user2) throw new Error('Missing second test user')
   console.log(`  Connected as ${ctx.defaultUser.identity.slice(0, 12)}...`)

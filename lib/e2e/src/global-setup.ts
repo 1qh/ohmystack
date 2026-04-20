@@ -5,7 +5,10 @@ import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
+import { config } from '../../../noboil.config'
+const REPO_ROOT = resolve(import.meta.dirname, '../../..')
+const BACKEND_CWD = join(REPO_ROOT, config.paths.backendConvex)
 const parseEnvLine = (line: string): [string, string] | null => {
   const trimmed = line.trim()
   if (!trimmed || trimmed.startsWith('#')) return null
@@ -17,7 +20,7 @@ const parseEnvLine = (line: string): [string, string] | null => {
   return [key, val]
 }
 const loadRootEnv = () => {
-  const envPath = resolve(process.cwd(), '../../../.env')
+  const envPath = join(REPO_ROOT, '.env')
   if (!existsSync(envPath)) return
   for (const line of readFileSync(envPath, 'utf8').split('\n')) {
     const parsed = parseEnvLine(line)
@@ -31,7 +34,7 @@ interface CleanupResult {
 const setConvexTestMode = (enabled: boolean) => {
   const cmd = enabled ? 'convex env set CONVEX_TEST_MODE true' : 'convex env remove CONVEX_TEST_MODE'
   try {
-    execSync(`bun with-env ${cmd}`, { cwd: '../../../backend/convex', stdio: 'pipe' })
+    execSync(`bun with-env ${cmd}`, { cwd: BACKEND_CWD, stdio: 'pipe' })
     console.log(`CONVEX_TEST_MODE ${enabled ? 'enabled' : 'disabled'} on server`)
   } catch (error) {
     if (enabled) throw new Error('Failed to set CONVEX_TEST_MODE on Convex server', { cause: error })

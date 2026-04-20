@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: env fallbacks */
 /** biome-ignore-all lint/nursery/noUndeclaredEnvVars: e2e proxy env vars */
 import { serve } from 'bun'
-import { urls } from '../../../noboil.config'
+import { config, urls } from '../../../noboil.config'
 const u = urls()
 const BACKEND_API = process.env.CONVEX_URL ?? u.convexApi
 const BACKEND_WS = process.env.CONVEX_WS_URL ?? u.convexApi.replace('http://', 'ws://')
@@ -41,7 +41,7 @@ serve({
       return new Response('Proxy error', { status: 502 })
     }
   },
-  port: 4001,
+  port: config.ports.convexApi,
   websocket: {
     close: ws => {
       try {

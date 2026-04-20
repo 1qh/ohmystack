@@ -35,7 +35,7 @@
     "spacetime:reset": "docker compose -f spacetimedb.yml down -v && bun script/setup-spacetimedb.ts",
     "spacetime:up": "bun script/emit-env.ts && docker compose -f spacetimedb.yml up -d --quiet-pull",
     "test": "turbo test --output-logs=errors-only",
-    "test:all": "bash script/test-all.sh",
+    "test:all": "bun script/test-all.ts",
     "test:all:watch": "bash script/watch-test-all.sh",
     "test:web": "bun run test",
     "tsc": "turbo run typecheck --output-logs=errors-only",
