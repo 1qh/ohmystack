@@ -24,9 +24,9 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
     volumes:
       - convex_minio_data:/data
-    expose:
-      - "9000"
-      - "9001"
+    ports:
+      - 4600:9000
+      - 4601:9001
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
