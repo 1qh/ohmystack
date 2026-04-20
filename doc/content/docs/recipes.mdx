@@ -469,7 +469,7 @@ Since `ctx.http.fetch()` panics in local Docker, use a Next.js API route to fetc
 ```typescript
 import { NextResponse } from 'next/server'
 
-const STDB_URI = process.env.SPACETIMEDB_URI ?? 'http://localhost:4000'
+const STDB_URI = process.env.SPACETIMEDB_URI ?? 'http://localhost:%%port:stdb%%'
 const MODULE = process.env.MODULE_NAME ?? 'my-app'
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 
@@ -682,7 +682,7 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
         <div
           key={p.userId}
           className="absolute size-4 rounded-full bg-blue-500"
-          style={{ left: p.data.cursor.x, top: p.data.cursor.y }}
+          style=%% left: p.data.cursor.x, top: p.data.cursor.y %%
         />
       ))}
     </div>
@@ -1166,7 +1166,7 @@ const BulkActions = ({ selectedIds }: { selectedIds: string[] }) => {
       disabled={isPending}
       onClick={() => {
         run(selectedIds)
-      }}
+      %%
     >
       {progress
         ? `${progress.succeeded}/${progress.total}`
@@ -1271,7 +1271,7 @@ const CreatePostForm = () => {
         content: form.get('content') as string,
         published: false
       })
-    }}>
+    %%>
       <input name="title" required />
       <textarea name="content" required />
       <button type="submit">Create</button>
@@ -1510,7 +1510,7 @@ const CreatePost = () => {
         content: form.get('content') as string,
         published: false
       })
-    }}>
+    %%>
       <div>
         <input name="title" />
         {fieldErrors.title && <p className="text-red-500">{fieldErrors.title}</p>}

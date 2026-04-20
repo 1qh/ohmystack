@@ -375,8 +375,8 @@ If you want to remove `@noboil/spacetimedb` entirely from the client too, replac
 ## Step 5: Republish and regenerate
 
 ```bash
-spacetime publish my-app --module-path backend/spacetimedb/
-spacetime generate --lang typescript --module-path backend/spacetimedb/ --out-dir backend/spacetimedb/module_bindings/
+spacetime publish my-app --module-path %%path:backendStdb%%/
+spacetime generate --lang typescript --module-path %%path:backendStdb%%/ --out-dir %%path:backendStdb%%/module_bindings/
 ```
 
 The generated bindings are identical whether you used the factories or wrote reducers manually. The reducer names (`create_post`, `update_post`, `rm_post`) are what matter, not how they were defined.

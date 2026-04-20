@@ -29,7 +29,7 @@ Pass `--no-demos` to skip the demo apps, or `--skip-install` to skip `bun instal
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
 <Tab value="Convex">
 
-The template includes a `backend/convex` workspace with `s.ts` (Zod schemas), `lazy.ts` (your `noboil()` call), and one example module per table. Boot Convex:
+The template includes a `%%path:backendConvex%%` workspace with `s.ts` (Zod schemas), `lazy.ts` (your `noboil()` call), and one example module per table. Boot Convex:
 
 ```bash
 bunx convex dev
@@ -40,10 +40,10 @@ Authentication is wired through `@convex-dev/auth`. See the [Convex Auth guide](
 </Tab>
 <Tab value="SpacetimeDB">
 
-The template ships `spacetimedb.yml` (Docker Compose) and a `backend/spacetimedb` workspace with `s.ts` (Zod schemas) and `src/index.ts` (the `noboil()` module). Boot SpacetimeDB and publish:
+The template ships `spacetimedb.yml` (Docker Compose) and a `%%path:backendStdb%%` workspace with `s.ts` (Zod schemas) and `src/index.ts` (the `noboil()` module). Boot SpacetimeDB and publish:
 
 ```bash
-bun spacetime:up           # Docker Compose: SpacetimeDB on :4000
+bun spacetime:up           # Docker Compose: SpacetimeDB on :%%port:stdb%%
 bun spacetime:publish      # publish module
 bun spacetime:generate     # generate TypeScript bindings
 ```
@@ -80,7 +80,7 @@ export const s = schema({
 <Tab value="Convex">
 
 ```ts
-// backend/convex/lazy.ts
+// %%path:backendConvex%%/lazy.ts
 import { noboil } from '@noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
@@ -105,7 +105,7 @@ export const { create, update, rm, pub: { list, read, search } } = api.blog
 <Tab value="SpacetimeDB">
 
 ```ts
-// backend/spacetimedb/src/index.ts
+// %%path:backendStdb%%/src/index.ts
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 
@@ -194,7 +194,7 @@ After `noboil init my-app` completes, here's what you have:
 
 ```
 my-app/
-  backend/convex/     or  backend/spacetimedb/
+  %%path:backendConvex%%/     or  %%path:backendStdb%%/
   lib/convex/         or  lib/spacetimedb/
   web/cvx/blog/       or  web/stdb/blog/
   doc/
@@ -216,7 +216,7 @@ bun spacetime:generate  # generates TypeScript bindings
 noboil-stdb dev         # starts Next.js + watches for schema changes
 ```
 
-**Open the app** at `http://localhost:4100`. You'll see the blog demo with:
+**Open the app** at `http://localhost:%%port:cvx-blog%%`. You'll see the blog demo with:
 - Login (email or Google)
 - Create / edit / delete posts (owned CRUD)
 - Public vs private toggle (`pub` option)
@@ -228,7 +228,7 @@ noboil-stdb dev         # starts Next.js + watches for schema changes
 
 ```bash
 # Convex: deploy + restart
-cd backend/convex && bun with-env npx convex dev --once
+cd %%path:backendConvex%% && bun with-env npx convex dev --once
 
 # SpacetimeDB: publish + generate + restart
 bun spacetime:publish && bun spacetime:generate

@@ -25,9 +25,9 @@ SpacetimeDB handles schema changes through module republishing. When you run `sp
 
 The basic workflow:
 
-1. Edit your module (`backend/spacetimedb/src/index.ts`)
-2. Publish: `spacetime publish my-app --module-path backend/spacetimedb/`
-3. Regenerate bindings: `spacetime generate --lang typescript --module-path backend/spacetimedb/ --out-dir backend/spacetimedb/module_bindings/`
+1. Edit your module (`%%path:backendStdb%%/src/index.ts`)
+2. Publish: `spacetime publish my-app --module-path %%path:backendStdb%%/`
+3. Regenerate bindings: `spacetime generate --lang typescript --module-path %%path:backendStdb%%/ --out-dir %%path:backendStdb%%/module_bindings/`
 4. Update client code to use new fields/tables
 
 </Tab>
@@ -90,7 +90,7 @@ const post = table(
 ```
 
 ```bash
-spacetime publish my-app --module-path backend/spacetimedb/
+spacetime publish my-app --module-path %%path:backendStdb%%/
 ```
 
 Existing rows get `null` for the new optional field. Required (non-optional) fields on existing rows will have their zero value (empty string for `t.string()`, `0` for `t.u32()`, `false` for `t.bool()`). Verify this is acceptable for your business logic before deploying.
@@ -537,7 +537,7 @@ When you add or remove a field, form components adapt automatically:
 After any schema change, regenerate bindings:
 
 ```bash
-spacetime generate --lang typescript --module-path backend/spacetimedb/ --out-dir backend/spacetimedb/module_bindings/
+spacetime generate --lang typescript --module-path %%path:backendStdb%%/ --out-dir %%path:backendStdb%%/module_bindings/
 ```
 
 Then update your `zodFromTable` calls. If you removed a field, `zodFromTable` will no longer include it in the schema, and any form fields referencing it will get TypeScript errors.
@@ -579,7 +579,7 @@ During development, you can wipe and republish. **Never do this in production.**
 ```bash
 spacetime delete my-app
 
-spacetime publish my-app --module-path backend/spacetimedb/
+spacetime publish my-app --module-path %%path:backendStdb%%/
 ```
 
 </Tab>

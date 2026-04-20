@@ -152,7 +152,7 @@ export const isSlugAvailable = uniqueCheck(s.wiki, 'wiki', 'slug')
 <Text name='slug' asyncValidate={async v => {
   const ok = await isSlugAvailable({ value: v, exclude: id })
   return ok ? undefined : 'Slug already taken'
-}} asyncDebounceMs={500} />
+%% asyncDebounceMs={500} />
 ```
 
 `uniqueCheck` is a Convex-specific helper that generates a server-side query backed by an index.
@@ -165,7 +165,7 @@ export const isSlugAvailable = uniqueCheck(s.wiki, 'wiki', 'slug')
   const posts = [...conn.db.post.iter()]
   const taken = posts.some(p => p.slug === v && p.id !== currentId)
   return taken ? 'Slug already taken' : undefined
-}} asyncDebounceMs={500} />
+%% asyncDebounceMs={500} />
 ```
 
 SpacetimeDB queries the in-memory subscription directly — no server roundtrip needed.

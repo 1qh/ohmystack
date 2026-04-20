@@ -60,7 +60,7 @@ docker compose ps
 Publish your module before running integration tests. Use a separate module name for tests so they don't interfere with your dev module:
 
 ```bash
-spacetime publish my-app-test --module-path backend/spacetimedb/
+spacetime publish my-app-test --module-path %%path:backendStdb%%/
 ```
 
 Set test env vars before running helper-based tests:
@@ -153,7 +153,7 @@ describe('zodFromTable', () => {
 Run unit tests:
 
 ```bash
-bun test backend/spacetimedb/__tests__/
+bun test %%path:backendStdb%%/__tests__/
 ```
 
 </Tab>
@@ -213,7 +213,7 @@ export const connectAsTestUser = async (
 
   return new Promise((resolve, reject) => {
     const builder = DbConnection.builder()
-      .withUri('ws://localhost:4000')
+      .withUri('%%url:stdbWs%%')
       .withModuleName(process.env.SPACETIMEDB_MODULE_NAME ?? 'my-app-test')
 
     if (savedToken) {
@@ -797,11 +797,11 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 10_000,
   use: {
-    baseURL: 'http://localhost:4100'
+    baseURL: 'http://localhost:%%port:cvx-blog%%'
   },
   webServer: {
     command: 'bun dev',
-    url: 'http://localhost:4100',
+    url: 'http://localhost:%%port:cvx-blog%%',
     reuseExistingServer: !process.env.CI
   }
 })
@@ -823,11 +823,11 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 10_000,
   use: {
-    baseURL: 'http://localhost:4200'
+    baseURL: 'http://localhost:%%port:stdb-blog%%'
   },
   webServer: {
     command: 'bun dev',
-    url: 'http://localhost:4200',
+    url: 'http://localhost:%%port:stdb-blog%%',
     reuseExistingServer: !process.env.CI
   }
 })

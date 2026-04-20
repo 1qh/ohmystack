@@ -23,12 +23,12 @@ Start SpacetimeDB with Docker Compose:
 docker compose up -d
 ```
 
-This starts SpacetimeDB at `ws://localhost:4000` (WebSocket) and `http://localhost:4000` (HTTP API). File uploads are stored inline as byte arrays.
+This starts SpacetimeDB at `%%url:stdbWs%%` (WebSocket) and `http://localhost:%%port:stdb%%` (HTTP API). File uploads are stored inline as byte arrays.
 
 Publish your module (replace `my-app` with your SpacetimeDB module name):
 
 ```bash
-spacetime publish my-app --module-path backend/spacetimedb/
+spacetime publish my-app --module-path %%path:backendStdb%%/
 ```
 
 Generate bindings:
@@ -36,8 +36,8 @@ Generate bindings:
 ```bash
 spacetime generate \
   --lang typescript \
-  --module-path backend/spacetimedb/ \
-  --out-dir backend/spacetimedb/module_bindings/
+  --module-path %%path:backendStdb%%/ \
+  --out-dir %%path:backendStdb%%/module_bindings/
 ```
 
 Start your Next.js app:
@@ -49,7 +49,7 @@ bun dev
 ### Environment variables (local)
 
 ```bash
-NEXT_PUBLIC_SPACETIMEDB_URI=ws://localhost:4000
+NEXT_PUBLIC_SPACETIMEDB_URI=%%url:stdbWs%%
 SPACETIMEDB_MODULE_NAME=my-app
 ```
 
@@ -64,7 +64,7 @@ SpacetimeDB Maincloud is the managed cloud offering. It handles hosting, scaling
 ```bash
 spacetime login
 
-spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+spacetime publish my-app --server maincloud --module-path %%path:backendStdb%%/
 ```
 
 The module is now available at `wss://maincloud.spacetimedb.com/my-app`.
@@ -79,7 +79,7 @@ NEXT_PUBLIC_MODULE_NAME=my-app
 ### Republishing
 
 ```bash
-spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+spacetime publish my-app --server maincloud --module-path %%path:backendStdb%%/
 ```
 
 Republishing applies schema changes and updates reducer logic. Existing data is preserved (see [schema evolution](./schema-evolution.md)).
@@ -185,7 +185,7 @@ certbot renew --dry-run
 ```bash
 spacetime server add https://stdb.yourdomain.com --name myserver
 
-spacetime publish my-app --server myserver --module-path backend/spacetimedb/
+spacetime publish my-app --server myserver --module-path %%path:backendStdb%%/
 ```
 
 ### Environment variables (self-hosted)
@@ -278,16 +278,16 @@ jobs:
         run: curl -sSf https://install.spacetimedb.com | sh
 
       - name: Publish SpacetimeDB module
-run: spacetime publish my-app --server maincloud --module-path backend/spacetimedb/
+run: spacetime publish my-app --server maincloud --module-path %%path:backendStdb%%/
         env:
-          SPACETIMEDB_TOKEN: ${{ secrets.SPACETIMEDB_TOKEN }}
+          SPACETIMEDB_TOKEN: $%% secrets.SPACETIMEDB_TOKEN %%
 
       - name: Regenerate bindings
         run: |
           spacetime generate \
             --lang typescript \
-  --module-path backend/spacetimedb/ \
-  --out-dir backend/spacetimedb/module_bindings/
+  --module-path %%path:backendStdb%%/ \
+  --out-dir %%path:backendStdb%%/module_bindings/
 
       - name: Build Next.js
         run: bun run build
@@ -298,7 +298,7 @@ run: spacetime publish my-app --server maincloud --module-path backend/spacetime
       - name: Deploy to Vercel
         run: vercel deploy --prod
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TOKEN: $%% secrets.VERCEL_TOKEN %%
 ```
 
 ---
@@ -308,8 +308,8 @@ run: spacetime publish my-app --server maincloud --module-path backend/spacetime
 SpacetimeDB exposes ping endpoints for health checks:
 
 ```bash
-curl http://localhost:4000/v1/ping
-curl http://localhost:4000/database/ping
+curl http://localhost:%%port:stdb%%/v1/ping
+curl http://localhost:%%port:stdb%%/database/ping
 ```
 
 Both endpoints are valid; use either in Docker health checks and load balancer probes.
