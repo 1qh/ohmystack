@@ -3,8 +3,8 @@ services:
     image: clockworklabs/spacetime:latest
     command: start --listen-addr 0.0.0.0:3000
     ports:
-      - "4000:3000"
-      - "5432:5432"
+      - "${PORT_STDB}:3000"
+      - "${PORT_POSTGRES}:5432"
     volumes:
       - spacetimedb_data:/stdb
     restart: unless-stopped

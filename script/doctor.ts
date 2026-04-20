@@ -3,6 +3,7 @@
 import { $ } from 'bun'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { config } from '../noboil.config'
 import { box, c, composeRunning, fail, hasCmd, hasDocker, log, ok, parseArgs, portFree, root, warn } from './utils'
 interface CheckResult {
   hint?: string
@@ -11,9 +12,8 @@ interface CheckResult {
 }
 const flags = parseArgs(process.argv.slice(2))
 const want = {
-  all: flags.has('all') || !(flags.has('convex') || flags.has('stdb')),
-  convex: flags.has('convex') || flags.has('all'),
-  stdb: flags.has('stdb') || flags.has('all')
+  convex: flags.has('convex') || flags.has('all') || !(flags.has('convex') || flags.has('stdb')),
+  stdb: flags.has('stdb') || flags.has('all') || !(flags.has('convex') || flags.has('stdb'))
 }
 const core: (() => Promise<CheckResult>)[] = [
   async () => ({
@@ -27,14 +27,21 @@ const core: (() => Promise<CheckResult>)[] = [
     pass: await hasDocker()
   })
 ]
+const convexPorts = [
+  config.ports.convexApi,
+  config.ports.convexSite,
+  config.ports.convexDashboard,
+  config.ports.minio,
+  config.ports.minioConsole
+]
+const stdbPorts = [config.ports.stdb]
 const convexChecks: (() => Promise<CheckResult>)[] = [
   async () => {
     if (await composeRunning('convex.yml')) return { label: 'Convex compose already running (will reuse)', pass: true }
-    const ports = [4001, 4002, 4500, 4600, 4601]
-    const busy = (await Promise.all(ports.map(async p => ({ free: await portFree(p), p })))).filter(x => !x.free)
+    const busy = (await Promise.all(convexPorts.map(async p => ({ free: await portFree(p), p })))).filter(x => !x.free)
     return {
       hint: busy.length > 0 ? `Port(s) ${busy.map(b => b.p).join(', ')} busy (non-noboil). Stop them first.` : undefined,
-      label: `Convex ports free (${ports.join(', ')})`,
+      label: `Convex ports free (${convexPorts.join(', ')})`,
       pass: busy.length === 0
     }
   }
@@ -48,11 +55,10 @@ const stdbChecks: (() => Promise<CheckResult>)[] = [
   async () => {
     if (await composeRunning('spacetimedb.yml'))
       return { label: 'SpacetimeDB compose already running (will reuse)', pass: true }
-    const ports = [4000]
-    const busy = (await Promise.all(ports.map(async p => ({ free: await portFree(p), p })))).filter(x => !x.free)
+    const busy = (await Promise.all(stdbPorts.map(async p => ({ free: await portFree(p), p })))).filter(x => !x.free)
     return {
       hint: busy.length > 0 ? `Port(s) ${busy.map(b => b.p).join(', ')} busy (non-noboil). Stop them first.` : undefined,
-      label: `SpacetimeDB ports free (${ports.join(', ')})`,
+      label: `SpacetimeDB ports free (${stdbPorts.join(', ')})`,
       pass: busy.length === 0
     }
   },
@@ -72,7 +78,7 @@ const stdbChecks: (() => Promise<CheckResult>)[] = [
     }
   }
 ]
-const all = [...core, ...(want.convex || want.all ? convexChecks : []), ...(want.stdb || want.all ? stdbChecks : [])]
+const all = [...core, ...(want.convex ? convexChecks : []), ...(want.stdb ? stdbChecks : [])]
 log(c.bold('doctor — environment preflight\n'))
 const results = await Promise.all(all.map(async fn => fn()))
 for (const r of results)

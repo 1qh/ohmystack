@@ -17,7 +17,9 @@
 /* oxlint-disable unicorn/consistent-function-scoping */
 /* oxlint-disable eslint(max-params), eslint(no-await-in-loop), eslint(no-control-regex), eslint(no-promise-executor-return), eslint(no-shadow), eslint(no-useless-assignment), eslint-plugin-promise(always-return), eslint-plugin-promise(param-names), eslint-plugin-promise(prefer-await-to-then), eslint-plugin-unicorn(no-process-exit), typescript-eslint(no-non-null-assertion) */
 import type { Browser, BrowserContext, Page } from 'playwright'
+import { join } from 'node:path'
 import { chromium } from 'playwright'
+import { appPort, urls } from '../noboil.config'
 interface AppSpec {
   authedRoutes?: string[]
   devLog?: string
@@ -26,6 +28,20 @@ interface AppSpec {
   port: number
   seedRoutes?: string[]
 }
+const logFor = (name: string) => join(import.meta.dirname, '..', '.cache/dev-logs', `${name}.log`)
+const appMeta = (
+  name: string,
+  kind: 'cvx' | 'stdb' | undefined,
+  seedRoutes: string[],
+  authedRoutes?: string[]
+): AppSpec => ({
+  authedRoutes,
+  devLog: logFor(name),
+  kind,
+  name,
+  port: appPort(name),
+  seedRoutes
+})
 interface Issue {
   kind: string
   msg: string
@@ -38,47 +54,20 @@ interface Result {
   routes: string[]
 }
 const APPS: AppSpec[] = [
-  {
-    authedRoutes: ['/', '/profile', '/pagination', '/dev'],
-    devLog: '/tmp/dev-blog.log',
-    kind: 'cvx',
-    name: 'cvx-blog',
-    port: 4100,
-    seedRoutes: ['/login', '/login/email']
-  },
-  {
-    authedRoutes: ['/'],
-    devLog: '/tmp/dev-chat.log',
-    kind: 'cvx',
-    name: 'cvx-chat',
-    port: 4101,
-    seedRoutes: ['/login/email']
-  },
-  { devLog: '/tmp/dev-movie.log', kind: 'cvx', name: 'cvx-movie', port: 4102, seedRoutes: ['/', '/fetch'] },
-  {
-    authedRoutes: [
-      '/',
-      '/onboarding',
-      '/new',
-      '/dashboard',
-      '/members',
-      '/projects',
-      '/projects/new',
-      '/wiki',
-      '/wiki/new',
-      '/settings'
-    ],
-    devLog: '/tmp/dev-org.log',
-    kind: 'cvx',
-    name: 'cvx-org',
-    port: 4103,
-    seedRoutes: ['/login', '/login/email']
-  },
-  { devLog: '/tmp/dev-sblog.log', kind: 'stdb', name: 'stdb-blog', port: 4200, seedRoutes: ['/', '/profile'] },
-  { devLog: '/tmp/dev-schat.log', kind: 'stdb', name: 'stdb-chat', port: 4201, seedRoutes: ['/login/email'] },
-  { devLog: '/tmp/dev-smovie.log', kind: 'stdb', name: 'stdb-movie', port: 4202, seedRoutes: ['/', '/fetch'] },
-  { devLog: '/tmp/dev-sorg.log', kind: 'stdb', name: 'stdb-org', port: 4203, seedRoutes: ['/login/email'] },
-  { devLog: '/tmp/dev-doc.log', name: 'doc', port: 4300, seedRoutes: ['/'] }
+  appMeta('cvx-blog', 'cvx', ['/login', '/login/email'], ['/', '/profile', '/pagination', '/dev']),
+  appMeta('cvx-chat', 'cvx', ['/login/email'], ['/']),
+  appMeta('cvx-movie', 'cvx', ['/', '/fetch']),
+  appMeta(
+    'cvx-org',
+    'cvx',
+    ['/login', '/login/email'],
+    ['/', '/onboarding', '/new', '/dashboard', '/members', '/projects', '/projects/new', '/wiki', '/wiki/new', '/settings']
+  ),
+  appMeta('stdb-blog', 'stdb', ['/', '/profile']),
+  appMeta('stdb-chat', 'stdb', ['/login/email']),
+  appMeta('stdb-movie', 'stdb', ['/', '/fetch']),
+  appMeta('stdb-org', 'stdb', ['/login/email']),
+  appMeta('doc', undefined, ['/'])
 ]
 const argv = process.argv.slice(2)
 const flag = (k: string) => {
@@ -199,7 +188,7 @@ const cvxCreateOrgViaApi = async (ctx: BrowserContext, app: AppSpec, issues: Iss
   if (!jwt) return false
   const hdrs = { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' }
   try {
-    await fetch('http://127.0.0.1:4001/api/mutation', {
+    await fetch(`${urls().convexApi}/api/mutation`, {
       body: JSON.stringify({
         args: { displayName: 'Crawl User', notifications: false, theme: 'system' },
         format: 'json',
@@ -209,7 +198,7 @@ const cvxCreateOrgViaApi = async (ctx: BrowserContext, app: AppSpec, issues: Iss
       method: 'POST'
     })
     const slug = `crawl-${Math.random().toString(36).slice(2, 8)}`
-    const createRes = await fetch('http://127.0.0.1:4001/api/mutation', {
+    const createRes = await fetch(`${urls().convexApi}/api/mutation`, {
       body: JSON.stringify({
         args: { data: { name: 'Crawl Org', slug } },
         format: 'json',
@@ -227,7 +216,7 @@ const cvxCreateOrgViaApi = async (ctx: BrowserContext, app: AppSpec, issues: Iss
       { domain: 'localhost', name: 'activeOrgId', path: '/', value: body.value.orgId },
       { domain: 'localhost', name: 'activeOrgSlug', path: '/', value: slug }
     ])
-    const projRes = await fetch('http://127.0.0.1:4001/api/mutation', {
+    const projRes = await fetch(`${urls().convexApi}/api/mutation`, {
       body: JSON.stringify({
         args: { name: 'Crawl Project', orgId: body.value.orgId, status: 'active' },
         format: 'json',
@@ -246,7 +235,7 @@ const cvxCreateOrgViaApi = async (ctx: BrowserContext, app: AppSpec, issues: Iss
         msg: `project create: ${JSON.stringify(projVal).slice(0, 120)}`,
         route: '/projects/new'
       })
-    const wikiRes = await fetch('http://127.0.0.1:4001/api/mutation', {
+    const wikiRes = await fetch(`${urls().convexApi}/api/mutation`, {
       body: JSON.stringify({
         args: { content: 'crawl', orgId: body.value.orgId, slug: 'crawl-page', status: 'draft', title: 'Crawl Wiki' },
         format: 'json',

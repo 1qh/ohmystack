@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "bun with-env next build --turbo",
-    "dev": "PORT=4203 bun with-env next dev --turbo",
+    "dev": "bun ../../../script/dev-app.ts",
     "start": "bun with-env next start",
     "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && bun with-env playwright test --reporter=list",
     "typecheck": "bun with-env next typegen && tsc --noEmit",

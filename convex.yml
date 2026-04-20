@@ -20,13 +20,13 @@ services:
     restart: unless-stopped
     entrypoint: /bin/sh -c "mkdir -p /data/exports /data/imports /data/modules /data/files /data/search && minio server /data --console-address ':9001'"
     environment:
-      MINIO_ROOT_USER: sss
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
     volumes:
       - convex_minio_data:/data
     ports:
-      - 4600:9000
-      - 4601:9001
+      - ${PORT_MINIO}:9000
+      - ${PORT_MINIO_CONSOLE}:9001
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
@@ -46,19 +46,19 @@ services:
       convex-minio:
         condition: service_healthy
     ports:
-      - 4001:3210
-      - 4002:3211
+      - ${PORT_CONVEX_API}:3210
+      - ${PORT_CONVEX_SITE}:3211
     volumes:
       - convex_data:/convex/data
     environment:
-      AWS_ACCESS_KEY_ID: sss
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       AWS_REGION: us-east-1
       AWS_S3_DISABLE_CHECKSUMS: "true"
       AWS_S3_DISABLE_SSE: "true"
       AWS_S3_FORCE_PATH_STYLE: "true"
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
-      CONVEX_CLOUD_ORIGIN: http://127.0.0.1:4001
-      CONVEX_SITE_ORIGIN: http://127.0.0.1:4002
+      CONVEX_CLOUD_ORIGIN: http://127.0.0.1:${PORT_CONVEX_API}
+      CONVEX_SITE_ORIGIN: http://127.0.0.1:${PORT_CONVEX_SITE}
       DOCUMENT_RETENTION_DELAY: "172800"
       DO_NOT_REQUIRE_SSL: 1
       POSTGRES_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432
@@ -80,7 +80,7 @@ services:
   backend-loopback:
     image: alpine/socat
     restart: unless-stopped
-    command: "tcp-listen:4002,fork,reuseaddr tcp-connect:localhost:3211"
+    command: "tcp-listen:${PORT_CONVEX_SITE},fork,reuseaddr tcp-connect:localhost:3211"
     network_mode: "service:backend"
     depends_on:
       backend:
@@ -94,9 +94,9 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - 4500:6791
+      - ${PORT_CONVEX_DASHBOARD}:6791
     environment:
-      NEXT_PUBLIC_DEPLOYMENT_URL: http://127.0.0.1:4001
+      NEXT_PUBLIC_DEPLOYMENT_URL: http://127.0.0.1:${PORT_CONVEX_API}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6791"]
       interval: 10s

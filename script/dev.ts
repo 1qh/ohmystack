@@ -6,44 +6,30 @@
 import { sleep, spawn } from 'bun'
 import { existsSync, mkdirSync, openSync } from 'node:fs'
 import { join } from 'node:path'
+import { allAppPorts, config } from '../noboil.config'
 import { box, c, log, ok, portFree, root, warn } from './utils'
 interface App {
   dir: string
   name: string
   port: number
 }
-const arg = (name: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.split('=')[1] ?? undefined
+const arg = (name: string) => process.argv.find(a => a.startsWith(`--${name}=`))?.split('=')[1]
 const onlyArg = arg('apps')
 const only = onlyArg ? new Set(onlyArg.split(',').map(s => s.trim())) : null
-const PORT_MAP: Record<string, number> = {
-  'cvx-blog': 4100,
-  'cvx-chat': 4101,
-  'cvx-movie': 4102,
-  'cvx-org': 4103,
-  doc: 4300,
-  'stdb-blog': 4200,
-  'stdb-chat': 4201,
-  'stdb-movie': 4202,
-  'stdb-org': 4203
+const appDir = (id: string): string => {
+  if (id === 'doc') return join(root, config.paths.doc)
+  const [kind, name] = id.split('-')
+  if (!name) throw new Error(`Bad app id: ${id}`)
+  const parentPath = kind === 'cvx' ? config.paths.webCvx : kind === 'stdb' ? config.paths.webStdb : ''
+  if (!parentPath) throw new Error(`Unknown app kind: ${kind}`)
+  return join(root, parentPath, name)
 }
-const discover = (): App[] => {
-  const apps: App[] = []
-  for (const kind of ['cvx', 'stdb'] as const) {
-    const dir = join(root, 'web', kind)
-    if (!existsSync(dir)) continue
-    for (const name of ['blog', 'chat', 'movie', 'org']) {
-      const appDir = join(dir, name)
-      const id = `${kind}-${name}`
-      if (existsSync(join(appDir, 'package.json')) && PORT_MAP[id])
-        apps.push({ dir: appDir, name: id, port: PORT_MAP[id] })
-    }
-  }
-  if (existsSync(join(root, 'doc/package.json'))) apps.push({ dir: join(root, 'doc'), name: 'doc', port: PORT_MAP.doc })
-  return apps
-}
-const all = discover().filter(a => (only ? only.has(a.name) : true))
+const all: App[] = Object.entries(allAppPorts())
+  .filter(([id]) => (only ? only.has(id) : true))
+  .map(([id, port]) => ({ dir: appDir(id), name: id, port }))
+  .filter(a => existsSync(join(a.dir, 'package.json')))
 if (all.length === 0) {
-  warn('No apps found. Expected web/cvx/*, web/stdb/*, or doc/.')
+  warn('No apps found.')
   process.exit(1)
 }
 const logDir = join(root, '.cache/dev-logs')
@@ -56,12 +42,9 @@ for (const app of all) {
     occupied.push(app)
     continue
   }
-  const logPath = join(logDir, `${app.name}.log`)
-  const fd = openSync(logPath, 'w')
-  const isNext = app.name !== 'doc'
-  const cmd = isNext ? ['bun', 'with-env', 'next', 'dev', '--port', String(app.port)] : ['bun', 'run', 'dev']
+  const fd = openSync(join(logDir, `${app.name}.log`), 'w')
   const proc = spawn({
-    cmd,
+    cmd: ['bun', 'run', 'dev'],
     cwd: app.dir,
     stderr: fd,
     stdin: 'ignore',
