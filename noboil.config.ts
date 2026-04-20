@@ -3,11 +3,22 @@ const config = {
     minio: { password: 'minioadmin', user: 'sss' },
     postgres: 'postgres'
   },
+  minio: {
+    buckets: {
+      exports: 'exports',
+      files: 'files',
+      imports: 'imports',
+      modules: 'modules',
+      primary: 'mybucket',
+      search: 'search'
+    }
+  },
   module: 'noboil',
   paths: {
     backendConvex: 'backend/convex',
     backendStdb: 'backend/spacetimedb',
     doc: 'doc',
+    stdbGenerated: 'lib/spacetimedb/src/generated',
     webCvx: 'web/cvx',
     webStdb: 'web/stdb'
   },
@@ -30,8 +41,32 @@ const config = {
     minioConsole: 4601,
     postgres: 5432,
     stdb: 4000
-  }
+  },
+  postgres: { db: 'convex_self_hosted' }
 } as const
+const allPorts = (): Record<string, number> => {
+  const p = config.ports
+  return {
+    convexApi: p.convexApi,
+    convexDashboard: p.convexDashboard,
+    convexSite: p.convexSite,
+    doc: p.doc,
+    minio: p.minio,
+    minioConsole: p.minioConsole,
+    postgres: p.postgres,
+    stdb: p.stdb,
+    ...p.apps
+  }
+}
+const validate = () => {
+  const seen = new Map<number, string>()
+  for (const [name, port] of Object.entries(allPorts())) {
+    const existing = seen.get(port)
+    if (existing) throw new Error(`Port collision: ${name} and ${existing} both claim ${port}`)
+    seen.set(port, name)
+  }
+}
+validate()
 type AppId = 'doc' | keyof typeof config.ports.apps
 const allAppPorts = (): Record<string, number> => ({ ...config.ports.apps, doc: config.ports.doc })
 const appPort = (id: string): number => {
@@ -54,6 +89,15 @@ const portVars = (): Record<string, string> => {
   for (const [k, v] of Object.entries(config.ports.apps)) vars[`PORT_${k.toUpperCase().replaceAll('-', '_')}`] = String(v)
   return vars
 }
+const infraVars = (): Record<string, string> => ({
+  POSTGRES_DB: config.postgres.db,
+  S3_BUCKET_EXPORTS: config.minio.buckets.exports,
+  S3_BUCKET_FILES: config.minio.buckets.files,
+  S3_BUCKET_IMPORTS: config.minio.buckets.imports,
+  S3_BUCKET_MODULES: config.minio.buckets.modules,
+  S3_BUCKET_PRIMARY: config.minio.buckets.primary,
+  S3_BUCKET_SEARCH: config.minio.buckets.search
+})
 const urls = () => ({
   convexApi: `http://127.0.0.1:${config.ports.convexApi}`,
   convexDashboard: `http://127.0.0.1:${config.ports.convexDashboard}`,
@@ -65,4 +109,4 @@ const urls = () => ({
   siteStdb: `http://localhost:${config.ports.apps['stdb-blog']}`,
   stdbWs: `ws://localhost:${config.ports.stdb}`
 })
-export { allAppPorts, type AppId, appPort, config, portVars, urls }
+export { allAppPorts, type AppId, appPort, config, infraVars, portVars, urls }

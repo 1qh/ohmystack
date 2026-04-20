@@ -47,7 +47,7 @@ patchEnv([
   ['S3_SECRET_ACCESS_KEY', config.credentials.minio.password],
   ['S3_ACCESS_KEY_ID', config.credentials.minio.user],
   ['S3_ENDPOINT', u.minio],
-  ['S3_BUCKET', 'mybucket'],
+  ['S3_BUCKET', config.minio.buckets.primary],
   ['CONVEX_URL', u.convexApi],
   ['CONVEX_SITE_URL', u.convexSite],
   ['CONVEX_SELF_HOSTED_URL', u.convexApi],
@@ -83,7 +83,10 @@ if (skipDeploy) {
 step(5, TOTAL, 'Pushing backend env + deploying functions')
 const reread = readEnv()
 const setEnv = async (k: string, v: string) => {
-  const proc = await $`cd backend/convex && bun with-env npx convex env set ${k} -- ${v}`.cwd(root).quiet().nothrow()
+  const proc = await $`cd ${config.paths.backendConvex} && bun with-env npx convex env set ${k} -- ${v}`
+    .cwd(root)
+    .quiet()
+    .nothrow()
   if (proc.exitCode !== 0) throw new Error(`convex env set ${k} failed: ${proc.stderr.toString()}`)
 }
 for (const [k, v] of [
@@ -100,7 +103,7 @@ if (needsKeygen) {
   await setEnv('JWKS', jwks)
   await setEnv('JWT_PRIVATE_KEY', pem.trimEnd())
 }
-await run('cd backend/convex && bun with-env npx convex dev --once', { quiet: false })
+await run(`cd ${config.paths.backendConvex} && bun with-env npx convex dev --once`, { quiet: false })
 const feat = [
   reread.AUTH_GOOGLE_ID
     ? `${c.green('✓')} Google OAuth`
