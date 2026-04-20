@@ -1,10 +1,19 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in config */
 import { defineConfig, devices } from '@playwright/test'
+import { basename, dirname } from 'node:path'
+import { appPort } from '../../../noboil.config'
 interface PlaywrightOptions {
-  port: number
+  port?: number
   webServerUrl?: string
 }
-const createPlaywrightConfig = ({ port, webServerUrl }: PlaywrightOptions) => {
+const detectAppId = (cwd = process.cwd()): string => {
+  const name = basename(cwd)
+  const parent = basename(dirname(cwd))
+  if (parent === 'cvx' || parent === 'stdb') return `${parent}-${name}`
+  return name
+}
+const createPlaywrightConfig = (opts: PlaywrightOptions = {}) => {
+  const port = opts.port ?? appPort(detectAppId())
   const baseURL = `http://localhost:${port}`
   const isCI = Boolean(process.env.CI)
   return defineConfig({
@@ -36,7 +45,7 @@ const createPlaywrightConfig = ({ port, webServerUrl }: PlaywrightOptions) => {
       reuseExistingServer: !isCI,
       stdout: 'pipe',
       timeout: 120_000,
-      url: webServerUrl ?? baseURL
+      url: opts.webServerUrl ?? baseURL
     },
     workers: 1
   })

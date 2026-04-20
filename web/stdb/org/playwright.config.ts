@@ -1,4 +1,5 @@
 import { createPlaywrightConfig } from '@a/e2e/playwright-config'
-const config = createPlaywrightConfig({ port: 4203, webServerUrl: 'http://localhost:4203/login' })
+import { appPort } from '../../../noboil.config'
+const config = createPlaywrightConfig({ webServerUrl: `http://localhost:${appPort('stdb-org')}/login` })
 config.timeout = 45_000
 export default config

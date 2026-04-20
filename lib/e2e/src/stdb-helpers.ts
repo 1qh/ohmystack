@@ -3,9 +3,11 @@
 import type { Page } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { config } from '../../../noboil.config'
 const DEFAULT_HTTP_URL =
-  process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:4000'
-const DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? 'noboil'
+  process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ??
+  `http://localhost:${config.ports.stdb}`
+const DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? config.module
 const readTokenData = (tokenFile: string): null | { identity: string; token: string } => {
   try {
     return JSON.parse(readFileSync(tokenFile, 'utf8')) as {

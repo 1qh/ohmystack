@@ -5,7 +5,9 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import type { PaginatedResponse, WikiResponse } from './helpers'
+import { appPort } from '../../../../noboil.config'
 import { api, createTestOrg, ensureTestUser, login, makeOrgTestUtils, tc } from './helpers'
+const APP_URL = `http://localhost:${appPort('stdb-org')}`
 const testPrefix = `e2e-org-wiki-${Date.now()}`
 const { cleanupOrgTestData, cleanupTestUsers, generateSlug } = makeOrgTestUtils(testPrefix)
 let activeOrgId = ''
@@ -15,8 +17,7 @@ const gotoWikiEdit = async (page: Page, id: string) => {
 }
 test.beforeEach(async ({ page }) => {
   await login(page)
-  if (activeOrgId.length > 0)
-    await page.context().addCookies([{ name: 'activeOrgId', url: 'http://localhost:4203', value: activeOrgId }])
+  if (activeOrgId.length > 0) await page.context().addCookies([{ name: 'activeOrgId', url: APP_URL, value: activeOrgId }])
 })
 test.describe
   .serial('Wiki Page UI', () => {

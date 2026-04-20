@@ -1,9 +1,11 @@
 /** biome-ignore-all lint/style/noProcessEnv: env fallbacks */
 /** biome-ignore-all lint/nursery/noUndeclaredEnvVars: e2e proxy env vars */
 import { serve } from 'bun'
-const BACKEND_API = process.env.CONVEX_URL ?? 'http://127.0.0.1:4001'
-const BACKEND_WS = process.env.CONVEX_WS_URL ?? 'ws://127.0.0.1:4001'
-const SITE_URL = process.env.CONVEX_SITE_URL ?? 'http://127.0.0.1:4002'
+import { urls } from '../../../noboil.config'
+const u = urls()
+const BACKEND_API = process.env.CONVEX_URL ?? u.convexApi
+const BACKEND_WS = process.env.CONVEX_WS_URL ?? u.convexApi.replace('http://', 'ws://')
+const SITE_URL = process.env.CONVEX_SITE_URL ?? u.convexSite
 const swallow = () => undefined
 process.on('uncaughtException', swallow)
 process.on('unhandledRejection', swallow)

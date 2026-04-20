@@ -3,6 +3,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */
 /** biome-ignore-all lint/performance/useTopLevelRegex: test helper */
+import { config } from '../../../noboil.config'
 interface HttpCtx {
   baseHttpUrl: string
   moduleName: string
@@ -60,8 +61,9 @@ const API_PATH_RE = /api\.(?<mod>\w+)\.(?<fn>\w+)/u
 let httpCtx: HttpCtx | null = null
 const userTokens = new Map<string, string>()
 const DEFAULT_HTTP_URL =
-  process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ?? 'http://localhost:4000'
-const DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? 'noboil'
+  process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ??
+  `http://localhost:${config.ports.stdb}`
+const DEFAULT_MODULE = process.env.SPACETIMEDB_MODULE_NAME ?? config.module
 const setToken = (token: string) => {
   httpCtx = {
     baseHttpUrl: DEFAULT_HTTP_URL,

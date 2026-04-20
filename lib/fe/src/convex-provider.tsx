@@ -5,6 +5,7 @@ import { ConvexAuthNextjsProvider as AuthProvider } from '@convex-dev/auth/nextj
 import { FileApiProvider } from '@noboil/convex/components'
 import { ConvexProvider as BaseProvider, ConvexReactClient as Client } from 'convex/react'
 import { NavigationGuardProvider } from 'next-navigation-guard'
+import { urls } from '../../../noboil.config'
 import env from './env'
 interface ConvexProviderProps {
   children: ReactNode
@@ -14,7 +15,7 @@ interface ConvexProviderProps {
 }
 const FILE_API = { info: api.file.info, upload: api.file.upload }
 const clients = new Map<string, Client>()
-const FALLBACK_CONVEX_URL = 'http://127.0.0.1:4001'
+const FALLBACK_CONVEX_URL = urls().convexApi
 const getClient = (url: string) => {
   let c = clients.get(url)
   if (!c) {
