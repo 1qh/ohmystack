@@ -1,9 +1,6 @@
 import { defineConfig } from 'tsdown'
 export default defineConfig({
   clean: true,
-  deps: {
-    neverBundle: ['bun']
-  },
   dts: { eager: true },
   entry: [
     'src/index.ts',
@@ -33,7 +30,6 @@ export default defineConfig({
     'src/spacetimedb/seed.ts'
   ],
   format: 'esm',
-  noExternal: ['@tanstack/react-store', 'use-sync-external-store'],
   outDir: 'dist',
   sourcemap: true,
   unbundle: true
