@@ -23,7 +23,7 @@
     "doctor": "bun script/doctor.ts",
     "fix": "lintmax fix && turbo typecheck build --output-logs=errors-only",
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",
-    "postinstall": "sherif",
+    "postinstall": "sherif && bun script/patch-stdb-sdk.ts",
     "prepare": "bunx simple-git-hooks",
     "publish": "bun script/prep-publish.ts && bun publish --access public --cwd .cache/publish-staging/noboil",
     "setup": "bun script/setup.ts",
