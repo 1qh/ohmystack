@@ -26,10 +26,12 @@ const createNextConfigWithCsp = ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
   ...(noboilCondition === 'noboil-spacetimedb' && {
-    turbopack: { resolveConditions: ['noboil-spacetimedb', '...'] } as NextConfig['turbopack'],
+    turbopack: {
+      resolveConditions: ['noboil-spacetimedb', 'import', 'node', 'default']
+    } as NextConfig['turbopack'],
     webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
       config.resolve ??= {}
-      config.resolve.conditionNames = ['noboil-spacetimedb', '...', 'default']
+      config.resolve.conditionNames = ['noboil-spacetimedb', '...']
       return config
     }) as NextConfig['webpack']
   }),

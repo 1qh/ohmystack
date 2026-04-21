@@ -3430,7 +3430,7 @@ describe('bundle verification', () => {
   test('entry point count matches package.json exports', async () => {
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
-    const content = readFileSync(join(import.meta.dir, '..', '..', 'package.json'), 'utf8')
+    const content = readFileSync(join(import.meta.dir, '..', '..', '..', 'package.json'), 'utf8')
     const pkg = JSON.parse(content) as { exports: Record<string, string> }
     const exportKeys = Object.keys(pkg.exports)
     expect(exportKeys.length).toBeGreaterThanOrEqual(8)
@@ -7414,7 +7414,7 @@ describe('doctor', () => {
     expect(checkRateLimit(calls).status).toBe('pass')
   })
   test('checkEslintContent — with plugin', () => {
-    expect(checkEslintContent("import { recommended } from '../eslint'").status).toBe('pass')
+    expect(checkEslintContent("import { recommended } from 'noboil/spacetimedb/eslint'").status).toBe('pass')
   })
   test('checkEslintContent — without plugin', () => {
     expect(checkEslintContent('export default []').status).toBe('warn')
