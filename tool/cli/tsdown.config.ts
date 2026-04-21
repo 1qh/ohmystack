@@ -1,9 +1,39 @@
 import { defineConfig } from 'tsdown'
 export default defineConfig({
   clean: true,
-  deps: { neverBundle: ['bun'] },
-  dts: true,
-  entry: ['src/index.ts'],
+  deps: {
+    neverBundle: ['bun']
+  },
+  dts: false,
+  entry: [
+    'src/index.ts',
+    'src/convex/index.ts',
+    'src/convex/server/index.ts',
+    'src/convex/zod.ts',
+    'src/convex/retry.ts',
+    'src/convex/schema.ts',
+    'src/convex/react/index.ts',
+    'src/convex/components/index.ts',
+    'src/convex/eslint.ts',
+    'src/convex/next/index.ts',
+    'src/convex/server/test.ts',
+    'src/convex/server/test-discover.ts',
+    'src/convex/seed.ts',
+    'src/spacetimedb/index.ts',
+    'src/spacetimedb/server/index.ts',
+    'src/spacetimedb/zod.ts',
+    'src/spacetimedb/retry.ts',
+    'src/spacetimedb/schema.ts',
+    'src/spacetimedb/react/index.ts',
+    'src/spacetimedb/components/index.ts',
+    'src/spacetimedb/eslint.ts',
+    'src/spacetimedb/next/index.ts',
+    'src/spacetimedb/server/test.ts',
+    'src/spacetimedb/server/test-discover.ts',
+    'src/spacetimedb/seed.ts'
+  ],
   format: 'esm',
-  outDir: 'dist'
+  noExternal: ['@a/ui', '@tanstack/react-store', 'use-sync-external-store'],
+  outDir: 'dist',
+  unbundle: true
 })
