@@ -1,5 +1,5 @@
-import { appPort } from '@a/config'
 /* oxlint-disable no-process-exit */
+import { appPort } from '@a/config'
 import { spawn } from 'bun'
 import { basename, dirname } from 'node:path'
 const cwd = process.cwd()
@@ -8,7 +8,7 @@ const parent = basename(dirname(cwd))
 const id = parent === 'cvx' || parent === 'stdb' ? `${parent}-${name}` : name
 const port = appPort(id)
 const proc = spawn({
-  cmd: ['nb-env', 'next', 'dev', '--turbo', '--port', String(port)],
+  cmd: ['next', 'dev', '--turbo', '--port', String(port)],
   cwd,
   stderr: 'inherit',
   stdin: 'inherit',

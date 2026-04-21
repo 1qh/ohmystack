@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nb-env next build --turbo",
-    "dev": "bun ../../../script/dev-app.ts",
-    "start": "nb-env next start",
-    "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && nb-env playwright test --reporter=list",
-    "typecheck": "nb-env next typegen && tsc --noEmit"
+    "build": "next build --turbo",
+    "dev": "bun dev.ts",
+    "start": "next start",
+    "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && playwright test --reporter=list",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@a/config": "workspace:*"

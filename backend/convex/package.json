@@ -13,9 +13,10 @@
   "scripts": {
     "build": "tsc",
     "check:schema": "bun ./check-schema.ts",
-    "dev": "nb-env convex dev",
-    "prod": "nb-env convex deploy",
-    "test:integration": "CONVEX_TEST_MODE=true nb-env bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
+    "dev": "convex dev",
+    "dev:once": "convex dev --once",
+    "prod": "convex deploy",
+    "test:integration": "CONVEX_TEST_MODE=true bun test convex/f.test.ts convex/org-api.test.ts convex/edge.test.ts",
     "typecheck": "bun check:schema && tsc --noEmit"
   },
   "dependencies": {

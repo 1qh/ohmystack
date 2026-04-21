@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test:integration": "nb-env bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
+    "test:integration": "bun test __tests__/f.test.ts __tests__/org-api.test.ts __tests__/edge.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
