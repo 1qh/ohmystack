@@ -126,14 +126,12 @@ const CONVEX_ONLY_FE_FILES = [
   'auth-layout.tsx',
   'convex-provider.tsx',
   'email-login-page.tsx',
-  'error-boundary.tsx',
   'image-route.ts',
   'login-page.tsx',
   'logout-action.ts',
   'next-config.ts',
   'proxy.ts',
-  'user-menu.tsx',
-  'utils.ts'
+  'user-menu.tsx'
 ]
 const pruneLibFe = ({ db, dir }: { db: Db; dir: string }) => {
   const feSrc = join(dir, 'lib', 'fe', 'src')

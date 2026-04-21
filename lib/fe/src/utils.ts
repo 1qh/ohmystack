@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 import { getErrorMessage } from 'noboil/server'
 import { toast } from 'sonner'
@@ -15,7 +16,7 @@ const parseId = (val: unknown): null | number => {
   }
   return null
 }
-const isId = <T extends TableNames>(val: unknown): val is Id<T> => typeof val === 'string' && val.length > 0
+const isId = <T extends string = string>(val: unknown): val is T => typeof val === 'string' && val.length > 0
 const formatDate = (ts: number) => new Date(ts).toLocaleDateString()
 const formatExpiry = (expiresAt: number) => {
   const days = Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
