@@ -30,6 +30,7 @@
     "@a/ui": "workspace:*",
     "@ai-sdk/react": "latest",
     "@convex-dev/auth": "latest",
+    "@t3-oss/env-nextjs": "latest",
     "next": "latest",
     "noboil": "workspace:*",
     "react-oidc-context": "latest"
