@@ -176,7 +176,20 @@ const resolveFields = (fields: unknown, t: StdbDeps['t'], tableName: string): Ta
   if (isZodObject(fields)) return zodToStdbFields(fields.shape ?? {}, t, tableName)
   return fields as TableFields
 }
-const makeSchema = (deps?: Partial<StdbDeps>) => {
+interface MakeSchemaResult {
+  cacheTable: (keyFieldOrName: KeyField | string, fields: TableInput, opts?: TableOptions) => StdbTable
+  childTable: (foreignKeyName: string, fields: TableInput, opts?: TableOptions) => StdbTable
+  fileTable: () => StdbTable
+  orgInviteTable: () => StdbTable
+  orgJoinRequestTable: () => StdbTable
+  orgMemberTable: () => StdbTable
+  orgScopedTable: (fields: TableInput, extra?: TableFields, opts?: TableOptions) => StdbTable
+  ownedTable: (fields: TableInput, extra?: TableFields, opts?: TableOptions) => StdbTable
+  schema: typeof stdbSchema
+  singletonTable: (fields: TableInput, opts?: TableOptions) => StdbTable
+  t: StdbDeps['t']
+}
+const makeSchema = (deps?: Partial<StdbDeps>): MakeSchemaResult => {
   const t = deps?.t ?? stdbT
   const table = deps?.table ?? stdbTableFn
   const schema = stdbSchema

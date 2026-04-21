@@ -96,7 +96,8 @@ const pkgJsonPath = `${STAGING}/package.json`
 const pkg = JSON.parse(await file(pkgJsonPath).text()) as Record<string, unknown>
 const exportsMap = pkg.exports as Record<string, Record<string, string> | string>
 const srcToDist = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.mjs')
-const wrap = (p: string) => ({ default: srcToDist(p), types: p })
+const srcToDts = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.d.mts')
+const wrap = (p: string) => ({ default: srcToDist(p), types: srcToDts(p) })
 for (const [subpath, target] of Object.entries(exportsMap))
   if (typeof target === 'string') exportsMap[subpath] = wrap(target)
   else {
@@ -105,6 +106,6 @@ for (const [subpath, target] of Object.entries(exportsMap))
     exportsMap[subpath] = next as Record<string, string>
   }
 pkg.bin = { noboil: './dist/index.mjs' }
-pkg.files = ['dist', 'src', '!src/**/__tests__']
+pkg.files = ['dist']
 await write(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
 console.log('prep-publish: ready at', STAGING)

@@ -4,7 +4,7 @@ export default defineConfig({
   deps: {
     neverBundle: ['bun']
   },
-  dts: false,
+  dts: { eager: true },
   entry: [
     'src/index.ts',
     'src/convex/index.ts',
