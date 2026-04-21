@@ -323,19 +323,33 @@ const fillForm = async (page: Page, route: string, push: (i: Issue) => void) => 
   }
 }
 const ORIG_AUTHED = new Map(APPS.map(a => [a.name, [...(a.authedRoutes ?? [])]]))
+let sharedBrowser: Browser | null = null
+const getBrowser = async (): Promise<Browser> => {
+  if (sharedBrowser?.isConnected()) return sharedBrowser
+  sharedBrowser = await chromium.launch({ args: ['--disable-dev-shm-usage'], headless: !headed })
+  return sharedBrowser
+}
+const waitHealthy = async (port: number): Promise<boolean> => {
+  for (let i = 0; i < 10; i += 1) {
+    const ok = await fetch(`http://localhost:${port}/`, { signal: AbortSignal.timeout(3000) })
+      .then(r => r.status < 500)
+      .catch(() => false)
+    if (ok) return true
+    await new Promise(r => setTimeout(r, 1500))
+  }
+  return false
+}
 const crawlApp = async (app: AppSpec): Promise<Result> => {
   if (app.authedRoutes && ORIG_AUTHED.has(app.name)) app.authedRoutes = [...(ORIG_AUTHED.get(app.name) ?? [])]
-  const healthOk = await fetch(`http://localhost:${app.port}/`, { signal: AbortSignal.timeout(3000) })
-    .then(r => r.status < 500)
-    .catch(() => false)
+  const healthOk = await waitHealthy(app.port)
   if (!healthOk)
     return {
       app: app.name,
-      issues: [{ kind: 'app-down', msg: `app at :${app.port} not responding before crawl`, route: '?' }],
+      issues: [{ kind: 'app-down', msg: `app at :${app.port} not responding`, route: '?' }],
       port: app.port,
       routes: []
     }
-  const browser: Browser = await chromium.launch({ args: ['--disable-dev-shm-usage'], headless: !headed })
+  const browser = await getBrowser()
   const ctx: BrowserContext = await browser.newContext()
   const captured: string[] = []
   await ctx.exposeFunction('__crawlReport', (msg: string) => {
@@ -514,10 +528,12 @@ const crawlApp = async (app: AppSpec): Promise<Result> => {
     if (seen.has(route)) continue
     seen.add(route)
     const ok = await Promise.race([processRoute(route), new Promise<boolean>(r => setTimeout(() => r(false), 20_000))])
-    if (!ok) issues.push({ kind: 'route-timeout', msg: `route ${route} exceeded 20s`, route })
+    if (!ok) {
+      issues.push({ kind: 'route-timeout', msg: `route ${route} exceeded 20s`, route })
+      for (const p of ctx.pages()) await p.close({ runBeforeUnload: false }).catch(() => null)
+    }
   }
-  await ctx.close().catch(() => null)
-  await browser.close().catch(() => null)
+  await Promise.race([ctx.close(), new Promise(r => setTimeout(r, 3000))]).catch(() => null)
   if (app.devLog)
     try {
       const { readFileSync, existsSync } = await import('node:fs')
@@ -563,11 +579,11 @@ for (const a of apps) {
         () =>
           resolve({
             app: a.name,
-            issues: [{ kind: 'timeout', msg: 'app crawl exceeded 240s', route: '?' }],
+            issues: [{ kind: 'timeout', msg: 'app crawl exceeded 60s', route: '?' }],
             port: a.port,
             routes: []
           }),
-        240_000
+        60_000
       )
     )
   ])
@@ -576,14 +592,20 @@ for (const a of apps) {
   if (r.issues.some(i => i.kind === 'timeout' || i.kind === 'app-down')) {
     process.stderr.write(`  retrying ${a.name} after 5s...\n`)
     await new Promise(r => setTimeout(r, 5000))
-    const retry = await Promise.race([crawlApp(a), new Promise<Result>(resolve => setTimeout(() => resolve(r), 240_000))])
+    const retry = await Promise.race([crawlApp(a), new Promise<Result>(resolve => setTimeout(() => resolve(r), 60_000))])
     if (!retry.issues.some(i => i.kind === 'timeout' || i.kind === 'app-down')) {
       results[results.length - 1] = retry
       if (!jsonOut) printResult(retry)
     }
   }
-  await new Promise(r => setTimeout(r, 3000))
+  await new Promise(r => setTimeout(r, 500))
+}
+if (sharedBrowser !== null) {
+  const b: Browser = sharedBrowser
+  try {
+    await Promise.race([b.close(), new Promise<void>(r => setTimeout(r, 3000))])
+  } catch {}
 }
 if (jsonOut) process.stdout.write(JSON.stringify(results, null, 2))
 const totalIssues = results.reduce((n, r) => n + r.issues.length, 0)
-process.exitCode = totalIssues > 0 ? 1 : 0
+process.exit(totalIssues > 0 ? 1 : 0)
