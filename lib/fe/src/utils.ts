@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
-import { getErrorMessage } from 'noboil/server'
 import { toast } from 'sonner'
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error) return String(error.message)
+  return 'Unknown error'
+}
 const fail = (error: unknown) => {
   const msg = getErrorMessage(error)
   if (msg.includes('NOT_AUTHENTICATED')) toast.error('Please log in')
