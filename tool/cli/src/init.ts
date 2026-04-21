@@ -112,6 +112,19 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
   }
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
+const patchTsconfig = ({ db, dir }: { db: Db; dir: string }) => {
+  if (db === 'convex') return
+  const tsconfigPath = join(dir, 'tsconfig.json')
+  if (!existsSync(tsconfigPath)) return
+  const tsconfig = JSON.parse(readFileSync(tsconfigPath, 'utf8')) as {
+    compilerOptions?: { customConditions?: string[] }
+  }
+  tsconfig.compilerOptions ??= {}
+  const existing = tsconfig.compilerOptions.customConditions ?? []
+  const condition = `noboil-${db}`
+  if (!existing.includes(condition)) tsconfig.compilerOptions.customConditions = [...existing, condition]
+  writeFileSync(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`)
+}
 const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: string[] }) => {
   const fullPath = resolvePath(process.cwd(), dir)
   if (existsSync(fullPath) && readdirSync(fullPath).length > 0) {
@@ -136,6 +149,7 @@ const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: str
   removeDirs({ db, dir: fullPath, includeDemos })
   console.log(`  ${dim('patching')} package.json files...`)
   patchRootPackageJson({ db, dir: fullPath, includeDemos })
+  patchTsconfig({ db, dir: fullPath })
   if (!args.includes('--skip-install')) {
     console.log(`  ${dim('installing')} dependencies...`)
     const installResult = spawnSync('bun', ['install'], {
