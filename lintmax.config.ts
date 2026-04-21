@@ -87,14 +87,7 @@ export default defineConfig({
     ],
     ignores: [...backendLintIgnoreFiles]
   },
-  ignores: [
-    '**/.source/**',
-    'readonly/ui/**',
-    'web/*/*/next-env.d.ts',
-    'doc/next-env.d.ts',
-    'web/*/*/dev.ts',
-    'doc/dev.ts'
-  ],
+  ignores: ['web/*/*/dev.ts', 'doc/dev.ts'],
   oxlint: {
     overrides: [
       {
