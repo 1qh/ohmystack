@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-deprecated */
 'use client'
 import type { StandardSchemaV1 } from '@tanstack/form-core'
 import type { FormValidateOrFn, ReactFormExtendedApi } from '@tanstack/react-form'
 import type { output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
 import { useForm as useTanStackForm } from '@tanstack/react-form'
-import { useStore } from '@tanstack/react-store'
+import { useSelector } from '@tanstack/react-store'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { globalRegistry } from 'zod/v4'
@@ -244,7 +243,7 @@ const createUseForm = (deps: UseFormDeps) => {
       },
       validators: { onSubmit: schema as unknown as StandardSchemaV1<output<S>, unknown> }
     }) as unknown as Api<output<S>>
-    const storeState = useStore(instance.store, s => ({
+    const storeState = useSelector(instance.store, s => ({
       isDirty: s.isDirty,
       isSubmitting: s.isSubmitting,
       values: s.values

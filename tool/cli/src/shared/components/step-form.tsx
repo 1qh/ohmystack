@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable jsx-no-new-object-as-prop, react/jsx-handler-names, react-hooks/refs */
-/* eslint-disable complexity, @typescript-eslint/no-deprecated */
+/* eslint-disable complexity */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
@@ -15,7 +15,7 @@ import { Dialog, DialogContent } from '@a/ui/dialog'
 import { Spinner } from '@a/ui/spinner'
 import { defineStepper } from '@stepperize/react'
 import { useForm as useTanStackForm } from '@tanstack/react-form'
-import { useStore } from '@tanstack/react-store'
+import { useSelector } from '@tanstack/react-store'
 import { Check } from 'lucide-react'
 import { useNavigationGuard } from 'next-navigation-guard'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -160,7 +160,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         defaultValues: resolved,
         validators: { onSubmit: schema as unknown as StandardSchemaV1<output<typeof schema>, unknown> }
       }) as unknown as FormApiLike
-      const { isDirty } = useStore(instance.store as never, st => ({ isDirty: (st as { isDirty: boolean }).isDirty }))
+      const { isDirty } = useSelector(instance.store as never, st => ({ isDirty: (st as { isDirty: boolean }).isDirty }))
       useEffect(() => {
         ctx.onDirtyChange(isDirty)
       }, [ctx, isDirty])
