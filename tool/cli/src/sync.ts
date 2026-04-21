@@ -27,7 +27,16 @@ const REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO
 const REPO_GIT_URL =
   REPO_SPEC.includes('://') || REPO_SPEC.startsWith('/') ? REPO_SPEC : `https://github.com/${REPO_SPEC}.git`
 const REPO = REPO_SPEC
-const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', '.github']
+const REMOVE_ALWAYS = [
+  'PLAN.md',
+  'AGENTS.md',
+  'TODO.md',
+  'LEARNING.md',
+  'RULES.md',
+  'doc',
+  '.github',
+  'script/prep-publish.ts'
+]
 const ROOT_CONFIG_FILES = new Set([
   'biome.jsonc',
   'convex.yml',
@@ -120,16 +129,15 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; 
   pkg.workspaces = workspaces
   if (pkg.scripts) {
     const keep: Record<string, string> = {
-      test: db === 'convex' ? 'bun --cwd lib/convex test' : 'bun --cwd lib/spacetimedb test'
+      test: 'echo "add tests"'
     }
     for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
     pkg.scripts = keep
   }
-  const selectedLib = db === 'convex' ? 'noboil/convex' : 'noboil/spacetimedb'
   const nextDependencies: Record<string, string> = {}
   if (pkg.dependencies)
     for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
-  nextDependencies[selectedLib] = 'workspace:*'
+  nextDependencies.noboil = 'latest'
   pkg.dependencies = nextDependencies
   if (pkg.devDependencies) {
     const nextDevDependencies: Record<string, string> = {}
@@ -142,7 +150,8 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; 
 const removeDirs = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
   const dbTag = db === 'convex' ? 'cvx' : 'stdb'
   const otherTag = db === 'convex' ? 'stdb' : 'cvx'
-  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, 'backend/agent', 'tool/cli']
+  const otherDbName = db === 'convex' ? 'spacetimedb' : 'convex'
+  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `backend/${otherDbName}`, 'backend/agent', 'tool/cli']
   if (!includeDemos) toRemove.push(`web/${dbTag}`)
   for (const path of toRemove) rmSafe(join(dir, path))
 }

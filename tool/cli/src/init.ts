@@ -33,7 +33,16 @@ const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
 const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`
-const REMOVE_ALWAYS = ['PLAN.md', 'AGENTS.md', 'doc', '.github']
+const REMOVE_ALWAYS = [
+  'PLAN.md',
+  'AGENTS.md',
+  'TODO.md',
+  'LEARNING.md',
+  'RULES.md',
+  'doc',
+  '.github',
+  'script/prep-publish.ts'
+]
 /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
 const ask = async (question: string) => {
   const rl = createInterface({
@@ -57,7 +66,8 @@ const run = (cmd: string, args: string[], cwd: string) => {
 const removeDirs = ({ db, dir, includeDemos }: InitOpts) => {
   const dbTag = db === 'convex' ? 'cvx' : 'stdb'
   const otherTag = db === 'convex' ? 'stdb' : 'cvx'
-  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, 'backend/agent', 'tool/cli']
+  const otherDbName = db === 'convex' ? 'spacetimedb' : 'convex'
+  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `backend/${otherDbName}`, 'backend/agent', 'tool/cli']
   if (!includeDemos) toRemove.push(`web/${dbTag}`)
   for (const p of toRemove) {
     const full = join(dir, p)
@@ -94,7 +104,7 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
   pkg.workspaces = workspaces
   if (pkg.scripts) {
     const keep: Record<string, string> = {
-      test: db === 'convex' ? 'bun --cwd lib/convex test' : 'bun --cwd lib/spacetimedb test'
+      test: 'echo "add tests"'
     }
     for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
     pkg.scripts = keep
