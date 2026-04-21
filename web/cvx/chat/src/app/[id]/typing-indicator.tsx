@@ -1,6 +1,6 @@
 'use client'
 import { api } from '@a/be-convex'
-import { usePresence } from '@noboil/convex/react'
+import { usePresence } from 'noboil/convex/react'
 import { useEffect, useRef } from 'react'
 const TYPING_TIMEOUT_MS = 3000
 const presenceRefs = {

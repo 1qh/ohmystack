@@ -3,8 +3,8 @@
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
 import type { Blog } from '@a/be-spacetimedb/spacetimedb/types'
-import { useResolveFileUrl } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
+import { useResolveFileUrl } from 'noboil/spacetimedb/react'
 import { useSpacetimeDB } from 'spacetimedb/react'
 import { Author } from '../common'
 const Client = ({ blog }: { blog: Blog | null }) => {

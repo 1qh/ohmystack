@@ -4,8 +4,8 @@ import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import ChatSidebar from '@a/fe/chat-sidebar'
 import { toIdentityKey } from '@a/fe/utils'
 import { Spinner } from '@a/ui/spinner'
-import { useMut } from '@noboil/spacetimedb/react'
 import { Check } from 'lucide-react'
+import { useMut } from 'noboil/spacetimedb/react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 const Sb = () => {
   const { identity } = useSpacetimeDB()

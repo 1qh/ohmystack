@@ -3,14 +3,20 @@
   "version": "0.0.1",
   "description": "Schema-first, zero-boilerplate fullstack. Pick your database.",
   "keywords": [
+    "acl",
     "cli",
-    "fullstack",
     "convex",
-    "spacetimedb",
     "crud",
-    "zod",
+    "file-upload",
+    "fullstack",
+    "multi-tenancy",
+    "nextjs",
+    "pagination",
+    "rate-limiting",
     "react",
-    "nextjs"
+    "soft-delete",
+    "spacetimedb",
+    "zod"
   ],
   "homepage": "https://github.com/1qh/noboil",
   "bugs": "https://github.com/1qh/noboil/issues",
@@ -21,23 +27,81 @@
   },
   "license": "MIT",
   "author": "1qh",
+  "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
-    }
+    ".": "./src/index.ts",
+    "./convex": "./src/convex/index.ts",
+    "./convex/server": "./src/convex/server/index.ts",
+    "./convex/zod": "./src/convex/zod.ts",
+    "./convex/retry": "./src/convex/retry.ts",
+    "./convex/schema": "./src/convex/schema.ts",
+    "./convex/react": "./src/convex/react/index.ts",
+    "./convex/components": "./src/convex/components/index.ts",
+    "./convex/eslint": "./src/convex/eslint.ts",
+    "./convex/next": "./src/convex/next/index.ts",
+    "./convex/test": "./src/convex/server/test.ts",
+    "./convex/test/discover": "./src/convex/server/test-discover.ts",
+    "./convex/seed": "./src/convex/seed.ts",
+    "./spacetimedb": "./src/spacetimedb/index.ts",
+    "./spacetimedb/server": "./src/spacetimedb/server/index.ts",
+    "./spacetimedb/zod": "./src/spacetimedb/zod.ts",
+    "./spacetimedb/retry": "./src/spacetimedb/retry.ts",
+    "./spacetimedb/schema": "./src/spacetimedb/schema.ts",
+    "./spacetimedb/react": "./src/spacetimedb/react/index.ts",
+    "./spacetimedb/components": "./src/spacetimedb/components/index.ts",
+    "./spacetimedb/eslint": "./src/spacetimedb/eslint.ts",
+    "./spacetimedb/next": "./src/spacetimedb/next/index.ts",
+    "./spacetimedb/test": "./src/spacetimedb/server/test.ts",
+    "./spacetimedb/test/discover": "./src/spacetimedb/server/test-discover.ts",
+    "./spacetimedb/seed": "./src/spacetimedb/seed.ts"
   },
   "bin": {
-    "noboil": "./dist/index.mjs"
+    "noboil": "./src/index.ts"
   },
   "files": [
-    "dist"
+    "src",
+    "!src/**/__tests__"
   ],
   "scripts": {
-    "build": "tsdown",
-    "prepublishOnly": "bun run build",
     "postpublish": "bunx pm4ai@latest cleanup",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "browser-image-compression": "latest",
+    "next-navigation-guard": "latest",
+    "react-dropzone": "latest"
+  },
+  "peerDependencies": {
+    "@auth/core": "0.41",
+    "@convex-dev/auth": "latest",
+    "@stepperize/react": "latest",
+    "@tanstack/react-form": "latest",
+    "convex": "latest",
+    "convex-helpers": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "sharp": "latest",
+    "spacetimedb": "latest",
+    "zod": "latest"
+  },
+  "peerDependenciesMeta": {
+    "@auth/core": {
+      "optional": true
+    },
+    "@convex-dev/auth": {
+      "optional": true
+    },
+    "convex": {
+      "optional": true
+    },
+    "convex-helpers": {
+      "optional": true
+    },
+    "spacetimedb": {
+      "optional": true
+    }
   }
 }

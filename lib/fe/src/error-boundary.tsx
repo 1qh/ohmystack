@@ -1,3 +1,3 @@
 'use client'
-import { ErrorBoundary } from '@noboil/convex/components'
+import { ErrorBoundary } from 'noboil/convex/components'
 export default ErrorBoundary

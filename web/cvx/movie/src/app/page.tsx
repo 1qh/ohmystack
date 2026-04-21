@@ -5,9 +5,9 @@
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import { Input } from '@a/ui/input'
-import { useOnlineStatus } from '@noboil/convex/react'
 import { useAction } from 'convex/react'
 import Link from 'next/link'
+import { useOnlineStatus } from 'noboil/convex/react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 type SearchError = null | { message: string }

@@ -1,5 +1,5 @@
-/* oxlint-disable promise/prefer-await-to-callbacks, promise/prefer-await-to-then */
 /* eslint-disable no-console */
+/* oxlint-disable promise/prefer-await-to-callbacks, promise/prefer-await-to-then */
 'use client'
 import type { ComponentProps } from 'react'
 import { useAuthActions } from '@convex-dev/auth/react'

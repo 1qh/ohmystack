@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 /* eslint-disable no-console */
+/** biome-ignore-all lint/style/noProcessEnv: cli */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -99,11 +99,10 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
     for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
     pkg.scripts = keep
   }
-  const selectedLib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb'
   const nextDependencies: Record<string, string> = {}
   if (pkg.dependencies)
     for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
-  nextDependencies[selectedLib] = 'workspace:*'
+  nextDependencies.noboil = 'latest'
   pkg.dependencies = nextDependencies
   if (pkg.devDependencies) {
     const nextDevDependencies: Record<string, string> = {}

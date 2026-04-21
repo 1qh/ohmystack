@@ -1,8 +1,8 @@
 import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
-import { queryTable } from '@noboil/spacetimedb/next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { queryTable } from 'noboil/spacetimedb/next'
 import env from './env'
 import UserMenuShell from './user-menu-shell'
 interface UserInfo {

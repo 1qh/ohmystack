@@ -1,7 +1,8 @@
+/* eslint-disable no-continue */
 /** biome-ignore-all lint/nursery/noContinue: script */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: ANSI color codes */
-/* eslint-disable no-await-in-loop, no-continue, no-control-regex */
+/* eslint-disable no-await-in-loop, no-control-regex */
 /* oxlint-disable no-await-in-loop, no-control-regex */
 import { $, sleep } from 'bun'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'

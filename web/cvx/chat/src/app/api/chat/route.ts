@@ -5,7 +5,6 @@ import { api } from '@a/be-convex'
 import { getModel } from '@a/be-convex/ai'
 import { toUIMessage } from '@a/fe/ui-message'
 import { convexAuthNextjsToken } from '@convex-dev/auth/nextjs/server'
-import { getToken, isAuthenticated } from '@noboil/convex/next'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -15,6 +14,7 @@ import {
   tool
 } from 'ai'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
+import { getToken, isAuthenticated } from 'noboil/convex/next'
 import { z } from 'zod/v4'
 const filterSupportedParts = (parts: Record<string, unknown>[]) =>
   parts

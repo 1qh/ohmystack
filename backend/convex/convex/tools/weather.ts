@@ -1,6 +1,6 @@
 'use node'
-import { fetchWithRetry } from '@noboil/convex/retry'
 import { v } from 'convex/values'
+import { fetchWithRetry } from 'noboil/convex/retry'
 import { z } from 'zod/v4'
 import { internalAction } from '../_generated/server'
 const geoApiResponseSchema = z.object({

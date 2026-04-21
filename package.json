@@ -25,7 +25,7 @@
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",
     "postinstall": "sherif",
     "prepare": "bunx simple-git-hooks",
-    "publish": "bun publish --access public --cwd lib/shared && bun publish --access public --cwd lib/convex && bun publish --access public --cwd lib/spacetimedb && bun publish --access public --cwd tool/cli",
+    "publish": "bun script/prep-publish.ts && bun publish --access public --cwd tool/cli",
     "setup": "bun script/setup.ts",
     "setup:convex": "bun script/setup-convex.ts",
     "setup:spacetimedb": "bun script/setup-spacetimedb.ts",

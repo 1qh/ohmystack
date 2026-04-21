@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
+/* eslint-disable no-continue */
 /** biome-ignore-all lint/nursery/noContinue: parser */
 /** biome-ignore-all lint/style/noProcessEnv: env loader */
-/* eslint-disable no-continue */
 import { spawn } from 'bun'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'

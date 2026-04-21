@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-continue */
+/** biome-ignore-all lint/nursery/noContinue: filter loop */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 const exportPat = /export\s+(?:type\s+)?\{(?<syms>[^}]+)\}/gu
@@ -38,19 +39,20 @@ const extractExports = (filePath: string): string[] => {
   names.delete('type')
   return [...names].toSorted()
 }
-const genTable = (pkgDir: string): string => {
+const genTable = (pkgDir: string, filter: string): string => {
   const pkgJson = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8')) as {
     exports: Record<string, string | { default?: string; types?: string }>
     name: string
   }
   const rows: string[] = []
   for (const [subpath, target] of Object.entries(pkgJson.exports)) {
+    if (!subpath.startsWith(`./${filter}`)) continue
     const targetPath = typeof target === 'string' ? target : (target.types ?? target.default ?? '')
     if (targetPath) {
       const filePath = resolve(pkgDir, targetPath)
       const names = extractExports(filePath)
       if (names.length > 0) {
-        const modulePath = subpath === '.' ? pkgJson.name : `${pkgJson.name}/${subpath.replace('./', '')}`
+        const modulePath = `${pkgJson.name}/${subpath.replace('./', '')}`
         rows.push(`| \`${modulePath}\` | \`${names.join('`, `')}\` |`)
       }
     }
@@ -59,8 +61,8 @@ const genTable = (pkgDir: string): string => {
 }
 const START = '{/* AUTO-GENERATED:IMPORTS:START */}'
 const END = '{/* AUTO-GENERATED:IMPORTS:END */}'
-const convexDir = resolve(import.meta.dir, '../../lib/convex')
-const stdbDir = resolve(import.meta.dir, '../../lib/spacetimedb')
+const convexDir = resolve(import.meta.dir, '../../tool/cli')
+const stdbDir = resolve(import.meta.dir, '../../tool/cli')
 const mdxPath = resolve(import.meta.dir, '../content/docs/api-reference.mdx')
 const section = [
   '',
@@ -69,14 +71,14 @@ const section = [
   '',
   '| Module | Key Exports |',
   '| ------ | ----------- |',
-  genTable(convexDir),
+  genTable(convexDir, 'convex'),
   '',
   '</Tab>',
   '<Tab value="SpacetimeDB">',
   '',
   '| Module | Key Exports |',
   '| ------ | ----------- |',
-  genTable(stdbDir),
+  genTable(stdbDir, 'spacetimedb'),
   '',
   '</Tab>',
   '</Tabs>',

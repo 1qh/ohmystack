@@ -30,8 +30,8 @@
     "@a/ui": "workspace:*",
     "@ai-sdk/react": "latest",
     "@convex-dev/auth": "latest",
-    "@noboil/convex": "workspace:*",
     "next": "latest",
+    "noboil": "workspace:*",
     "react-oidc-context": "latest"
   }
 }

@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable unicorn/no-useless-promise-resolve-reject, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 /** biome-ignore-all lint/suspicious/useAwait: sync reducers wrapped as promises */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-/* eslint-disable @typescript-eslint/strict-void-return */
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'
@@ -10,10 +10,10 @@ import { Button } from '@a/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'
 import { Skeleton } from '@a/ui/skeleton'
-import { AutoSaveIndicator, Form, PermissionGuard, useFormMutation } from '@noboil/spacetimedb/components'
-import { useSoftDelete } from '@noboil/spacetimedb/react'
-import { pickValues } from '@noboil/spacetimedb/zod'
 import { useRouter } from 'next/navigation'
+import { AutoSaveIndicator, Form, PermissionGuard, useFormMutation } from 'noboil/spacetimedb/components'
+import { useSoftDelete } from 'noboil/spacetimedb/react'
+import { pickValues } from 'noboil/spacetimedb/zod'
 import { use } from 'react'
 import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'

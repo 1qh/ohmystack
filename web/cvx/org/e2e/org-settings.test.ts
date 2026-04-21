@@ -1,5 +1,5 @@
-// biome-ignore-all lint/performance/useTopLevelRegex: test file
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+// biome-ignore-all lint/performance/useTopLevelRegex: test file
 import { addTestOrgMember, createTestOrg, createTestUser, ensureTestUser, makeOrgTestUtils } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
 const testPrefix = `e2e-org-settings-${Date.now()}`

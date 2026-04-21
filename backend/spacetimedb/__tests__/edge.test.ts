@@ -1,5 +1,5 @@
-import { callReducer, extractErrorData, getErrorCode } from '@noboil/spacetimedb/test'
 import { describe, expect, test } from 'bun:test'
+import { callReducer, extractErrorData, getErrorCode } from 'noboil/spacetimedb/test'
 import type { ErrorContext, EventContext, ReducerEventContext, SubscriptionEventContext } from '../module_bindings'
 import { reducers, tables } from '../module_bindings'
 import { findMine, getNumber, getString, listTable, none, some, withCtx } from './test-helpers'

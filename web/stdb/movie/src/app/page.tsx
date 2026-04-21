@@ -5,8 +5,8 @@
 // biome-ignore-all lint/correctness/useImageSize: dynamic images
 'use client'
 import { Input } from '@a/ui/input'
-import { useErrorToast, useOnlineStatus } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
+import { useErrorToast, useOnlineStatus } from 'noboil/spacetimedb/react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 interface SearchResult {

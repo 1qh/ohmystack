@@ -3,10 +3,10 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/spacetimedb-auth-layout'
 import Logout from '@a/fe/spacetimedb-user-menu'
-import { Devtools } from '@noboil/spacetimedb/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { Devtools } from 'noboil/spacetimedb/react'
 import { SpacetimeWrapper } from './providers'
 const metadata: Metadata = { description: 'spacetimedb blog demo', title: 'Blog' }
 const Layout = async ({ children }: { children: ReactNode }) => {

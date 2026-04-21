@@ -8,10 +8,10 @@ import {
   DropdownMenuTrigger
 } from '@a/ui/dropdown-menu'
 import { Skeleton } from '@a/ui/skeleton'
-import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, setActiveOrgCookieClient, useFiles } from '@noboil/spacetimedb/react'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { OrgAvatar, RoleBadge } from 'noboil/spacetimedb/components'
+import { resolveFileUrl, setActiveOrgCookieClient, useFiles } from 'noboil/spacetimedb/react'
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
 const OrgSwitcher = () => {
   const router = useRouter()

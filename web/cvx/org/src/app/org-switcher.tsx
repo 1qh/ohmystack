@@ -8,10 +8,10 @@ import {
   DropdownMenuTrigger
 } from '@a/ui/dropdown-menu'
 import { Skeleton } from '@a/ui/skeleton'
-import { OrgAvatar, RoleBadge } from '@noboil/convex/components'
-import { setActiveOrgCookieClient } from '@noboil/convex/react'
 import { ChevronDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { OrgAvatar, RoleBadge } from 'noboil/convex/components'
+import { setActiveOrgCookieClient } from 'noboil/convex/react'
 import { useActiveOrg, useMyOrgs } from '~/hook/use-org'
 const OrgSwitcher = () => {
   const router = useRouter()

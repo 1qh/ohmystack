@@ -1,5 +1,5 @@
-// biome-ignore-all lint/performance/useTopLevelRegex: test file
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+// biome-ignore-all lint/performance/useTopLevelRegex: test file
 import {
   addTestOrgMember,
   api,

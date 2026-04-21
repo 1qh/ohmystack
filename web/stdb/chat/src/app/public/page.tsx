@@ -1,8 +1,8 @@
 'use client'
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Input } from '@a/ui/input'
-import { useList } from '@noboil/spacetimedb/react'
 import Link from 'next/link'
+import { useList } from 'noboil/spacetimedb/react'
 import { useState } from 'react'
 import { useTable } from 'spacetimedb/react'
 const Page = () => {

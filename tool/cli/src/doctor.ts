@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -48,13 +49,10 @@ const doctor = (_args: string[]) => {
   const raw = readFileSync(pkgPath, 'utf8')
   const pkg = JSON.parse(raw) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
   const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-  const hasConvex = '@noboil/convex' in deps
-  const hasStdb = '@noboil/spacetimedb' in deps
-  if (hasConvex || hasStdb) {
-    if (hasConvex) console.log(`  ${green('+')} @noboil/convex ${dim(deps['@noboil/convex'] ?? 'unknown')}`)
-    if (hasStdb) console.log(`  ${green('+')} @noboil/spacetimedb ${dim(deps['@noboil/spacetimedb'] ?? 'unknown')}`)
-  } else {
-    console.log(`  ${red('x')} Neither @noboil/convex nor @noboil/spacetimedb found in dependencies`)
+  const hasNoboil = 'noboil' in deps
+  if (hasNoboil) console.log(`  ${green('+')} noboil ${dim(deps.noboil ?? 'unknown')}`)
+  else {
+    console.log(`  ${red('x')} noboil not found in dependencies`)
     issues += 1
   }
   const bunResult = spawnSync('bun', ['--version'], { encoding: 'utf8' })
@@ -76,7 +74,9 @@ const doctor = (_args: string[]) => {
     warnings += 1
   }
   warnings += checkManifest(cwd)
-  if (hasConvex) {
+  const rcPath = join(cwd, '.noboilrc.json')
+  const rcDb = existsSync(rcPath) ? ((JSON.parse(readFileSync(rcPath, 'utf8')) as { db?: string }).db ?? '') : ''
+  if (rcDb === 'convex') {
     const convexDir = join(cwd, 'convex')
     if (existsSync(convexDir)) console.log(`  ${green('+')} convex/ directory found`)
     else {
@@ -84,7 +84,7 @@ const doctor = (_args: string[]) => {
       warnings += 1
     }
   }
-  if (hasStdb) {
+  if (rcDb === 'spacetimedb') {
     const dockerFile = join(cwd, 'docker-compose.yml')
     const dockerFileAlt = join(cwd, 'compose.yml')
     if (existsSync(dockerFile) || existsSync(dockerFileAlt)) console.log(`  ${green('+')} Docker compose file found`)

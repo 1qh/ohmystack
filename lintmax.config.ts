@@ -38,12 +38,12 @@ export default defineConfig({
       },
       eslintImport({
         files: ['backend/convex/convex/**/*.ts', 'backend/convex/convex/**/*.tsx'],
-        from: '@noboil/convex/eslint',
+        from: 'noboil/convex/eslint',
         name: 'recommended'
       }),
       eslintImport({
         files: ['backend/spacetimedb/src/**/*.ts'],
-        from: '@noboil/spacetimedb/eslint',
+        from: 'noboil/spacetimedb/eslint',
         name: 'recommended'
       }),
       {

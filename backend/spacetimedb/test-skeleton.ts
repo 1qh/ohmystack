@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { config } from '@a/config'
-import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/server'
+import { callReducer, cleanup, createTestContext, queryTable } from 'noboil/spacetimedb/server'
 interface BlogRow {
   content: string
   id: number

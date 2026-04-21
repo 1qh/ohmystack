@@ -7,9 +7,9 @@ import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { formatExpiry } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@a/ui/table'
-import { RoleBadge } from '@noboil/spacetimedb/components'
-import { useMut, useMutate } from '@noboil/spacetimedb/react'
 import { Copy, Trash } from 'lucide-react'
+import { RoleBadge } from 'noboil/spacetimedb/components'
+import { useMut, useMutate } from 'noboil/spacetimedb/react'
 import { useOrgTable } from '~/hook/use-org-table'
 const PendingInvites = () => {
   const [invites] = useOrgTable<OrgInvite>(tables.orgInvite)

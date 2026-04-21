@@ -2,7 +2,7 @@
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
-import { useList, useOwnRows } from '@noboil/spacetimedb/react'
+import { useList, useOwnRows } from 'noboil/spacetimedb/react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { Create, List } from './common'

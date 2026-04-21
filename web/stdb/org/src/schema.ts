@@ -1,5 +1,5 @@
 import { s } from '@a/be-spacetimedb/s'
-import { file } from '@noboil/spacetimedb/schema'
+import { file } from 'noboil/spacetimedb/schema'
 import { boolean, email, object, string } from 'zod/v4'
 const { project, wiki: wikiSchema } = s
 const orgTeam = s.team.omit({ avatarId: true })

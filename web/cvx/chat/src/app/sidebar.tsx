@@ -2,9 +2,9 @@
 import { api } from '@a/be-convex'
 import ChatSidebar from '@a/fe/chat-sidebar'
 import { Spinner } from '@a/ui/spinner'
-import { useList } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
 import { Check } from 'lucide-react'
+import { useList } from 'noboil/convex/react'
 import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 const Sb = () => {

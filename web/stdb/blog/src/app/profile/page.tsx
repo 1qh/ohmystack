@@ -1,18 +1,18 @@
+/* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable jsx-no-new-object-as-prop, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-/* eslint-disable @typescript-eslint/strict-void-return */
 import type { ChangeEvent } from 'react'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
 import { FieldGroup } from '@a/ui/field'
 import { Spinner } from '@a/ui/spinner'
-import { Form, useFormMutation } from '@noboil/spacetimedb/components'
-import { useResolveFileUrl, useUpload } from '@noboil/spacetimedb/react'
 import { Upload } from 'lucide-react'
 import Link from 'next/link'
+import { Form, useFormMutation } from 'noboil/spacetimedb/components'
+import { useResolveFileUrl, useUpload } from 'noboil/spacetimedb/react'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'

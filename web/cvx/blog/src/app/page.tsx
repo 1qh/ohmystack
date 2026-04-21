@@ -3,7 +3,7 @@ import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
-import { useList } from '@noboil/convex/react'
+import { useList } from 'noboil/convex/react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { Create, List } from './common'
 type Blog = FunctionReturnType<typeof api.blog.list>['page'][number]

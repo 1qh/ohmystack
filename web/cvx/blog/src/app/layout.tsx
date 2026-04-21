@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import AuthLayout from '@a/fe/auth-layout'
 import Logout from '@a/fe/user-menu'
-import { Devtools } from '@noboil/convex/react'
 import { UserRound } from 'lucide-react'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { Devtools } from 'noboil/convex/react'
 import { ConvexWrapper } from './providers'
 const metadata: Metadata = { description: 'noboil blog demo', title: 'Blog' }
 const Layout = async ({ children }: { children: ReactNode }) => {

@@ -6,7 +6,7 @@ import {
   noboil,
   orgCascade,
   slowQueryWarn
-} from '@noboil/convex/server'
+} from 'noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './convex/_generated/server'
 import { getAuthUserIdOrTest } from './convex/testauth'
 import { s } from './s'

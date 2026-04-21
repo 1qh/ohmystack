@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/style/noProcessEnv: env detection in test teardown */
 /* eslint-disable no-console */
+/** biome-ignore-all lint/style/noProcessEnv: env detection in test teardown */
 import { config } from '@a/config'
 import { execSync } from 'node:child_process'
 import { join, resolve } from 'node:path'

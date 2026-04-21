@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
 import { Skeleton } from '@a/ui/skeleton'
-import { Form, OrgAvatar, useForm } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, setActiveOrgCookieClient, useFiles, useMut } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
+import { Form, OrgAvatar, useForm } from 'noboil/spacetimedb/components'
+import { resolveFileUrl, setActiveOrgCookieClient, useFiles, useMut } from 'noboil/spacetimedb/react'
 import { use } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { joinRequest } from '~/schema'

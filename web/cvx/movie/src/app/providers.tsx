@@ -2,8 +2,8 @@
 import type { ReactNode } from 'react'
 import ConvexProvider from '@a/fe/convex-provider'
 import { Toaster } from '@a/ui/sonner'
-import { ErrorBoundary, OfflineIndicator } from '@noboil/convex/components'
 import { ThemeProvider } from 'next-themes'
+import { ErrorBoundary, OfflineIndicator } from 'noboil/convex/components'
 import { Suspense } from 'react'
 const Providers = ({ children }: { children: ReactNode }) => (
   <Suspense>

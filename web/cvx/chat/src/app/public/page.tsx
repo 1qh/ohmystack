@@ -1,8 +1,8 @@
 'use client'
 import { api } from '@a/be-convex'
 import { Input } from '@a/ui/input'
-import { useList } from '@noboil/convex/react'
 import Link from 'next/link'
+import { useList } from 'noboil/convex/react'
 import { useMemo, useState } from 'react'
 interface ChatItem {
   _id: string

@@ -21,12 +21,12 @@
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "latest",
-    "@noboil/convex": "workspace:*",
     "@t3-oss/env-nextjs": "latest",
     "convex": "latest",
     "convex-helpers": "latest",
     "convex-test": "latest",
-    "ky": "latest"
+    "ky": "latest",
+    "noboil": "workspace:*"
   },
   "devDependencies": {
     "@a/e2e": "workspace:*"

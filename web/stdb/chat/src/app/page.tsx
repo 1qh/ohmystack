@@ -5,9 +5,9 @@ import { Conversation, ConversationContent, ConversationEmptyState } from '@a/ui
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from '@a/ui/ai-elements/prompt-input'
 import { Label } from '@a/ui/label'
 import { Switch } from '@a/ui/switch'
-import { useMut } from '@noboil/spacetimedb/react'
 import { SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useMut } from 'noboil/spacetimedb/react'
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
 const Page = () => {

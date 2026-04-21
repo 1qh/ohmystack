@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
-/* eslint-disable complexity, no-console */
+/* eslint-disable no-console */
+/* eslint-disable complexity */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
 interface EjectContext {
   cwd: string
   db: 'convex' | 'spacetimedb'
-  installedPackage: '@noboil/convex' | '@noboil/spacetimedb'
+  installedPackage: 'noboil'
   rootPackagePath: string
   sharedFiles: string[]
   sharedRoot?: string
@@ -36,7 +37,7 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const HELP = `\n${bold('noboil eject')} — inline noboil library locally\n\n${bold('Usage:')}\n  noboil eject [--dry-run]\n\n${bold('Options:')}\n  --dry-run      ${dim('Show what would change without writing files')}\n  --help, -h     ${dim('Show this help')}\n`
-const SHARED_SPECIFIER = '@noboil/shared'
+const SHARED_SPECIFIER = 'noboil/shared'
 const LOCAL_PACKAGE = '@local/noboil'
 const sharedExtensionCandidates = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']
 const isIgnoredPath = (filePath: string) => {
@@ -85,12 +86,15 @@ const detectInstalledPackage = (rootPackagePath: string) => {
     for (const [key, value] of Object.entries(rootPackageJson.dependencies)) merged[key] = value
   if (rootPackageJson.devDependencies)
     for (const [key, value] of Object.entries(rootPackageJson.devDependencies)) merged[key] = value
-  const hasConvex = '@noboil/convex' in merged
-  const hasSpacetimedb = '@noboil/spacetimedb' in merged
-  if (!(hasConvex || hasSpacetimedb)) fail('No @noboil/* package found. Nothing to eject.')
-  if (hasConvex && hasSpacetimedb) fail('Both @noboil/convex and @noboil/spacetimedb are installed. Keep one and retry.')
-  if (hasConvex) return { db: 'convex' as const, installedPackage: '@noboil/convex' as const }
-  return { db: 'spacetimedb' as const, installedPackage: '@noboil/spacetimedb' as const }
+  if (!('noboil' in merged)) fail('noboil not found in dependencies. Nothing to eject.')
+  const rcPath = join(dirname(rootPackagePath), '.noboilrc.json')
+  if (!existsSync(rcPath))
+    fail(
+      'Missing .noboilrc.json — cannot determine db. Re-run `noboil init` or create .noboilrc.json with { "db": "convex" | "spacetimedb" }.'
+    )
+  const rc = readJson(rcPath) as { db?: string }
+  if (rc.db !== 'convex' && rc.db !== 'spacetimedb') fail('.noboilrc.json missing valid `db` field.')
+  return { db: rc.db as 'convex' | 'spacetimedb', installedPackage: 'noboil' as const }
 }
 const IMPORT_PATTERN = /(?:from\s+|import\s*\(\s*|import\s+)(?<quote>['"])(?<specifier>[^'"\n]+)\k<quote>/gu
 const extractSpecifiers = (content: string) => {
@@ -183,7 +187,7 @@ const rewriteNoboilSpecifiers = (content: string, installedPackage: string): Rew
   })
   return { changed: replacements > 0, output, replacements }
 }
-const SHARED_IMPORT_PATTERN = /(?<q>['"])@a\/shared(?<sfx>[^'"\n]*)\k<q>/gu
+const SHARED_IMPORT_PATTERN = /(?<q>['"])noboil\/shared(?<sfx>[^'"\n]*)\k<q>/gu
 const rewriteSharedSpecifiers = (content: string, filePath: string, ejectedSrcRoot: string): RewriteResult => {
   let replacements = 0
   const output = content.replaceAll(SHARED_IMPORT_PATTERN, (_m: string, quote: string, suffix: string) => {
@@ -237,8 +241,8 @@ const replaceDependencyInSection = (section: Record<string, string> | undefined,
 const prepareContext = (cwd: string): EjectContext => {
   const rootPackagePath = join(cwd, 'package.json')
   const detected = detectInstalledPackage(rootPackagePath)
-  const sourceRoot = join(cwd, 'node_modules', '@noboil', detected.db, 'src')
-  const sourcePackageJsonPath = join(cwd, 'node_modules', '@noboil', detected.db, 'package.json')
+  const sourceRoot = join(cwd, 'node_modules', 'noboil', 'src', detected.db)
+  const sourcePackageJsonPath = join(cwd, 'node_modules', 'noboil', 'package.json')
   if (!(existsSync(sourceRoot) && existsSync(sourcePackageJsonPath))) fail('Run `bun install` first.')
   const sourcePackageJson = readJson(sourcePackageJsonPath) as PackageJson
   if (!sourcePackageJson.exports || typeof sourcePackageJson.exports !== 'object')
@@ -248,11 +252,9 @@ const prepareContext = (cwd: string): EjectContext => {
   let sharedRoot: string | undefined
   let sharedFiles: string[] = []
   if (sharedSpecifiers.size > 0) {
-    const nodeModulesShared = join(cwd, 'node_modules', '@a', 'shared', 'src')
-    const workspaceShared = join(cwd, 'lib', 'shared', 'src')
+    const nodeModulesShared = join(cwd, 'node_modules', 'noboil', 'src', 'shared')
     if (existsSync(nodeModulesShared)) sharedRoot = nodeModulesShared
-    else if (existsSync(workspaceShared)) sharedRoot = workspaceShared
-    else fail('Shared source missing. Install `@noboil/shared` or include lib/shared.')
+    else fail('Shared source missing in node_modules/noboil/src/shared.')
     if (sharedRoot) sharedFiles = buildSharedDependencySet(sharedRoot, sharedSpecifiers)
   }
   return {

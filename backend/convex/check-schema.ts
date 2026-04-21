@@ -1,4 +1,4 @@
-import { checkSchema } from '@noboil/convex/server'
+import { checkSchema } from 'noboil/convex/server'
 import { base, children, owned } from './s'
 checkSchema({
   ...base,

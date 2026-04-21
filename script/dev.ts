@@ -1,7 +1,8 @@
+/* eslint-disable no-continue */
 /** biome-ignore-all lint/nursery/noContinue: script */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 /** biome-ignore-all lint/suspicious/noEmptyBlockStatements: keep process alive */
-/* eslint-disable no-await-in-loop, no-continue, no-empty */
+/* eslint-disable no-await-in-loop, no-empty */
 import { allAppPorts, config } from '@a/config'
 /* oxlint-disable no-await-in-loop, no-process-exit */
 import { sleep, spawn } from 'bun'

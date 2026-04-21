@@ -1,5 +1,5 @@
-import { requireOrgMember } from '@noboil/convex/server'
 import { zid } from 'convex-helpers/server/zod4'
+import { requireOrgMember } from 'noboil/convex/server'
 import { api, q, uniqueCheck } from '../lazy'
 import { s } from '../s'
 export const { addEditor, create, editors, list, read, removeEditor, restore, rm, setEditors, update } = api.wiki

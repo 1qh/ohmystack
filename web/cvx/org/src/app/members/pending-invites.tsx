@@ -5,10 +5,10 @@ import { fail, formatExpiry } from '@a/fe/utils'
 import { Button } from '@a/ui/button'
 import { Skeleton } from '@a/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@a/ui/table'
-import { RoleBadge } from '@noboil/convex/components'
-import { useOrgQuery } from '@noboil/convex/react'
 import { useMutation } from 'convex/react'
 import { Copy, Trash } from 'lucide-react'
+import { RoleBadge } from 'noboil/convex/components'
+import { useOrgQuery } from 'noboil/convex/react'
 import { toast } from 'sonner'
 const PendingInvites = () => {
   const invites = useOrgQuery(api.org.pendingInvites)

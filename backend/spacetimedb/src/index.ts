@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 const spacetimedb = noboil({
   tables: ({ t, table }) => ({

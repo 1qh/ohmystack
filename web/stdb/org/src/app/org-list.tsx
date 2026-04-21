@@ -1,10 +1,10 @@
 'use client'
 import type { OrgListGridItem } from '@a/fe/org-list-grid'
-import type { OrgRole } from '@noboil/spacetimedb'
+import type { OrgRole } from 'noboil/spacetimedb'
 import OrgListGrid from '@a/fe/org-list-grid'
-import { OrgAvatar, RoleBadge } from '@noboil/spacetimedb/components'
-import { resolveFileUrl, setActiveOrgCookieClient, useFiles } from '@noboil/spacetimedb/react'
 import { useRouter } from 'next/navigation'
+import { OrgAvatar, RoleBadge } from 'noboil/spacetimedb/components'
+import { resolveFileUrl, setActiveOrgCookieClient, useFiles } from 'noboil/spacetimedb/react'
 type OrgItem = OrgListGridItem<OrgRole>
 const OrgList = ({ orgs }: { orgs: OrgItem[] }) => {
   const router = useRouter()

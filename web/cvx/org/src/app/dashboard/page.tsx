@@ -1,10 +1,10 @@
 'use client'
 import { api } from '@a/be-convex'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
-import { RoleBadge } from '@noboil/convex/components'
-import { useOrgQuery } from '@noboil/convex/react'
 import { FolderOpen, Users } from 'lucide-react'
 import Link from 'next/link'
+import { RoleBadge } from 'noboil/convex/components'
+import { useOrgQuery } from 'noboil/convex/react'
 import { useOrg } from '~/hook/use-org'
 const OrgDashboard = () => {
   const { org, role } = useOrg()

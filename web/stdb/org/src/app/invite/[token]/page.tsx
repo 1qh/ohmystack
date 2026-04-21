@@ -3,9 +3,9 @@
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
-import { useMut } from '@noboil/spacetimedb/react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useMut } from 'noboil/spacetimedb/react'
 import { use, useEffect, useRef, useState } from 'react'
 const AcceptInvitePage = ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = use(params)

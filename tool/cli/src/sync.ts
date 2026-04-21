@@ -125,7 +125,7 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; 
     for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
     pkg.scripts = keep
   }
-  const selectedLib = db === 'convex' ? '@noboil/convex' : '@noboil/spacetimedb'
+  const selectedLib = db === 'convex' ? 'noboil/convex' : 'noboil/spacetimedb'
   const nextDependencies: Record<string, string> = {}
   if (pkg.dependencies)
     for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val

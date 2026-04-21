@@ -1,6 +1,7 @@
+/* eslint-disable no-continue */
 /** biome-ignore-all lint/nursery/noContinue: sequential */
 /** biome-ignore-all lint/suspicious/noEmptyBlockStatements: silent cleanup */
-/* eslint-disable no-continue, no-empty */
+/* eslint-disable no-empty */
 import { config, infraVars, portVars } from '@a/config'
 import { existsSync, lstatSync, readdirSync, symlinkSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'

@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable jsx-no-new-object-as-prop */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
-/* eslint-disable @typescript-eslint/strict-void-return */
 'use client'
 import type { ChangeEvent } from 'react'
 import { api } from '@a/be-convex'
@@ -8,11 +8,11 @@ import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'
 import { FieldGroup } from '@a/ui/field'
 import { Spinner } from '@a/ui/spinner'
-import { Form, useForm } from '@noboil/convex/components'
-import { useUpload } from '@noboil/convex/react'
 import { useMutation, useQuery } from 'convex/react'
 import { Upload } from 'lucide-react'
 import Link from 'next/link'
+import { Form, useForm } from 'noboil/convex/components'
+import { useUpload } from 'noboil/convex/react'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { profileSchema } from '~/schema'

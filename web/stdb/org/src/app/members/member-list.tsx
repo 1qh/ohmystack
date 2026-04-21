@@ -1,5 +1,5 @@
-// biome-ignore-all lint/nursery/noFloatingPromises: event handler
 /* eslint-disable @typescript-eslint/strict-void-return */
+// biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
@@ -9,9 +9,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@a/ui/input'
 import { Skeleton } from '@a/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@a/ui/table'
-import { RoleBadge } from '@noboil/spacetimedb/components'
-import { useMut, useSearch } from '@noboil/spacetimedb/react'
 import { MoreHorizontal, Search, UserMinus } from 'lucide-react'
+import { RoleBadge } from 'noboil/spacetimedb/components'
+import { useMut, useSearch } from 'noboil/spacetimedb/react'
 import { useState } from 'react'
 import { useSpacetimeDB } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
