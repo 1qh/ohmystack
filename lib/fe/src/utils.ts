@@ -1,19 +1,11 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
-import type { Id, TableNames } from '@a/be-convex/model'
-import { getErrorMessage, handleConvexError } from 'noboil/convex/server'
+import { getErrorMessage } from 'noboil/server'
 import { toast } from 'sonner'
 const fail = (error: unknown) => {
-  handleConvexError(error, {
-    NOT_AUTHENTICATED: () => {
-      toast.error('Please log in')
-    },
-    RATE_LIMITED: () => {
-      toast.error('Too many requests, try again later')
-    },
-    default: () => {
-      toast.error(getErrorMessage(error))
-    }
-  })
+  const msg = getErrorMessage(error)
+  if (msg.includes('NOT_AUTHENTICATED')) toast.error('Please log in')
+  else if (msg.includes('RATE_LIMITED')) toast.error('Too many requests, try again later')
+  else toast.error(msg)
 }
 const parseId = (val: unknown): null | number => {
   if (typeof val === 'number' && val > 0) return val
