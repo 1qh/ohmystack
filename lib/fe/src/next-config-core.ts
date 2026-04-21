@@ -26,9 +26,6 @@ const createNextConfigWithCsp = ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
   ...(noboilCondition === 'noboil-spacetimedb' && {
-    turbopack: {
-      resolveConditions: ['noboil-spacetimedb', 'import', 'node', 'default']
-    } as NextConfig['turbopack'],
     webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
       config.resolve ??= {}
       config.resolve.conditionNames = ['noboil-spacetimedb', '...']

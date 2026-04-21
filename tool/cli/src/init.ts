@@ -126,6 +126,7 @@ const CONVEX_ONLY_FE_FILES = [
   'auth-layout.tsx',
   'convex-provider.tsx',
   'email-login-page.tsx',
+  'error-boundary.tsx',
   'image-route.ts',
   'login-page.tsx',
   'logout-action.ts',

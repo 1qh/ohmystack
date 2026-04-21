@@ -6,8 +6,8 @@ import { Toaster } from '@a/ui/sonner'
 import { ThemeProvider } from 'next-themes'
 import { OfflineIndicator } from 'noboil/spacetimedb/components'
 import { Suspense } from 'react'
-import ErrorBoundary from './error-boundary'
 import LoginLayout from './login-layout'
+import ErrorBoundary from './spacetimedb-error-boundary'
 interface AuthLayoutProps {
   bodyClassName?: string
   bodyProps?: Omit<ComponentProps<'body'>, 'children' | 'className'>
