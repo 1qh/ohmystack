@@ -180,5 +180,12 @@
     "spacetimedb": {
       "optional": true
     }
+  },
+  "engines": {
+    "bun": ">=1.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

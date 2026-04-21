@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
+/* eslint-disable complexity, no-console */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -91,6 +91,19 @@ const doctor = (_args: string[]) => {
     else {
       console.log(`  ${yellow('!')} No docker-compose.yml found — needed for SpacetimeDB`)
       warnings += 1
+    }
+    if (existsSync(tsconfig)) {
+      const tscfg = JSON.parse(readFileSync(tsconfig, 'utf8')) as {
+        compilerOptions?: { customConditions?: string[] }
+      }
+      const conds = tscfg.compilerOptions?.customConditions ?? []
+      if (conds.includes('noboil-spacetimedb')) console.log(`  ${green('+')} customConditions: noboil-spacetimedb`)
+      else {
+        console.log(
+          `  ${yellow('!')} tsconfig missing customConditions: ['noboil-spacetimedb'] — noboil/* imports will resolve to Convex bindings`
+        )
+        warnings += 1
+      }
     }
   }
   console.log()

@@ -1,6 +1,6 @@
 # noboil
 
-[![npm](https://img.shields.io/npm/v/noboil)](https://www.npmjs.com/package/noboil) [![npm](https://img.shields.io/npm/v/@noboil/convex)](https://www.npmjs.com/package/@noboil/convex) [![npm](https://img.shields.io/npm/v/@noboil/spacetimedb)](https://www.npmjs.com/package/@noboil/spacetimedb) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![npm](https://img.shields.io/npm/v/noboil)](https://www.npmjs.com/package/noboil) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 One schema. Typed backend. Auto forms. Zero boilerplate.
 

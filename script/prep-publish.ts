@@ -31,6 +31,8 @@ console.log('prep-publish: staging at', STAGING)
 if (existsSync(STAGING)) rmSync(STAGING, { force: true, recursive: true })
 mkdirSync(STAGING, { recursive: true })
 await $`cp -R ${PKG}/package.json ${STAGING}/package.json`
+await $`cp ${PKG}/README.md ${STAGING}/README.md`
+await $`cp ${PKG}/LICENSE ${STAGING}/LICENSE`
 await $`cp -R ${PKG}/src ${STAGING}/src`
 await $`cp -R ${REPO}/readonly/ui/src ${STAGING}/src/ui`
 const glob = new Glob('**/*.{ts,tsx}')
@@ -106,6 +108,6 @@ for (const [subpath, target] of Object.entries(exportsMap))
     exportsMap[subpath] = next as Record<string, string>
   }
 pkg.bin = { noboil: './dist/index.mjs' }
-pkg.files = ['dist']
+pkg.files = ['dist', 'README.md', 'LICENSE']
 await write(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
 console.log('prep-publish: ready at', STAGING)

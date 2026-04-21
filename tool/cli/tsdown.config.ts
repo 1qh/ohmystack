@@ -35,5 +35,6 @@ export default defineConfig({
   format: 'esm',
   noExternal: ['@tanstack/react-store', 'use-sync-external-store'],
   outDir: 'dist',
+  sourcemap: true,
   unbundle: true
 })
