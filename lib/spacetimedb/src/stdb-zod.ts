@@ -35,7 +35,7 @@ const NUMBER_TAGS = new Set([
 ])
 /** Narrows unknown values to plain records. */
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
-const toBuilder = (v: unknown): RuntimeBuilder => (isRecord(v) ? (v as RuntimeBuilder) : {})
+const toBuilder = (v: unknown): RuntimeBuilder => (isRecord(v) ? v : {})
 const toTypeBuilder = (v: unknown): RuntimeBuilder => {
   const b = toBuilder(v)
   const { typeBuilder } = b
@@ -165,7 +165,7 @@ const productSchema = (v: unknown, visit: (x: unknown) => ZodType): ZodType => {
   const b = toTypeBuilder(v)
   const { elements: elementsObj } = toBuilder(b)
   if (!isRecord(elementsObj)) return unknown()
-  const shape = {} as unknown as Record<string, ZodType>
+  const shape: Record<string, ZodType> = {}
   for (const k of Object.keys(elementsObj)) shape[k] = visit(elementsObj[k])
   return object(shape)
 }
@@ -205,7 +205,7 @@ const zodFromTable = (columns: Record<string, unknown>, options: ZodFromTableOpt
   const excludeSet = new Set(options.exclude)
   const optionalSet = new Set(options.optional)
   const hasInclude = includeSet.size > 0
-  const shape = {} as unknown as Record<string, ZodType>
+  const shape: Record<string, ZodType> = {}
   for (const key of Object.keys(columns)) {
     const inInclude = includeSet.has(key)
     const explicitlyExcluded = excludeSet.has(key)

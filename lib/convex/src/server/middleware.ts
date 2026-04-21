@@ -4,7 +4,7 @@ import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from 
 import { log } from './helpers'
 const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareCtx => ({ ...ctx, operation: op })
 const composeMiddleware = (...middlewares: Middleware[]): GlobalHooks =>
-  createComposeMiddleware({ middlewares, toMiddlewareCtx: withOp }) as GlobalHooks
+  createComposeMiddleware({ middlewares, toMiddlewareCtx: withOp })
 const auditLog = (opts?: { logLevel?: 'debug' | 'info'; verbose?: boolean }): Middleware => {
   const level = opts?.logLevel ?? 'info'
   const verbose = opts?.verbose ?? false
@@ -55,5 +55,5 @@ const slowQueryWarn = (opts?: { threshold?: number }): Middleware => {
     name: 'slowQueryWarn'
   }
 }
-const inputSanitize = (opts?: { fields?: string[] }): Middleware => createInputSanitize(opts) as Middleware
+const inputSanitize = (opts?: { fields?: string[] }): Middleware => createInputSanitize(opts)
 export { auditLog, composeMiddleware, inputSanitize, sanitizeRec, sanitizeString, slowQueryWarn }

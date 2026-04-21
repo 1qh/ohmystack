@@ -76,12 +76,12 @@ const OrgLayoutInner = ({ children }: { children: ReactNode }) => {
     : []
   const ownedItems = ownedOrgs
     .filter((o: Org) => !memberOrgs.some(m => m.org._id === String(o.id)))
-    .map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as OrgRole }))
+    .map((o: Org) => ({ org: toLegacyOrg(o), role: 'owner' as const }))
   const myOrgItems = identity
     ? [...ownedItems, ...memberOrgs]
     : orgs.map((o: Org) => ({
         org: toLegacyOrg(o),
-        role: 'owner' as OrgRole
+        role: 'owner' as const
       }))
   if (myOrgItems.length === 0) {
     if (isPlaywright && !playwrightWaitExpired) return null

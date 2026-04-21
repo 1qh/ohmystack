@@ -47,7 +47,7 @@ const applyOptimistic = <T extends Rec>(items: T[], pending: PendingMutation[]):
   if (updates.size > 0)
     result = result.map(i => {
       const patch = updates.get((i as Rec)._id as string)
-      return patch ? ({ ...i, ...patch, _id: (i as Rec)._id } as T) : i
+      return patch ? { ...i, ...patch, _id: (i as Rec)._id } : i
     })
   if (creates.length > 0) result = [...(creates.toReversed() as T[]), ...result]
   return result
@@ -71,7 +71,7 @@ const useList = <F extends PaginatedQueryReference>(query: F, ...rest: ListRest<
   useEffect(() => {
     if (!isDev) return
     const queryName = typeof query === 'string' ? query : ((query as { _name?: string })._name ?? 'unknown')
-    subIdRef.current = trackSubscription(queryName, queryArgs as Record<string, unknown>)
+    subIdRef.current = trackSubscription(queryName, queryArgs)
     const id = subIdRef.current
     return () => untrackSubscription(id)
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -93,7 +93,7 @@ const useList = <F extends PaginatedQueryReference>(query: F, ...rest: ListRest<
     [isOptimistic, pending, results]
   )
   return {
-    data: items as ListItems<F>,
+    data: items,
     hasMore: status === 'CanLoadMore' || status === 'LoadingMore',
     isDone: status === 'Exhausted',
     isLoading: status === 'LoadingFirstPage' || status === 'LoadingMore',
@@ -110,5 +110,5 @@ const useOwnRows = <T extends Rec>(
     for (const row of rows) out.push({ ...row, own: isOwn ? isOwn(row) : false })
     return out
   }, [rows, isOwn])
-export type { UseListOptions }
+export type { ListItems, UseListOptions }
 export { applyOptimistic, DEFAULT_PAGE_SIZE, useList, useOwnRows }

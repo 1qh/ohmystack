@@ -395,7 +395,7 @@ const makeOrg = <
     orgJoinRequestPk: config.orgJoinRequestPk as unknown as (table: Iterable<JoinRequestRow>) => {
       update: (row: JoinRequestRow) => JoinRequestRow
     },
-    orgJoinRequestTable: config.orgJoinRequestTable as unknown as (db: DB) => Iterable<JoinRequestRow>,
+    orgJoinRequestTable: config.orgJoinRequestTable,
     orgMemberTable: config.orgMemberTable,
     orgPk: config.orgPk,
     orgTable: config.orgTable
@@ -508,7 +508,7 @@ const makeOrgTables = <
     ),
   orgInviteByTokenIndex: tbl => tbl,
   orgInvitePk: tbl => asRec(tbl).id as OrgInvitePkLike<InviteRow, InviteId>,
-  orgInviteTable: tables.orgInvite as (db: DB) => OrgInviteTableLike<InviteRow>,
+  orgInviteTable: tables.orgInvite,
   orgJoinRequestByOrgIndex: tbl =>
     wrapByOrgIndex(
       asRec(tbl) as unknown as Iterable<JoinRequestRow> & {
@@ -529,7 +529,7 @@ const makeOrgTables = <
     }
   },
   orgJoinRequestPk: tbl => asRec(tbl).id as OrgJoinRequestPkLike<JoinRequestRow, RequestId>,
-  orgJoinRequestTable: tables.orgJoinRequest as (db: DB) => OrgJoinRequestTableLike<JoinRequestRow>,
+  orgJoinRequestTable: tables.orgJoinRequest,
   orgMemberByOrgIndex: tbl =>
     wrapByOrgIndex(
       asRec(tbl) as unknown as Iterable<MemberRow> & {
@@ -538,7 +538,7 @@ const makeOrgTables = <
     ),
   orgMemberByUserIndex: tbl => tbl,
   orgMemberPk: tbl => asRec(tbl).id as OrgMemberPkLike<MemberRow, MemberId>,
-  orgMemberTable: tables.orgMember as (db: DB) => OrgMemberTableLike<MemberRow>,
+  orgMemberTable: tables.orgMember,
   orgPk: tbl => asRec(tbl).id as OrgPkLike<OrgRow, OrgId>,
   orgSlugIndex: tbl => tbl,
   orgTable: tables.org as (db: DB) => Iterable<OrgRow> & { insert: (row: OrgRow) => OrgRow }

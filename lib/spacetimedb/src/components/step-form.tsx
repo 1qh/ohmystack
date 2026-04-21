@@ -62,7 +62,7 @@ const defineStepsBase = createDefineSteps<TypedFields<Record<string, unknown>>>(
   buildMeta,
   coerceOptionals,
   defaultValues: dv,
-  fields: fields as TypedFields<Record<string, unknown>>,
+  fields,
   onFinalSubmitError: (error: unknown) => {
     // eslint-disable-next-line no-console
     console.error('[@noboil/spacetimedb] Step form final submission failed:', error)

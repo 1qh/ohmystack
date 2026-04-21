@@ -8,7 +8,6 @@ import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar
 import { cn } from '@a/ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { ErrorCode } from '../server/types'
 import type { DevConnection, DevError, DevMutation, DevSubscription } from './devtools'
 import { ERROR_MESSAGES } from '../server/types'
 import { injectError, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS, useDevErrors } from './devtools'
@@ -245,7 +244,7 @@ const Devtools = ({
                 className='rounded-sm bg-muted px-1 py-0.5 text-xs text-muted-foreground'
                 onChange={e => {
                   const val = e.target.value
-                  if (val in ERROR_MESSAGES) injectError(val as ErrorCode, { table: 'test' })
+                  if (val in ERROR_MESSAGES) injectError(val, { table: 'test' })
                   e.target.value = ''
                 }}>
                 <option value=''>Inject...</option>

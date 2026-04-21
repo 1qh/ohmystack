@@ -108,7 +108,7 @@ const makeMemberHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
       if (orgDoc.userId === userId) return err('MUST_TRANSFER_OWNERSHIP')
       const member = await getOrgMember({ db, orgId, userId })
       if (!member) return err('NOT_ORG_MEMBER')
-      await db.delete((member as Rec)._id as string)
+      await db.delete(member._id as string)
     }
   })
   const transferOwnership = m({
@@ -120,9 +120,9 @@ const makeMemberHandlers = ({ m, q }: { m: Mb; q: Qb }) => {
       if (orgDoc.userId !== (c.user as Rec)._id) return err('FORBIDDEN')
       const targetMember = await getOrgMember({ db, orgId, userId: newOwnerId })
       if (!targetMember) return err('NOT_ORG_MEMBER')
-      if (!(targetMember as Rec).isAdmin) return err('TARGET_MUST_BE_ADMIN')
+      if (!targetMember.isAdmin) return err('TARGET_MUST_BE_ADMIN')
       await db.patch(orgId, { userId: newOwnerId, ...time() })
-      await db.delete((targetMember as Rec)._id as string)
+      await db.delete(targetMember._id as string)
       await db.insert('orgMember', {
         isAdmin: true,
         orgId,

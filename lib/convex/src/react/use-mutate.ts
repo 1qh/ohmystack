@@ -132,7 +132,7 @@ const useMutate = <T extends MutationRef>(
   const type = options?.type
   return useCallback(
     async (args: OptionalRestArgs<T>[0]): Promise<FunctionReturnType<T>> => {
-      const argsRecord = typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {}
+      const argsRecord: Record<string, unknown> = typeof args === 'object' && args !== null ? args : {}
       const mutationType = type ?? detectMutationType(ref)
       const name = getName?.(args) ?? getMutationName(ref)
       const devId = isDev ? trackMutation(name, argsRecord) : 0

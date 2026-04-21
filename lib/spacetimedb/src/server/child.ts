@@ -58,7 +58,7 @@ const makeChildCrud = <
   const updateName = `update_${tableName}`
   const rmName = `rm_${tableName}`
   const createParams: CrudFieldBuilders = {
-    [foreignKeyName]: foreignKeyField as TypeBuilder<unknown, AlgebraicTypeType>
+    [foreignKeyName]: foreignKeyField
   }
   const createFieldKeys = Object.keys(fields)
   const updateParams: Record<string, TypeBuilder<unknown, AlgebraicTypeType>> = {
@@ -110,7 +110,7 @@ const makeChildCrud = <
     })
     if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
       throw makeError('CONFLICT', `${tableName}:update`)
-    let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
+    let patch = pickPatch(typedArgs, fieldNames)
     if (hooks?.beforeUpdate)
       patch = hooks.beforeUpdate(hookCtx, {
         patch: patch as unknown as Partial<CrudFieldValues<F>>,

@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in test setup */
 /* eslint-disable no-console, no-await-in-loop */
 import type { FunctionReference } from 'convex/server'
+import { config } from '@a/config'
 import { ConvexHttpClient } from 'convex/browser'
 import { anyApi } from 'convex/server'
 import { execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { config } from '@a/config'
 const REPO_ROOT = resolve(import.meta.dirname, '../../..')
 const BACKEND_CWD = join(REPO_ROOT, config.paths.backendConvex)
 const parseEnvLine = (line: string): [string, string] | null => {

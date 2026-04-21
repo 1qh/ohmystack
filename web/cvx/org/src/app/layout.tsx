@@ -45,13 +45,13 @@ const resolveOrgContext = async (pathname: string): Promise<OrgContext> => {
   const token = await getToken()
   const org = (await getActiveOrg({ query: api.org.get, token: token ?? null })) as Doc<'org'> | null
   if (!org) {
-    const orgs = (await queryOrDirect<MyOrgsResult[]>(token, api.org.myOrgs as FunctionReference<'query'>, {})) ?? []
+    const orgs = (await queryOrDirect<MyOrgsResult[]>(token, api.org.myOrgs, {})) ?? []
     if (orgs.length === 0) redirect('/')
     const [first] = orgs
     if (first) return { kind: 'redirect', orgId: first.org._id, slug: first.org.slug, to: pathname }
     redirect('/')
   }
-  const membership = await queryOrDirect<MembershipResult>(token, api.org.membership as FunctionReference<'query'>, {
+  const membership = await queryOrDirect<MembershipResult>(token, api.org.membership, {
     orgId: org._id
   })
   if (!membership) redirect('/')

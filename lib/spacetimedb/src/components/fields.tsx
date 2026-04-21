@@ -5,8 +5,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 'use client'
-import type { AnyFieldApi } from '@tanstack/react-form'
-import type { ReactNode } from 'react'
 import { createFieldsModule } from '@a/shared/components/fields'
 import type { Api } from '../react/form'
 import { unwrapZod } from '../zod'
@@ -14,7 +12,7 @@ import FileFieldImpl from './file-field'
 const { deriveLabel, fields, FormContext, ServerFieldError } = createFieldsModule({
   defaultAsyncDebounceMs: 300,
   defaultRatingMax: 5,
-  dynamicFileField: FileFieldImpl as unknown as (props: { field: AnyFieldApi }) => ReactNode,
+  dynamicFileField: FileFieldImpl,
   errors: {
     chooseNoEnum: name =>
       `[@noboil/spacetimedb] Choose: field "${name}" has no enum options. Define the field as z.enum(["opt1", "opt2"]) in your schema, or pass an explicit options={[{ label: "...", value: "..." }]} prop to <Choose>.`,

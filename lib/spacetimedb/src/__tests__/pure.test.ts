@@ -230,7 +230,7 @@ const applyOptimistic = (items: Rec[], pending: PendingMutation[]): Rec[] => {
   for (const mutation of pending)
     if (mutation.type === 'create') {
       const created = {
-        ...(mutation.args as Rec),
+        ...mutation.args,
         __optimistic: true,
         _creationTime: mutation.timestamp,
         _id: mutation.id,
@@ -247,7 +247,7 @@ const applyOptimistic = (items: Rec[], pending: PendingMutation[]): Rec[] => {
       for (let i = 0; i < out.length; i += 1) {
         const row = out[i]
         if (row?._id === targetId) {
-          out[i] = { ...row, ...(mutation.args as Rec) }
+          out[i] = { ...row, ...mutation.args }
           break
         }
       }
@@ -317,15 +317,15 @@ describe('matchW', () => {
     expect(matchW(doc, { price: { $between: [50, 50] } })).toBe(true)
   })
   test('empty where object matches everything', () => {
-    expect(matchW(doc, {} as Rec & { own?: boolean })).toBe(true)
+    expect(matchW(doc, {})).toBe(true)
   })
   test('OR with own: true group', () => {
-    expect(
-      matchW(doc, { or: [{ published: true }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u1')
-    ).toBe(true)
-    expect(
-      matchW(doc, { or: [{ published: false }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u2')
-    ).toBe(false)
+    expect(matchW<{ own?: boolean; published?: boolean }>(doc, { or: [{ published: true }, { own: true }] }, 'u1')).toBe(
+      true
+    )
+    expect(matchW<{ own?: boolean; published?: boolean }>(doc, { or: [{ published: false }, { own: true }] }, 'u2')).toBe(
+      false
+    )
   })
   test('simple field equality — published: true', () => {
     expect(matchW(doc, { published: true })).toBe(true)
@@ -344,12 +344,10 @@ describe('groupList', () => {
     expect(groupList()).toEqual([])
   })
   test('empty where with no real keys returns empty', () => {
-    expect(groupList({} as Record<string, unknown> & { own?: boolean })).toEqual([])
+    expect(groupList({})).toEqual([])
   })
   test('single group with field', () => {
-    const gs = groupList({ published: true } as Record<string, unknown> & {
-      own?: boolean
-    })
+    const gs = groupList({ published: true })
     expect(gs).toHaveLength(1)
     expect(gs[0]?.published).toBe(true)
   })
@@ -364,9 +362,7 @@ describe('groupList', () => {
     expect(gs[1]?.category).toBe('life')
   })
   test('own-only group is included', () => {
-    const gs = groupList({ own: true } as Record<string, unknown> & {
-      own?: boolean
-    })
+    const gs = groupList({ own: true })
     expect(gs).toHaveLength(1)
   })
   test('filters out empty or groups', () => {
@@ -3666,7 +3662,7 @@ describe('lifecycle hooks in orgCrud and childCrud', () => {
   test('all 6 hook callbacks work with HookCtx', () => {
     type CrudHookCtx = Parameters<NonNullable<CrudHooks['beforeCreate']>>[0]
     const ctx: CrudHookCtx = {
-      db: {} as CrudHookCtx['db'],
+      db: {},
       sender: { toString: () => 'user_456' } as CrudHookCtx['sender'],
       timestamp: { microsSinceUnixEpoch: 0n } as CrudHookCtx['timestamp']
     }
@@ -3946,12 +3942,12 @@ describe('bulk operations', () => {
 describe('cacheCrud hooks', () => {
   test('CacheHookCtx has db property', () => {
     const ctx: CacheHookCtx = {
-      db: {} as CacheHookCtx['db']
+      db: {}
     }
     expect(ctx.db).toBeDefined()
   })
   test('CacheHookCtx does not require userId or storage', () => {
-    const ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const ctx: CacheHookCtx = { db: {} }
     expect('userId' in ctx).toBe(false)
     expect('storage' in ctx).toBe(false)
   })
@@ -3971,7 +3967,7 @@ describe('cacheCrud hooks', () => {
     expect(isCrudHooks).toBe(true)
   })
   test('CacheHooks differ from CrudHooks by context type', () => {
-    const cacheCtx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
+    const cacheCtx: CacheHookCtx = { db: {} }
     const crudCtx: HookCtx = {
       db: {} as HookCtx['db'],
       storage: {} as HookCtx['storage'],
@@ -4105,7 +4101,7 @@ describe('global hooks', () => {
   const timestamp = { microsSinceUnixEpoch: 0n } as GlobalHookCtx['timestamp']
   test('GlobalHookCtx has db, table, sender, and timestamp', () => {
     const ctx: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'blog',
       timestamp
@@ -4117,7 +4113,7 @@ describe('global hooks', () => {
   })
   test('GlobalHookCtx accepts sender and timestamp', () => {
     const ctx: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'blog',
       timestamp
@@ -4172,14 +4168,14 @@ describe('global hooks', () => {
       }
     }
     const ctx: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'blog',
       timestamp
     }
     hooks.afterCreate?.(ctx, { data: {}, row: {} })
     const ctx2: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'wiki',
       timestamp
@@ -4206,7 +4202,7 @@ describe('global hooks', () => {
       }
     }
     const ctx: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'blog',
       timestamp
@@ -4219,7 +4215,7 @@ describe('global hooks', () => {
       beforeUpdate: (_ctx, { patch }) => ({ ...patch, globalField: true })
     }
     const ctx: GlobalHookCtx = {
-      db: {} as GlobalHookCtx['db'],
+      db: {},
       sender,
       table: 'blog',
       timestamp
@@ -5528,7 +5524,7 @@ describe('accessForFactory', () => {
 })
 describe('middleware', () => {
   const mockCtx: GlobalHookCtx = {
-    db: {} as GlobalHookCtx['db'],
+    db: {},
     sender: { toString: () => 'sender1' } as GlobalHookCtx['sender'],
     table: 'blog',
     timestamp: { microsSinceUnixEpoch: 0n } as GlobalHookCtx['timestamp']
@@ -6005,7 +6001,7 @@ describe('middleware', () => {
     })
     test('MiddlewareCtx extends GlobalHookCtx with operation', () => {
       const ctx: MiddlewareCtx = {
-        db: {} as MiddlewareCtx['db'],
+        db: {},
         operation: 'create',
         sender: { toString: () => 'sender' } as MiddlewareCtx['sender'],
         table: 'test',
@@ -6416,7 +6412,7 @@ describe('typed error handling (R10.5)', () => {
       const e = makeSenderError({
         code: errorData.code,
         message: errorData.message
-      } as Record<string, string | undefined>)
+      })
       const msg = matchError(e, {
         NOT_FOUND: d => `Item not found: ${d.message}`,
         _: () => 'Unknown error'
@@ -6434,7 +6430,7 @@ describe('typed error handling (R10.5)', () => {
       const thrown = makeSenderError({
         code: errorData.code,
         message: errorData.message
-      } as Record<string, string | undefined>)
+      })
       expect(isMutationError(thrown)).toBe(true)
       expect(isErrorCode(thrown, 'CONFLICT')).toBe(true)
     })

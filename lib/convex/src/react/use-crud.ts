@@ -11,24 +11,23 @@ interface ConvexCrudRefs {
 }
 type ListItem<R extends ConvexCrudRefs> = FunctionReturnType<R['list']> extends { page: (infer T)[] } ? T : unknown
 const useCrud = <R extends ConvexCrudRefs>(refs: R, options?: CrudOptions): CrudResult<ListItem<R>> => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, hasMore, isLoading, loadMore } = useList(refs.list, options?.where ? { where: options.where } : {})
   const createMut = useMutation(refs.create)
   const updateMut = useMutation(refs.update)
   const rmMut = useMutation(refs.rm)
   return {
     create: async (d: Partial<ListItem<R>>) => {
-      await createMut(d as never)
+      await createMut(d)
     },
     data: data as ListItem<R>[],
     hasMore,
     isLoading,
     loadMore,
     rm: async (id: unknown) => {
-      await rmMut({ id } as never)
+      await rmMut({ id })
     },
     update: async (args: Partial<ListItem<R>> & { id: unknown }) => {
-      await updateMut(args as never)
+      await updateMut(args)
     }
   }
 }

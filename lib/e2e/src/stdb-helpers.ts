@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 // biome-ignore-all lint/nursery/useGlobalThis: test helper
 import type { Page } from '@playwright/test'
+import { config } from '@a/config'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { config } from '@a/config'
 const DEFAULT_HTTP_URL =
   process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ??
   `http://localhost:${config.ports.stdb}`

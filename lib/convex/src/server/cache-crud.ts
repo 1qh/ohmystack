@@ -150,7 +150,7 @@ const makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends Gener
       const ex = await c.db.get(id)
       const t = time()
       if (!ex) return err('NOT_FOUND')
-      let patch = d as Rec
+      let patch = d
       if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(chk(c), { id, patch, prev: ex })
       await dbPatch(c.db, id, { ...patch, ...t })
       const result = { ...ex, ...patch, ...t }
@@ -239,6 +239,6 @@ const makeCacheCrud = <S extends ZodRawShape, K extends string, DM extends Gener
     rm,
     set,
     update
-  } as unknown as CacheCrudResult<S>
+  }
 }
 export { makeCacheCrud }

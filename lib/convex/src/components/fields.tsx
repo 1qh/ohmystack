@@ -4,14 +4,12 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 'use client'
-import type { AnyFieldApi } from '@tanstack/react-form'
-import type { ReactNode } from 'react'
 import { createFieldsModule } from '@a/shared/components/fields'
 import type { Api } from '../react/form'
 import { unwrapZod } from '../zod'
 import FileFieldImpl from './file-field'
 const { deriveLabel, fields, FormContext, ServerFieldError } = createFieldsModule({
-  dynamicFileField: FileFieldImpl as unknown as (props: { field: AnyFieldApi }) => ReactNode,
+  dynamicFileField: FileFieldImpl,
   errors: {
     chooseNoEnum: name => `Choose: field "${name}" has no enum options. Pass options prop.`,
     fieldOutsideForm: 'Field must be inside <Form>',

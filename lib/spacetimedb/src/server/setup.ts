@@ -69,6 +69,8 @@ interface ZodLike {
   shape: Record<string, unknown>
   type: 'object'
 }
+const isBaseOpts = (o: unknown): o is { key: string; ttl?: number } =>
+  Boolean(o) && typeof o === 'object' && o !== null && 'key' in o && typeof o.key === 'string'
 const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
   if (!value || typeof value !== 'object') return false
   const { then } = value as { then?: unknown }
@@ -185,7 +187,7 @@ const mergeCrudBeforeCreate = <DB, Row extends Rec, CreateArgs extends Rec, Upda
     if (globalHooks?.beforeCreate)
       data = requireSync(
         globalHooks.beforeCreate(toGlobalCtx(table, ctx), {
-          data: data as Rec
+          data
         }),
         'crud.beforeCreate:global'
       ) as CreateArgs
@@ -203,8 +205,8 @@ const mergeCrudAfterCreate = <DB, Row extends Rec, CreateArgs extends Rec, Updat
     if (globalHooks?.afterCreate)
       requireSync(
         globalHooks.afterCreate(toGlobalCtx(table, ctx), {
-          data: data as Rec,
-          row: row as Rec
+          data,
+          row
         }),
         'crud.afterCreate:global'
       )
@@ -222,8 +224,8 @@ const mergeCrudBeforeUpdate = <DB, Row extends Rec, CreateArgs extends Rec, Upda
     if (globalHooks?.beforeUpdate)
       patch = requireSync(
         globalHooks.beforeUpdate(toGlobalCtx(table, ctx), {
-          patch: patch as Rec,
-          prev: prev as Rec
+          patch,
+          prev
         }),
         'crud.beforeUpdate:global'
       ) as UpdatePatch
@@ -242,9 +244,9 @@ const mergeCrudAfterUpdate = <DB, Row extends Rec, CreateArgs extends Rec, Updat
     if (globalHooks?.afterUpdate)
       requireSync(
         globalHooks.afterUpdate(toGlobalCtx(table, ctx), {
-          next: next as Rec,
-          patch: patch as Rec,
-          prev: prev as Rec
+          next,
+          patch,
+          prev
         }),
         'crud.afterUpdate:global'
       )
@@ -261,7 +263,7 @@ const mergeCrudBeforeDelete = <DB, Row extends Rec, CreateArgs extends Rec, Upda
     if (globalHooks?.beforeDelete)
       requireSync(
         globalHooks.beforeDelete(toGlobalCtx(table, ctx), {
-          row: row as Rec
+          row
         }),
         'crud.beforeDelete:global'
       )
@@ -276,7 +278,7 @@ const mergeCrudAfterDelete = <DB, Row extends Rec, CreateArgs extends Rec, Updat
   if (!(globalHooks?.afterDelete || localHooks?.afterDelete)) return
   return (ctx, { row }) => {
     if (globalHooks?.afterDelete)
-      requireSync(globalHooks.afterDelete(toGlobalCtx(table, ctx), { row: row as Rec }), 'crud.afterDelete:global')
+      requireSync(globalHooks.afterDelete(toGlobalCtx(table, ctx), { row }), 'crud.afterDelete:global')
     if (localHooks?.afterDelete) requireSync(localHooks.afterDelete(ctx, { row }), 'crud.afterDelete:local')
   }
 }
@@ -312,7 +314,7 @@ const mergeSingletonBeforeCreate = <DB, Row extends Rec, UpdatePatch extends Rec
     if (globalHooks?.beforeCreate)
       data = requireSync(
         globalHooks.beforeCreate(toGlobalCtx(table, ctx), {
-          data: data as Rec
+          data
         }),
         'singleton.beforeCreate:global'
       ) as UpdatePatch
@@ -331,8 +333,8 @@ const mergeSingletonAfterCreate = <DB, Row extends Rec, UpdatePatch extends Rec>
     if (globalHooks?.afterCreate)
       requireSync(
         globalHooks.afterCreate(toGlobalCtx(table, ctx), {
-          data: data as Rec,
-          row: row as Rec
+          data,
+          row
         }),
         'singleton.afterCreate:global'
       )
@@ -350,8 +352,8 @@ const mergeSingletonBeforeUpdate = <DB, Row extends Rec, UpdatePatch extends Rec
     if (globalHooks?.beforeUpdate)
       patch = requireSync(
         globalHooks.beforeUpdate(toGlobalCtx(table, ctx), {
-          patch: patch as Rec,
-          prev: prev as Rec
+          patch,
+          prev
         }),
         'singleton.beforeUpdate:global'
       ) as UpdatePatch
@@ -370,9 +372,9 @@ const mergeSingletonAfterUpdate = <DB, Row extends Rec, UpdatePatch extends Rec>
     if (globalHooks?.afterUpdate)
       requireSync(
         globalHooks.afterUpdate(toGlobalCtx(table, ctx), {
-          next: next as Rec,
-          patch: patch as Rec,
-          prev: prev as Rec
+          next,
+          patch,
+          prev
         }),
         'singleton.afterUpdate:global'
       )
@@ -513,7 +515,7 @@ const isZodObject = (v: unknown): v is ZodLike =>
   typeof v === 'object' &&
   v !== null &&
   'type' in v &&
-  (v as { type: unknown }).type === 'object' &&
+  v.type === 'object' &&
   'shape' in v &&
   typeof (v as { shape: unknown }).shape === 'object' &&
   (v as { shape: unknown }).shape !== null
@@ -543,7 +545,7 @@ const regOwned = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         expectedUpdatedAtField: ctx.expectedUpdatedAtField,
         fields: merged as CrudFieldBuilders,
         idField: ctx.idField,
-        options: (ctx.opts?.[name] ?? undefined) as CrudOptions | undefined,
+        options: ctx.opts?.[name] ?? undefined,
         pk: pkById,
         table: tblOf(name),
         tableName: name
@@ -564,7 +566,7 @@ const regOrgScoped = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
         fields: merged as OrgCrudFieldBuilders,
         idField: ctx.idField,
         isOrgOwner: makeIsOrgOwner(tblOf('org')),
-        options: (ctx.opts?.[name] ?? undefined) as OrgCrudOptions | undefined,
+        options: ctx.opts?.[name] ?? undefined,
         orgIdField: ctx.orgIdField,
         orgMemberTable: tblOf('orgMember'),
         pk: pkById,
@@ -581,7 +583,7 @@ const regSingleton = (schemas: Record<string, ZodLike>, ctx: RegCtx) => {
     if (fields)
       ctx.s.singletonCrud({
         fields: resolveCrudFields(fields, name, ctx.defaults) as SingletonFieldBuilders,
-        options: (ctx.opts?.[name] ?? undefined) as SingletonOptions | undefined,
+        options: ctx.opts?.[name] ?? undefined,
         table: tblOf(name),
         tableName: name
       })
@@ -617,7 +619,7 @@ const regChildren = (schemas: Record<string, { foreignKey: string; parent: strin
         foreignKeyField: ctx.fkField,
         foreignKeyName: entry.foreignKey,
         idField: ctx.idField,
-        options: (ctx.opts?.[name] ?? undefined) as CrudOptions | undefined,
+        options: ctx.opts?.[name] ?? undefined,
         parentPk: pkById,
         parentTable: tblOf(entry.parent),
         pk: pkById,
@@ -641,10 +643,7 @@ const regFile = (file: boolean | string, ctx: RegCtx & { spacetimedb: SpacetimeD
     pk: pkById,
     table: tblOf(namespace)
   }
-  const result = makeFileUpload(
-    ctx.spacetimedb as Parameters<typeof makeFileUpload>[0],
-    looseConfig as Parameters<typeof makeFileUpload>[1]
-  )
+  const result = makeFileUpload(ctx.spacetimedb, looseConfig as Parameters<typeof makeFileUpload>[1])
   registerExports(ctx.s.exports, result.exports)
 }
 /** Convenience wrapper around setup with shared field defaults. */
@@ -722,14 +721,12 @@ const setupCrud = (spacetimedb: SpacetimeDbLike, defaults: CrudDefaults = {}, co
       fields?: FileUploadFields,
       options?: { allowedTypes?: Set<string>; maxFileSize?: number }
     ) => {
-      const resolvedFields =
-        fields ??
-        ({
-          contentType: stdbT.string(),
-          data: t.byteArray(),
-          filename: stdbT.string(),
-          size: stdbT.number()
-        } as FileUploadFields)
+      const resolvedFields = fields ?? {
+        contentType: stdbT.string(),
+        data: t.byteArray(),
+        filename: stdbT.string(),
+        size: stdbT.number()
+      }
       const looseConfig: FileUploadConfigLoose = {
         ...options,
         fields: resolvedFields,
@@ -738,10 +735,7 @@ const setupCrud = (spacetimedb: SpacetimeDbLike, defaults: CrudDefaults = {}, co
         pk: pkById,
         table: tblOf(tableName)
       }
-      const result = makeFileUpload(
-        spacetimedb as Parameters<typeof makeFileUpload>[0],
-        looseConfig as Parameters<typeof makeFileUpload>[1]
-      )
+      const result = makeFileUpload(spacetimedb, looseConfig as Parameters<typeof makeFileUpload>[1])
       registerExports(s.exports, result.exports)
       return result
     },
@@ -750,7 +744,7 @@ const setupCrud = (spacetimedb: SpacetimeDbLike, defaults: CrudDefaults = {}, co
       params: CrudFieldBuilders,
       handler: (ctx: { db: unknown; sender: Identity; timestamp: Timestamp }, args: unknown) => void
     ) => {
-      const reducer = spacetimedb.reducer({ name }, params as never, (ctxRaw: unknown, args: unknown) => {
+      const reducer = spacetimedb.reducer({ name }, params, (ctxRaw: unknown, args: unknown) => {
         const ctx = ctxRaw as {
           db: unknown
           sender?: Identity
@@ -1053,7 +1047,7 @@ const collectBsOpts = (name: string, m: BsTag, ctx: BsCtx) => {
   if ('cascadeTo' in m) o.cascade = (m as OrgScopedOpts).cascadeTo
   if (m.ttl !== undefined) o.ttl = m.ttl
   if (m.keyName) o.key = m.keyName
-  if (oKeys(o).length > 0) ctx.tblOpts[name] = o as never
+  if (oKeys(o).length > 0) ctx.tblOpts[name] = o
 }
 const collectBsSchema = (name: string, m: BsTag, ctx: BsCtx): { fileNs?: boolean | string; orgZod?: ZodLike } => {
   if (m.extraFields) ctx.extraFieldsByTable[name] = m.extraFields
@@ -1142,7 +1136,7 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
         cascade,
         cascadeTo,
         category: 'orgScoped',
-        extraFields: extra as Record<string, unknown> | undefined,
+        extraFields: extra,
         pub,
         rateLimit,
         softDelete,
@@ -1172,7 +1166,7 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     return bsOf(
       {
         category: 'owned',
-        extraFields: extra as Record<string, unknown> | undefined,
+        extraFields: extra,
         pub,
         rateLimit,
         softDelete,
@@ -1191,22 +1185,19 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     if (brand === 'owned') return ownedTable(fields as OwnedBranded, options as OwnedOpts<OwnedBranded>)
     if (brand === 'org') return orgScopedTable(fields as OrgScopedBranded, options as OrgScopedOpts<OrgScopedBranded>)
     if (brand === 'orgDef') return orgTable(fields as OrgDefBranded, options as OrgTableOpts<OrgDefBranded>)
-    if (brand === 'singleton') return singletonTable(fields as SingletonBranded)
+    if (brand === 'singleton') return singletonTable(fields)
     if (brand === 'base') {
-      if (!(options && typeof options === 'object' && 'key' in options && typeof options.key === 'string'))
+      if (!isBaseOpts(options))
         return err('VALIDATION_FAILED', {
           message: 'Base schema tables require options.key when using table()'
         })
-      const baseOptions = options as { key: string; ttl?: number }
-      return cacheTable(baseOptions.key, fields as BaseBranded, {
-        ttl: baseOptions.ttl
-      })
+      return cacheTable(options.key, fields, { ttl: options.ttl })
     }
     return err('VALIDATION_FAILED', {
       message: 'Unknown schema brand. Use makeOwned/makeOrgScoped/makeOrg/makeBase/makeSingleton before table()'
     })
   }
-  const table = Object.assign(tableBase, { file: () => fileTable() }) as TableFn
+  const table = Object.assign(tableBase, { file: () => fileTable() })
   return {
     cacheTable,
     childTable,
@@ -1238,7 +1229,7 @@ const noboil = ({
   tables: (helpers: NoboilHelpers) => Record<string, BsTable>
 }) => {
   const raw = makeSchema()
-  const result = tables(makeBsHelpers(raw) as never)
+  const result = tables(makeBsHelpers(raw))
   const rawTables: Record<string, unknown> = {}
   const ctx: BsCtx = {
     baseZ: {},
@@ -1269,7 +1260,7 @@ const noboil = ({
     }
   }
   const spacetimedb = raw.schema(rawTables as never)
-  const s = setupCrud(spacetimedb as SpacetimeDbLike)
+  const s = setupCrud(spacetimedb)
   const schemas = buildBsSchemas(ctx)
   if (fileNs) schemas.file = fileNs
   if (oKeys(schemas).length > 0)

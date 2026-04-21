@@ -253,7 +253,7 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
           const initial: Record<string, Record<string, unknown>> = {}
           for (const d of defs) {
             const v = s.values[d.id as keyof typeof s.values]
-            if (v) initial[d.id] = v as Record<string, unknown>
+            if (v) initial[d.id] = v
           }
           return initial
         })()

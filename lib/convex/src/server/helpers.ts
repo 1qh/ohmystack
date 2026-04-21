@@ -3,7 +3,7 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-depth */
-import type { ErrorData as SharedErrorData, ErrorHandler as SharedErrorHandler } from '@a/shared/server/helpers'
+import type { ErrorData as SharedErrorData } from '@a/shared/server/helpers'
 import type { RegisteredQuery } from 'convex/server'
 import type { ZodRawShape } from 'zod/v4'
 import {
@@ -63,7 +63,7 @@ const extractErrorData = (e: unknown): ErrorData | undefined => {
   const { code } = data
   if (typeof code !== 'string' || !(code in ERROR_MESSAGES)) return
   return {
-    code: code as ErrorCode,
+    code,
     debug: typeof data.debug === 'string' ? data.debug : undefined,
     fieldErrors: isRecord(data.fieldErrors) ? (data.fieldErrors as Record<string, string>) : undefined,
     fields: Array.isArray(data.fields) ? (data.fields as string[]) : undefined,
@@ -84,7 +84,7 @@ const throwConvexError = (code: string, opts?: Record<string, unknown> | string 
 }
 const errorUtils = createErrorUtils({
   errorMessages: ERROR_MESSAGES,
-  extractErrorData: extractErrorData as (e: unknown) => SharedErrorData | undefined,
+  extractErrorData,
   throwError: throwConvexError
 })
 const err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never =>
@@ -98,11 +98,10 @@ const getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?
 const getErrorMessage = (e: unknown): string => errorUtils.getErrorMessage(e)
 const getErrorDetail = (e: unknown): string => errorUtils.getErrorDetail(e)
 const handleError = (e: unknown, handlers: ErrorHandler): void => {
-  errorUtils.handleError(e, handlers as SharedErrorHandler)
+  errorUtils.handleError(e, handlers)
 }
 const handleConvexError = handleError
-const fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> =>
-  errorUtils.fail(code, detail) as MutationResult<never>
+const fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> => errorUtils.fail(code, detail)
 const isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined
 const isErrorCode = (e: unknown, code: ErrorCode): boolean => {
   const d = extractErrorData(e)
@@ -224,7 +223,8 @@ const addUrls = async <D extends Record<string, unknown>>({
   fileFields: string[]
   storage: StorageLike
 }): Promise<WithUrls<D>> => {
-  if (fileFields.length === 0) return doc as WithUrls<D>
+  const asWithUrls = <X>(x: Record<string, unknown>): WithUrls<X> => x as WithUrls<X>
+  if (fileFields.length === 0) return asWithUrls<D>(doc)
   const o = { ...doc } as Record<string, unknown>
   const getUrl = async (x: unknown) => {
     const id = toId(x)
@@ -306,7 +306,7 @@ const makeUnique = ({
                 .first()
             : q.filter(flt(f => f.eq(f.field(field), value))).first()
         )
-        return !(existing as null | Record<string, unknown>) || (existing as Record<string, unknown>)._id === exclude
+        return !existing || existing._id === exclude
       })
     })
   )

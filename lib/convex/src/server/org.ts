@@ -52,7 +52,7 @@ const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
       mutation,
       customCtx(async (c: GenericMutationCtx<DM>) => ({
         storage: typed(c.storage),
-        user: await getUser({ ctx: typed(c), db: typed(c.db) as DbLike, getAuthUserId })
+        user: await getUser({ ctx: typed(c), db: typed(c.db), getAuthUserId })
       }))
     )
   ) as Mb
@@ -60,7 +60,7 @@ const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
     zCustomQuery(
       query,
       customCtx(async (c: GenericQueryCtx<DM>) => ({
-        user: await getUser({ ctx: typed(c), db: typed(c.db) as DbLike, getAuthUserId })
+        user: await getUser({ ctx: typed(c), db: typed(c.db), getAuthUserId })
       }))
     )
   ) as Qb
@@ -85,7 +85,7 @@ const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
         .unique()
       if (existing) return err('ORG_SLUG_TAKEN')
       const orgId = await (c.db as DbLike).insert('org', {
-        avatarId: data.avatarId as string | undefined,
+        avatarId: data.avatarId,
         name: data.name,
         slug: data.slug,
         userId: (c.user as Rec)._id,
@@ -270,7 +270,7 @@ const makeOrg = <DM extends GenericDataModel, S extends ZodRawShape>({
           idx(o => o.eq('slug', slug))
         )
         .unique()
-      return { available: !existing } as { available: boolean }
+      return { available: !existing }
     }
   })
   const memberOps = makeMemberHandlers({ m, q })

@@ -1,12 +1,15 @@
 'use client'
+import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'
 import SearchInput from '@a/fe/search-input'
 import { useList } from '@noboil/convex/react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { Create, List } from './common'
+type Blog = FunctionReturnType<typeof api.blog.list>['page'][number]
 const Page = () => {
   const { data, loadMore, status } = useList(api.blog.list, { where: { or: [{ published: true }, { own: true }] } })
+  const blogs = data as Blog[]
   const [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set())
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query.toLowerCase())
@@ -15,16 +18,16 @@ const Page = () => {
   }, [])
   const filtered = useMemo(
     () =>
-      data.filter(b => {
+      blogs.filter(b => {
         if (removedIds.has(b._id)) return false
         if (!deferredQuery) return true
         return (
           b.title.toLowerCase().includes(deferredQuery) ||
           b.content.toLowerCase().includes(deferredQuery) ||
-          b.tags?.some((t: string) => t.toLowerCase().includes(deferredQuery))
+          (b.tags?.some(t => t.toLowerCase().includes(deferredQuery)) ?? false)
         )
       }),
-    [deferredQuery, data, removedIds]
+    [deferredQuery, blogs, removedIds]
   )
   return (
     <div data-testid='crud-dynamic-page'>

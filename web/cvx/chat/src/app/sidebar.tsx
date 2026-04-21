@@ -19,7 +19,7 @@ const Sb = () => {
   }, [inView, loadMore, status])
   return (
     <>
-      <ChatSidebar basePath='' getThreadId={thread => thread._id} onDelete={handleDelete} threads={data} />
+      <ChatSidebar basePath='' getThreadId={thread => thread._id as string} onDelete={handleDelete} threads={data} />
       <div className='flex justify-center p-2'>
         {status === 'LoadingMore' ? (
           <Spinner />

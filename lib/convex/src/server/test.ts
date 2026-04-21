@@ -810,8 +810,8 @@ const createTestContext = async (
           .filter(flt(q => q.eq(q.field('email'), u.email)))
           .first()
       )
-      if (existing) return existing._id as string
-      return c.db.insert('users', { ...u, emailVerificationTime: Date.now() }) as unknown as string
+      if (existing) return existing._id
+      return c.db.insert('users', { ...u, emailVerificationTime: Date.now() })
     })) as string
     ids.push(id)
   }

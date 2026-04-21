@@ -140,7 +140,7 @@ const Form = <T extends Record<string, unknown>, S extends ZodObject>({
             {error.message}
           </p>
         ) : null}
-        {render(fields as TypedFields<T>)}
+        {render(fields)}
       </form>
       <ConflictDialog conflict={conflict} onResolve={resolveConflict} />
       <Dialog

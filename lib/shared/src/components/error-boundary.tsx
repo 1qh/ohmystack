@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
+/** biome-ignore-all lint/style/useConsistentMemberAccessibility: class methods */
 /** biome-ignore-all lint/style/useReactFunctionComponents: ErrorBoundary requires class component */
 /* eslint-disable react/require-optimization, react/no-set-state, react/sort-comp, @typescript-eslint/promise-function-async */
 'use client'
@@ -20,18 +21,18 @@ interface ErrorBoundaryState {
 }
 const createErrorBoundary = ({ readErrorCode, readErrorMessage }: CreateErrorBoundaryOptions) => {
   class SharedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    constructor(props: ErrorBoundaryProps) {
+    public constructor(props: ErrorBoundaryProps) {
       super(props)
       this.state = { error: null }
     }
-    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
       return { error }
     }
-    override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
       const { onError } = this.props
       if (onError) onError(error, errorInfo)
     }
-    override render() {
+    public override render() {
       const { error } = this.state
       const { children, className, fallback } = this.props
       if (!error) return children

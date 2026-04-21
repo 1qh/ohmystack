@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-unsafe-assignment */
 import type { TestContext, TestUser } from '@noboil/spacetimedb/test'
-import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/test'
 import { config } from '@a/config'
+import { callReducer, cleanup, createTestContext, queryTable } from '@noboil/spacetimedb/test'
 type Row = Record<string, unknown>
 const none = { none: [] as [] }
 const some = <T>(value: T) => ({ some: value })

@@ -1,6 +1,5 @@
 import { canEdit, err, requireOrgMember, requireOrgRole, time } from '@noboil/convex/server'
 import { zid } from 'convex-helpers/server/zod4'
-import type { Id } from './_generated/dataModel'
 import { api, m, pq } from '../lazy'
 const { create, list, read, rm, update } = api.task
 const byProject = pq({
@@ -10,7 +9,7 @@ const byProject = pq({
     await requireOrgMember({ db: ctx.db, orgId, userId: ctx.viewerId })
     const tasks = await ctx.db
       .query('task')
-      .withIndex('by_parent', o => o.eq('projectId' as never, projectId as never))
+      .withIndex('by_parent', o => o.eq('projectId', projectId as never))
       .collect()
     return tasks.filter(t => t.orgId === orgId)
   }
@@ -21,7 +20,7 @@ const toggle = m({
     const { role } = await requireOrgMember({ db: ctx.db, orgId, userId: ctx.user._id })
     const task = await ctx.db.get(id)
     if (task?.orgId !== orgId) return err('NOT_FOUND')
-    const projectId = task.projectId as Id<'project'>
+    const { projectId } = task
     const project = projectId ? await ctx.db.get(projectId) : null
     const pEditors = project?.editors ?? []
     if (!canEdit({ acl: true, doc: { editors: pEditors, userId: task.userId }, role, userId: ctx.user._id }))

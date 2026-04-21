@@ -80,7 +80,7 @@ const makeCrud = <
     })
     if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
       throw makeError('CONFLICT', `${tableName}:update`)
-    let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
+    let patch = pickPatch(typedArgs, fieldNames)
     if (hooks?.beforeUpdate)
       patch = hooks.beforeUpdate(hookCtx, {
         patch: patch as unknown as Partial<CrudFieldValues<F>>,

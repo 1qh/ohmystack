@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in test teardown */
 /* eslint-disable no-console */
+import { config } from '@a/config'
 import { execSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
-import { config } from '@a/config'
 const BACKEND_CWD = join(resolve(import.meta.dirname, '../../..'), config.paths.backendConvex)
 const globalTeardown = () => {
   if (process.env.SKIP_CONVEX_ENV_TOGGLE) return

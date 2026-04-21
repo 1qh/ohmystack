@@ -9,10 +9,10 @@
     "test:e2e": "SPACETIMEDB_TEST_MODE=true bun spacetime:publish && nb-env playwright test --reporter=list",
     "typecheck": "nb-env next typegen && tsc --noEmit"
   },
-  "devDependencies": {
-    "@a/e2e": "workspace:*"
-  },
   "dependencies": {
     "@a/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@a/e2e": "workspace:*"
   }
 }

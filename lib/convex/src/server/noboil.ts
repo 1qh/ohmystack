@@ -73,10 +73,10 @@ type TableResult<T> =
             ? ChildCrudResult<CS>
             : CrudResult<InferShape<T>>
 const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Deferred): unknown => {
-  if (def.brand === 'child') return s.childCrud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'owned') return s.crud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'org') return s.orgCrud(name as never, def.schema as never, def.opts as never)
-  if (def.brand === 'singleton') return s.singletonCrud(name as never, def.schema as never, def.opts as never)
+  if (def.brand === 'child') return s.childCrud(name, def.schema as never, def.opts as never)
+  if (def.brand === 'owned') return s.crud(name, def.schema as never, def.opts as never)
+  if (def.brand === 'org') return s.orgCrud(name, def.schema as never, def.opts as never)
+  if (def.brand === 'singleton') return s.singletonCrud(name, def.schema as never, def.opts as never)
   if (def.brand === 'base') {
     const opts = (def.opts ?? {}) as Record<string, unknown>
     return s.cacheCrud({ ...opts, schema: def.schema, table: name } as never)

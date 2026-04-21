@@ -41,8 +41,9 @@ const useSearch = <F extends SearchFn>(
     []
   )
   const shouldSearch = debouncedQuery.length >= minLength
-  const args = shouldSearch ? argsBuilder(debouncedQuery) : 'skip'
-  const results = useQuery(searchRef, args as OptionalRestArgs<F>[0])
+  type QueryArgs = Parameters<typeof useQuery<F>>[1]
+  const args: QueryArgs = shouldSearch ? argsBuilder(debouncedQuery) : 'skip'
+  const results = useQuery(searchRef, args)
   const isSearching = query !== debouncedQuery || (shouldSearch && results === undefined)
   return {
     isSearching,

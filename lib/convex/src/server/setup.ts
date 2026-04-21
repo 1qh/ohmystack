@@ -13,10 +13,8 @@ import type {
   DbLike,
   GlobalHooks,
   HookCtx,
-  Mb,
   OrgSchema,
   OwnedSchema,
-  Qb,
   Rec,
   SetupConfig,
   SingletonOptions,
@@ -237,7 +235,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
   )
   const crud = <S extends ZodRawShape>(table: keyof DM & string, schema: OwnedSchema<S>, opt?: CrudOptions<S>) =>
     makeCrud({
-      builders: { cm, cq, m: typed(m) as Mb, pq: typed(pq) as Qb, q: typed(q) as Qb },
+      builders: { cm, cq, m: typed(m), pq: typed(pq), q: typed(q) },
       options: opt
         ? { ...opt, hooks: mergeHooks(gh, opt.hooks, table) }
         : gh
@@ -253,7 +251,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     opt?: { pub?: { parentField: keyof PS & string } }
   ) =>
     makeChildCrud({
-      builders: { m: typed(m) as Mb, pq: typed(pq) as Qb, q: typed(q) as Qb },
+      builders: { m: typed(m), pq: typed(pq), q: typed(q) },
       globalHooks: gh,
       meta,
       options: opt,
@@ -261,7 +259,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     })
   const orgCrud = <S extends ZodRawShape>(table: keyof DM & string, schema: OrgSchema<S>, opt?: OrgCrudOptions<S>) =>
     makeOrgCrud({
-      builders: { m: typed(m) as Mb, q: typed(q) as Qb },
+      builders: { m: typed(m), q: typed(q) },
       options: opt
         ? { ...opt, hooks: mergeHooks(gh, opt.hooks, table) }
         : gh
@@ -299,7 +297,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     opt?: SingletonOptions
   ) =>
     makeSingletonCrud({
-      builders: { m: typed(m) as Mb, q: typed(q) as Qb },
+      builders: { m: typed(m), q: typed(q) },
       options: opt,
       schema,
       table
@@ -309,7 +307,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     table: keyof DM & string,
     field: keyof S & string,
     index?: string
-  ) => makeUnique({ field, index, pq: typed(pq) as Qb, table })
+  ) => makeUnique({ field, index, pq: typed(pq), table })
   const normCascade = config.orgCascadeTables?.map(t => (typeof t === 'string' ? { table: t } : t))
   const org = config.orgSchema
     ? makeOrg({

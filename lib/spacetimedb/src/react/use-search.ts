@@ -52,7 +52,7 @@ const useSearch = <T extends Rec>(
     return filterSearchData(data, opts.fields, normalizeQuery(debouncedQuery))
   }, [data, debouncedQuery, opts.fields, skipped])
   const isSearching = skipped || opts.query !== debouncedQuery || !isReady
-  if (skipped) return SKIP_SEARCH as UseSearchResult<T>
+  if (skipped) return SKIP_SEARCH
   return { isSearching, results }
 }
 export type { UseSearchOptions, UseSearchResult }

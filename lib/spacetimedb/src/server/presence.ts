@@ -133,7 +133,7 @@ const makePresence = <
     [cleanupName]: cleanup,
     [heartbeatName]: heartbeat,
     [leaveName]: leave
-  } as Record<string, unknown>
+  }
   return {
     exports: exportsRecord
   }

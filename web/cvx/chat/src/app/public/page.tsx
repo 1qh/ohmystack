@@ -4,14 +4,19 @@ import { Input } from '@a/ui/input'
 import { useList } from '@noboil/convex/react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+interface ChatItem {
+  _id: string
+  title: string
+}
 const Page = () => {
   const { data: allChats } = useList(api.chat.list, { where: { isPublic: true } })
+  const chatsTyped = allChats as ChatItem[]
   const [query, setQuery] = useState('')
   const chats = useMemo(() => {
     const q = query.toLowerCase().trim()
-    if (!q) return allChats
-    return allChats.filter(c => c.title.toLowerCase().includes(q))
-  }, [allChats, query])
+    if (!q) return chatsTyped
+    return chatsTyped.filter(c => c.title.toLowerCase().includes(q))
+  }, [chatsTyped, query])
   return (
     <div className='mx-auto max-w-3xl p-4' data-testid='public-chats-page'>
       <h1 className='mb-4 text-xl font-semibold'>Public Chats</h1>

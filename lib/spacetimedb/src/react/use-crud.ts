@@ -17,17 +17,17 @@ const useCrud = <T extends Record<string, unknown>>(refs: StdbCrudRefs, options?
   const rm = useMut<Record<string, unknown>>(refs.rm)
   return {
     create: async (d: Partial<T>) => {
-      await create(d as Record<string, unknown>)
+      await create(d)
     },
     data,
     hasMore,
     isLoading,
     loadMore,
     rm: async (id: unknown) => {
-      await rm({ id } as Record<string, unknown>)
+      await rm({ id })
     },
     update: async (args: Partial<T> & { id: unknown }) => {
-      await update(args as Record<string, unknown>)
+      await update(args)
     }
   }
 }

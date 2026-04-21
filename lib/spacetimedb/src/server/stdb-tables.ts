@@ -107,7 +107,7 @@ const unionObject = (
       const shape = (option as ZodLike).def?.shape
       if (isRecord(shape)) variants.push(shape)
     }
-  if (variants.length === 0) return t.object(toPascalCase(path), {} as Record<string, StdbTypeBuilder>)
+  if (variants.length === 0) return t.object(toPascalCase(path), {})
   const totalVariants = variants.length
   const fieldCounts: Record<string, number> = {}
   const firstSchemaByField: Record<string, unknown> = {}
@@ -177,7 +177,7 @@ const resolveFields = (fields: unknown, t: StdbDeps['t'], tableName: string): Ta
   return fields as TableFields
 }
 const makeSchema = (deps?: Partial<StdbDeps>) => {
-  const t = deps?.t ?? (stdbT as unknown as ZodBridgeT)
+  const t = deps?.t ?? stdbT
   const table = deps?.table ?? stdbTableFn
   const schema = stdbSchema
   const tbl = (opts: TableOptions, fields: TableFields): StdbTable =>

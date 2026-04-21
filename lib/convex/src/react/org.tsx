@@ -53,7 +53,7 @@ const OrgProvider = <O extends OrgDoc, M>({ children, membership, org, role }: O
       role
     }
   }, [membership, org, role])
-  return <OrgContext value={value as OrgContextValue}>{children}</OrgContext>
+  return <OrgContext value={value}>{children}</OrgContext>
 }
 /** Returns the current org context; throws if used outside OrgProvider. */
 const useOrg = <O extends OrgDoc = OrgDoc, M = unknown>() => {

@@ -71,12 +71,12 @@ const enumToOptions = <T extends string>(
   for (const v of schema.options) out.push({ label: transform?.(v) ?? v.charAt(0).toUpperCase() + v.slice(1), value: v })
   return out
 }
-const shapeKeys = <S extends ZodObject>(schema: S): ShapeKey<S>[] => Object.keys(schema.shape) as ShapeKey<S>[]
+const shapeKeys = <S extends ZodObject>(schema: S): ShapeKey<S>[] => Object.keys(schema.shape)
 const requiredPartial = <S extends ZodObject>(schema: S, requiredKeys: (keyof S['shape'])[]): ZodObject => {
   const partial = schema.partial()
   const required: Record<string, true> = {}
   for (const k of requiredKeys) required[k as string] = true
-  return partial.required(required) as ZodObject
+  return partial.required(required)
 }
 const defaultValue = (schema: unknown): unknown => {
   let cur = schema as undefined | ZodSchema

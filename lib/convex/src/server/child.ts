@@ -258,6 +258,6 @@ const makeChildCrud = <S extends ZodRawShape, PS extends ZodRawShape = ZodRawSha
     ...(pub ? { pub } : {}),
     rm,
     update
-  } as unknown as ChildCrudResult<S>
+  }
 }
 export { makeChildCrud }

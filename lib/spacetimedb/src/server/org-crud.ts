@@ -99,7 +99,7 @@ const getOrgOwnedRow = <
       userId: sender
     } as unknown as Member
   if (!member) throw makeError('NOT_ORG_MEMBER', `${tableName}:${operation}`)
-  requireCanMutate({ acl, member, operation, row: row as { editors?: Identity[]; userId: Identity }, sender, tableName })
+  requireCanMutate({ acl, member, operation, row, sender, tableName })
   return { member, pk, row }
 }
 const deleteCascadeChildren = (
@@ -249,7 +249,7 @@ const makeOrgCrud = <
     })
     if (typedArgs.expectedUpdatedAt !== undefined && !timestampEquals(row.updatedAt, typedArgs.expectedUpdatedAt))
       throw makeError('CONFLICT', `${tableName}:update`)
-    let patch = pickPatch(typedArgs as unknown as Record<string, unknown>, fieldNames)
+    let patch = pickPatch(typedArgs, fieldNames)
     if (hooks?.beforeUpdate)
       patch = hooks.beforeUpdate(hookCtx, {
         patch: patch as unknown as Partial<OrgCrudFieldValues<F>>,
@@ -332,7 +332,7 @@ const makeOrgCrud = <
           throw makeError('FORBIDDEN', `${tableName}:addEditor`)
         const editors = ((row as Record<string, unknown>).editors as Identity[] | undefined) ?? []
         for (const e of editors) if (identityEquals(e, editorId)) return
-        pk.update({ ...row, editors: [...editors, editorId], updatedAt: ctx.timestamp } as never)
+        pk.update({ ...row, editors: [...editors, editorId], updatedAt: ctx.timestamp })
       }
     )
     exportsRecord[removeEditorName] = spacetimedb.reducer(
@@ -360,7 +360,7 @@ const makeOrgCrud = <
           ...row,
           editors: editors.filter(e => !identityEquals(e, editorId)),
           updatedAt: ctx.timestamp
-        } as never)
+        })
       }
     )
     exportsRecord[setEditorsName] = spacetimedb.reducer(
@@ -383,7 +383,7 @@ const makeOrgCrud = <
         })
         if (!(member.isAdmin || identityEquals(row.userId, ctx.sender)))
           throw makeError('FORBIDDEN', `${tableName}:setEditors`)
-        pk.update({ ...row, editors: editorIds, updatedAt: ctx.timestamp } as never)
+        pk.update({ ...row, editors: editorIds, updatedAt: ctx.timestamp })
       }
     )
   }

@@ -60,7 +60,7 @@ const defineStepsBase = createDefineSteps<TypedFields<Record<string, unknown>>>(
   buildMeta,
   coerceOptionals,
   defaultValues: dv,
-  fields: fields as TypedFields<Record<string, unknown>>,
+  fields,
   renderFormContext: ({ children, value }) => <FormContext value={value as never}>{children}</FormContext>
 })
 const defineSteps = defineStepsBase as <const Defs extends readonly [StepDef, ...StepDef[]]>(

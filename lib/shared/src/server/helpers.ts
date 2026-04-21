@@ -75,7 +75,7 @@ const pickFields = (data: Record<string, unknown>, keys: string[]): Record<strin
 }
 const groupList = <WG extends Record<string, unknown> & { own?: boolean }>(w?: WG & { or?: WG[] }): WG[] => {
   if (!w) return []
-  const groups: WG[] = [{ ...w, or: undefined } as WG, ...(w.or ?? [])]
+  const groups: WG[] = [{ ...w, or: undefined }, ...(w.or ?? [])]
   const out: WG[] = []
   for (const g of groups)
     if (g.own) out.push(g)

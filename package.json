@@ -44,6 +44,9 @@
   "simple-git-hooks": {
     "pre-commit": "sh up.sh && git add -u"
   },
+  "dependencies": {
+    "@a/config": "workspace:*"
+  },
   "devDependencies": {
     "@playwright/test": "latest",
     "@tailwindcss/postcss": "latest",
@@ -69,8 +72,5 @@
     "msw",
     "sharp",
     "simple-git-hooks"
-  ],
-  "dependencies": {
-    "@a/config": "workspace:*"
-  }
+  ]
 }

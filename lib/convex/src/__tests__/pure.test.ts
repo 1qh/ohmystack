@@ -215,12 +215,10 @@ describe('groupList', () => {
     expect(groupList()).toEqual([])
   })
   test('empty where with no real keys returns empty', () => {
-    expect(groupList({} as Record<string, unknown> & { own?: boolean })).toEqual([])
+    expect(groupList({})).toEqual([])
   })
   test('single group with field', () => {
-    const gs = groupList({ published: true } as Record<string, unknown> & {
-      own?: boolean
-    })
+    const gs = groupList({ published: true })
     expect(gs).toHaveLength(1)
     expect(gs[0]?.published).toBe(true)
   })
@@ -235,9 +233,7 @@ describe('groupList', () => {
     expect(gs[1]?.category).toBe('life')
   })
   test('own-only group is included', () => {
-    const gs = groupList({ own: true } as Record<string, unknown> & {
-      own?: boolean
-    })
+    const gs = groupList({ own: true })
     expect(gs).toHaveLength(1)
   })
   test('filters out empty or groups', () => {
@@ -1228,14 +1224,14 @@ describe('bridge functions', () => {
   describe('flt', () => {
     test('returns the callback as-is (passthrough cast)', () => {
       const fn = (fb: { eq: (f: string, v: unknown) => unknown }) => fb.eq('active', true)
-      const result: unknown = flt(fn as never)
+      const result: unknown = flt(fn)
       expect(result).toBe(fn)
     })
   })
   describe('sch', () => {
     test('returns the callback as-is (passthrough cast)', () => {
       const fn = (sb: { search: (f: string, q: string) => unknown }) => sb.search('content', 'hello')
-      const result: unknown = sch(fn as never)
+      const result: unknown = sch(fn)
       expect(result).toBe(fn)
     })
   })
@@ -3912,7 +3908,7 @@ describe('cacheCrud hooks', () => {
     const hooks: CacheHooks = {
       afterDelete: (_ctx, { doc, id }) => {
         capturedId = id
-        capturedDoc = doc as Record<string, unknown>
+        capturedDoc = doc
       }
     }
     const ctx: CacheHookCtx = { db: {} as CacheHookCtx['db'] }
@@ -6421,7 +6417,7 @@ describe('typed error handling (R10.5)', () => {
       const e = new ConvexError({
         code: errorData.code,
         message: errorData.message
-      } as Record<string, string | undefined>)
+      })
       const msg = matchError(e, {
         NOT_FOUND: d => `Item not found: ${d.message}`,
         _: () => 'Unknown error'
@@ -6439,7 +6435,7 @@ describe('typed error handling (R10.5)', () => {
       const thrown = new ConvexError({
         code: errorData.code,
         message: errorData.message
-      } as Record<string, string | undefined>)
+      })
       expect(isMutationError(thrown)).toBe(true)
       expect(isErrorCode(thrown, 'CONFLICT')).toBe(true)
     })
@@ -7442,15 +7438,15 @@ describe('doctor', () => {
 describe('matchW — additional edge cases', () => {
   const doc = { category: 'tech', price: 50, published: true, title: 'Test', userId: 'u1' }
   test('empty where object matches everything', () => {
-    expect(matchW(doc, {} as Rec & { own?: boolean })).toBe(true)
+    expect(matchW(doc, {})).toBe(true)
   })
   test('OR with own: true group', () => {
-    expect(
-      matchW(doc, { or: [{ published: true }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u1')
-    ).toBe(true)
-    expect(
-      matchW(doc, { or: [{ published: false }, { own: true }] } as Rec & { or?: (Rec & { own?: boolean })[] }, 'u2')
-    ).toBe(false)
+    expect(matchW<{ own?: boolean; published?: boolean }>(doc, { or: [{ published: true }, { own: true }] }, 'u1')).toBe(
+      true
+    )
+    expect(matchW<{ own?: boolean; published?: boolean }>(doc, { or: [{ published: false }, { own: true }] }, 'u2')).toBe(
+      false
+    )
   })
   test('simple field equality — published: true', () => {
     expect(matchW(doc, { published: true })).toBe(true)

@@ -1,11 +1,11 @@
 'use client'
 import type { ReactNode } from 'react'
 import { api } from '@a/be-convex'
+import { urls } from '@a/config'
 import { ConvexAuthNextjsProvider as AuthProvider } from '@convex-dev/auth/nextjs'
 import { FileApiProvider } from '@noboil/convex/components'
 import { ConvexProvider as BaseProvider, ConvexReactClient as Client } from 'convex/react'
 import { NavigationGuardProvider } from 'next-navigation-guard'
-import { urls } from '@a/config'
 import env from './env'
 interface ConvexProviderProps {
   children: ReactNode

@@ -1,8 +1,8 @@
-// biome-ignore-all lint/style/noProcessEnv: x
+/** biome-ignore-all lint/style/noProcessEnv: runtime env */
+import { config, urls } from '@a/config'
 import { createEnv } from '@t3-oss/env-nextjs'
 import { vercel } from '@t3-oss/env-nextjs/presets-zod'
 import { literal, string, url, enum as zenum } from 'zod/v4'
-import { config, urls } from '@a/config'
 const u = urls()
 export default createEnv({
   client: {

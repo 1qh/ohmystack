@@ -223,7 +223,7 @@ const createUseForm = (deps: UseFormDeps) => {
           const returned = deps.isRecord(result) ? result : coerced
           const newValues = resetOnSuccess ? returned : value
           instance.reset(newValues as unknown as output<S>)
-          if (resetOnSuccess && deps.isRecord(returned)) vRef.current = returned as unknown as Widen<output<S>>
+          if (resetOnSuccess && deps.isRecord(returned)) vRef.current = returned
           setForceSubmit(false)
           setLastSaved(Date.now())
           onSuccess?.()
@@ -271,8 +271,8 @@ const createUseForm = (deps: UseFormDeps) => {
       meta,
       reset: (vals?: output<S>) => {
         const resetVals = vals ?? (vRef.current as unknown as output<S>)
-        instance.reset(resetVals as unknown as output<S>)
-        if (vals) vRef.current = vals as unknown as Widen<output<S>>
+        instance.reset(resetVals)
+        if (vals) vRef.current = vals
         setEr(null)
         setFieldErrors({})
         setLastSaved(null)

@@ -258,7 +258,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
           if (
             !canEdit({
               acl: useAcl,
-              doc: aclDoc as { editors?: string[]; userId: string },
+              doc: aclDoc,
               role,
               userId: c.user._id as string
             })
@@ -284,7 +284,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
       if (
         !canEdit({
           acl: useAcl,
-          doc: aclDoc as { editors?: string[]; userId: string },
+          doc: aclDoc,
           role,
           userId: c.user._id as string
         })
@@ -316,7 +316,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
           if (
             !canEdit({
               acl: useAcl,
-              doc: aclDoc as { editors?: string[]; userId: string },
+              doc: aclDoc,
               role,
               userId: c.user._id as string
             })
@@ -343,7 +343,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
       if (
         !canEdit({
           acl: useAcl,
-          doc: aclDoc as { editors?: string[]; userId: string },
+          doc: aclDoc,
           role,
           userId: c.user._id as string
         })
@@ -373,7 +373,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
           if (
             !canEdit({
               acl: useAcl,
-              doc: aclDoc as { editors?: string[]; userId: string },
+              doc: aclDoc,
               role,
               userId: c.user._id as string
             })
@@ -469,7 +469,7 @@ const makeOrgCrud = <S extends ZodRawShape>({
       return { ...doc, ...patch }
     })
   })
-  return { ...base, addEditor, editors, removeEditor, setEditors } as unknown as OrgCrudResult<S>
+  return { ...base, addEditor, editors, removeEditor, setEditors }
 }
 /**
  * Creates a cascade configuration for org-scoped child tables, used with orgCrud's cascade option.

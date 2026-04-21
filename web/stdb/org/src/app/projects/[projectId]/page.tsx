@@ -358,14 +358,14 @@ const ProjectDetailPage = ({ params }: { params: Promise<{ projectId: string }> 
             if (!member) return
             const current = project.editors ?? []
             const next = [...current, member.userId]
-            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid })
             toast.success('Editor added')
           }}
           onRemove={(userId: string) => {
             const current = project.editors ?? []
             const next: typeof current = []
             for (const e of current) if (e.toHexString() !== userId) next.push(e)
-            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid } as never)
+            updateProject({ editors: next, expectedUpdatedAt: project.updatedAt, id: pid })
             toast.success('Editor removed')
           }}
         />

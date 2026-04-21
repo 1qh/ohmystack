@@ -90,7 +90,7 @@ const ToolPartDisplay = ({
   if (state === 'output-available' || state === 'output-denied')
     return (
       <Tool className='w-full' defaultOpen key={partKey}>
-        <ToolHeader state={state as 'output-available'} title={displayName} type='tool-invocation' />
+        <ToolHeader state={state} title={displayName} type='tool-invocation' />
         <ToolContent>
           {toolPart.input ? <ToolInput input={toolPart.input} /> : null}
           <ToolOutput errorText={toolPart.errorText} output={toolPart.output} />
@@ -119,7 +119,7 @@ const ToolPartDisplay = ({
   if (state === 'approval-responded' || state === 'input-available' || state === 'input-streaming')
     return (
       <Tool className='w-full' key={partKey}>
-        <ToolHeader state={state as 'input-available'} title={displayName} type='tool-invocation' />
+        <ToolHeader state={state} title={displayName} type='tool-invocation' />
         <ToolContent>{toolPart.input ? <ToolInput input={toolPart.input} /> : null}</ToolContent>
       </Tool>
     )

@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 /* eslint-disable no-await-in-loop */
+import { config, urls } from '@a/config'
 /* oxlint-disable no-await-in-loop, no-process-exit, no-immediate-mutation */
 import { $ } from 'bun'
-import { config, urls } from '@a/config'
 import { emit } from './emit-env'
 import {
   box,

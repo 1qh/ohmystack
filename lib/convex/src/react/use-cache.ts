@@ -54,7 +54,7 @@ const useCacheEntry = <Q extends QueryRef, A extends ActionRef>({
   }, [args])
   useEffect(() => {
     if (loadingRef.current) return
-    const isStale = cached !== undefined && (cached === null || (cached as Record<string, unknown>).stale === true)
+    const isStale = cached !== undefined && (cached === null || cached.stale === true)
     if (!isStale) return
     loadingRef.current = true
     setIsLoading(true)
@@ -67,7 +67,7 @@ const useCacheEntry = <Q extends QueryRef, A extends ActionRef>({
   }, [cached, load])
   useEffect(() => {
     if (!isDev || cached === undefined) return
-    const stale = cached === null || (cached as Record<string, unknown>).stale === true
+    const stale = cached === null || cached.stale === true
     trackCacheAccess({ hit: !stale, key: JSON.stringify(args ?? {}), stale, table: queryName })
   }, [cached, args, queryName])
   const refresh = useCallback(() => {
@@ -81,7 +81,7 @@ const useCacheEntry = <Q extends QueryRef, A extends ActionRef>({
       setIsLoading
     })
   }, [load])
-  const data = cached === undefined ? null : (cached as null | Record<string, unknown>)
+  const data = cached ?? null
   const isStale = data !== null && data.stale === true
   return { data, isLoading: isLoading || cached === undefined, isStale, refresh }
 }

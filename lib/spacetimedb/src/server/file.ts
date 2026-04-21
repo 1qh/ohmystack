@@ -121,7 +121,7 @@ const makeFileUpload = <
   const deleteReducer = spacetimedb.reducer(
     { name: deleteName },
     {
-      fileId: idField as TypeBuilder<unknown, AlgebraicTypeType>
+      fileId: idField
     },
     (ctx, args) => {
       const { fileId } = args as { fileId: Id }

@@ -140,11 +140,7 @@ const POST = async (request: Request) => {
           finishedMessages.map(async msg => {
             const existingMsg = uiMessages.find(m => m.id === msg.id)
             if (existingMsg)
-              return fetchMutation(
-                api.message.update,
-                { id: msg.id as Id<'message'>, parts: filterSupportedParts(msg.parts) },
-                opts
-              )
+              return fetchMutation(api.message.update, { id: msg.id, parts: filterSupportedParts(msg.parts) }, opts)
             return fetchMutation(
               api.message.create,
               { chatId, parts: filterSupportedParts(msg.parts), role: msg.role },
@@ -171,7 +167,7 @@ const DELETE = async (request: Request) => {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return new Response('Bad request', { status: 400 })
-  await fetchMutation(api.chat.rm, { id: id as Id<'chat'> }, { token })
+  await fetchMutation(api.chat.rm, { id }, { token })
   return new Response('OK', { status: 200 })
 }
 const maxDuration = 60

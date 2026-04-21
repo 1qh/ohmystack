@@ -64,19 +64,15 @@ const {
   removeEditorAsUser,
   rmAsUser: deleteProjectAsUser,
   updateAsUser: updateProjectAsUser
-} = projectTestCrud as Record<string, unknown>
-const {
-  createAsUser: createTaskAsUser,
-  rmAsUser: rmTaskAsUser,
-  updateAsUser: updateTaskAsUser
-} = taskTestCrud as Record<string, unknown>
+} = projectTestCrud
+const { createAsUser: createTaskAsUser, rmAsUser: rmTaskAsUser, updateAsUser: updateTaskAsUser } = taskTestCrud
 const {
   addEditorAsUser: addWikiEditorAsUser,
   createAsUser: createWikiAsUser,
   removeEditorAsUser: removeWikiEditorAsUser,
   rmAsUser: deleteWikiAsUser,
   updateAsUser: updateWikiAsUser
-} = wikiTestCrud as Record<string, unknown>
+} = wikiTestCrud
 const BATCH_SIZE = 50
 const cleanupTestData = mutation({
   args: {},

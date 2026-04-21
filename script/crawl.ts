@@ -17,9 +17,9 @@
 /* oxlint-disable unicorn/consistent-function-scoping */
 /* oxlint-disable eslint(max-params), eslint(no-await-in-loop), eslint(no-control-regex), eslint(no-promise-executor-return), eslint(no-shadow), eslint(no-useless-assignment), eslint-plugin-promise(always-return), eslint-plugin-promise(param-names), eslint-plugin-promise(prefer-await-to-then), eslint-plugin-unicorn(no-process-exit), typescript-eslint(no-non-null-assertion) */
 import type { Browser, BrowserContext, Page } from 'playwright'
+import { appPort, urls } from '@a/config'
 import { join } from 'node:path'
 import { chromium } from 'playwright'
-import { appPort, urls } from '@a/config'
 interface AppSpec {
   authedRoutes?: string[]
   devLog?: string

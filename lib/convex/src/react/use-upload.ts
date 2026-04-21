@@ -47,9 +47,7 @@ const useUpload = (uploadMutation: FunctionReference<'mutation'>, options?: Uplo
           try {
             const parsed: unknown = JSON.parse(x.responseText)
             const storageId =
-              typeof parsed === 'object' && parsed !== null && 'storageId' in parsed
-                ? (parsed as { storageId: unknown }).storageId
-                : undefined
+              typeof parsed === 'object' && parsed !== null && 'storageId' in parsed ? parsed.storageId : undefined
             if (typeof storageId !== 'string') return res({ code: 'INVALID_RESPONSE', ok: false })
             setProgress(100)
             res({ ok: true, storageId })

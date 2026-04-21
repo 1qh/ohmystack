@@ -1,7 +1,7 @@
+import { appPort } from '@a/config'
 /* oxlint-disable no-process-exit */
 import { spawn } from 'bun'
 import { basename, dirname } from 'node:path'
-import { appPort } from '@a/config'
 const cwd = process.cwd()
 const name = basename(cwd)
 const parent = basename(dirname(cwd))

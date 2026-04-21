@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 /* eslint-disable max-depth */
-import type { ErrorData as SharedErrorData, ErrorHandler as SharedErrorHandler } from '@a/shared/server/helpers'
+import type { ErrorData as SharedErrorData } from '@a/shared/server/helpers'
 import type { ZodObject, output as ZodOutput, ZodRawShape } from 'zod/v4'
 import {
   createErrorUtils,
@@ -65,8 +65,8 @@ const normalizeRateLimit = (input: RateLimitInput): RateLimitConfig =>
   typeof input === 'number' ? { max: input, window: RATE_LIMIT_DEFAULT_WINDOW } : input
 const serializeError = (data: ErrorData) => `${data.code}:${JSON.stringify(data)}`
 const throwSenderError = (code: string, opts?: Record<string, unknown> | string | { message: string }): never => {
-  if (!opts) throw new SenderError(serializeError({ code } as ErrorData))
-  if (typeof opts !== 'string') throw new SenderError(serializeError({ code, ...opts } as ErrorData))
+  if (!opts) throw new SenderError(serializeError({ code }))
+  if (typeof opts !== 'string') throw new SenderError(serializeError({ code, ...opts }))
   const sep = opts.indexOf(':')
   const data =
     sep > 0
@@ -80,12 +80,12 @@ const parseSenderMessage = (message: string): ErrorData | undefined => {
   const code = message.slice(0, sep)
   if (!(code in ERROR_MESSAGES)) return
   const rest = message.slice(sep + 1).trim()
-  const data: ErrorData = { code: code as ErrorCode }
+  const data: ErrorData = { code }
   if (rest.startsWith('{') && rest.endsWith('}'))
     try {
       const parsed = JSON.parse(rest) as Record<string, unknown>
       return {
-        code: code as ErrorCode,
+        code,
         debug: typeof parsed.debug === 'string' ? parsed.debug : undefined,
         fieldErrors: isRecord(parsed.fieldErrors) ? (parsed.fieldErrors as Record<string, string>) : undefined,
         fields: Array.isArray(parsed.fields) ? (parsed.fields as string[]) : undefined,
@@ -107,7 +107,7 @@ const extractErrorData = (e: unknown): ErrorData | undefined => {
       const { code } = data
       if (typeof code === 'string' && code in ERROR_MESSAGES)
         return {
-          code: code as ErrorCode,
+          code,
           debug: typeof data.debug === 'string' ? data.debug : undefined,
           fieldErrors: isRecord(data.fieldErrors) ? (data.fieldErrors as Record<string, string>) : undefined,
           fields: Array.isArray(data.fields) ? (data.fields as string[]) : undefined,
@@ -123,7 +123,7 @@ const extractErrorData = (e: unknown): ErrorData | undefined => {
 }
 const errorUtils = createErrorUtils({
   errorMessages: ERROR_MESSAGES,
-  extractErrorData: extractErrorData as (e: unknown) => SharedErrorData | undefined,
+  extractErrorData,
   throwError: throwSenderError
 })
 const err = (code: ErrorCode, opts?: Record<string, unknown> | string | { message: string }): never =>
@@ -137,10 +137,9 @@ const getErrorCode = (e: unknown): ErrorCode | undefined => extractErrorData(e)?
 const getErrorMessage = (e: unknown): string => errorUtils.getErrorMessage(e)
 const getErrorDetail = (e: unknown): string => errorUtils.getErrorDetail(e)
 const handleError = (e: unknown, handlers: ErrorHandler): void => {
-  errorUtils.handleError(e, handlers as SharedErrorHandler)
+  errorUtils.handleError(e, handlers)
 }
-const fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> =>
-  errorUtils.fail(code, detail) as MutationResult<never>
+const fail = (code: ErrorCode, detail?: Omit<ErrorData, 'code'>): MutationResult<never> => errorUtils.fail(code, detail)
 const isMutationError = (e: unknown): e is ErrorData => extractErrorData(e) !== undefined
 const isErrorCode = (e: unknown, code: ErrorCode): boolean => {
   const d = extractErrorData(e)
@@ -321,7 +320,8 @@ const addUrls = async <D extends Record<string, unknown>>({
   fileFields: string[]
   storage: StorageLike
 }): Promise<WithUrls<D>> => {
-  if (fileFields.length === 0) return doc as WithUrls<D>
+  const asWithUrls = <X>(x: Record<string, unknown>): WithUrls<X> => x as WithUrls<X>
+  if (fileFields.length === 0) return asWithUrls<D>(doc)
   const o = { ...doc } as Record<string, unknown>
   const getUrl = async (x: unknown) => {
     const id = toId(x)
@@ -473,7 +473,7 @@ const makeUnique = ({ field, index, pq, table }: { field: string; index?: string
                 )
               )
               .first())
-        return !(existing as null | Record<string, unknown>) || (existing as Record<string, unknown>)._id === exclude
+        return !existing || existing._id === exclude
       })
     })
   )

@@ -119,7 +119,7 @@ const OrgProvider = <O extends OrgDoc, M>({
   }, [membership, org, orgs, role])
   return (
     <ActiveOrgContext value={activeState as unknown as ActiveOrgState}>
-      <OrgContext value={value as OrgContextValue}>{children}</OrgContext>
+      <OrgContext value={value}>{children}</OrgContext>
     </ActiveOrgContext>
   )
 }

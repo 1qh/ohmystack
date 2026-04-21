@@ -90,7 +90,7 @@ const createOptimisticStore = (): OptimisticStore => {
         const next: T[] = []
         for (const row of result) {
           const patch = updates.get(row._id)
-          next.push(patch ? ({ ...row, ...patch, _id: row._id } as T) : row)
+          next.push(patch ? { ...row, ...patch, _id: row._id } : row)
         }
         result = next
       }
