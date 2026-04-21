@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
+/* eslint-disable no-console, @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unnecessary-condition */
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
@@ -122,6 +122,46 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
   }
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
+const patchWorkspacePackageJsons = ({ db, dir }: { db: Db; dir: string }) => {
+  const walk = (root: string): string[] => {
+    const out: string[] = []
+    if (!existsSync(root)) return out
+    for (const entry of readdirSync(root, { withFileTypes: true }))
+      if (entry.isDirectory()) {
+        const childRoot = join(root, entry.name)
+        const pkg = join(childRoot, 'package.json')
+        if (existsSync(pkg)) out.push(pkg)
+      }
+    return out
+  }
+  const otherDb = db === 'convex' ? 'spacetimedb' : 'convex'
+  const otherBeScope = otherDb === 'convex' ? '@a/be-convex' : '@a/be-spacetimedb'
+  const pkgs = [...walk(join(dir, 'lib')), ...walk(join(dir, 'backend')), ...walk(join(dir, 'readonly'))]
+  for (const pkgPath of pkgs) {
+    const content = readFileSync(pkgPath, 'utf8')
+    const pkg = JSON.parse(content) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+    let changed = false
+    const fixSection = (section?: Record<string, string>) => {
+      if (!section) return
+      if (section.noboil === 'workspace:*') {
+        section.noboil = 'latest'
+        changed = true
+      }
+      if (otherBeScope in section) {
+        delete section[otherBeScope]
+        changed = true
+      }
+    }
+    fixSection(pkg.dependencies)
+    fixSection(pkg.devDependencies)
+    fixSection(pkg.peerDependencies)
+    if (changed) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+  }
+}
 const patchTsconfig = ({ db, dir }: { db: Db; dir: string }) => {
   if (db === 'convex') return
   const tsconfigPath = join(dir, 'tsconfig.json')
@@ -159,6 +199,7 @@ const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: str
   removeDirs({ db, dir: fullPath, includeDemos })
   console.log(`  ${dim('patching')} package.json files...`)
   patchRootPackageJson({ db, dir: fullPath, includeDemos })
+  patchWorkspacePackageJsons({ db, dir: fullPath })
   patchTsconfig({ db, dir: fullPath })
   if (!args.includes('--skip-install')) {
     console.log(`  ${dim('installing')} dependencies...`)
