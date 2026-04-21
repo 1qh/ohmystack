@@ -26,6 +26,20 @@ const createNextConfigWithCsp = ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
   ...(noboilCondition === 'noboil-spacetimedb' && {
+    turbopack: {
+      resolveAlias: {
+        'noboil/components': 'noboil/spacetimedb/components',
+        'noboil/eslint': 'noboil/spacetimedb/eslint',
+        'noboil/next': 'noboil/spacetimedb/next',
+        'noboil/react': 'noboil/spacetimedb/react',
+        'noboil/retry': 'noboil/spacetimedb/retry',
+        'noboil/schema': 'noboil/spacetimedb/schema',
+        'noboil/seed': 'noboil/spacetimedb/seed',
+        'noboil/server': 'noboil/spacetimedb/server',
+        'noboil/test': 'noboil/spacetimedb/test',
+        'noboil/zod': 'noboil/spacetimedb/zod'
+      }
+    } satisfies NextConfig['turbopack'],
     webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
       config.resolve ??= {}
       config.resolve.conditionNames = ['noboil-spacetimedb', '...']
