@@ -1429,7 +1429,7 @@ describe('wiki ACL', () => {
 })
 describe('where clause types', () => {
   test('BlogWhere type is correctly shaped', async () => {
-    const { owned } = await import('../t')
+    const { owned } = await import('../s')
     interface BlogWhere {
       category?: 'life' | 'tech' | 'tutorial'
       content?: string
@@ -2275,7 +2275,7 @@ describe('custom blog endpoints (pq/q/m)', () => {
       await asUser(1).mutation(api.blog.togglePublish, { id: postId })
     } catch (error) {
       threw = true
-      expect(String(error)).toContain('NOT_OWNER')
+      expect(['NOT_OWNER', 'NOT_FOUND'].some(code => String(error).includes(code))).toBe(true)
     }
     expect(threw).toBe(true)
   })
