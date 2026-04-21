@@ -43,7 +43,6 @@
     "test": "bun test"
   },
   "peerDependencies": {
-    "@a/ui": "*",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
