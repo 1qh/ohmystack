@@ -33,7 +33,7 @@ export default defineConfig({
     'src/spacetimedb/seed.ts'
   ],
   format: 'esm',
-  noExternal: ['@a/ui', '@tanstack/react-store', 'use-sync-external-store'],
+  noExternal: ['@tanstack/react-store', 'use-sync-external-store'],
   outDir: 'dist',
   unbundle: true
 })
