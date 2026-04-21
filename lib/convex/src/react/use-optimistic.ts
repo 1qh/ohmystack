@@ -1,6 +1,6 @@
 'use client'
 import type { FunctionReference, FunctionReturnType, OptionalRestArgs } from 'convex/server'
-import { useOptimisticMutation as useOptimisticMutationBase } from '@a/shared/react/use-optimistic'
+import { useOptimisticMutation as useOptimisticMutationBase } from '@noboil/shared/react/use-optimistic'
 import { useMutation } from 'convex/react'
 type Args<T extends MutationFn> = OptionalRestArgs<T>[0]
 type MutationFn = FunctionReference<'mutation'>

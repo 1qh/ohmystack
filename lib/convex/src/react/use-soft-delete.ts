@@ -1,6 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
-import { useSoftDelete as useSharedSoftDelete } from '@a/shared/react/use-soft-delete'
+import { useSoftDelete as useSharedSoftDelete } from '@noboil/shared/react/use-soft-delete'
 import { UNDO_MS } from '../constants'
 interface SoftDeleteOpts<A extends { id: string }> {
   label?: string

@@ -4,7 +4,7 @@
 import type { Stepper as CoreStepper, Step } from '@stepperize/core'
 import type { ComponentProps, ReactNode } from 'react'
 import type { output, ZodObject } from 'zod/v4'
-import { createDefineSteps } from '@a/shared/components/step-form'
+import { createDefineSteps } from '@noboil/shared/components/step-form'
 import type { TypedFields } from './form'
 import { buildMeta } from '../react/form'
 import { coerceOptionals, defaultValues as dv } from '../zod'

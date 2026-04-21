@@ -4,8 +4,8 @@ import type {
   DevError as SharedDevError,
   DevMutation as SharedDevMutation,
   DevSubscription as SharedDevSubscription
-} from '@a/shared/react/devtools'
-import { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@a/shared/react/devtools'
+} from '@noboil/shared/react/devtools'
+import { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@noboil/shared/react/devtools'
 import { useSpacetimeDB } from 'spacetimedb/react'
 import type { ErrorData } from '../server/helpers'
 import type { ErrorCode } from '../server/types'

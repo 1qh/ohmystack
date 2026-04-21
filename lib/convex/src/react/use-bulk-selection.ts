@@ -1,5 +1,5 @@
 'use client'
-import { useBulkSelection as useSharedBulkSelection } from '@a/shared/react/use-bulk-selection'
+import { useBulkSelection as useSharedBulkSelection } from '@noboil/shared/react/use-bulk-selection'
 import type { ToastFn } from './use-soft-delete'
 import { UNDO_MS } from '../constants'
 interface UseBulkSelectionOpts {

@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 /* eslint-disable max-depth */
-import type { ErrorData as SharedErrorData } from '@a/shared/server/helpers'
+import type { ErrorData as SharedErrorData } from '@noboil/shared/server/helpers'
 import type { ZodObject, output as ZodOutput, ZodRawShape } from 'zod/v4'
 import {
   createErrorUtils,
@@ -14,7 +14,7 @@ import {
   RUNTIME_FILTER_WARN_THRESHOLD,
   SEVEN_DAYS_MS,
   time
-} from '@a/shared/server/helpers'
+} from '@noboil/shared/server/helpers'
 import { Identity } from 'spacetimedb'
 import { number, object, string } from 'zod/v4'
 import type {

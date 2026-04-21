@@ -4,8 +4,8 @@ import type {
   DevError as SharedDevError,
   DevMutation as SharedDevMutation,
   DevSubscription as SharedDevSubscription
-} from '@a/shared/react/devtools'
-import { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@a/shared/react/devtools'
+} from '@noboil/shared/react/devtools'
+import { createDevtoolsCore, SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@noboil/shared/react/devtools'
 import type { ErrorData } from '../server/helpers'
 import { extractErrorData, getErrorDetail, getErrorMessage } from '../server/helpers'
 type DevCacheEntry = SharedDevCacheEntry

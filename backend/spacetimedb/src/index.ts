@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { noboil } from '@noboil/spacetimedb/server'
 import { s } from '../s'
 const spacetimedb = noboil({
@@ -29,7 +30,6 @@ interface TableLike {
   delete: (row: unknown) => void
   iter: () => Iterable<unknown>
 }
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const cleanup_test_data = (
   spacetimedb as unknown as { reducer: (o: { name: string }, f: (c: { db: DbLike }) => void) => unknown }
 ).reducer({ name: 'cleanup_test_data' }, ctx => {

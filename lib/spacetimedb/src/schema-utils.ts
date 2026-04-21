@@ -1,5 +1,5 @@
 // biome-ignore-all lint/nursery/noUnnecessaryConditions: type narrowing
-import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
+import type { FactoryCall, SchemaField, SchemaTable } from '@noboil/shared/schema-utils'
 /* oxlint-disable eslint/complexity */
 import {
   CACHE_BASE,
@@ -12,7 +12,7 @@ import {
   ORG_CRUD_BASE,
   parseObjectFields,
   SINGLETON_BASE
-} from '@a/shared/schema-utils'
+} from '@noboil/shared/schema-utils'
 const tableCallPat = /(?<pname>\w+)\s*:\s*t\.table\(\{/gu
 const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase', 'defineTables']
 const extractSpacetimeTables = (content: string): SchemaTable[] => {

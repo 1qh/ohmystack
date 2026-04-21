@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/strict-void-return, no-console, no-continue */
 /** biome-ignore-all lint/nursery/noContinue: crawler */
 /** biome-ignore-all lint/nursery/noPlaywrightElementHandle: crawler */
 /** biome-ignore-all lint/nursery/noPlaywrightEval: crawler */
@@ -11,7 +12,7 @@
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: crawler */
 /** biome-ignore-all lint/suspicious/noEmptyBlockStatements: crawler */
 /* oxlint-disable no-empty, eslint-plugin-unicorn(no-process-exit) */
-/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-shadow, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/strict-void-return, complexity, no-await-in-loop, no-console, no-continue, no-control-regex, no-empty, no-promise-executor-return, no-useless-assignment */
+/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-shadow, complexity, no-await-in-loop, no-control-regex, no-empty, no-promise-executor-return, no-useless-assignment */
 /** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: crawler */
 /** biome-ignore-all lint/correctness/noUnusedVariables: crawler */
 /* oxlint-disable unicorn/consistent-function-scoping */

@@ -1,1 +1,1 @@
-export { default } from '@a/shared/components/permission-guard'
+export { default } from '@noboil/shared/components/permission-guard'

@@ -40,16 +40,19 @@ const extractExports = (filePath: string): string[] => {
 }
 const genTable = (pkgDir: string): string => {
   const pkgJson = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8')) as {
-    exports: Record<string, string>
+    exports: Record<string, string | { default?: string; types?: string }>
     name: string
   }
   const rows: string[] = []
   for (const [subpath, target] of Object.entries(pkgJson.exports)) {
-    const filePath = resolve(pkgDir, target)
-    const names = extractExports(filePath)
-    if (names.length > 0) {
-      const modulePath = subpath === '.' ? pkgJson.name : `${pkgJson.name}/${subpath.replace('./', '')}`
-      rows.push(`| \`${modulePath}\` | \`${names.join('`, `')}\` |`)
+    const targetPath = typeof target === 'string' ? target : (target.types ?? target.default ?? '')
+    if (targetPath) {
+      const filePath = resolve(pkgDir, targetPath)
+      const names = extractExports(filePath)
+      if (names.length > 0) {
+        const modulePath = subpath === '.' ? pkgJson.name : `${pkgJson.name}/${subpath.replace('./', '')}`
+        rows.push(`| \`${modulePath}\` | \`${names.join('`, `')}\` |`)
+      }
     }
   }
   return rows.join('\n')

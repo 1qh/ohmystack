@@ -1,4 +1,4 @@
-export type { DefType, FileKind, ZodSchema } from '@a/shared/zod'
+export type { DefType, FileKind, ZodSchema } from '@noboil/shared/zod'
 export {
   coerceOptionals,
   defaultValue,
@@ -16,4 +16,4 @@ export {
   pickValues,
   requiredPartial,
   unwrapZod
-} from '@a/shared/zod'
+} from '@noboil/shared/zod'

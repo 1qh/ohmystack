@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use client'
 import { useCallback, useId, useState } from 'react'
 import { toast } from 'sonner'
@@ -103,9 +104,8 @@ const useBulkMutate = <A, R = void>({
         if (errors.length > 0 && errorHandler) {
           errorHandler(errors[0])
           if (errors.length > 1) {
-            // eslint-disable-next-line no-console
             console.error(`[${packageName}] Bulk operation: ${errors.length} of ${items.length} items failed`)
-            for (let i = 1; i < errors.length; i += 1) console.error(`[${packageName}] Bulk error ${i + 1}:`, errors[i]) // eslint-disable-line no-console
+            for (let i = 1; i < errors.length; i += 1) console.error(`[${packageName}] Bulk error ${i + 1}:`, errors[i])
           }
         }
         if (results.length > 0) {

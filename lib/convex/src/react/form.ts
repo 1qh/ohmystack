@@ -1,9 +1,9 @@
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
 'use client'
-import type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn } from '@a/shared/react/form'
+import type { Api, ConflictData, FieldKind, FieldMeta, FieldMetaMap, FormReturn } from '@noboil/shared/react/form'
 import type { FunctionReference } from 'convex/server'
 import type { output, ZodObject } from 'zod/v4'
-import { buildMeta, createUseForm, getMeta } from '@a/shared/react/form'
+import { buildMeta, createUseForm, getMeta } from '@noboil/shared/react/form'
 import { useMutation } from 'convex/react'
 import { extractErrorData, getErrorCode, getErrorMessage, isRecord } from '../server/helpers'
 import { defaultOnError } from './use-mutate'

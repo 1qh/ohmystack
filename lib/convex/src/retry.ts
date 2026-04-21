@@ -1,6 +1,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/useAwait: x
-import { createRetryUtils } from '@a/shared/retry'
+import { createRetryUtils } from '@noboil/shared/retry'
 import { sleep } from './constants'
 interface RetryOptions {
   base?: number

@@ -1,6 +1,6 @@
 {
   "name": "@noboil/spacetimedb",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Schema-first, zero-boilerplate fullstack with SpacetimeDB.",
   "keywords": [
     "spacetimedb",
@@ -57,15 +57,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@a/ui": "workspace:*",
     "browser-image-compression": "latest",
     "next-navigation-guard": "latest",
     "react-dropzone": "latest"
   },
-  "devDependencies": {
-    "@a/shared": "workspace:*"
-  },
   "peerDependencies": {
+    "@noboil/shared": "*",
     "@stepperize/react": "latest",
     "@tanstack/react-form": "latest",
     "next": "latest",

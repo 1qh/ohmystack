@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
-/* eslint-disable one-var, max-depth */
-import { createEslintPluginBundle } from '@a/shared/eslint'
+/* eslint-disable max-depth */
+import { createEslintPluginBundle } from '@noboil/shared/eslint'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 interface BaseNode {
@@ -242,7 +242,9 @@ const checkStandardCrud = (node: BaseNode & { arguments: BaseNode[] }, context: 
 const extractCacheCrudProps = (
   obj: BaseNode & { properties: (BaseNode & { key: BaseNode; value: BaseNode })[] }
 ): { schemaName?: string; tableName?: string; tableNode?: BaseNode } => {
-  let tableName: string | undefined, schemaName: string | undefined, tableNode: BaseNode | undefined
+  let tableName: string | undefined
+  let schemaName: string | undefined
+  let tableNode: BaseNode | undefined
   for (const p of obj.properties)
     if (p.type === 'Property') {
       const key = getIdentName(p.key)

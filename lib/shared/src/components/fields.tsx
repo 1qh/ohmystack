@@ -1,5 +1,4 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* oxlint-disable jsx-no-jsx-as-prop */
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 // oxlint-disable promise/prefer-await-to-then
@@ -7,6 +6,7 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 'use client'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-condition */
 import type { AnyFieldApi, FormValidateOrFn, ReactFormExtendedApi } from '@tanstack/react-form'
 import type { LucideIcon } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
@@ -1014,7 +1014,6 @@ const createFieldsModule = ({
       const validators = asyncValidate
         ? {
             onChangeAsync: async ({ value }: { value: string }) => {
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               const error = await asyncValidate(value ?? '')
               return error
             }

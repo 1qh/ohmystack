@@ -1,9 +1,10 @@
+/* eslint-disable no-console */
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /** biome-ignore-all lint/nursery/noFloatingPromises: test hooks may return void or Promise */
 // biome-ignore-all lint/style/noProcessEnv: test env
 // biome-ignore-all lint/suspicious/useAwait: test async
 // biome-ignore-all lint/performance/noDelete: process.env requires delete to truly unset
-/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-parameters */
 import type { ComponentProps } from 'react'
 import type { Identity } from 'spacetimedb'
 import type { z } from 'zod/v4'
@@ -1408,7 +1409,6 @@ describe('bridge functions', () => {
 })
 const BASE36_PATTERN = /^[\da-z]+$/u
 const EXPORT_HOOK_PATTERN = /export\s*\{[^}]*\buse[A-Z]/u
-/* eslint-disable no-console */
 const captureWarns = () => {
   const warns: string[] = []
   const origWarn = console.warn
@@ -7820,7 +7820,6 @@ describe('doctor', () => {
     expect(widenType.count).toBe(1)
   })
 })
-/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
     ? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
@@ -7926,7 +7925,6 @@ describe('Sprint 4 Tier 1', () => {
 })
 describe('Sprint 4 Tier 2', () => {
   test('getFieldErrors infers schema keys and returns runtime field errors from Zod validation', () => {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const schema = object({ email: string().email(), title: string().min(3) })
     const parsed = schema.safeParse({ email: 'invalid', title: '' })
     expect(parsed.success).toBe(false)

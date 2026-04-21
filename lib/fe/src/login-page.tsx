@@ -1,4 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-callbacks, promise/prefer-await-to-then */
+/* eslint-disable no-console */
 'use client'
 import type { ComponentProps } from 'react'
 import { useAuthActions } from '@convex-dev/auth/react'
@@ -19,7 +20,6 @@ const LoginPage = ({
   const onGoogleClick = () => {
     const signInAttempt = signIn('google', { redirectTo })
     signInAttempt.catch((error: unknown) => {
-      // eslint-disable-next-line no-console
       console.error(error)
     })
   }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console,@typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, no-console */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'

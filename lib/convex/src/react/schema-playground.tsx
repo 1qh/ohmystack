@@ -1,7 +1,7 @@
 /* oxlint-disable eslint/complexity */
 'use client'
 import type { ComponentProps } from 'react'
-import SharedSchemaPlayground from '@a/shared/react/schema-playground'
+import SharedSchemaPlayground from '@noboil/shared/react/schema-playground'
 import { endpointsForFactory, extractSchemaFields } from '../schema-utils'
 type PlaygroundProps = Omit<
   ComponentProps<typeof SharedSchemaPlayground>,

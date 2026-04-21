@@ -1,6 +1,6 @@
 'use client'
 import type { ComponentProps } from 'react'
-import { createOfflineIndicator, OrgAvatar, RoleBadge as SharedRoleBadge } from '@a/shared/components/misc'
+import { createOfflineIndicator, OrgAvatar, RoleBadge as SharedRoleBadge } from '@noboil/shared/components/misc'
 import { useSpacetimeDB } from 'spacetimedb/react'
 import type { OrgRole } from '../server/types'
 const useSpacetimeOnline = () => {

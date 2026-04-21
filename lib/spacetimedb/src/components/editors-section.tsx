@@ -1,1 +1,1 @@
-export { default } from '@a/shared/components/editors-section'
+export { default } from '@noboil/shared/components/editors-section'

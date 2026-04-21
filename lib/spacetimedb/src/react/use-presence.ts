@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -39,7 +40,6 @@ const runHeartbeat = ({
     try {
       await heartbeat({ data })
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(
         '[@noboil/spacetimedb] Presence heartbeat failed — will retry on next interval. If this persists, check your SpacetimeDB connection:',
         error

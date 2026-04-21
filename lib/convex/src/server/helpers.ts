@@ -3,7 +3,7 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-depth */
-import type { ErrorData as SharedErrorData } from '@a/shared/server/helpers'
+import type { ErrorData as SharedErrorData } from '@noboil/shared/server/helpers'
 import type { RegisteredQuery } from 'convex/server'
 import type { ZodRawShape } from 'zod/v4'
 import {
@@ -18,7 +18,7 @@ import {
   RUNTIME_FILTER_WARN_THRESHOLD,
   SEVEN_DAYS_MS,
   time as sharedTime
-} from '@a/shared/server/helpers'
+} from '@noboil/shared/server/helpers'
 import { zid } from 'convex-helpers/server/zod4'
 import { ConvexError } from 'convex/values'
 import { nullable, number, object, string } from 'zod/v4'

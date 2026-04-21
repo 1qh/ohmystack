@@ -1,5 +1,5 @@
 'use client'
-import type { CrudOptions, CrudResult } from '@a/shared/react/use-crud'
+import type { CrudOptions, CrudResult } from '@noboil/shared/react/use-crud'
 import { useTable } from 'spacetimedb/react'
 import { useList } from './use-list'
 import { useMut } from './use-mutate'

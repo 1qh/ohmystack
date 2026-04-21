@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import { createCliTheme } from '@a/shared/cli'
+import { createCliTheme } from '@noboil/shared/cli'
 /* oxlint-disable eslint/complexity */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

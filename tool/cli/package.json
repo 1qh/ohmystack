@@ -1,6 +1,6 @@
 {
   "name": "noboil",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Schema-first, zero-boilerplate fullstack. Pick your database.",
   "keywords": [
     "cli",

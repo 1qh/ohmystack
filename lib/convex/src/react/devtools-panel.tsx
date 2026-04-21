@@ -1,10 +1,18 @@
 /* oxlint-disable jsx-no-new-object-as-prop, react-hooks/refs */
-/* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
+/* eslint-disable complexity */
 /* oxlint-disable eslint/complexity */
 /** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
 'use client'
-import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 import { cn } from '@a/ui'
+import {
+  CacheRow,
+  formatTime,
+  MAX_BADGE,
+  POSITION_CLASSES,
+  TabBtn,
+  WaterfallBar
+} from '@noboil/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { DevError, DevMutation, DevSubscription } from './devtools'

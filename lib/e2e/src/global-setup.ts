@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in test setup */
-/* eslint-disable no-console, no-await-in-loop */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-console */
 import type { FunctionReference } from 'convex/server'
 import { config } from '@a/config'
 import { ConvexHttpClient } from 'convex/browser'

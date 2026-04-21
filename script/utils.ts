@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/nursery/noContinue: script */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: ANSI color codes */
-/* eslint-disable no-await-in-loop, no-continue, no-control-regex, @typescript-eslint/prefer-nullish-coalescing */
-/* oxlint-disable no-await-in-loop, no-continue, no-control-regex */
+/* eslint-disable no-await-in-loop, no-continue, no-control-regex */
+/* oxlint-disable no-await-in-loop, no-control-regex */
 import { $, sleep } from 'bun'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -72,7 +72,7 @@ const patchEnv = (entries: [string, string][]) => {
 }
 const patchEnvDefaults = (entries: [string, string][]) => {
   const current = readEnv()
-  for (const [k, v] of entries) if (!current[k]) current[k] = v
+  for (const [k, v] of entries) current[k] ??= v
   writeEnv(current)
 }
 const generateJwtKeys = async () => {

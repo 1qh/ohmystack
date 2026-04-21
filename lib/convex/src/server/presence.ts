@@ -1,4 +1,4 @@
-import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@a/shared/server/presence'
+import { HEARTBEAT_INTERVAL_MS, PRESENCE_TTL_MS } from '@noboil/shared/server/presence'
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { any, object, string } from 'zod/v4'

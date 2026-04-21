@@ -1,5 +1,5 @@
 /* oxlint-disable eslint/complexity, max-depth */
-import type { FactoryCall, SchemaField, SchemaTable } from '@a/shared/schema-utils'
+import type { FactoryCall, SchemaField, SchemaTable } from '@noboil/shared/schema-utils'
 import {
   CACHE_BASE,
   CHILD_BASE,
@@ -11,7 +11,7 @@ import {
   ORG_CRUD_BASE,
   parseObjectFields,
   SINGLETON_BASE
-} from '@a/shared/schema-utils'
+} from '@noboil/shared/schema-utils'
 const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase']
 const { endpointsForFactory, extractSchemaFields } = createSchemaUtils({ wrapperFactories })
 export {

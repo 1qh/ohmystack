@@ -1,4 +1,4 @@
-import { createGuardApi } from '@a/shared/guard'
+import { createGuardApi } from '@noboil/shared/guard'
 const guardApi = createGuardApi({
   label: 'api',
   onError: msg => {

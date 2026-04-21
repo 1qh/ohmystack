@@ -62,8 +62,7 @@ interface SetupConfig {
   middleware?: Middleware[]
 }
 interface SpacetimeDbLike {
-  // eslint-disable-next-line @typescript-eslint/method-signature-style
-  reducer(...args: unknown[]): unknown
+  reducer: (...args: unknown[]) => unknown
 }
 interface ZodLike {
   shape: Record<string, unknown>
@@ -1260,7 +1259,7 @@ const noboil = ({
     }
   }
   const spacetimedb = raw.schema(rawTables as never)
-  const s = setupCrud(spacetimedb)
+  const s = setupCrud(spacetimedb as never)
   const schemas = buildBsSchemas(ctx)
   if (fileNs) schemas.file = fileNs
   if (oKeys(schemas).length > 0)

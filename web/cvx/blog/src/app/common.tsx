@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, @typescript-eslint/strict-void-return */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
 import type { FunctionReturnType } from 'convex/server'
@@ -71,10 +71,7 @@ const Delete = ({ id, onOptimisticRemove }: { id: Blog['_id']; onOptimisticRemov
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel data-testid='delete-cancel'>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            data-testid='delete-confirm'
-            // eslint-disable-next-line @typescript-eslint/strict-void-return
-            onClick={async () => execute({ id })}>
+          <AlertDialogAction data-testid='delete-confirm' onClick={async () => execute({ id })}>
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

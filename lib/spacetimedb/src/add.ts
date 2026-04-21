@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '@a/shared/cli'
+import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '@noboil/shared/cli'
 // oxlint-disable no-await-expression-member
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'

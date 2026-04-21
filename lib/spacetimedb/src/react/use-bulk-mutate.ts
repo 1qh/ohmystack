@@ -3,7 +3,7 @@ import {
   collectSettled,
   resolveBulkError as resolveSharedBulkError,
   useBulkMutate as useSharedBulkMutate
-} from '@a/shared/react/use-bulk-mutate'
+} from '@noboil/shared/react/use-bulk-mutate'
 import { BULK_MAX } from '../constants'
 import { defaultOnError } from './use-mutate'
 interface BulkMutateToast {

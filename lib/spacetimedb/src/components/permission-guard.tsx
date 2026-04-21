@@ -1,6 +1,6 @@
 'use client'
 import type { ComponentProps, ReactNode } from 'react'
-import SharedPermissionGuard from '@a/shared/components/permission-guard'
+import SharedPermissionGuard from '@noboil/shared/components/permission-guard'
 import type { OrgRole } from '../server/types'
 const PermissionGuard = ({
   allowedRoles,

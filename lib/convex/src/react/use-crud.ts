@@ -1,5 +1,5 @@
 'use client'
-import type { CrudOptions, CrudResult } from '@a/shared/react/use-crud'
+import type { CrudOptions, CrudResult } from '@noboil/shared/react/use-crud'
 import type { FunctionReference, FunctionReturnType } from 'convex/server'
 import { useMutation } from 'convex/react'
 import { useList } from './use-list'

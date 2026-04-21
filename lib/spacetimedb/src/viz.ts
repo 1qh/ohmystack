@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, max-depth */
-import type { ChildInfo, TableInfo } from '@a/shared/viz'
-import { bold, dim, isSchemaFile, red } from '@a/shared/viz'
+/* eslint-disable no-console */
+/* eslint-disable max-depth */
+import type { ChildInfo, TableInfo } from '@noboil/shared/viz'
+import { bold, dim, isSchemaFile, red } from '@noboil/shared/viz'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 const schemaMarkers = ['schema(', 'table(', 't.']

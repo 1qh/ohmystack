@@ -1,5 +1,6 @@
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { Button } from '@a/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@a/ui/card'
@@ -42,7 +43,6 @@ const JoinPage = ({ params }: { params: Promise<{ slug: string }> }) => {
     resetOnSuccess: true,
     schema: joinRequest
   })
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!orgs) return <Skeleton className='mx-auto h-64 max-w-md' />
   if (!org) return <div className='text-center text-muted-foreground'>Organization not found</div>
   if (membership) {

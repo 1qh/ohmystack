@@ -266,8 +266,6 @@ const createDefineSteps = <TFields,>(adapters: DefineStepsAdapters<TFields>) => 
         if (!dirty) return
         const h = (e: BeforeUnloadEvent) => {
           e.preventDefault()
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          e.returnValue = ''
         }
         window.addEventListener('beforeunload', h)
         return () => window.removeEventListener('beforeunload', h)

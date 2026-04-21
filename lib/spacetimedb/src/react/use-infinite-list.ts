@@ -1,5 +1,5 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ListSort, ListWhere, Rec } from './list-utils'
 import { matchW } from '../server/helpers'

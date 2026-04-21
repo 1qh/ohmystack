@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 interface ComparisonOp<V> {
   $between?: [V, V]
   $gt?: V
@@ -45,7 +46,6 @@ const generateToken = () => {
   return token.slice(0, TOKEN_LENGTH)
 }
 const log = (level: 'debug' | 'error' | 'info' | 'warn', msg: string, data?: Record<string, unknown>) => {
-  // eslint-disable-next-line no-console
   console[level](JSON.stringify({ level, msg, ts: Date.now(), ...data }))
 }
 const isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === 'object' && !Array.isArray(v)

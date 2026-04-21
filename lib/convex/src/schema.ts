@@ -1,5 +1,5 @@
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import { validateSchemas } from '@a/shared/zod'
+import { validateSchemas } from '@noboil/shared/zod'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, object, string } from 'zod/v4'
 import type { BaseSchema, OrgDefSchema, OrgSchema, OwnedSchema, SchemaBrand, SingletonSchema } from './server/types'

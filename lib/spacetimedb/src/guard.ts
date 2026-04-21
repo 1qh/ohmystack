@@ -1,4 +1,4 @@
-import { createGuardApi } from '@a/shared/guard'
+import { createGuardApi } from '@noboil/shared/guard'
 import { err } from './server/helpers'
 const guardApi = createGuardApi({
   label: 'module',

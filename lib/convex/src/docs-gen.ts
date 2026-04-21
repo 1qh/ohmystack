@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import { extractJSDoc, green, processEntryPoint, resolveReExports } from '@a/shared/docs-gen'
-import { bold, dim, isSchemaFile, red } from '@a/shared/viz'
+import { extractJSDoc, green, processEntryPoint, resolveReExports } from '@noboil/shared/docs-gen'
+import { bold, dim, isSchemaFile, red } from '@noboil/shared/viz'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { FactoryCall } from './check'

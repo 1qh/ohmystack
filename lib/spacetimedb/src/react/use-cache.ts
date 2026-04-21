@@ -1,7 +1,8 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
+/* eslint-disable no-console */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { trackCacheAccess } from './devtools'
 interface FireLoadCtx<A extends Record<string, unknown>> {
@@ -34,7 +35,6 @@ const fireLoad = async <A extends Record<string, unknown>>({
   try {
     await load(args)
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('[@noboil/spacetimedb] Cache load failed (table=%s, args=%o):', table, args, error)
   } finally {
     loadingRef.current = false

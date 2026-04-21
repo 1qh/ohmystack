@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @eslint-react/no-unnecessary-use-callback */
 import type { PaginatedQueryArgs, PaginatedQueryReference } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import { useCallback, useEffect, useRef } from 'react'
@@ -28,7 +29,6 @@ const useInfiniteList = <F extends PaginatedQueryReference>(query: F, ...rest: I
   const isLoadingMore = status === 'LoadingMore'
   const canLoad = status === 'CanLoadMore'
   const pageSize = opts?.pageSize ?? DEFAULT_PAGE_SIZE
-  // eslint-disable-next-line @eslint-react/no-unnecessary-use-callback
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries

@@ -2,17 +2,18 @@
 /** biome-ignore-all lint/a11y/useSemanticElements: dropzone requires div role button */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 // oxlint-disable promise/prefer-await-to-then, next/no-img-element
-/* eslint-disable complexity, no-await-in-loop, @next/next/no-img-element, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable complexity, no-await-in-loop, @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 'use client'
+/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/strict-void-return */
 import type { AnyFieldApi } from '@tanstack/react-form'
 import type { FunctionReference } from 'convex/server'
 import type { ComponentProps, ReactNode } from 'react'
-import { compress, fmt, isImgType, parseAccept } from '@a/shared/components/file-utils'
 import { cn } from '@a/ui'
 import { Field, FieldError, FieldLabel } from '@a/ui/field'
+import { compress, fmt, isImgType, parseAccept } from '@noboil/shared/components/file-utils'
 import { useQuery } from 'convex/react'
 import { FileIcon, ImageIcon, Upload, X } from 'lucide-react'
 import { createContext, use, useCallback, useMemo } from 'react'
@@ -120,7 +121,6 @@ const FileFieldImpl = ({
     disabled: disabled ?? (isUploading || !canAdd),
     maxSize,
     multiple: Boolean(multiple),
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/strict-void-return
     onDrop,
     onDropRejected: r => {
       const code = r[0]?.errors[0]?.code

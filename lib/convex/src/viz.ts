@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import type { ChildInfo, TableInfo } from '@a/shared/viz'
-import { bold, dim, findBracketEnd, isSchemaFile, printSummary, red } from '@a/shared/viz'
+import type { ChildInfo, TableInfo } from '@noboil/shared/viz'
+import { bold, dim, findBracketEnd, isSchemaFile, printSummary, red } from '@noboil/shared/viz'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']

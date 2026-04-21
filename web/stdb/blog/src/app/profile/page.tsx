@@ -1,8 +1,8 @@
 /* oxlint-disable jsx-no-new-object-as-prop, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
-/* eslint-disable @typescript-eslint/strict-void-return */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
+/* eslint-disable @typescript-eslint/strict-void-return */
 import type { ChangeEvent } from 'react'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { cn } from '@a/ui'

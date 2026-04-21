@@ -7,4 +7,4 @@ export {
   ONE_YEAR_SECONDS,
   sleep,
   UNDO_MS
-} from '@a/shared/constants'
+} from '@noboil/shared/constants'

@@ -1,13 +1,12 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use server'
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/prefer-nullish-coalescing */
 import type { FunctionReference } from 'convex/server'
 import { convexAuthNextjsToken } from '@convex-dev/auth/nextjs/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { fetchQuery } from 'convex/nextjs'
 import { cookies } from 'next/headers'
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
-/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 const isTestMode = () =>
   Boolean(
     process.env.PLAYWRIGHT || process.env.NEXT_PUBLIC_PLAYWRIGHT || process.env.TEST_MODE || process.env.CONVEX_TEST_MODE

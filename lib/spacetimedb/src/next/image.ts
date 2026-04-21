@@ -1,9 +1,9 @@
 // biome-ignore-all lint/suspicious/useAwait: async without await
 'use server'
 /* eslint-disable @typescript-eslint/require-await */
-import type { ProcessOptions } from '@a/shared/next/image'
+import type { ProcessOptions } from '@noboil/shared/next/image'
 import type { NextRequest } from 'next/server'
-import { applyTransforms, formatToMime, isImageType } from '@a/shared/next/image'
+import { applyTransforms, formatToMime, isImageType } from '@noboil/shared/next/image'
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'
 interface ImageRouteConfig {

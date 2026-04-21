@@ -4,7 +4,7 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 'use client'
-import { createFieldsModule } from '@a/shared/components/fields'
+import { createFieldsModule } from '@noboil/shared/components/fields'
 import type { Api } from '../react/form'
 import { unwrapZod } from '../zod'
 import FileFieldImpl from './file-field'

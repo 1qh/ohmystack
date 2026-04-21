@@ -1,4 +1,5 @@
-/* eslint-disable complexity, @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/max-params */
+/* eslint-disable complexity, @typescript-eslint/max-params */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import type { GenericDataModel, GenericMutationCtx, GenericQueryCtx } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { customCtx } from 'convex-helpers/server/customFunctions'

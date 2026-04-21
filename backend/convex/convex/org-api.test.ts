@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 /* oxlint-disable promise/prefer-await-to-then */
 /** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
 import { createTestContext } from '@noboil/convex/test'

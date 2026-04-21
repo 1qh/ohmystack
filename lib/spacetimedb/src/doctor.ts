@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, max-depth */
-import { createCliTheme } from '@a/shared/cli'
+/* eslint-disable no-console */
+/* eslint-disable max-depth */
+import { createCliTheme } from '@noboil/shared/cli'
 /* oxlint-disable eslint/complexity */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'

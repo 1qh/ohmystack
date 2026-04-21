@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 import type { FunctionReference, OptionalRestArgs } from 'convex/server'
 import { useAction, useQuery } from 'convex/react'
 import { useCallback, useEffect, useRef, useState } from 'react'

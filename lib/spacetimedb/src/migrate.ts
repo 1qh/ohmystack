@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import { createCliTheme, hasFlag, readArgOrEqFlag } from '@a/shared/cli'
+import { createCliTheme, hasFlag, readArgOrEqFlag } from '@noboil/shared/cli'
 /* oxlint-disable eslint/complexity */
 import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'

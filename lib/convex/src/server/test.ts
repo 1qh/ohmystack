@@ -3,7 +3,7 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
 /** biome-ignore-all lint/complexity/useMaxParams: test helpers */
 /* eslint-disable no-await-in-loop */
-/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/max-params */
 /* eslint-disable max-depth */
 import type { GenericDataModel, MutationBuilder, QueryBuilder } from 'convex/server'
 import { v } from 'convex/values'
@@ -681,7 +681,7 @@ const makeOrgTestCrud = <DM extends GenericDataModel>(config: OrgTestCrudConfig<
   const { acl, aclFrom, cascade, mutation: rawMut, query: rawQry, table } = config
   const mutation = rawMut as unknown as (opts: Rec) => Rec
   const query = rawQry as unknown as (opts: Rec) => Rec
-  const hasAcl = acl || Boolean(aclFrom)
+  const hasAcl = acl ?? Boolean(aclFrom)
   const createAsUser = mutation({
     args: { data: v.any(), orgId: v.id('org'), userId: v.id('users') },
     handler: async (ctx: { db: DbLike }, { data, orgId, userId }: { data: Rec; orgId: string; userId: string }) => {

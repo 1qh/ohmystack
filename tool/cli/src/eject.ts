@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, complexity */
+/* eslint-disable complexity, no-console */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
 interface EjectContext {
@@ -36,7 +36,7 @@ const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
 const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const HELP = `\n${bold('noboil eject')} — inline noboil library locally\n\n${bold('Usage:')}\n  noboil eject [--dry-run]\n\n${bold('Options:')}\n  --dry-run      ${dim('Show what would change without writing files')}\n  --help, -h     ${dim('Show this help')}\n`
-const SHARED_SPECIFIER = '@a/shared'
+const SHARED_SPECIFIER = '@noboil/shared'
 const LOCAL_PACKAGE = '@local/noboil'
 const sharedExtensionCandidates = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']
 const isIgnoredPath = (filePath: string) => {
@@ -252,7 +252,7 @@ const prepareContext = (cwd: string): EjectContext => {
     const workspaceShared = join(cwd, 'lib', 'shared', 'src')
     if (existsSync(nodeModulesShared)) sharedRoot = nodeModulesShared
     else if (existsSync(workspaceShared)) sharedRoot = workspaceShared
-    else fail('Shared source missing. Install `@a/shared` or include lib/shared.')
+    else fail('Shared source missing. Install `@noboil/shared` or include lib/shared.')
     if (sharedRoot) sharedFiles = buildSharedDependencySet(sharedRoot, sharedSpecifiers)
   }
   return {

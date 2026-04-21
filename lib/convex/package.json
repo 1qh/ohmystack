@@ -1,6 +1,6 @@
 {
   "name": "@noboil/convex",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Schema-first, zero-boilerplate fullstack with Convex.",
   "keywords": [
     "convex",
@@ -56,17 +56,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@a/ui": "workspace:*",
     "browser-image-compression": "latest",
     "next-navigation-guard": "latest",
     "react-dropzone": "latest"
   },
-  "devDependencies": {
-    "@a/shared": "workspace:*"
-  },
   "peerDependencies": {
     "@auth/core": "0.41",
     "@convex-dev/auth": "latest",
+    "@noboil/shared": "*",
     "@stepperize/react": "latest",
     "@tanstack/react-form": "latest",
     "convex": "latest",

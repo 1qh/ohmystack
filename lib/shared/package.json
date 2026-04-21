@@ -1,6 +1,16 @@
 {
-  "name": "@a/shared",
-  "private": true,
+  "name": "@noboil/shared",
+  "version": "0.0.1",
+  "description": "Shared utilities for @noboil/convex and @noboil/spacetimedb.",
+  "homepage": "https://github.com/1qh/noboil",
+  "bugs": "https://github.com/1qh/noboil/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1qh/noboil.git",
+    "directory": "lib/shared"
+  },
+  "license": "MIT",
+  "author": "1qh",
   "type": "module",
   "exports": {
     "./cli": "./src/cli.ts",
@@ -23,12 +33,21 @@
     "./react/devtools-panel": "./src/react/devtools-panel.tsx",
     "./react/schema-playground": "./src/react/schema-playground.tsx"
   },
+  "files": [
+    "src"
+  ],
   "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "bun run build",
+    "postpublish": "bunx pm4ai@latest cleanup",
     "test": "bun test"
   },
-  "dependencies": {
-    "@a/ui": "workspace:*",
+  "peerDependencies": {
+    "@a/ui": "*",
     "next": "latest",
-    "sharp": "latest"
+    "react": "latest",
+    "react-dom": "latest",
+    "sharp": "latest",
+    "zod": "latest"
   }
 }

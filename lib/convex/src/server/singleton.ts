@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { number } from 'zod/v4'
 import type { DbLike, Mb, MutCtx, Qb, Rec, SingletonCrudResult, SingletonOptions } from './types'
@@ -61,7 +60,8 @@ const makeSingletonCrud = <S extends ZodRawShape>({
       const now = time()
       const id = await dbInsert(c.db, table, { ...parsed.data, userId: c.user._id, ...now })
       const doc = await c.db.get(id)
-      return addUrls({ doc: doc as Rec, fileFields: fileFs, storage: c.storage })
+      if (!doc) return err('NOT_FOUND')
+      return addUrls({ doc, fileFields: fileFs, storage: c.storage })
     })
   })
   return typed({ get, upsert })

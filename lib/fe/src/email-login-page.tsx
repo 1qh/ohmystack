@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use client'
 import type { ComponentProps } from 'react'
 import { Input } from '@a/ui/input'
@@ -45,7 +46,6 @@ const EmailLoginPage = ({
           })
           // oxlint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks
           .catch((signInError: unknown) => {
-            // eslint-disable-next-line no-console
             console.error(signInError)
             let m: string
             if (signInError instanceof ConvexError && signInError.data === 'INVALID_PASSWORD')

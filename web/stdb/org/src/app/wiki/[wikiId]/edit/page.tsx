@@ -1,8 +1,8 @@
 /* oxlint-disable unicorn/no-useless-promise-resolve-reject, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
-/* eslint-disable @typescript-eslint/strict-void-return */
 /** biome-ignore-all lint/suspicious/useAwait: sync reducers wrapped as promises */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
+/* eslint-disable @typescript-eslint/strict-void-return */
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { sameIdentity } from '@a/fe/utils'

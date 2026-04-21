@@ -1,6 +1,6 @@
+'use client'
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-'use client'
 import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
 import { useMutation, useQuery } from 'convex/react'

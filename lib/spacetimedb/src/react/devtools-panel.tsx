@@ -1,11 +1,19 @@
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
 /** biome-ignore-all lint/nursery/noRedundantDefaultExport: backward-compat alias */
-/* eslint-disable complexity, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
+/* eslint-disable complexity */
 /* oxlint-disable eslint/complexity, react-hooks/refs */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
-import { CacheRow, formatTime, MAX_BADGE, POSITION_CLASSES, TabBtn, WaterfallBar } from '@a/shared/react/devtools-panel'
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/refs */
 import { cn } from '@a/ui'
+import {
+  CacheRow,
+  formatTime,
+  MAX_BADGE,
+  POSITION_CLASSES,
+  TabBtn,
+  WaterfallBar
+} from '@noboil/shared/react/devtools-panel'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { DevConnection, DevError, DevMutation, DevSubscription } from './devtools'

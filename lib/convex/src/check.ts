@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-/* eslint-disable complexity */
 /* eslint-disable no-console */
-import { createCliTheme } from '@a/shared/cli'
+/* eslint-disable complexity */
+import { createCliTheme } from '@noboil/shared/cli'
 /* oxlint-disable eslint/complexity, max-depth */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
