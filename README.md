@@ -212,29 +212,22 @@ noboil/
     stdb/             4 SpacetimeDB demo web apps
   doc/                Documentation site (fumadocs)
   lib/
-    convex/           @noboil/convex library (published)
-    spacetimedb/      @noboil/spacetimedb library (published)
-    shared/           internal shared code (not published)
     fe/               shared frontend utilities (Next.js + auth shells)
     e2e/              shared Playwright utilities
   backend/
     convex/           Convex backend (schema + functions)
     spacetimedb/      SpacetimeDB backend (module + bindings)
   readonly/ui/        shared shadcn components (synced from cnsync, read-only)
-  tool/cli/           CLI — bunx noboil@latest init
+  tool/cli/           noboil — single published package (CLI + convex + spacetimedb + shared)
 ```
 
-## Packages
+## Package
 
-| Package               | Description                  |
-| --------------------- | ---------------------------- |
-| `noboil`              | CLI — scaffold a new project |
-| `@noboil/convex`      | Convex library               |
-| `@noboil/spacetimedb` | SpacetimeDB library          |
+A single published package `noboil` ships the CLI, Convex bindings, SpacetimeDB bindings, and shared utilities. Subpath exports (`noboil/convex/*`, `noboil/spacetimedb/*`) or conditional exports (`noboil/components`, `noboil/server`, etc. resolved per `customConditions`) give you both ergonomic and explicit import styles.
 
 ## Requirements
 
-A TypeScript-capable bundler (Vite, Next.js, esbuild, etc.) is required. Library package.json `exports` point directly to `.ts` source files — this is intentional so consumers get full type inference without a separate build step.
+Bun ≥ 1.3. TypeScript ≥ 5.0 with `moduleResolution: "bundler"` or `"nodenext"` (required for `customConditions`). Next.js, Vite, or any ESM bundler.
 
 ## Docs
 
