@@ -87,7 +87,6 @@ export default defineConfig({
     ],
     ignores: [...backendLintIgnoreFiles]
   },
-  ignores: ['web/*/*/dev.ts', 'doc/dev.ts'],
   oxlint: {
     overrides: [
       {
