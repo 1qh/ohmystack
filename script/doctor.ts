@@ -3,7 +3,7 @@
 import { $ } from 'bun'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { config } from '../noboil.config'
+import { config } from '@a/config'
 import { box, c, composeRunning, fail, hasCmd, hasDocker, log, ok, parseArgs, portFree, root, warn } from './utils'
 interface CheckResult {
   hint?: string

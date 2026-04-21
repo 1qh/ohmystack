@@ -1,4 +1,4 @@
-import { infraVars, portVars } from '../noboil.config'
+import { infraVars, portVars } from '@a/config'
 import { patchEnv } from './utils'
 const emit = () => {
   const entries = [...Object.entries(portVars()), ...Object.entries(infraVars())].map(

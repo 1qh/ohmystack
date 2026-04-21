@@ -1,4 +1,4 @@
-import { config } from '../noboil.config'
+import { config } from '@a/config'
 import { run } from './utils'
 await run('bun --cwd lib/convex test', { quiet: false })
 await run('bun --cwd lib/spacetimedb test', { quiet: false })

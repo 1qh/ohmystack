@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "@a/e2e": "workspace:*"
+  },
+  "dependencies": {
+    "@a/config": "workspace:*"
   }
 }

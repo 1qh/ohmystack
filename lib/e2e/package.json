@@ -19,5 +19,8 @@
   },
   "bin": {
     "nb-env": "./src/bin/nb-env.ts"
+  },
+  "dependencies": {
+    "@a/config": "workspace:*"
   }
 }

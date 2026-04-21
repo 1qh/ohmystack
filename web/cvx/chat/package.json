@@ -10,6 +10,7 @@
     "typecheck": "nb-env next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@a/config": "workspace:*",
     "@ai-sdk/react": "latest",
     "ai": "latest",
     "react-intersection-observer": "latest"

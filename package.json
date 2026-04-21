@@ -69,5 +69,8 @@
     "msw",
     "sharp",
     "simple-git-hooks"
-  ]
+  ],
+  "dependencies": {
+    "@a/config": "workspace:*"
+  }
 }

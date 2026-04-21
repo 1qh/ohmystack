@@ -6,7 +6,7 @@
 import { sleep, spawn } from 'bun'
 import { existsSync, mkdirSync, openSync } from 'node:fs'
 import { join } from 'node:path'
-import { allAppPorts, config } from '../noboil.config'
+import { allAppPorts, config } from '@a/config'
 import { box, c, log, ok, portFree, root, warn } from './utils'
 interface App {
   dir: string

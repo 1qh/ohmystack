@@ -3,7 +3,7 @@
 import type { Page } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { config } from '../../../noboil.config'
+import { config } from '@a/config'
 const DEFAULT_HTTP_URL =
   process.env.SPACETIMEDB_URI?.replace('ws://', 'http://').replace('wss://', 'https://') ??
   `http://localhost:${config.ports.stdb}`

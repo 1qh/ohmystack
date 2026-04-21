@@ -19,7 +19,7 @@
 import type { Browser, BrowserContext, Page } from 'playwright'
 import { join } from 'node:path'
 import { chromium } from 'playwright'
-import { appPort, urls } from '../noboil.config'
+import { appPort, urls } from '@a/config'
 interface AppSpec {
   authedRoutes?: string[]
   devLog?: string

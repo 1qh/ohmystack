@@ -1,4 +1,4 @@
-import { config } from '../noboil.config'
+import { config } from '@a/config'
 import { run } from './utils'
 const args = process.argv.slice(2).join(' ')
 await run(

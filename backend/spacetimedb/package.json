@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@a/config": "workspace:*",
     "@noboil/spacetimedb": "workspace:*",
     "@t3-oss/env-core": "latest",
     "ky": "latest",

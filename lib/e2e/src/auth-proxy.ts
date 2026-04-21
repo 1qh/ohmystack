@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: env fallbacks */
 /** biome-ignore-all lint/nursery/noUndeclaredEnvVars: e2e proxy env vars */
 import { serve } from 'bun'
-import { config, urls } from '../../../noboil.config'
+import { config, urls } from '@a/config'
 const u = urls()
 const BACKEND_API = process.env.CONVEX_URL ?? u.convexApi
 const BACKEND_WS = process.env.CONVEX_WS_URL ?? u.convexApi.replace('http://', 'ws://')

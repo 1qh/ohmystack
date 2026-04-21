@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@a/be-convex": "workspace:*",
+    "@a/config": "workspace:*",
     "@a/ui": "workspace:*",
     "@ai-sdk/react": "latest",
     "@convex-dev/auth": "latest",

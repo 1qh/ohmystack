@@ -5,7 +5,7 @@ import { ConvexAuthNextjsProvider as AuthProvider } from '@convex-dev/auth/nextj
 import { FileApiProvider } from '@noboil/convex/components'
 import { ConvexProvider as BaseProvider, ConvexReactClient as Client } from 'convex/react'
 import { NavigationGuardProvider } from 'next-navigation-guard'
-import { urls } from '../../../noboil.config'
+import { urls } from '@a/config'
 import env from './env'
 interface ConvexProviderProps {
   children: ReactNode

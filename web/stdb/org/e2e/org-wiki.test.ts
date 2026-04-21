@@ -5,7 +5,7 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import type { PaginatedResponse, WikiResponse } from './helpers'
-import { appPort } from '../../../../noboil.config'
+import { appPort } from '@a/config'
 import { api, createTestOrg, ensureTestUser, login, makeOrgTestUtils, tc } from './helpers'
 const APP_URL = `http://localhost:${appPort('stdb-org')}`
 const testPrefix = `e2e-org-wiki-${Date.now()}`

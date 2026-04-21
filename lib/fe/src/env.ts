@@ -2,7 +2,7 @@
 import { createEnv } from '@t3-oss/env-nextjs'
 import { vercel } from '@t3-oss/env-nextjs/presets-zod'
 import { literal, string, url, enum as zenum } from 'zod/v4'
-import { config, urls } from '../../../noboil.config'
+import { config, urls } from '@a/config'
 const u = urls()
 export default createEnv({
   client: {

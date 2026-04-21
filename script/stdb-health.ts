@@ -1,5 +1,5 @@
 /* oxlint-disable no-process-exit */
-import { config } from '../noboil.config'
+import { config } from '@a/config'
 const r = await fetch(`http://localhost:${config.ports.stdb}/v1/ping`).catch(() => null)
 if (!r?.ok) {
   process.stderr.write('SpacetimeDB not healthy\n')

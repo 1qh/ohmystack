@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 /* oxlint-disable no-await-in-loop, no-process-exit, no-immediate-mutation */
 import { $ } from 'bun'
-import { config, urls } from '../noboil.config'
+import { config, urls } from '@a/config'
 import { emit } from './emit-env'
 import {
   box,

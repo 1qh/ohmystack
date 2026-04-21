@@ -1,5 +1,5 @@
 /* oxlint-disable no-process-exit */
-import { config, urls } from '../noboil.config'
+import { config, urls } from '@a/config'
 import { emit } from './emit-env'
 import { box, c, log, ok, parseArgs, patchEnv, run, step, waitHealthy, warn } from './utils'
 const flags = parseArgs(process.argv.slice(2))

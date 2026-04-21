@@ -3,7 +3,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */
 /** biome-ignore-all lint/performance/useTopLevelRegex: test helper */
-import { config } from '../../../noboil.config'
+import { config } from '@a/config'
 interface HttpCtx {
   baseHttpUrl: string
   moduleName: string
@@ -145,7 +145,7 @@ const unwrapOption = (v: unknown): unknown => {
     if (v[0] === 1) return
   }
   if (Array.isArray(v) && v.length === 1) return v[0]
-  if (v && typeof v === 'object' && 'some' in v) return (v as { some: unknown }).some
+  if (v && typeof v === 'object' && 'some' in v) return v.some
   if (v && typeof v === 'object' && 'none' in v) return
   return v
 }
@@ -156,8 +156,7 @@ const stripHexPrefix = (v: unknown): unknown => {
 const str = (v: unknown): string => {
   if (typeof v === 'string') return v
   if (typeof v === 'number') return `${v}`
-  if (typeof v === 'object' && v !== null && '__identity__' in v)
-    return String((v as { __identity__: unknown }).__identity__)
+  if (typeof v === 'object' && v !== null && '__identity__' in v) return String(v.__identity__)
   return ''
 }
 const normalizeRow = (row: Record<string, unknown>): NormalizedRow => {

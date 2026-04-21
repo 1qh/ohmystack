@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noProcessEnv: env detection in config */
 import { defineConfig, devices } from '@playwright/test'
 import { basename, dirname } from 'node:path'
-import { appPort } from '../../../noboil.config'
+import { appPort } from '@a/config'
 interface PlaywrightOptions {
   port?: number
   webServerUrl?: string
