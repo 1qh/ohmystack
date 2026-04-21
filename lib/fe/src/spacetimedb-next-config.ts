@@ -21,6 +21,7 @@ const createNextConfig = ({ experimental, imageDomains, imgSrc }: CreateNextConf
     experimental,
     imageDomains,
     imgSrc,
+    noboilCondition: 'noboil-spacetimedb',
     serverExternalPackages: ['spacetimedb/server']
   })
 export { createNextConfig }

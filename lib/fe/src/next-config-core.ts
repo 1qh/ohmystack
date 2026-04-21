@@ -7,6 +7,7 @@ interface CreateNextConfigOptions {
 }
 interface CreateNextConfigWithCspOptions extends CreateNextConfigOptions {
   csp: CspOptions
+  noboilCondition?: 'noboil-convex' | 'noboil-spacetimedb'
   serverExternalPackages?: string[]
 }
 interface CspOptions {
@@ -19,10 +20,19 @@ const createNextConfigWithCsp = ({
   experimental,
   imageDomains,
   imgSrc,
+  noboilCondition,
   serverExternalPackages
 }: CreateNextConfigWithCspOptions): NextConfig => ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
+  ...(noboilCondition === 'noboil-spacetimedb' && {
+    turbopack: { resolveConditions: ['noboil-spacetimedb', '...'] } as NextConfig['turbopack'],
+    webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
+      config.resolve ??= {}
+      config.resolve.conditionNames = ['noboil-spacetimedb', '...', 'default']
+      return config
+    }) as NextConfig['webpack']
+  }),
   headers: () => [
     {
       headers: [

@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-// oxlint-disable no-await-expression-member
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '../shared/cli'
