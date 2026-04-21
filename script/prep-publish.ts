@@ -8,6 +8,22 @@ import { dirname, relative } from 'node:path'
 const REPO = '/Users/o/z/noboil'
 const PKG = `${REPO}/tool/cli`
 const STAGING = `${REPO}/node_modules/.publish-staging/noboil`
+const UI_IMPORT_RE = /(from\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu
+const UI_DYNAMIC_RE = /(import\s*\(\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu
+const LEADING_SLASH = /^\//u
+const resolveUiSub = (sub: string): string => {
+  if (!sub) return '/lib/utils'
+  const cleaned = sub.replace(LEADING_SLASH, '')
+  if (cleaned === 'globals.css') return '/styles/globals.css'
+  if (
+    cleaned.startsWith('components/') ||
+    cleaned.startsWith('hooks/') ||
+    cleaned.startsWith('lib/') ||
+    cleaned.startsWith('styles/')
+  )
+    return `/${cleaned}`
+  return `/components/${cleaned}`
+}
 console.log('prep-publish: staging at', STAGING)
 if (existsSync(STAGING)) rmSync(STAGING, { force: true, recursive: true })
 mkdirSync(STAGING, { recursive: true })
@@ -24,13 +40,13 @@ for (const rel of files) {
   const fromDir = dirname(abs)
   const orig = await file(abs).text()
   const rewrite = (_m: string, prefix: string, quote: string, sub = '') => {
-    const targetAbs = `${srcRoot}/ui${sub || '/index'}`
+    const targetAbs = `${srcRoot}/ui${resolveUiSub(sub)}`
     let relPath = relative(fromDir, targetAbs)
     if (!relPath.startsWith('.')) relPath = `./${relPath}`
     return `${prefix}${quote}${relPath}${quote}`
   }
-  let next = orig.replaceAll(/(from\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu, rewrite)
-  next = next.replaceAll(/(import\s*\(\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu, rewrite)
+  let next = orig.replaceAll(UI_IMPORT_RE, rewrite)
+  next = next.replaceAll(UI_DYNAMIC_RE, rewrite)
   if (next !== orig) {
     touched += 1
     await write(abs, next)

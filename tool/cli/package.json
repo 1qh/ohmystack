@@ -31,6 +31,50 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./components": {
+      "noboil-spacetimedb": "./src/spacetimedb/components/index.ts",
+      "default": "./src/convex/components/index.ts"
+    },
+    "./react": {
+      "noboil-spacetimedb": "./src/spacetimedb/react/index.ts",
+      "default": "./src/convex/react/index.ts"
+    },
+    "./server": {
+      "noboil-spacetimedb": "./src/spacetimedb/server/index.ts",
+      "default": "./src/convex/server/index.ts"
+    },
+    "./schema": {
+      "noboil-spacetimedb": "./src/spacetimedb/schema.ts",
+      "default": "./src/convex/schema.ts"
+    },
+    "./zod": {
+      "noboil-spacetimedb": "./src/spacetimedb/zod.ts",
+      "default": "./src/convex/zod.ts"
+    },
+    "./retry": {
+      "noboil-spacetimedb": "./src/spacetimedb/retry.ts",
+      "default": "./src/convex/retry.ts"
+    },
+    "./seed": {
+      "noboil-spacetimedb": "./src/spacetimedb/seed.ts",
+      "default": "./src/convex/seed.ts"
+    },
+    "./eslint": {
+      "noboil-spacetimedb": "./src/spacetimedb/eslint.ts",
+      "default": "./src/convex/eslint.ts"
+    },
+    "./next": {
+      "noboil-spacetimedb": "./src/spacetimedb/next/index.ts",
+      "default": "./src/convex/next/index.ts"
+    },
+    "./test": {
+      "noboil-spacetimedb": "./src/spacetimedb/server/test.ts",
+      "default": "./src/convex/server/test.ts"
+    },
+    "./test/discover": {
+      "noboil-spacetimedb": "./src/spacetimedb/server/test-discover.ts",
+      "default": "./src/convex/server/test-discover.ts"
+    },
     "./convex": "./src/convex/index.ts",
     "./convex/server": "./src/convex/server/index.ts",
     "./convex/zod": "./src/convex/zod.ts",
@@ -69,21 +113,54 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "latest",
+    "@radix-ui/react-use-controllable-state": "latest",
+    "@rive-app/react-webgl2": "latest",
+    "@stepperize/react": "latest",
+    "@streamdown/cjk": "latest",
+    "@streamdown/code": "latest",
+    "@streamdown/math": "latest",
+    "@streamdown/mermaid": "latest",
+    "@tanstack/react-form": "latest",
+    "@xyflow/react": "latest",
+    "ai": "latest",
+    "ansi-to-react": "latest",
     "browser-image-compression": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "cmdk": "latest",
+    "date-fns": "latest",
+    "embla-carousel-react": "latest",
+    "input-otp": "latest",
+    "lucide-react": "latest",
+    "media-chrome": "latest",
+    "motion": "latest",
+    "nanoid": "latest",
     "next-navigation-guard": "latest",
-    "react-dropzone": "latest"
+    "next-themes": "latest",
+    "react-day-picker": "latest",
+    "react-dropzone": "latest",
+    "react-jsx-parser": "latest",
+    "react-resizable-panels": "latest",
+    "recharts": "latest",
+    "sharp": "latest",
+    "shiki": "latest",
+    "sonner": "latest",
+    "streamdown": "latest",
+    "tailwind-merge": "latest",
+    "tokenlens": "latest",
+    "tw-animate-css": "latest",
+    "use-stick-to-bottom": "latest",
+    "vaul": "latest"
   },
   "peerDependencies": {
     "@auth/core": "0.41",
     "@convex-dev/auth": "latest",
-    "@stepperize/react": "latest",
-    "@tanstack/react-form": "latest",
     "convex": "latest",
     "convex-helpers": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "sharp": "latest",
     "spacetimedb": "latest",
     "zod": "latest"
   },
