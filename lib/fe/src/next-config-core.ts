@@ -1,23 +1,6 @@
 import type { NextConfig } from 'next'
-import { createRequire } from 'node:module'
+import { resolveAliasFor } from 'noboil'
 import { env as nodeEnv } from 'node:process'
-const readNoboilExports = (): Record<string, unknown> => {
-  const require$ = createRequire(import.meta.url)
-  const pkg = require$('noboil/package.json') as { exports: Record<string, unknown> }
-  return pkg.exports
-}
-const EXPORT_PREFIX = /^\.\//u
-const deriveResolveAlias = (condition: 'noboil-convex' | 'noboil-spacetimedb'): Record<string, string> => {
-  const exp = readNoboilExports()
-  const db = condition === 'noboil-spacetimedb' ? 'spacetimedb' : 'convex'
-  const aliases: Record<string, string> = {}
-  for (const [key, target] of Object.entries(exp))
-    if (target && typeof target === 'object' && condition in target) {
-      const name = key.replace(EXPORT_PREFIX, '')
-      if (name !== '.') aliases[`noboil/${name}`] = `noboil/${db}/${name}`
-    }
-  return aliases
-}
 interface CreateNextConfigOptions {
   experimental?: NextConfig['experimental']
   imageDomains?: string[]
@@ -44,7 +27,7 @@ const createNextConfigWithCsp = ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
   ...(noboilCondition && {
-    turbopack: { resolveAlias: deriveResolveAlias(noboilCondition) } satisfies NextConfig['turbopack'],
+    turbopack: { resolveAlias: resolveAliasFor(noboilCondition) } satisfies NextConfig['turbopack'],
     webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
       config.resolve ??= {}
       config.resolve.conditionNames = [noboilCondition, '...']
