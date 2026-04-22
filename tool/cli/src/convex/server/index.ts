@@ -26,7 +26,7 @@ export { auditLog, composeMiddleware, inputSanitize, slowQueryWarn } from './mid
 export { noboil } from './noboil'
 export { makeOrg } from './org'
 export type { InviteDocLike, JoinRequestItem, OrgDocLike, OrgMemberItem, OrgUserLike } from './org'
-export { canEdit, getOrgMember, getOrgRole, orgCascade, requireOrgMember, requireOrgRole } from './org-crud'
+export { canEdit, getOrgMember, getOrgRole, makeOrgCrud, orgCascade, requireOrgMember, requireOrgRole } from './org-crud'
 export { HEARTBEAT_INTERVAL_MS, makePresence, PRESENCE_TTL_MS, presenceTable } from './presence'
 export {
   baseTable,
@@ -42,5 +42,6 @@ export {
 } from './schema-helpers'
 export { setup } from './setup'
 export { makeSingletonCrud } from './singleton'
-export { createTestContext, isTestMode } from './test'
+export type { OrgTestCrudConfig, TestAuthConfig, TestUser } from './test'
+export { createTestContext, getOrgMembership, isTestMode, makeOrgTestCrud, makeTestAuth, TEST_EMAIL } from './test'
 export { discoverModules } from './test-discover'
