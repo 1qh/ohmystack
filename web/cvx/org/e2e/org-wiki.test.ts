@@ -355,7 +355,6 @@ test.describe
     const restoreAllViaBackend = async () => {
       for (const id of wikiIds)
         try {
-          // biome-ignore lint/performance/noAwaitInLoops: sequential restore
           await tc.mutation(wikiRestore, { id, orgId })
         } catch {
           /* Ignore restore errors */
