@@ -3,8 +3,8 @@
 import { execSync } from 'node:child_process'
 import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '../shared/cli'
-const { bold, dim, green, yellow } = createCliTheme()
+import { bold, dim, green, yellow } from '../ansi'
+import { hasFlag, readEqFlag, writeFilesToDir } from '../shared/cli'
 const TABLES_TS = `import { t } from 'spacetimedb'
 const blogTable = {
   id: t.u32(),
@@ -188,14 +188,12 @@ const scaffold = (cwd: string, moduleDir: string, appDir: string) => {
   const b = writeFilesToDir({
     baseDir: join(cwd, moduleDir),
     files: BACKEND_FILES,
-    label: moduleDir,
-    theme: { dim, green, yellow }
+    label: moduleDir
   })
   const f = writeFilesToDir({
     baseDir: join(cwd, appDir),
     files: FRONTEND_FILES,
-    label: appDir,
-    theme: { dim, green, yellow }
+    label: appDir
   })
   writeConfigFile(join(cwd, '.env.local'), '.env.local', ENV_LOCAL)
   writeConfigFile(join(cwd, 'tsconfig.json'), 'tsconfig.json', TSCONFIG)

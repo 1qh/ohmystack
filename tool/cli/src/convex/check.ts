@@ -5,7 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import type { FactoryCall, SchemaField, SchemaTable } from './schema-utils'
-import { createCliTheme } from '../shared/cli'
+import { bold, dim, green, red, yellow } from '../ansi'
 import {
   CACHE_BASE,
   CHILD_BASE,
@@ -18,7 +18,6 @@ import {
   SINGLETON_BASE,
   wrapperFactories
 } from './schema-utils'
-const { bold, dim, green, red, yellow } = createCliTheme()
 interface AccessEntry {
   endpoints: string[]
   level: string

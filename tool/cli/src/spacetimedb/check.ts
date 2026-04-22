@@ -4,8 +4,7 @@
 /* oxlint-disable eslint/complexity, max-depth */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { createCliTheme } from '../shared/cli'
-const { bold, dim, green, red, yellow } = createCliTheme()
+import { bold, dim, green, red, yellow } from '../ansi'
 interface AccessEntry {
   endpoints: string[]
   level: string

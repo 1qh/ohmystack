@@ -4,9 +4,9 @@
 import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { createCliTheme, hasFlag, readArgOrEqFlag } from '../shared/cli'
+import { bold, cyan, dim, green, red, yellow } from '../ansi'
+import { hasFlag, readArgOrEqFlag } from '../shared/cli'
 import { wrapperFactories } from './schema-utils'
-const { bold, cyan, dim, green, red, yellow } = createCliTheme()
 interface FieldInfo {
   name: string
   optional: boolean

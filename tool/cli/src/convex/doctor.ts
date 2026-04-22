@@ -4,7 +4,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { FactoryCall } from './check'
-import { createCliTheme } from '../shared/cli'
+import { bold, dim, green, red, yellow } from '../ansi'
 import {
   accessForFactory,
   checkIndexCoverage,
@@ -20,7 +20,6 @@ interface CheckResult {
   status: 'fail' | 'pass' | 'warn'
   title: string
 }
-const { bold, dim, green, red, yellow } = createCliTheme()
 const STATUS_ICON: Record<string, string> = { fail: red('\u2717'), pass: green('\u2713'), warn: yellow('!') }
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
 const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu

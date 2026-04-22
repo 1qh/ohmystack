@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { FactoryCall } from './check'
-import { createCliTheme } from '../shared/cli'
+import { bold, dim, green, red, yellow } from '../ansi'
 import {
   accessForFactory,
   checkIndexCoverage,
@@ -22,7 +22,6 @@ interface CheckResult {
   status: 'fail' | 'pass' | 'warn'
   title: string
 }
-const { bold, dim, green, red, yellow } = createCliTheme()
 const STATUS_ICON: Record<string, string> = { fail: red('✗'), pass: green('✓'), warn: yellow('!') }
 const schemaMarkers = ['schema(', 'table(', 't.']
 const reducerPat = /reducer\(\s*['"](?<table>\w+)\.(?<endpoint>[\w.]+)['"]/gu

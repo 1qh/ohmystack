@@ -1,21 +1,12 @@
 /* eslint-disable no-console */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { bold, cyan, dim, green, red, yellow } from '../ansi'
-interface CliTheme {
-  bold: (s: string) => string
-  cyan: (s: string) => string
-  dim: (s: string) => string
-  green: (s: string) => string
-  red: (s: string) => string
-  yellow: (s: string) => string
-}
+import { dim, green, yellow } from '../ansi'
 interface ParseEnumFieldResult<T extends string> {
   name: string
   optional: boolean
   type: T | { enum: string[] }
 }
-const createCliTheme = (): CliTheme => ({ bold, cyan, dim, green, red, yellow })
 const CAMEL_PAT = /(?<upper>[A-Z])/gu
 const FIRST_CHAR_PAT = /^./u
 const camelToTitle = (s: string) => s.replace(CAMEL_PAT, ' $1').replace(FIRST_CHAR_PAT, c => c.toUpperCase())
@@ -58,56 +49,27 @@ const readArgOrEqFlag = (args: string[], name: string, fallback: string): string
     }
   return fallback
 }
-const writeIfNotExists = ({
-  content,
-  label,
-  path,
-  theme
-}: {
-  content: string
-  label: string
-  path: string
-  theme: Pick<CliTheme, 'dim' | 'green' | 'yellow'>
-}): boolean => {
+const writeIfNotExists = ({ content, label, path }: { content: string; label: string; path: string }): boolean => {
   if (existsSync(path)) {
-    console.log(`  ${theme.yellow('skip')} ${label} ${theme.dim('(exists)')}`)
+    console.log(`  ${yellow('skip')} ${label} ${dim('(exists)')}`)
     return false
   }
   const dir = path.slice(0, path.lastIndexOf('/'))
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(path, content)
-  console.log(`  ${theme.green('✓')} ${label}`)
+  console.log(`  ${green('✓')} ${label}`)
   return true
 }
-const writeFilesToDir = ({
-  baseDir,
-  files,
-  label,
-  theme
-}: {
-  baseDir: string
-  files: [string, string][]
-  label: string
-  theme: Pick<CliTheme, 'dim' | 'green' | 'yellow'>
-}) => {
+const writeFilesToDir = ({ baseDir, files, label }: { baseDir: string; files: [string, string][]; label: string }) => {
   if (!existsSync(baseDir)) mkdirSync(baseDir, { recursive: true })
   let created = 0
   let skipped = 0
   for (const [name, content] of files) {
     const path = join(baseDir, name)
-    if (writeIfNotExists({ content, label: `${label}/${name}`, path, theme })) created += 1
+    if (writeIfNotExists({ content, label: `${label}/${name}`, path })) created += 1
     else skipped += 1
   }
   return { created, skipped }
 }
-export {
-  camelToTitle,
-  createCliTheme,
-  hasFlag,
-  parseEnumFieldDef,
-  readArgOrEqFlag,
-  readEqFlag,
-  writeFilesToDir,
-  writeIfNotExists
-}
-export type { CliTheme, ParseEnumFieldResult }
+export { camelToTitle, hasFlag, parseEnumFieldDef, readArgOrEqFlag, readEqFlag, writeFilesToDir, writeIfNotExists }
+export type { ParseEnumFieldResult }

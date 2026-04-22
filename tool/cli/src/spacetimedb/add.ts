@@ -2,7 +2,8 @@
 /* eslint-disable no-console */
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
-import { camelToTitle, createCliTheme, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '../shared/cli'
+import { bold, dim, green, red, yellow } from '../ansi'
+import { camelToTitle, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '../shared/cli'
 interface AddFlags {
   appDir: string
   fields: ParsedField[]
@@ -21,7 +22,6 @@ interface ParsedField {
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
 const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton'])
 const FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string'])
-const { bold, dim, green, red, yellow } = createCliTheme()
 const parseFieldDef = (raw: string): null | ParsedField => parseEnumFieldDef(raw, FIELD_TYPES)
 const parseAddFlags = (args: string[]): AddFlags => {
   let type: TableType = 'owned'
@@ -289,8 +289,7 @@ const addSync = (flags: AddFlags) => {
     writeIfNotExists({
       content: genTableContent(flags.name, flags.type, fields),
       label: `${flags.moduleDir}/tables/${flags.name}.ts`,
-      path: tableFile,
-      theme: { dim, green, yellow }
+      path: tableFile
     })
   )
     created += 1
@@ -300,8 +299,7 @@ const addSync = (flags: AddFlags) => {
     writeIfNotExists({
       content: genReducerContent({ fields, name: flags.name, parent: flags.parent, type: flags.type }),
       label: `${flags.moduleDir}/reducers/${flags.name}.ts`,
-      path: reducerFile,
-      theme: { dim, green, yellow }
+      path: reducerFile
     })
   )
     created += 1
@@ -312,8 +310,7 @@ const addSync = (flags: AddFlags) => {
     writeIfNotExists({
       content: genPageContent(flags.name, flags.type),
       label: `${flags.appDir}/${flags.name}/page.tsx`,
-      path: pageFile,
-      theme: { dim, green, yellow }
+      path: pageFile
     })
   )
     created += 1

@@ -2,8 +2,8 @@
 /* eslint-disable no-console */
 import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { createCliTheme, hasFlag, readEqFlag, writeFilesToDir } from '../shared/cli'
-const { bold, dim, green, yellow } = createCliTheme()
+import { bold, dim, green, yellow } from '../ansi'
+import { hasFlag, readEqFlag, writeFilesToDir } from '../shared/cli'
 const SCHEMA_TS = `import { authTables } from '@convex-dev/auth/server'
 import { defineSchema } from 'convex/server'
 import { ownedTable, rateLimitTable, uploadTables } from './server'
@@ -199,14 +199,12 @@ const init = (args: string[] = []) => {
   const b = writeFilesToDir({
     baseDir: join(process.cwd(), convexDir),
     files: BACKEND_FILES,
-    label: convexDir,
-    theme: { dim, green, yellow }
+    label: convexDir
   })
   const f = writeFilesToDir({
     baseDir: join(process.cwd(), appDir),
     files: FRONTEND_FILES,
-    label: appDir,
-    theme: { dim, green, yellow }
+    label: appDir
   })
   const envPath = join(process.cwd(), '.env.local')
   if (existsSync(envPath)) console.log(`  ${yellow('skip')} .env.local ${dim('(exists)')}`)
