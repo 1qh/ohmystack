@@ -10,6 +10,7 @@ import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Badge } from '@a/ui/badge'
 import { Input } from '@a/ui/input'
 import { Skeleton } from '@a/ui/skeleton'
+import { TMDB } from '@lorenzopant/tmdb'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useMut } from 'noboil/spacetimedb/react'
@@ -108,22 +109,6 @@ const PLAYWRIGHT_MOVIES = new Map<number, MovieDetailData>([
 ])
 const formatMoney = (n: number | undefined) => (n ? `$${(n / 1_000_000).toFixed(1)}M` : 'N/A')
 type MovieDetailData = InferCreate<typeof s.movie>
-interface TmdbMovieResponse {
-  backdrop_path: null | string
-  budget: number
-  genres: { id: number; name: string }[]
-  id: number
-  original_title: string
-  overview: string
-  poster_path: null | string
-  release_date: string
-  revenue: number
-  runtime: null | number
-  tagline: string
-  title: string
-  vote_average: number
-  vote_count: number
-}
 const fetchMovie = async (id: number): Promise<MovieDetailData> => {
   const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
   if (!apiKey) {
@@ -133,26 +118,23 @@ const fetchMovie = async (id: number): Promise<MovieDetailData> => {
     }
     throw new Error('Missing NEXT_PUBLIC_TMDB_API_KEY')
   }
-  const url = new URL(`https://api.themoviedb.org/3/movie/${id}`)
-  url.searchParams.set('api_key', apiKey)
-  const response = await fetch(url)
-  if (!response.ok) throw new Error('Movie not found')
-  const payload = (await response.json()) as TmdbMovieResponse
+  const tmdb = new TMDB(apiKey)
+  const p = await tmdb.movies.details({ movie_id: id })
   return {
-    backdropPath: payload.backdrop_path ?? undefined,
-    budget: payload.budget || undefined,
-    genres: payload.genres,
-    originalTitle: payload.original_title,
-    overview: payload.overview,
-    posterPath: payload.poster_path ?? undefined,
-    releaseDate: payload.release_date,
-    revenue: payload.revenue || undefined,
-    runtime: payload.runtime ?? undefined,
-    tagline: payload.tagline || undefined,
-    title: payload.title,
-    tmdbId: payload.id,
-    voteAverage: payload.vote_average,
-    voteCount: payload.vote_count
+    backdropPath: p.backdrop_path ?? undefined,
+    budget: p.budget || undefined,
+    genres: p.genres,
+    originalTitle: p.original_title,
+    overview: p.overview ?? '',
+    posterPath: p.poster_path ?? undefined,
+    releaseDate: p.release_date,
+    revenue: p.revenue || undefined,
+    runtime: p.runtime ?? undefined,
+    tagline: p.tagline ?? undefined,
+    title: p.title,
+    tmdbId: p.id,
+    voteAverage: p.vote_average,
+    voteCount: p.vote_count
   }
 }
 const Page = () => {

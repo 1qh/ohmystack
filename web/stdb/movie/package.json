@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@a/config": "workspace:*"
+    "@a/config": "workspace:*",
+    "@lorenzopant/tmdb": "latest"
   },
   "devDependencies": {
     "@a/e2e": "workspace:*"
