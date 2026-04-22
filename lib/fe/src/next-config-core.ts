@@ -1,5 +1,23 @@
 import type { NextConfig } from 'next'
+import { createRequire } from 'node:module'
 import { env as nodeEnv } from 'node:process'
+const readNoboilExports = (): Record<string, unknown> => {
+  const require$ = createRequire(import.meta.url)
+  const pkg = require$('noboil/package.json') as { exports: Record<string, unknown> }
+  return pkg.exports
+}
+const EXPORT_PREFIX = /^\.\//u
+const deriveResolveAlias = (condition: 'noboil-convex' | 'noboil-spacetimedb'): Record<string, string> => {
+  const exp = readNoboilExports()
+  const db = condition === 'noboil-spacetimedb' ? 'spacetimedb' : 'convex'
+  const aliases: Record<string, string> = {}
+  for (const [key, target] of Object.entries(exp))
+    if (target && typeof target === 'object' && condition in target) {
+      const name = key.replace(EXPORT_PREFIX, '')
+      if (name !== '.') aliases[`noboil/${name}`] = `noboil/${db}/${name}`
+    }
+  return aliases
+}
 interface CreateNextConfigOptions {
   experimental?: NextConfig['experimental']
   imageDomains?: string[]
@@ -25,24 +43,11 @@ const createNextConfigWithCsp = ({
 }: CreateNextConfigWithCspOptions): NextConfig => ({
   ...(isPlaywright && { devIndicators: false }),
   experimental: { ...experimental },
-  ...(noboilCondition === 'noboil-spacetimedb' && {
-    turbopack: {
-      resolveAlias: {
-        'noboil/components': 'noboil/spacetimedb/components',
-        'noboil/eslint': 'noboil/spacetimedb/eslint',
-        'noboil/next': 'noboil/spacetimedb/next',
-        'noboil/react': 'noboil/spacetimedb/react',
-        'noboil/retry': 'noboil/spacetimedb/retry',
-        'noboil/schema': 'noboil/spacetimedb/schema',
-        'noboil/seed': 'noboil/spacetimedb/seed',
-        'noboil/server': 'noboil/spacetimedb/server',
-        'noboil/test': 'noboil/spacetimedb/test',
-        'noboil/zod': 'noboil/spacetimedb/zod'
-      }
-    } satisfies NextConfig['turbopack'],
+  ...(noboilCondition && {
+    turbopack: { resolveAlias: deriveResolveAlias(noboilCondition) } satisfies NextConfig['turbopack'],
     webpack: ((config: { resolve?: { conditionNames?: string[] } }) => {
       config.resolve ??= {}
-      config.resolve.conditionNames = ['noboil-spacetimedb', '...']
+      config.resolve.conditionNames = [noboilCondition, '...']
       return config
     }) as NextConfig['webpack']
   }),

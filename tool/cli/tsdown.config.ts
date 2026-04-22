@@ -1,41 +1,24 @@
 import { defineConfig } from 'tsdown'
+import pkg from './package.json' with { type: 'json' }
+const collect = (target: unknown, into: Set<string>): void => {
+  if (typeof target === 'string') {
+    if (target.startsWith('./src/')) into.add(target.slice(2))
+    return
+  }
+  if (target && typeof target === 'object') for (const v of Object.values(target)) collect(v, into)
+}
+const entries = new Set<string>()
+collect(pkg.exports, entries)
+for (const bin of Object.values(pkg.bin)) collect(bin, entries)
+entries.add('src/doctor.ts')
+entries.add('src/eject.ts')
+entries.add('src/init.ts')
+entries.add('src/sync.ts')
 export default defineConfig({
   clean: true,
   dts: { eager: true },
-  entry: [
-    'src/noboil.ts',
-    'src/index.ts',
-    'src/doctor.ts',
-    'src/eject.ts',
-    'src/init.ts',
-    'src/sync.ts',
-    'src/convex/index.ts',
-    'src/convex/server/index.ts',
-    'src/convex/zod.ts',
-    'src/convex/retry.ts',
-    'src/convex/schema.ts',
-    'src/convex/react/index.ts',
-    'src/convex/components/index.ts',
-    'src/convex/eslint.ts',
-    'src/convex/next/index.ts',
-    'src/convex/server/test.ts',
-    'src/convex/server/test-discover.ts',
-    'src/convex/seed.ts',
-    'src/spacetimedb/index.ts',
-    'src/spacetimedb/server/index.ts',
-    'src/spacetimedb/zod.ts',
-    'src/spacetimedb/retry.ts',
-    'src/spacetimedb/schema.ts',
-    'src/spacetimedb/react/index.ts',
-    'src/spacetimedb/components/index.ts',
-    'src/spacetimedb/eslint.ts',
-    'src/spacetimedb/next/index.ts',
-    'src/spacetimedb/server/test.ts',
-    'src/spacetimedb/server/test-discover.ts',
-    'src/spacetimedb/seed.ts'
-  ],
+  entry: [...entries],
   format: 'esm',
   outDir: 'dist',
-  sourcemap: true,
-  unbundle: true
+  sourcemap: true
 })
