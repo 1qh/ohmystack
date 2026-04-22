@@ -3,10 +3,11 @@
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
+import type { Db } from './scaffold-ops'
 import { bold, dim, green, red, yellow } from './ansi'
-type Db = 'convex' | 'spacetimedb'
+import { patchRootPackageJson, removeDirs, rmSafe } from './scaffold-ops'
 interface Manifest {
   db: Db
   includeDemos: boolean
@@ -23,16 +24,6 @@ const REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO
 const REPO_GIT_URL =
   REPO_SPEC.includes('://') || REPO_SPEC.startsWith('/') ? REPO_SPEC : `https://github.com/${REPO_SPEC}.git`
 const REPO = REPO_SPEC
-const REMOVE_ALWAYS = [
-  'PLAN.md',
-  'AGENTS.md',
-  'TODO.md',
-  'LEARNING.md',
-  'RULES.md',
-  'doc',
-  '.github',
-  'script/prep-publish.ts'
-]
 const ROOT_CONFIG_FILES = new Set([
   'biome.jsonc',
   'convex.yml',
@@ -94,62 +85,6 @@ const runGit = ({ args, cwd, err }: { args: string[]; cwd: string; err: string }
     process.exit(1)
   }
   return result.stdout.trim()
-}
-const rmSafe = (path: string) => {
-  if (existsSync(path)) rmSync(path, { force: true, recursive: true })
-}
-const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
-  const pkgPath = join(dir, 'package.json')
-  const raw = readFileSync(pkgPath, 'utf8')
-  const pkg = JSON.parse(raw) as {
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
-    name?: string
-    private?: boolean
-    scripts?: Record<string, string>
-    workspaces?: string[]
-  }
-  const otherDb = db === 'convex' ? 'spacetimedb' : 'convex'
-  const shouldRemove = (key: string, val: string) =>
-    key === 'test' ||
-    (db === 'spacetimedb' && key.includes('codegen')) ||
-    (db === 'convex' && key.startsWith('spacetime:')) ||
-    (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-    val.includes(otherDb)
-  pkg.name = 'my-app'
-  pkg.private = true
-  const workspaces: string[] = ['lib/*', 'backend/*', 'readonly/*']
-  if (includeDemos)
-    if (db === 'convex') workspaces.push('web/cvx/*')
-    else workspaces.push('web/stdb/*')
-  pkg.workspaces = workspaces
-  if (pkg.scripts) {
-    const keep: Record<string, string> = {
-      test: 'echo "add tests"'
-    }
-    for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
-    pkg.scripts = keep
-  }
-  const nextDependencies: Record<string, string> = {}
-  if (pkg.dependencies)
-    for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
-  nextDependencies.noboil = 'latest'
-  pkg.dependencies = nextDependencies
-  if (pkg.devDependencies) {
-    const nextDevDependencies: Record<string, string> = {}
-    for (const [key, val] of Object.entries(pkg.devDependencies))
-      if (!key.startsWith('@a/')) nextDevDependencies[key] = val
-    pkg.devDependencies = nextDevDependencies
-  }
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
-}
-const removeDirs = ({ db, dir, includeDemos }: { db: Db; dir: string; includeDemos: boolean }) => {
-  const dbTag = db === 'convex' ? 'cvx' : 'stdb'
-  const otherTag = db === 'convex' ? 'stdb' : 'cvx'
-  const otherDbName = db === 'convex' ? 'spacetimedb' : 'convex'
-  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `backend/${otherDbName}`, 'backend/agent', 'tool/cli']
-  if (!includeDemos) toRemove.push(`web/${dbTag}`)
-  for (const path of toRemove) rmSafe(join(dir, path))
 }
 const prepareUpstream = ({ db, includeDemos, root }: { db: Db; includeDemos: boolean; root: string }) => {
   removeDirs({ db, dir: root, includeDemos })

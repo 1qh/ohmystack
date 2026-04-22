@@ -6,8 +6,9 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'no
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
+import type { Db } from './scaffold-ops'
 import { bold, dim, green, red, yellow } from './ansi'
-type Db = 'convex' | 'spacetimedb'
+import { patchRootPackageJson, removeDirs } from './scaffold-ops'
 interface InitOpts {
   db: Db
   dir: string
@@ -29,16 +30,6 @@ const REPO_GIT_URL =
       ? REPO_SPEC
       : `${REPO_SPEC}.git`
 const REPO = REPO_SPEC
-const REMOVE_ALWAYS = [
-  'PLAN.md',
-  'AGENTS.md',
-  'TODO.md',
-  'LEARNING.md',
-  'RULES.md',
-  'doc',
-  '.github',
-  'script/prep-publish.ts'
-]
 /** biome-ignore lint/suspicious/useAwait: readline callback wrapper */
 const ask = async (question: string) => {
   const rl = createInterface({
@@ -58,65 +49,6 @@ const run = (cmd: string, args: string[], cwd: string) => {
     console.error(`${red('Error:')} ${cmd} ${args.join(' ')} failed`)
     process.exit(1)
   }
-}
-const removeDirs = ({ db, dir, includeDemos }: InitOpts) => {
-  const dbTag = db === 'convex' ? 'cvx' : 'stdb'
-  const otherTag = db === 'convex' ? 'stdb' : 'cvx'
-  const otherDbName = db === 'convex' ? 'spacetimedb' : 'convex'
-  const toRemove = [...REMOVE_ALWAYS, `web/${otherTag}`, `backend/${otherDbName}`, 'backend/agent', 'tool/cli']
-  if (!includeDemos) toRemove.push(`web/${dbTag}`)
-  for (const p of toRemove) {
-    const full = join(dir, p)
-    if (existsSync(full)) {
-      rmSync(full, { force: true, recursive: true })
-      console.log(`  ${dim('removed')} ${p}`)
-    }
-  }
-}
-const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
-  const pkgPath = join(dir, 'package.json')
-  const raw = readFileSync(pkgPath, 'utf8')
-  const pkg = JSON.parse(raw) as {
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
-    name?: string
-    private?: boolean
-    scripts?: Record<string, string>
-    workspaces?: string[]
-  }
-  const otherDb = db === 'convex' ? 'spacetimedb' : 'convex'
-  const shouldRemove = (key: string, val: string) =>
-    key === 'test' ||
-    (db === 'spacetimedb' && key.includes('codegen')) ||
-    (db === 'convex' && key.startsWith('spacetime:')) ||
-    (!includeDemos && (key.startsWith('dev:') || key.startsWith('test:e2e'))) ||
-    val.includes(otherDb)
-  pkg.name = 'my-app'
-  pkg.private = true
-  const workspaces: string[] = ['lib/*', 'backend/*', 'readonly/*']
-  if (includeDemos)
-    if (db === 'convex') workspaces.push('web/cvx/*')
-    else workspaces.push('web/stdb/*')
-  pkg.workspaces = workspaces
-  if (pkg.scripts) {
-    const keep: Record<string, string> = {
-      test: 'echo "add tests"'
-    }
-    for (const [key, val] of Object.entries(pkg.scripts)) if (!shouldRemove(key, val)) keep[key] = val
-    pkg.scripts = keep
-  }
-  const nextDependencies: Record<string, string> = {}
-  if (pkg.dependencies)
-    for (const [key, val] of Object.entries(pkg.dependencies)) if (!key.startsWith('@a/')) nextDependencies[key] = val
-  nextDependencies.noboil = 'latest'
-  pkg.dependencies = nextDependencies
-  if (pkg.devDependencies) {
-    const nextDevDependencies: Record<string, string> = {}
-    for (const [key, val] of Object.entries(pkg.devDependencies))
-      if (!key.startsWith('@a/')) nextDevDependencies[key] = val
-    pkg.devDependencies = nextDevDependencies
-  }
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
 const pruneLibFe = ({ db, dir }: { db: Db; dir: string }) => {
   const feSrc = join(dir, 'lib', 'fe', 'src')
@@ -198,7 +130,7 @@ const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: str
   }
   const scaffoldedFrom = (revResult.stdout.split('\n')[0] ?? '').split('\t')[0] ?? ''
   console.log(`  ${dim('cleaning up')} unused files...`)
-  removeDirs({ db, dir: fullPath, includeDemos })
+  for (const p of removeDirs({ db, dir: fullPath, includeDemos })) console.log(`  ${dim('removed')} ${p}`)
   console.log(`  ${dim('patching')} package.json files...`)
   patchRootPackageJson({ db, dir: fullPath, includeDemos })
   pruneLibFe({ db, dir: fullPath })
