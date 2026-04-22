@@ -1,12 +1,14 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 const target = join(import.meta.dir, '..', 'node_modules', 'spacetimedb', 'dist', 'server', 'index.mjs')
+const backup = `${target}.orig`
 if (!existsSync(target)) process.exit(0)
 const src = readFileSync(target, 'utf8')
 const marker = '/* patched: stdb-sys-stub */'
 if (src.includes(marker)) process.exit(0)
+if (!existsSync(backup)) copyFileSync(target, backup)
 const stub = `${marker}
 const _noop = new Proxy(function () { return _noop }, {
   get: (t, p) => p === Symbol.toPrimitive ? () => '' : (t[p] ?? _noop)
