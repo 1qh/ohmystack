@@ -102,7 +102,9 @@
     "./spacetimedb/seed": "./src/spacetimedb/seed.ts"
   },
   "bin": {
-    "noboil": "./src/index.ts"
+    "noboil": "./src/index.ts",
+    "noboil-convex": "./src/convex/cli.ts",
+    "noboil-stdb": "./src/spacetimedb/cli.ts"
   },
   "files": [
     "src",

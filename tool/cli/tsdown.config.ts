@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { defineConfig } from 'tsdown'
 import pkg from './package.json' with { type: 'json' }
 const DYNAMIC_IMPORT_RE = /await import\(['"]\.\/(?<sub>[^'"]+)['"]\)/gu
@@ -13,8 +14,10 @@ const entries = new Set<string>()
 collect(pkg.exports, entries)
 for (const bin of Object.values(pkg.bin)) collect(bin, entries)
 for (const binPath of Object.values(pkg.bin)) {
-  const src = readFileSync(binPath.replace(/^\.\//u, ''), 'utf8')
-  for (const [, sub] of src.matchAll(DYNAMIC_IMPORT_RE)) entries.add(`src/${sub}.ts`)
+  const rel = binPath.replace(/^\.\//u, '')
+  const src = readFileSync(rel, 'utf8')
+  const base = dirname(rel)
+  for (const [, sub] of src.matchAll(DYNAMIC_IMPORT_RE)) entries.add(`${base}/${sub}.ts`)
 }
 export default defineConfig({
   clean: true,

@@ -82,7 +82,9 @@ for (const [subpath, target] of Object.entries(exportsMap))
     for (const [cond, path] of Object.entries(target)) next[cond] = wrap(path)
     exportsMap[subpath] = next as Record<string, string>
   }
-pkg.bin = { noboil: './dist/index.mjs' }
+pkg.bin = Object.fromEntries(
+  Object.entries(pkg.bin as Record<string, string>).map(([name, src]) => [name, srcToDist(src)])
+)
 pkg.files = ['dist', 'README.md', 'LICENSE']
 await write(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
 console.log('prep-publish: ready at', STAGING)
