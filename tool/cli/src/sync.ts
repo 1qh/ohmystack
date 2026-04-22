@@ -6,7 +6,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import type { Db } from './scaffold-ops'
-import { bold, dim, green, red, yellow } from './ansi'
+import { bold, dim, green, yellow } from './ansi'
+import { die } from './cli-utils'
 import { patchRootPackageJson, removeDirs, rmSafe } from './scaffold-ops'
 interface Manifest {
   db: Db
@@ -50,39 +51,28 @@ const parseArgs = (args: string[]) => {
     else if (arg === '--help' || arg === '-h') {
       printHelp()
       process.exit(0)
-    } else {
-      console.error(`\n${red('Error:')} Unknown option ${arg}\n`)
-      process.exit(1)
-    }
+    } else die(`Unknown option ${arg}`)
   return opts
 }
 const readManifest = (cwd: string) => {
   const manifestPath = join(cwd, '.noboilrc.json')
-  if (!existsSync(manifestPath)) {
-    console.error(`${red('Error:')} Not a noboil project. Run \`noboil init\` first.`)
-    process.exit(1)
-  }
-  const raw = readFileSync(manifestPath, 'utf8')
-  const parsed = JSON.parse(raw) as Partial<Manifest>
+  if (!existsSync(manifestPath)) die('Not a noboil project. Run `noboil init` first.')
+  const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as Partial<Manifest>
   if (
     typeof parsed.version !== 'number' ||
     (parsed.db !== 'convex' && parsed.db !== 'spacetimedb') ||
     typeof parsed.includeDemos !== 'boolean' ||
     typeof parsed.scaffoldedFrom !== 'string' ||
     typeof parsed.scaffoldedAt !== 'string'
-  ) {
-    console.error(`${red('Error:')} Invalid .noboilrc.json manifest`)
-    process.exit(1)
-  }
+  )
+    die('Invalid .noboilrc.json manifest')
   return parsed as Manifest
 }
 const runGit = ({ args, cwd, err }: { args: string[]; cwd: string; err: string }) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' })
   if (result.status !== 0) {
     const stderr = result.stderr.trim()
-    console.error(`${red('Error:')} ${err}`)
-    if (stderr) console.error(dim(stderr))
-    process.exit(1)
+    die(stderr ? `${err}\n${dim(stderr)}` : err)
   }
   return result.stdout.trim()
 }

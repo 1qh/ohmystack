@@ -6,7 +6,8 @@ import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { Db } from './scaffold-ops'
-import { bold, dim, green, red, yellow } from './ansi'
+import { bold, dim, green, yellow } from './ansi'
+import { die } from './cli-utils'
 import { patchRootPackageJson, patchTsconfig, patchWorkspacePackageJsons, pruneLibFe, removeDirs } from './scaffold-ops'
 interface InitOpts {
   db: Db
@@ -44,17 +45,11 @@ const ask = async (question: string) => {
 }
 const run = (cmd: string, args: string[], cwd: string) => {
   const result = spawnSync(cmd, args, { cwd, stdio: 'inherit' })
-  if (result.status !== 0) {
-    console.error(`${red('Error:')} ${cmd} ${args.join(' ')} failed`)
-    process.exit(1)
-  }
+  if (result.status !== 0) die(`${cmd} ${args.join(' ')} failed`)
 }
 const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: string[] }) => {
   const fullPath = resolvePath(process.cwd(), dir)
-  if (existsSync(fullPath) && readdirSync(fullPath).length > 0) {
-    console.log(`\n${red('Error:')} Directory ${dir} is not empty.\n`)
-    process.exit(1)
-  }
+  if (existsSync(fullPath) && readdirSync(fullPath).length > 0) die(`Directory ${dir} is not empty.`)
   console.log(`\n${bold('Creating project...')}\n`)
   console.log(`  ${dim('scaffolding')} ${REPO}...`)
   if (REPO_SPEC.startsWith('/') || REPO_SPEC.startsWith('file://')) {
@@ -64,10 +59,7 @@ const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: str
   const revResult = spawnSync('git', ['ls-remote', REPO_GIT_URL, 'HEAD'], {
     encoding: 'utf8'
   })
-  if (revResult.status !== 0 || !revResult.stdout.trim()) {
-    console.error(`${red('Error:')} failed to read scaffold commit hash`)
-    process.exit(1)
-  }
+  if (revResult.status !== 0 || !revResult.stdout.trim()) die('failed to read scaffold commit hash')
   const scaffoldedFrom = (revResult.stdout.split('\n')[0] ?? '').split('\t')[0] ?? ''
   console.log(`  ${dim('cleaning up')} unused files...`)
   for (const p of removeDirs({ db, dir: fullPath, includeDemos })) console.log(`  ${dim('removed')} ${p}`)
@@ -130,11 +122,9 @@ const init = async (args: string[]) => {
     const choice = await ask(`${bold('Choice')} ${dim('(1/2)')}: `)
     if (choice === '1' || choice.toLowerCase() === 'convex') db = 'convex'
     else if (choice === '2' || choice.toLowerCase() === 'spacetimedb') db = 'spacetimedb'
-    else {
-      console.log(`\n${red('Invalid choice.')} Pick 1 or 2.\n`)
-      process.exit(1)
-    }
+    else die('Invalid choice. Pick 1 or 2.')
   }
+  const dbResolved: Db = db ?? die('Invalid choice. Pick 1 or 2.')
   const hasDbFlag = args.some(a => a.startsWith('--db='))
   const hasDemosFlag = args.includes('--no-demos')
   const isNonInteractive = hasDbFlag && (hasDemosFlag || targetDir)
@@ -146,6 +136,6 @@ const init = async (args: string[]) => {
     targetDir = await ask(`\n${bold('Project directory')} ${dim('(my-app)')}: `)
     if (!targetDir) targetDir = 'my-app'
   }
-  scaffoldProject({ args, db, dir: targetDir, includeDemos })
+  scaffoldProject({ args, db: dbResolved, dir: targetDir, includeDemos })
 }
 export { init }
