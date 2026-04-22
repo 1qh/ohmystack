@@ -7,17 +7,18 @@
 import { $, sleep } from 'bun'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { styleText } from 'node:util'
 const ANSI_RE = /\u001B\[\d+m/gu
 const root = join(import.meta.dirname, '..')
 const envPath = join(root, '.env')
 const stripAnsi = (s: string) => s.replaceAll(ANSI_RE, '')
 const c = {
-  bold: (s: string) => `\u001B[1m${s}\u001B[0m`,
-  cyan: (s: string) => `\u001B[36m${s}\u001B[0m`,
-  dim: (s: string) => `\u001B[2m${s}\u001B[0m`,
-  green: (s: string) => `\u001B[32m${s}\u001B[0m`,
-  red: (s: string) => `\u001B[31m${s}\u001B[0m`,
-  yellow: (s: string) => `\u001B[33m${s}\u001B[0m`
+  bold: (s: string) => styleText('bold', s),
+  cyan: (s: string) => styleText('cyan', s),
+  dim: (s: string) => styleText('dim', s),
+  green: (s: string) => styleText('green', s),
+  red: (s: string) => styleText('red', s),
+  yellow: (s: string) => styleText('yellow', s)
 }
 const log = (msg: string) => process.stdout.write(`${msg}\n`)
 const step = (n: number, total: number, label: string) => log(`${c.cyan(`[${n}/${total}]`)} ${label}`)
