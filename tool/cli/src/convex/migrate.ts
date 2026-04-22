@@ -5,6 +5,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createCliTheme, hasFlag, readArgOrEqFlag } from '../shared/cli'
+import { wrapperFactories } from './schema-utils'
 const { bold, cyan, dim, green, red, yellow } = createCliTheme()
 interface FieldInfo {
   name: string
@@ -37,7 +38,6 @@ const findBracketEnd = (text: string, startPos: number): number => {
   }
   return pos - 1
 }
-const WRAPPER_FACTORIES = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'] as const
 const FACTORY_MAP: Record<string, string> = {
   makeBase: 'cacheCrud',
   makeOrgScoped: 'orgCrud',
@@ -105,7 +105,7 @@ const parseSchemaContent = (content: string): SchemaSnapshot => {
       fm = pat.exec(content)
     }
   }
-  for (const factory of WRAPPER_FACTORIES) processFactory(factory)
+  for (const factory of wrapperFactories) processFactory(factory)
   const childPat = /(?<cname>\w+)\s*:\s*child\(\{/gu
   let cm = childPat.exec(content)
   while (cm) {

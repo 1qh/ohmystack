@@ -4,8 +4,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { ChildInfo, TableInfo } from '../shared/viz'
 import { bold, dim, findBracketEnd, isSchemaFile, printSummary, red } from '../shared/viz'
+import { wrapperFactories } from './schema-utils'
 const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
-const wrapperFactories = ['makeOwned', 'makeOrgScoped', 'makeSingleton', 'makeBase'] as const
 const TYPE_LABELS: Record<string, string> = {
   makeBase: 'cache',
   makeOrgScoped: 'org-scoped',
