@@ -6020,7 +6020,8 @@ describe('health check', () => {
   describe('checkSchemaConsistency', () => {
     test('returns empty issues for consistent schema', async () => {
       const { mkdirSync, writeFileSync } = await import('node:fs')
-      const tmpDir = `/tmp/noboil-stdb-test-health-${Date.now()}`
+      const { tmpdir } = await import('node:os')
+      const tmpDir = `${tmpdir()}/noboil-stdb-test-health-${Date.now()}`
       mkdirSync(`${tmpDir}/spacetimedb/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/spacetimedb/blog.ts`, "crud('blog', owned.blog)")
       const schemaFile = {
@@ -6035,8 +6036,9 @@ describe('health check', () => {
   describe('checkIndexCoverage', () => {
     test('returns empty issues when no where clauses used', async () => {
       const { mkdirSync, writeFileSync } = await import('node:fs')
+      const { tmpdir } = await import('node:os')
       const calls: FactoryCall[] = [{ factory: 'crud', file: 'blog.ts', options: '', table: 'blog' }]
-      const tmpDir = `/tmp/noboil-stdb-test-idx-${Date.now()}`
+      const tmpDir = `${tmpdir()}/noboil-stdb-test-idx-${Date.now()}`
       mkdirSync(`${tmpDir}/spacetimedb/_generated`, { recursive: true })
       writeFileSync(`${tmpDir}/spacetimedb/schema.ts`, 'export default defineSchema({})')
       const issues = checkIndexCoverage(`${tmpDir}/spacetimedb`, calls)

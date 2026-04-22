@@ -4,6 +4,7 @@ import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import type { Db } from './scaffold-ops'
 import { bold, dim, green, yellow } from './ansi'
@@ -141,7 +142,7 @@ const sync = (args: string[]) => {
   const opts = parseArgs(args)
   const cwd = process.cwd()
   const manifest = readManifest(cwd)
-  const tmpDir = join('/tmp', `noboil-sync-${Date.now()}`)
+  const tmpDir = join(tmpdir(), `noboil-sync-${Date.now()}`)
   console.log(`\n${bold('noboil sync')} — pull upstream changes\n`)
   console.log(`  ${dim('cloning')} ${REPO}...`)
   try {

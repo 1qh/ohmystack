@@ -107,10 +107,10 @@ const extractFactoryCalls = (moduleDir: string): FactoryCall[] => {
   return calls
 }
 const checkSpacetimeCli = (): CheckResult => {
-  const result = spawnSync('/Users/o/.local/bin/spacetime', ['--version'], { encoding: 'utf8' })
+  const result = spawnSync('spacetime', ['--version'], { encoding: 'utf8' })
   if (result.status !== 0)
     return {
-      details: ['spacetime CLI not found at /Users/o/.local/bin/spacetime'],
+      details: ['spacetime CLI not found on PATH — install from https://spacetimedb.com/install'],
       status: 'fail',
       title: 'Spacetime CLI'
     }

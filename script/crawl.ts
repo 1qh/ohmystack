@@ -19,6 +19,7 @@
 /* oxlint-disable eslint(max-params), eslint(no-await-in-loop), eslint(no-control-regex), eslint(no-promise-executor-return), eslint(no-shadow), eslint(no-useless-assignment), eslint-plugin-promise(always-return), eslint-plugin-promise(param-names), eslint-plugin-promise(prefer-await-to-then), eslint-plugin-unicorn(no-process-exit), typescript-eslint(no-non-null-assertion) */
 import type { Browser, BrowserContext, Page } from 'playwright'
 import { appPort, urls } from '@a/config'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium } from 'playwright'
 interface AppSpec {
@@ -86,7 +87,7 @@ const doForms = argv.includes('--forms')
 const doDeep = argv.includes('--deep')
 const doShots = argv.includes('--shots')
 const doA11y = argv.includes('--a11y')
-const SHOT_DIR = '/tmp/crawl-shots'
+const SHOT_DIR = join(tmpdir(), 'crawl-shots')
 const TEST_EMAIL = `crawl${Date.now()}@test.com`
 const TEST_PASSWORD = 'CrawlTest1234!'
 const stripAnsi = (s: string) => s.replaceAll(/\u001B\[[0-9;]*[A-Za-z]/gu, '')

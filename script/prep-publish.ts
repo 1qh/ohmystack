@@ -4,8 +4,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 import { $, file, Glob, write } from 'bun'
 import { existsSync, mkdirSync, rmSync } from 'node:fs'
-import { dirname, relative } from 'node:path'
-const REPO = '/Users/o/z/noboil'
+import { dirname, join, relative } from 'node:path'
+const REPO = join(import.meta.dirname, '..')
 const PKG = `${REPO}/tool/cli`
 const STAGING = `${REPO}/.cache/publish-staging/noboil`
 const UI_RE = /((?:from|import\s*\()\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu

@@ -251,9 +251,10 @@ const dev = async (args: string[] = []) => {
     console.log(`${red('Module name not found.')} Set SPACETIMEDB_MODULE_NAME in .env or package.json name.`)
     process.exit(1)
   }
-  const spacetimeBin = `${process.env.HOME ?? ''}/.local/bin/spacetime`
-  if (!existsSync(spacetimeBin)) {
-    console.log(`${red('Spacetime CLI not found:')} ${spacetimeBin}`)
+  const spacetimeBin = 'spacetime'
+  const probe = spawnSync(spacetimeBin, ['--version'], { stdio: 'ignore' })
+  if (probe.status !== 0) {
+    console.log(`${red('Spacetime CLI not found on PATH.')} Install from https://spacetimedb.com/install`)
     process.exit(1)
   }
   console.log(`\n${bold('noboil-stdb dev')} ${dim('— starting development environment')}`)

@@ -71,8 +71,7 @@ const switchTarget = (args: string[] = []) => {
     if (!hasServer) additions.push(`SPACETIMEDB_URI=${target.uri}`)
     if (additions.length > 0) writeFileSync(envPath, `${original.trimEnd()}\n${additions.join('\n')}\n`)
   } else writeFileSync(envPath, updated)
-  const spacetimeBin = `${process.env.HOME ?? ''}/.local/bin/spacetime`
-  if (existsSync(spacetimeBin)) spawnSync(spacetimeBin, ['server', 'set-default', target.server], { stdio: 'pipe' })
+  spawnSync('spacetime', ['server', 'set-default', target.server], { stdio: 'pipe' })
   console.log(`${green('✓')} ${target.label}`)
   console.log(`  ${dim(envPath)} → ${bold(target.uri)}`)
 }
