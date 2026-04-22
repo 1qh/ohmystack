@@ -60,6 +60,7 @@ test.describe('Authentication Failures', () => {
   })
   test('login form clears on mode toggle', async ({ page }) => {
     await page.goto('/login/email')
+    await page.locator('[name="email"]').waitFor({ state: 'visible' })
     await page.fill('[name="email"]', 'test@example.com')
     const toggleButton = page.getByRole('button', { name: /account/iu })
     await toggleButton.click()

@@ -277,14 +277,18 @@ test.describe
     })
     test('auto-save triggers after editing title', async ({ page }) => {
       await gotoWikiEdit(page, wikiId)
+      const title = page.getByLabel('Title')
+      await title.waitFor({ state: 'visible' })
       const nextTitle = `AutoSave Updated ${Date.now()}`
-      await page.getByLabel('Title').fill(nextTitle)
-      await expect(page.getByLabel('Title')).toHaveValue(nextTitle)
+      await title.fill(nextTitle)
+      await expect(title).toHaveValue(nextTitle)
     })
     test('auto-save persists changes after reload', async ({ page }) => {
       await gotoWikiEdit(page, wikiId)
+      const content = page.getByLabel('Content')
+      await content.waitFor({ state: 'visible' })
       const newContent = `Persisted content ${Date.now()}`
-      await page.getByLabel('Content').fill(newContent)
+      await content.fill(newContent)
       await page.reload()
       await expect(page).toHaveURL(new RegExp(`/wiki/${wikiId}/edit`, 'u'))
     })

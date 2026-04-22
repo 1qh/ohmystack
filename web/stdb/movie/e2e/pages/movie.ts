@@ -3,7 +3,9 @@ import type { Locator } from '@playwright/test'
 import BasePage from '@a/e2e/base-page'
 class MoviePage extends BasePage {
   public async fetchMovie(id: number): Promise<void> {
-    await this.getFetchInput().fill(String(id))
+    const input = this.getFetchInput()
+    await input.waitFor({ state: 'visible' })
+    await input.fill(String(id))
     await this.getFetchForm().locator('button[type="submit"], input').first().press('Enter')
   }
   public getCacheStatus(): Locator {
@@ -48,13 +50,17 @@ class MoviePage extends BasePage {
   public async gotoFetch(): Promise<void> {
     await this.page.goto('/fetch')
     await this.page.waitForLoadState('domcontentloaded')
+    await this.getFetchInput().waitFor({ state: 'visible' })
   }
   public async gotoSearch(): Promise<void> {
     await this.page.goto('/')
     await this.page.waitForLoadState('domcontentloaded')
+    await this.getSearchInput().waitFor({ state: 'visible' })
   }
   public async searchMovie(query: string): Promise<void> {
-    await this.getSearchInput().fill(query)
+    const input = this.getSearchInput()
+    await input.waitFor({ state: 'visible' })
+    await input.fill(query)
     await this.getSearchForm().locator('button[type="submit"], input').first().press('Enter')
   }
 }
