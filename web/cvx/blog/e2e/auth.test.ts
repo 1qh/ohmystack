@@ -22,6 +22,7 @@ test.describe('Authentication', () => {
 test.describe('Authentication Failures', () => {
   test('login page shows error for invalid credentials', async ({ page }) => {
     await page.goto('/login/email')
+    await page.locator('[name="email"]').waitFor({ state: 'visible' })
     await page.fill('[name="email"]', 'invalid@example.com')
     await page.fill('[name="password"]', 'wrongpassword')
     await page.click('button[type="submit"]')
@@ -55,6 +56,7 @@ test.describe('Authentication Failures', () => {
   })
   test('invalid password error shows specific message', async ({ page }) => {
     await page.goto('/login/email')
+    await page.locator('[name="email"]').waitFor({ state: 'visible' })
     await page.fill('[name="email"]', 'test@example.com')
     await page.fill('[name="password"]', 'short')
     const toggleButton = page.locator('button[type="button"]', { hasText: /sign up/iu })
@@ -70,6 +72,7 @@ test.describe('Authentication Failures', () => {
   })
   test('login form clears on mode toggle', async ({ page }) => {
     await page.goto('/login/email')
+    await page.locator('[name="email"]').waitFor({ state: 'visible' })
     await page.fill('[name="email"]', 'test@example.com')
     await page.fill('[name="password"]', 'testpassword')
     const toggleButton = page.getByRole('button', { name: /account/iu })
