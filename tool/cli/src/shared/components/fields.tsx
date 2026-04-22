@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable jsx-no-jsx-as-prop */
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering
@@ -70,6 +70,12 @@ type FileFieldComponent = (props: {
 const CAMEL_RE = /(?<lower>[a-z\d])(?<upper>[A-Z])/gu
 const FIRST_CHAR_RE = /^./u
 const HEX_COLOR_REGEX = /^#[\dA-Fa-f]{6}$/u
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+const readValue = <T,>(field: AnyFieldApi): T => {
+  const raw: unknown = field.state.value
+  return raw as T
+}
+const fieldName = (field: AnyFieldApi): string => field.name as string
 const createFieldsModule = ({
   defaultAsyncDebounceMs = 300,
   defaultRatingMax = 5,
@@ -183,15 +189,15 @@ const createFieldsModule = ({
       return (
         <form.Field mode='array' name={name}>
           {(f: AnyFieldApi) => {
-            const tags = (f.state.value ?? []) as string[]
+            const tags = readValue<string[] | undefined>(f) ?? []
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
             const mx = info.max
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -227,8 +233,8 @@ const createFieldsModule = ({
                       inputClassName
                     )}
                     disabled={disabled}
-                    id={f.name}
-                    name={f.name}
+                    id={fieldName(f)}
+                    name={fieldName(f)}
                     onBlur={f.handleBlur}
                     onKeyDown={e => {
                       const { value } = e.currentTarget
@@ -289,26 +295,26 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
                 )}
                 <Select
                   disabled={disabled}
-                  name={f.name}
+                  name={fieldName(f)}
                   onValueChange={v => f.handleChange(v)}
-                  value={f.state.value ?? ''}>
+                  value={readValue<string | undefined>(f) ?? ''}>
                   <SelectTrigger
                     aria-describedby={inv ? errorId : undefined}
                     aria-invalid={inv}
                     disabled={disabled}
-                    id={f.name}
+                    id={fieldName(f)}
                     onBlur={f.handleBlur}>
                     <SelectValue placeholder={placeholder} />
                   </SelectTrigger>
@@ -350,13 +356,13 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
-            const val = f.state.value ?? '#000000'
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
+            const val = readValue<string | undefined>(f) ?? '#000000'
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -367,8 +373,8 @@ const createFieldsModule = ({
                     aria-invalid={inv}
                     className='size-10 cursor-pointer rounded-md border border-input'
                     disabled={disabled}
-                    id={f.name}
-                    name={f.name}
+                    id={fieldName(f)}
+                    name={fieldName(f)}
                     onBlur={f.handleBlur}
                     onChange={e => f.handleChange(e.target.value)}
                     type='color'
@@ -425,14 +431,14 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
-            const selected = options.find(o => o.value === f.state.value)
-            const listId = `${f.name}-listbox`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
+            const selected = options.find(o => o.value === readValue<string | undefined>(f))
+            const listId = `${fieldName(f)}-listbox`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -447,7 +453,7 @@ const createFieldsModule = ({
                         aria-invalid={inv}
                         className='w-full justify-between font-normal'
                         disabled={disabled}
-                        id={f.name}
+                        id={fieldName(f)}
                         onBlur={f.handleBlur}
                         role='combobox'
                         variant='outline'>
@@ -466,12 +472,15 @@ const createFieldsModule = ({
                             <CommandItem
                               key={o.value}
                               onSelect={() => {
-                                f.handleChange(o.value === f.state.value ? '' : o.value)
+                                f.handleChange(o.value === readValue<string | undefined>(f) ? '' : o.value)
                                 setOpen(false)
                               }}
                               value={o.label}>
                               <Check
-                                className={cn('mr-2 size-4', f.state.value === o.value ? 'opacity-100' : 'opacity-0')}
+                                className={cn(
+                                  'mr-2 size-4',
+                                  readValue<string | undefined>(f) === o.value ? 'opacity-100' : 'opacity-0'
+                                )}
                               />
                               {o.label}
                             </CommandItem>
@@ -515,14 +524,14 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const ts = f.state.value as null | number | undefined
+            const ts = readValue<null | number | undefined>(f)
             const dateVal = ts ? new Date(ts) : undefined
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -537,7 +546,7 @@ const createFieldsModule = ({
                           className={cn('flex-1 justify-start text-left font-normal', !dateVal && 'text-muted-foreground')}
                           data-testid={`${tid}-trigger`}
                           disabled={disabled}
-                          id={f.name}
+                          id={fieldName(f)}
                           variant='outline'>
                           <CalendarIcon className='mr-2 size-4' />
                           {dateVal ? format(dateVal, 'PPP') : placeholder}
@@ -707,22 +716,22 @@ const createFieldsModule = ({
       return (
         <form.Field mode='array' name={name}>
           {(f: AnyFieldApi) => {
-            const selected = (f.state.value ?? []) as string[]
+            const selected = readValue<string[] | undefined>(f) ?? []
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
             const mx = info.max
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
                 )}
                 <Select
                   disabled={disabled}
-                  name={f.name}
+                  name={fieldName(f)}
                   onValueChange={(v: null | string) => {
                     if (disabled || !v) return
                     if (selected.includes(v)) f.handleChange(selected.filter(x => x !== v))
@@ -739,7 +748,7 @@ const createFieldsModule = ({
                     aria-describedby={inv ? errorId : undefined}
                     aria-invalid={inv}
                     disabled={disabled}
-                    id={f.name}
+                    id={fieldName(f)}
                     onBlur={f.handleBlur}>
                     <SelectValue placeholder={selected.length > 0 ? `${selected.length} selected` : placeholder} />
                   </SelectTrigger>
@@ -807,12 +816,12 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -821,15 +830,15 @@ const createFieldsModule = ({
                   aria-describedby={inv ? errorId : undefined}
                   aria-invalid={inv}
                   disabled={disabled}
-                  id={f.name}
-                  name={f.name}
+                  id={fieldName(f)}
+                  name={fieldName(f)}
                   onBlur={f.handleBlur}
                   onChange={e => {
                     const { value, valueAsNumber } = e.currentTarget
                     f.handleChange(value === '' || Number.isNaN(valueAsNumber) ? undefined : valueAsNumber)
                   }}
                   type='number'
-                  value={f.state.value ?? ''}
+                  value={readValue<string | undefined>(f) ?? ''}
                   {...props}
                 />
                 {helpText ? <p className='text-sm text-muted-foreground'>{helpText}</p> : null}
@@ -864,13 +873,13 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
-            const val = f.state.value ?? 0
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
+            const val = readValue<number | undefined>(f) ?? 0
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -924,14 +933,14 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
-            const val = f.state.value ?? min
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
+            const val = readValue<number | undefined>(f) ?? min
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 <div className='flex items-center justify-between'>
                   {label === false ? null : (
-                    <FieldLabel htmlFor={f.name}>
+                    <FieldLabel htmlFor={fieldName(f)}>
                       {label ?? deriveLabel(name)}
                       {required ? <span className='text-destructive'> *</span> : null}
                     </FieldLabel>
@@ -942,10 +951,10 @@ const createFieldsModule = ({
                   aria-describedby={inv ? errorId : undefined}
                   aria-invalid={inv}
                   disabled={disabled}
-                  id={f.name}
+                  id={fieldName(f)}
                   max={max}
                   min={min}
-                  name={f.name}
+                  name={fieldName(f)}
                   onBlur={f.handleBlur}
                   onValueChange={v => f.handleChange(Array.isArray(v) ? v[0] : v)}
                   step={step}
@@ -1025,14 +1034,14 @@ const createFieldsModule = ({
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
             const validating = f.state.meta.isValidating
             const C = multiline ? Textarea : Input
-            const val = f.state.value ?? ''
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const val = readValue<string | undefined>(f) ?? ''
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field data-invalid={inv} data-testid={tid}>
                 <div className='flex items-center justify-between'>
                   {label === false ? null : (
-                    <FieldLabel htmlFor={f.name}>
+                    <FieldLabel htmlFor={fieldName(f)}>
                       {label ?? deriveLabel(name)}
                       {required ? <span className='text-destructive'> *</span> : null}
                     </FieldLabel>
@@ -1046,7 +1055,7 @@ const createFieldsModule = ({
                     ) : null}
                     {maxLength ? (
                       <span className='text-xs text-muted-foreground'>
-                        {String(val).length}/{maxLength}
+                        {val.length}/{maxLength}
                       </span>
                     ) : null}
                   </div>
@@ -1055,9 +1064,9 @@ const createFieldsModule = ({
                   aria-describedby={inv ? errorId : undefined}
                   aria-invalid={inv}
                   disabled={disabled}
-                  id={f.name}
+                  id={fieldName(f)}
                   maxLength={maxLength}
-                  name={f.name}
+                  name={fieldName(f)}
                   onBlur={f.handleBlur}
                   onChange={e => f.handleChange(e.target.value)}
                   value={val}
@@ -1095,12 +1104,12 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 {label === false ? null : (
-                  <FieldLabel htmlFor={f.name}>
+                  <FieldLabel htmlFor={fieldName(f)}>
                     {label ?? deriveLabel(name)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
@@ -1109,13 +1118,13 @@ const createFieldsModule = ({
                   aria-describedby={inv ? errorId : undefined}
                   aria-invalid={inv}
                   disabled={disabled}
-                  id={f.name}
-                  name={f.name}
+                  id={fieldName(f)}
+                  name={fieldName(f)}
                   onBlur={f.handleBlur}
                   onChange={e => f.handleChange(e.target.value)}
                   placeholder={placeholder}
                   type='time'
-                  value={f.state.value ?? ''}
+                  value={readValue<string | undefined>(f) ?? ''}
                 />
                 {helpText ? <p className='text-sm text-muted-foreground'>{helpText}</p> : null}
                 {inv ? <FieldError errors={f.state.meta.errors} id={errorId} /> : null}
@@ -1149,23 +1158,23 @@ const createFieldsModule = ({
         <form.Field name={name}>
           {(f: AnyFieldApi) => {
             const inv = f.state.meta.isTouched && !f.state.meta.isValid
-            const tid = testId ?? f.name
-            const errorId = `${f.name}-error`
+            const tid = testId ?? fieldName(f)
+            const errorId = `${fieldName(f)}-error`
             return (
               <Field {...props} data-invalid={inv} data-testid={tid}>
                 <div className='flex items-center gap-2'>
                   <Switch
                     aria-describedby={inv ? errorId : undefined}
                     aria-invalid={inv}
-                    checked={f.state.value ?? false}
+                    checked={readValue<boolean | undefined>(f) ?? false}
                     disabled={disabled}
-                    id={f.name}
-                    name={f.name}
+                    id={fieldName(f)}
+                    name={fieldName(f)}
                     onBlur={f.handleBlur}
                     onCheckedChange={v => f.handleChange(v)}
                   />
-                  <FieldLabel htmlFor={f.name}>
-                    {f.state.value ? trueLabel : (falseLabel ?? trueLabel)}
+                  <FieldLabel htmlFor={fieldName(f)}>
+                    {readValue<boolean | undefined>(f) ? trueLabel : (falseLabel ?? trueLabel)}
                     {required ? <span className='text-destructive'> *</span> : null}
                   </FieldLabel>
                 </div>
