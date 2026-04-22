@@ -42,6 +42,3 @@ export {
 } from './schema-helpers'
 export { setup } from './setup'
 export { makeSingletonCrud } from './singleton'
-export type { OrgTestCrudConfig, TestAuthConfig, TestUser } from './test'
-export { createTestContext, getOrgMembership, isTestMode, makeOrgTestCrud, makeTestAuth, TEST_EMAIL } from './test'
-export { discoverModules } from './test-discover'
