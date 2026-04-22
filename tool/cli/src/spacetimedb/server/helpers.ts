@@ -51,9 +51,7 @@ interface MutationOk<T> {
 type MutationResult<T> = MutationFail | MutationOk<T>
 type TypedFieldErrors<S extends ZodObject> = Partial<Record<keyof ZodOutput<S> & string, string>>
 class SenderError extends Error {
-  /** biome-ignore lint/style/useConsistentMemberAccessibility: biome+eslint conflict */
   public readonly _tag = 'SenderError' as const
-  /** biome-ignore lint/style/useConsistentMemberAccessibility: biome+eslint conflict */
   public constructor(message: string) {
     super(message)
     this.name = 'SenderError'

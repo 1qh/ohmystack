@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 type Db = 'convex' | 'spacetimedb'
 interface PackageJson {
@@ -70,5 +70,74 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: { db: Db; dir: string; 
   pkg.devDependencies = stripAScope(pkg.devDependencies)
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
+const pruneLibFe = ({ db, dir }: { db: Db; dir: string }) => {
+  const feSrc = join(dir, 'lib', 'fe', 'src')
+  if (!existsSync(feSrc)) return
+  const otherPrefix = db === 'convex' ? 'spacetimedb-' : 'convex-'
+  for (const entry of readdirSync(feSrc)) if (entry.startsWith(otherPrefix)) rmSync(join(feSrc, entry))
+}
+const listChildPackages = (root: string): string[] => {
+  if (!existsSync(root)) return []
+  const out: string[] = []
+  for (const entry of readdirSync(root, { withFileTypes: true }))
+    if (entry.isDirectory()) {
+      const pkg = join(root, entry.name, 'package.json')
+      if (existsSync(pkg)) out.push(pkg)
+    }
+  return out
+}
+const fixChildSection = (
+  section: Record<string, string> | undefined,
+  otherBeScope: string
+): [Record<string, string> | undefined, boolean] => {
+  if (!section) return [section, false]
+  let changed = false
+  const next: Record<string, string> = {}
+  for (const [key, val] of Object.entries(section))
+    if (key === otherBeScope) changed = true
+    else if (key === 'noboil' && val === 'workspace:*') {
+      next[key] = 'latest'
+      changed = true
+    } else next[key] = val
+  return [next, changed]
+}
+const patchWorkspacePackageJsons = ({ db, dir }: { db: Db; dir: string }) => {
+  const otherDb = db === 'convex' ? 'spacetimedb' : 'convex'
+  const otherBeScope = `@a/be-${otherDb}`
+  const pkgs = [
+    ...listChildPackages(join(dir, 'lib')),
+    ...listChildPackages(join(dir, 'backend')),
+    ...listChildPackages(join(dir, 'readonly'))
+  ]
+  for (const pkgPath of pkgs) {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+    const [deps, a] = fixChildSection(pkg.dependencies, otherBeScope)
+    const [devDeps, b] = fixChildSection(pkg.devDependencies, otherBeScope)
+    const [peerDeps, c] = fixChildSection(pkg.peerDependencies, otherBeScope)
+    if (a || b || c) {
+      pkg.dependencies = deps
+      pkg.devDependencies = devDeps
+      pkg.peerDependencies = peerDeps
+      writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+    }
+  }
+}
+const patchTsconfig = ({ db, dir }: { db: Db; dir: string }) => {
+  if (db === 'convex') return
+  const tsconfigPath = join(dir, 'tsconfig.json')
+  if (!existsSync(tsconfigPath)) return
+  const tsconfig = JSON.parse(readFileSync(tsconfigPath, 'utf8')) as {
+    compilerOptions?: { customConditions?: string[] }
+  }
+  tsconfig.compilerOptions ??= {}
+  const existing = tsconfig.compilerOptions.customConditions ?? []
+  const condition = `noboil-${db}`
+  if (!existing.includes(condition)) tsconfig.compilerOptions.customConditions = [...existing, condition]
+  writeFileSync(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`)
+}
 export type { Db, PackageJson }
-export { patchRootPackageJson, REMOVE_ALWAYS, removeDirs, rmSafe }
+export { patchRootPackageJson, patchTsconfig, patchWorkspacePackageJsons, pruneLibFe, REMOVE_ALWAYS, removeDirs, rmSafe }

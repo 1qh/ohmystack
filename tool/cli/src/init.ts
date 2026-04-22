@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable no-console */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
 /** biome-ignore-all lint/style/noProcessEnv: cli */
 import type { Db } from './scaffold-ops'
 import { bold, dim, green, red, yellow } from './ansi'
-import { patchRootPackageJson, removeDirs } from './scaffold-ops'
+import { patchRootPackageJson, patchTsconfig, patchWorkspacePackageJsons, pruneLibFe, removeDirs } from './scaffold-ops'
 interface InitOpts {
   db: Db
   dir: string
@@ -49,65 +49,6 @@ const run = (cmd: string, args: string[], cwd: string) => {
     console.error(`${red('Error:')} ${cmd} ${args.join(' ')} failed`)
     process.exit(1)
   }
-}
-const pruneLibFe = ({ db, dir }: { db: Db; dir: string }) => {
-  const feSrc = join(dir, 'lib', 'fe', 'src')
-  if (!existsSync(feSrc)) return
-  const otherPrefix = db === 'convex' ? 'spacetimedb-' : 'convex-'
-  for (const entry of readdirSync(feSrc)) if (entry.startsWith(otherPrefix)) rmSync(join(feSrc, entry))
-}
-const patchWorkspacePackageJsons = ({ db, dir }: { db: Db; dir: string }) => {
-  const walk = (root: string): string[] => {
-    const out: string[] = []
-    if (!existsSync(root)) return out
-    for (const entry of readdirSync(root, { withFileTypes: true }))
-      if (entry.isDirectory()) {
-        const childRoot = join(root, entry.name)
-        const pkg = join(childRoot, 'package.json')
-        if (existsSync(pkg)) out.push(pkg)
-      }
-    return out
-  }
-  const otherDb = db === 'convex' ? 'spacetimedb' : 'convex'
-  const otherBeScope = otherDb === 'convex' ? '@a/be-convex' : '@a/be-spacetimedb'
-  const pkgs = [...walk(join(dir, 'lib')), ...walk(join(dir, 'backend')), ...walk(join(dir, 'readonly'))]
-  for (const pkgPath of pkgs) {
-    const content = readFileSync(pkgPath, 'utf8')
-    const pkg = JSON.parse(content) as {
-      dependencies?: Record<string, string>
-      devDependencies?: Record<string, string>
-      peerDependencies?: Record<string, string>
-    }
-    let changed = false
-    const fixSection = (section?: Record<string, string>) => {
-      if (!section) return
-      if (section.noboil === 'workspace:*') {
-        section.noboil = 'latest'
-        changed = true
-      }
-      if (otherBeScope in section) {
-        delete section[otherBeScope]
-        changed = true
-      }
-    }
-    fixSection(pkg.dependencies)
-    fixSection(pkg.devDependencies)
-    fixSection(pkg.peerDependencies)
-    if (changed) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
-  }
-}
-const patchTsconfig = ({ db, dir }: { db: Db; dir: string }) => {
-  if (db === 'convex') return
-  const tsconfigPath = join(dir, 'tsconfig.json')
-  if (!existsSync(tsconfigPath)) return
-  const tsconfig = JSON.parse(readFileSync(tsconfigPath, 'utf8')) as {
-    compilerOptions?: { customConditions?: string[] }
-  }
-  tsconfig.compilerOptions ??= {}
-  const existing = tsconfig.compilerOptions.customConditions ?? []
-  const condition = `noboil-${db}`
-  if (!existing.includes(condition)) tsconfig.compilerOptions.customConditions = [...existing, condition]
-  writeFileSync(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`)
 }
 const scaffoldProject = ({ args, db, dir, includeDemos }: InitOpts & { args: string[] }) => {
   const fullPath = resolvePath(process.cwd(), dir)
