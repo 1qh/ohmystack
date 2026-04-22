@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 /* eslint-disable complexity, no-console */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -31,7 +30,7 @@ const checkManifest = (cwd: string) => {
   }
   return 0
 }
-const doctor = (_args: string[]) => {
+const doctor = () => {
   console.log(`\n${bold('noboil doctor')} — project health check\n`)
   const cwd = process.cwd()
   let issues = 0
