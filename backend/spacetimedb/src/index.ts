@@ -30,9 +30,7 @@ interface TableLike {
   delete: (row: unknown) => void
   iter: () => Iterable<unknown>
 }
-export const cleanup_test_data = (
-  spacetimedb as unknown as { reducer: (o: { name: string }, f: (c: { db: DbLike }) => void) => unknown }
-).reducer({ name: 'cleanup_test_data' }, ctx => {
+export const cleanup_test_data = spacetimedb.reducer({ name: 'cleanup_test_data' }, (ctx: { db: DbLike }) => {
   for (const name of ['blog', 'blogProfile', 'blog_profile']) {
     const tbl = ctx.db[name]
     if (tbl) for (const row of tbl.iter()) tbl.delete(row)

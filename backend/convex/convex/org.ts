@@ -50,7 +50,7 @@ const getOrCreate = mutation({
   handler: async ctx => {
     const uid = await getAuthUserIdOrTest(ctx)
     if (!uid) throw new ConvexError({ code: 'NOT_AUTHENTICATED' })
-    const user = await ctx.db.get(uid as never)
+    const user: null | Record<string, unknown> = await ctx.db.get(uid as never)
     if (!user) throw new ConvexError({ code: 'USER_NOT_FOUND' })
     const existing = await Promise.resolve(
       ctx.db
@@ -59,10 +59,9 @@ const getOrCreate = mutation({
         .first()
     )
     if (existing) return { created: false, orgId: existing._id }
-    const name =
-      (user as unknown as { email?: string; name?: string }).name ??
-      (user as unknown as { email?: string; name?: string }).email ??
-      'User'
+    const userName = typeof user.name === 'string' ? user.name : undefined
+    const userEmail = typeof user.email === 'string' ? user.email : undefined
+    const name = userName ?? userEmail ?? 'User'
     const baseName = `${name}'s Organization`
     const baseSlug = name
       .toLowerCase()

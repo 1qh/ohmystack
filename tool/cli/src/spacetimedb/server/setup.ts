@@ -1226,7 +1226,7 @@ const noboil = ({
   hooks?: GlobalHooks
   middleware?: Middleware[]
   tables: (helpers: NoboilHelpers) => Record<string, BsTable>
-}) => {
+}): SpacetimeDbLike => {
   const raw = makeSchema()
   const result = tables(makeBsHelpers(raw))
   const rawTables: Record<string, unknown> = {}
@@ -1304,7 +1304,7 @@ const noboil = ({
   const regSym = syms.find(sym => typeof g[sym] === 'function')
   const ctxSym = syms.find(sym => sym !== regSym)
   if (regSym && ctxSym) (g[regSym] as (schemaCtx: unknown, n: string) => void)(g[ctxSym], '__bs')
-  return spacetimedb as never
+  return spacetimedb as unknown as SpacetimeDbLike
 }
 export type { CrudDefaults, OrgTypeBuilders }
 export { noboil, setup, setupCrud }
