@@ -1,6 +1,5 @@
 import type { PopoverTrigger } from '@a/ui/popover'
 import type { ComponentProps } from 'react'
-import { urls } from '@a/config'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { queryTable } from 'noboil/spacetimedb/next'
@@ -17,11 +16,10 @@ interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
     'email' | 'image' | 'isSignedIn' | 'name' | 'onLogout' | 'triggerProps'
   >
 }
-const toHttpUri = (uri: string | undefined) => {
-  const resolved = uri ?? urls().stdbWs
-  if (resolved.startsWith('wss://')) return resolved.replace('wss://', 'https://')
-  if (resolved.startsWith('ws://')) return resolved.replace('ws://', 'http://')
-  return resolved
+const toHttpUri = (uri: string) => {
+  if (uri.startsWith('wss://')) return uri.replace('wss://', 'https://')
+  if (uri.startsWith('ws://')) return uri.replace('ws://', 'http://')
+  return uri
 }
 const readUserProfile = async (token: string): Promise<UserInfo> => {
   const { rows } = await queryTable<UserInfo>({
