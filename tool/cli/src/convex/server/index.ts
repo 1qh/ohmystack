@@ -28,9 +28,6 @@ export { makeOrg } from './org'
 export type { InviteDocLike, JoinRequestItem, OrgDocLike, OrgMemberItem, OrgUserLike } from './org'
 export { canEdit, getOrgMember, getOrgRole, orgCascade, requireOrgMember, requireOrgRole } from './org-crud'
 export { HEARTBEAT_INTERVAL_MS, makePresence, PRESENCE_TTL_MS, presenceTable } from './presence'
-export { makeSingletonCrud } from './singleton'
-export { createTestContext, isTestMode } from './test'
-export { discoverModules } from './test-discover'
 export {
   baseTable,
   checkSchema,
@@ -44,3 +41,6 @@ export {
   uploadTables
 } from './schema-helpers'
 export { setup } from './setup'
+export { makeSingletonCrud } from './singleton'
+export { createTestContext, isTestMode } from './test'
+export { discoverModules } from './test-discover'
