@@ -7,7 +7,7 @@ import { ConvexAuthNextjsServerProvider as AuthProvider } from '@convex-dev/auth
 import { ThemeProvider } from 'next-themes'
 import { OfflineIndicator } from 'noboil/convex/components'
 import { Suspense } from 'react'
-import ErrorBoundary from './error-boundary'
+import ErrorBoundary from './convex-error-boundary'
 interface AuthLayoutProps {
   bodyClassName?: string
   bodyProps?: Omit<ComponentProps<'body'>, 'children' | 'className'>

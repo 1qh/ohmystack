@@ -122,32 +122,11 @@ const patchRootPackageJson = ({ db, dir, includeDemos }: InitOpts) => {
   }
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
-const CONVEX_ONLY_FE_FILES = [
-  'auth-layout.tsx',
-  'convex-provider.tsx',
-  'email-login-page.tsx',
-  'error-boundary.tsx',
-  'image-route.ts',
-  'login-page.tsx',
-  'logout-action.ts',
-  'next-config.ts',
-  'proxy.ts',
-  'user-menu.tsx'
-]
 const pruneLibFe = ({ db, dir }: { db: Db; dir: string }) => {
   const feSrc = join(dir, 'lib', 'fe', 'src')
   if (!existsSync(feSrc)) return
-  if (db === 'spacetimedb')
-    for (const f of CONVEX_ONLY_FE_FILES) {
-      const p = join(feSrc, f)
-      if (existsSync(p)) rmSync(p)
-    }
-  else
-    for (const entry of readdirSync(feSrc))
-      if (entry.startsWith('spacetimedb-')) {
-        const p = join(feSrc, entry)
-        if (existsSync(p)) rmSync(p)
-      }
+  const otherPrefix = db === 'convex' ? 'spacetimedb-' : 'convex-'
+  for (const entry of readdirSync(feSrc)) if (entry.startsWith(otherPrefix)) rmSync(join(feSrc, entry))
 }
 const patchWorkspacePackageJsons = ({ db, dir }: { db: Db; dir: string }) => {
   const walk = (root: string): string[] => {

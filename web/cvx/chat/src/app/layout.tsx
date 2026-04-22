@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import AuthLayout from '@a/fe/auth-layout'
+import AuthLayout from '@a/fe/convex-auth-layout'
 import { SidebarInset, SidebarProvider } from '@a/ui/sidebar'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'

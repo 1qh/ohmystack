@@ -1,1 +1,1 @@
-export { GET, POST } from '@a/fe/image-route'
+export { GET, POST } from '@a/fe/convex-image-route'

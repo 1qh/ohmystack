@@ -4,7 +4,7 @@ import { api } from '@a/be-convex'
 import { convexAuthNextjsToken as tok } from '@convex-dev/auth/nextjs/server'
 import { fetchQuery } from 'convex/nextjs'
 import { connection } from 'next/server'
-import { logoutAction } from './logout-action'
+import { logoutAction } from './convex-logout-action'
 import UserMenuShell from './user-menu-shell'
 interface UserMenuProps extends ComponentProps<typeof PopoverTrigger> {
   shellProps?: Omit<

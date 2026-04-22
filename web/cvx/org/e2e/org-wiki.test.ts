@@ -1,6 +1,6 @@
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 // oxlint-disable no-await-in-loop
-/* eslint-disable no-await-in-loop */
+
 import type { Page } from '@playwright/test'
 import { api, createTestOrg, ensureTestUser, makeOrgTestUtils, tc } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'
