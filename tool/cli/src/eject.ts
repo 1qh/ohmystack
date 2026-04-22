@@ -3,7 +3,8 @@
 /* eslint-disable complexity */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
-import { bold, dim, green, red, yellow } from './ansi'
+import { bold, dim, green, yellow } from './ansi'
+import { die } from './cli-utils'
 interface EjectContext {
   cwd: string
   db: 'convex' | 'spacetimedb'
@@ -44,10 +45,6 @@ const isIgnoredPath = (filePath: string) => {
 }
 const readJson = (filePath: string) => JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, unknown>
 const writeJson = (filePath: string, value: unknown) => writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
-const fail = (message: string): never => {
-  console.log(`\n${red('Error:')} ${message}\n`)
-  process.exit(1)
-}
 const collectFiles = (root: string) => {
   if (!existsSync(root)) return []
   const out: string[] = []
@@ -75,21 +72,21 @@ const collectPackageJsonFiles = (root: string) => {
   return out
 }
 const detectInstalledPackage = (rootPackagePath: string) => {
-  if (!existsSync(rootPackagePath)) fail('No package.json found in current directory.')
+  if (!existsSync(rootPackagePath)) die('No package.json found in current directory.')
   const rootPackageJson = readJson(rootPackagePath) as PackageJson
   const merged: Record<string, string> = {}
   if (rootPackageJson.dependencies)
     for (const [key, value] of Object.entries(rootPackageJson.dependencies)) merged[key] = value
   if (rootPackageJson.devDependencies)
     for (const [key, value] of Object.entries(rootPackageJson.devDependencies)) merged[key] = value
-  if (!('noboil' in merged)) fail('noboil not found in dependencies. Nothing to eject.')
+  if (!('noboil' in merged)) die('noboil not found in dependencies. Nothing to eject.')
   const rcPath = join(dirname(rootPackagePath), '.noboilrc.json')
   if (!existsSync(rcPath))
-    fail(
+    die(
       'Missing .noboilrc.json — cannot determine db. Re-run `noboil init` or create .noboilrc.json with { "db": "convex" | "spacetimedb" }.'
     )
   const rc = readJson(rcPath) as { db?: string }
-  if (rc.db !== 'convex' && rc.db !== 'spacetimedb') fail('.noboilrc.json missing valid `db` field.')
+  if (rc.db !== 'convex' && rc.db !== 'spacetimedb') die('.noboilrc.json missing valid `db` field.')
   return { db: rc.db as 'convex' | 'spacetimedb', installedPackage: 'noboil' as const }
 }
 const IMPORT_PATTERN = /(?:from\s+|import\s*\(\s*|import\s+)(?<quote>['"])(?<specifier>[^'"\n]+)\k<quote>/gu
@@ -147,7 +144,7 @@ const buildSharedDependencySet = (sharedRoot: string, sharedSpecifiers: Set<stri
         visited.add(resolved)
         queue.push(resolved)
       }
-    } else fail(`Unable to resolve ${specifier} from shared source.`)
+    } else die(`Unable to resolve ${specifier} from shared source.`)
   }
   let index = 0
   while (index < queue.length) {
@@ -168,7 +165,7 @@ const buildSharedDependencySet = (sharedRoot: string, sharedSpecifiers: Set<stri
         if (resolved && !visited.has(resolved)) {
           visited.add(resolved)
           queue.push(resolved)
-        } else if (!resolved) fail(`Unable to resolve ${specifier} from shared source.`)
+        } else if (!resolved) die(`Unable to resolve ${specifier} from shared source.`)
       }
     index += 1
   }
@@ -239,10 +236,10 @@ const prepareContext = (cwd: string): EjectContext => {
   const detected = detectInstalledPackage(rootPackagePath)
   const sourceRoot = join(cwd, 'node_modules', 'noboil', 'src', detected.db)
   const sourcePackageJsonPath = join(cwd, 'node_modules', 'noboil', 'package.json')
-  if (!(existsSync(sourceRoot) && existsSync(sourcePackageJsonPath))) fail('Run `bun install` first.')
+  if (!(existsSync(sourceRoot) && existsSync(sourcePackageJsonPath))) die('Run `bun install` first.')
   const sourcePackageJson = readJson(sourcePackageJsonPath) as PackageJson
   if (!sourcePackageJson.exports || typeof sourcePackageJson.exports !== 'object')
-    fail('Unable to read exports map from installed @noboil package.')
+    die('Unable to read exports map from installed @noboil package.')
   const sourceFiles = collectFiles(sourceRoot)
   const sharedSpecifiers = collectSharedImportsFromFiles(sourceFiles)
   let sharedRoot: string | undefined
@@ -250,7 +247,7 @@ const prepareContext = (cwd: string): EjectContext => {
   if (sharedSpecifiers.size > 0) {
     const nodeModulesShared = join(cwd, 'node_modules', 'noboil', 'src', 'shared')
     if (existsSync(nodeModulesShared)) sharedRoot = nodeModulesShared
-    else fail('Shared source missing in node_modules/noboil/src/shared.')
+    else die('Shared source missing in node_modules/noboil/src/shared.')
     if (sharedRoot) sharedFiles = buildSharedDependencySet(sharedRoot, sharedSpecifiers)
   }
   return {

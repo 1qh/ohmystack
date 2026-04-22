@@ -5,7 +5,6 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 import type { Db } from './scaffold-ops'
 import { bold, dim, green, red, yellow } from './ansi'
 import { patchRootPackageJson, patchTsconfig, patchWorkspacePackageJsons, pruneLibFe, removeDirs } from './scaffold-ops'
