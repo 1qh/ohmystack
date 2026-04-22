@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable @typescript-eslint/max-params, no-await-in-loop, no-console, prefer-named-capture-group */
+/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-unsafe-argument, no-console, prefer-named-capture-group */
 /** biome-ignore-all lint/nursery/useNamedCaptureGroup: trivial rewrite */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 import { $, file, Glob, write } from 'bun'
@@ -8,12 +8,10 @@ import { dirname, relative } from 'node:path'
 const REPO = '/Users/o/z/noboil'
 const PKG = `${REPO}/tool/cli`
 const STAGING = `${REPO}/.cache/publish-staging/noboil`
-const UI_IMPORT_RE = /(from\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu
-const UI_DYNAMIC_RE = /(import\s*\(\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu
-const LEADING_SLASH = /^\//u
-const NODE_MODULES_RE = /(['"])([^'"]*)\/node_modules\//gu
+const UI_RE = /((?:from|import\s*\()\s*)(['"])@a\/ui(\/[^'"]+)?\2/gu
 const SRC_DIR_RE = /^\.\/src\//u
 const TS_EXT_RE = /\.tsx?$/u
+const LEADING_SLASH = /^\//u
 const resolveUiSub = (sub: string): string => {
   if (!sub) return '/lib/utils'
   const cleaned = sub.replace(LEADING_SLASH, '')
@@ -27,79 +25,55 @@ const resolveUiSub = (sub: string): string => {
     return `/${cleaned}`
   return `/components/${cleaned}`
 }
+const STAGING_TSCONFIG = {
+  compilerOptions: {
+    esModuleInterop: true,
+    jsx: 'react-jsx',
+    lib: ['DOM', 'DOM.Iterable', 'ESNext'],
+    module: 'Preserve',
+    moduleDetection: 'force',
+    moduleResolution: 'bundler',
+    skipLibCheck: true,
+    target: 'ESNext',
+    verbatimModuleSyntax: true
+  },
+  include: ['src']
+}
+const srcToDist = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.mjs')
+const srcToDts = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.d.mts')
+const wrap = (p: string) => ({ default: srcToDist(p), types: srcToDts(p) })
 console.log('prep-publish: staging at', STAGING)
 if (existsSync(STAGING)) rmSync(STAGING, { force: true, recursive: true })
 mkdirSync(STAGING, { recursive: true })
-await $`cp -R ${PKG}/package.json ${STAGING}/package.json`
-await $`cp ${PKG}/README.md ${STAGING}/README.md`
-await $`cp ${PKG}/LICENSE ${STAGING}/LICENSE`
+await $`cp ${PKG}/package.json ${PKG}/README.md ${PKG}/LICENSE ${PKG}/tsdown.config.ts ${STAGING}/`
 await $`cp -R ${PKG}/src ${STAGING}/src`
 await $`cp -R ${REPO}/readonly/ui/src ${STAGING}/src/ui`
-const glob = new Glob('**/*.{ts,tsx}')
+await write(`${STAGING}/tsconfig.json`, `${JSON.stringify(STAGING_TSCONFIG, null, 2)}\n`)
 const srcRoot = `${STAGING}/src`
-const files: string[] = []
-for await (const f of glob.scan({ cwd: srcRoot, onlyFiles: true })) files.push(f)
+const glob = new Glob('**/*.{ts,tsx}')
 let touched = 0
-for (const rel of files) {
+for await (const rel of glob.scan({ cwd: srcRoot, onlyFiles: true })) {
   const abs = `${srcRoot}/${rel}`
   const fromDir = dirname(abs)
   const orig = await file(abs).text()
-  const rewrite = (_m: string, prefix: string, quote: string, sub = '') => {
+  const next = orig.replaceAll(UI_RE, (_m, prefix: string, quote: string, sub = '') => {
     const targetAbs = `${srcRoot}/ui${resolveUiSub(sub)}`
     let relPath = relative(fromDir, targetAbs)
     if (!relPath.startsWith('.')) relPath = `./${relPath}`
     return `${prefix}${quote}${relPath}${quote}`
-  }
-  let next = orig.replaceAll(UI_IMPORT_RE, rewrite)
-  next = next.replaceAll(UI_DYNAMIC_RE, rewrite)
+  })
   if (next !== orig) {
     touched += 1
     await write(abs, next)
   }
 }
 console.log(`prep-publish: rewrote @a/ui imports in ${touched} files`)
-await $`cp ${PKG}/tsdown.config.ts ${STAGING}/tsdown.config.ts`
-await write(
-  `${STAGING}/tsconfig.json`,
-  `${JSON.stringify(
-    {
-      compilerOptions: {
-        esModuleInterop: true,
-        jsx: 'react-jsx',
-        lib: ['DOM', 'DOM.Iterable', 'ESNext'],
-        module: 'Preserve',
-        moduleDetection: 'force',
-        moduleResolution: 'bundler',
-        skipLibCheck: true,
-        target: 'ESNext',
-        verbatimModuleSyntax: true
-      },
-      include: ['src']
-    },
-    null,
-    2
-  )}\n`
-)
 console.log('prep-publish: compiling dist with tsdown...')
 await $`cd ${STAGING} && bunx tsdown`.quiet()
-if (existsSync(`${STAGING}/dist/node_modules`)) {
-  console.log('prep-publish: renaming dist/node_modules → dist/vendor (npm strips node_modules)')
-  await $`mv ${STAGING}/dist/node_modules ${STAGING}/dist/vendor`
-  const distGlob = new Glob('**/*.mjs')
-  for await (const f of distGlob.scan({ cwd: `${STAGING}/dist`, onlyFiles: true })) {
-    const abs = `${STAGING}/dist/${f}`
-    const src = await file(abs).text()
-    const next = src.replaceAll(NODE_MODULES_RE, '$1$2/vendor/')
-    if (next !== src) await write(abs, next)
-  }
-}
 console.log('prep-publish: patching package.json exports to dist paths...')
 const pkgJsonPath = `${STAGING}/package.json`
 const pkg = JSON.parse(await file(pkgJsonPath).text()) as Record<string, unknown>
 const exportsMap = pkg.exports as Record<string, Record<string, string> | string>
-const srcToDist = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.mjs')
-const srcToDts = (p: string) => p.replace(SRC_DIR_RE, './dist/').replace(TS_EXT_RE, '.d.mts')
-const wrap = (p: string) => ({ default: srcToDist(p), types: srcToDts(p) })
 for (const [subpath, target] of Object.entries(exportsMap))
   if (typeof target === 'string') exportsMap[subpath] = wrap(target)
   else {
