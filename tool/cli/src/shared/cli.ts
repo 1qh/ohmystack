@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { bold, cyan, dim, green, red, yellow } from '../ansi'
 interface CliTheme {
   bold: (s: string) => string
   cyan: (s: string) => string
@@ -14,15 +15,7 @@ interface ParseEnumFieldResult<T extends string> {
   optional: boolean
   type: T | { enum: string[] }
 }
-const ansi = (code: number, s: string) => `\u001B[${String(code)}m${s}\u001B[0m`
-const createCliTheme = (): CliTheme => ({
-  bold: s => ansi(1, s),
-  cyan: s => ansi(36, s),
-  dim: s => ansi(2, s),
-  green: s => ansi(32, s),
-  red: s => ansi(31, s),
-  yellow: s => ansi(33, s)
-})
+const createCliTheme = (): CliTheme => ({ bold, cyan, dim, green, red, yellow })
 const CAMEL_PAT = /(?<upper>[A-Z])/gu
 const FIRST_CHAR_PAT = /^./u
 const camelToTitle = (s: string) => s.replace(CAMEL_PAT, ' $1').replace(FIRST_CHAR_PAT, c => c.toUpperCase())

@@ -4,15 +4,12 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { bold, dim, green, red } from '../ansi'
 type Target = 'cloud' | 'local'
 const TARGETS: Record<Target, { label: string; server: string; uri: string }> = {
   cloud: { label: '☁️  MainCloud', server: 'maincloud', uri: 'https://maincloud.spacetimedb.com' },
   local: { label: '🐳 Local Docker', server: 'local', uri: 'ws://localhost:4000' }
 }
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
 const URI_PAT = /^(?:NEXT_PUBLIC_SPACETIMEDB_URI|SPACETIMEDB_URI)=.*$/gmu
 const findEnvFile = (from: string): null | string => {
   let dir = resolve(from)

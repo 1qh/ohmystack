@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { bold, dim, red } from '../ansi'
 interface ChildInfo extends TableInfo {
   foreignKey: string
   parent: string
@@ -8,9 +9,6 @@ interface TableInfo {
   name: string
   tableType: string
 }
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const findBracketEnd = (text: string, startPos: number): number => {
   let depth = 1
   let pos = startPos

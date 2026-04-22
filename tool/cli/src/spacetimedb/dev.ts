@@ -7,6 +7,7 @@ import type { FSWatcher } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, watch } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { bold, dim, green, red, yellow } from '../ansi'
 import { findEnvFile } from './use'
 interface DevFlags {
   docker: boolean
@@ -14,11 +15,6 @@ interface DevFlags {
   moduleDir: null | string
   watch: boolean
 }
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
 const SPACE_PAT = /\s+/u
 const findPackageJsonFile = (from: string): null | string => {
   let dir = resolve(from)

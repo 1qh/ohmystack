@@ -1,12 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { green } from '../ansi'
 const reExportPat =
   /export\s+(?<typeKw>type\s+)?\{\s*(?<sym>(?:default\s+as\s+)?\w+)\s*\}\s*from\s*['"](?<src>[^'"]+)['"]/gu
 const tsExtPat = /\.ts$/u
 const leadingWsPat = /^\s+/u
 const trailingWsPat = /\s+$/u
 const jsdocStarPat = /^\s*\*\s?/gmu
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
 const resolveReExports = (
   indexContent: string
 ): { isDefault: boolean; isType: boolean; sourcePath: string; symbol: string }[] => {

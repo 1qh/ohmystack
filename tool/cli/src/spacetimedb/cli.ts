@@ -2,9 +2,7 @@
 /* eslint-disable no-console */
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
+import { bold, dim, red } from '../ansi'
 const COMMANDS: Record<string, { description: string; script: string }> = {
   add: { description: 'Add a new table/reducer to your project', script: 'add.ts' },
   check: { description: 'Validate schema/reducer consistency', script: 'check.ts' },
