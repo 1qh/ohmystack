@@ -1,8 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
+import { bold, dim, red } from './ansi'
 const COMMANDS: Record<string, string> = {
   doctor: 'Check project health and version alignment',
   eject: 'Detach from upstream, convert to standalone',

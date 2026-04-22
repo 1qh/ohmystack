@@ -3,6 +3,7 @@
 /* eslint-disable complexity */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
+import { bold, dim, green, red, yellow } from './ansi'
 interface EjectContext {
   cwd: string
   db: 'convex' | 'spacetimedb'
@@ -31,11 +32,6 @@ interface RewriteResult {
   output: string
   replacements: number
 }
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const HELP = `\n${bold('noboil eject')} — inline noboil library locally\n\n${bold('Usage:')}\n  noboil eject [--dry-run]\n\n${bold('Options:')}\n  --dry-run      ${dim('Show what would change without writing files')}\n  --help, -h     ${dim('Show this help')}\n`
 const SHARED_SPECIFIER = 'noboil/shared'
 const LOCAL_PACKAGE = '@local/noboil'

@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
+import { bold, dim, green, red, yellow } from './ansi'
 type Db = 'convex' | 'spacetimedb'
 interface Manifest {
   db: Db
@@ -17,11 +18,6 @@ interface SyncOpts {
   dryRun: boolean
   force: boolean
 }
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const DEFAULT_REPO = '1qh/noboil'
 const REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO
 const REPO_GIT_URL =

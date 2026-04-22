@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console, @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unnecessary-condition */
-/** biome-ignore-all lint/style/noProcessEnv: cli */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
+/** biome-ignore-all lint/style/noProcessEnv: cli */
+import { bold, dim, green, red, yellow } from './ansi'
 type Db = 'convex' | 'spacetimedb'
 interface InitOpts {
   db: Db
@@ -28,11 +29,6 @@ const REPO_GIT_URL =
       ? REPO_SPEC
       : `${REPO_SPEC}.git`
 const REPO = REPO_SPEC
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
 const REMOVE_ALWAYS = [
   'PLAN.md',
   'AGENTS.md',

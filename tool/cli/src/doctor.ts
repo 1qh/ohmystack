@@ -4,11 +4,7 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-const bold = (s: string) => `\u001B[1m${s}\u001B[0m`
-const dim = (s: string) => `\u001B[2m${s}\u001B[0m`
-const green = (s: string) => `\u001B[32m${s}\u001B[0m`
-const yellow = (s: string) => `\u001B[33m${s}\u001B[0m`
-const red = (s: string) => `\u001B[31m${s}\u001B[0m`
+import { bold, dim, green, red, yellow } from './ansi'
 const checkManifest = (cwd: string) => {
   const manifestPath = join(cwd, '.noboilrc.json')
   if (!existsSync(manifestPath)) {
