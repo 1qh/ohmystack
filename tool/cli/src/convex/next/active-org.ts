@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/prefer-nullish-coalescing */
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
 'use server'
 import type { FunctionReference } from 'convex/server'
@@ -9,14 +8,14 @@ import { cookies } from 'next/headers'
 import { ACTIVE_ORG_COOKIE, ACTIVE_ORG_SLUG_COOKIE, ONE_YEAR_SECONDS } from '../constants'
 const isTestMode = () =>
   Boolean(
-    process.env.PLAYWRIGHT || process.env.NEXT_PUBLIC_PLAYWRIGHT || process.env.TEST_MODE || process.env.CONVEX_TEST_MODE
+    process.env.PLAYWRIGHT ?? process.env.NEXT_PUBLIC_PLAYWRIGHT ?? process.env.TEST_MODE ?? process.env.CONVEX_TEST_MODE
   )
-const directQuery = async (query: FunctionReference<'query'>, args: Record<string, unknown>) => {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL
+const directQuery = async (query: FunctionReference<'query'>, args: Record<string, unknown>): Promise<unknown> => {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL
   if (!url) return null
   const client = new ConvexHttpClient(url)
   try {
-    return await client.query(query, args)
+    return (await client.query(query, args)) as unknown
   } catch {
     return null
   }
@@ -46,12 +45,18 @@ const clearActiveOrgCookie = async () => {
   cookieStore.delete(ACTIVE_ORG_COOKIE)
   cookieStore.delete(ACTIVE_ORG_SLUG_COOKIE)
 }
-const getActiveOrg = async ({ query, token }: { query: FunctionReference<'query'>; token: null | string }) => {
+const getActiveOrg = async ({
+  query,
+  token
+}: {
+  query: FunctionReference<'query'>
+  token: null | string
+}): Promise<unknown> => {
   const cookieStore = await cookies()
   const orgId = cookieStore.get(ACTIVE_ORG_COOKIE)?.value
   if (!orgId) return null
   try {
-    if (token) return await fetchQuery(query, { orgId }, { token })
+    if (token) return (await fetchQuery(query, { orgId }, { token })) as unknown
     return await directQuery(query, { orgId })
   } catch {
     cookieStore.delete(ACTIVE_ORG_COOKIE)

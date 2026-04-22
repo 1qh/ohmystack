@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/max-params */
 import type { TestContext, TestUser } from 'noboil/spacetimedb/test'
 import { config } from '@a/config'
@@ -18,9 +17,9 @@ const getString = (row: Row, key: string): string => {
   return value
 }
 const hasIdentity = (row: Row, identity: string): boolean => {
-  const raw = row.user_id
+  const raw: unknown = row.user_id
   if (!Array.isArray(raw) || raw.length === 0) return false
-  const [first] = raw
+  const [first] = raw as unknown[]
   return first === toIdentityCell(identity)
 }
 const findMine = (rows: Row[], identity: string): Row[] => {

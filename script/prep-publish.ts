@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable @typescript-eslint/max-params, @typescript-eslint/no-unsafe-argument, no-console, prefer-named-capture-group */
+/* eslint-disable @typescript-eslint/max-params, no-console, prefer-named-capture-group */
 /** biome-ignore-all lint/nursery/useNamedCaptureGroup: trivial rewrite */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
 import { $, file, Glob, write } from 'bun'
@@ -56,12 +56,13 @@ for await (const rel of glob.scan({ cwd: srcRoot, onlyFiles: true })) {
   const abs = `${srcRoot}/${rel}`
   const fromDir = dirname(abs)
   const orig = await file(abs).text()
-  const next = orig.replaceAll(UI_RE, (_m, prefix: string, quote: string, sub = '') => {
-    const targetAbs = `${srcRoot}/ui${resolveUiSub(sub)}`
+  const rewriteUi = (_m: string, prefix: string, quote: string, sub?: string): string => {
+    const targetAbs = `${srcRoot}/ui${resolveUiSub(sub ?? '')}`
     let relPath = relative(fromDir, targetAbs)
     if (!relPath.startsWith('.')) relPath = `./${relPath}`
     return `${prefix}${quote}${relPath}${quote}`
-  })
+  }
+  const next = orig.replaceAll(UI_RE, rewriteUi)
   if (next !== orig) {
     touched += 1
     await write(abs, next)

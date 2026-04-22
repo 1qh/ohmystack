@@ -30,7 +30,7 @@
   "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    ".": "./src/noboil.ts",
     "./components": {
       "noboil-spacetimedb": "./src/spacetimedb/components/index.ts",
       "default": "./src/convex/components/index.ts"

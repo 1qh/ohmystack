@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/strict-void-return, no-console, no-continue */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-void-return, no-console, no-continue */
 /** biome-ignore-all lint/nursery/noContinue: crawler */
 /** biome-ignore-all lint/nursery/noPlaywrightElementHandle: crawler */
 /** biome-ignore-all lint/nursery/noPlaywrightEval: crawler */
@@ -126,8 +126,8 @@ const attachListeners = (page: Page, route: string, push: (i: Issue) => void, pe
     const text = m.text()
     safePush({ kind: t === 'warning' ? 'warn' : 'console', msg: trim(text), route })
     if (text.includes('%o') || text.includes('%s')) {
-      const pending = Promise.all(m.args().map(async a => a.jsonValue().catch(() => null)))
-        .then(vals => {
+      const pending = Promise.all(m.args().map(async (a): Promise<unknown> => a.jsonValue().catch(() => null)))
+        .then((vals: unknown[]) => {
           const flat = vals.map(v => (typeof v === 'string' ? v : JSON.stringify(v ?? ''))).join(' ')
           if (flat && flat !== text && !isIgnored(flat)) safePush({ kind: 'full', msg: trim(flat, 800), route })
         })
@@ -165,7 +165,8 @@ const pollOverlay = async (page: Page, route: string, push: (i: Issue) => void) 
     const p = document.querySelector('nextjs-portal')
     if (!p?.shadowRoot) return null
     const root = p.shadowRoot
-    const badge = root.querySelector('[data-next-badge]')
+    const badge = root.querySelector<HTMLElement>('[data-next-badge]')
+    if (!badge) return null
     const errCount = Number(badge.dataset.issuesCount ?? '0')
     if (errCount <= 0) return null
     const title = root
@@ -525,7 +526,8 @@ const crawlApp = async (app: AppSpec): Promise<Result> => {
     return true
   }
   while (queue.length > 0 && seen.size < maxRoutes) {
-    const route = queue.shift()!
+    const route = queue.shift()
+    if (!route) break
     if (seen.has(route)) continue
     seen.add(route)
     const ok = await Promise.race([processRoute(route), new Promise<boolean>(r => setTimeout(() => r(false), 20_000))])

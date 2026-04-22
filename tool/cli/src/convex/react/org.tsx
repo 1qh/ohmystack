@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 'use client'
 import type { FunctionReference } from 'convex/server'
 import type { ReactNode } from 'react'
@@ -73,14 +73,17 @@ const useOrgQuery = <F extends FunctionReference<'query'>>(
   args?: 'skip' | Omit<F['_args'], 'orgId'>
 ): F['_returnType'] | undefined => {
   const { orgId } = useOrg()
-  return useQuery(query as FunctionReference<'query'>, args === 'skip' ? 'skip' : { ...args, orgId })
+  return useQuery(query as FunctionReference<'query'>, args === 'skip' ? 'skip' : { ...args, orgId }) as
+    | F['_returnType']
+    | undefined
 }
 /** Wraps useMutation to automatically inject the current org's ID. */
 const useOrgMutation = <F extends FunctionReference<'mutation'>>(mutation: F) => {
   const { orgId } = useOrg()
   const mutate = useMutation(mutation as FunctionReference<'mutation'>)
   return useCallback(
-    async (args?: Omit<F['_args'], 'orgId'>): Promise<F['_returnType']> => mutate({ ...args, orgId }),
+    async (args?: Omit<F['_args'], 'orgId'>): Promise<F['_returnType']> =>
+      (await mutate({ ...args, orgId })) as F['_returnType'],
     [mutate, orgId]
   )
 }

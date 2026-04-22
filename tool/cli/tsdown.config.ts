@@ -3,7 +3,12 @@ export default defineConfig({
   clean: true,
   dts: { eager: true },
   entry: [
+    'src/noboil.ts',
     'src/index.ts',
+    'src/doctor.ts',
+    'src/eject.ts',
+    'src/init.ts',
+    'src/sync.ts',
     'src/convex/index.ts',
     'src/convex/server/index.ts',
     'src/convex/zod.ts',

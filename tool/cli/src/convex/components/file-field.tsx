@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/strict-void-return */
+/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/strict-void-return */
 /* oxlint-disable eslint/no-await-in-loop, jsx-no-new-object-as-prop, jsx-a11y/prefer-tag-over-role */
 /** biome-ignore-all lint/a11y/useSemanticElements: dropzone requires div role button */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
@@ -92,12 +92,13 @@ const FileFieldImpl = ({
   multiple?: boolean
 }) => {
   const { upload: uploadRef } = useFileApi()
-  const raw = f.state.value
+  const raw: unknown = f.state.value
+  const name = f.name as string
   const vals = useMemo(() => (multiple ? ((raw ?? []) as string[]) : raw ? [raw as string] : []), [multiple, raw])
   const inv = f.state.meta.isTouched && !f.state.meta.isValid
   const canAdd = multiple ? !max || vals.length < max : vals.length === 0
   const { isUploading, progress, reset, upload } = useUpload(uploadRef)
-  const errorId = `${f.name}-error`
+  const errorId = `${name}-error`
   const onDrop = useCallback(
     async (accepted: File[]) => {
       if (multiple && max && vals.length + accepted.length > max) return toast.error(`Max ${max}`)
@@ -136,11 +137,11 @@ const FileFieldImpl = ({
     (disabled ?? isUploading) && 'cursor-not-allowed opacity-50',
     dropClassName
   )
-  const tid = testId ?? f.name
+  const tid = testId ?? name
   return (
     <Field {...props} data-invalid={inv} data-testid={tid}>
       {label ? (
-        <FieldLabel htmlFor={f.name}>
+        <FieldLabel htmlFor={name}>
           {label}
           {multiple && max ? (
             <span className='text-muted-foreground'>
