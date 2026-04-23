@@ -243,6 +243,35 @@ const api = noboil({
 
 Auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, conflict detection — all included. Same API across databases. `create`, `update`, and `rm` each accept single or bulk input (up to 100 items).
 
+## Factories
+
+Each table declares its shape via Zod and picks a factory that matches its access pattern. noboil generates the matching CRUD/ops per factory.
+
+| Factory     | Shape                     | Generates                                                                | Use for                                    |
+| ----------- | ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------ |
+| `owned`     | user-scoped               | `create`/`list`/`read`/`update`/`rm`                                     | user-owned data (posts, chats, tasks)      |
+| `org`       | org-scoped with editors   | `addEditor`/`removeEditor` + full CRUD                                   | multi-tenant, team-shared resources        |
+| `child`     | nested under a parent     | `create`/`list`/`rm`/`update` by parentId                                | comments under posts, items under orders   |
+| `singleton` | one per user              | `get`/`upsert`                                                           | user preferences, profiles                 |
+| `cache`     | keyed external API cache  | `get`/`load`/`refresh`/`invalidate`/`purge`                              | TMDB movies, Gravatar avatars              |
+| `log`       | append-only event stream  | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing     |
+| `kv`        | string-keyed state        | `get` (public) / `set`/`rm` (role-gated)                                 | feature flags, status banners, site config |
+| `quota`     | sliding-window rate limit | `check`/`record`/`consume`                                               | anti-spam, vote throttling, API limits     |
+
+One `s.ts` file, one Zod schema per table, one factory per access pattern:
+
+```ts
+const s = schema({
+  owned:     { chat: object({...}) },                                          // user-scoped CRUD
+  log:       { message: { parent: 'chat', schema: object({...}) } },           // append-only log
+  kv:        { banner: { keys: ['active'] as const, schema: object({...}), writeRole: 'admin' } },
+  quota:     { sendMessage: { limit: 30, durationMs: 60_000 } },               // 30 msgs/minute
+  singleton: { prefs: object({...}) }
+})
+```
+
+Each factory’s React hook mirrors the server API: `useCrud` / `useSingleton` / `useCache` / `useLog` / `useKv` / `useQuota`. See `doc/content/docs/` for per-factory guides.
+
 ## Monorepo Structure
 
 ```
