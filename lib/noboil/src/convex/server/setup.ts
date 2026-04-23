@@ -26,9 +26,12 @@ import { makeCacheCrud } from './cache-crud'
 import { makeChildCrud } from './child'
 import { makeCrud } from './crud'
 import { dbInsert, dbPatch, err, getUser, makeUnique, ownGet, readCtx, time } from './helpers'
+import { makeKv } from './kv'
+import { makeLog } from './log'
 import { composeMiddleware } from './middleware'
 import { makeOrg } from './org'
 import { makeOrgCrud } from './org-crud'
+import { makeQuota } from './quota'
 import { makeSingletonCrud } from './singleton'
 const mergeGlobalHooks = (a: GlobalHooks | undefined, b: GlobalHooks | undefined): GlobalHooks | undefined => {
   if (!(a || b)) return
@@ -309,6 +312,25 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     field: keyof S & string,
     index?: string
   ) => makeUnique({ field, index, pq: typed(pq), table })
+  const log = <S extends ZodRawShape>(table: keyof DM & string, schema: ZodObject<S>) =>
+    makeLog({ builders: { m: typed(m), q: typed(q) }, schema, table })
+  const kv = <S extends ZodRawShape>(
+    table: keyof DM & string,
+    opts: {
+      keys?: readonly string[]
+      schema: ZodObject<S>
+      writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
+    }
+  ) =>
+    makeKv({
+      builders: { m: typed(m), q: typed(q) },
+      keys: opts.keys,
+      schema: opts.schema,
+      table,
+      writeRole: opts.writeRole
+    })
+  const quota = (table: keyof DM & string, opts: { durationMs: number; limit: number }) =>
+    makeQuota({ builders: { m: typed(m), q: typed(q) }, durationMs: opts.durationMs, limit: opts.limit, table })
   const normCascade = config.orgCascadeTables?.map(t => (typeof t === 'string' ? { table: t } : t))
   const org = config.orgSchema
     ? makeOrg({
@@ -320,6 +342,6 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       })
     : undefined
   const user = { me: q({ handler: (c: Rec) => c.user }) }
-  return { cacheCrud, childCrud, cm, cq, crud, m, org, orgCrud, pq, q, singletonCrud, uniqueCheck, user }
+  return { cacheCrud, childCrud, cm, cq, crud, kv, log, m, org, orgCrud, pq, q, quota, singletonCrud, uniqueCheck, user }
 }
 export { mergeCacheHooks, mergeGlobalHooks, mergeHooks, setup }

@@ -119,8 +119,8 @@ interface LogEntryInput {
 const makeLog = <T extends Record<string, LogEntryInput>>(entries: T): T => {
   for (const name of Object.keys(entries)) {
     const entry = entries[name]
-    if (entry?.schema)
-      Object.defineProperty(entry.schema as unknown as { __bs?: string }, '__bs', {
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
         configurable: true,
         enumerable: false,
         value: 'log'
@@ -137,8 +137,8 @@ interface KvEntryInput {
 const makeKv = <T extends Record<string, KvEntryInput>>(entries: T): T => {
   for (const name of Object.keys(entries)) {
     const entry = entries[name]
-    if (entry?.schema)
-      Object.defineProperty(entry.schema as unknown as { __bs?: string }, '__bs', {
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
         configurable: true,
         enumerable: false,
         value: 'kv'
@@ -151,7 +151,18 @@ interface QuotaEntryInput {
   limit: number
 }
 /** Creates quota entries for use with quota(). */
-const makeQuota = <T extends Record<string, QuotaEntryInput>>(entries: T): T => typed(entries)
+const makeQuota = <T extends Record<string, QuotaEntryInput>>(entries: T): T => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'quota'
+      })
+  }
+  return typed(entries)
+}
 const mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {
   const keys = Object.keys(source)
   for (const key of keys) target[key] = source[key]

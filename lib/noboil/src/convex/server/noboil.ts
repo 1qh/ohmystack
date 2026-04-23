@@ -14,7 +14,7 @@ import type {
 } from './types'
 import { setup } from './setup'
 type AnyShape = ZodRawShape
-type Brand = 'base' | 'org' | 'orgDef' | 'owned' | 'singleton'
+type Brand = 'base' | 'kv' | 'log' | 'org' | 'orgDef' | 'owned' | 'quota' | 'singleton'
 const readBrand = (schema: unknown): Brand | undefined => {
   const v = (schema as undefined | { __bs?: unknown })?.__bs
   return typeof v === 'string' ? (v as Brand) : undefined
@@ -81,8 +81,20 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
     const opts = (def.opts ?? {}) as Record<string, unknown>
     return s.cacheCrud({ ...opts, schema: def.schema, table: name } as never)
   }
+  if (def.brand === 'log') {
+    const entry = def.schema as { parent: string; schema: ZodObject }
+    return s.log(name, entry.schema)
+  }
+  if (def.brand === 'kv') {
+    const entry = def.schema as { keys?: readonly string[]; schema: ZodObject; writeRole?: unknown }
+    return s.kv(name, { keys: entry.keys, schema: entry.schema, writeRole: entry.writeRole as never })
+  }
+  if (def.brand === 'quota') {
+    const entry = def.schema as { durationMs: number; limit: number }
+    return s.quota(name, { durationMs: entry.durationMs, limit: entry.limit })
+  }
   throw new Error(
-    `noboil(): unknown brand '${def.brand}' on table '${name}'. Valid brands: base, org, owned, singleton, child`
+    `noboil(): unknown brand '${def.brand}' on table '${name}'. Valid brands: base, kv, log, org, owned, quota, singleton, child`
   )
 }
 const buildDeferred = (schema: unknown, opts: unknown): Deferred => {
