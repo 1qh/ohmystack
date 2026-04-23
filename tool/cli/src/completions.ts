@@ -1,5 +1,6 @@
 /* oxlint-disable eslint-plugin-unicorn(no-process-exit) */
 /* eslint-disable no-console */
+import { homedir } from 'node:os'
 const BASH = `_noboil() {
   local cur prev
   COMPREPLY=()
@@ -67,13 +68,61 @@ complete -c noboil -n '__fish_seen_subcommand_from doctor' -l fix
 complete -c noboil -n '__fish_seen_subcommand_from eject' -l yes
 complete -c noboil -n '__fish_seen_subcommand_from completions' -xa 'bash zsh fish'
 `
-const printCompletions = (shell: string) => {
-  if (shell === 'bash') console.log(BASH)
-  else if (shell === 'zsh') console.log(ZSH)
-  else if (shell === 'fish') console.log(FISH)
-  else {
-    console.log('Usage: noboil completions <bash|zsh|fish>')
+const scriptFor = (shell: string): null | string => {
+  if (shell === 'bash') return BASH
+  if (shell === 'zsh') return ZSH
+  if (shell === 'fish') return FISH
+  return null
+}
+const installPath = (shell: string): null | string => {
+  const home = homedir()
+  if (!home) return null
+  if (shell === 'bash') return `${home}/.bashrc`
+  if (shell === 'zsh') return `${home}/.zshrc`
+  if (shell === 'fish') return `${home}/.config/fish/completions/noboil.fish`
+  return null
+}
+const INSTALL_MARKER = '# noboil completions'
+const installCompletion = async (shell: string): Promise<void> => {
+  const { file, write } = await import('bun')
+  const script = scriptFor(shell)
+  const target = installPath(shell)
+  if (!(script && target)) {
+    console.log('Usage: noboil completions install <bash|zsh|fish>')
     process.exit(1)
   }
+  if (shell === 'fish') {
+    await write(target, script)
+    console.log(`${target} written.`)
+    return
+  }
+  const existing = (await file(target).exists()) ? await file(target).text() : ''
+  if (existing.includes(INSTALL_MARKER)) {
+    console.log(`${target} already has noboil completions. Skipping.`)
+    return
+  }
+  const block = `\n${INSTALL_MARKER}\n${script}\n`
+  await write(target, existing + block)
+  console.log(`${target} appended. Restart your shell or source the file.`)
+}
+const printCompletions = async (arg: string, rest: string[] = []) => {
+  if (arg === 'install') {
+    const shell = rest[0] ?? ''
+    try {
+      await installCompletion(shell)
+    } catch (error) {
+      console.log(`install failed: ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
+    return
+  }
+  const script = scriptFor(arg)
+  if (script) {
+    console.log(script)
+    return
+  }
+  console.log('Usage: noboil completions <bash|zsh|fish>')
+  console.log('       noboil completions install <bash|zsh|fish>')
+  process.exit(1)
 }
 export { printCompletions }

@@ -5,8 +5,8 @@
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import type { Db } from './scaffold-ops'
 import { bold, dim } from './ansi'
@@ -139,17 +139,29 @@ const processOneFile = ({
   else if (isRootConfig(relPath)) rootReview.push(`${relPath} ${dim('(review manually)')}`)
   else skipped.push(`${relPath} ${dim('(skipped (modified locally))')}`)
 }
+const CACHE_REPO_DIR = () => join(homedir(), '.noboil', 'upstream.git')
+const refreshCache = (cwd: string) => {
+  const cacheDir = CACHE_REPO_DIR()
+  if (existsSync(cacheDir)) {
+    runGit({ args: ['fetch', '--depth', '1', 'origin', 'HEAD'], cwd: cacheDir, err: 'git fetch failed during sync' })
+    runGit({ args: ['reset', '--hard', 'FETCH_HEAD'], cwd: cacheDir, err: 'git reset failed during sync' })
+    return
+  }
+  mkdirSync(dirname(cacheDir), { recursive: true })
+  runGit({
+    args: ['clone', '--depth', '1', REPO_GIT_URL, cacheDir],
+    cwd,
+    err: 'git clone failed during sync'
+  })
+}
 const runSync = async (opts: SyncOpts, onProgress: (p: Record<string, unknown>) => void): Promise<void> => {
   const cwd = process.cwd()
   const manifest = readManifest(cwd)
   const tmpDir = join(tmpdir(), `noboil-sync-${Date.now()}`)
   onProgress({ phase: 'cloning' })
   try {
-    runGit({
-      args: ['clone', '--depth', '1', REPO_GIT_URL, tmpDir],
-      cwd,
-      err: 'git clone failed during sync'
-    })
+    refreshCache(cwd)
+    cpSync(CACHE_REPO_DIR(), tmpDir, { recursive: true })
     const nextHash = runGit({
       args: ['rev-parse', 'HEAD'],
       cwd: tmpDir,

@@ -1,12 +1,15 @@
-/* oxlint-disable no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return) */
+/* oxlint-disable no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), eslint-plugin-promise(prefer-await-to-then) */
 import { Box, render, Text, useApp, useInput } from 'ink'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { useEffect, useState } from 'react'
+import { checkForUpdate } from './shared/update-check'
 import { getCliVersion } from './shared/version'
+type Action = 'add' | 'completions' | 'doctor' | 'eject' | 'exit' | 'init' | 'sync' | 'upgrade'
 interface DashboardProps {
   cwd: string
   manifest: Manifest | null
-  onExit: () => void
+  onExit: (action: Action) => void
   version: string
 }
 interface Manifest {
@@ -16,22 +19,38 @@ interface Manifest {
   scaffoldedFrom: string
   version: number
 }
-const COMMANDS: { desc: string; name: string }[] = [
-  { desc: 'Create a new noboil project', name: 'init' },
-  { desc: 'Check project health', name: 'doctor' },
-  { desc: 'Pull upstream changes', name: 'sync' },
-  { desc: 'Detach from upstream', name: 'eject' },
-  { desc: 'Add a table (auto-detects DB)', name: 'add <name>' },
-  { desc: 'Convex-specific subcommands', name: 'convex ...' },
-  { desc: 'SpacetimeDB-specific subcommands', name: 'stdb ...' },
-  { desc: 'Print shell completion script', name: 'completions' }
+const COMMANDS: { action: Action; desc: string; key: string; name: string }[] = [
+  { action: 'init', desc: 'Create a new noboil project', key: 'i', name: 'init' },
+  { action: 'doctor', desc: 'Check project health', key: 'd', name: 'doctor' },
+  { action: 'sync', desc: 'Pull upstream changes', key: 's', name: 'sync' },
+  { action: 'add', desc: 'Add a table (auto-detects DB)', key: 'a', name: 'add' },
+  { action: 'eject', desc: 'Detach from upstream', key: 'e', name: 'eject' },
+  { action: 'upgrade', desc: 'Upgrade noboil to latest', key: 'u', name: 'upgrade' },
+  { action: 'completions', desc: 'Print shell completion script', key: 'c', name: 'completions' }
 ]
 const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
   const app = useApp()
+  const [latest, setLatest] = useState<null | string>(null)
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLatest(await checkForUpdate(version))
+      } catch {
+        setLatest(null)
+      }
+    }
+    run().catch(() => null)
+  }, [version])
   useInput((input, key) => {
+    const match = COMMANDS.find(c => c.key === input)
+    if (match) {
+      app.exit()
+      onExit(match.action)
+      return
+    }
     if (input === 'q' || (key.ctrl && input === 'c') || key.escape || key.return) {
       app.exit()
-      onExit()
+      onExit('exit')
     }
   })
   return (
@@ -42,6 +61,7 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
             noboil
           </Text>
           <Text dimColor> v{version}</Text>
+          {latest && latest !== version ? <Text color='yellow'> (v{latest} available — press u to upgrade)</Text> : null}
         </Box>
         <Text dimColor>schema-first, zero-boilerplate fullstack</Text>
       </Box>
@@ -73,20 +93,22 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
         </Box>
       ) : (
         <Box marginBottom={1}>
-          <Text dimColor>No noboil project detected in {cwd}. Run `noboil init` to start.</Text>
+          <Text dimColor>No noboil project detected in {cwd}. Press i to start.</Text>
         </Box>
       )}
       <Box flexDirection='column'>
         <Text bold>Commands</Text>
         {COMMANDS.map(c => (
           <Box key={c.name}>
-            <Text color='cyan'> {c.name.padEnd(14)}</Text>
+            <Text color='cyan'> {c.key}</Text>
+            <Text dimColor> · </Text>
+            <Text color='cyan'>{c.name.padEnd(12)}</Text>
             <Text dimColor>{c.desc}</Text>
           </Box>
         ))}
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>Run `noboil &lt;command&gt; --help` for options · q/↵ exit</Text>
+        <Text dimColor>single-key to run · q/↵/esc exit</Text>
       </Box>
     </Box>
   )
@@ -100,16 +122,17 @@ const readManifest = (cwd: string): Manifest | null => {
     return null
   }
 }
-const runDashboard = async (): Promise<void> => {
+const runDashboard = async (): Promise<Action> => {
   const cwd = process.cwd()
   const manifest = readManifest(cwd)
   const version = await getCliVersion()
-  await new Promise<void>(resolve => {
+  return new Promise<Action>(resolve => {
     const { unmount } = render(<DashboardApp cwd={cwd} manifest={manifest} onExit={resolve} version={version} />)
     process.on('SIGINT', () => {
       unmount()
-      resolve()
+      resolve('exit')
     })
   })
 }
+export type { Action }
 export { runDashboard }
