@@ -1,9 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { writeFile } from 'node:fs/promises'
 import { defineConfig } from 'tsdown'
 import pkg from './package.json' with { type: 'json' }
-const DYNAMIC_IMPORT_RE = /await import\(['"]\.\/(?<sub>[^'"]+)['"]\)/gu
-const BIN_PREFIX_RE = /^\.\//u
+const SRC_RE = /^\.\/src\//u
+const TS_EXT_RE = /\.tsx?$/u
 const collect = (target: unknown, into: Set<string>): void => {
   if (typeof target === 'string') {
     if (target.startsWith('./src/')) into.add(target.slice(2))
@@ -11,27 +10,43 @@ const collect = (target: unknown, into: Set<string>): void => {
   }
   if (target && typeof target === 'object') for (const v of Object.values(target)) collect(v, into)
 }
-const resolveEntry = (baseRel: string): string => {
-  if (existsSync(`${baseRel}.ts`)) return `${baseRel}.ts`
-  if (existsSync(`${baseRel}.tsx`)) return `${baseRel}.tsx`
-  return `${baseRel}.ts`
-}
-const scanBinDynamics = (binPath: string, into: Set<string>): void => {
-  const rel = binPath.replace(BIN_PREFIX_RE, '')
-  const src = readFileSync(rel, 'utf8')
-  const base = dirname(rel)
-  for (const [, sub] of src.matchAll(DYNAMIC_IMPORT_RE)) into.add(resolveEntry(`${base}/${sub}`))
-}
 const entries = new Set<string>()
 collect(pkg.exports, entries)
 for (const bin of Object.values(pkg.bin)) collect(bin, entries)
-for (const binPath of Object.values(pkg.bin)) scanBinDynamics(binPath, entries)
+const srcToMjs = (p: string) => p.replace(SRC_RE, './').replace(TS_EXT_RE, '.mjs')
+const srcToDts = (p: string) => p.replace(SRC_RE, './').replace(TS_EXT_RE, '.d.mts')
+const wrap = (p: string) => ({ default: srcToMjs(p), types: srcToDts(p) })
+const writePublishPkgJson = async () => {
+  const published = structuredClone(pkg) as Record<string, unknown>
+  const exportsMap = published.exports as Record<string, Record<string, string> | string>
+  for (const [sub, target] of Object.entries(exportsMap))
+    if (sub === './package.json') Reflect.deleteProperty(exportsMap, sub)
+    else if (typeof target === 'string') exportsMap[sub] = wrap(target)
+    else {
+      const next: Record<string, unknown> = {}
+      for (const [cond, path] of Object.entries(target)) next[cond] = wrap(path)
+      exportsMap[sub] = next as Record<string, string>
+    }
+  published.bin = Object.fromEntries(
+    Object.entries(published.bin as Record<string, string>).map(([name, src]) => [name, srcToMjs(src)])
+  )
+  Reflect.deleteProperty(published, 'files')
+  Reflect.deleteProperty(published, 'devDependencies')
+  Reflect.deleteProperty(published, 'scripts')
+  Reflect.deleteProperty(published, 'publishConfig')
+  await writeFile('dist/package.json', `${JSON.stringify(published, null, 2)}\n`)
+}
 export default defineConfig({
   clean: true,
+  copy: [
+    { from: 'README.md', to: 'dist/README.md' },
+    { from: 'LICENSE', to: 'dist/LICENSE' }
+  ],
   dts: { eager: true },
   entry: [...entries],
   format: 'esm',
   noExternal: [/^@a\/ui/u],
+  onSuccess: writePublishPkgJson,
   outDir: 'dist',
   sourcemap: true
 })
