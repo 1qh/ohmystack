@@ -1,4 +1,4 @@
-type RlsCategory = 'base' | 'children' | 'file' | 'org' | 'orgScoped' | 'owned' | 'singleton'
+type RlsCategory = 'base' | 'children' | 'file' | 'kv' | 'log' | 'org' | 'orgScoped' | 'owned' | 'quota' | 'singleton'
 type RlsPub = boolean | string | undefined
 const RLS_COL = { orgId: 'orgId', userId: 'userId' } as const
 const RLS_TBL = { orgMember: 'orgMember' } as const
@@ -23,6 +23,8 @@ const rlsSql = (name: string, category: RlsCategory, pub?: RlsPub): string[] => 
     return [rlsWhereSender(name, RLS_COL.userId)]
   }
   if (category === 'orgScoped') return []
+  if (category === 'log') return [rlsWhereSender(name, RLS_COL.userId)]
+  if (category === 'kv') return [rlsSelect(name)]
   return []
 }
 export type { RlsCategory, RlsPub }

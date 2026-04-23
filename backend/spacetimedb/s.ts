@@ -43,6 +43,22 @@ const s = schema({
       })
     )
   },
+  kv: {
+    siteConfig: {
+      schema: object({
+        active: boolean(),
+        message: string()
+      })
+    }
+  },
+  log: {
+    vote: {
+      parent: 'poll',
+      schema: object({
+        option: string()
+      })
+    }
+  },
   org: {
     team: object({
       avatarId: file.optional(),
@@ -84,7 +100,14 @@ const s = schema({
     chat: object({
       isPublic: boolean(),
       title: string().min(1)
+    }),
+    poll: object({
+      options: array(string().min(1)).min(2).max(10),
+      question: string().min(1)
     })
+  },
+  quota: {
+    pollVoteQuota: { durationMs: 60_000, limit: 30 }
   },
   singleton: {
     blogProfile: object(profileShape),

@@ -16,6 +16,7 @@ import type {
   OwnedSchema,
   RateLimitInput,
   Rec,
+  SchemaBrand,
   SingletonSchema
 } from './types'
 import type { CacheConfigLoose, CacheFieldBuilders, CacheOptions } from './types/cache'
@@ -29,9 +30,12 @@ import { makeChildCrud } from './child'
 import { makeCrud } from './crud'
 import { makeFileUpload } from './file'
 import { err, normalizeRateLimit } from './helpers'
+import { makeKv } from './kv'
+import { makeLog } from './log'
 import { composeMiddleware } from './middleware'
 import { makeOrg, makeOrgTables } from './org'
 import { makeOrgCrud } from './org-crud'
+import { makeQuota } from './quota'
 import { identityEquals } from './reducer-utils'
 import { rlsChildSql, rlsSql } from './rls'
 import { makeSingletonCrud } from './singleton'
@@ -871,8 +875,11 @@ interface BsCtx {
   cascades: string[]
   childZ: Record<string, { foreignKey: string; parent: string; schema: ZodLike }>
   extraFieldsByTable: Record<string, Record<string, unknown>>
+  kvZ: Record<string, ZodLike>
+  logZ: Record<string, { parent: string; schema: ZodLike }>
   orgScopedZ: Record<string, ZodLike>
   ownedZ: Record<string, ZodLike>
+  quotaZ: Record<string, { durationMs: number; limit: number }>
   singletonZ: Record<string, ZodLike>
   tblOpts: Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }>
 }
@@ -882,12 +889,15 @@ interface BsTable {
 }
 interface BsTag {
   cascade?: boolean
-  category: 'base' | 'children' | 'file' | 'org' | 'orgScoped' | 'owned' | 'singleton'
+  category: 'base' | 'children' | 'file' | 'kv' | 'log' | 'org' | 'orgScoped' | 'owned' | 'quota' | 'singleton'
   childFk?: string
   childParent?: string
   extraFields?: Record<string, unknown>
   keyName?: string
+  logParent?: string
   pub?: boolean | string
+  quotaDurationMs?: number
+  quotaLimit?: number
   rateLimit?: { max: number; window: number }
   softDelete?: boolean
   ttl?: number
@@ -898,6 +908,8 @@ interface ChildLike {
   parent: string
   schema: unknown
 }
+type KvBranded = SchemaBrand<'kv'> & { schema: unknown }
+type LogBranded = SchemaBrand<'log'> & { parent: string; schema: unknown }
 type OrgDefBranded = OrgDefSchema<ZodRawShape>
 type OrgScopedBranded = OrgSchema<ZodRawShape>
 interface OrgScopedOpts<F = unknown> extends OwnedOpts<F> {
@@ -924,15 +936,25 @@ interface OwnedOpts<F = unknown> {
   softDelete?: boolean
   unique?: ZodKeys<F>[]
 }
-type RuntimeSchemaBrand = 'base' | 'org' | 'orgDef' | 'owned' | 'singleton'
+type QuotaBranded = SchemaBrand<'quota'> & { durationMs: number; limit: number }
+type RuntimeSchemaBrand = 'base' | 'kv' | 'log' | 'org' | 'orgDef' | 'owned' | 'quota' | 'singleton'
 type SchemaHelpers = ReturnType<typeof makeSchema>
 type SingletonBranded = SingletonSchema<ZodRawShape>
-type TableArgInput = BaseBranded | ChildLike | OrgDefBranded | OrgScopedBranded | OwnedBranded | SingletonBranded
+type TableArgInput =
+  | BaseBranded
+  | ChildLike
+  | KvBranded
+  | LogBranded
+  | OrgDefBranded
+  | OrgScopedBranded
+  | OwnedBranded
+  | QuotaBranded
+  | SingletonBranded
 type TableArgs<F> = F extends ChildLike
   ? [childDef: F]
   : F extends BaseBranded
     ? [fields: F, opts: { key: string; ttl?: number }]
-    : F extends SingletonBranded
+    : F extends KvBranded | LogBranded | QuotaBranded | SingletonBranded
       ? [fields: F]
       : F extends TableArgInput
         ? [fields: F, opts?: TableOpts<F>]
@@ -949,7 +971,7 @@ type TableOpts<F> = F extends OwnedBranded
       ? OrgTableOpts<F>
       : F extends BaseBranded
         ? { key: string; ttl?: number }
-        : F extends SingletonBranded
+        : F extends KvBranded | LogBranded | QuotaBranded | SingletonBranded
           ? undefined
           : never
 type TblChild = Parameters<SchemaHelpers['childTable']>[1]
@@ -972,7 +994,10 @@ const readSchemaBrand = (v: unknown): RuntimeSchemaBrand | undefined => {
     rawBrand === 'org' ||
     rawBrand === 'orgDef' ||
     rawBrand === 'base' ||
-    rawBrand === 'singleton'
+    rawBrand === 'singleton' ||
+    rawBrand === 'log' ||
+    rawBrand === 'kv' ||
+    rawBrand === 'quota'
   )
     return rawBrand
 }
@@ -1048,6 +1073,12 @@ const collectBsOpts = (name: string, m: BsTag, ctx: BsCtx) => {
   if (m.keyName) o.key = m.keyName
   if (oKeys(o).length > 0) ctx.tblOpts[name] = o
 }
+const collectBsFactories = (name: string, m: BsTag, ctx: BsCtx): void => {
+  if (m.category === 'log' && m.zod && m.logParent) ctx.logZ[name] = { parent: m.logParent, schema: m.zod }
+  if (m.category === 'kv' && m.zod) ctx.kvZ[name] = m.zod
+  if (m.category === 'quota' && m.quotaLimit !== undefined && m.quotaDurationMs !== undefined)
+    ctx.quotaZ[name] = { durationMs: m.quotaDurationMs, limit: m.quotaLimit }
+}
 const collectBsSchema = (name: string, m: BsTag, ctx: BsCtx): { fileNs?: boolean | string; orgZod?: ZodLike } => {
   if (m.extraFields) ctx.extraFieldsByTable[name] = m.extraFields
   if (m.category === 'owned' && m.zod) ctx.ownedZ[name] = m.zod
@@ -1063,6 +1094,7 @@ const collectBsSchema = (name: string, m: BsTag, ctx: BsCtx): { fileNs?: boolean
       parent: m.childParent,
       schema: m.zod
     }
+  collectBsFactories(name, m, ctx)
   if (m.category === 'file') return { fileNs: name === 'file' ? true : name }
   if (m.category === 'org') return { orgZod: m.zod }
   return {}
@@ -1176,6 +1208,12 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
   }
   const singletonTable = (fields: TblInput): BsTable =>
     bsOf({ category: 'singleton', zod: bsZod(fields) }, raw.singletonTable(fields))
+  const logTable = (entry: { parent: string; schema: TblInput }): BsTable =>
+    bsOf({ category: 'log', logParent: entry.parent, zod: bsZod(entry.schema) }, raw.logTable(entry.schema))
+  const kvTable = (entry: { schema: TblInput }): BsTable =>
+    bsOf({ category: 'kv', zod: bsZod(entry.schema) }, raw.kvTable(entry.schema))
+  const quotaTable = (entry: { durationMs: number; limit: number }): BsTable =>
+    bsOf({ category: 'quota', quotaDurationMs: entry.durationMs, quotaLimit: entry.limit }, raw.quotaTable())
   const tableBase = <F extends TableArgInput>(...args: TableArgs<F>): BsTable => {
     const [fields, optionsRaw] = args
     const options = optionsRaw as TableOpts<F> | undefined
@@ -1184,13 +1222,16 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     if (brand === 'owned') return ownedTable(fields as OwnedBranded, options as OwnedOpts<OwnedBranded>)
     if (brand === 'org') return orgScopedTable(fields as OrgScopedBranded, options as OrgScopedOpts<OrgScopedBranded>)
     if (brand === 'orgDef') return orgTable(fields as OrgDefBranded, options as OrgTableOpts<OrgDefBranded>)
-    if (brand === 'singleton') return singletonTable(fields)
+    if (brand === 'singleton') return singletonTable(fields as SingletonBranded)
+    if (brand === 'log') return logTable(fields as unknown as { parent: string; schema: TblInput })
+    if (brand === 'kv') return kvTable(fields as unknown as { schema: TblInput })
+    if (brand === 'quota') return quotaTable(fields as unknown as { durationMs: number; limit: number })
     if (brand === 'base') {
       if (!isBaseOpts(options))
         return err('VALIDATION_FAILED', {
           message: 'Base schema tables require options.key when using table()'
         })
-      return cacheTable(options.key, fields, { ttl: options.ttl })
+      return cacheTable(options.key, fields as BaseBranded, { ttl: options.ttl })
     }
     return err('VALIDATION_FAILED', {
       message: 'Unknown schema brand. Use makeOwned/makeOrgScoped/makeOrg/makeBase/makeSingleton before table()'
@@ -1201,9 +1242,12 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     cacheTable,
     childTable,
     fileTable,
+    kvTable,
+    logTable,
     orgScopedTable,
     orgTable,
     ownedTable,
+    quotaTable,
     singletonTable,
     t: raw.t,
     table
@@ -1213,12 +1257,74 @@ interface NoboilHelpers {
   cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
   childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
   fileTable: () => BsTable
+  kvTable: (entry: { schema: TblInput }) => BsTable
+  logTable: (entry: { parent: string; schema: TblInput }) => BsTable
   orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
   orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
   ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
+  quotaTable: (entry: { durationMs: number; limit: number }) => BsTable
   singletonTable: (fields: TblInput) => BsTable
   t: SchemaHelpers['t']
   table: TableFn
+}
+type StdbReducerLike = Parameters<typeof makeLog>[0]
+const wireLogFactories = (
+  reducer: StdbReducerLike,
+  bridgeT: ZodBridgeT,
+  logZ: BsCtx['logZ'],
+  target: ReducerExportRecord
+) => {
+  for (const [name, entry] of Object.entries(logZ)) {
+    const fields = zodToStdbFields(entry.schema.shape, bridgeT, name)
+    const { exports: logExports } = makeLog(reducer, {
+      fields,
+      idempotencyKeyField: bridgeT.string().optional() as never,
+      parentField: bridgeT.string() as never,
+      table: tblOf(name) as never,
+      tableName: name
+    })
+    registerExports(target, logExports)
+  }
+}
+const wireKvFactories = (
+  reducer: StdbReducerLike,
+  bridgeT: ZodBridgeT,
+  kvZ: BsCtx['kvZ'],
+  target: ReducerExportRecord
+) => {
+  for (const [name, zod] of Object.entries(kvZ)) {
+    const fields = zodToStdbFields(zod.shape, bridgeT, name)
+    const { exports: kvExports } = makeKv(reducer as never, {
+      fields,
+      keyField: bridgeT.string() as never,
+      table: tblOf(name) as never,
+      tableName: name
+    })
+    registerExports(target, kvExports)
+  }
+}
+const wireQuotaFactories = (
+  reducer: StdbReducerLike,
+  bridgeT: ZodBridgeT,
+  quotaZ: BsCtx['quotaZ'],
+  target: ReducerExportRecord
+) => {
+  for (const [name, q] of Object.entries(quotaZ)) {
+    const { exports: quotaExports } = makeQuota(reducer as never, {
+      durationMs: q.durationMs,
+      limit: q.limit,
+      ownerField: bridgeT.string() as never,
+      table: tblOf(name) as never,
+      tableName: name
+    })
+    registerExports(target, quotaExports)
+  }
+}
+const wireFactoryExports = (spacetimedb: unknown, bridgeT: ZodBridgeT, ctx: BsCtx, target: ReducerExportRecord) => {
+  const reducer = spacetimedb as StdbReducerLike
+  wireLogFactories(reducer, bridgeT, ctx.logZ, target)
+  wireKvFactories(reducer, bridgeT, ctx.kvZ, target)
+  wireQuotaFactories(reducer, bridgeT, ctx.quotaZ, target)
 }
 const noboil = ({
   tables
@@ -1235,8 +1341,11 @@ const noboil = ({
     cascades: [],
     childZ: {},
     extraFieldsByTable: {},
+    kvZ: {},
+    logZ: {},
     orgScopedZ: {},
     ownedZ: {},
+    quotaZ: {},
     singletonZ: {},
     tblOpts: {}
   }
@@ -1269,6 +1378,7 @@ const noboil = ({
       oKeys(ctx.extraFieldsByTable).length > 0 ? ctx.extraFieldsByTable : undefined
     )
   if (orgZod) s.org(orgZod, ctx.cascades.length > 0 ? { cascadeTables: ctx.cascades } : undefined)
+  wireFactoryExports(spacetimedb, raw.t, ctx, s.exports)
   const rlsExports: Record<string, unknown> = {}
   let rlsI = 0
   const addRls = (sql: string) => {

@@ -180,11 +180,14 @@ interface MakeSchemaResult {
   cacheTable: (keyFieldOrName: KeyField | string, fields: TableInput, opts?: TableOptions) => StdbTable
   childTable: (foreignKeyName: string, fields: TableInput, opts?: TableOptions) => StdbTable
   fileTable: () => StdbTable
+  kvTable: (fields: TableInput, opts?: TableOptions) => StdbTable
+  logTable: (fields: TableInput, opts?: TableOptions) => StdbTable
   orgInviteTable: () => StdbTable
   orgJoinRequestTable: () => StdbTable
   orgMemberTable: () => StdbTable
   orgScopedTable: (fields: TableInput, extra?: TableFields, opts?: TableOptions) => StdbTable
   ownedTable: (fields: TableInput, extra?: TableFields, opts?: TableOptions) => StdbTable
+  quotaTable: (opts?: TableOptions) => StdbTable
   schema: typeof stdbSchema
   singletonTable: (fields: TableInput, opts?: TableOptions) => StdbTable
   t: StdbDeps['t']
@@ -311,15 +314,51 @@ const makeSchema = (deps?: Partial<StdbDeps>): MakeSchemaResult => {
         userId: t.identity().index()
       }
     )
+  const logTable = (fields: TableInput, opts?: TableOptions): StdbTable =>
+    tbl(
+      { ...opts },
+      {
+        ...resolveFields(fields, t, 'log'),
+        createdAt: t.timestamp(),
+        id: t.u32().autoInc().primaryKey(),
+        idempotencyKey: t.string().optional(),
+        parent: t.string().index(),
+        seq: t.u32().index(),
+        userId: t.identity().index()
+      }
+    )
+  const kvTable = (fields: TableInput, opts?: TableOptions): StdbTable =>
+    tbl(
+      { ...opts },
+      {
+        ...resolveFields(fields, t, 'kv'),
+        createdAt: t.timestamp(),
+        id: t.u32().autoInc().primaryKey(),
+        key: t.string().unique(),
+        updatedAt: t.timestamp()
+      }
+    )
+  const quotaTable = (opts?: TableOptions): StdbTable =>
+    tbl(
+      { ...opts },
+      {
+        id: t.u32().autoInc().primaryKey(),
+        owner: t.string().unique(),
+        timestamps: t.array(t.number() as StdbTypeBuilder)
+      }
+    )
   return {
     cacheTable,
     childTable,
     fileTable,
+    kvTable,
+    logTable,
     orgInviteTable,
     orgJoinRequestTable,
     orgMemberTable,
     orgScopedTable,
     ownedTable,
+    quotaTable,
     schema,
     singletonTable,
     t

@@ -112,6 +112,37 @@ const childTable = <T extends ZodRawShape>(s: ZodObject<T>, indexField: string, 
       updatedAt: 'number'
     }).index(indexName ?? `by_${indexField}`, [indexField])
   )
+/** Declares an append-only log table with (parent, seq) ordering + optional idempotency dedup. */
+const logTable = <T extends ZodRawShape>(entry: { parent: string; schema: ZodObject<T> }) =>
+  asNever(
+    tableDef('owned', {
+      ...zodShapeToFields(entry.schema.shape),
+      createdAt: 'timestamp',
+      idempotencyKey: 'string?',
+      parent: 'string',
+      seq: 'u32'
+    })
+      .index('by_parent', ['parent'])
+      .index('by_parent_seq', ['parent', 'seq'])
+  )
+/** Declares a string-keyed kv table for site-wide state. */
+const kvTable = <T extends ZodRawShape>(entry: { schema: ZodObject<T> }) =>
+  asNever(
+    tableDef('base', {
+      ...zodShapeToFields(entry.schema.shape),
+      createdAt: 'timestamp',
+      key: 'string',
+      updatedAt: 'timestamp'
+    }).index('by_key', ['key'])
+  )
+/** Declares a per-owner sliding-window quota table. */
+const quotaTable = () =>
+  asNever(
+    tableDef('base', {
+      owner: 'string',
+      timestamps: 'array<number>'
+    }).index('by_owner', ['owner'])
+  )
 /** Declares all org management tables (org, member, invite, join request). */
 const orgTables = () => ({
   org: asNever(
@@ -232,10 +263,13 @@ export {
   baseTable,
   checkSchema,
   childTable,
+  kvTable,
+  logTable,
   orgChildTable,
   orgTable,
   orgTables,
   ownedTable,
+  quotaTable,
   rateLimitTable,
   singletonTable,
   uploadTables

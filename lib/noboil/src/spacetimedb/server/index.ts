@@ -36,10 +36,13 @@ export {
   baseTable,
   checkSchema,
   childTable,
+  kvTable,
+  logTable,
   orgChildTable,
   orgTable,
   orgTables,
   ownedTable,
+  quotaTable,
   rateLimitTable,
   singletonTable,
   uploadTables

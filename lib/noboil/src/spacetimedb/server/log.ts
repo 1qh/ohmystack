@@ -3,6 +3,8 @@ import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } fro
 type FieldBuilders = Record<string, ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>>
 interface LogConfig<DB, Tbl extends LogTableLike> {
   fields: FieldBuilders
+  idempotencyKeyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
+  parentField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   table: (db: DB) => Tbl
   tableName: string
 }
@@ -37,15 +39,11 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   },
   config: LogConfig<DB, Tbl>
 ): LogExports => {
-  const { fields, table: tableAccessor, tableName } = config
+  const { fields, idempotencyKeyField, parentField, table: tableAccessor, tableName } = config
   const appendName = `append_${tableName}`
   const purgeName = `purge_${tableName}_by_parent`
-  const parentField: FieldBuilders = {
-    idempotencyKey: { optional: () => ({}) } as never,
-    parent: { optional: () => ({}) } as never
-  }
-  const appendParams: FieldBuilders = { ...fields, ...parentField }
-  const purgeParams: FieldBuilders = { parent: parentField.parent as never }
+  const appendParams: FieldBuilders = { ...fields, idempotencyKey: idempotencyKeyField, parent: parentField }
+  const purgeParams: FieldBuilders = { parent: parentField }
   const appendReducer = spacetimedb.reducer({ name: appendName }, appendParams, (ctx, args) => {
     const typedArgs = args as Record<string, unknown> & { idempotencyKey?: string; parent: string }
     const table = tableAccessor(ctx.db) as unknown as LogTableLike
