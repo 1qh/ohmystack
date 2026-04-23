@@ -1,14 +1,14 @@
 ---
-title: Registry factory (string-keyed global state)
+title: kv factory (string-keyed global state)
 description: Named key → value state with role-gated writes and public reads. For site-wide configuration, feature flags, maintenance banners, system status.
 ---
 
-Use `registry` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` which is one row per user: a registry has many rows, each identified by a string key chosen by the caller.
+Use `kv` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` which is one row per user: a kv has many rows, each identified by a string key chosen by the caller.
 
 ## API surface
 
 ```ts
-type RegistryFactoryResult = {
+type KvFactoryResult = {
   get: Query<(ctx, { key: string }) => Row | null>
   list: Query<(ctx) => Row[]>
   set: Mutation<(ctx, { key: string, payload: T }) => Row>
@@ -27,8 +27,8 @@ type RegistryFactoryResult = {
 
 ```ts
 import { object, string, boolean } from 'zod/v4'
-import { schema, makeRegistry } from 'noboil/convex/schema'
-const registry = makeRegistry({
+import { schema, makeKv } from 'noboil/convex/schema'
+const kv = makeKv({
   systemStatus: {
     schema: object({
       kind: string(),
@@ -77,9 +77,9 @@ keys: ['banner', 'version', 'maintenance'] as const
 
 Prevents typos in client code. Omit `keys` if you want to allow arbitrary strings.
 
-## When to use registry vs singleton vs cache
+## When to use kv vs singleton vs cache
 
-| Use `registry` if | Use `singleton` if | Use `cache` if |
+| Use `kv` if | Use `singleton` if | Use `cache` if |
 |---|---|---|
 | Key is a named string (`'banner'`, `'google_oauth'`) | One row per user | Key is a fetched-from-upstream ID with TTL |
 | Writes are gated by role | Writes are by owner | Writes are by cron refresh |

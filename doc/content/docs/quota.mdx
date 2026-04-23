@@ -1,14 +1,14 @@
 ---
-title: Rate limiting factory (sliding window)
+title: quota factory (sliding window)
 description: Per-owner sliding-window rate limit primitive with explicit check / record / consume semantics. For anti-spam, API throttling, ballot-stuffing prevention.
 ---
 
-Use `rateLimit` for sliding-window rate limits per owner — anti-spam on form submissions, API throttling per user, ballot-stuffing prevention on polls, typing-indicator debouncing. Storage is per-owner with a `timestamps: number[]` ring; pruning happens on write.
+Use `quota` for sliding-window rate limits per owner — anti-spam on form submissions, API throttling per user, ballot-stuffing prevention on polls, typing-indicator debouncing. Storage is per-owner with a `timestamps: number[]` ring; pruning happens on write.
 
 ## API surface
 
 ```ts
-type RateLimitFactoryResult = {
+type QuotaFactoryResult = {
   check: Query<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
   record: Mutation<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
   consume: Mutation<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
@@ -24,8 +24,8 @@ type RateLimitFactoryResult = {
 ## Schema
 
 ```ts
-import { schema, makeRateLimit } from 'noboil/convex/schema'
-const limits = makeRateLimit({
+import { schema, makeQuota } from 'noboil/convex/schema'
+const limits = makeQuota({
   messageSend: {
     limit: 10,
     durationMs: 60_000      // 10 messages per 60 seconds per owner
@@ -85,7 +85,7 @@ if (!pre.allowed) throw new Error('slow down')
 await api.limits.vote.record(ctx, { owner: userId })   // only record after success
 ```
 
-## What rateLimit deliberately doesn't do
+## What quota deliberately doesn't do
 
 - **No global limit** — every limit is per-owner. For global limits (e.g. "100 total signups/hour"), use `registry` + manual counter.
 - **No fixed-window variant** — sliding window only. Fixed bucket is cheaper but less precise; if you need it, ship your own on top of `registry`.
