@@ -20,7 +20,7 @@ interface StdbQuotaRefs {
   config: { durationMs: number; limit: number }
   consume: unknown
   record: unknown
-  table: { tableName: string }
+  table: unknown
 }
 const compute = ({
   durationMs,

@@ -15,7 +15,7 @@ interface LogRowBase {
 interface StdbLogRefs {
   append: unknown
   purgeByParent: unknown
-  table: { tableName: string }
+  table: unknown
 }
 const useLog = <T extends LogRowBase>(refs: StdbLogRefs, args: { parent: string }): LogHookResult<T> => {
   const [rows, isReady] = useTable(refs.table as never) as [T[], boolean]

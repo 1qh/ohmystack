@@ -1,0 +1,19 @@
+{
+  "name": "@a/stdb-poll",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build --turbo",
+    "dev": "bun dev.ts",
+    "start": "next start",
+    "test:e2e": "(cd ../../.. && SPACETIMEDB_TEST_MODE=true bun spacetime:publish) && playwright test --reporter=list",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@a/config": "workspace:*",
+    "react-intersection-observer": "latest"
+  },
+  "devDependencies": {
+    "@a/e2e": "workspace:*"
+  }
+}

@@ -14,7 +14,7 @@ interface KvRowBase {
 interface StdbKvRefs {
   rm: unknown
   set: unknown
-  table: { tableName: string }
+  table: unknown
 }
 const useKv = <T extends KvRowBase>(refs: StdbKvRefs, key: string): KvHookResult<T> => {
   const [rows, isReady] = useTable(refs.table as never) as [T[], boolean]
