@@ -12,9 +12,14 @@ interface Field {
   type: FieldType
 }
 type FieldType = 'boolean' | 'enum' | 'number' | 'string'
+interface PreviewFile {
+  content: string
+  path: string
+}
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
 interface WizardConfig {
   kind: 'convex' | 'spacetimedb'
+  preview?: (result: WizardResult) => PreviewFile[]
   typeDescriptions: Record<TableType, string>
 }
 interface WizardResult {
@@ -25,7 +30,17 @@ interface WizardResult {
 }
 const TABLE_TYPES: TableType[] = ['owned', 'org', 'singleton', 'cache', 'child']
 const FIELD_TYPES: FieldType[] = ['string', 'number', 'boolean', 'enum']
-type Phase = 'enum' | 'field-add' | 'field-name' | 'field-optional' | 'field-type' | 'name' | 'parent' | 'review' | 'type'
+type Phase =
+  | 'enum'
+  | 'field-add'
+  | 'field-name'
+  | 'field-optional'
+  | 'field-type'
+  | 'name'
+  | 'parent'
+  | 'preview'
+  | 'review'
+  | 'type'
 const NameInput = ({
   initial = '',
   label,
@@ -118,18 +133,21 @@ const Summary = ({
   fields,
   name,
   onConfirm,
+  onPreview,
   parent,
   type
 }: {
   fields: Field[]
   name: string
   onConfirm: (accept: boolean) => void
+  onPreview?: () => void
   parent: string
   type: TableType
 }) => {
   useInput((input, key) => {
     if (input === 'y' || input === 'Y' || key.return) onConfirm(true)
     else if (input === 'n' || input === 'N' || input === 'q') onConfirm(false)
+    else if (input === 'p' && onPreview) onPreview()
   })
   return (
     <Box flexDirection='column'>
@@ -165,7 +183,34 @@ const Summary = ({
         )}
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>↵/y generate · n cancel</Text>
+        <Text dimColor>↵/y generate · p preview · n cancel</Text>
+      </Box>
+    </Box>
+  )
+}
+const Preview = ({ files, onBack, onConfirm }: { files: PreviewFile[]; onBack: () => void; onConfirm: () => void }) => {
+  const [idx, setIdx] = useState(0)
+  useInput((input, key) => {
+    if (key.leftArrow || input === 'h') setIdx(i => (i === 0 ? files.length - 1 : i - 1))
+    else if (key.rightArrow || input === 'l') setIdx(i => (i === files.length - 1 ? 0 : i + 1))
+    else if (input === 'b') onBack()
+    else if (key.return || input === 'y') onConfirm()
+  })
+  const current = files[idx]
+  const lines = (current?.content ?? '').split('\n').slice(0, 24)
+  return (
+    <Box flexDirection='column'>
+      <Text bold color='cyan'>
+        Preview {idx + 1}/{files.length}: {current?.path}
+      </Text>
+      <Box borderColor='gray' borderStyle='round' flexDirection='column' marginTop={1} paddingLeft={1} paddingRight={1}>
+        {lines.map((line, i) => (
+          <Text key={i}>{line || ' '}</Text>
+        ))}
+        {(current?.content.split('\n').length ?? 0) > 24 ? <Text dimColor>… (truncated)</Text> : null}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>←→/hl switch file · ↵/y generate · b back to review</Text>
       </Box>
     </Box>
   )
@@ -271,7 +316,21 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
       ) : null}
       {phase === 'field-optional' ? <YesNo label='Optional field?' onConfirm={handleFieldOptional} /> : null}
       {phase === 'review' ? (
-        <Summary fields={fields} name={name} onConfirm={handleReview} parent={parent} type={type} />
+        <Summary
+          fields={fields}
+          name={name}
+          onConfirm={handleReview}
+          onPreview={config.preview ? () => setPhase('preview') : undefined}
+          parent={parent}
+          type={type}
+        />
+      ) : null}
+      {phase === 'preview' && config.preview ? (
+        <Preview
+          files={config.preview({ fields, name, parent, type })}
+          onBack={() => setPhase('review')}
+          onConfirm={() => handleReview(true)}
+        />
       ) : null}
     </Box>
   )

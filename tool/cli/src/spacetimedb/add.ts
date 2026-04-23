@@ -246,7 +246,27 @@ const STDB_TYPE_DESCRIPTIONS = {
 } as const
 const promptInteractive = async (): Promise<AddFlags | null> => {
   const { runAddWizard } = await import('../shared/components/add-wizard')
-  const result = await runAddWizard({ kind: 'spacetimedb', typeDescriptions: STDB_TYPE_DESCRIPTIONS })
+  const toParsed = (fs: { enumValues?: string[]; name: string; optional: boolean; type: string }[]): ParsedField[] =>
+    fs.map(f => ({
+      name: f.name,
+      optional: f.optional,
+      type: f.type === 'enum' ? { enum: f.enumValues ?? [] } : (f.type as FieldType)
+    }))
+  const result = await runAddWizard({
+    kind: 'spacetimedb',
+    preview: r => {
+      const pf = toParsed(r.fields).length > 0 ? toParsed(r.fields) : defaultFields(r.type)
+      return [
+        { content: genTableContent(r.name, r.type, pf), path: `module/tables/${r.name}.ts` },
+        {
+          content: genReducerContent({ fields: pf, name: r.name, parent: r.parent, type: r.type }),
+          path: `module/reducers/${r.name}.ts`
+        },
+        { content: genPageContent(r.name, r.type), path: `src/app/${r.name}/page.tsx` }
+      ]
+    },
+    typeDescriptions: STDB_TYPE_DESCRIPTIONS
+  })
   if (!result) return null
   return {
     appDir: 'src/app',

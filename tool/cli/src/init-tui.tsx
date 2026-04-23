@@ -17,6 +17,7 @@ interface DbChoice {
 }
 interface InitFlags {
   db?: Db
+  defaultDb?: Db
   dir?: string
   includeDemos?: boolean
   skipInstall: boolean
@@ -156,6 +157,15 @@ const Scaffold = ({
   skipInstall: boolean
 }) => {
   const [state, setState] = useState<ScaffoldState>({ currentStep: 0, details: [], status: 'idle' })
+  const [attempt, setAttempt] = useState(0)
+  useInput((input, key) => {
+    if (state.status !== 'failed') return
+    if (input === 'r' || input === 'R') {
+      setState({ currentStep: 0, details: [], status: 'idle' })
+      setAttempt(a => a + 1)
+    } else if (input === 'q' || input === 'Q' || key.escape) onDone(state)
+  })
+  /** biome-ignore lint/correctness/useExhaustiveDependencies: attempt is an intentional retry trigger */
   useEffect(() => {
     const run = async () => {
       await new Promise(r => setTimeout(r, 50))
@@ -208,15 +218,17 @@ const Scaffold = ({
           version: 1
         }
         writeFileSync(join(fullPath, '.noboilrc.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+        const { writeState } = await import('./shared/state')
+        await writeState({ lastDb: db }).catch(() => null)
         setState(s => ({ ...s, currentStep: SCAFFOLD_STEPS.length, status: 'done' }))
       } catch (error) {
         setState(s => ({ ...s, error: error instanceof Error ? error.message : String(error), status: 'failed' }))
       }
     }
     run().catch(() => null)
-  }, [db, dir, includeDemos, skipInstall])
+  }, [db, dir, includeDemos, skipInstall, attempt])
   useEffect(() => {
-    if (state.status === 'done' || state.status === 'failed') {
+    if (state.status === 'done') {
       const t = setTimeout(() => onDone(state), 300)
       return () => clearTimeout(t)
     }
@@ -263,8 +275,9 @@ const Scaffold = ({
         </Box>
       ) : null}
       {state.error ? (
-        <Box marginTop={1}>
+        <Box flexDirection='column' marginTop={1}>
           <Text color='red'>Error: {state.error}</Text>
+          <Text dimColor>r retry · q quit</Text>
         </Box>
       ) : null}
     </Box>
@@ -316,7 +329,7 @@ const InitApp = ({ onExit, ...flags }: InitFlags & { onExit: (result: { dir: str
   return (
     <Box flexDirection='column' padding={1}>
       <Header />
-      {phase === 'pick-db' ? <PickDb onPick={handleDbPick} selected={0} /> : null}
+      {phase === 'pick-db' ? <PickDb onPick={handleDbPick} selected={flags.defaultDb === 'spacetimedb' ? 1 : 0} /> : null}
       {phase === 'demos' ? (
         <Toggle hint='y/n · space toggle · ↵ confirm' initial label='Include demo apps?' onConfirm={handleDemos} />
       ) : null}

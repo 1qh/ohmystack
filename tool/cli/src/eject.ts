@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
-/* eslint-disable complexity */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
 import { bold, dim, green, yellow } from './ansi'
@@ -33,7 +32,7 @@ interface RewriteResult {
   output: string
   replacements: number
 }
-const HELP = `\n${bold('noboil eject')} — inline noboil library locally\n\n${bold('Usage:')}\n  noboil eject [--dry-run]\n\n${bold('Options:')}\n  --dry-run      ${dim('Show what would change without writing files')}\n  --help, -h     ${dim('Show this help')}\n`
+const HELP = `\n${bold('noboil eject')} — inline noboil library locally\n\n${bold('Usage:')}\n  noboil eject [--dry-run] [--yes]\n\n${bold('Options:')}\n  --dry-run      ${dim('Show what would change without writing files')}\n  --yes, -y      ${dim('Skip confirmation prompt')}\n  --help, -h     ${dim('Show this help')}\n`
 const SHARED_SPECIFIER = 'noboil/shared'
 const LOCAL_PACKAGE = '@local/noboil'
 const sharedExtensionCandidates = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']
@@ -321,12 +320,7 @@ const printSummary = ({
   console.log(`\n  ${yellow('!')} Sync and doctor commands will be disabled for ejected projects.`)
   console.log(`  ${dim('Next step:')} Run ${bold('bun install')} to link the local package.\n`)
 }
-const eject = (args: string[]) => {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log(HELP)
-    return
-  }
-  const dryRun = args.includes('--dry-run')
+const ejectSync = (dryRun: boolean) => {
   const cwd = process.cwd()
   const context = prepareContext(cwd)
   const localPackageDir = join(cwd, 'lib', 'noboil')
@@ -415,5 +409,16 @@ const eject = (args: string[]) => {
     rewrittenSharedCount,
     rewrittenSharedFiles
   })
+}
+const eject = async (args: string[]) => {
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(HELP)
+    return
+  }
+  const dryRun = args.includes('--dry-run')
+  const assumeYes = args.includes('--yes') || args.includes('-y')
+  const { runEjectTui } = await import('./eject-tui')
+  const code = await runEjectTui({ assumeYes, dryRun, run: () => ejectSync(dryRun) })
+  if (code !== 0) process.exit(code)
 }
 export { eject }

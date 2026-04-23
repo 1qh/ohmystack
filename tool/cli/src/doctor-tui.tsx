@@ -5,7 +5,7 @@
 import { Box, render, Text, useApp, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { useEffect, useState } from 'react'
 interface CheckResult {
@@ -142,11 +142,33 @@ const Row = ({ result }: { result: CheckResult }) => (
     {result.detail ? <Text dimColor>{result.detail}</Text> : null}
   </Box>
 )
-const DoctorApp = ({ onExit }: { onExit: (code: number) => void }) => {
+const applyFixes = (cwd: string, results: CheckResult[]): string[] => {
+  const actions: string[] = []
+  for (const r of results) {
+    if (r.title === 'node_modules' && r.status === 'warn') {
+      const install = spawnSync('bun', ['install'], { cwd, stdio: 'pipe' })
+      actions.push(install.status === 0 ? '✔ bun install' : '✘ bun install failed')
+    }
+    if (r.title === 'tsconfig customConditions' && r.status === 'warn')
+      try {
+        const p = join(cwd, 'tsconfig.json')
+        const cfg = JSON.parse(readFileSync(p, 'utf8')) as { compilerOptions?: { customConditions?: string[] } }
+        cfg.compilerOptions ??= {}
+        cfg.compilerOptions.customConditions = [...(cfg.compilerOptions.customConditions ?? []), 'noboil-spacetimedb']
+        writeFileSync(p, `${JSON.stringify(cfg, null, 2)}\n`)
+        actions.push("✔ tsconfig: added 'noboil-spacetimedb'")
+      } catch {
+        actions.push('✘ tsconfig patch failed')
+      }
+  }
+  return actions
+}
+const DoctorApp = ({ fix, onExit }: { fix: boolean; onExit: (code: number) => void }) => {
   const app = useApp()
   const [results, setResults] = useState<CheckResult[]>([])
   const [current, setCurrent] = useState<null | string>(null)
   const [done, setDone] = useState(false)
+  const [fixActions, setFixActions] = useState<string[]>([])
   useEffect(() => {
     const runChecks = async () => {
       const cwd = process.cwd()
@@ -162,6 +184,12 @@ const DoctorApp = ({ onExit }: { onExit: (code: number) => void }) => {
         setResults([...accumulator])
       }
       setCurrent(null)
+      if (fix) {
+        setCurrent('applying fixes...')
+        const actions = applyFixes(cwd, accumulator)
+        setFixActions(actions)
+        setCurrent(null)
+      }
       setDone(true)
       const issues = accumulator.filter(r => r.status === 'fail').length
       setTimeout(() => {
@@ -170,7 +198,7 @@ const DoctorApp = ({ onExit }: { onExit: (code: number) => void }) => {
       }, 200)
     }
     runChecks().catch(() => null)
-  }, [app, onExit])
+  }, [app, onExit, fix])
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) {
       app.exit()
@@ -213,12 +241,22 @@ const DoctorApp = ({ onExit }: { onExit: (code: number) => void }) => {
           <Text dimColor>running {current ?? ''}</Text>
         </Box>
       )}
+      {fixActions.length > 0 ? (
+        <Box flexDirection='column' marginTop={1}>
+          <Text bold>Fixes applied</Text>
+          {fixActions.map(a => (
+            <Text dimColor key={a}>
+              {a}
+            </Text>
+          ))}
+        </Box>
+      ) : null}
     </Box>
   )
 }
-const runDoctorTui = async (): Promise<number> =>
+const runDoctorTui = async ({ fix }: { fix: boolean }): Promise<number> =>
   new Promise(resolve => {
-    const { unmount } = render(<DoctorApp onExit={resolve} />)
+    const { unmount } = render(<DoctorApp fix={fix} onExit={resolve} />)
     process.on('SIGINT', () => {
       unmount()
       resolve(1)

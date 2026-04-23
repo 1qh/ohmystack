@@ -263,7 +263,24 @@ const add = async (args: string[] = []) => {
   }
   if (args.length === 0) {
     const { runAddWizard } = await import('../shared/components/add-wizard')
-    const result = await runAddWizard({ kind: 'convex', typeDescriptions: TYPE_DESCRIPTIONS })
+    const toParsed = (fs: { enumValues?: string[]; name: string; optional: boolean; type: string }[]): ParsedField[] =>
+      fs.map(f => ({
+        name: f.name,
+        optional: f.optional,
+        type: f.type === 'enum' ? { enum: f.enumValues ?? [] } : (f.type as FieldType)
+      }))
+    const result = await runAddWizard({
+      kind: 'convex',
+      preview: r => {
+        const pf = toParsed(r.fields).length > 0 ? toParsed(r.fields) : defaultFields(r.type)
+        return [
+          { content: genSchemaContent(r.name, r.type, pf), path: `convex/${r.name}-schema.ts` },
+          { content: genEndpointContent(r.name, r.type), path: `convex/${r.name}.ts` },
+          { content: genPageContent(r.name, r.type), path: `src/app/${r.name}/page.tsx` }
+        ]
+      },
+      typeDescriptions: TYPE_DESCRIPTIONS
+    })
     if (!result) {
       console.log(yellow('Cancelled.'))
       return { created: 0, skipped: 0 }

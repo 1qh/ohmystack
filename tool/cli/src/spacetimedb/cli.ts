@@ -24,7 +24,10 @@ const printHelp = () => {
   console.log(`\nRun ${dim('noboil-stdb <command> --help')} for command-specific options.\n`)
 }
 const [cmd, ...rest] = process.argv.slice(2)
-if (!cmd || cmd === '--help' || cmd === '-h') printHelp()
+if (cmd === '--version' || cmd === '-v') {
+  const { getCliVersion } = await import('../shared/version')
+  console.log(await getCliVersion())
+} else if (!cmd || cmd === '--help' || cmd === '-h') printHelp()
 else if (!(cmd in COMMANDS)) {
   console.log(`${red('Unknown command:')} ${cmd}\n`)
   printHelp()

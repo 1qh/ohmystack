@@ -24,7 +24,13 @@ const init = async (args: string[]) => {
     else if (arg === '--no-demos') includeDemos = false
     else if (arg === '--skip-install') skipInstall = true
     else if (!arg.startsWith('--')) dir = arg
+  let defaultDb: Db | undefined
+  if (!db) {
+    const { readState } = await import('./shared/state')
+    const prev = await readState()
+    defaultDb = prev.lastDb
+  }
   const { runInitTui } = await import('./init-tui')
-  await runInitTui({ db, dir, includeDemos, skipInstall })
+  await runInitTui({ db, defaultDb, dir, includeDemos, skipInstall })
 }
 export { init }
