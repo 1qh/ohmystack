@@ -151,6 +151,7 @@ const ERROR_MESSAGES = {
   INSUFFICIENT_ORG_ROLE: 'This action requires a higher role — ask an admin to upgrade your access',
   INVALID_FILE_TYPE: 'This file type is not allowed — check the accepted formats',
   INVALID_INVITE: 'This invite link is invalid — ask for a new one',
+  INVALID_KEY: 'This key is not in the registry — check the allowed keys list',
   INVALID_MESSAGE: 'Message content is invalid — check the format and try again',
   INVALID_SESSION_STATE: 'Session is in an unexpected state — try refreshing the page',
   INVALID_TOOL_ARGS: 'Invalid tool arguments — check the parameter types',
@@ -298,6 +299,10 @@ interface FilterLike {
 }
 interface IndexLike {
   eq: (field: string, value: unknown) => IndexLike
+  gt: (field: string, value: unknown) => IndexLike
+  gte: (field: string, value: unknown) => IndexLike
+  lt: (field: string, value: unknown) => IndexLike
+  lte: (field: string, value: unknown) => IndexLike
 }
 type Mb<V extends FunctionVisibility = 'public'> = CustomBuilder<
   'mutation',

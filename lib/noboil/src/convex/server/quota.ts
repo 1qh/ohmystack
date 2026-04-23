@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/complexity/useMaxParams: destructured builder options pattern matches singleton/cache-crud */
+/* oxlint-disable eslint-plugin-unicorn(prefer-ternary) */
+/* eslint-disable @typescript-eslint/max-params */
 import type { DbLike, Mb, MutCtx, Qb, QuotaFactoryResult, QuotaResult } from './types'
 import { idx, typed } from './bridge'
 import { dbInsert, dbPatch } from './helpers'
@@ -14,6 +17,20 @@ const compute = (timestamps: number[], limit: number, durationMs: number, now: n
   const oldest = pruned[0] ?? now
   return { allowed: false, remaining: 0, retryAfter: oldest + durationMs - now }
 }
+const persist = async (
+  db: DbLike,
+  table: string,
+  doc: null | { _id: string },
+  owner: string,
+  timestamps: number[]
+): Promise<void> => {
+  if (doc) await dbPatch(db, doc._id, { timestamps })
+  else await dbInsert(db, table, { owner, timestamps })
+}
+interface QuotaRow {
+  _id: string
+  timestamps?: number[]
+}
 const makeQuota = ({
   builders,
   durationMs,
@@ -25,48 +42,41 @@ const makeQuota = ({
   limit: number
   table: string
 }): QuotaFactoryResult => {
-  const byOwner = async (db: DbLike, owner: string) =>
-    db
+  const byOwner = async (db: DbLike, owner: string): Promise<null | QuotaRow> =>
+    (await db
       .query(table)
       .withIndex(
         'by_owner',
         idx(o => o.eq('owner', owner))
       )
-      .unique()
+      .unique()) as null | QuotaRow
   const check = builders.q({
     handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
       const doc = await byOwner(c.db, owner)
-      const ts = doc?.timestamps ?? []
-      return compute(ts, limit, durationMs, Date.now())
+      return compute(doc?.timestamps ?? [], limit, durationMs, Date.now())
     })
   })
   const record = builders.m({
     handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
       const now = Date.now()
-      const cutoff = now - durationMs
-      const doc = (await byOwner(c.db, owner)) as null | { _id: string; timestamps?: number[] }
-      const prev = doc?.timestamps ?? []
-      const pruned = prune(prev, cutoff)
+      const doc = await byOwner(c.db, owner)
+      const pruned = prune(doc?.timestamps ?? [], now - durationMs)
       const next = [...pruned, now]
-      if (doc) await dbPatch(c.db, doc._id, { timestamps: next })
-      else await dbInsert(c.db, table, { owner, timestamps: next })
+      await persist(c.db, table, doc, owner, next)
       return compute(next, limit, durationMs, now)
     })
   })
   const consume = builders.m({
     handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
       const now = Date.now()
-      const cutoff = now - durationMs
-      const doc = (await byOwner(c.db, owner)) as null | { _id: string; timestamps?: number[] }
-      const prev = doc?.timestamps ?? []
-      const pruned = prune(prev, cutoff)
+      const doc = await byOwner(c.db, owner)
+      const pruned = prune(doc?.timestamps ?? [], now - durationMs)
       if (pruned.length >= limit) {
         const oldest = pruned[0] ?? now
         return { allowed: false, remaining: 0, retryAfter: oldest + durationMs - now }
       }
       const next = [...pruned, now]
-      if (doc) await dbPatch(c.db, doc._id, { timestamps: next })
-      else await dbInsert(c.db, table, { owner, timestamps: next })
+      await persist(c.db, table, doc, owner, next)
       return { allowed: true, remaining: Math.max(0, limit - next.length) }
     })
   })
