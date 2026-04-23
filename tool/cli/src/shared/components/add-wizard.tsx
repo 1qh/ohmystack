@@ -4,7 +4,7 @@
 /* eslint-disable react/no-array-index-key, @eslint-react/no-array-index-key, @typescript-eslint/no-non-null-assertion */
 import type { ReactNode } from 'react'
 import { Box, render, Text, useApp, useInput } from 'ink'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 interface Field {
   enumValues?: string[]
   name: string
@@ -136,6 +136,7 @@ const Summary = ({
   fields,
   name,
   onConfirm,
+  onPopField,
   onPreview,
   parent,
   type
@@ -143,6 +144,7 @@ const Summary = ({
   fields: Field[]
   name: string
   onConfirm: (accept: boolean) => void
+  onPopField?: () => void
   onPreview?: () => void
   parent: string
   type: TableType
@@ -151,6 +153,7 @@ const Summary = ({
     if (input === 'y' || input === 'Y' || key.return) onConfirm(true)
     else if (input === 'n' || input === 'N' || input === 'q') onConfirm(false)
     else if (input === 'p' && onPreview) onPreview()
+    else if (input === 'x' && onPopField && fields.length > 0) onPopField()
   })
   return (
     <Box flexDirection='column'>
@@ -186,7 +189,7 @@ const Summary = ({
         )}
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>↵/y generate · p preview · n cancel</Text>
+        <Text dimColor>↵/y generate · p preview · x pop last field · esc back · n cancel</Text>
       </Box>
     </Box>
   )
@@ -226,40 +229,76 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
   const [fields, setFields] = useState<Field[]>([])
   const [currentField, setCurrentField] = useState<Partial<Field>>({})
   const [phase, setPhase] = useState<Phase>('name')
-  const handleNameConfirm = useCallback((v: string) => {
-    setName(v)
-    setPhase('type')
+  const historyRef = useRef<Phase[]>([])
+  const pushPhase = useCallback(
+    (next: Phase) => {
+      historyRef.current.push(phase)
+      setPhase(next)
+    },
+    [phase]
+  )
+  const goBack = useCallback(() => {
+    const prev = historyRef.current.pop()
+    if (prev !== undefined) setPhase(prev)
   }, [])
-  const handleTypePick = useCallback((v: TableType) => {
-    setType(v)
-    if (v === 'child') setPhase('parent')
-    else setPhase('field-add')
-  }, [])
-  const handleParent = useCallback((v: string) => {
-    setParent(v)
-    setPhase('field-add')
-  }, [])
-  const handleFieldAdd = useCallback((addMore: boolean) => {
-    if (addMore) setPhase('field-name')
-    else setPhase('review')
-  }, [])
-  const handleFieldName = useCallback((v: string) => {
-    setCurrentField({ name: v })
-    setPhase('field-type')
-  }, [])
-  const handleFieldType = useCallback((v: FieldType) => {
-    setCurrentField(f => ({ ...f, type: v }))
-    if (v === 'enum') setPhase('enum')
-    else setPhase('field-optional')
-  }, [])
-  const handleEnumValues = useCallback((v: string) => {
-    const values = v
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean)
-    setCurrentField(f => ({ ...f, enumValues: values }))
-    setPhase('field-optional')
-  }, [])
+  useInput((_input, key) => {
+    if (key.escape && phase !== 'name' && historyRef.current.length > 0) goBack()
+  })
+  const handleNameConfirm = useCallback(
+    (v: string) => {
+      setName(v)
+      pushPhase('type')
+    },
+    [pushPhase]
+  )
+  const handleTypePick = useCallback(
+    (v: TableType) => {
+      setType(v)
+      if (v === 'child') pushPhase('parent')
+      else pushPhase('field-add')
+    },
+    [pushPhase]
+  )
+  const handleParent = useCallback(
+    (v: string) => {
+      setParent(v)
+      pushPhase('field-add')
+    },
+    [pushPhase]
+  )
+  const handleFieldAdd = useCallback(
+    (addMore: boolean) => {
+      if (addMore) pushPhase('field-name')
+      else pushPhase('review')
+    },
+    [pushPhase]
+  )
+  const handleFieldName = useCallback(
+    (v: string) => {
+      setCurrentField({ name: v })
+      pushPhase('field-type')
+    },
+    [pushPhase]
+  )
+  const handleFieldType = useCallback(
+    (v: FieldType) => {
+      setCurrentField(f => ({ ...f, type: v }))
+      if (v === 'enum') pushPhase('enum')
+      else pushPhase('field-optional')
+    },
+    [pushPhase]
+  )
+  const handleEnumValues = useCallback(
+    (v: string) => {
+      const values = v
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+      setCurrentField(f => ({ ...f, enumValues: values }))
+      pushPhase('field-optional')
+    },
+    [pushPhase]
+  )
   const handleFieldOptional = useCallback(
     (optional: boolean) => {
       const finalized: Field = {
@@ -270,9 +309,9 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
       }
       setFields(fs => [...fs, finalized])
       setCurrentField({})
-      setPhase('field-add')
+      pushPhase('field-add')
     },
-    [currentField]
+    [currentField, pushPhase]
   )
   const handleReview = useCallback(
     (accept: boolean) => {
@@ -292,7 +331,7 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
   return (
     <Box flexDirection='column' padding={1}>
       {header}
-      {phase === 'name' ? <NameInput label='Table name' onConfirm={handleNameConfirm} /> : null}
+      {phase === 'name' ? <NameInput initial={name} label='Table name' onConfirm={handleNameConfirm} /> : null}
       {phase === 'type' ? (
         <PickList<TableType>
           getDesc={t => config.typeDescriptions[t]}
@@ -302,7 +341,7 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
           onPick={handleTypePick}
         />
       ) : null}
-      {phase === 'parent' ? <NameInput label='Parent table name' onConfirm={handleParent} /> : null}
+      {phase === 'parent' ? <NameInput initial={parent} label='Parent table name' onConfirm={handleParent} /> : null}
       {phase === 'field-add' ? (
         <YesNo
           label={fields.length > 0 ? `Add another field? (${fields.length} added)` : 'Add a field?'}
@@ -310,7 +349,11 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
         />
       ) : null}
       {phase === 'field-name' ? (
-        <NameInput label={`Field #${fields.length + 1} name`} onConfirm={handleFieldName} />
+        <NameInput
+          initial={currentField.name ?? ''}
+          label={`Field #${fields.length + 1} name`}
+          onConfirm={handleFieldName}
+        />
       ) : null}
       {phase === 'field-type' ? (
         <PickList<FieldType> items={FIELD_TYPES} label={`Field #${fields.length + 1} type`} onPick={handleFieldType} />
@@ -324,7 +367,11 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
           fields={fields}
           name={name}
           onConfirm={handleReview}
-          onPreview={config.preview ? () => setPhase('preview') : undefined}
+          onPopField={() => {
+            setFields(fs => fs.slice(0, -1))
+            pushPhase('field-name')
+          }}
+          onPreview={config.preview ? () => pushPhase('preview') : undefined}
           parent={parent}
           type={type}
         />
@@ -332,7 +379,7 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
       {phase === 'preview' && config.preview ? (
         <Preview
           files={config.preview({ fields, name, parent, type })}
-          onBack={() => setPhase('review')}
+          onBack={goBack}
           onConfirm={() => handleReview(true)}
         />
       ) : null}

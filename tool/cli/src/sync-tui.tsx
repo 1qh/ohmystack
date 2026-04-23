@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: scrolled window */
-/* oxlint-disable eslint-plugin-react(no-array-index-key), no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), typescript-eslint(no-unnecessary-condition), eslint-plugin-promise(prefer-await-to-then), react-web-api(no-leaked-timeout), eslint(require-await) */
-/* eslint-disable react/no-array-index-key, @eslint-react/no-array-index-key */
+/* oxlint-disable eslint-plugin-react(no-array-index-key), no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), typescript-eslint(no-unnecessary-condition), eslint-plugin-promise(prefer-await-to-then), react-web-api(no-leaked-timeout), eslint(require-await), eslint(complexity) */
+/* eslint-disable react/no-array-index-key, @eslint-react/no-array-index-key, complexity */
 import { Box, render, Text, useApp, useInput } from 'ink'
 import Spinner from 'ink-spinner'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 interface SyncAction {
   kind: 'added' | 'review' | 'skipped' | 'updated'
   relPath: string
@@ -89,6 +89,12 @@ const SyncApp = ({
   const skipped = actions.filter(a => a.kind === 'skipped').length
   const review = actions.filter(a => a.kind === 'review').length
   const recent = actions.slice(-12)
+  const startTime = useMemo(() => Date.now(), [])
+  const processed = actions.length
+  const pct = progress.total > 0 ? Math.floor((processed / progress.total) * 100) : 0
+  const elapsedMs = Date.now() - startTime
+  const etaMs = processed > 0 && progress.total > processed ? ((progress.total - processed) * elapsedMs) / processed : 0
+  const etaSec = Math.ceil(etaMs / 1000)
   return (
     <Box flexDirection='column' padding={1}>
       <Box flexDirection='column' marginBottom={1}>
@@ -121,7 +127,11 @@ const SyncApp = ({
             <Text color='cyan'>
               <Spinner type='dots' />
             </Text>
-            <Text> {progress.current || 'processing'}</Text>
+            <Text>
+              {' '}
+              {processed}/{progress.total} ({pct}%){etaMs > 0 ? ` · eta ${etaSec}s` : ''} ·{' '}
+              {progress.current || 'processing'}
+            </Text>
           </Box>
           {recent.length > 0 ? (
             <Box flexDirection='column' marginTop={1}>

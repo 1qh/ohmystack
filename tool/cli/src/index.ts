@@ -1,12 +1,15 @@
 #!/usr/bin/env bun
-/* oxlint-disable eslint-plugin-promise(prefer-await-to-then) */
-/* eslint-disable no-console */
+/** biome-ignore-all lint/performance/noAwaitInLoops: dashboard session loop */
+/** biome-ignore-all lint/nursery/noUnnecessaryConditions: dashboard loop intentionally infinite until exit */
+/* oxlint-disable eslint-plugin-promise(prefer-await-to-then), eslint(no-useless-assignment), eslint(no-constant-condition) */
+/* eslint-disable no-console, no-await-in-loop, @typescript-eslint/no-unnecessary-condition */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { bold, dim, red } from './ansi'
 import { LOG_PATH, logCrash } from './shared/crash-log'
+import { pushRecent } from './shared/recent'
 import { getCliVersion } from './shared/version'
 const handleFatal = (label: string, err: unknown) => {
   logCrash(err).catch(() => null)
@@ -23,6 +26,7 @@ const COMMANDS: Record<string, string> = {
   doctor: 'Check project health and version alignment',
   eject: 'Detach from upstream, convert to standalone',
   init: 'Create a new noboil project',
+  status: 'Show project drift, last sync, and health at a glance',
   stdb: 'Run a SpacetimeDB subcommand (add, dev, generate, migrate, use, viz, ...)',
   sync: 'Pull and apply upstream changes',
   upgrade: 'Install the latest noboil version'
@@ -53,33 +57,44 @@ const runNamespace = (ns: 'convex' | 'spacetimedb', args: string[]): never => {
   process.exit(result.status ?? 1)
 }
 const [cmd, ...rest] = process.argv.slice(2)
+if (cmd && cmd !== '--version' && cmd !== '-v' && cmd !== '--help' && cmd !== '-h')
+  await pushRecent(cmd, rest).catch(() => null)
 if (cmd === '--version' || cmd === '-v') console.log(await getCliVersion())
 else if (cmd === '--help' || cmd === '-h') printHelp()
 else if (!cmd) {
   const { runDashboard } = await import('./dashboard-tui')
-  const action = await runDashboard()
-  if (action === 'init') {
-    const { init } = await import('./init')
-    await init([])
-  } else if (action === 'doctor') {
-    const { doctor } = await import('./doctor')
-    await doctor([])
-  } else if (action === 'sync') {
-    const { sync } = await import('./sync')
-    await sync([])
-  } else if (action === 'eject') {
-    const { eject } = await import('./eject')
-    await eject([])
-  } else if (action === 'upgrade') {
-    const { upgrade } = await import('./upgrade')
-    upgrade([])
-  } else if (action === 'completions') {
-    const { printCompletions } = await import('./completions')
-    await printCompletions('bash')
-  } else if (action === 'add') {
-    const db = detectDb()
-    if (db) runNamespace(db, ['add'])
-    else console.log(`${red('No .noboilrc.json found.')} Run ${dim('noboil init')} first.`)
+  while (true) {
+    const action = await runDashboard()
+    if (action === 'exit') break
+    if (action === 'init') {
+      const { init } = await import('./init')
+      await init([])
+    } else if (action === 'doctor') {
+      const { doctor } = await import('./doctor')
+      await doctor([])
+    } else if (action === 'sync') {
+      const { sync } = await import('./sync')
+      await sync([])
+    } else if (action === 'eject') {
+      const { eject } = await import('./eject')
+      await eject([])
+    } else if (action === 'upgrade') {
+      const { upgrade } = await import('./upgrade')
+      upgrade([])
+    } else if (action === 'completions') {
+      const { printCompletions } = await import('./completions')
+      await printCompletions('bash')
+    } else if (action === 'status') {
+      const { status } = await import('./status')
+      status([])
+    } else if (action === 'add') {
+      const db = detectDb()
+      if (db) {
+        const entry = db === 'convex' ? '../convex/cli.ts' : '../spacetimedb/cli.ts'
+        const script = fileURLToPath(new URL(entry, import.meta.url))
+        spawnSync('bun', [script, 'add'], { stdio: 'inherit' })
+      } else console.log(`${red('No .noboilrc.json found.')} Run ${dim('noboil init')} first.`)
+    }
   }
 } else if (cmd === 'init') {
   const { init } = await import('./init')
@@ -99,6 +114,9 @@ else if (!cmd) {
 } else if (cmd === 'upgrade') {
   const { upgrade } = await import('./upgrade')
   upgrade(rest)
+} else if (cmd === 'status') {
+  const { status } = await import('./status')
+  status(rest)
 } else if (cmd === 'convex') runNamespace('convex', rest)
 else if (cmd === 'stdb' || cmd === 'spacetimedb') runNamespace('spacetimedb', rest)
 else if (cmd === 'add') {

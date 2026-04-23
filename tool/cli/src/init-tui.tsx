@@ -211,9 +211,13 @@ const Scaffold = ({
         step(7)
         if (skipInstall) setState(s => ({ ...s, details: [...s.details, '  skipped (--skip-install)'] }))
         else {
+          const installStart = Date.now()
+          setState(s => ({ ...s, details: [...s.details, '  bun install (this may take 30-90s)'] }))
           const installResult = spawnSync('bun', ['install'], { cwd: fullPath, stdio: 'pipe' })
-          if (installResult.status !== 0)
-            setState(s => ({ ...s, details: [...s.details, '  bun install failed — run manually later'] }))
+          const elapsedSec = Math.round((Date.now() - installStart) / 1000)
+          if (installResult.status === 0)
+            setState(s => ({ ...s, details: [...s.details, `  bun install done in ${elapsedSec}s`] }))
+          else setState(s => ({ ...s, details: [...s.details, '  bun install failed — run manually later'] }))
         }
         step(8)
         const manifest = {
@@ -224,6 +228,12 @@ const Scaffold = ({
           version: 1
         }
         writeFileSync(join(fullPath, '.noboilrc.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+        const gitInit = spawnSync('git', ['init', '-q'], { cwd: fullPath })
+        if (gitInit.status === 0) {
+          spawnSync('git', ['add', '-A'], { cwd: fullPath })
+          spawnSync('git', ['commit', '-q', '-m', 'chore: initial noboil scaffold'], { cwd: fullPath })
+          setState(s => ({ ...s, details: [...s.details, '  git init + initial commit'] }))
+        }
         const { writeState } = await import('./shared/state')
         await writeState({ lastDb: db }).catch(() => null)
         setState(s => ({ ...s, currentStep: SCAFFOLD_STEPS.length, status: 'done' }))

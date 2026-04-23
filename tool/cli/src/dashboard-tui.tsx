@@ -3,9 +3,11 @@ import { Box, render, Text, useApp, useInput } from 'ink'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { useEffect, useState } from 'react'
+import type { RecentEntry } from './shared/recent'
+import { readRecent } from './shared/recent'
 import { checkForUpdate } from './shared/update-check'
 import { getCliVersion } from './shared/version'
-type Action = 'add' | 'completions' | 'doctor' | 'eject' | 'exit' | 'init' | 'sync' | 'upgrade'
+type Action = 'add' | 'completions' | 'doctor' | 'eject' | 'exit' | 'init' | 'status' | 'sync' | 'upgrade'
 interface DashboardProps {
   cwd: string
   manifest: Manifest | null
@@ -19,8 +21,10 @@ interface Manifest {
   scaffoldedFrom: string
   version: number
 }
+const PRINTABLE_KEY = /[\da-z]/iu
 const COMMANDS: { action: Action; desc: string; key: string; name: string }[] = [
   { action: 'init', desc: 'Create a new noboil project', key: 'i', name: 'init' },
+  { action: 'status', desc: 'Project snapshot (drift, sync age, health)', key: 't', name: 'status' },
   { action: 'doctor', desc: 'Check project health', key: 'd', name: 'doctor' },
   { action: 'sync', desc: 'Pull upstream changes', key: 's', name: 'sync' },
   { action: 'add', desc: 'Add a table (auto-detects DB)', key: 'a', name: 'add' },
@@ -31,6 +35,7 @@ const COMMANDS: { action: Action; desc: string; key: string; name: string }[] = 
 const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
   const app = useApp()
   const [latest, setLatest] = useState<null | string>(null)
+  const [recent, setRecent] = useState<RecentEntry[]>([])
   useEffect(() => {
     const run = async () => {
       try {
@@ -38,20 +43,41 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
       } catch {
         setLatest(null)
       }
+      try {
+        setRecent((await readRecent()).slice(0, 3))
+      } catch {
+        setRecent([])
+      }
     }
     run().catch(() => null)
   }, [version])
+  const [filter, setFilter] = useState('')
+  const filtered = filter ? COMMANDS.filter(c => c.name.toLowerCase().includes(filter.toLowerCase())) : COMMANDS
   useInput((input, key) => {
-    const match = COMMANDS.find(c => c.key === input)
-    if (match) {
-      app.exit()
-      onExit(match.action)
-      return
+    if (filter === '') {
+      const match = COMMANDS.find(c => c.key === input)
+      if (match) {
+        app.exit()
+        onExit(match.action)
+        return
+      }
     }
-    if (input === 'q' || (key.ctrl && input === 'c') || key.escape || key.return) {
+    if ((key.ctrl && input === 'c') || key.escape || (input === 'q' && filter === '')) {
       app.exit()
       onExit('exit')
+      return
     }
+    if (key.return) {
+      const pick = filtered[0]
+      app.exit()
+      onExit(pick ? pick.action : 'exit')
+      return
+    }
+    if (key.backspace || key.delete) {
+      setFilter(f => f.slice(0, -1))
+      return
+    }
+    if (input && !key.ctrl && !key.meta && PRINTABLE_KEY.test(input)) setFilter(f => f + input)
   })
   return (
     <Box flexDirection='column' padding={1}>
@@ -98,7 +124,7 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
       )}
       <Box flexDirection='column'>
         <Text bold>Commands</Text>
-        {COMMANDS.map(c => (
+        {filtered.map(c => (
           <Box key={c.name}>
             <Text color='cyan'> {c.key}</Text>
             <Text dimColor> · </Text>
@@ -106,10 +132,31 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
             <Text dimColor>{c.desc}</Text>
           </Box>
         ))}
+        {filtered.length === 0 ? <Text color='yellow'>no matches for &quot;{filter}&quot;</Text> : null}
       </Box>
-      <Box marginTop={1}>
-        <Text dimColor>single-key to run · q/↵/esc exit</Text>
-      </Box>
+      {recent.length > 0 ? (
+        <Box flexDirection='column' marginTop={1}>
+          <Text dimColor>Recent:</Text>
+          {recent.map(r => (
+            <Text dimColor key={`${r.at}-${r.cmd}`}>
+              {'  '}
+              {r.cmd} {r.args.join(' ')}
+            </Text>
+          ))}
+        </Box>
+      ) : null}
+      {filter ? (
+        <Box marginTop={1}>
+          <Text color='cyan'>filter: </Text>
+          <Text>{filter}</Text>
+          <Text color='cyan'>_</Text>
+          <Text dimColor> · ↵ run first match · ⌫ clear · esc exit</Text>
+        </Box>
+      ) : (
+        <Box marginTop={1}>
+          <Text dimColor>single-key to run · type to filter · q/↵/esc exit</Text>
+        </Box>
+      )}
     </Box>
   )
 }
