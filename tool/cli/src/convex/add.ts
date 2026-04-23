@@ -40,7 +40,10 @@ const parseAddFlags = (args: string[]): AddFlags => {
         process.exit(1)
       }
     } else if (arg.startsWith('--fields=')) fieldsRaw = arg.slice('--fields='.length)
-    else if (!(arg.startsWith('-') || name)) name = arg
+    else if (!arg.startsWith('-'))
+      if (name) fieldsRaw = fieldsRaw ? `${fieldsRaw},${arg}` : arg
+      else name = arg
+
   convexDir = readEqFlag(args, 'convex-dir', convexDir)
   appDir = readEqFlag(args, 'app-dir', appDir)
   parent = readEqFlag(args, 'parent', parent)
@@ -326,6 +329,16 @@ const add = async (args: string[] = []) => {
   if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
   const convexPath = join(process.cwd(), flags.convexDir)
   const appPath = join(process.cwd(), flags.appDir)
+  if (args.includes('--dry-run')) {
+    console.log(`\n${bold(`Dry-run: ${flags.type} table '${flags.name}'`)}\n`)
+    console.log(`${dim('--- ')}${flags.convexDir}/${flags.name}-schema.ts${dim(' ---')}`)
+    console.log(genSchemaContent(flags.name, flags.type, fields))
+    console.log(`${dim('--- ')}${flags.convexDir}/${flags.name}.ts${dim(' ---')}`)
+    console.log(genEndpointContent(flags.name, flags.type))
+    console.log(`${dim('--- ')}${flags.appDir}/${flags.name}/page.tsx${dim(' ---')}`)
+    console.log(genPageContent(flags.name, flags.type))
+    return { created: 0, skipped: 0 }
+  }
   console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
   let created = 0
   let skipped = 0

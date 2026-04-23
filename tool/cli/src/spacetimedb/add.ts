@@ -39,7 +39,10 @@ const parseAddFlags = (args: string[]): AddFlags => {
         process.exit(1)
       }
     } else if (arg.startsWith('--fields=')) fieldsRaw = arg.slice('--fields='.length)
-    else if (!(arg.startsWith('-') || name)) name = arg
+    else if (!arg.startsWith('-'))
+      if (name) fieldsRaw = fieldsRaw ? `${fieldsRaw},${arg}` : arg
+      else name = arg
+
   moduleDir = readEqFlag(args, 'module-dir', moduleDir)
   appDir = readEqFlag(args, 'app-dir', appDir)
   parent = readEqFlag(args, 'parent', parent)
@@ -298,6 +301,16 @@ const addSync = async (flags: AddFlags) => {
     type: flags.type
   }
   if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
+  if (process.argv.includes('--dry-run')) {
+    console.log(`\n${bold(`Dry-run: ${flags.type} table '${flags.name}'`)}\n`)
+    console.log(`${dim('--- ')}${flags.moduleDir}/tables/${flags.name}.ts${dim(' ---')}`)
+    console.log(genTableContent(flags.name, flags.type, fields))
+    console.log(`${dim('--- ')}${flags.moduleDir}/reducers/${flags.name}.ts${dim(' ---')}`)
+    console.log(genReducerContent({ fields, name: flags.name, parent: flags.parent, type: flags.type }))
+    console.log(`${dim('--- ')}${flags.appDir}/${flags.name}/page.tsx${dim(' ---')}`)
+    console.log(genPageContent(flags.name, flags.type))
+    return { created: 0, skipped: 0 }
+  }
   const modulePath = join(process.cwd(), flags.moduleDir)
   const appPath = join(process.cwd(), flags.appDir)
   console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
