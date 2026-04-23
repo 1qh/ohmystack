@@ -116,7 +116,7 @@ interface LogEntryInput {
   schema: ZodObject
 }
 /** Creates log entries branded for use with log(). Each entry declares a parent table + payload schema. */
-const makeLog = <T extends Record<string, LogEntryInput>>(entries: T): T => {
+const makeLog = <T extends Record<string, LogEntryInput>>(entries: T): { [K in keyof T]: SchemaBrand<'log'> & T[K] } => {
   for (const name of Object.keys(entries)) {
     const entry = entries[name]
     if (entry)
@@ -134,7 +134,7 @@ interface KvEntryInput {
   writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
 }
 /** Creates kv entries branded for use with kv(). Each entry declares a string-keyed state schema. */
-const makeKv = <T extends Record<string, KvEntryInput>>(entries: T): T => {
+const makeKv = <T extends Record<string, KvEntryInput>>(entries: T): { [K in keyof T]: SchemaBrand<'kv'> & T[K] } => {
   for (const name of Object.keys(entries)) {
     const entry = entries[name]
     if (entry)
@@ -151,7 +151,9 @@ interface QuotaEntryInput {
   limit: number
 }
 /** Creates quota entries for use with quota(). */
-const makeQuota = <T extends Record<string, QuotaEntryInput>>(entries: T): T => {
+const makeQuota = <T extends Record<string, QuotaEntryInput>>(
+  entries: T
+): { [K in keyof T]: SchemaBrand<'quota'> & T[K] } => {
   for (const name of Object.keys(entries)) {
     const entry = entries[name]
     if (entry)
@@ -188,10 +190,10 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
     ? { [K in keyof C]: C[K] & Named<K & string> }
     : unknown) &
   (NonNullable<T['kv']> extends infer O extends Record<string, KvEntryInput>
-    ? { [K in keyof O]: Named<K & string> & O[K] }
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'kv'> }
     : unknown) &
   (NonNullable<T['log']> extends infer O extends Record<string, LogEntryInput>
-    ? { [K in keyof O]: Named<K & string> & O[K] }
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'log'> }
     : unknown) &
   (NonNullable<T['org']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: Named<K & string> & O[K] & OrgDefSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
@@ -203,7 +205,7 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
     ? { [K in keyof O]: Named<K & string> & O[K] & OwnedSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown) &
   (NonNullable<T['quota']> extends infer O extends Record<string, QuotaEntryInput>
-    ? { [K in keyof O]: Named<K & string> & O[K] }
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'quota'> }
     : unknown) &
   (NonNullable<T['singleton']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: Named<K & string> & O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }

@@ -7,7 +7,10 @@ import type {
   CrudOptions,
   CrudResult,
   DetectBrand,
+  KvFactoryResult,
+  LogFactoryResult,
   OrgCrudResult,
+  QuotaFactoryResult,
   SetupConfig,
   SingletonCrudResult,
   SingletonOptions
@@ -85,9 +88,19 @@ type TableResult<T> =
         ? SingletonCrudResult<InferShape<T>>
         : DetectBrand<T> extends 'base'
           ? CacheCrudResult<InferShape<T>>
-          : T extends ChildConfigOf<infer CS>
-            ? ChildCrudResult<CS>
-            : CrudResult<InferShape<T>>
+          : DetectBrand<T> extends 'log'
+            ? T extends LogEntryConfig
+              ? LogFactoryResult<InferShape<T['schema']>>
+              : never
+            : DetectBrand<T> extends 'kv'
+              ? T extends KvEntryConfig
+                ? KvFactoryResult<InferShape<T['schema']>>
+                : never
+              : DetectBrand<T> extends 'quota'
+                ? QuotaFactoryResult
+                : T extends ChildConfigOf<infer CS>
+                  ? ChildCrudResult<CS>
+                  : CrudResult<InferShape<T>>
 const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Deferred): unknown => {
   if (def.brand === 'child') return s.childCrud(name, def.schema as never, def.opts as never)
   if (def.brand === 'owned') return s.crud(name, def.schema as never, def.opts as never)
