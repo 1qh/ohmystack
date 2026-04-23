@@ -2,7 +2,7 @@ import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
-import type { BaseSchema, OrgSchema, OwnedSchema, SingletonSchema } from './types'
+import type { BaseSchema, KvSchema, LogSchema, OrgSchema, OwnedSchema, SingletonSchema } from './types'
 import { elementOf, isArrayType, unwrapZod } from '../zod'
 import { indexFields } from './bridge'
 import { isRecord } from './helpers'
@@ -74,6 +74,34 @@ const childTable = <T extends ZodRawShape>(s: ZodObject<T>, indexField: string, 
     ...z2c(s.shape),
     updatedAt: v.number()
   }).index(indexName ?? `by_${indexField}`, indexFields(indexField))
+/**
+ * Creates a Convex table definition for an append-only log with (parent, seq) ordering.
+ * @param s - Log-branded Zod schema (payload shape)
+ * @returns Convex table definition with by_parent, by_parent_seq, by_idempotency indexes
+ */
+const logTable = <T extends ZodRawShape>(s: LogSchema<T>) =>
+  defineTable({
+    ...z2c(s.shape),
+    idempotencyKey: v.optional(v.string()),
+    parent: v.string(),
+    seq: v.number()
+  })
+    .index('by_parent', indexFields('parent'))
+    .index('by_parent_seq', indexFields('parent', 'seq'))
+    .index('by_idempotency', indexFields('parent', 'idempotencyKey'))
+/**
+ * Creates a Convex table definition for string-keyed kv state.
+ * @param s - KV-branded Zod schema
+ * @returns Convex table definition with by_key index
+ */
+const kvTable = <T extends ZodRawShape>(s: KvSchema<T>) =>
+  defineTable({ ...z2c(s.shape), key: v.string(), updatedAt: v.number() }).index('by_key', indexFields('key'))
+/**
+ * Creates a Convex table definition for a sliding-window quota counter.
+ * @returns Convex table definition with by_owner index
+ */
+const quotaTable = () =>
+  defineTable({ owner: v.string(), timestamps: v.array(v.number()) }).index('by_owner', indexFields('owner'))
 /**
  * Returns the full set of Convex table definitions for org infrastructure: org, orgInvite, orgJoinRequest, orgMember.
  * @returns Object with org, orgInvite, orgJoinRequest, and orgMember table definitions
@@ -190,10 +218,13 @@ export {
   baseTable,
   checkSchema,
   childTable,
+  kvTable,
+  logTable,
   orgChildTable,
   orgTable,
   orgTables,
   ownedTable,
+  quotaTable,
   rateLimitTable,
   singletonTable,
   uploadTables
