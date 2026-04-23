@@ -32,11 +32,24 @@ const fetchLatest = async (): Promise<null | string> => {
     return null
   }
 }
+const parseVersion = (v: string): number[] => v.split('.').map(p => Number.parseInt(p, 10) || 0)
+const isNewer = (latest: string, current: string): boolean => {
+  const a = parseVersion(latest)
+  const b = parseVersion(current)
+  for (let i = 0; i < 3; i += 1) {
+    if ((a[i] ?? 0) > (b[i] ?? 0)) return true
+    if ((a[i] ?? 0) < (b[i] ?? 0)) return false
+  }
+  return false
+}
 const checkForUpdate = async (currentVersion: string): Promise<null | string> => {
   const cached = await readCache()
-  if (cached && Date.now() - cached.checkedAt < TTL_MS) return cached.version
+  if (cached && Date.now() - cached.checkedAt < TTL_MS)
+    return isNewer(cached.version, currentVersion) ? cached.version : currentVersion
+
   const latest = await fetchLatest()
   if (latest) await writeCache(latest)
-  return latest ?? currentVersion
+  if (latest && isNewer(latest, currentVersion)) return latest
+  return currentVersion
 }
-export { checkForUpdate }
+export { checkForUpdate, isNewer }
