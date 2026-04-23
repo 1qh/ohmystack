@@ -1,0 +1,97 @@
+---
+title: Log factory (append-only event log)
+description: Append-only sequential tables with atomic seq allocation, idempotent appends, and parent-scoped listing. For messaging, audit trails, activity feeds, event sourcing.
+---
+
+Use `log` for tables where rows are **append-only** and **ordered by a per-parent sequence number** — chat messages, stream events, audit trails, activity feeds. Unlike `owned` or `child` factories, `log` exposes no `update` endpoint (events are immutable), auto-assigns a `seq` (atomic counter per parent), and supports idempotent appends so re-sending the same event is a no-op.
+
+## API surface
+
+```ts
+type LogFactoryResult = {
+  append: Mutation<(ctx, { parent: string, payload: T, idempotencyKey?: string }) => { seq: number, created: boolean }>
+  listAfter: Query<(ctx, { parent: string, seq: number, limit?: number }) => Row[]>
+  list: Query<(ctx, { parent: string, paginationOpts }) => PaginatedResult>
+  purgeByParent: Mutation<(ctx, { parent: string }) => { deleted: number }>
+}
+```
+
+| Method | Semantics |
+|---|---|
+| `append(parent, payload, {idempotencyKey?})` | Atomically `seq = nextSeq(parent)`, insert row. If `idempotencyKey` provided and `(parent, idempotencyKey)` exists, returns existing `{seq, created: false}` without inserting. |
+| `listAfter(parent, seq, limit?)` | Rows where `row.seq > seq`, ordered ascending. Streaming-friendly tail read. Default limit 500. |
+| `list(parent, {paginationOpts})` | Cursor pagination newest-first, standard Convex shape. For UI history scroll. |
+| `purgeByParent(parent)` | Bulk delete all rows for parent. Call on parent row delete. Returns count. |
+
+## Schema
+
+```ts
+import { object, string } from 'zod/v4'
+import { schema, makeLog } from 'noboil/convex/schema'
+const log = makeLog({
+  messages: {
+    parent: 'chats',                    // parent table name
+    schema: object({
+      content: string(),
+      type: z.enum(['user', 'assistant'])
+    })
+  }
+})
+```
+
+Every log row gets these auto-fields (added by factory, not in user schema):
+- `parent: Id<parentTable>` — foreign key
+- `seq: number` — monotonic per parent, starts at 1
+- `idempotencyKey?: string` — optional dedup hash
+- `_creationTime: number` — Convex native
+
+Indexes auto-created: `by_parent` (parent, seq) and `by_idempotency` (parent, idempotencyKey).
+
+## Seq allocation
+
+Counter row per parent stored in internal `_logCounters` table (one row per `{table, parent}`). `append` reads counter, increments atomically, inserts row. Convex mutations are transactional so the read+write is safe. No `_creationTime` tiebreaker needed.
+
+## Idempotency
+
+When `idempotencyKey` is provided, the factory queries the `by_idempotency` index first. If found → return existing `{seq, created: false}`. If not → atomic insert. Guarantees "insert-or-noop" semantics for retryable client writes.
+
+Without `idempotencyKey` → every `append` inserts (duplicates allowed; caller responsible for dedup).
+
+## What log deliberately doesn't do
+
+- **No `update`** — events are immutable. Want to edit? Use `owned` or `child` instead.
+- **No auto-TTL** — retention is explicit via `purgeByParent`. Add a cron if you want "delete events older than N days".
+- **No cross-parent queries** — every op is scoped by parent. Cross-table analytics belong in a separate read-only view.
+- **No subscriptions API** — consume via Convex's native `useQuery` on `listAfter` for streaming, or `useList` for paginated history. Factory generates the queries; you get subscriptions for free.
+
+## Example: chat messages
+
+```ts
+const s = schema({
+  owned: {
+    chats: object({ title: string(), userId: zid('users') })
+  },
+  log: {
+    messages: {
+      parent: 'chats',
+      schema: object({ content: string(), role: z.enum(['user','assistant','system']) })
+    }
+  }
+})
+```
+
+Client:
+```ts
+import { useLog } from 'noboil/convex/react'
+const { items, append, loadMore } = useLog(api.messages, { parent: chatId })
+append({ payload: { content: 'hi', role: 'user' } })
+```
+
+## When to use log vs child
+
+| Use `log` if | Use `child` if |
+|---|---|
+| Rows are append-only (no edits) | Rows are editable |
+| Order matters (strict seq) | Order doesn't matter or is by `_creationTime` |
+| Idempotent retries expected | Duplicates are errors |
+| Common patterns: messages, events, audit | Common patterns: comments that can be edited, todos under a project |

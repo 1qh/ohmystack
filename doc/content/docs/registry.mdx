@@ -1,0 +1,87 @@
+---
+title: Registry factory (string-keyed global state)
+description: Named key → value state with role-gated writes and public reads. For site-wide configuration, feature flags, maintenance banners, system status.
+---
+
+Use `registry` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` which is one row per user: a registry has many rows, each identified by a string key chosen by the caller.
+
+## API surface
+
+```ts
+type RegistryFactoryResult = {
+  get: Query<(ctx, { key: string }) => Row | null>
+  list: Query<(ctx) => Row[]>
+  set: Mutation<(ctx, { key: string, payload: T }) => Row>
+  rm: Mutation<(ctx, { key: string }) => { deleted: boolean }>
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `get(key)` | public (no auth gate) | Returns row or null. Safe to call from unauthenticated clients (status page). |
+| `list()` | role-gated | Returns all rows. Admin dashboards. |
+| `set(key, payload)` | role-gated | Upsert: creates if missing, updates if exists. |
+| `rm(key)` | role-gated | Delete by key. |
+
+## Schema
+
+```ts
+import { object, string, boolean } from 'zod/v4'
+import { schema, makeRegistry } from 'noboil/convex/schema'
+const registry = makeRegistry({
+  systemStatus: {
+    schema: object({
+      kind: string(),
+      valid: boolean(),
+      error: string().optional(),
+      checkedAt: z.number()
+    }),
+    writeRole: (ctx) => isInternal(ctx),
+    keys: ['google_oauth', 'convex_api', 'db_migrations'] as const
+  }
+})
+```
+
+Config:
+- `schema` — Zod shape for the value
+- `writeRole: (ctx) => boolean | Promise<boolean>` — predicate gating `set`/`rm`/`list`. Return `true` to allow. Sugar: pass the literal `true` for public writes, omit for internal-only (throws unless `ctx.internal` is true).
+- `keys?: readonly string[]` — optional compile-time enum constraint. If provided, `key` arg must be one of these strings. If omitted, `key` is `string`.
+
+Auto-fields:
+- `key: string` — primary identifier (indexed)
+- `updatedAt: number` — last write timestamp
+- `_creationTime: number` — Convex native
+
+Index auto-created: `by_key` (unique).
+
+## writeRole patterns
+
+```ts
+writeRole: true                                    // public writes (rare, think config forms)
+writeRole: (ctx) => ctx.user?.role === 'admin'     // admin-only
+writeRole: (ctx) => isInternal(ctx)                // from cron / internal action only
+writeRole: async (ctx) => {
+  const user = await ctx.db.get(ctx.userId)
+  return user?.permissions.includes('manage_status')
+}
+```
+
+Omitting `writeRole` entirely → internal-only (only callable from `internalMutation`s). Public reads always allowed.
+
+## Typed keys
+
+```ts
+keys: ['banner', 'version', 'maintenance'] as const
+// set/get/rm now require key to be 'banner' | 'version' | 'maintenance'
+```
+
+Prevents typos in client code. Omit `keys` if you want to allow arbitrary strings.
+
+## When to use registry vs singleton vs cache
+
+| Use `registry` if | Use `singleton` if | Use `cache` if |
+|---|---|---|
+| Key is a named string (`'banner'`, `'google_oauth'`) | One row per user | Key is a fetched-from-upstream ID with TTL |
+| Writes are gated by role | Writes are by owner | Writes are by cron refresh |
+| Reads are public | Reads are user-scoped | Reads are lookups on upstream key |
+| Examples: maintenance banner, feature flags, health | User preferences, profile | TMDB movie, GitHub repo, external API response |

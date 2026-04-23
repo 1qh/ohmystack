@@ -1,0 +1,93 @@
+---
+title: Rate limiting factory (sliding window)
+description: Per-owner sliding-window rate limit primitive with explicit check / record / consume semantics. For anti-spam, API throttling, ballot-stuffing prevention.
+---
+
+Use `rateLimit` for sliding-window rate limits per owner — anti-spam on form submissions, API throttling per user, ballot-stuffing prevention on polls, typing-indicator debouncing. Storage is per-owner with a `timestamps: number[]` ring; pruning happens on write.
+
+## API surface
+
+```ts
+type RateLimitFactoryResult = {
+  check: Query<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
+  record: Mutation<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
+  consume: Mutation<(ctx, { owner: string }) => { allowed: boolean, remaining: number, retryAfter?: number }>
+}
+```
+
+| Method | Pure | Semantics |
+|---|---|---|
+| `check(owner)` | ✓ (query) | Returns current state without mutating. Use for UI — "3 left in 60s". |
+| `record(owner)` | ✗ (mutation) | Appends timestamp, prunes expired entries, returns new state. Always records even if already over limit (hard-fail at call site if you want; factory does not throw). |
+| `consume(owner)` | ✗ (mutation) | Atomic: checks, records IF allowed, returns result. Returns `allowed: false` if over — caller should reject. This is the typical "before mutation" gate. |
+
+## Schema
+
+```ts
+import { schema, makeRateLimit } from 'noboil/convex/schema'
+const limits = makeRateLimit({
+  messageSend: {
+    limit: 10,
+    durationMs: 60_000      // 10 messages per 60 seconds per owner
+  },
+  pollVote: {
+    limit: 1,
+    durationMs: 24 * 60 * 60 * 1000   // 1 vote per day per owner (ballot-stuffing prevention)
+  }
+})
+```
+
+Auto-fields in the backing table:
+- `owner: string` — the rate-limit key (userId, email, IP, composite)
+- `timestamps: number[]` — recent timestamps within the window
+- `_creationTime: number` — Convex native
+
+Index auto-created: `by_owner` (unique).
+
+## Pruning
+
+Entries older than `durationMs` are pruned on every `record` / `consume`. No background cleanup cron needed. If a row sees no writes, it stays — but `check` returns `allowed: true` / `remaining: limit` because pruning is computed on read (not written). Dead rows are harmless; add a nightly cron if you care about storage.
+
+## Owner key conventions
+
+`owner` is opaque string — pick what makes sense:
+- `userId` for authenticated per-user limits
+- `email` for pre-auth form submissions
+- `ip` for public endpoints (`x-forwarded-for` from HTTP action)
+- `${userId}:${resource}` for per-user-per-resource limits (e.g. `user123:poll456`)
+
+## Typical patterns
+
+**Gate a mutation:**
+```ts
+export const send = mutation({
+  args: { chatId: v.id('chats'), content: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    const rl = await api.limits.messageSend.consume(ctx, { owner: userId })
+    if (!rl.allowed) throw new Error(`rate limit; retry in ${rl.retryAfter}ms`)
+    // ... actual send logic
+  }
+})
+```
+
+**Show UI state:**
+```ts
+const { allowed, remaining, retryAfter } = useQuery(api.limits.messageSend.check, { owner: userId })
+return <Button disabled={!allowed}>Send ({remaining} left)</Button>
+```
+
+**Split check from record for deferred actions:**
+```ts
+const pre = await api.limits.vote.check(ctx, { owner: userId })
+if (!pre.allowed) throw new Error('slow down')
+// ... async work that might fail ...
+await api.limits.vote.record(ctx, { owner: userId })   // only record after success
+```
+
+## What rateLimit deliberately doesn't do
+
+- **No global limit** — every limit is per-owner. For global limits (e.g. "100 total signups/hour"), use `registry` + manual counter.
+- **No fixed-window variant** — sliding window only. Fixed bucket is cheaper but less precise; if you need it, ship your own on top of `registry`.
+- **No persistence across server restarts** — it's just a Convex table, so survives everything Convex survives.
+- **No distributed rate limit** — Convex mutations are transactional per database; single-region assumption holds.
