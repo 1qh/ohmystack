@@ -40,7 +40,7 @@ backend/convex/        — Convex backend functions + schema
 backend/spacetimedb/   — SpacetimeDB module + schema
 lib/fe/                — shared frontend utilities
 lib/e2e/               — shared Playwright utilities
-tool/cli/              — noboil CLI (published as `noboil`)
+lib/noboil/              — noboil CLI (published as `noboil`)
 ```
 
 Library packages (`lib/convex/`, `lib/spacetimedb/`) are published to npm. `lib/shared/` is internal-only (never published) — both libraries import from it via workspace alias `@a/shared`. Everything else is consumer code. Libraries must work for ANY project — never hardcode project-specific data.

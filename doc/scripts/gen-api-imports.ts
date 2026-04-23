@@ -61,8 +61,8 @@ const genTable = (pkgDir: string, filter: string): string => {
 }
 const START = '{/* AUTO-GENERATED:IMPORTS:START */}'
 const END = '{/* AUTO-GENERATED:IMPORTS:END */}'
-const convexDir = resolve(import.meta.dir, '../../tool/cli')
-const stdbDir = resolve(import.meta.dir, '../../tool/cli')
+const convexDir = resolve(import.meta.dir, '../../lib/noboil')
+const stdbDir = resolve(import.meta.dir, '../../lib/noboil')
 const mdxPath = resolve(import.meta.dir, '../content/docs/api-reference.mdx')
 const section = [
   '',

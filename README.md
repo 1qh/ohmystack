@@ -258,7 +258,7 @@ noboil/
     convex/           Convex backend (schema + functions)
     spacetimedb/      SpacetimeDB backend (module + bindings)
   readonly/ui/        shared shadcn components (synced from cnsync, read-only)
-  tool/cli/           noboil — single published package (CLI + convex + spacetimedb + shared)
+  lib/noboil/           noboil — single published package (CLI + convex + spacetimedb + shared)
 ```
 
 ## Package

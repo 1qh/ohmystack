@@ -112,7 +112,9 @@
     "!src/**/__tests__"
   ],
   "scripts": {
-    "postpublish": "bunx pm4ai@latest cleanup",
+    "prepublishOnly": "bunx tsdown",
+    "publish": "bun run prepublishOnly && bun publish --access public --cwd dist && bunx pm4ai@latest cleanup",
+    "publish:dry": "bun run prepublishOnly && bun publish --dry-run --access public --cwd dist",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

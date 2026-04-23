@@ -1,7 +1,7 @@
 ## Known Gotchas
 
 - `next-env.d.ts` format mismatch — Next.js generates double quotes + semicolons, biome wants single + none. Add to biome ignore.
-- LSP errors in `tool/cli/src/*.ts` and `lib/*/src/doctor.ts` are false positives — `bun run tsc` passes fine.
+- LSP errors in `lib/noboil/src/*.ts` and `lib/*/src/doctor.ts` are false positives — `bun run tsc` passes fine.
 - Base UI Switch renders as `<span>` not `<button>` — use `[role="switch"]` selector in E2E tests, never `button[role="switch"]`.
 - Shimmer component (`@a/ui/ai-elements/shimmer`) requires `as` prop (e.g. `as="p"`). Without it, `motion.create(undefined)` crashes.
 

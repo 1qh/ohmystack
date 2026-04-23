@@ -7,8 +7,7 @@
     "web/stdb/*",
     "lib/*",
     "readonly/*",
-    "backend/*",
-    "tool/*"
+    "backend/*"
   ],
   "scripts": {
     "action": "sh up.sh && bun run test",
@@ -25,8 +24,8 @@
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",
     "postinstall": "sherif && bun script/patch-stdb-sdk.ts",
     "prepare": "bunx simple-git-hooks",
-    "publish": "cd tool/cli && bunx tsdown && bun publish --access public --cwd dist && cd ../.. && bunx pm4ai@latest cleanup",
-    "publish:dry": "cd tool/cli && bunx tsdown && bun publish --dry-run --access public --cwd dist",
+    "publish": "bun run --cwd lib/noboil publish",
+    "publish:dry": "bun run --cwd lib/noboil publish:dry",
     "setup": "bun script/setup.ts",
     "setup:convex": "bun script/setup-convex.ts",
     "setup:spacetimedb": "bun script/setup-spacetimedb.ts",
