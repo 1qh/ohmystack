@@ -56,8 +56,19 @@ const parseArgs = (args: string[]) => {
     } else die(`Unknown option ${arg}`)
   return opts
 }
-const readManifest = (cwd: string) => {
-  const manifestPath = join(cwd, '.noboilrc.json')
+const findProjectRoot = (start: string): string => {
+  let dir = start
+  for (let i = 0; i < 10; i += 1) {
+    if (existsSync(join(dir, '.noboilrc.json'))) return dir
+    const parent = join(dir, '..')
+    if (parent === dir) break
+    dir = parent
+  }
+  die('Not a noboil project. Run `noboil init` first.')
+  return start
+}
+const readManifest = (root: string) => {
+  const manifestPath = join(root, '.noboilrc.json')
   if (!existsSync(manifestPath)) die('Not a noboil project. Run `noboil init` first.')
   const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as Partial<Manifest>
   if (
@@ -155,7 +166,7 @@ const refreshCache = (cwd: string) => {
   })
 }
 const runSync = async (opts: SyncOpts, onProgress: (p: Record<string, unknown>) => void): Promise<void> => {
-  const cwd = process.cwd()
+  const cwd = findProjectRoot(process.cwd())
   const manifest = readManifest(cwd)
   const tmpDir = join(tmpdir(), `noboil-sync-${Date.now()}`)
   onProgress({ phase: 'cloning' })

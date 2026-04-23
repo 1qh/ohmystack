@@ -49,13 +49,20 @@ const checkTsconfig = (cwd: string): CheckResult =>
     return { detail: 'missing', status: 'warn' }
   })
 const readRc = (cwd: string) => {
-  const rcPath = join(cwd, '.noboilrc.json')
-  if (!existsSync(rcPath)) return null
-  try {
-    return JSON.parse(readFileSync(rcPath, 'utf8')) as { db?: 'convex' | 'spacetimedb'; scaffoldedFrom?: string }
-  } catch {
-    return null
+  let dir = cwd
+  for (let i = 0; i < 10; i += 1) {
+    const rcPath = join(dir, '.noboilrc.json')
+    if (existsSync(rcPath))
+      try {
+        return JSON.parse(readFileSync(rcPath, 'utf8')) as { db?: 'convex' | 'spacetimedb'; scaffoldedFrom?: string }
+      } catch {
+        return null
+      }
+    const parent = join(dir, '..')
+    if (parent === dir) break
+    dir = parent
   }
+  return null
 }
 const checkManifest = (cwd: string): CheckResult =>
   check('noboil manifest', () => {
