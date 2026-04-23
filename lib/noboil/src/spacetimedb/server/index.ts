@@ -22,6 +22,8 @@ export {
   time,
   warnLargeFilterSet
 } from './helpers'
+export { makeKv } from './kv'
+export { makeLog } from './log'
 export { auditLog, composeMiddleware, inputSanitize, slowQueryWarn } from './middleware'
 export { makeOrg, makeOrgTables } from './org'
 export type { InviteDocLike, JoinRequestItem, OrgDocLike, OrgMemberItem, OrgUserLike } from './org'
@@ -29,6 +31,7 @@ export { checkMembership, makeOrgCrud, orgCascade } from './org-crud'
 export { canEdit, requireOrgMember } from './org-crud-helpers'
 export type { OrgRole } from './org-members'
 export { HEARTBEAT_INTERVAL_MS, makePresence, PRESENCE_TTL_MS, presenceTable } from './presence'
+export { makeQuota } from './quota'
 export {
   baseTable,
   checkSchema,
