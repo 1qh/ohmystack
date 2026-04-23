@@ -46,8 +46,24 @@ interface ChildConfigOf<S extends AnyShape> {
   schema: ZodObject<S>
 }
 type InferShape<T> = T extends ZodObject<infer S> ? S : ZodRawShape
+interface KvEntryConfig {
+  keys?: readonly string[]
+  schema: ZodObject
+  writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
+}
+interface LogEntryConfig {
+  parent: string
+  schema: ZodObject
+}
+interface QuotaEntryConfig {
+  durationMs: number
+  limit: number
+}
 type SetupResult<DM extends GenericDataModel> = ReturnType<typeof setup<DM>>
-type TableFn = <T extends ChildConfigOf<ZodRawShape> | ZodObject>(schema: T, opts?: TableOpts<T>) => TableResult<T>
+type TableFn = <T extends ChildConfigOf<ZodRawShape> | KvEntryConfig | LogEntryConfig | QuotaEntryConfig | ZodObject>(
+  schema: T,
+  opts?: TableOpts<T>
+) => TableResult<T>
 type TableOpts<T> =
   DetectBrand<T> extends 'owned'
     ? CrudOptions<InferShape<T>>

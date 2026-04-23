@@ -30,15 +30,19 @@ const api = noboil({
     }),
     message: table(s.message, { pub: { parentField: 'isPublic' } }),
     orgProfile: table(s.orgProfile),
+    poll: table(s.poll),
+    pollVoteQuota: table(s.pollVote),
     project: table(s.project, {
       acl: true,
       cascade: orgCascade(s.task, { foreignKey: 'projectId' }),
       rateLimit: 30
     }),
+    siteConfig: table(s.siteConfig),
     task: table(s.task, {
       aclFrom: { field: 'projectId', table: s.project.__name },
       rateLimit: 30
     }),
+    vote: table(s.vote),
     wiki: table(s.wiki, {
       acl: true,
       rateLimit: 30,
