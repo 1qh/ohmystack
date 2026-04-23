@@ -246,6 +246,8 @@ const STDB_TYPE_DESCRIPTIONS = {
 } as const
 const promptInteractive = async (): Promise<AddFlags | null> => {
   const { runAddWizard } = await import('../shared/components/add-wizard')
+  const { readState, writeState } = await import('../shared/state')
+  const prevState = await readState()
   const toParsed = (fs: { enumValues?: string[]; name: string; optional: boolean; type: string }[]): ParsedField[] =>
     fs.map(f => ({
       name: f.name,
@@ -253,6 +255,7 @@ const promptInteractive = async (): Promise<AddFlags | null> => {
       type: f.type === 'enum' ? { enum: f.enumValues ?? [] } : (f.type as FieldType)
     }))
   const result = await runAddWizard({
+    initialType: prevState.lastTableType as TableType | undefined,
     kind: 'spacetimedb',
     preview: r => {
       const pf = toParsed(r.fields).length > 0 ? toParsed(r.fields) : defaultFields(r.type)
@@ -268,6 +271,7 @@ const promptInteractive = async (): Promise<AddFlags | null> => {
     typeDescriptions: STDB_TYPE_DESCRIPTIONS
   })
   if (!result) return null
+  await writeState({ lastTableType: result.type }).catch(() => null)
   return {
     appDir: 'src/app',
     fields: result.fields.map(f => ({

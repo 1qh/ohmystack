@@ -18,6 +18,7 @@ interface PreviewFile {
 }
 type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
 interface WizardConfig {
+  initialType?: TableType
   kind: 'convex' | 'spacetimedb'
   preview?: (result: WizardResult) => PreviewFile[]
   typeDescriptions: Record<TableType, string>
@@ -72,16 +73,18 @@ const NameInput = ({
 }
 const PickList = <T extends string>({
   getDesc,
+  initialIdx = 0,
   items,
   label,
   onPick
 }: {
   getDesc?: (item: T) => string
+  initialIdx?: number
   items: T[]
   label: string
   onPick: (v: T) => void
 }) => {
-  const [idx, setIdx] = useState(0)
+  const [idx, setIdx] = useState(initialIdx)
   useInput((input, key) => {
     if (key.upArrow || input === 'k') setIdx(i => (i === 0 ? items.length - 1 : i - 1))
     else if (key.downArrow || input === 'j') setIdx(i => (i === items.length - 1 ? 0 : i + 1))
@@ -293,6 +296,7 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
       {phase === 'type' ? (
         <PickList<TableType>
           getDesc={t => config.typeDescriptions[t]}
+          initialIdx={Math.max(0, TABLE_TYPES.indexOf(config.initialType ?? 'owned'))}
           items={TABLE_TYPES}
           label='Table type'
           onPick={handleTypePick}
