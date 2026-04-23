@@ -11,7 +11,13 @@ interface AddContext {
   parent: string
   type: string
 }
+interface CustomFieldType {
+  convex: string
+  description?: string
+  stdb: string
+}
 interface NoboilConfig {
+  fieldTypes?: Record<string, CustomFieldType>
   hooks?: {
     afterAdd?: (ctx: AddContext) => Promise<void> | void
     beforeAdd?: (ctx: AddContext) => Promise<void> | void
@@ -32,5 +38,5 @@ const loadConfig = async (cwd: string): Promise<NoboilConfig | null> => {
   }
   return null
 }
-export type { AddContext, NoboilConfig }
+export type { AddContext, CustomFieldType, NoboilConfig }
 export { defineConfig, loadConfig }

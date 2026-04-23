@@ -12,7 +12,47 @@ Define a Zod schema once. Get authenticated CRUD, typesafe forms, file upload, r
 bunx noboil@latest init
 ```
 
-Pick a database, name your project, done. The CLI scaffolds the full monorepo.
+Pick a database, name your project, done. The CLI scaffolds the full monorepo — all four vertical demos (blog, chat, movie, org) and shared infra included. Delete what you don’t need.
+
+## CLI
+
+Run `noboil` with no args for an interactive dashboard with single-key hotkeys:
+
+| key | command       | what it does                                                 |
+| --- | ------------- | ------------------------------------------------------------ |
+| `i` | `init`        | create a new project                                         |
+| `d` | `doctor`      | health check; `doctor --fix` auto-remediates                 |
+| `s` | `sync`        | pull upstream changes (cached at `~/.noboil/upstream.git`)   |
+| `a` | `add`         | scaffold a table (auto-dispatches by DB in `.noboilrc.json`) |
+| `e` | `eject`       | inline the noboil library into `lib/noboil`                  |
+| `u` | `upgrade`     | `bun add noboil@latest`                                      |
+| `c` | `completions` | print shell completion script                                |
+
+All commands also work non-interactively: `noboil init my-app --db=convex`, `noboil add post --type=owned --fields="title:string,content:string"`, etc. Run `noboil <cmd> --help` for options. `noboil --version`, `noboil-convex --version`, and `noboil-stdb --version` each print the CLI version.
+
+Shell completions:
+
+```sh
+noboil completions bash              # print
+noboil completions install zsh       # append to ~/.zshrc
+```
+
+Crash logs land in `~/.noboil/last-error.log`. Print the most recent with `noboil doctor --last-error`.
+
+### Extending `noboil add`
+
+Drop a `noboil.config.ts` at the project root to hook lifecycle events:
+
+```ts
+import { defineConfig } from 'noboil/config'
+export default defineConfig({
+  hooks: {
+    afterAdd: async ({ name, type }) => {
+      // e.g. run a formatter, notify Slack, etc.
+    }
+  }
+})
+```
 
 ## Before / After
 

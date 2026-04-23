@@ -158,10 +158,16 @@ const Scaffold = ({
 }) => {
   const [state, setState] = useState<ScaffoldState>({ currentStep: 0, details: [], status: 'idle' })
   const [attempt, setAttempt] = useState(0)
+  const isDirNotEmptyError = state.status === 'failed' && state.error?.startsWith('directory')
   useInput((input, key) => {
     if (state.status !== 'failed') return
     if (input === 'r' || input === 'R') {
       setState({ currentStep: 0, details: [], status: 'idle' })
+      setAttempt(a => a + 1)
+    } else if (isDirNotEmptyError && (input === 'o' || input === 'O')) {
+      const fullPath = resolvePath(process.cwd(), dir)
+      rmSync(fullPath, { force: true, recursive: true })
+      setState({ currentStep: 0, details: ['  overwritten existing directory'], status: 'idle' })
       setAttempt(a => a + 1)
     } else if (input === 'q' || input === 'Q' || key.escape) onDone(state)
   })
@@ -277,7 +283,7 @@ const Scaffold = ({
       {state.error ? (
         <Box flexDirection='column' marginTop={1}>
           <Text color='red'>Error: {state.error}</Text>
-          <Text dimColor>r retry · q quit</Text>
+          <Text dimColor>{isDirNotEmptyError ? 'r retry · o overwrite · q quit' : 'r retry · q quit'}</Text>
         </Box>
       ) : null}
     </Box>
