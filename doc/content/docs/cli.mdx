@@ -5,32 +5,41 @@ description: Complete reference for all noboil CLI commands — project scaffold
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-Three CLIs ship with noboil. `noboil` handles project creation. `noboil-convex` and `noboil-stdb` are database-specific and live inside your project.
+Three CLIs ship with noboil. `noboil` handles project creation and top-level ops. `noboil-convex` and `noboil-stdb` are database-specific. All three support `--version` and `--help`.
+
+Running `noboil` with no args opens an **interactive dashboard** with single-key hotkeys. `/` filters commands, `↑↓` navigates recent history, any letter runs the matching command instantly.
 
 ## Commands at a glance
 
-| CLI | Command | What it does |
-| --- | ------- | ------------ |
-| `noboil` | `init` | Create a new project |
-| `noboil` | `doctor` | Check project health |
-| `noboil` | `sync` | Pull upstream template updates |
-| `noboil` | `eject` | Inline library code, remove deps |
-| `noboil-convex` | `add` | Generate a new table with CRUD |
-| `noboil-convex` | `check` | Validate schema/factory consistency |
-| `noboil-convex` | `doctor` | Project diagnostics with health score |
-| `noboil-convex` | `migrate` | Schema diff and migration plans |
-| `noboil-convex` | `viz` | Visualize schema relationships |
-| `noboil-convex` | `docs` | Generate API documentation |
-| `noboil-stdb` | `add` | Generate a new table with reducers |
-| `noboil-stdb` | `check` | Validate schema/factory consistency |
-| `noboil-stdb` | `doctor` | Project diagnostics with health score |
-| `noboil-stdb` | `dev` | Start integrated local dev workflow |
-| `noboil-stdb` | `migrate` | Schema diff and migration plans |
-| `noboil-stdb` | `use` | Switch SpacetimeDB target |
-| `noboil-stdb` | `generate docker` | Generate docker-compose.yml |
-| `noboil-stdb` | `viz` | Visualize schema relationships |
-| `noboil-stdb` | `docs` | Generate API documentation |
-| `noboil-stdb` | `validate` | Alias for `check --health` |
+| CLI | Command | Hotkey | What it does |
+| --- | ------- | ------ | ------------ |
+| `noboil` | (no args) | — | Interactive dashboard |
+| `noboil` | `init` | `i` | Create a new project |
+| `noboil` | `status` | `t` | Project snapshot (drift, sync age, health) |
+| `noboil` | `doctor` | `d` | Health check; `--fix` auto-remediates |
+| `noboil` | `sync` | `s` | Pull upstream changes (offline-cached) |
+| `noboil` | `add` | `a` | Scaffold a table — auto-dispatches by DB |
+| `noboil` | `eject` | `e` | Inline library code, remove deps |
+| `noboil` | `upgrade` | `u` | `bun add noboil@latest` |
+| `noboil` | `completions` | `c` | Print or install shell completions |
+| `noboil` | `convex <cmd>` | — | Run a Convex subcommand (see below) |
+| `noboil` | `stdb <cmd>` | — | Run a SpacetimeDB subcommand (see below) |
+| `noboil-convex` | `add` | — | Generate a new table with CRUD |
+| `noboil-convex` | `check` | — | Validate schema/factory consistency |
+| `noboil-convex` | `doctor` | — | Project diagnostics with health score |
+| `noboil-convex` | `migrate` | — | Schema diff and migration plans |
+| `noboil-convex` | `viz` | — | Visualize schema relationships |
+| `noboil-convex` | `docs` | — | Generate API documentation |
+| `noboil-stdb` | `add` | — | Generate a new table with reducers |
+| `noboil-stdb` | `check` | — | Validate schema/factory consistency |
+| `noboil-stdb` | `doctor` | — | Project diagnostics with health score |
+| `noboil-stdb` | `dev` | — | Start integrated local dev workflow |
+| `noboil-stdb` | `migrate` | — | Schema diff and migration plans |
+| `noboil-stdb` | `use` | — | Switch SpacetimeDB target |
+| `noboil-stdb` | `generate docker` | — | Generate docker-compose.yml |
+| `noboil-stdb` | `viz` | — | Visualize schema relationships |
+| `noboil-stdb` | `docs` | — | Generate API documentation |
+| `noboil-stdb` | `validate` | — | Alias for `check --health` |
 
 ---
 
@@ -49,6 +58,7 @@ noboil init [directory]
 | `--db` | `convex` \| `spacetimedb` | prompt | Skip the database selection prompt |
 | `--no-demos` | boolean | `false` | Skip demo apps |
 | `--skip-install` | boolean | `false` | Skip `bun install` after scaffolding |
+| `--no-git` | boolean | `false` | Skip auto `git init` + initial commit |
 
 **Examples**
 
@@ -113,13 +123,51 @@ Don't edit this file manually — `noboil sync` and `noboil doctor` read it to u
 
 ### doctor
 
-Check project health. No flags.
+Check project health.
 
 ```bash
-noboil doctor
+noboil doctor [--fix] [--last-error]
 ```
 
-Checks: `package.json` presence, `@noboil/*` packages installed, bun version, `node_modules`, `tsconfig.json`, and database-specific directories.
+| Flag | Type | Description |
+| ---- | ---- | ----------- |
+| `--fix` | boolean | Auto-remediate warnings (install deps, patch tsconfig customConditions) |
+| `--last-error` | boolean | Print the most recent crash log from `~/.noboil/last-error.log` |
+
+Checks: `package.json` presence, `noboil` dep, bun version, `node_modules`, `tsconfig.json`, manifest, upstream sync state, and database-specific directories.
+
+---
+
+### status
+
+Project snapshot — drift vs upstream, sync age, install health. Read-only.
+
+```bash
+noboil status
+```
+
+Walks up directories to find `.noboilrc.json`, so it works from any subdirectory. Warns if the last sync is >30 days old.
+
+---
+
+### upgrade
+
+Install the latest `noboil`. Inside a noboil project adds to deps; outside, defaults to `-g` (global).
+
+```bash
+noboil upgrade [--global]
+```
+
+---
+
+### completions
+
+Print or install a shell completion script.
+
+```bash
+noboil completions bash | zsh | fish            # print to stdout
+noboil completions install bash | zsh | fish    # append to your shell rc
+```
 
 ---
 
@@ -178,6 +226,44 @@ noboil eject --dry-run
 
 ---
 
+### Namespaces and auto-dispatch
+
+Instead of invoking `noboil-convex` / `noboil-stdb` directly, you can run them through the unified `noboil` entry:
+
+```bash
+noboil convex add post            # same as noboil-convex add post
+noboil stdb add post              # same as noboil-stdb add post
+noboil add post                   # auto-dispatches based on .noboilrc.json
+```
+
+`noboil add` reads `.noboilrc.json` (walking up from cwd) to pick the right backend. Useful if you forget which DB the project uses.
+
+---
+
+### Plugin hooks (`noboil.config.ts`)
+
+Create `noboil.config.ts` at the project root to run code around scaffolding operations:
+
+```ts
+import { defineConfig } from 'noboil/config'
+export default defineConfig({
+  hooks: {
+    beforeAdd: async ({ db, name, type, fields }) => {
+      // runs before 'noboil add' writes files
+      // throw to cancel
+    },
+    afterAdd: async ({ db, name, type, fields }) => {
+      // runs after files are written
+      // e.g. notify team Slack, run a formatter, etc.
+    }
+  }
+})
+```
+
+Hooks are skipped when `--dry-run` is passed. Config files ending in `.ts`, `.mts`, `.js`, `.mjs` are all accepted.
+
+---
+
 ## Database CLIs
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
@@ -197,6 +283,9 @@ noboil-convex add <table> [flags]
 | `--type` | `owned` \| `org` \| `singleton` \| `cache` \| `child` | `owned` | Table type |
 | `--fields` | string | — | Comma-separated field definitions |
 | `--parent` | string | — | Parent table name (required for `child` type) |
+| `--dry-run` | boolean | `false` | Print what would be generated without writing files |
+
+Run with no `<table>` to launch an interactive Ink wizard (table name, type, field-by-field entry, live preview, `esc` goes back, `x` on review pops last field).
 
 **Table types**
 
@@ -208,7 +297,7 @@ noboil-convex add <table> [flags]
 | `cache` | External API cache |
 | `child` | Nested under a parent table |
 
-**Field syntax**
+**Field syntax** — pass via `--fields="…"` or as positional tokens after the table name.
 
 | Syntax | Meaning |
 | ------ | ------- |
@@ -334,6 +423,9 @@ noboil-stdb add <table> [flags]
 | `--type` | `owned` \| `org` \| `singleton` \| `cache` \| `child` | `owned` | Table type |
 | `--fields` | string | — | Comma-separated field definitions |
 | `--parent` | string | — | Parent table name (required for `child` type) |
+| `--dry-run` | boolean | `false` | Print what would be generated without writing files |
+
+Run with no `<table>` to launch an interactive Ink wizard (table name, type, field-by-field entry, live preview, `esc` goes back, `x` on review pops last field).
 
 **Table types**
 
@@ -345,7 +437,7 @@ noboil-stdb add <table> [flags]
 | `cache` | External API cache |
 | `child` | Nested under a parent table |
 
-**Field syntax**
+**Field syntax** — pass via `--fields="…"` or as positional tokens after the table name.
 
 | Syntax | Meaning |
 | ------ | ------- |
