@@ -323,6 +323,12 @@ type InferRows<T extends Record<string, unknown>> = {
   [K in keyof T]: InferRow<T[K]>
 }
 type InferUpdate<S> = S extends ZodObject<infer T> ? Partial<_.output<ZodObject<T>>> : never
+type KvSchema<T extends ZodRawShape> = SchemaBrand<'kv'> &
+  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { key: string }, Partial<_.output<ZodObject<T>>>> &
+  ZodObject<T>
+type LogSchema<T extends ZodRawShape> = SchemaBrand<'log'> &
+  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { parent: string; seq: number }, Partial<_.output<ZodObject<T>>>> &
+  ZodObject<T>
 type OrgDefSchema<T extends ZodRawShape> = SchemaBrand<'orgDef'> &
   SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { userId: string }, Partial<_.output<ZodObject<T>>>> &
   ZodObject<T>
@@ -335,12 +341,6 @@ type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> &
   ZodObject<T>
 type OwnedSchema<T extends ZodRawShape> = SchemaBrand<'owned'> &
   SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { userId: string }, Partial<_.output<ZodObject<T>>>> &
-  ZodObject<T>
-type LogSchema<T extends ZodRawShape> = SchemaBrand<'log'> &
-  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { parent: string; seq: number }, Partial<_.output<ZodObject<T>>>> &
-  ZodObject<T>
-type KvSchema<T extends ZodRawShape> = SchemaBrand<'kv'> &
-  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { key: string }, Partial<_.output<ZodObject<T>>>> &
   ZodObject<T>
 interface QuotaSchema {
   readonly [__brand]: 'quota'
@@ -421,6 +421,8 @@ export type {
   InferRow,
   InferRows,
   InferUpdate,
+  KvSchema,
+  LogSchema,
   Mb,
   Middleware,
   MiddlewareCtx,
@@ -432,14 +434,12 @@ export type {
   OrgSchema,
   OrgUserLike,
   OwnedSchema,
-  KvSchema,
-  LogSchema,
-  QuotaSchema,
   PaginatedResult,
   PaginationOptsShape,
   Qb,
   QueryCtxLike,
   QueryLike,
+  QuotaSchema,
   RateLimitConfig,
   RateLimitInput,
   ReadCtx,

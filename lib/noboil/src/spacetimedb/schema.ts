@@ -104,6 +104,57 @@ const makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
   brandSchemas('singleton', schemas) as {
     [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S, infer _Config> ? S : ZodRawShape> & T[K]
   }
+interface LogEntryInput {
+  parent: string
+  schema: ZodObject
+}
+const makeLog = <T extends Record<string, LogEntryInput>>(entries: T): { [K in keyof T]: SchemaBrand<'log'> & T[K] } => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'log'
+      })
+  }
+  return typed(entries)
+}
+interface KvEntryInput {
+  keys?: readonly string[]
+  schema: ZodObject
+  writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
+}
+const makeKv = <T extends Record<string, KvEntryInput>>(entries: T): { [K in keyof T]: SchemaBrand<'kv'> & T[K] } => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'kv'
+      })
+  }
+  return typed(entries)
+}
+interface QuotaEntryInput {
+  durationMs: number
+  limit: number
+}
+const makeQuota = <T extends Record<string, QuotaEntryInput>>(
+  entries: T
+): { [K in keyof T]: SchemaBrand<'quota'> & T[K] } => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry)
+      Object.defineProperty(entry as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'quota'
+      })
+  }
+  return typed(entries)
+}
 const mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {
   const keys = Object.keys(source)
   for (const key of keys) target[key] = source[key]
@@ -120,6 +171,9 @@ const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
   if (config.org) mergeInto(result, makeOrg(config.org))
   if (config.base) mergeInto(result, makeBase(config.base))
   if (config.singleton) mergeInto(result, makeSingleton(config.singleton))
+  if (config.log) mergeInto(result, makeLog(config.log))
+  if (config.kv) mergeInto(result, makeKv(config.kv))
+  if (config.quota) mergeInto(result, makeQuota(config.quota))
   if (config.children) mergeInto(result, config.children)
   for (const name of Object.keys(result))
     Object.defineProperty(result[name] as object, '__name', {
@@ -136,9 +190,12 @@ interface Named<N extends string> {
 interface SchemaConfig {
   base?: Record<string, ZodObject>
   children?: Record<string, ChildEntry>
+  kv?: Record<string, KvEntryInput>
+  log?: Record<string, LogEntryInput>
   org?: Record<string, ZodObject>
   orgScoped?: Record<string, ZodObject>
   owned?: Record<string, ZodObject>
+  quota?: Record<string, QuotaEntryInput>
   singleton?: Record<string, ZodObject>
 }
 type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infer O extends Record<string, ZodObject>
@@ -146,6 +203,12 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
   : unknown) &
   (NonNullable<T['children']> extends infer C extends Record<string, ChildEntry>
     ? { [K in keyof C]: C[K] & Named<K & string> }
+    : unknown) &
+  (NonNullable<T['kv']> extends infer O extends Record<string, KvEntryInput>
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'kv'> }
+    : unknown) &
+  (NonNullable<T['log']> extends infer O extends Record<string, LogEntryInput>
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'log'> }
     : unknown) &
   (NonNullable<T['org']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: Named<K & string> & O[K] & OrgDefSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
@@ -156,7 +219,24 @@ type SchemaResult<T extends SchemaConfig> = (NonNullable<T['base']> extends infe
   (NonNullable<T['owned']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: Named<K & string> & O[K] & OwnedSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown) &
+  (NonNullable<T['quota']> extends infer O extends Record<string, QuotaEntryInput>
+    ? { [K in keyof O]: Named<K & string> & O[K] & SchemaBrand<'quota'> }
+    : unknown) &
   (NonNullable<T['singleton']> extends infer O extends Record<string, ZodObject>
     ? { [K in keyof O]: Named<K & string> & O[K] & SingletonSchema<O[K] extends ZodObject<infer S> ? S : ZodRawShape> }
     : unknown)
-export { child, file, files, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }
+export {
+  child,
+  file,
+  files,
+  makeBase,
+  makeKv,
+  makeLog,
+  makeOrg,
+  makeOrgScoped,
+  makeOwned,
+  makeQuota,
+  makeSingleton,
+  orgSchema,
+  schema
+}
