@@ -4,16 +4,19 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import {
   baseTable,
+  kvTable,
+  logTable,
   orgChildTable,
   orgTable,
   orgTables,
   ownedTable,
   presenceTable,
+  quotaTable,
   rateLimitTable,
   singletonTable,
   uploadTables
 } from 'noboil/convex/server'
-import { base, children, orgScoped, owned, singleton } from '../s'
+import { base, children, kv, log, orgScoped, owned, singleton } from '../s'
 export default defineSchema({
   ...authTables,
   ...orgTables(),
@@ -25,7 +28,8 @@ export default defineSchema({
       .index('by_published', ['published'])
       .index('by_category', ['category'])
       .searchIndex('search_field', { searchField: 'content' as never }),
-    chat: ownedTable(owned.chat)
+    chat: ownedTable(owned.chat),
+    poll: ownedTable(owned.poll)
   } satisfies Record<keyof typeof owned, ReturnType<typeof ownedTable>>),
   ...({
     message: defineTable({
@@ -40,7 +44,10 @@ export default defineSchema({
     blogProfile: singletonTable(singleton.blogProfile),
     orgProfile: singletonTable(singleton.orgProfile)
   } satisfies Record<keyof typeof singleton, ReturnType<typeof singletonTable>>),
+  pollVoteQuota: quotaTable(),
   project: orgTable(orgScoped.project),
+  siteConfig: kvTable(kv.siteConfig.schema as never),
   task: orgChildTable(orgScoped.task, { foreignKey: 'projectId', table: 'project' }),
+  vote: logTable(log.vote.schema as never),
   wiki: orgTable(orgScoped.wiki).index('by_slug', ['orgId' as never, 'slug' as never])
 })

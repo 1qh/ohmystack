@@ -45,6 +45,19 @@ const s = schema({
       })
     })
   },
+  kv: {
+    siteConfig: {
+      keys: ['banner', 'defaultPollDays'] as const,
+      schema: object({ value: string() }),
+      writeRole: true
+    }
+  },
+  log: {
+    vote: {
+      parent: 'poll',
+      schema: object({ optionIdx: number(), voter: string() })
+    }
+  },
   org: {
     team: orgSchema
   },
@@ -86,17 +99,28 @@ const s = schema({
     chat: object({
       isPublic: boolean(),
       title: string().min(1)
+    }),
+    poll: object({
+      closedAt: number().nullable().optional(),
+      options: array(string().min(1)).min(2).max(10),
+      question: string().min(1)
     })
+  },
+  quota: {
+    pollVote: { durationMs: 24 * 60 * 60 * 1000, limit: 1 }
   },
   singleton: {
     blogProfile: object(profileShape),
     orgProfile: object(profileShape)
   }
 })
-const owned = { blog: s.blog, chat: s.chat }
+const owned = { blog: s.blog, chat: s.chat, poll: s.poll }
 const orgScoped = { project: s.project, task: s.task, wiki: s.wiki }
 const base = { movie: s.movie }
 const singleton = { blogProfile: s.blogProfile, orgProfile: s.orgProfile }
 const org = { team: s.team }
 const children = { message: s.message }
-export { base, children, org, orgScoped, owned, s, singleton }
+const log = { vote: s.vote }
+const kv = { siteConfig: s.siteConfig }
+const quota = { pollVote: s.pollVote }
+export { base, children, kv, log, org, orgScoped, owned, quota, s, singleton }
