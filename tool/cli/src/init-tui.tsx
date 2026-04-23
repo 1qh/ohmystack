@@ -162,7 +162,9 @@ const Scaffold = ({
   useInput((input, key) => {
     if (state.status !== 'failed') return
     if (input === 'r' || input === 'R') {
-      setState({ currentStep: 0, details: [], status: 'idle' })
+      const fullPath = resolvePath(process.cwd(), dir)
+      if (existsSync(fullPath)) rmSync(fullPath, { force: true, recursive: true })
+      setState({ currentStep: 0, details: ['  cleaned prior attempt'], status: 'idle' })
       setAttempt(a => a + 1)
     } else if (isDirNotEmptyError && (input === 'o' || input === 'O')) {
       const fullPath = resolvePath(process.cwd(), dir)

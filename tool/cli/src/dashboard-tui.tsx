@@ -1,4 +1,5 @@
-/* oxlint-disable no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), eslint-plugin-promise(prefer-await-to-then) */
+/* oxlint-disable no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), eslint-plugin-promise(prefer-await-to-then), eslint(complexity) */
+/* eslint-disable complexity */
 import { Box, render, Text, useApp, useInput } from 'ink'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -52,25 +53,62 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
     run().catch(() => null)
   }, [version])
   const [filter, setFilter] = useState('')
+  const [filterMode, setFilterMode] = useState(false)
+  const [recentIdx, setRecentIdx] = useState(-1)
   const filtered = filter ? COMMANDS.filter(c => c.name.toLowerCase().includes(filter.toLowerCase())) : COMMANDS
   useInput((input, key) => {
-    if (filter === '') {
+    if (!filterMode) {
+      if (input === '/') {
+        setFilterMode(true)
+        return
+      }
+      if (recent.length > 0 && key.upArrow) {
+        setRecentIdx(i => Math.min(i + 1, recent.length - 1))
+        return
+      }
+      if (recent.length > 0 && key.downArrow) {
+        setRecentIdx(i => Math.max(i - 1, -1))
+        return
+      }
+      if (recentIdx >= 0 && key.return) {
+        const entry = recent[recentIdx]
+        if (entry) {
+          app.exit()
+          onExit(entry.cmd as Action)
+          return
+        }
+      }
       const match = COMMANDS.find(c => c.key === input)
       if (match) {
         app.exit()
         onExit(match.action)
         return
       }
+      if (input === 'q' || (key.ctrl && input === 'c') || key.escape) {
+        app.exit()
+        onExit('exit')
+      }
+      return
     }
-    if ((key.ctrl && input === 'c') || key.escape || (input === 'q' && filter === '')) {
+    if (key.escape) {
+      setFilterMode(false)
+      setFilter('')
+      return
+    }
+    if (key.ctrl && input === 'c') {
       app.exit()
       onExit('exit')
       return
     }
     if (key.return) {
       const pick = filtered[0]
-      app.exit()
-      onExit(pick ? pick.action : 'exit')
+      if (pick) {
+        app.exit()
+        onExit(pick.action)
+      } else {
+        setFilterMode(false)
+        setFilter('')
+      }
       return
     }
     if (key.backspace || key.delete) {
@@ -136,25 +174,27 @@ const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
       </Box>
       {recent.length > 0 ? (
         <Box flexDirection='column' marginTop={1}>
-          <Text dimColor>Recent:</Text>
-          {recent.map(r => (
-            <Text dimColor key={`${r.at}-${r.cmd}`}>
-              {'  '}
-              {r.cmd} {r.args.join(' ')}
-            </Text>
+          <Text dimColor>Recent (↑↓ select, ↵ rerun):</Text>
+          {recent.map((r, i) => (
+            <Box key={`${r.at}-${r.cmd}`}>
+              <Text color={i === recentIdx ? 'cyan' : undefined}>{i === recentIdx ? '› ' : '  '}</Text>
+              <Text color={i === recentIdx ? 'cyan' : undefined} dimColor={i !== recentIdx}>
+                {r.cmd} {r.args.join(' ')}
+              </Text>
+            </Box>
           ))}
         </Box>
       ) : null}
-      {filter ? (
+      {filterMode ? (
         <Box marginTop={1}>
-          <Text color='cyan'>filter: </Text>
+          <Text color='cyan'>/</Text>
           <Text>{filter}</Text>
           <Text color='cyan'>_</Text>
-          <Text dimColor> · ↵ run first match · ⌫ clear · esc exit</Text>
+          <Text dimColor> · ↵ run first match · ⌫ clear · esc cancel</Text>
         </Box>
       ) : (
         <Box marginTop={1}>
-          <Text dimColor>single-key to run · type to filter · q/↵/esc exit</Text>
+          <Text dimColor>single-key run · / filter · ↑↓ recent · q/esc exit</Text>
         </Box>
       )}
     </Box>

@@ -359,7 +359,11 @@ const AddWizardApp = ({ config, onExit }: { config: WizardConfig; onExit: (r: nu
         <PickList<FieldType> items={FIELD_TYPES} label={`Field #${fields.length + 1} type`} onPick={handleFieldType} />
       ) : null}
       {phase === 'enum' ? (
-        <NameInput label='Enum values (comma-separated, e.g. low,medium,high)' onConfirm={handleEnumValues} />
+        <NameInput
+          initial={(currentField.enumValues ?? []).join(',')}
+          label='Enum values (comma-separated, e.g. low,medium,high)'
+          onConfirm={handleEnumValues}
+        />
       ) : null}
       {phase === 'field-optional' ? <YesNo label='Optional field?' onConfirm={handleFieldOptional} /> : null}
       {phase === 'review' ? (
