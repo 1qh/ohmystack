@@ -39,9 +39,20 @@ const printHelp = () => {
   for (const [name, description] of Object.entries(COMMANDS)) console.log(`  ${name.padEnd(12)} ${dim(description)}`)
   console.log(`\nRun ${dim('noboil <command> --help')} for command-specific options.\n`)
 }
+const findManifest = (start: string): null | string => {
+  let dir = start
+  for (let i = 0; i < 10; i += 1) {
+    const p = join(dir, '.noboilrc.json')
+    if (existsSync(p)) return p
+    const parent = join(dir, '..')
+    if (parent === dir) break
+    dir = parent
+  }
+  return null
+}
 const detectDb = (): 'convex' | 'spacetimedb' | null => {
-  const p = join(process.cwd(), '.noboilrc.json')
-  if (!existsSync(p)) return null
+  const p = findManifest(process.cwd())
+  if (!p) return null
   try {
     const rc = JSON.parse(readFileSync(p, 'utf8')) as { db?: string }
     if (rc.db === 'convex' || rc.db === 'spacetimedb') return rc.db
