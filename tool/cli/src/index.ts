@@ -22,7 +22,7 @@ else if (cmd === 'init') {
   await init(rest)
 } else if (cmd === 'doctor') {
   const { doctor } = await import('./doctor')
-  doctor()
+  await doctor()
 } else if (cmd === 'sync') {
   const { sync } = await import('./sync')
   sync(rest)

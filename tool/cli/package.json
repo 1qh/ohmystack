@@ -139,6 +139,8 @@
     "cmdk": "latest",
     "date-fns": "latest",
     "embla-carousel-react": "latest",
+    "ink": "latest",
+    "ink-spinner": "latest",
     "input-otp": "latest",
     "lucide-react": "latest",
     "media-chrome": "latest",
