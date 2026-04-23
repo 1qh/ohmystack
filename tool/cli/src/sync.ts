@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-continue, @typescript-eslint/require-await */
+/** biome-ignore-all lint/nursery/noContinue: flow clarity */
+/** biome-ignore-all lint/suspicious/useAwait: TUI expects Promise<void> */
 import { env } from 'bun'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -7,7 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import type { Db } from './scaffold-ops'
-import { bold, dim, green, yellow } from './ansi'
+import { bold, dim } from './ansi'
 import { die } from './cli-utils'
 import { patchRootPackageJson, removeDirs, rmSafe } from './scaffold-ops'
 interface Manifest {
@@ -25,7 +27,6 @@ const DEFAULT_REPO = '1qh/noboil'
 const REPO_SPEC = env.NOBOIL_REPO ?? DEFAULT_REPO
 const REPO_GIT_URL =
   REPO_SPEC.includes('://') || REPO_SPEC.startsWith('/') ? REPO_SPEC : `https://github.com/${REPO_SPEC}.git`
-const REPO = REPO_SPEC
 const ROOT_CONFIG_FILES = new Set([
   'biome.jsonc',
   'convex.yml',
@@ -138,13 +139,11 @@ const processOneFile = ({
   else if (isRootConfig(relPath)) rootReview.push(`${relPath} ${dim('(review manually)')}`)
   else skipped.push(`${relPath} ${dim('(skipped (modified locally))')}`)
 }
-const sync = (args: string[]) => {
-  const opts = parseArgs(args)
+const runSync = async (opts: SyncOpts, onProgress: (p: Record<string, unknown>) => void): Promise<void> => {
   const cwd = process.cwd()
   const manifest = readManifest(cwd)
   const tmpDir = join(tmpdir(), `noboil-sync-${Date.now()}`)
-  console.log(`\n${bold('noboil sync')} — pull upstream changes\n`)
-  console.log(`  ${dim('cloning')} ${REPO}...`)
+  onProgress({ phase: 'cloning' })
   try {
     runGit({
       args: ['clone', '--depth', '1', REPO_GIT_URL, tmpDir],
@@ -156,33 +155,45 @@ const sync = (args: string[]) => {
       cwd: tmpDir,
       err: 'failed to read upstream commit hash'
     })
+    onProgress({ fromHash: manifest.scaffoldedFrom, toHash: nextHash })
     if (nextHash === manifest.scaffoldedFrom) {
-      console.log(`\n${green('Already up to date.')}\n`)
+      onProgress({ phase: 'done' })
       return
     }
-    prepareUpstream({
-      db: manifest.db,
-      includeDemos: manifest.includeDemos,
-      root: tmpDir
-    })
+    onProgress({ phase: 'comparing' })
+    prepareUpstream({ db: manifest.db, includeDemos: manifest.includeDemos, root: tmpDir })
     const upstreamFiles = listFiles({ root: tmpDir })
+    onProgress({ phase: 'processing', total: upstreamFiles.length })
     const skipped: string[] = []
     const updates: string[] = []
     const additions: string[] = []
     const rootReview: string[] = []
-    for (const relPath of upstreamFiles)
-      if (relPath !== '.noboilrc.json')
-        processOneFile({
-          additions,
-          cwd,
-          dryRun: opts.dryRun,
-          force: opts.force,
-          relPath,
-          rootReview,
-          skipped,
-          tmpDir,
-          updates
-        })
+    const actions: { kind: 'added' | 'review' | 'skipped' | 'updated'; relPath: string }[] = []
+    for (const relPath of upstreamFiles) {
+      if (relPath === '.noboilrc.json') continue
+      const before = {
+        additions: additions.length,
+        rootReview: rootReview.length,
+        skipped: skipped.length,
+        updates: updates.length
+      }
+      processOneFile({
+        additions,
+        cwd,
+        dryRun: opts.dryRun,
+        force: opts.force,
+        relPath,
+        rootReview,
+        skipped,
+        tmpDir,
+        updates
+      })
+      if (updates.length > before.updates) actions.push({ kind: 'updated', relPath })
+      else if (additions.length > before.additions) actions.push({ kind: 'added', relPath })
+      else if (rootReview.length > before.rootReview) actions.push({ kind: 'review', relPath })
+      else if (skipped.length > before.skipped) actions.push({ kind: 'skipped', relPath })
+      onProgress({ actions: [...actions], current: relPath })
+    }
     if (!opts.dryRun) {
       const nextManifest: Manifest = {
         db: manifest.db,
@@ -193,22 +204,15 @@ const sync = (args: string[]) => {
       }
       writeFileSync(join(cwd, '.noboilrc.json'), `${JSON.stringify(nextManifest, null, 2)}\n`)
     }
-    const mode = opts.dryRun ? `${yellow('dry-run')} ` : ''
-    console.log(
-      `\n${bold('Summary')} ${dim(mode)}${dim(`(${manifest.scaffoldedFrom.slice(0, 7)} -> ${nextHash.slice(0, 7)})`)}`
-    )
-    console.log(`  ${green('+')} files updated: ${updates.length}`)
-    console.log(`  ${green('+')} new files added: ${additions.length}`)
-    console.log(`  ${yellow('!')} files skipped: ${skipped.length + rootReview.length}`)
-    if (rootReview.length > 0) console.log(`  ${yellow('!')} review manually: ${rootReview.length}`)
-    for (const file of updates) console.log(`  ${dim('updated')} ${file}`)
-    for (const file of additions) console.log(`  ${dim('added')} ${file}`)
-    for (const file of skipped) console.log(`  ${yellow('!')} ${file}`)
-    for (const file of rootReview) console.log(`  ${yellow('!')} ${file}`)
-    if (opts.dryRun) console.log(`\n${dim('No files were written.')}\n`)
-    else console.log(`\n${green('Sync complete.')}\n`)
+    onProgress({ phase: 'done' })
   } finally {
     rmSafe(resolvePath(tmpDir))
   }
+}
+const sync = async (args: string[]) => {
+  const opts = parseArgs(args)
+  const { runSyncTui } = await import('./sync-tui')
+  const code = await runSyncTui({ dryRun: opts.dryRun, force: opts.force, run: runSync })
+  if (code !== 0) process.exit(code)
 }
 export { sync }

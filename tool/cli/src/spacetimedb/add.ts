@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 import { join } from 'node:path'
-import { createInterface } from 'node:readline/promises'
 import { bold, dim, green, red, yellow } from '../ansi'
 import { camelToTitle, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '../shared/cli'
 interface AddFlags {
@@ -238,43 +237,29 @@ export default ${component}Page
 `
 }
 const isInteractive = () => typeof process.stdin.isTTY === 'boolean' && process.stdin.isTTY
-const promptInteractive = async (): Promise<AddFlags> => {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  try {
-    console.log(`\n${bold('noboil-stdb add')} ${dim('— interactive mode')}\n`)
-    const name = (await rl.question(`${bold('Table name:')} `)).trim()
-    if (!name) {
-      console.log(`${red('Error:')} table name is required.`)
-      process.exit(1)
-    }
-    const typeStr =
-      (await rl.question(`${bold('Type')} ${dim('(owned, org, singleton, cache, child)')} [owned]: `)).trim() || 'owned'
-    if (!TABLE_TYPES.has(typeStr as TableType)) {
-      console.log(`${red('Invalid type:')} ${typeStr}`)
-      process.exit(1)
-    }
-    const type = typeStr as TableType
-    let parent = ''
-    if (type === 'child') {
-      parent = (await rl.question(`${bold('Parent table:')} `)).trim()
-      if (!parent) {
-        console.log(`${red('Error:')} parent table is required for child type.`)
-        process.exit(1)
-      }
-    }
-    const fieldsRaw = (
-      await rl.question(`${bold('Fields')} ${dim('(e.g. title:string,done:boolean,bio:string?)')} [defaults]: `)
-    ).trim()
-    const fields: ParsedField[] = []
-    if (fieldsRaw)
-      for (const f of fieldsRaw.split(',')) {
-        const parsed = parseFieldDef(f)
-        if (parsed) fields.push(parsed)
-        else console.log(`${yellow('warn')} Skipping invalid field: ${f}`)
-      }
-    return { appDir: 'src/app', fields, help: false, moduleDir: 'module', name, parent, type }
-  } finally {
-    rl.close()
+const STDB_TYPE_DESCRIPTIONS = {
+  cache: 'upstream-cached (crud + refresh)',
+  child: 'nested under a parent row',
+  org: 'organization-scoped CRUD',
+  owned: 'user-owned CRUD',
+  singleton: 'one-per-user state'
+} as const
+const promptInteractive = async (): Promise<AddFlags | null> => {
+  const { runAddWizard } = await import('../shared/components/add-wizard')
+  const result = await runAddWizard({ kind: 'spacetimedb', typeDescriptions: STDB_TYPE_DESCRIPTIONS })
+  if (!result) return null
+  return {
+    appDir: 'src/app',
+    fields: result.fields.map(f => ({
+      name: f.name,
+      optional: f.optional,
+      type: f.type === 'enum' ? { enum: f.enumValues ?? [] } : f.type
+    })),
+    help: false,
+    moduleDir: 'module',
+    name: result.name,
+    parent: result.parent,
+    type: result.type
   }
 }
 const addSync = (flags: AddFlags) => {
@@ -332,6 +317,10 @@ const add = async (args: string[] = []) => {
   }
   if (!flags.name && isInteractive()) {
     const interactiveFlags = await promptInteractive()
+    if (!interactiveFlags) {
+      console.log(yellow('Cancelled.'))
+      return { created: 0, skipped: 0 }
+    }
     return addSync(interactiveFlags)
   }
   if (!flags.name) {

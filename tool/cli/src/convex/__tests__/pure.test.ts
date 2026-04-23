@@ -7280,8 +7280,8 @@ describe('noboil-convex add command', () => {
     })
   })
   describe('add function', () => {
-    test('add with --help returns zero counts', () => {
-      const result = add(['--help'])
+    test('add with --help returns zero counts', async () => {
+      const result = await add(['--help'])
       expect(result).toEqual({ created: 0, skipped: 0 })
     })
   })

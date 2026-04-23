@@ -248,11 +248,39 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
 export default ${title.replaceAll(/\s/gu, '')}Page
 `
 }
-const add = (args: string[] = []) => {
-  const flags = parseAddFlags(args)
+const TYPE_DESCRIPTIONS: Record<TableType, string> = {
+  cache: 'upstream-cached (crud + refresh)',
+  child: 'nested under a parent row',
+  org: 'organization-scoped CRUD',
+  owned: 'user-owned CRUD',
+  singleton: 'one-per-user state'
+}
+const add = async (args: string[] = []) => {
+  let flags = parseAddFlags(args)
   if (flags.help) {
     printAddHelp()
     return { created: 0, skipped: 0 }
+  }
+  if (args.length === 0) {
+    const { runAddWizard } = await import('../shared/components/add-wizard')
+    const result = await runAddWizard({ kind: 'convex', typeDescriptions: TYPE_DESCRIPTIONS })
+    if (!result) {
+      console.log(yellow('Cancelled.'))
+      return { created: 0, skipped: 0 }
+    }
+    flags = {
+      appDir: 'src/app',
+      convexDir: 'convex',
+      fields: result.fields.map(f => ({
+        name: f.name,
+        optional: f.optional,
+        type: f.type === 'enum' ? { enum: f.enumValues ?? [] } : f.type
+      })),
+      help: false,
+      name: result.name,
+      parent: result.parent,
+      type: result.type
+    }
   }
   if (!flags.name) {
     console.log(`${red('Error:')} table name is required.\n`)

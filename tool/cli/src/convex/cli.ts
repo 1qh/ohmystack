@@ -27,7 +27,7 @@ else if (!(cmd in COMMANDS)) {
   process.exit(1)
 } else if (cmd === 'add') {
   const { add } = await import('./add')
-  add(rest)
+  await add(rest)
 } else {
   const entry = COMMANDS[cmd]
   if (!entry) process.exit(1)

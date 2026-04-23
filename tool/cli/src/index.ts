@@ -25,7 +25,7 @@ else if (cmd === 'init') {
   await doctor()
 } else if (cmd === 'sync') {
   const { sync } = await import('./sync')
-  sync(rest)
+  await sync(rest)
 } else if (cmd === 'eject') {
   const { eject } = await import('./eject')
   eject(rest)
