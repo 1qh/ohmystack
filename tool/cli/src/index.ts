@@ -59,8 +59,13 @@ const runNamespace = (ns: 'convex' | 'spacetimedb', args: string[]): never => {
 const [cmd, ...rest] = process.argv.slice(2)
 if (cmd && cmd !== '--version' && cmd !== '-v' && cmd !== '--help' && cmd !== '-h')
   await pushRecent(cmd, rest).catch(() => null)
-if (cmd === '--version' || cmd === '-v') console.log(await getCliVersion())
-else if (cmd === '--help' || cmd === '-h') printHelp()
+if (cmd === '--version' || cmd === '-v') {
+  const current = await getCliVersion()
+  console.log(current)
+  const { checkForUpdate } = await import('./shared/update-check')
+  const latest = await checkForUpdate(current).catch(() => current)
+  if (latest && latest !== current) console.log(dim(`(v${latest} available — ${bold('noboil upgrade')})`))
+} else if (cmd === '--help' || cmd === '-h') printHelp()
 else if (!cmd) {
   const { runDashboard } = await import('./dashboard-tui')
   while (true) {

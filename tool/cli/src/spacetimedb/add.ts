@@ -42,7 +42,6 @@ const parseAddFlags = (args: string[]): AddFlags => {
     else if (!arg.startsWith('-'))
       if (name) fieldsRaw = fieldsRaw ? `${fieldsRaw},${arg}` : arg
       else name = arg
-
   moduleDir = readEqFlag(args, 'module-dir', moduleDir)
   appDir = readEqFlag(args, 'app-dir', appDir)
   parent = readEqFlag(args, 'parent', parent)
