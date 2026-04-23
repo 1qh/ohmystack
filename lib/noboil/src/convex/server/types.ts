@@ -427,14 +427,46 @@ type BaseSchema<T extends ZodRawShape> = SchemaBrand<'base'> & ZodObject<T>
 /** Readable brand name for error messages. */
 interface BrandLabelMap {
   base: 'BaseSchema (from makeBase())'
+  kv: 'KvSchema (from makeKv())'
+  log: 'LogSchema (from makeLog())'
   org: 'OrgSchema (from makeOrgScoped())'
   orgDef: 'OrgDefSchema (from makeOrg())'
   owned: 'OwnedSchema (from makeOwned())'
+  quota: 'QuotaSchema (from makeQuota())'
   singleton: 'SingletonSchema (from makeSingleton())'
   unbranded: 'plain ZodObject (not branded)'
 }
 /** Detects the brand key from a schema type, returning 'unbranded' for plain ZodObject. */
 type DetectBrand<T> = T extends SchemaBrand<infer K> ? K : 'unbranded'
+type KvDoc<S extends ZodRawShape> = DocBase<S> & { key: string; updatedAt: number }
+interface KvEntry {
+  keys?: readonly string[]
+  schema: ZodObject
+  writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
+}
+interface KvFactoryResult<S extends ZodRawShape> {
+  get: RegisteredQuery<'public', Rec, KvDoc<S> | null>
+  list: RegisteredQuery<'public', Rec, KvDoc<S>[]>
+  rm: RegisteredMutation<'public', Rec, { deleted: boolean }>
+  set: RegisteredMutation<'public', Rec, KvDoc<S>>
+}
+/** Schema branded for use with kv(). Used for string-keyed global state. */
+type KvSchema<T extends ZodRawShape> = SchemaBrand<'kv'> & ZodObject<T>
+type LogDoc<S extends ZodRawShape> = DocBase<S> & { idempotencyKey?: string; parent: string; seq: number }
+/** Config for a log entry — schema + parent table reference. */
+interface LogEntry {
+  parent: string
+  schema: ZodObject
+}
+/** Result type for log factory: append-only log endpoints. */
+interface LogFactoryResult<S extends ZodRawShape> {
+  append: RegisteredMutation<'public', Rec, { created: boolean; seq: number }>
+  list: RegisteredQuery<'public', Rec, { continueCursor: string; isDone: boolean; page: LogDoc<S>[] }>
+  listAfter: RegisteredQuery<'public', Rec, LogDoc<S>[]>
+  purgeByParent: RegisteredMutation<'public', Rec, { deleted: number }>
+}
+/** Schema branded for use with log(). Used for append-only event logs. */
+type LogSchema<T extends ZodRawShape> = SchemaBrand<'log'> & ZodObject<T>
 type OrgDefSchema<T extends ZodRawShape> = SchemaBrand<'orgDef'> & ZodObject<T>
 type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> & ZodObject<T>
 /** Minimal user shape used across org operations, containing id, name, email, and image. */
@@ -446,6 +478,22 @@ interface OrgUserLike {
   name?: string
 }
 type OwnedSchema<T extends ZodRawShape> = SchemaBrand<'owned'> & ZodObject<T>
+interface QuotaEntry {
+  durationMs: number
+  limit: number
+}
+interface QuotaFactoryResult {
+  check: RegisteredQuery<'public', Rec, QuotaResult>
+  consume: RegisteredMutation<'public', Rec, QuotaResult>
+  record: RegisteredMutation<'public', Rec, QuotaResult>
+}
+interface QuotaResult {
+  allowed: boolean
+  remaining: number
+  retryAfter?: number
+}
+/** Schema branded for use with quota(). Used for sliding-window rate limits. */
+type QuotaSchema<T extends ZodRawShape> = SchemaBrand<'quota'> & ZodObject<T>
 interface SchemaBrand<K extends string> {
   readonly [__brand]: K
   readonly __hint: SchemaHint<K>
@@ -453,9 +501,12 @@ interface SchemaBrand<K extends string> {
 type SchemaHint<K extends string> = K extends keyof SchemaHintMap ? SchemaHintMap[K] : string
 interface SchemaHintMap {
   base: 'Created by makeBase() → use cacheCrud() + baseTable()'
+  kv: 'Created by makeKv() → use kv() + kvTable()'
+  log: 'Created by makeLog() → use log() + logTable()'
   org: 'Created by makeOrgScoped() → use orgCrud() + orgTable()'
   orgDef: 'Created by makeOrg() → pass to setup({ orgSchema })'
   owned: 'Created by makeOwned() → use crud() + ownedTable()'
+  quota: 'Created by makeQuota() → use quota() + quotaTable()'
   singleton: 'Created by makeSingleton() → use singletonCrud() + singletonTable()'
 }
 /** Produces a descriptive compile-time error message when the wrong schema brand is passed. */
@@ -545,6 +596,18 @@ export type {
   HookCtx,
   /** Index builder interface for query optimization. */
   IndexLike,
+  /** KV entry config for schema DSL. */
+  KvEntry,
+  /** Generated endpoints for kv factory. */
+  KvFactoryResult,
+  /** Schema branded as kv type for string-keyed state via kv(). */
+  KvSchema,
+  /** Log entry config for schema DSL. */
+  LogEntry,
+  /** Generated endpoints for log factory. */
+  LogFactoryResult,
+  /** Schema branded as append-only log for use with log(). */
+  LogSchema,
   /** Mutation builder type for public visibility. */
   Mb,
   /** Middleware for intercepting CRUD operations. */
@@ -581,6 +644,14 @@ export type {
   QueryCtxLike,
   /** Query builder interface for database queries. */
   QueryLike,
+  /** Quota entry config for schema DSL. */
+  QuotaEntry,
+  /** Generated endpoints for quota factory. */
+  QuotaFactoryResult,
+  /** Result shape returned by quota check/record/consume. */
+  QuotaResult,
+  /** Schema branded as quota type for sliding-window rate limits. */
+  QuotaSchema,
   /** Configuration for sliding window rate limiting. */
   RateLimitConfig,
   RateLimitInput,

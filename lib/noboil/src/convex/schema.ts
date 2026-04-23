@@ -111,6 +111,47 @@ const makeSingleton = <T extends Record<string, ZodObject>>(schemas: T) =>
   brandSchemas('singleton', schemas) as {
     [K in keyof T]: SingletonSchema<T[K] extends ZodObject<infer S> ? S : ZodRawShape> & T[K]
   }
+interface LogEntryInput {
+  parent: string
+  schema: ZodObject
+}
+/** Creates log entries branded for use with log(). Each entry declares a parent table + payload schema. */
+const makeLog = <T extends Record<string, LogEntryInput>>(entries: T): T => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry?.schema)
+      Object.defineProperty(entry.schema as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'log'
+      })
+  }
+  return typed(entries)
+}
+interface KvEntryInput {
+  keys?: readonly string[]
+  schema: ZodObject
+  writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
+}
+/** Creates kv entries branded for use with kv(). Each entry declares a string-keyed state schema. */
+const makeKv = <T extends Record<string, KvEntryInput>>(entries: T): T => {
+  for (const name of Object.keys(entries)) {
+    const entry = entries[name]
+    if (entry?.schema)
+      Object.defineProperty(entry.schema as unknown as { __bs?: string }, '__bs', {
+        configurable: true,
+        enumerable: false,
+        value: 'kv'
+      })
+  }
+  return typed(entries)
+}
+interface QuotaEntryInput {
+  durationMs: number
+  limit: number
+}
+/** Creates quota entries for use with quota(). */
+const makeQuota = <T extends Record<string, QuotaEntryInput>>(entries: T): T => typed(entries)
 const mergeInto = (target: Record<string, unknown>, source: Record<string, unknown>) => {
   const keys = Object.keys(source)
   for (const key of keys) target[key] = source[key]
@@ -167,4 +208,18 @@ const schema = <T extends SchemaConfig>(config: T): SchemaResult<T> => {
     })
   return typed(result)
 }
-export { child, file, files, makeBase, makeOrg, makeOrgScoped, makeOwned, makeSingleton, orgSchema, schema }
+export {
+  child,
+  file,
+  files,
+  makeBase,
+  makeKv,
+  makeLog,
+  makeOrg,
+  makeOrgScoped,
+  makeOwned,
+  makeQuota,
+  makeSingleton,
+  orgSchema,
+  schema
+}
