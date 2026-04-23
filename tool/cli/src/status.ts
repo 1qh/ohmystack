@@ -1,16 +1,10 @@
 /* oxlint-disable eslint(complexity) */
 /* eslint-disable no-console, complexity */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, statSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { bold, dim, green, red, yellow } from './ansi'
-interface Manifest {
-  db?: 'convex' | 'spacetimedb'
-  ejected?: boolean
-  includeDemos?: boolean
-  scaffoldedAt?: string
-  scaffoldedFrom?: string
-}
+import { readManifestFrom } from './shared/manifest'
 const HELP = `
 ${bold('noboil status')} — snapshot of the current project
 Usage:
@@ -31,21 +25,17 @@ const status = (args: string[]) => {
     return
   }
   const cwd = process.cwd()
-  const rcPath = join(cwd, '.noboilrc.json')
   console.log(`\n${bold('noboil status')}\n`)
   console.log(`  ${dim('cwd:')}      ${cwd}`)
-  if (!existsSync(rcPath)) {
+  const found = readManifestFrom(cwd)
+  if (!found) {
     console.log(`  ${red('✘')} no .noboilrc.json — not a noboil project`)
     console.log(`\nRun ${dim('noboil init')} to scaffold a new project.\n`)
     return
   }
-  let rc: Manifest
-  try {
-    rc = JSON.parse(readFileSync(rcPath, 'utf8')) as Manifest
-  } catch {
-    console.log(`  ${red('✘')} .noboilrc.json is invalid JSON`)
-    return
-  }
+  const { manifest: rc, path: rcPath } = found
+  const projectRoot = dirname(rcPath)
+  if (projectRoot !== cwd) console.log(`  ${dim('root:')}     ${projectRoot}`)
   console.log(`  ${dim('db:')}       ${rc.db ?? '?'}`)
   console.log(`  ${dim('demos:')}    ${rc.includeDemos ? 'included' : 'excluded'}`)
   if (rc.ejected) console.log(`  ${yellow('!')} ejected — sync disabled`)
@@ -57,7 +47,7 @@ const status = (args: string[]) => {
     console.log(`  ${dim('last sync:')} ${humanizeAge(rc.scaffoldedAt)}${stale ? ` ${yellow('(stale)')}` : ''}`)
     if (stale) console.log(`    ${yellow('!')} consider ${dim('noboil sync')} — scaffold is >30 days old`)
   }
-  if (existsSync(join(cwd, 'node_modules'))) console.log(`  ${green('✓')} node_modules present`)
+  if (existsSync(join(projectRoot, 'node_modules'))) console.log(`  ${green('✓')} node_modules present`)
   else console.log(`  ${yellow('!')} node_modules missing — run ${dim('bun install')}`)
   if (!rc.ejected && rc.scaffoldedFrom) {
     const r = spawnSync('git', ['ls-remote', 'https://github.com/1qh/noboil.git', 'HEAD'], { encoding: 'utf8' })
@@ -69,7 +59,7 @@ const status = (args: string[]) => {
       } else console.log(`  ${green('✓')} up to date with upstream`)
     }
   }
-  const logPath = join(cwd, 'package.json')
+  const logPath = join(projectRoot, 'package.json')
   if (existsSync(logPath)) {
     const { mtime } = statSync(logPath)
     console.log(`  ${dim('pkg mtime:')} ${humanizeAge(mtime.toISOString())}`)
