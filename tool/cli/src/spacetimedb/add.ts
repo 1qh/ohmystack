@@ -303,8 +303,9 @@ const addSync = async (flags: AddFlags) => {
     parent: flags.parent,
     type: flags.type
   }
-  if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
-  if (process.argv.includes('--dry-run')) {
+  const isDryRun = process.argv.includes('--dry-run')
+  if (!isDryRun && userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
+  if (isDryRun) {
     console.log(`\n${bold(`Dry-run: ${flags.type} table '${flags.name}'`)}\n`)
     console.log(`${dim('--- ')}${flags.moduleDir}/tables/${flags.name}.ts${dim(' ---')}`)
     console.log(genTableContent(flags.name, flags.type, fields))

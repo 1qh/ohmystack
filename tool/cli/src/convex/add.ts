@@ -329,10 +329,11 @@ const add = async (args: string[] = []) => {
     parent: flags.parent,
     type: flags.type
   }
-  if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
+  const isDryRun = args.includes('--dry-run')
+  if (!isDryRun && userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
   const convexPath = join(projectRoot, flags.convexDir)
   const appPath = join(projectRoot, flags.appDir)
-  if (args.includes('--dry-run')) {
+  if (isDryRun) {
     console.log(`\n${bold(`Dry-run: ${flags.type} table '${flags.name}'`)}\n`)
     console.log(`${dim('--- ')}${flags.convexDir}/${flags.name}-schema.ts${dim(' ---')}`)
     console.log(genSchemaContent(flags.name, flags.type, fields))
