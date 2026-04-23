@@ -1,0 +1,86 @@
+---
+title: Composing mutations
+description: Factories generate atomic CRUD endpoints. Compose them for domain operations like "send message" = append to log + bump parent timestamp.
+---
+
+noboil's factories (`crud`, `orgCrud`, `log`, `kv`, `quota`, `cache`, `singletonCrud`) generate atomic endpoints — one mutation per table operation. Real applications have **domain operations** that span multiple tables: sending a chat message updates the chat, inserts a message, records a rate-limit hit. This guide shows how to compose factory-generated mutations without abandoning the type safety they give you.
+
+## The pattern
+
+Every factory's mutations are callable from another Convex mutation via `ctx.runMutation(api.x.y, args)` — same API you'd use from the client. So:
+
+```ts
+// A domain mutation that uses three factory-generated mutations under the hood.
+import { mutation } from './_generated/server'
+import { v } from 'convex/values'
+import { api } from './_generated/api'
+export const send = mutation({
+  args: { chatId: v.id('chat'), content: v.string() },
+  handler: async (ctx, { chatId, content }) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('unauthorized')
+    // 1. Rate-limit check (quota factory)
+    const rate = await ctx.runMutation(api.sendQuota.consume, { owner: userId })
+    if (!rate.allowed) throw new Error(`rate limit; retry in ${rate.retryAfter}ms`)
+    // 2. Append to log (log factory, idempotent)
+    const { seq } = await ctx.runMutation(api.message.append, {
+      idempotencyKey: `${userId}:${Date.now()}`,
+      parent: chatId,
+      payload: { content, role: 'user' }
+    })
+    // 3. Bump chat's updatedAt (crud factory)
+    await ctx.runMutation(api.chat.update, { id: chatId, updatedAt: Date.now() })
+    return { seq }
+  }
+})
+```
+
+Export from `convex/chat.ts` like any other endpoint.
+
+## Why this works
+
+- **Each factory is unchanged** — you didn't modify `api.message.append` or `api.chat.update`; they still behave atomically.
+- **Your domain mutation is its own transaction** — Convex runs the whole handler in one transaction, so all three effects commit or roll back together.
+- **Types compose** — each `ctx.runMutation` return type flows through; your `send` handler gets full inference.
+
+## Transactional semantics
+
+A domain mutation inherits Convex's default: the entire handler is atomic. If step 2 (`append`) fails validation, step 1's rate-limit consumption doesn't get rolled back — because it already committed in its own sub-transaction. To avoid surprises:
+
+- **Idempotency-first order** — run writes that are safe to retry first (rate-limit consume, cache invalidate).
+- **Compensating writes** — if a later step fails, explicitly undo earlier side-effects inside a try/catch.
+- **Or inline logic** — for strict atomicity, skip factories and write raw `ctx.db.insert` / `patch` in your handler. You lose generated endpoints but get a single transaction.
+
+## Exposing domain mutations
+
+Domain mutations live alongside factory-generated ones in the same `convex/*.ts` module:
+
+```ts
+// convex/chat.ts
+import { api } from '../lazy'
+const {
+  auth: { list, read },
+  create,
+  rm,
+  update
+} = api.chat          // factory-generated
+export { create, list, read, rm, update }
+export { send } from './sendImpl'   // domain composite
+```
+
+Clients call `api.chat.send(...)` just like factory-generated ones.
+
+## Patterns by factory
+
+| Want | Compose |
+|---|---|
+| Append-only with rate limit | `quota.consume` → `log.append` |
+| Create parent + seed children | `crud.create` → loop `child.create` |
+| Update + cache invalidate | `crud.update` → `cache.invalidate` |
+| Vote + count | `quota.consume` → `log.append`; client reads counts via `log.list` subscription |
+| Delete + cascade | `crud.rm` already handles `cascade: [...]`, no manual work |
+| Maintenance banner gate | client polls `kv.get('banner')`; mutations read via `ctx.runQuery(api.siteConfig.get, {key:'banner'})` |
+
+## When to stop composing
+
+If you find yourself composing 5+ factory calls in one domain mutation, consider whether the schema needs reshaping. Often a long compose chain hides a missing `child` relationship or a missing denormalized field. The factories are building blocks; they shouldn't be plumbing for complex business logic that a cleaner schema would eliminate.

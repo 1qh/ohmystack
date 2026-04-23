@@ -286,9 +286,12 @@ type BaseSchema<T extends ZodRawShape> = SchemaBrand<'base'> &
   ZodObject<T>
 interface BrandLabelMap {
   base: 'BaseSchema (from makeBase())'
+  kv: 'KvSchema (from makeKv())'
+  log: 'LogSchema (from makeLog())'
   org: 'OrgSchema (from makeOrgScoped())'
   orgDef: 'OrgDefSchema (from makeOrg())'
   owned: 'OwnedSchema (from makeOwned())'
+  quota: 'QuotaSchema (from makeQuota())'
   singleton: 'SingletonSchema (from makeSingleton())'
   unbranded: 'plain ZodObject (not branded)'
 }
@@ -333,6 +336,18 @@ type OrgSchema<T extends ZodRawShape> = SchemaBrand<'org'> &
 type OwnedSchema<T extends ZodRawShape> = SchemaBrand<'owned'> &
   SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { userId: string }, Partial<_.output<ZodObject<T>>>> &
   ZodObject<T>
+type LogSchema<T extends ZodRawShape> = SchemaBrand<'log'> &
+  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { parent: string; seq: number }, Partial<_.output<ZodObject<T>>>> &
+  ZodObject<T>
+type KvSchema<T extends ZodRawShape> = SchemaBrand<'kv'> &
+  SchemaPhantoms<_.output<ZodObject<T>>, DocBase<T> & { key: string }, Partial<_.output<ZodObject<T>>>> &
+  ZodObject<T>
+interface QuotaSchema {
+  readonly [__brand]: 'quota'
+  readonly __hint: SchemaHint<'quota'>
+  readonly durationMs: number
+  readonly limit: number
+}
 interface Register {
   _?: never
 }
@@ -345,9 +360,12 @@ interface SchemaBrand<K extends string> {
 type SchemaHint<K extends string> = K extends keyof SchemaHintMap ? SchemaHintMap[K] : string
 interface SchemaHintMap {
   base: 'Created by makeBase() → use table()'
+  kv: 'Created by makeKv() → use kv()'
+  log: 'Created by makeLog() → use log()'
   org: 'Created by makeOrgScoped() → use table()'
   orgDef: 'Created by makeOrg() → use table()'
   owned: 'Created by makeOwned() → use table()'
+  quota: 'Created by makeQuota() → use quota()'
   singleton: 'Created by makeSingleton() → use table()'
 }
 interface SchemaPhantoms<C, R, U> {
@@ -414,6 +432,9 @@ export type {
   OrgSchema,
   OrgUserLike,
   OwnedSchema,
+  KvSchema,
+  LogSchema,
+  QuotaSchema,
   PaginatedResult,
   PaginationOptsShape,
   Qb,

@@ -1,0 +1,176 @@
+---
+title: Gradual adoption
+description: Use noboil factories where they fit, raw Convex/SpacetimeDB where they don't. The two coexist in the same project.
+---
+
+noboil is not all-or-nothing. Every table in a noboil project can be either factory-generated or hand-written. Every mutation can be generated, composed, or fully custom. This guide shows the mixing patterns so you can adopt incrementally.
+
+## The default: factory-generated
+
+When a table maps cleanly to a CRUD pattern (owned, org-scoped, singleton, cache, child, log, kv, quota), register it via `noboil({tables: ({table}) => ({...})})` and let factories generate the endpoints.
+
+```ts
+// convex/chat.ts
+import { api } from '../lazy'
+const {
+  auth: { list, read },
+  create,
+  rm,
+  update
+} = api.chat
+export { create, list, read, rm, update }
+```
+
+Client:
+```ts
+import { useCrud } from 'noboil/convex/react'
+const chats = useCrud(api.chat)
+```
+
+## Mix 1: hand-written mutations alongside factory endpoints
+
+The table is in `s.ts` + `schema.ts` and registered in `lazy.ts`. But one specific mutation needs custom logic. Write it raw and export from the same module:
+
+```ts
+// convex/chat.ts
+import { mutation } from './_generated/server'
+import { v } from 'convex/values'
+import { api } from '../lazy'
+const {
+  auth: { list, read },
+  create,
+  rm,
+  update
+} = api.chat
+// custom — factory doesn't cover this
+export const markArchived = mutation({
+  args: { id: v.id('chat') },
+  handler: async (ctx, { id }) => {
+    const chat = await ctx.db.get(id)
+    if (!chat) throw new Error('not found')
+    await ctx.db.patch(id, { archivedAt: Date.now() })
+  }
+})
+export { create, list, markArchived, read, rm, update }
+```
+
+Client uses the same `api.chat.markArchived(...)` as factory endpoints. No type gymnastics.
+
+## Mix 2: table that doesn't fit any factory
+
+Some tables are legitimately outside CRUD — event sourcing with complex deduplication, time-series with retention, analytics rollups. Define them raw in `convex/schema.ts` and write mutations by hand:
+
+```ts
+// convex/schema.ts
+import { defineSchema, defineTable } from 'convex/server'
+import { v } from 'convex/values'
+import { ownedTable } from 'noboil/convex/server'
+import { owned } from '../s'
+export default defineSchema({
+  ...({
+    blog: ownedTable(owned.blog),           // factory
+    chat: ownedTable(owned.chat)            // factory
+  }),
+  analytics: defineTable({                  // hand-written
+    event: v.string(),
+    userId: v.optional(v.id('users')),
+    props: v.any(),
+    ts: v.number()
+  })
+    .index('by_event_ts', ['event', 'ts'])
+    .index('by_user_ts', ['userId', 'ts'])
+})
+```
+
+```ts
+// convex/analytics.ts — fully raw, no noboil
+import { mutation, query } from './_generated/server'
+import { v } from 'convex/values'
+export const track = mutation({
+  args: { event: v.string(), props: v.any() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    await ctx.db.insert('analytics', { ...args, ts: Date.now(), userId: userId ?? undefined })
+  }
+})
+export const eventCount = query({
+  args: { event: v.string(), since: v.number() },
+  handler: async (ctx, { event, since }) =>
+    (await ctx.db.query('analytics').withIndex('by_event_ts', q => q.eq('event', event).gt('ts', since)).collect()).length
+})
+```
+
+Client calls `api.analytics.track(...)` identically to factory-generated endpoints.
+
+## Mix 3: HTTP actions
+
+noboil factories only generate RPC mutations/queries. HTTP endpoints (webhooks, OAuth callbacks, Stripe events) use Convex's `httpAction` as-is:
+
+```ts
+// convex/http.ts
+import { httpRouter } from 'convex/server'
+import { httpAction } from './_generated/server'
+const http = httpRouter()
+http.route({
+  path: '/stripe',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    const body = await request.json()
+    await ctx.runMutation(api.subscription.update, { ... })   // calls factory-generated mutation
+    return new Response(null, { status: 200 })
+  })
+})
+export default http
+```
+
+HTTP actions coexist with noboil — they just call factory-generated mutations via `ctx.runMutation`.
+
+## Mix 4: scheduled functions
+
+Convex's scheduler runs background jobs. Factory-generated mutations are callable from scheduled handlers unchanged:
+
+```ts
+// convex/crons.ts
+import { cronJobs } from 'convex/server'
+import { internal } from './_generated/api'
+const crons = cronJobs()
+crons.interval('prune old logs', { hours: 24 }, internal.message.purgeByParent, { parent: someChatId })
+export default crons
+```
+
+The `_scheduled_functions` system table is referenced in your schema via `v.id('_scheduled_functions')` — noboil doesn't interfere.
+
+## Mix 5: custom Zod refinements on factory tables
+
+You want a table to be factory-generated but with a field-level refinement Zod supports and noboil doesn't auto-enforce:
+
+```ts
+// s.ts
+const owned = {
+  blog: object({
+    title: string().min(1).max(200).refine(s => !/[<>]/u.test(s), 'no HTML'),
+    content: string().min(3),
+    // ... factory still generates create/update that validate via this schema
+  })
+}
+```
+
+The refinement runs in the factory's generated `create`/`update` mutations automatically — you don't need to intercept.
+
+## What NOT to mix
+
+- **Don't patch factory-generated endpoints** — if you need different behavior, write a sibling mutation and stop using the generated one for that operation. Patching leads to drift.
+- **Don't bypass the schema** — if you insert raw via `ctx.db.insert` on a factory-registered table, you skip the Zod validation the factory enforces. Use the factory's `create` mutation, or don't register the table.
+- **Don't mix DBs per table** — a table lives in Convex or SpacetimeDB, not both. noboil's `s.ts` is one schema per project.
+
+## Migration path from raw Convex
+
+Going the other way: you have an existing Convex project, want to adopt noboil for new tables without rewriting old ones.
+
+1. Add `noboil` as a dependency (you already have since you're reading this)
+2. Keep existing `schema.ts` as-is; add a new `s.ts` with Zod schemas for NEW tables only
+3. Add `noboil()` setup in `lazy.ts` for the new tables
+4. In `convex/schema.ts`, spread both raw defineTable calls and `ownedTable(owned.x)` etc in the same `defineSchema`
+5. Old tables keep their hand-written `convex/oldTable.ts` modules; new tables get re-export modules from `api.x`
+
+No migration of existing code required. You can coexist forever.
