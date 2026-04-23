@@ -1,12 +1,19 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
+import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { bold, dim, red } from './ansi'
 import { getCliVersion } from './shared/version'
 const COMMANDS: Record<string, string> = {
+  add: 'Add a table/endpoint (auto-detects DB from .noboilrc.json)',
   completions: 'Print shell completion script',
+  convex: 'Run a Convex subcommand (add, check, docs, migrate, viz, doctor)',
   doctor: 'Check project health and version alignment',
   eject: 'Detach from upstream, convert to standalone',
   init: 'Create a new noboil project',
+  stdb: 'Run a SpacetimeDB subcommand (add, dev, generate, migrate, use, viz, ...)',
   sync: 'Pull and apply upstream changes'
 }
 const printHelp = () => {
@@ -16,6 +23,23 @@ const printHelp = () => {
   console.log(bold('Commands:'))
   for (const [name, description] of Object.entries(COMMANDS)) console.log(`  ${name.padEnd(12)} ${dim(description)}`)
   console.log(`\nRun ${dim('noboil <command> --help')} for command-specific options.\n`)
+}
+const detectDb = (): 'convex' | 'spacetimedb' | null => {
+  const p = join(process.cwd(), '.noboilrc.json')
+  if (!existsSync(p)) return null
+  try {
+    const rc = JSON.parse(readFileSync(p, 'utf8')) as { db?: string }
+    if (rc.db === 'convex' || rc.db === 'spacetimedb') return rc.db
+  } catch {
+    return null
+  }
+  return null
+}
+const runNamespace = (ns: 'convex' | 'spacetimedb', args: string[]): never => {
+  const entry = ns === 'convex' ? '../convex/cli.ts' : '../spacetimedb/cli.ts'
+  const script = fileURLToPath(new URL(entry, import.meta.url))
+  const result = spawnSync('bun', [script, ...args], { stdio: 'inherit' })
+  process.exit(result.status ?? 1)
 }
 const [cmd, ...rest] = process.argv.slice(2)
 if (cmd === '--version' || cmd === '-v') console.log(await getCliVersion())
@@ -38,6 +62,17 @@ else if (!cmd) {
 } else if (cmd === 'completions') {
   const { printCompletions } = await import('./completions')
   printCompletions(rest[0] ?? '')
+} else if (cmd === 'convex') runNamespace('convex', rest)
+else if (cmd === 'stdb' || cmd === 'spacetimedb') runNamespace('spacetimedb', rest)
+else if (cmd === 'add') {
+  const db = detectDb()
+  if (!db) {
+    console.log(
+      `${red('No .noboilrc.json found.')} Run inside a noboil project, or use ${dim('noboil convex add')} / ${dim('noboil stdb add')} explicitly.`
+    )
+    process.exit(1)
+  }
+  runNamespace(db, ['add', ...rest])
 } else {
   console.log(`${red('Unknown command:')} ${cmd}\n`)
   printHelp()

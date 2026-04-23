@@ -6,7 +6,7 @@ const BASH = `_noboil() {
   cur="\${COMP_WORDS[COMP_CWORD]}"
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "init doctor sync eject completions --help --version" -- "$cur") )
+    COMPREPLY=( $(compgen -W "init doctor sync eject add convex stdb completions --help --version" -- "$cur") )
     return 0
   fi
   case "$prev" in
@@ -27,6 +27,9 @@ _noboil() {
     'doctor:Check project health'
     'sync:Pull upstream changes'
     'eject:Detach from upstream'
+    'add:Add a table (auto-detect DB)'
+    'convex:Convex subcommands'
+    'stdb:SpacetimeDB subcommands'
     'completions:Print shell completion script'
     '--help:Show help'
     '--version:Show version'

@@ -21,6 +21,9 @@ const COMMANDS: { desc: string; name: string }[] = [
   { desc: 'Check project health', name: 'doctor' },
   { desc: 'Pull upstream changes', name: 'sync' },
   { desc: 'Detach from upstream', name: 'eject' },
+  { desc: 'Add a table (auto-detects DB)', name: 'add <name>' },
+  { desc: 'Convex-specific subcommands', name: 'convex ...' },
+  { desc: 'SpacetimeDB-specific subcommands', name: 'stdb ...' },
   { desc: 'Print shell completion script', name: 'completions' }
 ]
 const DashboardApp = ({ cwd, manifest, onExit, version }: DashboardProps) => {
