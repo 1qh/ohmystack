@@ -1,12 +1,13 @@
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential deletes in purgeByParent */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB deletes */
 /** biome-ignore-all lint/suspicious/useAwait: handlers return thenable chains */
 /* oxlint-disable eslint(no-await-in-loop) */
 /* eslint-disable no-await-in-loop */
-import type { PaginationOptions } from 'convex/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import type { DbLike, LogFactoryResult, Mb, MutCtx, Qb, QueryLike, Rec } from './types'
+import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
+import { number, object, string } from 'zod/v4'
+import type { DbCtx, DbLike, LogFactoryResult, Mb, Qb, QueryLike, Rec } from './types'
 import { idx, typed } from './bridge'
-import { dbDelete, dbInsert, errValidation } from './helpers'
+import { dbDelete, dbInsert, errValidation, pgOpts } from './helpers'
 const DEFAULT_LIMIT = 500
 interface LogRow {
   _id: string
@@ -15,7 +16,7 @@ interface LogRow {
   seq: number
 }
 const makeLog = <S extends ZodRawShape>({
-  builders,
+  builders: b,
   schema,
   table
 }: {
@@ -36,7 +37,7 @@ const makeLog = <S extends ZodRawShape>({
         idx(o => o.eq('parent', p).eq('idempotencyKey', key))
       )
       .first() as Promise<LogRow | null>
-  const maxSeq = async (db: DbLike, p: string): Promise<LogRow | null> =>
+  const byParentSeq = async (db: DbLike, p: string): Promise<LogRow | null> =>
     db
       .query(table)
       .withIndex(
@@ -45,8 +46,13 @@ const makeLog = <S extends ZodRawShape>({
       )
       .order('desc')
       .first() as Promise<LogRow | null>
-  const append = builders.m({
-    handler: typed(async (c: MutCtx, args: { idempotencyKey?: string; parent: string; payload: Rec }) => {
+  const appendArgs = z2c(object({ idempotencyKey: string().optional(), parent: string(), payload: schema }).shape) as Rec
+  const listAfterArgs = z2c(object({ limit: number().optional(), parent: string(), seq: number() }).shape) as Rec
+  const listArgs = z2c(object({ parent: string() }).shape) as Rec
+  const purgeArgs = z2c(object({ parent: string() }).shape) as Rec
+  const append = b.m({
+    args: typed({ ...appendArgs }),
+    handler: typed(async (c: DbCtx, args: { idempotencyKey?: string; parent: string; payload: Rec }) => {
       const { idempotencyKey: key, parent: p, payload } = args
       if (key) {
         const existing = await byIdempotency(c.db, p, key)
@@ -54,14 +60,15 @@ const makeLog = <S extends ZodRawShape>({
       }
       const parsed = schema.safeParse(payload)
       if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
-      const last = await maxSeq(c.db, p)
+      const last = await byParentSeq(c.db, p)
       const seq = (last?.seq ?? 0) + 1
       await dbInsert(c.db, table, { ...parsed.data, idempotencyKey: key, parent: p, seq })
       return { created: true, seq }
     })
   })
-  const listAfter = builders.q({
-    handler: typed(async (c: MutCtx, { limit, parent: p, seq }: { limit?: number; parent: string; seq: number }) =>
+  const listAfter = b.q({
+    args: typed({ ...listAfterArgs }),
+    handler: typed(async (c: DbCtx, { limit, parent: p, seq }: { limit?: number; parent: string; seq: number }) =>
       c.db
         .query(table)
         .withIndex(
@@ -72,16 +79,15 @@ const makeLog = <S extends ZodRawShape>({
         .take(limit ?? DEFAULT_LIMIT)
     )
   })
-  const list = builders.q({
-    handler: typed(
-      async (c: MutCtx, { paginationOpts, parent: p }: { paginationOpts: PaginationOptions; parent: string }) => {
-        const optsAsRec = paginationOpts as unknown as Rec
-        return byParent(c.db, p).order('desc').paginate(optsAsRec)
-      }
+  const list = b.q({
+    args: typed({ ...listArgs, paginationOpts: pgOpts }),
+    handler: typed(async (c: DbCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) =>
+      byParent(c.db, p).order('desc').paginate(op)
     )
   })
-  const purgeByParent = builders.m({
-    handler: typed(async (c: MutCtx, { parent: p }: { parent: string }) => {
+  const purgeByParent = b.m({
+    args: typed({ ...purgeArgs }),
+    handler: typed(async (c: DbCtx, { parent: p }: { parent: string }) => {
       let deleted = 0
       const docs = (await byParent(c.db, p).collect()) as { _id: string }[]
       for (const doc of docs) {

@@ -2,11 +2,13 @@
 /* oxlint-disable typescript-eslint(no-unnecessary-condition) */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import type { DbLike, KvFactoryResult, Mb, MutCtx, Qb, Rec } from './types'
+import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
+import { object, string } from 'zod/v4'
+import type { DbCtx, DbLike, KvFactoryResult, Mb, Qb, Rec } from './types'
 import { idx, typed } from './bridge'
 import { dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
 const makeKv = <S extends ZodRawShape>({
-  builders,
+  builders: b,
   keys,
   schema,
   table,
@@ -16,7 +18,7 @@ const makeKv = <S extends ZodRawShape>({
   keys?: readonly string[]
   schema: ZodObject<S>
   table: string
-  writeRole?: ((ctx: MutCtx) => boolean | Promise<boolean>) | boolean
+  writeRole?: ((ctx: DbCtx) => boolean | Promise<boolean>) | boolean
 }): KvFactoryResult<S> => {
   const byKey = async (db: DbLike, key: string) =>
     db
@@ -26,11 +28,8 @@ const makeKv = <S extends ZodRawShape>({
         idx(o => o.eq('key', key))
       )
       .unique()
-  const assertKey = (key: string) => {
-    if (keys && !keys.includes(key)) return err('INVALID_KEY')
-    return null
-  }
-  const assertWrite = async (c: MutCtx) => {
+  const assertKey = (key: string) => (keys && !keys.includes(key) ? err('INVALID_KEY') : null)
+  const assertWrite = async (c: DbCtx) => {
     if (writeRole === true) return null
     if (typeof writeRole === 'function') {
       const ok = await writeRole(c)
@@ -38,18 +37,22 @@ const makeKv = <S extends ZodRawShape>({
     }
     return err('FORBIDDEN')
   }
-  const get = builders.q({
-    handler: typed(async (c: MutCtx, { key }: { key: string }) => {
+  const keyArgs = z2c(object({ key: string() }).shape) as Rec
+  const setArgs = z2c(object({ key: string(), payload: schema }).shape) as Rec
+  const get = b.q({
+    args: typed({ ...keyArgs }),
+    handler: typed(async (c: DbCtx, { key }: { key: string }) => {
       const bad = assertKey(key)
       if (bad) return bad
       return byKey(c.db, key)
     })
   })
-  const list = builders.q({
-    handler: typed(async (c: MutCtx) => c.db.query(table).collect())
+  const list = b.q({
+    handler: typed(async (c: DbCtx) => c.db.query(table).collect())
   })
-  const set = builders.m({
-    handler: typed(async (c: MutCtx, { key, payload }: { key: string; payload: Rec }) => {
+  const set = b.m({
+    args: typed({ ...setArgs }),
+    handler: typed(async (c: DbCtx, { key, payload }: { key: string; payload: Rec }) => {
       const gate = await assertWrite(c)
       if (gate) return gate
       const bad = assertKey(key)
@@ -68,8 +71,9 @@ const makeKv = <S extends ZodRawShape>({
       return doc
     })
   })
-  const rm = builders.m({
-    handler: typed(async (c: MutCtx, { key }: { key: string }) => {
+  const rm = b.m({
+    args: typed({ ...keyArgs }),
+    handler: typed(async (c: DbCtx, { key }: { key: string }) => {
       const gate = await assertWrite(c)
       if (gate) return gate
       const bad = assertKey(key)

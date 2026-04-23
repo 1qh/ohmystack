@@ -1,7 +1,9 @@
 /** biome-ignore-all lint/complexity/useMaxParams: destructured builder options pattern matches singleton/cache-crud */
 /* oxlint-disable eslint-plugin-unicorn(prefer-ternary) */
 /* eslint-disable @typescript-eslint/max-params */
-import type { DbLike, Mb, MutCtx, Qb, QuotaFactoryResult, QuotaResult } from './types'
+import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
+import { object, string } from 'zod/v4'
+import type { DbCtx, DbLike, Mb, Qb, QuotaFactoryResult, QuotaResult, Rec } from './types'
 import { idx, typed } from './bridge'
 import { dbInsert, dbPatch } from './helpers'
 const prune = (timestamps: number[], cutoff: number): number[] => {
@@ -10,8 +12,7 @@ const prune = (timestamps: number[], cutoff: number): number[] => {
   return out
 }
 const compute = (timestamps: number[], limit: number, durationMs: number, now: number): QuotaResult => {
-  const cutoff = now - durationMs
-  const pruned = prune(timestamps, cutoff)
+  const pruned = prune(timestamps, now - durationMs)
   const remaining = Math.max(0, limit - pruned.length)
   if (pruned.length < limit) return { allowed: true, remaining }
   const oldest = pruned[0] ?? now
@@ -32,7 +33,7 @@ interface QuotaRow {
   timestamps?: number[]
 }
 const makeQuota = ({
-  builders,
+  builders: b,
   durationMs,
   limit,
   table
@@ -50,14 +51,17 @@ const makeQuota = ({
         idx(o => o.eq('owner', owner))
       )
       .unique()) as null | QuotaRow
-  const check = builders.q({
-    handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
+  const ownerArgs = z2c(object({ owner: string() }).shape) as Rec
+  const check = b.q({
+    args: typed({ ...ownerArgs }),
+    handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {
       const doc = await byOwner(c.db, owner)
       return compute(doc?.timestamps ?? [], limit, durationMs, Date.now())
     })
   })
-  const record = builders.m({
-    handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
+  const record = b.m({
+    args: typed({ ...ownerArgs }),
+    handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {
       const now = Date.now()
       const doc = await byOwner(c.db, owner)
       const pruned = prune(doc?.timestamps ?? [], now - durationMs)
@@ -66,8 +70,9 @@ const makeQuota = ({
       return compute(next, limit, durationMs, now)
     })
   })
-  const consume = builders.m({
-    handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
+  const consume = b.m({
+    args: typed({ ...ownerArgs }),
+    handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {
       const now = Date.now()
       const doc = await byOwner(c.db, owner)
       const pruned = prune(doc?.timestamps ?? [], now - durationMs)
