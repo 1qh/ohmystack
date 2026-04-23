@@ -46,7 +46,6 @@ const checkForUpdate = async (currentVersion: string): Promise<null | string> =>
   const cached = await readCache()
   if (cached && Date.now() - cached.checkedAt < TTL_MS)
     return isNewer(cached.version, currentVersion) ? cached.version : currentVersion
-
   const latest = await fetchLatest()
   if (latest) await writeCache(latest)
   if (latest && isNewer(latest, currentVersion)) return latest

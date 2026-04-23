@@ -14,6 +14,7 @@ import { die } from './cli-utils'
 import { patchRootPackageJson, removeDirs, rmSafe } from './scaffold-ops'
 interface Manifest {
   db: Db
+  ejected?: boolean
   includeDemos: boolean
   scaffoldedAt: string
   scaffoldedFrom: string
@@ -168,6 +169,7 @@ const refreshCache = (cwd: string) => {
 const runSync = async (opts: SyncOpts, onProgress: (p: Record<string, unknown>) => void): Promise<void> => {
   const cwd = findProjectRoot(process.cwd())
   const manifest = readManifest(cwd)
+  if (manifest.ejected) die('Project is ejected — sync is disabled. Upstream changes must be applied manually.')
   const tmpDir = join(tmpdir(), `noboil-sync-${Date.now()}`)
   onProgress({ phase: 'cloning' })
   try {
