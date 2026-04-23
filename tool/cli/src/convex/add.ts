@@ -316,8 +316,12 @@ const add = async (args: string[] = []) => {
     process.exit(1)
   }
   const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type)
+  const { findManifestPath } = await import('../shared/manifest')
+  const { dirname } = await import('node:path')
+  const manifestPath = findManifestPath(process.cwd())
+  const projectRoot = manifestPath ? dirname(manifestPath) : process.cwd()
   const { loadConfig } = await import('../config')
-  const userConfig = await loadConfig(process.cwd())
+  const userConfig = await loadConfig(projectRoot)
   const hookCtx = {
     db: 'convex' as const,
     fields: fields.map(f => ({ name: f.name, optional: f.optional, type: typeof f.type === 'object' ? 'enum' : f.type })),
@@ -326,8 +330,8 @@ const add = async (args: string[] = []) => {
     type: flags.type
   }
   if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
-  const convexPath = join(process.cwd(), flags.convexDir)
-  const appPath = join(process.cwd(), flags.appDir)
+  const convexPath = join(projectRoot, flags.convexDir)
+  const appPath = join(projectRoot, flags.appDir)
   if (args.includes('--dry-run')) {
     console.log(`\n${bold(`Dry-run: ${flags.type} table '${flags.name}'`)}\n`)
     console.log(`${dim('--- ')}${flags.convexDir}/${flags.name}-schema.ts${dim(' ---')}`)

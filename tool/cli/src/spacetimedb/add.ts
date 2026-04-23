@@ -290,8 +290,12 @@ const promptInteractive = async (): Promise<AddFlags | null> => {
 }
 const addSync = async (flags: AddFlags) => {
   const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type)
+  const { findManifestPath } = await import('../shared/manifest')
+  const { dirname } = await import('node:path')
+  const manifestPath = findManifestPath(process.cwd())
+  const projectRoot = manifestPath ? dirname(manifestPath) : process.cwd()
   const { loadConfig } = await import('../config')
-  const userConfig = await loadConfig(process.cwd())
+  const userConfig = await loadConfig(projectRoot)
   const hookCtx = {
     db: 'spacetimedb' as const,
     fields: fields.map(f => ({ name: f.name, optional: f.optional, type: typeof f.type === 'object' ? 'enum' : f.type })),
@@ -310,8 +314,8 @@ const addSync = async (flags: AddFlags) => {
     console.log(genPageContent(flags.name, flags.type))
     return { created: 0, skipped: 0 }
   }
-  const modulePath = join(process.cwd(), flags.moduleDir)
-  const appPath = join(process.cwd(), flags.appDir)
+  const modulePath = join(projectRoot, flags.moduleDir)
+  const appPath = join(projectRoot, flags.appDir)
   console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
   let created = 0
   let skipped = 0
