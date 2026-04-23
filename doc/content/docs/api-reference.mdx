@@ -1,6 +1,6 @@
 ---
 title: API Reference
-description: Complete API reference for @noboil/convex and @noboil/spacetimedb — server factories, React hooks, utilities, and error codes.
+description: Complete API reference for noboil/convex and noboil/spacetimedb — server factories, React hooks, utilities, and error codes.
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
@@ -11,7 +11,7 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
 <Tab value="Convex">
 
 ```bash
-bun add @noboil/convex
+bun add noboil
 ```
 
 Peer dependencies: `convex`, `convex-helpers`, `zod`, `@tanstack/react-form`, `react`.
@@ -20,7 +20,7 @@ Peer dependencies: `convex`, `convex-helpers`, `zod`, `@tanstack/react-form`, `r
 <Tab value="SpacetimeDB">
 
 ```bash
-bun add @noboil/spacetimedb
+bun add noboil
 ```
 
 Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
@@ -81,7 +81,7 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 The high-level entry point. Wraps `setup()` and provides a `table()` helper that dispatches to the correct factory based on schema brand:
 
 ```typescript
-import { noboil } from '@noboil/convex/server'
+import { noboil } from 'noboil/convex/server'
 import { s } from './s'
 
 const api = noboil({
@@ -108,7 +108,7 @@ const { pq, q, m } = api.setup
 Lower-level entry point. Call once in a shared file and destructure `crud`, `orgCrud`, `pq`, `q`, `m`, and other builders:
 
 ```typescript
-import { setup } from '@noboil/convex/server'
+import { setup } from 'noboil/convex/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import {
   action,
@@ -209,7 +209,7 @@ export const { all, get, load, refresh, invalidate, purge } = cacheCrud({
 The primary entry point. Pass a factory function that receives `table` and `t` helpers:
 
 ```typescript
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 
 export default noboil({ tables: ({ table }) => ({
@@ -269,7 +269,7 @@ table(s.blog)                       // private — only own rows visible
 Generates presence heartbeat, leave, and cleanup reducers:
 
 ```typescript
-import { makePresence } from '@noboil/spacetimedb/server'
+import { makePresence } from 'noboil/spacetimedb/server'
 
 const presenceFns = makePresence(spacetimedb, {
   dataField: t.string(),
@@ -293,7 +293,7 @@ Constants: `HEARTBEAT_INTERVAL_MS = 15000`, `PRESENCE_TTL_MS = 30000`.
 Generates reducers for registering and deleting uploaded files:
 
 ```typescript
-import { makeFileUpload } from '@noboil/spacetimedb/server'
+import { makeFileUpload } from 'noboil/spacetimedb/server'
 
 const fileCrud = makeFileUpload(spacetimedb, {
   fields: {
@@ -324,14 +324,14 @@ React hooks exported from `/react`:
 <Tab value="Convex">
 
 ```typescript
-import { useList, useOwnRows, usePresence, useInfiniteList, useSearch } from '@noboil/convex/react'
+import { useList, useOwnRows, usePresence, useInfiniteList, useSearch } from 'noboil/convex/react'
 ```
 
 </Tab>
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { useList, useOwnRows, usePresence, useInfiniteList, useSearch } from '@noboil/spacetimedb/react'
+import { useList, useOwnRows, usePresence, useInfiniteList, useSearch } from 'noboil/spacetimedb/react'
 ```
 
 </Tab>
@@ -390,7 +390,7 @@ Computes an `own` boolean on each row using a predicate function. Pass `null` wh
 <Tab value="Convex">
 
 ```typescript
-import { useOwnRows } from '@noboil/convex/react'
+import { useOwnRows } from 'noboil/convex/react'
 
 const blogs = useOwnRows(allBlogs, me ? b => b.userId === me._id : null)
 ```
@@ -399,7 +399,7 @@ const blogs = useOwnRows(allBlogs, me ? b => b.userId === me._id : null)
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { useOwnRows } from '@noboil/spacetimedb/react'
+import { useOwnRows } from 'noboil/spacetimedb/react'
 
 const blogs = useOwnRows(
   allBlogs,
@@ -425,7 +425,7 @@ Manages presence state with heartbeat and TTL-based cleanup.
 <Tab value="Convex">
 
 ```typescript
-import { usePresence } from '@noboil/convex/react'
+import { usePresence } from 'noboil/convex/react'
 
 const refs = {
   heartbeat: api.presence.heartbeat,
@@ -444,7 +444,7 @@ updatePresence({ cursor: { x: 100, y: 200 }, status: 'editing' })
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { usePresence } from '@noboil/spacetimedb/react'
+import { usePresence } from 'noboil/spacetimedb/react'
 import { useTable, useReducer } from 'spacetimedb/react'
 import { tables, reducers } from '@/generated/module_bindings'
 
@@ -594,7 +594,7 @@ Combines `useForm` with a mutation function. Handles loading state, error toasts
 <Tab value="Convex">
 
 ```typescript
-import { useFormMutation } from '@noboil/convex/react'
+import { useFormMutation } from 'noboil/convex/react'
 
 const form = useFormMutation({
   schema: blogSchema,
@@ -607,7 +607,7 @@ const form = useFormMutation({
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { useFormMutation } from '@noboil/spacetimedb/react'
+import { useFormMutation } from 'noboil/spacetimedb/react'
 
 const form = useFormMutation({
   mutate: useReducer(reducers.createWiki),
@@ -672,7 +672,7 @@ Use `useMutation` from `convex/react` directly for raw Convex mutations.
 Combines `useReducer` + `useMutate` into a single call:
 
 ```typescript
-import { useMutation } from '@noboil/spacetimedb/react'
+import { useMutation } from 'noboil/spacetimedb/react'
 import { useReducer } from 'spacetimedb/react'
 import { reducers } from '@/generated/module_bindings'
 
@@ -686,7 +686,7 @@ save({ id: 1, title: 'New title' })
 For the shortest form, `useMut` skips passing `useReducer` entirely:
 
 ```typescript
-import { useMut } from '@noboil/spacetimedb/react'
+import { useMut } from 'noboil/spacetimedb/react'
 
 const save = useMut(reducers.update_blog, {
   onSuccess: () => toast.success('Saved')
@@ -706,7 +706,7 @@ const save = useMut(reducers.update_blog, {
 Wraps a query and automatically injects `orgId` from the current org context:
 
 ```typescript
-import { useOrgQuery } from '@noboil/convex/react'
+import { useOrgQuery } from 'noboil/convex/react'
 
 const projects = useOrgQuery(api.project.read, { status: 'active' })
 const skipped = useOrgQuery(api.project.read, 'skip')
@@ -717,7 +717,7 @@ const skipped = useOrgQuery(api.project.read, 'skip')
 Wraps a mutation and automatically injects `orgId`:
 
 ```typescript
-import { useOrgMutation } from '@noboil/convex/react'
+import { useOrgMutation } from 'noboil/convex/react'
 
 const remove = useOrgMutation(api.project.rm)
 await remove({ id: projectId })
@@ -731,7 +731,7 @@ await remove({ id: projectId })
 Wraps a query function and automatically injects `orgId` from the current org context:
 
 ```typescript
-import { useOrgQuery } from '@noboil/spacetimedb/react'
+import { useOrgQuery } from 'noboil/spacetimedb/react'
 
 const projects = useOrgQuery(queryProject, { status: 'active' })
 const skipped = useOrgQuery(queryProject, 'skip')
@@ -742,7 +742,7 @@ const skipped = useOrgQuery(queryProject, 'skip')
 Wraps a reducer and automatically injects `orgId`:
 
 ```typescript
-import { useOrgMutation } from '@noboil/spacetimedb/react'
+import { useOrgMutation } from 'noboil/spacetimedb/react'
 
 const createProject = useOrgMutation(useReducer(reducers.create_project))
 await createProject({ name: 'New project' })
@@ -759,7 +759,7 @@ Factory that returns typed org hooks bound to a specific org type:
 <Tab value="Convex">
 
 ```typescript
-import { createOrgHooks } from '@noboil/convex/react'
+import { createOrgHooks } from 'noboil/convex/react'
 
 const { useActiveOrg, useMyOrgs, useOrg, useOrgMutation } = createOrgHooks<MyOrg>()
 ```
@@ -768,7 +768,7 @@ const { useActiveOrg, useMyOrgs, useOrg, useOrgMutation } = createOrgHooks<MyOrg
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { createOrgHooks } from '@noboil/spacetimedb/react'
+import { createOrgHooks } from 'noboil/spacetimedb/react'
 
 const { useActiveOrg, useMyOrgs, useOrg, useOrgMutation } = createOrgHooks<
   Org & { _id: string }
@@ -808,7 +808,7 @@ await update(d) // orgId auto-injected as Number(org._id)
 | `ORG_SLUG_TAKEN` | Org slug already in use |
 
 ```typescript
-import { handleConvexError } from '@noboil/convex/server'
+import { handleConvexError } from 'noboil/convex/server'
 
 handleConvexError(error, {
   NOT_AUTHENTICATED: () => router.push('/login'),
@@ -820,7 +820,7 @@ handleConvexError(error, {
 **Rate limit metadata:**
 
 ```typescript
-import { getErrorDetail } from '@noboil/convex/server'
+import { getErrorDetail } from 'noboil/convex/server'
 
 handleConvexError(error, {
   RATE_LIMITED: e => {
@@ -835,7 +835,7 @@ handleConvexError(error, {
 **Error boundary:**
 
 ```typescript
-import { ErrorBoundary } from '@noboil/convex/components'
+import { ErrorBoundary } from 'noboil/convex/components'
 
 <ErrorBoundary
   className="p-8"
@@ -875,7 +875,7 @@ import { ErrorBoundary } from '@noboil/convex/components'
 Parse errors on the client:
 
 ```typescript
-import { extractErrorData, getErrorCode, getErrorMessage } from '@noboil/spacetimedb/server'
+import { extractErrorData, getErrorCode, getErrorMessage } from 'noboil/spacetimedb/server'
 
 try {
   await createPost(data)
@@ -889,7 +889,7 @@ try {
 Throw errors in reducers:
 
 ```typescript
-import { err, errValidation } from '@noboil/spacetimedb/server'
+import { err, errValidation } from 'noboil/spacetimedb/server'
 
 err('NOT_FOUND')
 err('FORBIDDEN', 'User does not own this resource')
@@ -899,7 +899,7 @@ errValidation({ title: 'Required', slug: 'Already taken' })
 **Error boundary:**
 
 ```typescript
-import { ErrorBoundary } from '@noboil/spacetimedb/components'
+import { ErrorBoundary } from 'noboil/spacetimedb/components'
 
 <ErrorBoundary
   className="p-8"
@@ -925,7 +925,7 @@ Creates a stable, memoized callback that toasts errors with optional per-code ha
 <Tab value="Convex">
 
 ```typescript
-import { useErrorToast } from '@noboil/convex/react'
+import { useErrorToast } from 'noboil/convex/react'
 
 const handleError = useErrorToast({
   toast: toast.error,
@@ -940,7 +940,7 @@ const handleError = useErrorToast({
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { useErrorToast } from '@noboil/spacetimedb/react'
+import { useErrorToast } from 'noboil/spacetimedb/react'
 
 const handleError = useErrorToast({
   toast: toast.error,
@@ -980,7 +980,7 @@ Development panel showing active subscriptions, pending mutations, and errors:
 <Tab value="Convex">
 
 ```typescript
-import { Devtools } from '@noboil/convex/react'
+import { Devtools } from 'noboil/convex/react'
 
 {process.env.NODE_ENV === 'development' && <Devtools />}
 ```
@@ -989,7 +989,7 @@ import { Devtools } from '@noboil/convex/react'
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { Devtools } from '@noboil/spacetimedb/react'
+import { Devtools } from 'noboil/spacetimedb/react'
 
 {process.env.NODE_ENV === 'development' && <Devtools />}
 ```
@@ -1005,7 +1005,7 @@ Interactive schema explorer for development:
 <Tab value="Convex">
 
 ```typescript
-import { SchemaPlayground } from '@noboil/convex/react'
+import { SchemaPlayground } from 'noboil/convex/react'
 
 <SchemaPlayground className="my-8" />
 ```
@@ -1014,7 +1014,7 @@ import { SchemaPlayground } from '@noboil/convex/react'
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { SchemaPlayground } from '@noboil/spacetimedb/react'
+import { SchemaPlayground } from 'noboil/spacetimedb/react'
 
 <SchemaPlayground tables={tables} />
 ```
@@ -1027,8 +1027,8 @@ import { SchemaPlayground } from '@noboil/spacetimedb/react'
 The `<Form>` component renders a typed form with automatic field layout:
 
 ```typescript
-import { Form, useForm } from '@noboil/convex/components'
-// or: import { Form, useForm } from '@noboil/spacetimedb/components'
+import { Form, useForm } from 'noboil/convex/components'
+// or: import { Form, useForm } from 'noboil/spacetimedb/components'
 
 const form = useForm({ schema, values, onSubmit })
 
@@ -1065,7 +1065,7 @@ Creates a type-safe multi-step form with per-step Zod schemas:
 <Tab value="Convex">
 
 ```typescript
-import { defineSteps } from '@noboil/convex/components'
+import { defineSteps } from 'noboil/convex/components'
 
 const { StepForm, useStepper } = defineSteps(
   { id: 'profile', label: 'Profile', schema: profileStep },
@@ -1088,7 +1088,7 @@ const { StepForm, useStepper } = defineSteps(
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { defineSteps } from '@noboil/spacetimedb/components'
+import { defineSteps } from 'noboil/spacetimedb/components'
 
 const { StepForm, useStepper, steps } = defineSteps([
   { id: 'profile', label: 'Profile', schema: profileSchema },
@@ -1149,7 +1149,7 @@ Renders a fixed-position banner when the backend connection is inactive:
 <Tab value="Convex">
 
 ```typescript
-import { auditLog, inputSanitize, slowQueryWarn } from '@noboil/convex/server'
+import { auditLog, inputSanitize, slowQueryWarn } from 'noboil/convex/server'
 
 const { crud } = setup({
   // ...
@@ -1161,7 +1161,7 @@ const { crud } = setup({
 <Tab value="SpacetimeDB">
 
 ```typescript
-import { noboil, auditLog, inputSanitize, slowQueryWarn } from '@noboil/spacetimedb/server'
+import { noboil, auditLog, inputSanitize, slowQueryWarn } from 'noboil/spacetimedb/server'
 
 export default noboil({
   middleware: [inputSanitize(), auditLog(), slowQueryWarn({ threshold: 200 })],
@@ -1184,7 +1184,7 @@ export default noboil({
 <Tab value="Convex">
 
 ```typescript
-import { pickValues } from '@noboil/convex/zod'
+import { pickValues } from 'noboil/convex/zod'
 
 const values = pickValues(singleton.profile, profile)
 ```
@@ -1193,9 +1193,9 @@ const values = pickValues(singleton.profile, profile)
 <Tab value="SpacetimeDB">
 
 ```typescript
-import type { InferRow, InferCreate, InferUpdate } from '@noboil/spacetimedb/server'
-import { schemaVariants } from '@noboil/spacetimedb/zod'
-import { partialValues } from '@noboil/spacetimedb/zod'
+import type { InferRow, InferCreate, InferUpdate } from 'noboil/spacetimedb/server'
+import { schemaVariants } from 'noboil/spacetimedb/zod'
+import { partialValues } from 'noboil/spacetimedb/zod'
 
 type PostRow = InferRow<typeof s.post>
 type PostCreate = InferCreate<typeof s.post>

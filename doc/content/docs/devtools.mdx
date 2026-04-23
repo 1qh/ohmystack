@@ -12,9 +12,9 @@ DevTools activate when `NODE_ENV !== 'production'`. In development, a floating b
 The DevTools panel is already mounted by `Form` and `AutoForm`. For pages without forms, mount it explicitly:
 
 ```tsx
-import { DevtoolsAutoMount } from '@noboil/convex/react'
+import { DevtoolsAutoMount } from 'noboil/convex/react'
 // or
-import { DevtoolsAutoMount } from '@noboil/spacetimedb/react'
+import { DevtoolsAutoMount } from 'noboil/spacetimedb/react'
 
 const Layout = ({ children }) => (
   <>
@@ -67,7 +67,7 @@ Aggregated error log:
 Track your own operations in DevTools:
 
 ```tsx
-import { trackMutation, completeMutation, pushError } from '@noboil/convex/react'
+import { trackMutation, completeMutation, pushError } from 'noboil/convex/react'
 
 const devId = trackMutation('customOp', { key: 'value' })
 try {
@@ -89,7 +89,7 @@ try {
 Adjust thresholds:
 
 ```tsx
-import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from '@noboil/convex/react'
+import { SLOW_THRESHOLD_MS, STALE_THRESHOLD_MS } from 'noboil/convex/react'
 // SLOW_THRESHOLD_MS = 500
 // STALE_THRESHOLD_MS = 30000
 ```

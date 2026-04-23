@@ -14,7 +14,7 @@ No big bang required. Adopt noboil one table at a time while keeping your existi
 ## Step 1: Install
 
 ```bash
-bun add @noboil/convex
+bun add noboil
 ```
 
 Peer dependencies: `convex`, `convex-helpers`, `zod`, `@tanstack/react-form`, `react`.
@@ -24,7 +24,7 @@ Peer dependencies: `convex`, `convex-helpers`, `zod`, `@tanstack/react-form`, `r
 Pick your simplest user-owned table. Define a Zod schema with `makeOwned`:
 
 ```tsx
-import { makeOwned } from '@noboil/convex/schema'
+import { makeOwned } from 'noboil/convex/schema'
 import { boolean, object, string } from 'zod/v4'
 
 const owned = makeOwned({
@@ -42,7 +42,7 @@ Add the table alongside your existing schema. `ownedTable()` returns a standard 
 
 ```tsx
 import { defineSchema, defineTable } from 'convex/server'
-import { ownedTable } from '@noboil/convex/server'
+import { ownedTable } from 'noboil/convex/server'
 
 export default defineSchema({
   posts: defineTable({
@@ -61,7 +61,7 @@ export default defineSchema({
 Create a setup file (or add to an existing one):
 
 ```tsx
-import { setup } from '@noboil/convex/server'
+import { setup } from 'noboil/convex/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import {
   action,
@@ -92,7 +92,7 @@ Your existing `posts` and `comments` endpoints keep working. The new `note` endp
 ## Step 5: Use in React
 
 ```tsx
-import { useList } from '@noboil/convex/react'
+import { useList } from 'noboil/convex/react'
 import { api } from '../convex/_generated/api'
 
 const { items: notes, loadMore, status } = useList(api.note.list)
@@ -126,7 +126,7 @@ export const create = mutation({
 })
 ```
 
-### After (@noboil/convex)
+### After (noboil/convex)
 
 ```tsx
 export const { create, list, read, rm, update } = crud('post', owned.post)
@@ -140,9 +140,9 @@ Both patterns work simultaneously:
 convex/
   posts.ts      ← raw Convex (existing, untouched)
   comments.ts   ← raw Convex (existing, untouched)
-  note.ts       ← @noboil/convex crud()
-  wiki.ts       ← @noboil/convex orgCrud()
-  setup.ts      ← @noboil/convex setup()
+  note.ts       ← noboil/convex crud()
+  wiki.ts       ← noboil/convex orgCrud()
+  setup.ts      ← noboil/convex setup()
 ```
 
 ## Mixing crud() with Custom Endpoints
@@ -191,8 +191,8 @@ export const {
 When you need multi-tenancy, use `makeOrgScoped` + `orgCrud`:
 
 ```tsx
-import { makeOrgScoped } from '@noboil/convex/schema'
-import { orgTables } from '@noboil/convex/server'
+import { makeOrgScoped } from 'noboil/convex/schema'
+import { orgTables } from 'noboil/convex/server'
 
 const orgScoped = makeOrgScoped({
   wiki: object({
@@ -220,7 +220,7 @@ export const { create, list, read, rm, update } = orgCrud(
 Add the ESLint plugin to catch common mistakes at dev time:
 
 ```tsx
-import noboilConvex from '@noboil/convex/eslint'
+import noboilConvex from 'noboil/convex/eslint'
 import { defineConfig } from 'eslint/config'
 
 export default defineConfig([noboilConvex.recommended])
@@ -233,7 +233,7 @@ This catches wrong API casing (`api.blogprofile` vs `api.blogProfile`), form fie
 Convex's generated `api` object has a runtime `anyApi` proxy that accepts any property name. Use `strictApi` to strip the index signature:
 
 ```tsx
-import { strictApi } from '@noboil/convex'
+import { strictApi } from 'noboil/convex'
 import { api as rawApi } from '../convex/_generated/api'
 
 const api = strictApi(rawApi)
@@ -245,7 +245,7 @@ api.noet.list
 
 | Step | Status |
 | ---- | ------ |
-| Install `@noboil/convex` | |
+| Install `noboil/convex` | |
 | Define first Zod schema with `makeOwned` / `makeOrgScoped` | |
 | Add table to schema with `ownedTable` / `orgTable` | |
 | Call `setup()` in a convex file | |
@@ -259,7 +259,7 @@ api.noet.list
 
 <Tab value="SpacetimeDB">
 
-`@noboil/spacetimedb` is the SpacetimeDB successor to `@noboil/convex`. The mental model is similar, but the underlying system is different. This guide maps Convex concepts to their SpacetimeDB equivalents.
+`noboil/spacetimedb` is the SpacetimeDB successor to `noboil/convex`. The mental model is similar, but the underlying system is different. This guide maps Convex concepts to their SpacetimeDB equivalents.
 
 ## The big picture
 
@@ -342,7 +342,7 @@ const posts = useQuery(api.blog.list, { published: true })
 ```typescript
 const [posts, isReady] = useTable(tables.post.where(r => r.published.eq(true)))
 
-import { useList } from '@noboil/spacetimedb/react'
+import { useList } from 'noboil/spacetimedb/react'
 
 const [allPosts, isReady] = useTable(tables.post)
 const { data: posts } = useList(allPosts, isReady, {
@@ -363,7 +363,7 @@ const { results, status, loadMore } = usePaginatedQuery(
 ```
 
 ```typescript
-import { useList } from '@noboil/spacetimedb/react'
+import { useList } from 'noboil/spacetimedb/react'
 
 const [posts, isReady] = useTable(tables.post)
 const { data, hasMore, loadMore, totalCount } = useList(posts, isReady, {
@@ -477,7 +477,7 @@ export default defineSchema({
 ```
 
 ```typescript
-import { schema } from '@noboil/spacetimedb/schema'
+import { schema } from 'noboil/spacetimedb/schema'
 import { boolean, object, string } from 'zod/v4'
 
 const s = schema({
@@ -494,7 +494,7 @@ export { s }
 ```
 
 ```typescript
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 
 export default noboil({ tables: ({ table }) => ({
@@ -524,7 +524,7 @@ await updatePost({ id: postId, title: 'New title' })
 
 const url = `/posts/${postId}`
 
-import { idToWire } from '@noboil/spacetimedb'
+import { idToWire } from 'noboil/spacetimedb'
 const url = `/posts/${idToWire(postId)}`
 ```
 
@@ -540,7 +540,7 @@ const userId = await getAuthUserId(ctx)
 ```
 
 ```typescript
-import { identityEquals } from '@noboil/spacetimedb/server'
+import { identityEquals } from 'noboil/spacetimedb/server'
 
 ;(ctx, args) => {
   const userId = ctx.sender
@@ -561,7 +561,7 @@ await ctx.storage.getUrl(storageId)
 ```
 
 ```typescript
-import { useUpload } from '@noboil/spacetimedb/react'
+import { useUpload } from 'noboil/spacetimedb/react'
 
 const { upload } = useUpload({
   registerFile: async ({ data, ...meta }) => {
@@ -588,7 +588,7 @@ try {
 ```typescript
 throw new SenderError('NOT_FOUND: post:update')
 
-import { extractErrorData, getErrorCode } from '@noboil/spacetimedb'
+import { extractErrorData, getErrorCode } from 'noboil/spacetimedb'
 
 try {
   await createPost(data)

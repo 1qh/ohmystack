@@ -1,6 +1,6 @@
 ---
 title: Convex vs SpacetimeDB
-description: Where the @noboil/convex and @noboil/spacetimedb APIs diverge — and why.
+description: Where the noboil/convex and noboil/spacetimedb APIs diverge — and why.
 ---
 
 The rest of the docs cover the noboil API as one thing, because almost every component, hook, schema helper, and convention works the same on both backends. The handful of places where the libraries genuinely differ live here.
@@ -13,12 +13,12 @@ Almost every snippet in the docs is the same code on both backends. The only thi
 
 ```ts
 // before
-import { noboil } from '@noboil/convex/server'
-import { useFormMutation, Form } from '@noboil/convex/components'
+import { noboil } from 'noboil/convex/server'
+import { useFormMutation, Form } from 'noboil/convex/components'
 
 // after
-import { noboil } from '@noboil/spacetimedb/server'
-import { useFormMutation, Form } from '@noboil/spacetimedb/components'
+import { noboil } from 'noboil/spacetimedb/server'
+import { useFormMutation, Form } from 'noboil/spacetimedb/components'
 ```
 
 `useForm`, `useFormMutation`, `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OrgAvatar`, `RoleBadge`, `OfflineIndicator`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `Devtools`, `useList`, `useSearch`, `useBulkSelection`, `useBulkMutate`, `useSoftDelete`, `useUpload`, `useOwnRows`, `useInfiniteList`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgMutation`, `useOrgQuery`, `OrgProvider`, `createOrgHooks`, `usePresence`, `useOptimisticMutation`, `singletonCrud` results, `child()`, `file()`, `files()`, `makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`, `makeOrg`, `schema()`, `noboil()` — all symmetric.
@@ -31,7 +31,7 @@ Convex needs its `query`/`mutation`/`action`/etc. builders and `getAuthUserId` a
 
 ```ts
 // Convex
-import { noboil } from '@noboil/convex/server'
+import { noboil } from 'noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { s } from './s'
@@ -44,7 +44,7 @@ export const api = noboil({
 })
 
 // SpacetimeDB
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 
 export default noboil({ tables: ({ table }) => ({

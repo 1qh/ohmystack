@@ -168,7 +168,7 @@ const results = usePaginatedQuery(
 | Where clauses | Runtime `.filter()` | Convex `.withIndex()` |
 | Conflict detection | `expectedUpdatedAt` | `c.patch(id, data, expectedUpdatedAt)` |
 | Author enrichment | Automatic | `c.withAuthor(docs)` |
-| Rate limiting | `rateLimit` option | Manual (`checkRateLimit` from `@noboil/convex/server`) |
+| Rate limiting | `rateLimit` option | Manual (`checkRateLimit` from `noboil/convex/server`) |
 
 ## Decision tree
 

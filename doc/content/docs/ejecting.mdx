@@ -20,9 +20,9 @@ noboil is designed for incremental ejection. You can replace one factory at a ti
 ## The spectrum
 
 ```
-Full @noboil/convex ←──────────────────────────→ Full raw Convex
+Full noboil/convex ←──────────────────────────→ Full raw Convex
 
-crud() for all   crud() + custom    custom only,     no @noboil/convex
+crud() for all   crud() + custom    custom only,     no noboil/convex
 tables           queries on hot     keep schemas     at all
                  paths
 ```
@@ -143,7 +143,7 @@ The frontend doesn't change — it still imports `api.blog.list`.
 If you eject all factories for a table, you can also replace the branded schema with a plain Convex table definition:
 
 ```tsx
-import { ownedTable } from '@noboil/convex/server'
+import { ownedTable } from 'noboil/convex/server'
 import { owned } from './s'
 blog: ownedTable(owned.blog)
 ```
@@ -170,7 +170,7 @@ blog: defineTable({
 
 Replace React hooks with Convex equivalents:
 
-| @noboil/convex | Raw Convex |
+| noboil/convex | Raw Convex |
 | ----------------- | ---------- |
 | `useList(api.blog.list)` | `usePaginatedQuery(api.blog.list, {}, { initialNumItems: 50 })` |
 | `useFormMutation(api.blog.create, owned.blog)` | `useMutation(api.blog.create)` + manual form state |
@@ -209,7 +209,7 @@ The client-side hooks (`useList`, `usePresence`, `useUpload`) are independent ut
 For a setup like:
 
 ```typescript
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 
 export default noboil({ tables: ({ table }) => ({
@@ -272,7 +272,7 @@ spacetimedb.reducer({ name: 'rm_post' }, { id: t.u32() }, (ctx, { id }) => {
 Replace:
 
 ```typescript
-import { noboil } from '@noboil/spacetimedb/server'
+import { noboil } from 'noboil/spacetimedb/server'
 import { s } from '../s'
 
 export default noboil({ tables: ({ table }) => ({
@@ -344,10 +344,10 @@ const reducers = spacetimedb.exportGroup({
 })
 ```
 
-## Step 3: Remove @noboil/spacetimedb from the module
+## Step 3: Remove noboil/spacetimedb from the module
 
 ```bash
-bun remove @noboil/spacetimedb
+bun remove noboil/spacetimedb
 ```
 
 Update imports in your module file:
@@ -361,11 +361,11 @@ import { schema, t, table, SenderError } from 'spacetimedb/server'
 The client-side hooks are independent of the server factories. You can keep using them:
 
 ```typescript
-import { useList, usePresence, useUpload } from '@noboil/spacetimedb/react'
-import { zodFromTable } from '@noboil/spacetimedb'
+import { useList, usePresence, useUpload } from 'noboil/spacetimedb/react'
+import { zodFromTable } from 'noboil/spacetimedb'
 ```
 
-If you want to remove `@noboil/spacetimedb` entirely from the client too, replace:
+If you want to remove `noboil/spacetimedb` entirely from the client too, replace:
 
 - `useList` with your own filtering/pagination logic
 - `usePresence` with direct `useTable` + `useReducer` calls

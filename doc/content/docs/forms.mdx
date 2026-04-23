@@ -13,7 +13,7 @@ You have a blog schema in `s.ts` and a registered table via `noboil()`. Build a 
 
 ```tsx
 import { api } from '@/backend/lazy'
-import { Form, useFormMutation } from '@noboil/convex/components'
+import { Form, useFormMutation } from 'noboil/convex/components'
 import { s } from '@/backend/s'
 
 const CreatePost = () => {
@@ -78,8 +78,8 @@ For multi-file uploads, use `<Files>` against a `files()` field.
 `useFormMutation` pre-fills values from an existing record via `pickValues`:
 
 ```tsx
-import { useFormMutation } from '@noboil/convex/components'
-import { pickValues } from '@noboil/convex/zod'
+import { useFormMutation } from 'noboil/convex/components'
+import { pickValues } from 'noboil/convex/zod'
 
 const EditPost = ({ post }: { post: BlogRow }) => {
   const form = useFormMutation({
@@ -133,7 +133,7 @@ const form = useFormMutation({
   autoSave: { enabled: true, debounceMs: 1000 }
 })
 
-import { AutoSaveIndicator } from '@noboil/convex/components'
+import { AutoSaveIndicator } from 'noboil/convex/components'
 ;<AutoSaveIndicator lastSaved={form.lastSaved} />
 ```
 
@@ -180,7 +180,7 @@ The `asyncValidate` runs 500ms after the user stops typing and shows inline feed
 For complex forms like onboarding, use `defineSteps` to split into typed steps.
 
 ```tsx
-import { defineSteps } from '@noboil/convex/components'
+import { defineSteps } from 'noboil/convex/components'
 
 const { StepForm, useStepper } = defineSteps(
   { id: 'profile', label: 'Profile', schema: profileStep },
@@ -240,7 +240,7 @@ Customize step indicator styling without forking components — pass `stepIndica
 For instant-feeling delete buttons:
 
 ```tsx
-import { useOptimisticMutation } from '@noboil/convex/react'
+import { useOptimisticMutation } from 'noboil/convex/react'
 
 const { execute, isPending } = useOptimisticMutation({
   mutation: api.blog.rm,
@@ -300,7 +300,7 @@ const form = useFormMutation({
 **Rate limit errors** — when a mutation returns `RATE_LIMITED`, the default error toast shows "Too many requests". For custom UX, use `handleError`:
 
 ```tsx
-import { handleError } from '@noboil/convex/server'
+import { handleError } from 'noboil/convex/server'
 
 const form = useFormMutation({
   schema: s.blog,
@@ -317,7 +317,7 @@ const form = useFormMutation({
 **Error boundary** — wrap pages with `ErrorBoundary` to catch unhandled errors:
 
 ```tsx
-import { ErrorBoundary } from '@noboil/convex/components'
+import { ErrorBoundary } from 'noboil/convex/components'
 
 <ErrorBoundary>
   <BlogEditor />

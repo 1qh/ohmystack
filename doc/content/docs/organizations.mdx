@@ -8,7 +8,7 @@ A complete multi-tenant system: orgs, members, roles, invites, join requests, pe
 ## Schema setup
 
 ```ts
-import { schema, orgSchema } from '@noboil/convex/schema'
+import { schema, orgSchema } from 'noboil/convex/schema'
 import { object, string } from 'zod/v4'
 
 export const s = schema({
@@ -79,7 +79,7 @@ The `create` reducer checks org membership before inserting. `update` and `rm` c
 Wrap your layout with `OrgProvider`. Components inside read the active org via `useOrg`, scope queries with `useOrgQuery`, and call mutations with `useOrgMutation` — `orgId` is injected automatically.
 
 ```tsx
-import { OrgProvider, useOrg, useOrgQuery, useOrgMutation, useActiveOrg, useMyOrgs } from '@noboil/convex/react'
+import { OrgProvider, useOrg, useOrgQuery, useOrgMutation, useActiveOrg, useMyOrgs } from 'noboil/convex/react'
 
 <OrgProvider org={org} role={role} membership={membership}>
   {children}
@@ -97,7 +97,7 @@ await remove({ id: projectId })
 ### Typed bindings with createOrgHooks
 
 ```ts
-import { createOrgHooks } from '@noboil/convex/react'
+import { createOrgHooks } from 'noboil/convex/react'
 
 const { useOrg, useActiveOrg, useMyOrgs, useOrgQuery, useOrgMutation } = createOrgHooks(api.org)
 ```
@@ -120,7 +120,7 @@ table(s.wiki, { acl: true, softDelete: true })
 Use `canEditResource` to gate UI:
 
 ```ts
-import { canEditResource } from '@noboil/convex/react'
+import { canEditResource } from 'noboil/convex/react'
 
 const canEdit = canEditResource({
   resource: wiki,
@@ -139,7 +139,7 @@ table(s.task, { aclFrom: { field: 'projectId', table: 'project' } })
 ## Cascade delete
 
 ```ts
-import { orgCascade } from '@noboil/convex/server'
+import { orgCascade } from 'noboil/convex/server'
 
 table(s.project, {
   acl: true,
@@ -204,7 +204,7 @@ Invite tokens are 24 random bytes (`crypto.getRandomValues()`) encoded as a 32-c
 The active org is stored as a cookie so server components can read it.
 
 ```tsx
-import { setActiveOrgCookie, getActiveOrg, clearActiveOrgCookie } from '@noboil/convex/next'
+import { setActiveOrgCookie, getActiveOrg, clearActiveOrgCookie } from 'noboil/convex/next'
 
 await setActiveOrgCookie(orgId)
 const activeOrg = await getActiveOrg()
@@ -212,7 +212,7 @@ await clearActiveOrgCookie()
 ```
 
 ```tsx
-import { setActiveOrgCookieClient } from '@noboil/convex/react'
+import { setActiveOrgCookieClient } from 'noboil/convex/react'
 
 setActiveOrgCookieClient(orgId)
 ```
@@ -228,7 +228,7 @@ setActiveOrgCookieClient(orgId)
 ## Handling permission errors
 
 ```tsx
-import { handleError } from '@noboil/convex/server'
+import { handleError } from 'noboil/convex/server'
 
 try {
   await createProject({ name, orgId: org.id })
@@ -252,7 +252,7 @@ import {
   OrgAvatar,
   RoleBadge,
   OfflineIndicator
-} from '@noboil/convex/components'
+} from 'noboil/convex/components'
 ```
 
 See [Components](./components) for the full reference.

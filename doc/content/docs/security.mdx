@@ -134,7 +134,7 @@ Sanitization is applied recursively to all string values in nested objects and a
 Middleware is a composable security pipeline that runs around every CRUD operation. Configure it once in `noboil()` config and it applies to all tables:
 
 ```ts
-import { auditLog, inputSanitize, slowQueryWarn } from '@noboil/convex/server'
+import { auditLog, inputSanitize, slowQueryWarn } from 'noboil/convex/server'
 
 noboil({
   query, mutation, action, internalQuery, internalMutation, getAuthUserId,
@@ -156,7 +156,7 @@ noboil({
 **Custom middleware:**
 
 ```ts
-import type { Middleware } from '@noboil/convex/server'
+import type { Middleware } from 'noboil/convex/server'
 
 const notifyOnCreate: Middleware = {
   name: 'notifyOnCreate',
@@ -187,7 +187,7 @@ Middleware can also be applied per-table via `hooks` on individual table options
 On the client, use `matchError` or `handleError`:
 
 ```ts
-import { matchError } from '@noboil/convex/server'
+import { matchError } from 'noboil/convex/server'
 
 const msg = matchError(error, {
   NOT_FOUND: () => 'Item not found',
@@ -220,7 +220,7 @@ const techPosts = useQuery(api.blog.pubIndexed, {
 Enable `strictFilter: true` in `noboil()` config to throw instead of warn when a filter set exceeds 1,000 docs. Recommended in production.
 
 ```ts
-import { warnLargeFilterSet } from '@noboil/convex/server'
+import { warnLargeFilterSet } from 'noboil/convex/server'
 
 const docs = await ctx.db.query('post').collect()
 warnLargeFilterSet(docs.length, 'post', 'home-feed')

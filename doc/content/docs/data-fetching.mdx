@@ -55,7 +55,7 @@ export default noboil({ tables: ({ table }) => ({
 
 ```tsx
 'use client'
-import { useList } from '@noboil/convex/react'
+import { useList } from 'noboil/convex/react'
 
 const Posts = () => {
   const { items, hasMore, loadMore, isLoading } = useList(api.blog.list, {
@@ -78,7 +78,7 @@ The shape is the same on both. SpacetimeDB users can also drop down to `useTable
 ```tsx
 import { useTable } from 'spacetimedb/react'
 import { tables } from '@/generated/module_bindings'
-import { useList } from '@noboil/spacetimedb/react'
+import { useList } from 'noboil/spacetimedb/react'
 
 const [posts, isReady] = useTable(tables.post)
 const { data, hasMore, loadMore } = useList(posts, isReady, { pageSize: 20 })
@@ -299,7 +299,7 @@ table(s.task, { softDelete: true })
 ```
 
 ```tsx
-import { useSoftDelete } from '@noboil/convex/react'
+import { useSoftDelete } from 'noboil/convex/react'
 
 const { softDelete } = useSoftDelete({
   deleteMutation: api.task.rm,
@@ -320,7 +320,7 @@ const { items: deleted } = useList(api.task.list, { where: { deletedAt: { $gt: 0
 `useBulkMutate` runs a list of mutations concurrently with progress tracking:
 
 ```tsx
-import { useBulkMutate } from '@noboil/convex/react'
+import { useBulkMutate } from 'noboil/convex/react'
 
 const { execute, progress, isPending } = useBulkMutate({
   mutation: api.blog.rm,  // or mutate: id => removeBlog({ id })
@@ -341,7 +341,7 @@ Convex's bulk endpoints accept an `items` or `ids` array directly (capped at `BU
 <Tab value="Convex">
 
 ```tsx
-import { useOwnRows } from '@noboil/convex/react'
+import { useOwnRows } from 'noboil/convex/react'
 
 const rows = useOwnRows(items, userId)
 rows.map(r => (r.own ? <EditButton id={r._id} /> : null))
@@ -351,7 +351,7 @@ rows.map(r => (r.own ? <EditButton id={r._id} /> : null))
 <Tab value="SpacetimeDB">
 
 ```ts
-import { useOwnRows } from '@noboil/spacetimedb/react'
+import { useOwnRows } from 'noboil/spacetimedb/react'
 
 const { identity } = useSpacetimeDB()
 const ownedPosts = useOwnRows(posts, identity ? p => p.userId.isEqual(identity) : null)
@@ -497,7 +497,7 @@ SpacetimeDB is an in-memory database. Subscriptions don't support `LIMIT`, `OFFS
 Use `warnLargeFilterSet` to catch unbounded data patterns during development:
 
 ```ts
-import { warnLargeFilterSet } from '@noboil/spacetimedb/server'
+import { warnLargeFilterSet } from 'noboil/spacetimedb/server'
 
 warnLargeFilterSet(rows.length, 'posts', 'home-feed')
 warnLargeFilterSet(rows.length, 'posts', 'home-feed', true) // strict mode (throw)
@@ -511,7 +511,7 @@ warnLargeFilterSet(rows.length, 'posts', 'home-feed', true) // strict mode (thro
 In dev mode, `Devtools` auto-mounts inside `<Form>`. To render it standalone:
 
 ```tsx
-import { Devtools } from '@noboil/convex/react'
+import { Devtools } from 'noboil/convex/react'
 
 <Devtools position='bottom-right' defaultTab='subs' />
 ```

@@ -21,7 +21,7 @@ Pick your database, choose whether to include demo apps, and you have a working 
 ## Define a schema, get an API
 
 ```ts
-import { schema, file, files } from '@noboil/convex/schema'
+import { schema, file, files } from 'noboil/convex/schema'
 import { array, boolean, object, string, enum as zenum } from 'zod/v4'
 
 export const s = schema({
@@ -39,7 +39,7 @@ export const s = schema({
 ```
 
 ```ts
-import { noboil } from '@noboil/convex/server'
+import { noboil } from 'noboil/convex/server'
 // ...
 export const api = noboil({ ...config, tables: ({ table }) => ({
   blog: table(s.blog, { rateLimit: { max: 10, window: 60_000 }, search: 'content' })
@@ -65,7 +65,7 @@ Table types: `owned` (user-scoped), `org` (multi-tenant), `singleton` (one per u
 **Prebuilt UI** — 16 typed form fields, multi-step wizards, editor management, error boundaries, and access control guards. Pass a Zod schema and get a working form:
 
 ```tsx
-import { Form, useFormMutation } from '@noboil/convex/components'
+import { Form, useFormMutation } from 'noboil/convex/components'
 
 const form = useFormMutation({ mutation: api.blog.create, schema: s.blog })
 

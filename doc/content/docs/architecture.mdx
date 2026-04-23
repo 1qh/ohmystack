@@ -10,7 +10,7 @@ The mental model. Read this once and you can predict noboil's behavior instead o
 You define a Zod schema once. Everything else — the database table definition, the CRUD endpoints, the TypeScript types for input validation and query results — is derived from that single source of truth.
 
 ```ts
-import { schema } from '@noboil/convex/schema'
+import { schema } from 'noboil/convex/schema'
 import { boolean, object, string } from 'zod/v4'
 
 export const s = schema({
@@ -59,7 +59,7 @@ Created by makeOrgScoped() -> use orgCrud() + orgTable()
 `noboil()` is the single entry point. Call it once with a config object that includes a `tables` callback mapping each table name to a registered table:
 
 ```ts
-import { noboil } from '@noboil/convex/server'
+import { noboil } from 'noboil/convex/server'
 import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { s } from './s'
