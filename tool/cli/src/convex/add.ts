@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
+/* oxlint-disable eslint(complexity) */
+/* eslint-disable no-console, complexity */
 import { join } from 'node:path'
 import { bold, dim, green, red, yellow } from '../ansi'
 import { camelToTitle, hasFlag, parseEnumFieldDef, readEqFlag, writeIfNotExists } from '../shared/cli'
@@ -313,6 +314,16 @@ const add = async (args: string[] = []) => {
     process.exit(1)
   }
   const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type)
+  const { loadConfig } = await import('../config')
+  const userConfig = await loadConfig(process.cwd())
+  const hookCtx = {
+    db: 'convex' as const,
+    fields: fields.map(f => ({ name: f.name, optional: f.optional, type: typeof f.type === 'object' ? 'enum' : f.type })),
+    name: flags.name,
+    parent: flags.parent,
+    type: flags.type
+  }
+  if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
   const convexPath = join(process.cwd(), flags.convexDir)
   const appPath = join(process.cwd(), flags.appDir)
   console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
@@ -356,6 +367,7 @@ const add = async (args: string[] = []) => {
   console.log(`  ${dim('1.')} Import and register in your schema.ts`)
   console.log(`  ${dim('2.')} Add ${flags.type === 'child' ? 'childCrud' : factoryFn(flags.type)} import to your lazy.ts`)
   console.log(`  ${dim('3.')} Update guarded-api.ts to include '${flags.name}'\n`)
+  if (userConfig?.hooks?.afterAdd) await userConfig.hooks.afterAdd(hookCtx)
   return { created, skipped }
 }
 if (process.argv[1]?.endsWith('add.ts')) add(process.argv.slice(2))

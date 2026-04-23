@@ -286,8 +286,18 @@ const promptInteractive = async (): Promise<AddFlags | null> => {
     type: result.type
   }
 }
-const addSync = (flags: AddFlags) => {
+const addSync = async (flags: AddFlags) => {
   const fields = flags.fields.length > 0 ? flags.fields : defaultFields(flags.type)
+  const { loadConfig } = await import('../config')
+  const userConfig = await loadConfig(process.cwd())
+  const hookCtx = {
+    db: 'spacetimedb' as const,
+    fields: fields.map(f => ({ name: f.name, optional: f.optional, type: typeof f.type === 'object' ? 'enum' : f.type })),
+    name: flags.name,
+    parent: flags.parent,
+    type: flags.type
+  }
+  if (userConfig?.hooks?.beforeAdd) await userConfig.hooks.beforeAdd(hookCtx)
   const modulePath = join(process.cwd(), flags.moduleDir)
   const appPath = join(process.cwd(), flags.appDir)
   console.log(`\n${bold(`Adding ${flags.type} table: ${flags.name}`)}\n`)
@@ -331,6 +341,7 @@ const addSync = (flags: AddFlags) => {
   console.log(`  ${dim('1.')} Register table in your module schema()`)
   console.log(`  ${dim('2.')} Export reducer from your module entrypoint`)
   console.log(`  ${dim('3.')} Run spacetime publish and spacetime generate\n`)
+  if (userConfig?.hooks?.afterAdd) await userConfig.hooks.afterAdd(hookCtx)
   return { created, skipped }
 }
 const add = async (args: string[] = []) => {
