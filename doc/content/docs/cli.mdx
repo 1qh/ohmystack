@@ -9,6 +9,201 @@ Three CLIs ship with noboil. `noboil` handles project creation and top-level ops
 
 Running `noboil` with no args opens an **interactive dashboard** with single-key hotkeys. `/` filters commands, `↑↓` navigates recent history, any letter runs the matching command instantly.
 
+## Live help output
+
+These blocks are regenerated from actual CLI `--help` output by `doc/scripts/gen-cli-help.ts`. They are the source of truth for every flag and description.
+
+{/* AUTO-GENERATED:HELP:START */}
+**noboil --help**
+
+```text
+noboil — schema-first, zero-boilerplate fullstack
+
+Usage:
+  noboil <command> [options]
+
+Commands:
+  add          Add a table/endpoint (auto-detects DB from .noboilrc.json)
+  completions  Print or install shell completion script
+  convex       Run a Convex subcommand (add, check, docs, migrate, viz, doctor)
+  doctor       Check project health and version alignment
+  eject        Detach from upstream, convert to standalone
+  init         Create a new noboil project
+  status       Show project drift, last sync, and health at a glance
+  stdb         Run a SpacetimeDB subcommand (add, dev, generate, migrate, use, viz, ...)
+  sync         Pull and apply upstream changes
+  upgrade      Install the latest noboil version
+
+Run noboil <command> --help for command-specific options.
+```
+
+**noboil init --help**
+
+```text
+noboil init — create a new noboil project
+
+Usage:
+  noboil init [directory]
+
+Options:
+  --db=convex|spacetimedb    Skip database prompt
+  --no-demos                 Skip demo apps
+  --skip-install             Skip bun install after scaffolding
+  --no-git                   Skip auto git init + initial commit
+  --help, -h                 Show this help
+```
+
+**noboil doctor --help**
+
+```text
+noboil doctor — check project health
+Usage:
+  noboil doctor [--fix] [--last-error]
+Options:
+  --fix          Auto-remediate common issues (install deps, patch tsconfig)
+  --last-error   Print the most recent crash log
+  --help, -h     Show this help
+```
+
+**noboil status --help**
+
+```text
+noboil status — snapshot of the current project
+Usage:
+  noboil status
+Shows: database, scaffolded-from hash, drift vs upstream, last sync, install health.
+```
+
+**noboil sync --help**
+
+```text
+noboil sync — pull upstream changes
+
+Usage:
+  noboil sync [options]
+
+Options:
+  --dry-run                  Show what would change without writing files
+  --force                    Update files even when locally modified
+  --help, -h                 Show this help
+```
+
+**noboil eject --help**
+
+```text
+noboil eject — inline noboil library locally
+
+Usage:
+  noboil eject [--dry-run] [--yes]
+
+Options:
+  --dry-run      Show what would change without writing files
+  --yes, -y      Skip confirmation prompt
+  --help, -h     Show this help
+```
+
+**noboil upgrade --help**
+
+```text
+noboil upgrade — install latest noboil
+Usage:
+  noboil upgrade [--global]
+Options:
+  --global, -g   Upgrade the globally installed binary (bun add -g noboil@latest)
+  --help, -h     Show this help
+```
+
+**noboil-convex --help**
+
+```text
+noboil/convex — Zod schema → fullstack app
+
+Usage:
+  noboil-convex <command> [options]
+
+Commands:
+  add              Add a new table/endpoint to your project
+  check            Validate schema/factory consistency
+  docs             Generate API documentation
+  doctor           Run project diagnostics
+  migrate          Schema diff and migration plans
+  viz              Visualize schema relationships
+
+Run noboil-convex <command> --help for command-specific options.
+```
+
+**noboil-convex add --help**
+
+```text
+noboil-convex add — add a new table/endpoint to your project
+
+Usage:
+  noboil-convex add <table-name> [options]
+
+Options:
+  --type=TYPE           Table type: owned, org, singleton, cache, child (default: owned)
+  --fields=FIELDS       Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)")
+  --parent=TABLE        Parent table name (required for child type)
+  --convex-dir=DIR      Convex directory (default: convex)
+  --app-dir=DIR         App directory (default: src/app)
+  --help, -h            Show this help
+
+Examples:
+  $ noboil-convex add todo --fields="title:string,done:boolean"
+  $ noboil-convex add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"
+  $ noboil-convex add message --type=child --parent=chat --fields="text:string"
+  $ noboil-convex add profile --type=singleton --fields="displayName:string,bio:string?"
+  $ noboil-convex add movie --type=cache --fields="title:string,tmdb_id:number"
+```
+
+**noboil-stdb --help**
+
+```text
+noboil-stdb — Zod schema → fullstack app
+
+Usage:
+  noboil-stdb <command> [options]
+
+Commands:
+  add              Add a new table/reducer to your project
+  check            Validate schema/reducer consistency
+  dev              Start integrated local development workflow
+  docs             Generate API documentation
+  doctor           Run project diagnostics
+  generate         Generate project files (docker-compose, etc.)
+  migrate          Schema diff and publish migration plans
+  use              Switch SpacetimeDB target (local / cloud)
+  validate         Lint schema, reducers, indexes, and access control
+  viz              Visualize schema relationships
+
+Run noboil-stdb <command> --help for command-specific options.
+```
+
+**noboil-stdb add --help**
+
+```text
+noboil-stdb add — add a new table/reducer to your project
+
+Usage:
+  noboil-stdb add <table-name> [options]
+
+Options:
+  --type=TYPE           Table type: owned, org, singleton, cache, child (default: owned)
+  --fields=FIELDS       Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)")
+  --parent=TABLE        Parent table name (required for child type)
+  --module-dir=DIR      SpacetimeDB module directory (default: module)
+  --app-dir=DIR         App directory (default: src/app)
+  --help, -h            Show this help
+
+Examples:
+  $ noboil-stdb add todo --fields="title:string,done:boolean"
+  $ noboil-stdb add wiki --type=org --fields="title:string,content:string,status:enum(draft,published)"
+  $ noboil-stdb add message --type=child --parent=chat --fields="text:string"
+  $ noboil-stdb add profile --type=singleton --fields="displayName:string,bio:string?"
+  $ noboil-stdb add movie --type=cache --fields="title:string,externalId:string"
+```
+{/* AUTO-GENERATED:HELP:END */}
+
 ## Commands at a glance
 
 | CLI | Command | Hotkey | What it does |
