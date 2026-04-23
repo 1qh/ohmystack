@@ -319,8 +319,10 @@ const makeOrgTestUtils = (prefix: string) => ({
       /* */
     }
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   cleanupTestUsers: async () => {
-    await Promise.resolve()
+    httpCtx = null
+    userTokens.clear()
   },
   generateSlug: (suffix: string) => `${prefix}-${suffix}-${Date.now()}`
 })
