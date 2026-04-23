@@ -19,11 +19,8 @@ import { toast } from 'sonner'
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'
 import { wiki as wikiSchema } from '~/schema'
-const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
+const EditWikiForm = ({ wiki, wikis }: { wiki: Wiki; wikis: readonly Wiki[] }) => {
   const router = useRouter()
-  const { org } = useOrg()
-  const [wikis] = useTable(tables.wiki)
-  const wiki = wikis.find((w: Wiki) => w.id === wikiId && w.orgId === Number(org._id))
   const updateWikiReducer = useReducer(reducers.updateWiki)
   const rmWikiReducer = useReducer(reducers.rmWiki)
   const { remove } = useSoftDelete({
@@ -55,14 +52,13 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
     toast: { success: 'Wiki page saved' },
     transform: d => ({
       ...d,
-      deletedAt: wiki?.deletedAt,
-      editors: wiki?.editors,
-      expectedUpdatedAt: wiki?.updatedAt,
-      id: wikiId
+      deletedAt: wiki.deletedAt,
+      editors: wiki.editors,
+      expectedUpdatedAt: wiki.updatedAt,
+      id: wiki.id
     }),
-    values: wiki ? pickValues(wikiSchema, wiki) : undefined
+    values: pickValues(wikiSchema, wiki)
   })
-  if (!wiki) return <Skeleton className='h-40' />
   return (
     <Form
       className='space-y-4'
@@ -80,7 +76,7 @@ const EditWikiForm = ({ wikiId }: { wikiId: number }) => {
             <span className='flex-1' />
             <Button
               onClick={() => {
-                remove({ id: String(wikiId) }).then(() => router.push('/wiki'))
+                remove({ id: String(wiki.id) }).then(() => router.push('/wiki'))
               }}
               type='button'
               variant='destructive'>
@@ -111,7 +107,7 @@ const EditWikiPage = ({ params }: { params: Promise<{ wikiId: string }> }) => {
             <CardTitle>Edit wiki page</CardTitle>
           </CardHeader>
           <CardContent>
-            <EditWikiForm wikiId={id} />
+            <EditWikiForm wiki={wiki} wikis={wikis} />
           </CardContent>
         </Card>
       </div>
