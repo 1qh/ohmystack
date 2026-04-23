@@ -164,6 +164,21 @@ export const OrgProfile = __t.object("OrgProfile", {
   userId: __t.identity(),
 });
 export type OrgProfile = __Infer<typeof OrgProfile>;
+export const Poll = __t.object("Poll", {
+  options: __t.array(__t.string()),
+  question: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  updatedAt: __t.timestamp(),
+  userId: __t.identity(),
+});
+export type Poll = __Infer<typeof Poll>;
+export const PollVoteQuota = __t.object("PollVoteQuota", {
+  id: __t.u32(),
+  owner: __t.string(),
+  timestamps: __t.array(__t.f64()),
+});
+export type PollVoteQuota = __Infer<typeof PollVoteQuota>;
 export const Project = __t.object("Project", {
   description: __t.option(__t.string()),
   name: __t.string(),
@@ -176,6 +191,15 @@ export const Project = __t.object("Project", {
   userId: __t.identity(),
 });
 export type Project = __Infer<typeof Project>;
+export const SiteConfig = __t.object("SiteConfig", {
+  active: __t.bool(),
+  message: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  key: __t.string(),
+  updatedAt: __t.timestamp(),
+});
+export type SiteConfig = __Infer<typeof SiteConfig>;
 export const Task = __t.object("Task", {
   completed: __t.option(__t.bool()),
   priority: __t.option(__t.string()),
@@ -189,6 +213,16 @@ export const Task = __t.object("Task", {
   userId: __t.identity(),
 });
 export type Task = __Infer<typeof Task>;
+export const Vote = __t.object("Vote", {
+  option: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  idempotencyKey: __t.option(__t.string()),
+  parent: __t.string(),
+  seq: __t.u32(),
+  userId: __t.identity(),
+});
+export type Vote = __Infer<typeof Vote>;
 export const Wiki = __t.object("Wiki", {
   content: __t.option(__t.string()),
   slug: __t.string(),

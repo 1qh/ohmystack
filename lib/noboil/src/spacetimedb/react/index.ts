@@ -87,8 +87,12 @@ export type {
   SkipInfiniteListResult
 } from './use-infinite-list'
 export { useInfiniteList } from './use-infinite-list'
+export type { KvHookResult, KvRowBase, StdbKvRefs } from './use-kv'
+export { useKv } from './use-kv'
 export type { ListWhere, SkipListResult, UseListOptions, UseListResult, WhereGroup } from './use-list'
 export { useList, useOwnRows } from './use-list'
+export type { LogHookResult, LogRowBase, StdbLogRefs } from './use-log'
+export { useLog } from './use-log'
 export type { MutateOptions, MutateToast } from './use-mutate'
 export { defaultOnError, useMut, useMutate, useMutation } from './use-mutate'
 export { default as useOnlineStatus } from './use-online-status'
@@ -102,6 +106,8 @@ export type {
   UsePresenceResult
 } from './use-presence'
 export { usePresence } from './use-presence'
+export type { QuotaHookResult, QuotaRowBase, QuotaState, StdbQuotaRefs } from './use-quota'
+export { useQuota } from './use-quota'
 export type { UseSearchOptions, UseSearchResult } from './use-search'
 export { useSearch } from './use-search'
 export type { SoftDeleteOpts } from './use-soft-delete'

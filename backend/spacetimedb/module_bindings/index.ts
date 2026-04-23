@@ -32,6 +32,9 @@ import UpdateBlogReducer from "./update_blog_reducer";
 import CreateChatReducer from "./create_chat_reducer";
 import RmChatReducer from "./rm_chat_reducer";
 import UpdateChatReducer from "./update_chat_reducer";
+import CreatePollReducer from "./create_poll_reducer";
+import RmPollReducer from "./rm_poll_reducer";
+import UpdatePollReducer from "./update_poll_reducer";
 import CreateProjectReducer from "./create_project_reducer";
 import RmProjectReducer from "./rm_project_reducer";
 import UpdateProjectReducer from "./update_project_reducer";
@@ -69,6 +72,12 @@ import OrgApproveJoinReducer from "./org_approve_join_reducer";
 import OrgCancelJoinReducer from "./org_cancel_join_reducer";
 import OrgRejectJoinReducer from "./org_reject_join_reducer";
 import OrgRequestJoinReducer from "./org_request_join_reducer";
+import AppendVoteReducer from "./append_vote_reducer";
+import PurgeVoteByParentReducer from "./purge_vote_by_parent_reducer";
+import RmSiteConfigReducer from "./rm_site_config_reducer";
+import SetSiteConfigReducer from "./set_site_config_reducer";
+import ConsumePollVoteQuotaReducer from "./consume_poll_vote_quota_reducer";
+import RecordPollVoteQuotaReducer from "./record_poll_vote_quota_reducer";
 import CleanupTestDataReducer from "./cleanup_test_data_reducer";
 import BlogRow from "./blog_table";
 import BlogProfileRow from "./blog_profile_table";
@@ -81,8 +90,12 @@ import OrgInviteRow from "./org_invite_table";
 import OrgJoinRequestRow from "./org_join_request_table";
 import OrgMemberRow from "./org_member_table";
 import OrgProfileRow from "./org_profile_table";
+import PollRow from "./poll_table";
+import PollVoteQuotaRow from "./poll_vote_quota_table";
 import ProjectRow from "./project_table";
+import SiteConfigRow from "./site_config_table";
 import TaskRow from "./task_table";
+import VoteRow from "./vote_table";
 import WikiRow from "./wiki_table";
 /** Type-only namespace exports for generated type groups. */
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
@@ -268,6 +281,35 @@ const tablesSchema = __schema({
       { name: 'org_profile_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, OrgProfileRow),
+  poll: __table({
+    name: 'poll',
+    indexes: [
+      { accessor: 'id', name: 'poll_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'userId', name: 'poll_user_id_idx_btree', algorithm: 'btree', columns: [
+        'userId',
+      ] },
+    ],
+    constraints: [
+      { name: 'poll_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, PollRow),
+  pollVoteQuota: __table({
+    name: 'poll_vote_quota',
+    indexes: [
+      { accessor: 'id', name: 'poll_vote_quota_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'owner', name: 'poll_vote_quota_owner_idx_btree', algorithm: 'btree', columns: [
+        'owner',
+      ] },
+    ],
+    constraints: [
+      { name: 'poll_vote_quota_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'poll_vote_quota_owner_key', constraint: 'unique', columns: ['owner'] },
+    ],
+  }, PollVoteQuotaRow),
   project: __table({
     name: 'project',
     indexes: [
@@ -285,6 +327,21 @@ const tablesSchema = __schema({
       { name: 'project_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ProjectRow),
+  siteConfig: __table({
+    name: 'site_config',
+    indexes: [
+      { accessor: 'id', name: 'site_config_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'key', name: 'site_config_key_idx_btree', algorithm: 'btree', columns: [
+        'key',
+      ] },
+    ],
+    constraints: [
+      { name: 'site_config_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'site_config_key_key', constraint: 'unique', columns: ['key'] },
+    ],
+  }, SiteConfigRow),
   task: __table({
     name: 'task',
     indexes: [
@@ -302,6 +359,26 @@ const tablesSchema = __schema({
       { name: 'task_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, TaskRow),
+  vote: __table({
+    name: 'vote',
+    indexes: [
+      { accessor: 'id', name: 'vote_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'parent', name: 'vote_parent_idx_btree', algorithm: 'btree', columns: [
+        'parent',
+      ] },
+      { accessor: 'seq', name: 'vote_seq_idx_btree', algorithm: 'btree', columns: [
+        'seq',
+      ] },
+      { accessor: 'userId', name: 'vote_user_id_idx_btree', algorithm: 'btree', columns: [
+        'userId',
+      ] },
+    ],
+    constraints: [
+      { name: 'vote_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, VoteRow),
   wiki: __table({
     name: 'wiki',
     indexes: [
@@ -332,6 +409,9 @@ const reducersSchema = __reducers(
   __reducerSchema("create_chat", CreateChatReducer),
   __reducerSchema("rm_chat", RmChatReducer),
   __reducerSchema("update_chat", UpdateChatReducer),
+  __reducerSchema("create_poll", CreatePollReducer),
+  __reducerSchema("rm_poll", RmPollReducer),
+  __reducerSchema("update_poll", UpdatePollReducer),
   __reducerSchema("create_project", CreateProjectReducer),
   __reducerSchema("rm_project", RmProjectReducer),
   __reducerSchema("update_project", UpdateProjectReducer),
@@ -369,6 +449,12 @@ const reducersSchema = __reducers(
   __reducerSchema("org_cancel_join", OrgCancelJoinReducer),
   __reducerSchema("org_reject_join", OrgRejectJoinReducer),
   __reducerSchema("org_request_join", OrgRequestJoinReducer),
+  __reducerSchema("append_vote", AppendVoteReducer),
+  __reducerSchema("purge_vote_by_parent", PurgeVoteByParentReducer),
+  __reducerSchema("rm_siteConfig", RmSiteConfigReducer),
+  __reducerSchema("set_siteConfig", SetSiteConfigReducer),
+  __reducerSchema("consume_pollVoteQuota", ConsumePollVoteQuotaReducer),
+  __reducerSchema("record_pollVoteQuota", RecordPollVoteQuotaReducer),
   __reducerSchema("cleanup_test_data", CleanupTestDataReducer),
 );
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
