@@ -31,6 +31,7 @@ export default defineConfig({
   dts: { eager: true },
   entry: [...entries],
   format: 'esm',
+  noExternal: [/^@a\/ui/u],
   outDir: 'dist',
   sourcemap: true
 })
