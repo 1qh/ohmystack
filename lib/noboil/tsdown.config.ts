@@ -33,7 +33,6 @@ const writePublishPkgJson = async () => {
   Reflect.deleteProperty(published, 'files')
   Reflect.deleteProperty(published, 'devDependencies')
   Reflect.deleteProperty(published, 'scripts')
-  Reflect.deleteProperty(published, 'publishConfig')
   await writeFile('dist/package.json', `${JSON.stringify(published, null, 2)}\n`)
 }
 export default defineConfig({
