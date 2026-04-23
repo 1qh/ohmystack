@@ -11,6 +11,7 @@ const init = async (args: string[]) => {
     console.log(`  --db=convex|spacetimedb    ${dim('Skip database prompt')}`)
     console.log(`  --no-demos                 ${dim('Skip demo apps')}`)
     console.log(`  --skip-install             ${dim('Skip bun install after scaffolding')}`)
+    console.log(`  --no-git                   ${dim('Skip auto git init + initial commit')}`)
     console.log(`  --help, -h                 ${dim('Show this help')}\n`)
     return
   }
@@ -18,11 +19,13 @@ const init = async (args: string[]) => {
   let includeDemos: boolean | undefined
   let dir: string | undefined
   let skipInstall = false
+  let skipGit = false
   for (const arg of args)
     if (arg === '--db=convex') db = 'convex'
     else if (arg === '--db=spacetimedb') db = 'spacetimedb'
     else if (arg === '--no-demos') includeDemos = false
     else if (arg === '--skip-install') skipInstall = true
+    else if (arg === '--no-git') skipGit = true
     else if (!arg.startsWith('--')) dir = arg
   let defaultDb: Db | undefined
   if (!db) {
@@ -31,6 +34,6 @@ const init = async (args: string[]) => {
     defaultDb = prev.lastDb
   }
   const { runInitTui } = await import('./init-tui')
-  await runInitTui({ db, defaultDb, dir, includeDemos, skipInstall })
+  await runInitTui({ db, defaultDb, dir, includeDemos, skipGit, skipInstall })
 }
 export { init }

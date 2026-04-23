@@ -161,7 +161,10 @@ const applyFixes = (cwd: string, results: CheckResult[]): string[] => {
         const p = join(cwd, 'tsconfig.json')
         const cfg = JSON.parse(readFileSync(p, 'utf8')) as { compilerOptions?: { customConditions?: string[] } }
         cfg.compilerOptions ??= {}
-        cfg.compilerOptions.customConditions = [...(cfg.compilerOptions.customConditions ?? []), 'noboil-spacetimedb']
+        const existing = cfg.compilerOptions.customConditions ?? []
+        cfg.compilerOptions.customConditions = existing.includes('noboil-spacetimedb')
+          ? existing
+          : [...existing, 'noboil-spacetimedb']
         writeFileSync(p, `${JSON.stringify(cfg, null, 2)}\n`)
         actions.push("✔ tsconfig: added 'noboil-spacetimedb'")
       } catch {

@@ -26,6 +26,7 @@
     "postinstall": "sherif && bun script/patch-stdb-sdk.ts",
     "prepare": "bunx simple-git-hooks",
     "publish": "bun script/prep-publish.ts && bun publish --access public --cwd .cache/publish-staging/noboil",
+    "publish:dry": "bun script/prep-publish.ts && bun publish --dry-run --access public --cwd .cache/publish-staging/noboil",
     "setup": "bun script/setup.ts",
     "setup:convex": "bun script/setup-convex.ts",
     "setup:spacetimedb": "bun script/setup-spacetimedb.ts",

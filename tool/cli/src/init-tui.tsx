@@ -20,6 +20,7 @@ interface InitFlags {
   defaultDb?: Db
   dir?: string
   includeDemos?: boolean
+  skipGit?: boolean
   skipInstall: boolean
 }
 const DBS: DbChoice[] = [
@@ -148,12 +149,14 @@ const Scaffold = ({
   dir,
   includeDemos,
   onDone,
+  skipGit,
   skipInstall
 }: {
   db: Db
   dir: string
   includeDemos: boolean
   onDone: (state: ScaffoldState) => void
+  skipGit: boolean
   skipInstall: boolean
 }) => {
   const [state, setState] = useState<ScaffoldState>({ currentStep: 0, details: [], status: 'idle' })
@@ -230,11 +233,13 @@ const Scaffold = ({
           version: 1
         }
         writeFileSync(join(fullPath, '.noboilrc.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-        const gitInit = spawnSync('git', ['init', '-q'], { cwd: fullPath })
-        if (gitInit.status === 0) {
-          spawnSync('git', ['add', '-A'], { cwd: fullPath })
-          spawnSync('git', ['commit', '-q', '-m', 'chore: initial noboil scaffold'], { cwd: fullPath })
-          setState(s => ({ ...s, details: [...s.details, '  git init + initial commit'] }))
+        if (!skipGit) {
+          const gitInit = spawnSync('git', ['init', '-q'], { cwd: fullPath })
+          if (gitInit.status === 0) {
+            spawnSync('git', ['add', '-A'], { cwd: fullPath })
+            spawnSync('git', ['commit', '-q', '-m', 'chore: initial noboil scaffold'], { cwd: fullPath })
+            setState(s => ({ ...s, details: [...s.details, '  git init + initial commit'] }))
+          }
         }
         const { writeState } = await import('./shared/state')
         await writeState({ lastDb: db }).catch(() => null)
@@ -244,7 +249,7 @@ const Scaffold = ({
       }
     }
     run().catch(() => null)
-  }, [db, dir, includeDemos, skipInstall, attempt])
+  }, [db, dir, includeDemos, skipGit, skipInstall, attempt])
   useEffect(() => {
     if (state.status === 'done') {
       const t = setTimeout(() => onDone(state), 300)
@@ -358,6 +363,7 @@ const InitApp = ({ onExit, ...flags }: InitFlags & { onExit: (result: { dir: str
           dir={dir}
           includeDemos={includeDemos}
           onDone={handleScaffoldDone}
+          skipGit={Boolean(flags.skipGit)}
           skipInstall={Boolean(flags.skipInstall)}
         />
       ) : null}
