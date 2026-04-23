@@ -28,7 +28,9 @@ const useLog = <T extends LogRowBase>(refs: StdbLogRefs, args: { parent: string 
   }, [rows, args.parent])
   return {
     append: async ({ idempotencyKey, payload }) => {
-      await appendFn({ ...payload, idempotencyKey, parent: args.parent })
+      const merged: Record<string, unknown> = { ...payload, parent: args.parent }
+      if (idempotencyKey !== undefined) merged.idempotencyKey = idempotencyKey
+      await appendFn(merged)
     },
     data,
     isLoading: !isReady,

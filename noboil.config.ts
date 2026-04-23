@@ -39,10 +39,12 @@ const config = {
       'cvx-chat': 4101,
       'cvx-movie': 4102,
       'cvx-org': 4103,
+      'cvx-poll': 4104,
       'stdb-blog': 4200,
       'stdb-chat': 4201,
       'stdb-movie': 4202,
-      'stdb-org': 4203
+      'stdb-org': 4203,
+      'stdb-poll': 4204
     },
     convexApi: 4001,
     convexDashboard: 4500,

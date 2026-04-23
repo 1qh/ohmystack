@@ -6,16 +6,12 @@ import BasePage from '@a/e2e/base-page'
 class PollPage extends BasePage {
   public async createPoll(question: string, options: string[]): Promise<void> {
     await this.getQuestionInput().fill(question)
-    for (let i = 0; i < options.length; i += 1) {
-      const input = this.getOptionInput(i)
-      const visible = await input.isVisible().catch(() => false)
-      if (!visible) await this.getAddOptionButton().click()
-      await this.getOptionInput(i).fill(options[i] ?? '')
+    const tagInput = this.getOptionsTagInput()
+    for (const opt of options) {
+      await tagInput.fill(opt)
+      await tagInput.press('Enter')
     }
     await this.getCreateSubmit().click()
-  }
-  public getAddOptionButton(): Locator {
-    return this.$('poll-options', 'button').last()
   }
   public getBanner(): Locator {
     return this.$('poll-banner')
@@ -23,8 +19,8 @@ class PollPage extends BasePage {
   public getCreateSubmit(): Locator {
     return this.$('poll-create-submit')
   }
-  public getOptionInput(i: number): Locator {
-    return this.$('poll-options', `input[name="options.${i}"]`)
+  public getOptionsTagInput(): Locator {
+    return this.$('poll-options', 'input')
   }
   public getPollItems(): Locator {
     return this.$$('poll-item')
