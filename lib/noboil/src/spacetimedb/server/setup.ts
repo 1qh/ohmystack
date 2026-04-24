@@ -1359,6 +1359,7 @@ const wireKvFactories = ({
     const sd = tblOpts[name]?.softDelete
     const hasOpts = Boolean(rl) || Boolean(sd)
     const { exports: kvExports } = makeKv(reducer as never, {
+      expectedUpdatedAtField: bridgeT.timestamp().optional(),
       fields,
       keyField: bridgeT.string() as never,
       options: hasOpts ? { rateLimit: rl, softDelete: sd } : undefined,

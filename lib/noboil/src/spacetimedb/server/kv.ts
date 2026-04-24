@@ -8,6 +8,7 @@ const findByKey = (table: KvTableLike, key: string): KvRow | undefined => {
   for (const row of table) if (row.key === key) return row
 }
 interface KvConfig<DB, Tbl extends KvTableLike> {
+  expectedUpdatedAtField?: ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
   fields: FieldBuilders
   keyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   options?: KvOptions<DB>
@@ -60,7 +61,7 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   },
   config: KvConfig<DB, Tbl>
 ): KvExports => {
-  const { fields, keyField, options, table: tableAccessor, tableName, writeRole } = config
+  const { expectedUpdatedAtField, fields, keyField, options, table: tableAccessor, tableName, writeRole } = config
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
   const softDelete = options?.softDelete ?? false
@@ -69,19 +70,27 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   const restoreName = `restore_${tableName}`
   const setParams: FieldBuilders = { key: keyField, ...fields }
   const rmParams: FieldBuilders = { key: keyField }
-  const setReducer = spacetimedb.reducer({ name: setName }, setParams, (ctx, args) => {
+  const setParamsWithConflict: FieldBuilders = expectedUpdatedAtField
+    ? { expectedUpdatedAt: expectedUpdatedAtField, ...setParams }
+    : setParams
+  const setReducer = spacetimedb.reducer({ name: setName }, setParamsWithConflict, (ctx, args) => {
     if (writeRole && !writeRole({ db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }))
       throw makeError('FORBIDDEN', `${tableName}:set`)
     if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
     const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
-    const typedArgs = args as Record<string, unknown> & { key: string }
-    const { key, ...rawPayload } = typedArgs
+    const typedArgs = args as Record<string, unknown> & { expectedUpdatedAt?: Timestamp; key: string }
+    const { expectedUpdatedAt, key, ...rawPayload } = typedArgs
     let payload: Record<string, unknown> = rawPayload
     if (hooks?.beforeSet) payload = hooks.beforeSet(hookCtx, { data: payload, key })
     const table = tableAccessor(ctx.db) as unknown as KvTableLike
     const existing = findByKey(table, key)
     let row: KvRow
     if (existing) {
+      if (
+        expectedUpdatedAt !== undefined &&
+        existing.updatedAt.microsSinceUnixEpoch !== expectedUpdatedAt.microsSinceUnixEpoch
+      )
+        throw makeError('CONFLICT', `${tableName}:set`)
       const basePatch = softDelete && existing.deletedAt ? { ...payload, deletedAt: null } : payload
       const patched = applyPatch(
         existing as unknown as Record<string, unknown>,

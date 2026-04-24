@@ -6,7 +6,7 @@ import { number, string } from 'zod/v4'
 import type { CrudHooks, DbCtx, DbLike, HookCtx, KvFactoryResult, Mb, MutCtx, Qb, RateLimitConfig, Rec } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
-import { checkRateLimit, dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
+import { addUrls, checkRateLimit, dbDelete, dbInsert, dbPatch, detectFiles, err, errValidation, time } from './helpers'
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const isSoftDeleted = (doc: null | Rec): boolean => doc?.deletedAt !== undefined
 const makeKv = <S extends ZodRawShape>({
@@ -28,6 +28,9 @@ const makeKv = <S extends ZodRawShape>({
   table: string
   writeRole?: ((ctx: DbCtx) => boolean | Promise<boolean>) | boolean
 }): KvFactoryResult<S> => {
+  const fileFs = detectFiles(schema.shape)
+  const addFileUrls = async (doc: null | Rec, storage: unknown): Promise<null | Rec> =>
+    doc ? addUrls({ doc, fileFields: fileFs, storage: storage as never }) : doc
   const byKey = async (db: DbLike, key: string): Promise<null | Rec> =>
     db
       .query(table)
@@ -52,18 +55,19 @@ const makeKv = <S extends ZodRawShape>({
   const setArgs = { expectedUpdatedAt: number().optional(), key: string(), payload: schema }
   const get = b.q({
     args: typed({ ...keyArgs }),
-    handler: typed(async (c: DbCtx, { key }: { key: string }) => {
+    handler: typed(async (c: DbCtx & { storage: unknown }, { key }: { key: string }) => {
       const bad = assertKey(key)
       if (bad) return bad
       const doc = await byKey(c.db, key)
       if (softDelete && isSoftDeleted(doc)) return null
-      return doc
+      return addFileUrls(doc, c.storage)
     })
   })
   const list = b.q({
-    handler: typed(async (c: DbCtx) => {
+    handler: typed(async (c: DbCtx & { storage: unknown }) => {
       const rows = await c.db.query(table).collect()
-      return softDelete ? rows.filter(r => !isSoftDeleted(r)) : rows
+      const filtered = softDelete ? rows.filter(r => !isSoftDeleted(r)) : rows
+      return Promise.all(filtered.map(async r => addFileUrls(r, c.storage)))
     })
   })
   const set = b.m({
