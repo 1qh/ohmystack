@@ -17,11 +17,11 @@ const spacetimedb = noboil({
       cascade: { foreignKey: 'projectId', table: s.task.__name },
       extra: { editors: t.array(t.identity()).optional() }
     }),
-    siteConfig: table(s.siteConfig),
+    siteConfig: table(s.siteConfig, { softDelete: true }),
     task: table(s.task, {
       extra: { assigneeId: t.identity().optional() }
     }),
-    vote: table(s.vote),
+    vote: table(s.vote, { softDelete: true }),
     wiki: table(s.wiki, {
       compoundIndex: ['orgId', 'slug'],
       extra: { editors: t.array(t.identity()).optional() },

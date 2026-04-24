@@ -12,7 +12,16 @@ import { createPoll } from '~/schema'
 const POLL_QUOTA = { durationMs: 60_000, limit: 30 }
 const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) => {
   const log = useLog<{ option: string; parent: string; seq: number }>(
-    { append: reducers.appendVote, purgeByParent: reducers.purgeVoteByParent, table: tables.vote },
+    {
+      append: reducers.appendVote,
+      bulkAppend: reducers.bulkAppendVote,
+      bulkRm: reducers.bulkRmVote,
+      purgeByParent: reducers.purgeVoteByParent,
+      restoreByParent: reducers.restoreVoteByParent,
+      rm: reducers.rmVote,
+      table: tables.vote,
+      update: reducers.updateVote
+    },
     { parent: String(pollId) }
   )
   const quota = useQuota(
@@ -58,15 +67,35 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) =>
           </span>
         </div>
       ))}
-      <Button
-        data-testid='vote-purge'
-        onClick={() => {
-          purge().catch(() => null)
-        }}
-        size='sm'
-        variant='ghost'>
-        purge votes
-      </Button>
+      <div className='flex gap-2'>
+        <Button
+          data-testid='vote-purge'
+          onClick={() => {
+            purge().catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          purge votes
+        </Button>
+        <Button
+          data-testid='vote-restore'
+          onClick={() => {
+            log.restore().catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          restore votes
+        </Button>
+        <Button
+          data-testid='vote-bulk'
+          onClick={() => {
+            log.appendBulk(options.map(opt => ({ option: opt }))).catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          bulk +1 each
+        </Button>
+      </div>
     </div>
   )
 }
@@ -92,7 +121,12 @@ const CreatePoll = () => {
 }
 const BannerAdmin = () => {
   const banner = useKv<{ active: boolean; key: string; message: string }>(
-    { rm: reducers.rmSiteConfig, set: reducers.setSiteConfig, table: tables.siteConfig },
+    {
+      restore: reducers.restoreSiteConfig,
+      rm: reducers.rmSiteConfig,
+      set: reducers.setSiteConfig,
+      table: tables.siteConfig
+    },
     'banner'
   )
   const [message, setMessage] = useState('')
@@ -140,6 +174,15 @@ const BannerAdmin = () => {
           size='sm'
           variant='outline'>
           clear banner
+        </Button>
+        <Button
+          data-testid='banner-restore'
+          onClick={() => {
+            banner.restore().catch(() => null)
+          }}
+          size='sm'
+          variant='outline'>
+          restore banner
         </Button>
       </div>
       <div className='text-xs text-muted-foreground' data-testid='banner-state'>

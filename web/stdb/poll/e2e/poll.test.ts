@@ -57,8 +57,7 @@ test.describe('Poll CRUD', () => {
   })
   test('polls list updates immediately after create', async ({ pollPage }) => {
     const q = `Live ${Date.now()}`
-    const before = await pollPage.getPollItems().count()
     await pollPage.createPoll(q, ['x', 'y'])
-    await expect(pollPage.getPollItems()).toHaveCount(before + 1, { timeout: 10_000 })
+    await expect(pollPage.getPollItems().filter({ hasText: q })).toHaveCount(1, { timeout: 10_000 })
   })
 })

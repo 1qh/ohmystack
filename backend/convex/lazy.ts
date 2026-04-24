@@ -37,12 +37,12 @@ const api = noboil({
       cascade: orgCascade(s.task, { foreignKey: 'projectId' }),
       rateLimit: 30
     }),
-    siteConfig: table(s.siteConfig),
+    siteConfig: table(s.siteConfig, { softDelete: true }),
     task: table(s.task, {
       aclFrom: { field: 'projectId', table: s.project.__name },
       rateLimit: 30
     }),
-    vote: table(s.vote),
+    vote: table(s.vote, { softDelete: true }),
     wiki: table(s.wiki, {
       acl: true,
       rateLimit: 30,

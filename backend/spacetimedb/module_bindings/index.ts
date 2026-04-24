@@ -74,12 +74,14 @@ import OrgRejectJoinReducer from "./org_reject_join_reducer";
 import OrgRequestJoinReducer from "./org_request_join_reducer";
 import AppendVoteReducer from "./append_vote_reducer";
 import PurgeVoteByParentReducer from "./purge_vote_by_parent_reducer";
+import RestoreVoteByParentReducer from "./restore_vote_by_parent_reducer";
 import BulkAppendVoteReducer from "./bulk_append_vote_reducer";
 import UpdateVoteReducer from "./update_vote_reducer";
 import RmVoteReducer from "./rm_vote_reducer";
 import BulkRmVoteReducer from "./bulk_rm_vote_reducer";
 import RmSiteConfigReducer from "./rm_site_config_reducer";
 import SetSiteConfigReducer from "./set_site_config_reducer";
+import RestoreSiteConfigReducer from "./restore_site_config_reducer";
 import ConsumePollVoteQuotaReducer from "./consume_poll_vote_quota_reducer";
 import RecordPollVoteQuotaReducer from "./record_poll_vote_quota_reducer";
 import CleanupTestDataReducer from "./cleanup_test_data_reducer";
@@ -455,12 +457,14 @@ const reducersSchema = __reducers(
   __reducerSchema("org_request_join", OrgRequestJoinReducer),
   __reducerSchema("append_vote", AppendVoteReducer),
   __reducerSchema("purge_vote_by_parent", PurgeVoteByParentReducer),
+  __reducerSchema("restore_vote_by_parent", RestoreVoteByParentReducer),
   __reducerSchema("bulk_append_vote", BulkAppendVoteReducer),
   __reducerSchema("update_vote", UpdateVoteReducer),
   __reducerSchema("rm_vote", RmVoteReducer),
   __reducerSchema("bulk_rm_vote", BulkRmVoteReducer),
   __reducerSchema("rm_siteConfig", RmSiteConfigReducer),
   __reducerSchema("set_siteConfig", SetSiteConfigReducer),
+  __reducerSchema("restore_siteConfig", RestoreSiteConfigReducer),
   __reducerSchema("consume_pollVoteQuota", ConsumePollVoteQuotaReducer),
   __reducerSchema("record_pollVoteQuota", RecordPollVoteQuotaReducer),
   __reducerSchema("cleanup_test_data", CleanupTestDataReducer),

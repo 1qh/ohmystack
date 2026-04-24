@@ -57,15 +57,35 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: string }) =>
           </span>
         </div>
       ))}
-      <Button
-        data-testid='vote-purge'
-        onClick={() => {
-          purge().catch(() => null)
-        }}
-        size='sm'
-        variant='ghost'>
-        purge votes
-      </Button>
+      <div className='flex gap-2'>
+        <Button
+          data-testid='vote-purge'
+          onClick={() => {
+            purge().catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          purge votes
+        </Button>
+        <Button
+          data-testid='vote-restore'
+          onClick={() => {
+            log.restore().catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          restore votes
+        </Button>
+        <Button
+          data-testid='vote-bulk'
+          onClick={() => {
+            log.appendBulk(options.map(opt => ({ optionIdx: options.indexOf(opt), voter: 'bulk' }))).catch(() => null)
+          }}
+          size='sm'
+          variant='ghost'>
+          bulk +1 each
+        </Button>
+      </div>
     </div>
   )
 }
@@ -92,6 +112,7 @@ const BannerAdmin = () => {
   const banner = useKv(api.siteConfig, 'banner') as {
     data: null | undefined | { active: boolean; message: string; updatedAt: number }
     remove: () => Promise<void>
+    restore: () => Promise<void>
     update: (payload: { active: boolean; message: string }) => Promise<void>
   }
   const [message, setMessage] = useState('')
@@ -139,6 +160,15 @@ const BannerAdmin = () => {
           size='sm'
           variant='outline'>
           clear banner
+        </Button>
+        <Button
+          data-testid='banner-restore'
+          onClick={() => {
+            banner.restore().catch(() => null)
+          }}
+          size='sm'
+          variant='outline'>
+          restore banner
         </Button>
       </div>
       <div className='text-xs text-muted-foreground' data-testid='banner-state'>
