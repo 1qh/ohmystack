@@ -1,8 +1,9 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB deletes/inserts */
 /** biome-ignore-all lint/suspicious/useAwait: handlers return thenable chains */
 /** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: factory with many optional features */
-/* oxlint-disable eslint(no-await-in-loop), eslint(complexity) */
-/* eslint-disable complexity, no-await-in-loop */
+/** biome-ignore-all lint/nursery/noContinue: bulk-loop skip on missing doc */
+/* oxlint-disable eslint(no-await-in-loop), eslint(complexity), eslint(no-continue) */
+/* eslint-disable complexity, no-await-in-loop, no-continue */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, string } from 'zod/v4'
@@ -273,21 +274,69 @@ const makeLog = <S extends ZodRawShape>({
       : undefined
   const searchEndpoint = pub ? pubSearch : authSearch
   const rmOne = b.m({
-    args: typed({ id: zid(table) }),
-    handler: typed(async (c: MutCtx, { id }: { id: string }) => {
+    args: typed({ id: zid(table).optional(), ids: array(zid(table)).max(BULK_MAX).optional() }),
+    handler: typed(async (c: MutCtx, args: { id?: string; ids?: string[] }) => {
       await rl(c)
-      const doc = await c.db.get(id)
-      if (!doc) return { deleted: false }
-      if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id })
-      if (softDelete) await dbPatch(c.db, id, { deletedAt: Date.now() })
-      else {
-        await dbDelete(c.db, id)
-        await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+      const targets = args.ids ?? (args.id ? [args.id] : [])
+      if (targets.length === 0) return err('VALIDATION_FAILED')
+      const results: { deleted: boolean; id: string; soft?: boolean }[] = []
+      for (const id of targets) {
+        const doc = await c.db.get(id)
+        if (!doc) {
+          results.push({ deleted: false, id })
+          continue
+        }
+        if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id })
+        if (softDelete) await dbPatch(c.db, id, { deletedAt: Date.now() })
+        else {
+          await dbDelete(c.db, id)
+          await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+        }
+        if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id })
+        results.push({ deleted: true, id, soft: Boolean(softDelete) })
       }
-      if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id })
-      return { deleted: true, soft: Boolean(softDelete) }
+      return args.ids ? results : results[0]
     })
   })
+  const authIndexed = b.q({
+    args: typed({ index: string(), key: string(), value: string(), where: wSchema.optional() }),
+    handler: typed(
+      async (c: ReadCtx, { index, key, value, where }: { index: string; key: string; value: string; where?: Rec }) => {
+        const base = c.db.query(table).withIndex(
+          index,
+          idx(o => o.eq(key, value))
+        )
+        const rows = (await base
+          .filter((f: FilterLike) =>
+            pubField
+              ? f.or(f.eq(f.field(pubField), true), f.eq(f.field('userId'), c.viewerId))
+              : f.eq(f.field('userId'), c.viewerId)
+          )
+          .collect()) as (Rec & { userId: string })[]
+        const userW = where ?? authWhereDefault
+        const filtered = userW ? rows.filter(d => matchW(d, userW, c.viewerId)) : rows
+        return enrich(c, filtered)
+      }
+    )
+  })
+  const pubIndexed = pubEnabled
+    ? b.q({
+        args: typed({ index: string(), key: string(), value: string(), where: wSchema.optional() }),
+        handler: typed(
+          async (c: ReadCtx, { index, key, value, where }: { index: string; key: string; value: string; where?: Rec }) => {
+            const base = c.db.query(table).withIndex(
+              index,
+              idx(o => o.eq(key, value))
+            )
+            const q2 = pubField ? base.filter((f: FilterLike) => f.eq(f.field(pubField), true)) : base
+            const rows = (await q2.collect()) as (Rec & { userId: string })[]
+            const userW = where ?? pubWhereOpt
+            const withW = userW ? rows.filter(d => matchW(d, userW, c.viewerId)) : rows
+            return enrich(c, withW)
+          }
+        )
+      })
+    : undefined
   const read = b.q({
     args: typed({ id: zid(table) }),
     handler: typed(async (c: ReadCtx, { id }: { id: string }) => {
@@ -305,6 +354,7 @@ const makeLog = <S extends ZodRawShape>({
   const endpoints: Record<string, unknown> = {
     append,
     auth: authApi,
+    authIndexed,
     list,
     listAfter,
     purgeByParent,
@@ -312,6 +362,7 @@ const makeLog = <S extends ZodRawShape>({
     rm: rmOne
   }
   if (pubApi) endpoints.pub = pubApi
+  if (pubIndexed) endpoints.pubIndexed = pubIndexed
   if (searchEndpoint) endpoints.search = searchEndpoint
   if (restoreByParent) endpoints.restoreByParent = restoreByParent
   return typed(endpoints)
