@@ -3,8 +3,7 @@
 /* oxlint-disable eslint(no-await-in-loop) */
 /* eslint-disable no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
-import { number, object, string } from 'zod/v4'
+import { number, string } from 'zod/v4'
 import type { DbCtx, DbLike, LogFactoryResult, Mb, Qb, QueryLike, Rec } from './types'
 import { idx, typed } from './bridge'
 import { dbDelete, dbInsert, errValidation, pgOpts } from './helpers'
@@ -46,10 +45,10 @@ const makeLog = <S extends ZodRawShape>({
       )
       .order('desc')
       .first() as Promise<LogRow | null>
-  const appendArgs = z2c(object({ idempotencyKey: string().optional(), parent: string(), payload: schema }).shape) as Rec
-  const listAfterArgs = z2c(object({ limit: number().optional(), parent: string(), seq: number() }).shape) as Rec
-  const listArgs = z2c(object({ parent: string() }).shape) as Rec
-  const purgeArgs = z2c(object({ parent: string() }).shape) as Rec
+  const appendArgs = { idempotencyKey: string().optional(), parent: string(), payload: schema }
+  const listAfterArgs = { limit: number().optional(), parent: string(), seq: number() }
+  const listArgs = { parent: string() }
+  const purgeArgs = { parent: string() }
   const append = b.m({
     args: typed({ ...appendArgs }),
     handler: typed(async (c: DbCtx, args: { idempotencyKey?: string; parent: string; payload: Rec }) => {

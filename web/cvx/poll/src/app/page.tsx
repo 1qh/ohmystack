@@ -4,7 +4,7 @@ import { api } from '@a/be-convex'
 import { Button } from '@a/ui/button'
 import { FieldGroup } from '@a/ui/field'
 import { Form, useFormMutation } from 'noboil/convex/components'
-import { useCrud, useKv, useLog, useQuota } from 'noboil/convex/react'
+import { useKv, useList, useLog, useQuota } from 'noboil/convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { createPoll } from '~/schema'
@@ -69,7 +69,8 @@ const CreatePoll = () => {
   )
 }
 const Page = () => {
-  const polls = useCrud(api.poll) as unknown as { data: Poll[] }
+  const { data } = useList(api.poll.list, {})
+  const polls = data as Poll[]
   const banner = useKv(api.siteConfig, 'banner') as { data: null | undefined | { active: boolean; message: string } }
   const [selectedPoll, setSelectedPoll] = useState<null | string>(null)
   const bannerDoc = banner.data
@@ -83,7 +84,7 @@ const Page = () => {
       <h1 className='text-2xl font-bold'>Polls</h1>
       <CreatePoll />
       <ul className='space-y-3'>
-        {polls.data.map(p => (
+        {polls.map(p => (
           <li className='rounded-sm border p-4' data-testid='poll-item' key={p._id}>
             <button className='text-left font-medium' onClick={() => setSelectedPoll(p._id)} type='button'>
               {p.question}

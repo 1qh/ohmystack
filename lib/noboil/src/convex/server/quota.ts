@@ -1,9 +1,8 @@
 /** biome-ignore-all lint/complexity/useMaxParams: destructured builder options pattern matches singleton/cache-crud */
 /* oxlint-disable eslint-plugin-unicorn(prefer-ternary) */
 /* eslint-disable @typescript-eslint/max-params */
-import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
-import { object, string } from 'zod/v4'
-import type { DbCtx, DbLike, Mb, Qb, QuotaFactoryResult, QuotaResult, Rec } from './types'
+import { string } from 'zod/v4'
+import type { DbCtx, DbLike, Mb, Qb, QuotaFactoryResult, QuotaResult } from './types'
 import { idx, typed } from './bridge'
 import { dbInsert, dbPatch } from './helpers'
 const prune = (timestamps: number[], cutoff: number): number[] => {
@@ -51,7 +50,7 @@ const makeQuota = ({
         idx(o => o.eq('owner', owner))
       )
       .unique()) as null | QuotaRow
-  const ownerArgs = z2c(object({ owner: string() }).shape) as Rec
+  const ownerArgs = { owner: string() }
   const check = b.q({
     args: typed({ ...ownerArgs }),
     handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {

@@ -2,8 +2,7 @@
 /* oxlint-disable typescript-eslint(no-unnecessary-condition) */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import { zodOutputToConvexFields as z2c } from 'convex-helpers/server/zod4'
-import { object, string } from 'zod/v4'
+import { string } from 'zod/v4'
 import type { DbCtx, DbLike, KvFactoryResult, Mb, Qb, Rec } from './types'
 import { idx, typed } from './bridge'
 import { dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
@@ -37,8 +36,8 @@ const makeKv = <S extends ZodRawShape>({
     }
     return err('FORBIDDEN')
   }
-  const keyArgs = z2c(object({ key: string() }).shape) as Rec
-  const setArgs = z2c(object({ key: string(), payload: schema }).shape) as Rec
+  const keyArgs = { key: string() }
+  const setArgs = { key: string(), payload: schema }
   const get = b.q({
     args: typed({ ...keyArgs }),
     handler: typed(async (c: DbCtx, { key }: { key: string }) => {
