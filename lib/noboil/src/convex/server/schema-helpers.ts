@@ -84,11 +84,13 @@ const logTable = <T extends ZodRawShape>(s: LogSchema<T>) =>
     ...z2c(s.shape),
     idempotencyKey: v.optional(v.string()),
     parent: v.string(),
-    seq: v.number()
+    seq: v.number(),
+    userId: v.id('users')
   })
     .index('by_parent', indexFields('parent'))
     .index('by_parent_seq', indexFields('parent', 'seq'))
     .index('by_idempotency', indexFields('parent', 'idempotencyKey'))
+    .index('by_user', indexFields('userId'))
 /**
  * Creates a Convex table definition for string-keyed kv state.
  * @param s - KV-branded Zod schema

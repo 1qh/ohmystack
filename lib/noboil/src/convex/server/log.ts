@@ -6,7 +6,6 @@ import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { array, number, string } from 'zod/v4'
 import type {
   CrudHooks,
-  DbCtx,
   DbLike,
   HookCtx,
   LogFactoryResult,
@@ -15,6 +14,7 @@ import type {
   Qb,
   QueryLike,
   RateLimitConfig,
+  ReadCtx,
   Rec
 } from './types'
 import { idx, typed } from './bridge'
@@ -99,7 +99,13 @@ const makeLog = <S extends ZodRawShape>({
     if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
     const last = await byParentSeq(c.db, p)
     const seq = (last?.seq ?? 0) + 1
-    const id = await dbInsert(c.db, table, { ...data, idempotencyKey: keyArg, parent: p, seq })
+    const id = await dbInsert(c.db, table, {
+      ...data,
+      idempotencyKey: keyArg,
+      parent: p,
+      seq,
+      userId: c.user._id
+    })
     if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
     return { created: true, id, seq }
   }
@@ -122,22 +128,27 @@ const makeLog = <S extends ZodRawShape>({
   })
   const listAfter = b.q({
     args: typed({ ...listAfterArgs }),
-    handler: typed(async (c: DbCtx, { limit, parent: p, seq }: { limit?: number; parent: string; seq: number }) =>
-      c.db
+    handler: typed(async (c: ReadCtx, { limit, parent: p, seq }: { limit?: number; parent: string; seq: number }) => {
+      const rows = (await c.db
         .query(table)
         .withIndex(
           'by_parent_seq',
           idx(o => o.eq('parent', p).gt('seq', seq))
         )
         .order('asc')
-        .take(limit ?? DEFAULT_LIMIT)
-    )
+        .take(limit ?? DEFAULT_LIMIT)) as { userId: string }[]
+      return c.withAuthor(rows)
+    })
   })
   const list = b.q({
     args: typed({ ...listArgs, paginationOpts: pgOpts }),
-    handler: typed(async (c: DbCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) =>
-      byParent(c.db, p).order('desc').paginate(op)
-    )
+    handler: typed(async (c: ReadCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) => {
+      const page = (await byParent(c.db, p).order('desc').paginate(op)) as unknown as {
+        page: { userId: string }[]
+      }
+      const enriched = await c.withAuthor(page.page)
+      return { ...page, page: enriched }
+    })
   })
   const purgeByParent = b.m({
     args: typed({ ...purgeArgs }),

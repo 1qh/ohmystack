@@ -2,7 +2,7 @@
 /* oxlint-disable typescript-eslint(no-unnecessary-condition) */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import { string } from 'zod/v4'
+import { number, string } from 'zod/v4'
 import type { CrudHooks, DbCtx, DbLike, HookCtx, KvFactoryResult, Mb, MutCtx, Qb, RateLimitConfig, Rec } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
@@ -46,7 +46,7 @@ const makeKv = <S extends ZodRawShape>({
     if (rateLimit && !isTestMode()) await checkRateLimit(c.db, { config: rateLimit, key: c.user._id as string, table })
   }
   const keyArgs = { key: string() }
-  const setArgs = { key: string(), payload: schema }
+  const setArgs = { expectedUpdatedAt: number().optional(), key: string(), payload: schema }
   const get = b.q({
     args: typed({ ...keyArgs }),
     handler: typed(async (c: DbCtx, { key }: { key: string }) => {
@@ -60,32 +60,38 @@ const makeKv = <S extends ZodRawShape>({
   })
   const set = b.m({
     args: typed({ ...setArgs }),
-    handler: typed(async (c: MutCtx, { key, payload }: { key: string; payload: Rec }) => {
-      const gate = await assertWrite(c)
-      if (gate) return gate
-      const bad = assertKey(key)
-      if (bad) return bad
-      await rl(c)
-      const parsed = schema.safeParse(payload)
-      if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
-      let data = parsed.data as Rec
-      const now = time()
-      const existing = await byKey(c.db, key)
-      if (existing) {
-        const prev = existing
-        if (hooks?.beforeUpdate) data = await hooks.beforeUpdate(hk(c), { id: prev._id as string, patch: data, prev })
-        await dbPatch(c.db, prev._id as string, { ...data, ...now })
-        const next = { ...prev, ...data, ...now, key }
-        if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: prev._id as string, patch: data, prev })
-        return next
+    handler: typed(
+      async (
+        c: MutCtx,
+        { expectedUpdatedAt, key, payload }: { expectedUpdatedAt?: number; key: string; payload: Rec }
+      ) => {
+        const gate = await assertWrite(c)
+        if (gate) return gate
+        const bad = assertKey(key)
+        if (bad) return bad
+        await rl(c)
+        const parsed = schema.safeParse(payload)
+        if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+        let data = parsed.data as Rec
+        const now = time()
+        const existing = await byKey(c.db, key)
+        if (existing) {
+          if (expectedUpdatedAt !== undefined && existing.updatedAt !== expectedUpdatedAt) return err('CONFLICT')
+          const prev = existing
+          if (hooks?.beforeUpdate) data = await hooks.beforeUpdate(hk(c), { id: prev._id as string, patch: data, prev })
+          await dbPatch(c.db, prev._id as string, { ...data, ...now })
+          const next = { ...prev, ...data, ...now, key }
+          if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: prev._id as string, patch: data, prev })
+          return next
+        }
+        if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
+        const id = await dbInsert(c.db, table, { ...data, ...now, key })
+        if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
+        const doc = await c.db.get(id)
+        if (!doc) return err('NOT_FOUND')
+        return doc
       }
-      if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
-      const id = await dbInsert(c.db, table, { ...data, ...now, key })
-      if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
-      const doc = await c.db.get(id)
-      if (!doc) return err('NOT_FOUND')
-      return doc
-    })
+    )
   })
   const rm = b.m({
     args: typed({ ...keyArgs }),

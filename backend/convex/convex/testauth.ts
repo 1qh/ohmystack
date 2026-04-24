@@ -97,7 +97,11 @@ const cleanupTestData = mutation({
       'chat',
       'blog',
       'blogProfile',
-      'orgProfile'
+      'orgProfile',
+      'vote',
+      'poll',
+      'siteConfig',
+      'pollVoteQuota'
     ] as const
     const tableDocs = await Promise.all(
       tables.map(async table => {
