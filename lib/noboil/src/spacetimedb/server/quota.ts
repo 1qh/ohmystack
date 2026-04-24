@@ -7,6 +7,7 @@ const findByOwner = (table: QuotaTableLike, owner: string): QuotaRow | undefined
 }
 interface QuotaConfig<DB, Tbl extends QuotaTableLike> {
   durationMs: number
+  hooks?: QuotaHooks<DB>
   limit: number
   ownerField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   table: (db: DB) => Tbl
@@ -14,6 +15,18 @@ interface QuotaConfig<DB, Tbl extends QuotaTableLike> {
 }
 interface QuotaExports {
   exports: Record<string, ReducerExportLike>
+}
+interface QuotaHookCtx<DB> {
+  db: DB
+  sender: Identity
+  timestamp: Timestamp
+}
+interface QuotaHooks<DB = unknown> {
+  afterConsume?: (ctx: QuotaHookCtx<DB>, args: { allowed: boolean; owner: string }) => void
+  afterRecord?: (ctx: QuotaHookCtx<DB>, args: { owner: string }) => void
+  beforeConsume?: (ctx: QuotaHookCtx<DB>, args: { owner: string }) => void
+  beforeRecord?: (ctx: QuotaHookCtx<DB>, args: { owner: string }) => void
+  onExceeded?: (ctx: QuotaHookCtx<DB>, args: { owner: string }) => void
 }
 interface QuotaRow {
   id: number
@@ -47,24 +60,33 @@ const makeQuota = <DB, Tbl extends QuotaTableLike>(
   },
   config: QuotaConfig<DB, Tbl>
 ): QuotaExports => {
-  const { durationMs, limit, ownerField, table: tableAccessor, tableName } = config
+  const { durationMs, hooks, limit, ownerField, table: tableAccessor, tableName } = config
   const consumeName = `consume_${tableName}`
   const recordName = `record_${tableName}`
   const params: FieldBuilders = { owner: ownerField }
   const consumeReducer = spacetimedb.reducer({ name: consumeName }, params, (ctx, args) => {
     const { owner } = args as { owner: string }
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
+    if (hooks?.beforeConsume) hooks.beforeConsume(hookCtx, { owner })
     const now = timestampToMs(ctx.timestamp)
     const table = tableAccessor(ctx.db) as unknown as QuotaTableLike
     const existing = findByOwner(table, owner)
     const prev = existing?.timestamps ?? []
     const pruned = prune(prev, now - durationMs)
-    if (pruned.length >= limit) throw makeError('LIMIT_EXCEEDED', `${tableName}:consume`)
+    if (pruned.length >= limit) {
+      if (hooks?.onExceeded) hooks.onExceeded(hookCtx, { owner })
+      if (hooks?.afterConsume) hooks.afterConsume(hookCtx, { allowed: false, owner })
+      throw makeError('LIMIT_EXCEEDED', `${tableName}:consume`)
+    }
     const next = [...pruned, now]
     if (existing) table.id.update({ ...existing, timestamps: next })
     else table.insert({ id: 0, owner, timestamps: next })
+    if (hooks?.afterConsume) hooks.afterConsume(hookCtx, { allowed: true, owner })
   })
   const recordReducer = spacetimedb.reducer({ name: recordName }, params, (ctx, args) => {
     const { owner } = args as { owner: string }
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
+    if (hooks?.beforeRecord) hooks.beforeRecord(hookCtx, { owner })
     const now = timestampToMs(ctx.timestamp)
     const table = tableAccessor(ctx.db) as unknown as QuotaTableLike
     const existing = findByOwner(table, owner)
@@ -73,6 +95,7 @@ const makeQuota = <DB, Tbl extends QuotaTableLike>(
     const next = [...pruned, now]
     if (existing) table.id.update({ ...existing, timestamps: next })
     else table.insert({ id: 0, owner, timestamps: next })
+    if (hooks?.afterRecord) hooks.afterRecord(hookCtx, { owner })
   })
   const exports: Record<string, ReducerExportLike> = {
     [consumeName]: consumeReducer as ReducerExportLike,
@@ -80,5 +103,5 @@ const makeQuota = <DB, Tbl extends QuotaTableLike>(
   }
   return { exports }
 }
-export type { QuotaConfig, QuotaExports, QuotaRow, QuotaTableLike }
+export type { QuotaConfig, QuotaExports, QuotaHooks, QuotaRow, QuotaTableLike }
 export { makeQuota }

@@ -5,6 +5,7 @@ import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { customCtx } from 'convex-helpers/server/customFunctions'
 import { zCustomMutation, zCustomQuery } from 'convex-helpers/server/zod4'
 import type { OrgCrudOptions } from './org-crud'
+import type { QuotaHooks } from './quota'
 import type {
   BaseSchema,
   CacheHookCtx,
@@ -357,8 +358,14 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       table,
       writeRole: opts.writeRole
     })
-  const quota = (table: keyof DM & string, opts: { durationMs: number; limit: number }) =>
-    makeQuota({ builders: { m: typed(m), q: typed(q) }, durationMs: opts.durationMs, limit: opts.limit, table })
+  const quota = (table: keyof DM & string, opts: { durationMs: number; hooks?: QuotaHooks; limit: number }) =>
+    makeQuota({
+      builders: { m: typed(m), q: typed(q) },
+      durationMs: opts.durationMs,
+      hooks: opts.hooks,
+      limit: opts.limit,
+      table
+    })
   const normCascade = config.orgCascadeTables?.map(t => (typeof t === 'string' ? { table: t } : t))
   const org = config.orgSchema
     ? makeOrg({

@@ -5,6 +5,7 @@ import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/
 import type { ZodRawShape } from 'zod/v4'
 import { t } from 'spacetimedb/server'
 import type { OrgFieldBuilders } from './org'
+import type { QuotaHooks } from './quota'
 import type { FieldBuilder, ZodBridgeT } from './stdb-tables'
 import type {
   BaseSchema,
@@ -879,7 +880,7 @@ interface BsCtx {
   logZ: Record<string, { parent: string; schema: ZodLike }>
   orgScopedZ: Record<string, ZodLike>
   ownedZ: Record<string, ZodLike>
-  quotaZ: Record<string, { durationMs: number; limit: number }>
+  quotaZ: Record<string, { durationMs: number; hooks?: QuotaHooks; limit: number }>
   singletonZ: Record<string, ZodLike>
   tblOpts: Record<string, CacheOptions & CrudOptions & OrgCrudOptions & { key?: string }>
 }
@@ -897,6 +898,7 @@ interface BsTag {
   logParent?: string
   pub?: boolean | string
   quotaDurationMs?: number
+  quotaHooks?: QuotaHooks
   quotaLimit?: number
   rateLimit?: { max: number; window: number }
   softDelete?: boolean
@@ -958,11 +960,13 @@ type TableArgs<F> = F extends ChildLike
       ? [fields: F, opts?: { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }]
       : F extends KvBranded
         ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
-        : F extends QuotaBranded | SingletonBranded
-          ? [fields: F]
-          : F extends TableArgInput
-            ? [fields: F, opts?: TableOpts<F>]
-            : never
+        : F extends QuotaBranded
+          ? [fields: F, opts?: { hooks?: QuotaHooks }]
+          : F extends SingletonBranded
+            ? [fields: F]
+            : F extends TableArgInput
+              ? [fields: F, opts?: TableOpts<F>]
+              : never
 interface TableFn {
   <F extends TableArgInput>(...args: TableArgs<F>): BsTable
   file: () => BsTable
@@ -979,9 +983,11 @@ type TableOpts<F> = F extends OwnedBranded
           ? { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }
           : F extends KvBranded
             ? { rateLimit?: RateLimitInput; softDelete?: boolean }
-            : F extends QuotaBranded | SingletonBranded
-              ? undefined
-              : never
+            : F extends QuotaBranded
+              ? { hooks?: QuotaHooks }
+              : F extends SingletonBranded
+                ? undefined
+                : never
 type TblChild = Parameters<SchemaHelpers['childTable']>[1]
 type TblInput = Parameters<SchemaHelpers['ownedTable']>[0]
 type TblKey = Parameters<SchemaHelpers['cacheTable']>[0]
@@ -1085,7 +1091,7 @@ const collectBsFactories = (name: string, m: BsTag, ctx: BsCtx): void => {
   if (m.category === 'log' && m.zod && m.logParent) ctx.logZ[name] = { parent: m.logParent, schema: m.zod }
   if (m.category === 'kv' && m.zod) ctx.kvZ[name] = m.zod
   if (m.category === 'quota' && m.quotaLimit !== undefined && m.quotaDurationMs !== undefined)
-    ctx.quotaZ[name] = { durationMs: m.quotaDurationMs, limit: m.quotaLimit }
+    ctx.quotaZ[name] = { durationMs: m.quotaDurationMs, hooks: m.quotaHooks, limit: m.quotaLimit }
 }
 const collectBsSchema = (name: string, m: BsTag, ctx: BsCtx): { fileNs?: boolean | string; orgZod?: ZodLike } => {
   if (m.extraFields) ctx.extraFieldsByTable[name] = m.extraFields
@@ -1240,8 +1246,16 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
       raw.kvTable(entry.schema)
     )
   }
-  const quotaTable = (entry: { durationMs: number; limit: number }): BsTable =>
-    bsOf({ category: 'quota', quotaDurationMs: entry.durationMs, quotaLimit: entry.limit }, raw.quotaTable())
+  const quotaTable = (entry: { durationMs: number; limit: number }, opts?: { hooks?: QuotaHooks }): BsTable =>
+    bsOf(
+      {
+        category: 'quota',
+        quotaDurationMs: entry.durationMs,
+        quotaHooks: opts?.hooks,
+        quotaLimit: entry.limit
+      },
+      raw.quotaTable()
+    )
   const tableBase = <F extends TableArgInput>(...args: TableArgs<F>): BsTable => {
     const [fields, optionsRaw] = args
     const options = optionsRaw as TableOpts<F> | undefined
@@ -1261,7 +1275,11 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
         fields as unknown as { schema: TblInput },
         options as undefined | { rateLimit?: RateLimitInput; softDelete?: boolean }
       )
-    if (brand === 'quota') return quotaTable(fields as unknown as { durationMs: number; limit: number })
+    if (brand === 'quota')
+      return quotaTable(
+        fields as unknown as { durationMs: number; limit: number },
+        options as undefined | { hooks?: QuotaHooks }
+      )
     if (brand === 'base') {
       if (!isBaseOpts(options))
         return err('VALIDATION_FAILED', {
@@ -1301,7 +1319,7 @@ interface NoboilHelpers {
   orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
   orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
   ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
-  quotaTable: (entry: { durationMs: number; limit: number }) => BsTable
+  quotaTable: (entry: { durationMs: number; limit: number }, opts?: { hooks?: QuotaHooks }) => BsTable
   singletonTable: (fields: TblInput) => BsTable
   t: SchemaHelpers['t']
   table: TableFn
@@ -1380,6 +1398,7 @@ const wireQuotaFactories = (
   for (const [name, q] of Object.entries(quotaZ)) {
     const { exports: quotaExports } = makeQuota(reducer as never, {
       durationMs: q.durationMs,
+      hooks: q.hooks,
       limit: q.limit,
       ownerField: bridgeT.string() as never,
       table: tblOf(name) as never,

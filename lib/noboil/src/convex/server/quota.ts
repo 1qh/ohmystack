@@ -2,9 +2,17 @@
 /* oxlint-disable eslint-plugin-unicorn(prefer-ternary) */
 /* eslint-disable @typescript-eslint/max-params */
 import { string } from 'zod/v4'
-import type { DbCtx, DbLike, Mb, Qb, QuotaFactoryResult, QuotaResult } from './types'
+import type { DbCtx, DbLike, HookCtx, Mb, MutCtx, Qb, QuotaFactoryResult, QuotaResult } from './types'
 import { idx, typed } from './bridge'
 import { dbInsert, dbPatch } from './helpers'
+interface QuotaHooks {
+  afterConsume?: (ctx: HookCtx, args: { owner: string; result: QuotaResult }) => Promise<void> | void
+  afterRecord?: (ctx: HookCtx, args: { owner: string; result: QuotaResult }) => Promise<void> | void
+  beforeConsume?: (ctx: HookCtx, args: { owner: string }) => Promise<void> | void
+  beforeRecord?: (ctx: HookCtx, args: { owner: string }) => Promise<void> | void
+  onExceeded?: (ctx: HookCtx, args: { owner: string; result: QuotaResult }) => Promise<void> | void
+}
+const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const prune = (timestamps: number[], cutoff: number): number[] => {
   const out: number[] = []
   for (const t of timestamps) if (t >= cutoff) out.push(t)
@@ -34,11 +42,13 @@ interface QuotaRow {
 const makeQuota = ({
   builders: b,
   durationMs,
+  hooks,
   limit,
   table
 }: {
   builders: { m: Mb; q: Qb }
   durationMs: number
+  hooks?: QuotaHooks
   limit: number
   table: string
 }): QuotaFactoryResult => {
@@ -60,30 +70,40 @@ const makeQuota = ({
   })
   const record = b.m({
     args: typed({ ...ownerArgs }),
-    handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {
+    handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
+      if (hooks?.beforeRecord) await hooks.beforeRecord(hk(c), { owner })
       const now = Date.now()
       const doc = await byOwner(c.db, owner)
       const pruned = prune(doc?.timestamps ?? [], now - durationMs)
       const next = [...pruned, now]
       await persist(c.db, table, doc, owner, next)
-      return compute(next, limit, durationMs, now)
+      const result = compute(next, limit, durationMs, now)
+      if (hooks?.afterRecord) await hooks.afterRecord(hk(c), { owner, result })
+      return result
     })
   })
   const consume = b.m({
     args: typed({ ...ownerArgs }),
-    handler: typed(async (c: DbCtx, { owner }: { owner: string }) => {
+    handler: typed(async (c: MutCtx, { owner }: { owner: string }) => {
+      if (hooks?.beforeConsume) await hooks.beforeConsume(hk(c), { owner })
       const now = Date.now()
       const doc = await byOwner(c.db, owner)
       const pruned = prune(doc?.timestamps ?? [], now - durationMs)
       if (pruned.length >= limit) {
         const oldest = pruned[0] ?? now
-        return { allowed: false, remaining: 0, retryAfter: oldest + durationMs - now }
+        const result: QuotaResult = { allowed: false, remaining: 0, retryAfter: oldest + durationMs - now }
+        if (hooks?.onExceeded) await hooks.onExceeded(hk(c), { owner, result })
+        if (hooks?.afterConsume) await hooks.afterConsume(hk(c), { owner, result })
+        return result
       }
       const next = [...pruned, now]
       await persist(c.db, table, doc, owner, next)
-      return { allowed: true, remaining: Math.max(0, limit - next.length) }
+      const result: QuotaResult = { allowed: true, remaining: Math.max(0, limit - next.length) }
+      if (hooks?.afterConsume) await hooks.afterConsume(hk(c), { owner, result })
+      return result
     })
   })
   return typed({ check, consume, record })
 }
+export type { QuotaHooks }
 export { makeQuota }

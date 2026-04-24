@@ -143,7 +143,8 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
   }
   if (def.brand === 'quota') {
     const entry = def.schema as { durationMs: number; limit: number }
-    return s.quota(name, { durationMs: entry.durationMs, limit: entry.limit })
+    const opts = (def.opts ?? {}) as { hooks?: unknown }
+    return s.quota(name, { durationMs: entry.durationMs, hooks: opts.hooks as never, limit: entry.limit })
   }
   throw new Error(
     `noboil(): unknown brand '${def.brand}' on table '${name}'. Valid brands: base, kv, log, org, owned, quota, singleton, child`
