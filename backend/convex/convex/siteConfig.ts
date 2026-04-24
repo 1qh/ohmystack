@@ -1,3 +1,3 @@
 import { api } from '../lazy'
-const { get, list, rm, set } = api.siteConfig
-export { get, list, rm, set }
+const { get, list, restore, rm, set } = api.siteConfig
+export { get, list, restore, rm, set }

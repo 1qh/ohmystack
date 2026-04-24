@@ -7,6 +7,7 @@
  * To regenerate, run `npx convex dev`.
  * @module
  */
+
 import type * as auth from "../auth.js";
 import type * as blog from "../blog.js";
 import type * as blogProfile from "../blogProfile.js";
@@ -28,11 +29,13 @@ import type * as tools_weather from "../tools/weather.js";
 import type * as user from "../user.js";
 import type * as vote from "../vote.js";
 import type * as wiki from "../wiki.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
+
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   blog: typeof blog;
@@ -56,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   vote: typeof vote;
   wiki: typeof wiki;
 }>;
+
 /**
  * A utility for referencing Convex functions in your app's public API.
  *
@@ -68,6 +72,7 @@ export declare const api: FilterApi<
   typeof fullApi,
   FunctionReference<any, "public">
 >;
+
 /**
  * A utility for referencing Convex functions in your app's internal API.
  *
@@ -80,4 +85,5 @@ export declare const internal: FilterApi<
   typeof fullApi,
   FunctionReference<any, "internal">
 >;
+
 export declare const components: {};

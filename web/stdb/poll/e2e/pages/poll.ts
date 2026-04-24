@@ -35,6 +35,9 @@ class PollPage extends BasePage {
   public getBannerMessageInput(): Locator {
     return this.$('banner-message-input')
   }
+  public getBannerRestore(): Locator {
+    return this.$('banner-restore')
+  }
   public getBannerSave(): Locator {
     return this.$('banner-save')
   }
@@ -62,6 +65,9 @@ class PollPage extends BasePage {
   public getSearchInput(): Locator {
     return this.$('poll-search-input')
   }
+  public getVoteBulk(): Locator {
+    return this.$('vote-bulk')
+  }
   public getVoteButton(i: number): Locator {
     return this.$(`vote-option-${i}`)
   }
@@ -70,6 +76,9 @@ class PollPage extends BasePage {
   }
   public getVotePurge(): Locator {
     return this.$('vote-purge')
+  }
+  public getVoteRestore(): Locator {
+    return this.$('vote-restore')
   }
   public getVoteView(): Locator {
     return this.$('vote-view')

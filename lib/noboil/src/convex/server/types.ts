@@ -453,6 +453,7 @@ interface KvEntry {
 interface KvFactoryResult<S extends ZodRawShape> {
   get: RegisteredQuery<'public', Rec, KvDoc<S> | null>
   list: RegisteredQuery<'public', Rec, KvDoc<S>[]>
+  restore?: RegisteredMutation<'public', Rec, { restored: boolean }>
   rm: RegisteredMutation<'public', Rec, { deleted: boolean }>
   set: RegisteredMutation<'public', Rec, KvDoc<S>>
 }
@@ -467,9 +468,26 @@ interface LogEntry {
 /** Result type for log factory: append-only log endpoints. */
 interface LogFactoryResult<S extends ZodRawShape> {
   append: RegisteredMutation<'public', Rec, { created: boolean; seq: number }>
+  auth: {
+    list: RegisteredQuery<'public', Rec, { continueCursor: string; isDone: boolean; page: LogDoc<S>[] }>
+    read: RegisteredQuery<'public', Rec, LogDoc<S> | null>
+    search?: RegisteredQuery<'public', Rec, LogDoc<S>[]>
+  }
+  authIndexed: RegisteredQuery<'public', Rec, LogDoc<S>[]>
   list: RegisteredQuery<'public', Rec, { continueCursor: string; isDone: boolean; page: LogDoc<S>[] }>
   listAfter: RegisteredQuery<'public', Rec, LogDoc<S>[]>
+  pub?: {
+    list: RegisteredQuery<'public', Rec, { continueCursor: string; isDone: boolean; page: LogDoc<S>[] }>
+    read: RegisteredQuery<'public', Rec, LogDoc<S> | null>
+    search?: RegisteredQuery<'public', Rec, LogDoc<S>[]>
+  }
+  pubIndexed?: RegisteredQuery<'public', Rec, LogDoc<S>[]>
   purgeByParent: RegisteredMutation<'public', Rec, { deleted: number }>
+  read: RegisteredQuery<'public', Rec, LogDoc<S> | null>
+  restoreByParent?: RegisteredMutation<'public', Rec, { restored: number }>
+  rm: RegisteredMutation<'public', Rec, { deleted: boolean }>
+  search?: RegisteredQuery<'public', Rec, LogDoc<S>[]>
+  update: RegisteredMutation<'public', Rec, LogDoc<S>>
 }
 /** Schema branded for use with log(). Used for append-only event logs. */
 type LogSchema<T extends ZodRawShape> = SchemaBrand<'log'> & ZodObject<T>

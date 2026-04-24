@@ -1,3 +1,3 @@
 import { api } from '../lazy'
-const { append, list, listAfter, purgeByParent } = api.vote
-export { append, list, listAfter, purgeByParent }
+const { append, auth, authIndexed, list, listAfter, purgeByParent, read, restoreByParent, rm, update } = api.vote
+export { append, auth, authIndexed, list, listAfter, purgeByParent, read, restoreByParent, rm, update }
