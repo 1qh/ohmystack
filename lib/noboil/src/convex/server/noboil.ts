@@ -127,12 +127,13 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
   }
   if (def.brand === 'kv') {
     const entry = def.schema as { keys?: readonly string[]; schema: ZodObject; writeRole?: unknown }
-    const opts = (def.opts ?? {}) as { hooks?: unknown; rateLimit?: unknown }
+    const opts = (def.opts ?? {}) as { hooks?: unknown; rateLimit?: unknown; softDelete?: unknown }
     return s.kv(name, {
       hooks: opts.hooks as never,
       keys: entry.keys,
       rateLimit: opts.rateLimit as never,
       schema: entry.schema,
+      softDelete: opts.softDelete as never,
       writeRole: entry.writeRole as never
     })
   }

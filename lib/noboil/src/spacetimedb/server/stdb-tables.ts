@@ -334,6 +334,7 @@ const makeSchema = (deps?: Partial<StdbDeps>): MakeSchemaResult => {
       {
         ...resolveFields(fields, t, 'kv'),
         createdAt: t.timestamp(),
+        deletedAt: t.timestamp().optional(),
         id: t.u32().autoInc().primaryKey(),
         key: t.string().unique(),
         updatedAt: t.timestamp()

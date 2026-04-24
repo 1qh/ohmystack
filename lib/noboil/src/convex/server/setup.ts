@@ -339,6 +339,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       keys?: readonly string[]
       rateLimit?: RateLimitInput
       schema: ZodObject<S>
+      softDelete?: boolean
       writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
     }
   ) =>
@@ -348,6 +349,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       keys: opts.keys,
       rateLimit: opts.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
       schema: opts.schema,
+      softDelete: opts.softDelete,
       table,
       writeRole: opts.writeRole
     })

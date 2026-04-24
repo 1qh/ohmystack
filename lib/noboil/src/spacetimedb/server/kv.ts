@@ -35,9 +35,11 @@ interface KvHooks<DB = unknown> {
 interface KvOptions<DB = unknown> {
   hooks?: KvHooks<DB>
   rateLimit?: RateLimitConfig
+  softDelete?: boolean
 }
 interface KvRow {
   createdAt: Timestamp
+  deletedAt?: null | Timestamp
   id: number
   key: string
   updatedAt: Timestamp
@@ -61,8 +63,10 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   const { fields, keyField, options, table: tableAccessor, tableName, writeRole } = config
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
+  const softDelete = options?.softDelete ?? false
   const setName = `set_${tableName}`
   const rmName = `rm_${tableName}`
+  const restoreName = `restore_${tableName}`
   const setParams: FieldBuilders = { key: keyField, ...fields }
   const rmParams: FieldBuilders = { key: keyField }
   const setReducer = spacetimedb.reducer({ name: setName }, setParams, (ctx, args) => {
@@ -78,9 +82,10 @@ const makeKv = <DB, Tbl extends KvTableLike>(
     const existing = findByKey(table, key)
     let row: KvRow
     if (existing) {
+      const basePatch = softDelete && existing.deletedAt ? { ...payload, deletedAt: null } : payload
       const patched = applyPatch(
         existing as unknown as Record<string, unknown>,
-        payload,
+        basePatch,
         ctx.timestamp
       ) as unknown as KvRow
       row = table.id.update(patched)
@@ -105,13 +110,25 @@ const makeKv = <DB, Tbl extends KvTableLike>(
     if (!existing) return
     const rowCast = existing as unknown as Record<string, unknown>
     if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: rowCast })
-    table.id.delete(existing.id)
+    if (softDelete) table.id.update({ ...existing, deletedAt: ctx.timestamp })
+    else table.id.delete(existing.id)
     if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: rowCast })
   })
+  const restoreReducer = softDelete
+    ? spacetimedb.reducer({ name: restoreName }, rmParams, (ctx, args) => {
+        if (writeRole && !writeRole({ db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }))
+          throw makeError('FORBIDDEN', `${tableName}:restore`)
+        const typedArgs = args as { key: string }
+        const table = tableAccessor(ctx.db) as unknown as KvTableLike
+        const existing = findByKey(table, typedArgs.key)
+        if (existing?.deletedAt) table.id.update({ ...existing, deletedAt: null, updatedAt: ctx.timestamp })
+      })
+    : undefined
   const exports: Record<string, ReducerExportLike> = {
     [rmName]: rmReducer as ReducerExportLike,
     [setName]: setReducer as ReducerExportLike
   }
+  if (restoreReducer) exports[restoreName] = restoreReducer as ReducerExportLike
   return { exports }
 }
 export type { KvConfig, KvExports, KvHooks, KvOptions, KvRow, KvTableLike }

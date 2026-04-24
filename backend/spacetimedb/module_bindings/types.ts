@@ -195,6 +195,7 @@ export const SiteConfig = __t.object("SiteConfig", {
   active: __t.bool(),
   message: __t.string(),
   createdAt: __t.timestamp(),
+  deletedAt: __t.option(__t.timestamp()),
   id: __t.u32(),
   key: __t.string(),
   updatedAt: __t.timestamp(),

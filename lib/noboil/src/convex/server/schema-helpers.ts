@@ -98,7 +98,12 @@ const logTable = <T extends ZodRawShape>(s: LogSchema<T>) =>
  * @returns Convex table definition with by_key index
  */
 const kvTable = <T extends ZodRawShape>(s: KvSchema<T>) =>
-  defineTable({ ...z2c(s.shape), key: v.string(), updatedAt: v.number() }).index('by_key', indexFields('key'))
+  defineTable({
+    ...z2c(s.shape),
+    deletedAt: v.optional(v.number()),
+    key: v.string(),
+    updatedAt: v.number()
+  }).index('by_key', indexFields('key'))
 /**
  * Creates a Convex table definition for a sliding-window quota counter.
  * @returns Convex table definition with by_owner index

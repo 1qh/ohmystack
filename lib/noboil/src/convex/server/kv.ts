@@ -8,12 +8,14 @@ import { idx, typed } from './bridge'
 import { isTestMode } from './env'
 import { checkRateLimit, dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
+const isSoftDeleted = (doc: null | Rec): boolean => doc?.deletedAt !== undefined
 const makeKv = <S extends ZodRawShape>({
   builders: b,
   hooks,
   keys,
   rateLimit,
   schema,
+  softDelete,
   table,
   writeRole
 }: {
@@ -22,6 +24,7 @@ const makeKv = <S extends ZodRawShape>({
   keys?: readonly string[]
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
+  softDelete?: boolean
   table: string
   writeRole?: ((ctx: DbCtx) => boolean | Promise<boolean>) | boolean
 }): KvFactoryResult<S> => {
@@ -52,11 +55,16 @@ const makeKv = <S extends ZodRawShape>({
     handler: typed(async (c: DbCtx, { key }: { key: string }) => {
       const bad = assertKey(key)
       if (bad) return bad
-      return byKey(c.db, key)
+      const doc = await byKey(c.db, key)
+      if (softDelete && isSoftDeleted(doc)) return null
+      return doc
     })
   })
   const list = b.q({
-    handler: typed(async (c: DbCtx) => c.db.query(table).collect())
+    handler: typed(async (c: DbCtx) => {
+      const rows = await c.db.query(table).collect()
+      return softDelete ? rows.filter(r => !isSoftDeleted(r)) : rows
+    })
   })
   const set = b.m({
     args: typed({ ...setArgs }),
@@ -79,7 +87,8 @@ const makeKv = <S extends ZodRawShape>({
           if (expectedUpdatedAt !== undefined && existing.updatedAt !== expectedUpdatedAt) return err('CONFLICT')
           const prev = existing
           if (hooks?.beforeUpdate) data = await hooks.beforeUpdate(hk(c), { id: prev._id as string, patch: data, prev })
-          await dbPatch(c.db, prev._id as string, { ...data, ...now })
+          const patch = softDelete && isSoftDeleted(prev) ? { ...data, deletedAt: undefined } : data
+          await dbPatch(c.db, prev._id as string, { ...patch, ...now })
           const next = { ...prev, ...data, ...now, key }
           if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: prev._id as string, patch: data, prev })
           return next
@@ -104,11 +113,28 @@ const makeKv = <S extends ZodRawShape>({
       const doc = await byKey(c.db, key)
       if (!doc) return { deleted: false }
       if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id as string })
-      await dbDelete(c.db, doc._id as string)
+      await (softDelete ? dbPatch(c.db, doc._id as string, { deletedAt: Date.now() }) : dbDelete(c.db, doc._id as string))
       if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id as string })
-      return { deleted: true }
+      return { deleted: true, soft: Boolean(softDelete) }
     })
   })
-  return typed({ get, list, rm, set })
+  const restore = softDelete
+    ? b.m({
+        args: typed({ key: string() }),
+        handler: typed(async (c: MutCtx, { key }: { key: string }) => {
+          const gate = await assertWrite(c)
+          if (gate) return gate
+          const bad = assertKey(key)
+          if (bad) return bad
+          const doc = await byKey(c.db, key)
+          if (!(doc && isSoftDeleted(doc))) return { restored: false }
+          await dbPatch(c.db, doc._id as string, { deletedAt: undefined })
+          return { restored: true }
+        })
+      })
+    : undefined
+  const endpoints: Record<string, unknown> = { get, list, rm, set }
+  if (restore) endpoints.restore = restore
+  return typed(endpoints)
 }
 export { makeKv }

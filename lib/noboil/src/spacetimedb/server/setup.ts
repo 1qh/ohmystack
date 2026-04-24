@@ -957,7 +957,7 @@ type TableArgs<F> = F extends ChildLike
     : F extends LogBranded
       ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
       : F extends KvBranded
-        ? [fields: F, opts?: { rateLimit?: RateLimitInput }]
+        ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
         : F extends QuotaBranded | SingletonBranded
           ? [fields: F]
           : F extends TableArgInput
@@ -978,7 +978,7 @@ type TableOpts<F> = F extends OwnedBranded
         : F extends LogBranded
           ? { rateLimit?: RateLimitInput; softDelete?: boolean }
           : F extends KvBranded
-            ? { rateLimit?: RateLimitInput }
+            ? { rateLimit?: RateLimitInput; softDelete?: boolean }
             : F extends QuotaBranded | SingletonBranded
               ? undefined
               : never
@@ -1226,9 +1226,12 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
       raw.logTable(entry.schema)
     )
   }
-  const kvTable = (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput }): BsTable => {
+  const kvTable = (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }): BsTable => {
     const rateLimit = opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined
-    return bsOf({ category: 'kv', rateLimit, zod: bsZod(entry.schema) }, raw.kvTable(entry.schema))
+    return bsOf(
+      { category: 'kv', rateLimit, softDelete: opts?.softDelete, zod: bsZod(entry.schema) },
+      raw.kvTable(entry.schema)
+    )
   }
   const quotaTable = (entry: { durationMs: number; limit: number }): BsTable =>
     bsOf({ category: 'quota', quotaDurationMs: entry.durationMs, quotaLimit: entry.limit }, raw.quotaTable())
@@ -1247,7 +1250,10 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
         options as undefined | { rateLimit?: RateLimitInput; softDelete?: boolean }
       )
     if (brand === 'kv')
-      return kvTable(fields as unknown as { schema: TblInput }, options as undefined | { rateLimit?: RateLimitInput })
+      return kvTable(
+        fields as unknown as { schema: TblInput },
+        options as undefined | { rateLimit?: RateLimitInput; softDelete?: boolean }
+      )
     if (brand === 'quota') return quotaTable(fields as unknown as { durationMs: number; limit: number })
     if (brand === 'base') {
       if (!isBaseOpts(options))
@@ -1280,7 +1286,7 @@ interface NoboilHelpers {
   cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
   childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
   fileTable: () => BsTable
-  kvTable: (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput }) => BsTable
+  kvTable: (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }) => BsTable
   logTable: (
     entry: { parent: string; schema: TblInput },
     opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }
@@ -1339,10 +1345,12 @@ const wireKvFactories = ({
   for (const [name, zod] of Object.entries(kvZ)) {
     const fields = zodToStdbFields(zod.shape, bridgeT, name)
     const rl = tblOpts[name]?.rateLimit
+    const sd = tblOpts[name]?.softDelete
+    const hasOpts = Boolean(rl) || Boolean(sd)
     const { exports: kvExports } = makeKv(reducer as never, {
       fields,
       keyField: bridgeT.string() as never,
-      options: rl ? { rateLimit: rl } : undefined,
+      options: hasOpts ? { rateLimit: rl, softDelete: sd } : undefined,
       table: tblOf(name) as never,
       tableName: name
     })

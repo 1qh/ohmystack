@@ -9,6 +9,7 @@ export default __t.row({
   active: __t.bool(),
   message: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
+  deletedAt: __t.option(__t.timestamp()).name("deleted_at"),
   id: __t.u32().primaryKey(),
   key: __t.string(),
   updatedAt: __t.timestamp().name("updated_at"),
