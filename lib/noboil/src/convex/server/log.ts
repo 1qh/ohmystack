@@ -225,19 +225,42 @@ const makeLog = <S extends ZodRawShape>({
         })
       })
     : undefined
-  const searchEndpoint = searchCfg
-    ? b.q({
-        args: typed({ parent: string(), query: string() }),
-        handler: typed(async (c: ReadCtx, { parent: p, query }: { parent: string; query: string }) => {
-          const rows = (await c.db
-            .query(table)
-            .withSearchIndex(searchCfg.index, (sb: SearchLike) => sb.search(searchCfg.field, query))
-            .filter((f: FilterLike) => f.eq(f.field('parent'), p))
-            .collect()) as { userId: string }[]
-          return enrich(c, rows)
-        })
-      })
+  const makeSearchHandler =
+    (ownOnly: boolean) =>
+    async (c: ReadCtx, { parent: p, query }: { parent: string; query: string }) => {
+      if (!searchCfg) throw new Error('search not configured')
+      let q = c.db
+        .query(table)
+        .withSearchIndex(searchCfg.index, (sb: SearchLike) => sb.search(searchCfg.field, query))
+        .filter((f: FilterLike) => f.eq(f.field('parent'), p))
+      if (ownOnly) q = q.filter((f: FilterLike) => f.eq(f.field('userId'), c.viewerId))
+      const rows = (await q.collect()) as { userId: string }[]
+      return enrich(c, rows)
+    }
+  const authSearch = searchCfg
+    ? b.q({ args: typed({ parent: string(), query: string() }), handler: typed(makeSearchHandler(true)) })
     : undefined
+  const pubSearch =
+    searchCfg && pub
+      ? b.q({ args: typed({ parent: string(), query: string() }), handler: typed(makeSearchHandler(false)) })
+      : undefined
+  const searchEndpoint = pub ? pubSearch : authSearch
+  const rmOne = b.m({
+    args: typed({ id: zid(table) }),
+    handler: typed(async (c: MutCtx, { id }: { id: string }) => {
+      await rl(c)
+      const doc = await c.db.get(id)
+      if (!doc) return { deleted: false }
+      if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id })
+      if (softDelete) await dbPatch(c.db, id, { deletedAt: Date.now() })
+      else {
+        await dbDelete(c.db, id)
+        await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+      }
+      if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id })
+      return { deleted: true, soft: Boolean(softDelete) }
+    })
+  })
   const read = b.q({
     args: typed({ id: zid(table) }),
     handler: typed(async (c: ReadCtx, { id }: { id: string }) => {
@@ -248,15 +271,20 @@ const makeLog = <S extends ZodRawShape>({
       return enriched
     })
   })
+  const authApi: Record<string, unknown> = { list: authList, read }
+  if (authSearch) authApi.search = authSearch
+  const pubApi: Record<string, unknown> | undefined = pubList ? { list: pubList, read } : undefined
+  if (pubApi && pubSearch) pubApi.search = pubSearch
   const endpoints: Record<string, unknown> = {
     append,
-    auth: { list: authList, read },
+    auth: authApi,
     list,
     listAfter,
     purgeByParent,
-    read
+    read,
+    rm: rmOne
   }
-  if (pubList) endpoints.pub = { list: pubList, read }
+  if (pubApi) endpoints.pub = pubApi
   if (searchEndpoint) endpoints.search = searchEndpoint
   if (restoreByParent) endpoints.restoreByParent = restoreByParent
   return typed(endpoints)

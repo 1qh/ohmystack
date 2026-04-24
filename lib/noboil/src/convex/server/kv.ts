@@ -16,6 +16,7 @@ import {
   detectFiles,
   err,
   errValidation,
+  pgOpts,
   time
 } from './helpers'
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
@@ -75,10 +76,12 @@ const makeKv = <S extends ZodRawShape>({
     })
   })
   const list = b.q({
-    handler: typed(async (c: DbCtx & { storage: unknown }) => {
-      const rows = await c.db.query(table).collect()
-      const filtered = softDelete ? rows.filter(r => !isSoftDeleted(r)) : rows
-      return Promise.all(filtered.map(async r => addFileUrls(r, c.storage)))
+    args: typed({ paginationOpts: pgOpts }),
+    handler: typed(async (c: DbCtx & { storage: unknown }, { paginationOpts: op }: { paginationOpts: Rec }) => {
+      const page = (await c.db.query(table).paginate(op)) as unknown as { page: Rec[] }
+      const filtered = softDelete ? page.page.filter(r => !isSoftDeleted(r)) : page.page
+      const withUrls = await Promise.all(filtered.map(async r => addFileUrls(r, c.storage)))
+      return { ...page, page: withUrls }
     })
   })
   const set = b.m({
