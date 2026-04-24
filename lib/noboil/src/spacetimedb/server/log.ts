@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/nursery/noContinue: bulk-loop skip on missing row */
+/* eslint-disable no-continue */
+/* oxlint-disable eslint(no-continue) */
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { RateLimitConfig } from './types'
@@ -8,6 +11,7 @@ interface LogConfig<DB, Tbl extends LogTableLike> {
   fields: FieldBuilders
   idempotencyKeyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   idField?: ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
+  idsField?: ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
   options?: LogOptions<DB>
   parentField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   table: (db: DB) => Tbl
@@ -65,6 +69,7 @@ const makeLog = <DB, Tbl extends LogTableLike>(
     bulkItemsField,
     fields,
     idField,
+    idsField,
     idempotencyKeyField,
     options,
     parentField,
@@ -183,6 +188,7 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   if (restoreReducer) exports[restoreName] = restoreReducer as ReducerExportLike
   if (bulkReducer) exports[bulkAppendName] = bulkReducer as ReducerExportLike
   const rmName = `rm_${tableName}`
+  const bulkRmName = `bulk_rm_${tableName}`
   if (idField) {
     const rmReducer = spacetimedb.reducer({ name: rmName }, { id: idField }, (ctx, args) => {
       if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
@@ -196,6 +202,22 @@ const makeLog = <DB, Tbl extends LogTableLike>(
       else table.id.delete(typedArgs.id)
     })
     exports[rmName] = rmReducer as ReducerExportLike
+  }
+  if (idsField) {
+    const bulkRmReducer = spacetimedb.reducer({ name: bulkRmName }, { ids: idsField }, (ctx, args) => {
+      if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+      const typedArgs = args as { ids: number[] }
+      const table = tableAccessor(ctx.db) as unknown as LogTableLike & {
+        id: { delete: (id: number) => void; find: (id: number) => LogRow | null; update: (row: LogRow) => LogRow }
+      }
+      for (const id of typedArgs.ids) {
+        const row = table.id.find(id)
+        if (!row) continue
+        if (softDelete) table.id.update({ ...row, deletedAt: ctx.timestamp })
+        else table.id.delete(id)
+      }
+    })
+    exports[bulkRmName] = bulkRmReducer as ReducerExportLike
   }
   return { exports }
 }
