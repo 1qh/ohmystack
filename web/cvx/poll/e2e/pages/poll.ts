@@ -8,10 +8,11 @@ class PollPage extends BasePage {
     const qInput = this.getQuestionInput()
     await qInput.waitFor({ state: 'visible', timeout: 15_000 })
     await qInput.scrollIntoViewIfNeeded()
-    await qInput.fill(question)
+    await qInput.pressSequentially(question, { delay: 10 })
     const tagInput = this.getOptionsTagInput()
     for (const opt of options) {
-      await tagInput.fill(opt)
+      await tagInput.focus()
+      await tagInput.pressSequentially(opt, { delay: 10 })
       await tagInput.press('Enter')
     }
     await this.getCreateSubmit().click()
