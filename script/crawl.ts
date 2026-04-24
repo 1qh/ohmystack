@@ -59,6 +59,7 @@ const APPS: AppSpec[] = [
   appMeta('cvx-blog', 'cvx', ['/login', '/login/email'], ['/', '/profile', '/pagination', '/dev']),
   appMeta('cvx-chat', 'cvx', ['/login/email'], ['/']),
   appMeta('cvx-movie', 'cvx', ['/', '/fetch']),
+  appMeta('cvx-poll', 'cvx', ['/login', '/login/email'], ['/']),
   appMeta(
     'cvx-org',
     'cvx',
@@ -68,6 +69,7 @@ const APPS: AppSpec[] = [
   appMeta('stdb-blog', 'stdb', ['/', '/profile']),
   appMeta('stdb-chat', 'stdb', ['/login/email']),
   appMeta('stdb-movie', 'stdb', ['/', '/fetch']),
+  appMeta('stdb-poll', 'stdb', ['/']),
   appMeta('stdb-org', 'stdb', ['/login/email']),
   appMeta('doc', undefined, ['/'])
 ]

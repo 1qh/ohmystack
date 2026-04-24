@@ -5,7 +5,10 @@ import type { Locator } from '@playwright/test'
 import BasePage from '@a/e2e/base-page'
 class PollPage extends BasePage {
   public async createPoll(question: string, options: string[]): Promise<void> {
-    await this.getQuestionInput().fill(question)
+    const qInput = this.getQuestionInput()
+    await qInput.waitFor({ state: 'visible', timeout: 15_000 })
+    await qInput.scrollIntoViewIfNeeded()
+    await qInput.fill(question)
     const tagInput = this.getOptionsTagInput()
     for (const opt of options) {
       await tagInput.fill(opt)
