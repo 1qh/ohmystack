@@ -6,7 +6,18 @@ import { number, string } from 'zod/v4'
 import type { CrudHooks, DbCtx, DbLike, HookCtx, KvFactoryResult, Mb, MutCtx, Qb, RateLimitConfig, Rec } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
-import { addUrls, checkRateLimit, dbDelete, dbInsert, dbPatch, detectFiles, err, errValidation, time } from './helpers'
+import {
+  addUrls,
+  checkRateLimit,
+  cleanFiles,
+  dbDelete,
+  dbInsert,
+  dbPatch,
+  detectFiles,
+  err,
+  errValidation,
+  time
+} from './helpers'
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const isSoftDeleted = (doc: null | Rec): boolean => doc?.deletedAt !== undefined
 const makeKv = <S extends ZodRawShape>({
@@ -93,6 +104,7 @@ const makeKv = <S extends ZodRawShape>({
           if (hooks?.beforeUpdate) data = await hooks.beforeUpdate(hk(c), { id: prev._id as string, patch: data, prev })
           const patch = softDelete && isSoftDeleted(prev) ? { ...data, deletedAt: undefined } : data
           await dbPatch(c.db, prev._id as string, { ...patch, ...now })
+          await cleanFiles({ doc: prev, fileFields: fileFs, next: patch, storage: c.storage })
           const next = { ...prev, ...data, ...now, key }
           if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: prev._id as string, patch: data, prev })
           return next
@@ -117,7 +129,11 @@ const makeKv = <S extends ZodRawShape>({
       const doc = await byKey(c.db, key)
       if (!doc) return { deleted: false }
       if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id as string })
-      await (softDelete ? dbPatch(c.db, doc._id as string, { deletedAt: Date.now() }) : dbDelete(c.db, doc._id as string))
+      if (softDelete) await dbPatch(c.db, doc._id as string, { deletedAt: Date.now() })
+      else {
+        await dbDelete(c.db, doc._id as string)
+        await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+      }
       if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id as string })
       return { deleted: true, soft: Boolean(softDelete) }
     })

@@ -22,7 +22,18 @@ import type {
 } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
-import { addUrls, checkRateLimit, dbDelete, dbInsert, dbPatch, detectFiles, err, errValidation, pgOpts } from './helpers'
+import {
+  addUrls,
+  checkRateLimit,
+  cleanFiles,
+  dbDelete,
+  dbInsert,
+  dbPatch,
+  detectFiles,
+  err,
+  errValidation,
+  pgOpts
+} from './helpers'
 const DEFAULT_LIMIT = 500
 const BULK_MAX = 100
 interface LogRow {
@@ -186,7 +197,10 @@ const makeLog = <S extends ZodRawShape>({
       const hard = !softDelete || purge === 1
       for (const doc of docs) {
         if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id })
-        await (hard ? dbDelete(c.db, doc._id) : dbPatch(c.db, doc._id, { deletedAt: Date.now() }))
+        if (hard) {
+          await dbDelete(c.db, doc._id)
+          await cleanFiles({ doc, fileFields: fileFs, storage: c.storage })
+        } else await dbPatch(c.db, doc._id, { deletedAt: Date.now() })
         if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id })
         deleted += 1
       }
