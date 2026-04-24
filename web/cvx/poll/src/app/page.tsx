@@ -70,14 +70,14 @@ const CreatePoll = () => {
 }
 const Page = () => {
   const polls = useCrud(api.poll) as unknown as { data: Poll[] }
-  const banner = useKv(api.siteConfig, 'banner')
+  const banner = useKv(api.siteConfig, 'banner') as { data: null | undefined | { active: boolean; message: string } }
   const [selectedPoll, setSelectedPoll] = useState<null | string>(null)
-  const bannerDoc = banner.data as null | undefined | { value: string }
+  const bannerDoc = banner.data
   return (
     <div className='mx-auto max-w-2xl space-y-6 p-8' data-testid='poll-page'>
-      {bannerDoc ? (
+      {bannerDoc?.active ? (
         <div className='rounded-sm bg-muted p-3 text-sm' data-testid='poll-banner'>
-          {bannerDoc.value}
+          {bannerDoc.message}
         </div>
       ) : null}
       <h1 className='text-2xl font-bold'>Polls</h1>
