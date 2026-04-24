@@ -35,6 +35,7 @@ const notDeleted = (f: FilterLike): unknown => f.eq(f.field('deletedAt'), undefi
 const makeLog = <S extends ZodRawShape>({
   builders: b,
   hooks,
+  pub,
   rateLimit,
   schema,
   search: searchOpt,
@@ -43,6 +44,7 @@ const makeLog = <S extends ZodRawShape>({
 }: {
   builders: { m: Mb; q: Qb }
   hooks?: CrudHooks
+  pub?: boolean
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   search?: boolean | string | { field?: string; index?: string }
@@ -160,16 +162,20 @@ const makeLog = <S extends ZodRawShape>({
       return enrich(c, rows)
     })
   })
-  const list = b.q({
-    args: typed({ ...listArgs, paginationOpts: pgOpts }),
-    handler: typed(async (c: ReadCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) => {
-      const page = (await byParent(c.db, p).order('desc').paginate(op)) as unknown as {
-        page: { userId: string }[]
-      }
+  const makeListHandler =
+    (ownOnly: boolean) =>
+    async (c: ReadCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) => {
+      let q = byParent(c.db, p)
+      if (ownOnly) q = q.filter((f: FilterLike) => f.eq(f.field('userId'), c.viewerId))
+      const page = (await q.order('desc').paginate(op)) as unknown as { page: { userId: string }[] }
       const enriched = await enrich(c, page.page)
       return { ...page, page: enriched }
-    })
-  })
+    }
+  const authList = b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler(true)) })
+  const pubList = pub
+    ? b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler(false)) })
+    : undefined
+  const list = pub ? pubList : authList
   const purgeByParent = b.m({
     args: typed({ purge: number().optional(), ...purgeArgs }),
     handler: typed(async (c: MutCtx, { parent: p, purge }: { parent: string; purge?: number }) => {
@@ -217,7 +223,14 @@ const makeLog = <S extends ZodRawShape>({
         })
       })
     : undefined
-  const endpoints: Record<string, unknown> = { append, list, listAfter, purgeByParent }
+  const endpoints: Record<string, unknown> = {
+    append,
+    auth: { list: authList },
+    list,
+    listAfter,
+    purgeByParent
+  }
+  if (pubList) endpoints.pub = { list: pubList }
   if (searchEndpoint) endpoints.search = searchEndpoint
   if (restoreByParent) endpoints.restoreByParent = restoreByParent
   return typed(endpoints)

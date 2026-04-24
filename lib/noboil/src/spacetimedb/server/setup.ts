@@ -955,7 +955,7 @@ type TableArgs<F> = F extends ChildLike
   : F extends BaseBranded
     ? [fields: F, opts: { key: string; ttl?: number }]
     : F extends LogBranded
-      ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
+      ? [fields: F, opts?: { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }]
       : F extends KvBranded
         ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
         : F extends QuotaBranded | SingletonBranded
@@ -976,7 +976,7 @@ type TableOpts<F> = F extends OwnedBranded
       : F extends BaseBranded
         ? { key: string; ttl?: number }
         : F extends LogBranded
-          ? { rateLimit?: RateLimitInput; softDelete?: boolean }
+          ? { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }
           : F extends KvBranded
             ? { rateLimit?: RateLimitInput; softDelete?: boolean }
             : F extends QuotaBranded | SingletonBranded
@@ -1218,11 +1218,18 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     bsOf({ category: 'singleton', zod: bsZod(fields) }, raw.singletonTable(fields))
   const logTable = (
     entry: { parent: string; schema: TblInput },
-    opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }
+    opts?: { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }
   ): BsTable => {
     const rateLimit = opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined
     return bsOf(
-      { category: 'log', logParent: entry.parent, rateLimit, softDelete: opts?.softDelete, zod: bsZod(entry.schema) },
+      {
+        category: 'log',
+        logParent: entry.parent,
+        pub: opts?.pub,
+        rateLimit,
+        softDelete: opts?.softDelete,
+        zod: bsZod(entry.schema)
+      },
       raw.logTable(entry.schema)
     )
   }
@@ -1247,7 +1254,7 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     if (brand === 'log')
       return logTable(
         fields as unknown as { parent: string; schema: TblInput },
-        options as undefined | { rateLimit?: RateLimitInput; softDelete?: boolean }
+        options as undefined | { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }
       )
     if (brand === 'kv')
       return kvTable(
@@ -1289,7 +1296,7 @@ interface NoboilHelpers {
   kvTable: (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }) => BsTable
   logTable: (
     entry: { parent: string; schema: TblInput },
-    opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }
+    opts?: { pub?: boolean; rateLimit?: RateLimitInput; softDelete?: boolean }
   ) => BsTable
   orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
   orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable

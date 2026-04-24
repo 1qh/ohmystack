@@ -318,6 +318,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     schema: ZodObject<S>,
     opts?: {
       hooks?: CrudHooks
+      pub?: boolean
       rateLimit?: RateLimitInput
       search?: boolean | string | { field?: string; index?: string }
       softDelete?: boolean
@@ -326,6 +327,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     makeLog({
       builders: { m: typed(m), q: typed(q) },
       hooks: mergeHooks(gh, opts?.hooks, table),
+      pub: opts?.pub,
       rateLimit: opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
       schema,
       search: opts?.search,
