@@ -69,7 +69,7 @@ const CreatePoll = () => {
   )
 }
 const Page = () => {
-  const polls = useCrud(api.poll) as unknown as { create: (d: Record<string, unknown>) => Promise<void>; data: Poll[] }
+  const polls = useCrud(api.poll) as unknown as { data: Poll[] }
   const banner = useKv(api.siteConfig, 'banner')
   const [selectedPoll, setSelectedPoll] = useState<null | string>(null)
   const bannerDoc = banner.data as null | undefined | { value: string }
