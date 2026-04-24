@@ -3,6 +3,7 @@
 /* oxlint-disable eslint(no-await-in-loop) */
 /* eslint-disable no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
+import { zid } from 'convex-helpers/server/zod4'
 import { array, number, string } from 'zod/v4'
 import type {
   CrudHooks,
@@ -223,14 +224,25 @@ const makeLog = <S extends ZodRawShape>({
         })
       })
     : undefined
+  const read = b.q({
+    args: typed({ id: zid(table) }),
+    handler: typed(async (c: ReadCtx, { id }: { id: string }) => {
+      const doc = (await c.db.get(id)) as null | { userId: string }
+      if (!doc) return null
+      if (softDelete && (doc as unknown as Rec).deletedAt !== undefined) return null
+      const [enriched] = await enrich(c, [doc])
+      return enriched
+    })
+  })
   const endpoints: Record<string, unknown> = {
     append,
-    auth: { list: authList },
+    auth: { list: authList, read },
     list,
     listAfter,
-    purgeByParent
+    purgeByParent,
+    read
   }
-  if (pubList) endpoints.pub = { list: pubList }
+  if (pubList) endpoints.pub = { list: pubList, read }
   if (searchEndpoint) endpoints.search = searchEndpoint
   if (restoreByParent) endpoints.restoreByParent = restoreByParent
   return typed(endpoints)
