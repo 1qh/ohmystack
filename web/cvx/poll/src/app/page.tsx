@@ -3,6 +3,7 @@
 import { api } from '@a/be-convex'
 import { Button } from '@a/ui/button'
 import { FieldGroup } from '@a/ui/field'
+import { useMutation } from 'convex/react'
 import { Form, useFormMutation } from 'noboil/convex/components'
 import { useKv, useList, useLog, useQuota } from 'noboil/convex/react'
 import { useState } from 'react'
@@ -12,8 +13,10 @@ interface Poll {
   _id: string
   options: string[]
   question: string
+  updatedAt: number
 }
 interface VoteRow {
+  _id: string
   optionIdx: number
 }
 const VoteView = ({ options, pollId }: { options: string[]; pollId: string }) => {
@@ -29,8 +32,14 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: string }) =>
     }
     await log.append({ payload: { optionIdx: idx, voter: 'anon' } })
   }
+  const purge = async () => {
+    await log.purge()
+  }
   return (
     <div className='mt-3 space-y-2' data-testid='vote-view'>
+      <div className='text-xs text-muted-foreground' data-testid='quota-remaining'>
+        quota: {quota.state?.remaining ?? '—'}
+      </div>
       {options.map((opt, i) => (
         <div className='flex items-center gap-2' key={opt}>
           <Button
@@ -43,9 +52,20 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: string }) =>
             variant='outline'>
             {opt}
           </Button>
-          <span className='text-sm text-muted-foreground'>{counts[i]} votes</span>
+          <span className='text-sm text-muted-foreground' data-testid={`vote-count-${i}`}>
+            {counts[i]} votes
+          </span>
         </div>
       ))}
+      <Button
+        data-testid='vote-purge'
+        onClick={() => {
+          purge().catch(() => null)
+        }}
+        size='sm'
+        variant='ghost'>
+        purge votes
+      </Button>
     </div>
   )
 }
@@ -68,12 +88,77 @@ const CreatePoll = () => {
     />
   )
 }
+const BannerAdmin = () => {
+  const banner = useKv(api.siteConfig, 'banner') as {
+    data: null | undefined | { active: boolean; message: string; updatedAt: number }
+    remove: () => Promise<void>
+    update: (payload: { active: boolean; message: string }) => Promise<void>
+  }
+  const [message, setMessage] = useState('')
+  const [active, setActive] = useState(true)
+  const save = async (): Promise<void> => {
+    await banner.update({ active, message })
+    toast.success('banner saved')
+  }
+  const clear = async (): Promise<void> => {
+    await banner.remove()
+    toast.success('banner cleared')
+  }
+  return (
+    <div className='space-y-2 rounded-sm border p-3' data-testid='banner-admin'>
+      <input
+        className='w-full rounded-sm border px-2 py-1 text-sm'
+        data-testid='banner-message-input'
+        onChange={e => setMessage(e.target.value)}
+        placeholder='banner message'
+        value={message}
+      />
+      <label className='flex items-center gap-2 text-sm'>
+        <input
+          checked={active}
+          data-testid='banner-active-input'
+          onChange={e => setActive(e.target.checked)}
+          type='checkbox'
+        />
+        active
+      </label>
+      <div className='flex gap-2'>
+        <Button
+          data-testid='banner-save'
+          onClick={() => {
+            save().catch(() => null)
+          }}
+          size='sm'>
+          save banner
+        </Button>
+        <Button
+          data-testid='banner-clear'
+          onClick={() => {
+            clear().catch(() => null)
+          }}
+          size='sm'
+          variant='outline'>
+          clear banner
+        </Button>
+      </div>
+      <div className='text-xs text-muted-foreground' data-testid='banner-state'>
+        {banner.data ? `active=${banner.data.active} message=${banner.data.message}` : 'no banner'}
+      </div>
+    </div>
+  )
+}
 const Page = () => {
-  const { data } = useList(api.poll.list, {})
+  const { data, hasMore, loadMore } = useList(api.poll.list, {})
   const polls = data as Poll[]
   const banner = useKv(api.siteConfig, 'banner') as { data: null | undefined | { active: boolean; message: string } }
   const [selectedPoll, setSelectedPoll] = useState<null | string>(null)
+  const [query, setQuery] = useState('')
+  const rmPoll = useMutation(api.poll.rm)
   const bannerDoc = banner.data
+  const filtered = query ? polls.filter(p => p.question.toLowerCase().includes(query.toLowerCase())) : polls
+  const del = async (id: string): Promise<void> => {
+    await rmPoll({ id })
+  }
   return (
     <div className='mx-auto max-w-2xl space-y-6 p-8' data-testid='poll-page'>
       {bannerDoc?.active ? (
@@ -82,17 +167,41 @@ const Page = () => {
         </div>
       ) : null}
       <h1 className='text-2xl font-bold'>Polls</h1>
+      <BannerAdmin />
       <CreatePoll />
+      <input
+        className='w-full rounded-sm border px-2 py-1'
+        data-testid='poll-search-input'
+        onChange={e => setQuery(e.target.value)}
+        placeholder='search polls'
+        value={query}
+      />
       <ul className='space-y-3'>
-        {polls.map(p => (
-          <li className='rounded-sm border p-4' data-testid='poll-item' key={p._id}>
-            <button className='text-left font-medium' onClick={() => setSelectedPoll(p._id)} type='button'>
-              {p.question}
-            </button>
+        {filtered.map(p => (
+          <li className='space-y-2 rounded-sm border p-4' data-testid='poll-item' key={p._id}>
+            <div className='flex items-center justify-between'>
+              <button className='text-left font-medium' onClick={() => setSelectedPoll(p._id)} type='button'>
+                {p.question}
+              </button>
+              <Button
+                data-testid={`poll-delete-${p._id}`}
+                onClick={() => {
+                  del(p._id).catch(() => null)
+                }}
+                size='sm'
+                variant='ghost'>
+                delete
+              </Button>
+            </div>
             {selectedPoll === p._id ? <VoteView options={p.options} pollId={p._id} /> : null}
           </li>
         ))}
       </ul>
+      {hasMore ? (
+        <Button data-testid='poll-load-more' onClick={() => loadMore(10)} size='sm' variant='outline'>
+          load more
+        </Button>
+      ) : null}
     </div>
   )
 }

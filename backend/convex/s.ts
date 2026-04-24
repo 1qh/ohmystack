@@ -48,7 +48,7 @@ const s = schema({
   kv: {
     siteConfig: {
       keys: ['banner', 'defaultPollDays'] as const,
-      schema: object({ value: string() }),
+      schema: object({ active: boolean(), message: string() }),
       writeRole: true
     }
   },
@@ -107,7 +107,7 @@ const s = schema({
     })
   },
   quota: {
-    pollVote: { durationMs: 24 * 60 * 60 * 1000, limit: 1 }
+    pollVote: { durationMs: 60_000, limit: 30 }
   },
   singleton: {
     blogProfile: object(profileShape),

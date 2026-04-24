@@ -33,8 +33,14 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) =>
     await quota.consume()
     await log.append({ payload: { option: opt } })
   }
+  const purge = async (): Promise<void> => {
+    await log.purge()
+  }
   return (
     <div className='mt-3 space-y-2' data-testid='vote-view'>
+      <div className='text-xs text-muted-foreground' data-testid='quota-remaining'>
+        quota: {quota.state.remaining}
+      </div>
       {options.map((opt, i) => (
         <div className='flex items-center gap-2' key={opt}>
           <Button
@@ -47,9 +53,20 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) =>
             variant='outline'>
             {opt}
           </Button>
-          <span className='text-sm text-muted-foreground'>{counts[i]} votes</span>
+          <span className='text-sm text-muted-foreground' data-testid={`vote-count-${i}`}>
+            {counts[i]} votes
+          </span>
         </div>
       ))}
+      <Button
+        data-testid='vote-purge'
+        onClick={() => {
+          purge().catch(() => null)
+        }}
+        size='sm'
+        variant='ghost'>
+        purge votes
+      </Button>
     </div>
   )
 }
@@ -73,16 +90,80 @@ const CreatePoll = () => {
     />
   )
 }
+const BannerAdmin = () => {
+  const banner = useKv<{ active: boolean; key: string; message: string }>(
+    { rm: reducers.rmSiteConfig, set: reducers.setSiteConfig, table: tables.siteConfig },
+    'banner'
+  )
+  const [message, setMessage] = useState('')
+  const [active, setActive] = useState(true)
+  const save = async (): Promise<void> => {
+    await banner.update({ active, message })
+    toast.success('banner saved')
+  }
+  const clear = async (): Promise<void> => {
+    await banner.remove()
+    toast.success('banner cleared')
+  }
+  return (
+    <div className='space-y-2 rounded-sm border p-3' data-testid='banner-admin'>
+      <input
+        className='w-full rounded-sm border px-2 py-1 text-sm'
+        data-testid='banner-message-input'
+        onChange={e => setMessage(e.target.value)}
+        placeholder='banner message'
+        value={message}
+      />
+      <label className='flex items-center gap-2 text-sm'>
+        <input
+          checked={active}
+          data-testid='banner-active-input'
+          onChange={e => setActive(e.target.checked)}
+          type='checkbox'
+        />
+        active
+      </label>
+      <div className='flex gap-2'>
+        <Button
+          data-testid='banner-save'
+          onClick={() => {
+            save().catch(() => null)
+          }}
+          size='sm'>
+          save banner
+        </Button>
+        <Button
+          data-testid='banner-clear'
+          onClick={() => {
+            clear().catch(() => null)
+          }}
+          size='sm'
+          variant='outline'>
+          clear banner
+        </Button>
+      </div>
+      <div className='text-xs text-muted-foreground' data-testid='banner-state'>
+        {banner.data ? `active=${banner.data.active} message=${banner.data.message}` : 'no banner'}
+      </div>
+    </div>
+  )
+}
 const Page = () => {
   const [allPolls, isReady] = useTable(tables.poll)
   const { identity } = useSpacetimeDB()
   const mine = useOwnRows(allPolls, identity ? (p: (typeof allPolls)[number]) => p.userId.isEqual(identity) : null)
-  const { data: polls } = useList(mine, isReady, { sort: { direction: 'desc', field: 'id' } })
+  const rmPoll = useMut<{ id: number }>(reducers.rmPoll)
+  const [query, setQuery] = useState('')
+  const filtered = query ? mine.filter(p => p.question.toLowerCase().includes(query.toLowerCase())) : mine
+  const { data: polls } = useList(filtered, isReady, { sort: { direction: 'desc', field: 'id' } })
   const banner = useKv<{ active: boolean; key: string; message: string }>(
     { rm: reducers.rmSiteConfig, set: reducers.setSiteConfig, table: tables.siteConfig },
     'banner'
   )
   const [selected, setSelected] = useState<null | number>(null)
+  const del = async (id: number): Promise<void> => {
+    await rmPoll({ id })
+  }
   return (
     <div className='mx-auto max-w-2xl space-y-6 p-8' data-testid='poll-page'>
       {banner.data?.active ? (
@@ -91,13 +172,32 @@ const Page = () => {
         </div>
       ) : null}
       <h1 className='text-2xl font-bold'>Polls</h1>
+      <BannerAdmin />
       <CreatePoll />
+      <input
+        className='w-full rounded-sm border px-2 py-1'
+        data-testid='poll-search-input'
+        onChange={e => setQuery(e.target.value)}
+        placeholder='search polls'
+        value={query}
+      />
       <ul className='space-y-3'>
         {polls.map(p => (
-          <li className='rounded-sm border p-4' data-testid='poll-item' key={p.id}>
-            <button className='text-left font-medium' onClick={() => setSelected(p.id)} type='button'>
-              {p.question}
-            </button>
+          <li className='space-y-2 rounded-sm border p-4' data-testid='poll-item' key={p.id}>
+            <div className='flex items-center justify-between'>
+              <button className='text-left font-medium' onClick={() => setSelected(p.id)} type='button'>
+                {p.question}
+              </button>
+              <Button
+                data-testid={`poll-delete-${p.id}`}
+                onClick={() => {
+                  del(p.id).catch(() => null)
+                }}
+                size='sm'
+                variant='ghost'>
+                delete
+              </Button>
+            </div>
             {selected === p.id ? <VoteView options={p.options} pollId={p.id} /> : null}
           </li>
         ))}
