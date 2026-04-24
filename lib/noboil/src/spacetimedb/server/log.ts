@@ -61,8 +61,9 @@ const makeLog = <DB, Tbl extends LogTableLike>(
       id: 0,
       idempotencyKey: idempotencyKey ?? null,
       parent,
-      seq: maxSeq + 1
-    })
+      seq: maxSeq + 1,
+      userId: ctx.sender
+    } as unknown as LogRow)
   })
   const purgeReducer = spacetimedb.reducer({ name: purgeName }, purgeParams, (ctx, args) => {
     const typedArgs = args as { parent: string }
