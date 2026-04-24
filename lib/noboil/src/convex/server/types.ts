@@ -295,6 +295,7 @@ interface FilterLike {
   gte: (a: unknown, b: unknown) => unknown
   lt: (a: unknown, b: unknown) => unknown
   lte: (a: unknown, b: unknown) => unknown
+  neq: (a: unknown, b: unknown) => unknown
   or: (a: unknown, b: unknown) => unknown
 }
 interface IndexLike {

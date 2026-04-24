@@ -21,7 +21,7 @@ import type {
 } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
-import { addUrls, checkRateLimit, dbDelete, dbInsert, detectFiles, err, errValidation, pgOpts } from './helpers'
+import { addUrls, checkRateLimit, dbDelete, dbInsert, dbPatch, detectFiles, err, errValidation, pgOpts } from './helpers'
 const DEFAULT_LIMIT = 500
 const BULK_MAX = 100
 interface LogRow {
@@ -31,12 +31,14 @@ interface LogRow {
   seq: number
 }
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
+const notDeleted = (f: FilterLike): unknown => f.eq(f.field('deletedAt'), undefined)
 const makeLog = <S extends ZodRawShape>({
   builders: b,
   hooks,
   rateLimit,
   schema,
   search: searchOpt,
+  softDelete,
   table
 }: {
   builders: { m: Mb; q: Qb }
@@ -44,6 +46,7 @@ const makeLog = <S extends ZodRawShape>({
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   search?: boolean | string | { field?: string; index?: string }
+  softDelete?: boolean
   table: string
 }): LogFactoryResult<S> => {
   const searchCfg =
@@ -59,11 +62,13 @@ const makeLog = <S extends ZodRawShape>({
     const withAuthored = await c.withAuthor(docs)
     return Promise.all(withAuthored.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage })))
   }
-  const byParent = (db: DbLike, p: string): QueryLike =>
-    db.query(table).withIndex(
+  const byParent = (db: DbLike, p: string): QueryLike => {
+    const base = db.query(table).withIndex(
       'by_parent',
       idx(o => o.eq('parent', p))
     )
+    return softDelete ? base.filter(notDeleted) : base
+  }
   const byIdempotency = async (db: DbLike, p: string, key: string): Promise<LogRow | null> =>
     db
       .query(table)
@@ -146,14 +151,12 @@ const makeLog = <S extends ZodRawShape>({
   const listAfter = b.q({
     args: typed({ ...listAfterArgs }),
     handler: typed(async (c: ReadCtx, { limit, parent: p, seq }: { limit?: number; parent: string; seq: number }) => {
-      const rows = (await c.db
-        .query(table)
-        .withIndex(
-          'by_parent_seq',
-          idx(o => o.eq('parent', p).gt('seq', seq))
-        )
-        .order('asc')
-        .take(limit ?? DEFAULT_LIMIT)) as { userId: string }[]
+      const base = c.db.query(table).withIndex(
+        'by_parent_seq',
+        idx(o => o.eq('parent', p).gt('seq', seq))
+      )
+      const q = softDelete ? base.filter(notDeleted) : base
+      const rows = (await q.order('asc').take(limit ?? DEFAULT_LIMIT)) as { userId: string }[]
       return enrich(c, rows)
     })
   })
@@ -168,20 +171,39 @@ const makeLog = <S extends ZodRawShape>({
     })
   })
   const purgeByParent = b.m({
-    args: typed({ ...purgeArgs }),
-    handler: typed(async (c: MutCtx, { parent: p }: { parent: string }) => {
+    args: typed({ purge: number().optional(), ...purgeArgs }),
+    handler: typed(async (c: MutCtx, { parent: p, purge }: { parent: string; purge?: number }) => {
       await rl(c)
       let deleted = 0
       const docs = (await byParent(c.db, p).collect()) as { _id: string }[]
+      const hard = !softDelete || purge === 1
       for (const doc of docs) {
         if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id })
-        await dbDelete(c.db, doc._id)
+        await (hard ? dbDelete(c.db, doc._id) : dbPatch(c.db, doc._id, { deletedAt: Date.now() }))
         if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id })
         deleted += 1
       }
-      return { deleted }
+      return { deleted, soft: !hard }
     })
   })
+  const restoreByParent = softDelete
+    ? b.m({
+        args: typed({ parent: string() }),
+        handler: typed(async (c: MutCtx, { parent: p }: { parent: string }) => {
+          await rl(c)
+          const rows = (await c.db
+            .query(table)
+            .withIndex(
+              'by_parent',
+              idx(o => o.eq('parent', p))
+            )
+            .filter((f: FilterLike) => f.neq(f.field('deletedAt'), undefined))
+            .collect()) as { _id: string }[]
+          for (const r of rows) await dbPatch(c.db, r._id, { deletedAt: undefined })
+          return { restored: rows.length }
+        })
+      })
+    : undefined
   const searchEndpoint = searchCfg
     ? b.q({
         args: typed({ parent: string(), query: string() }),
@@ -197,6 +219,7 @@ const makeLog = <S extends ZodRawShape>({
     : undefined
   const endpoints: Record<string, unknown> = { append, list, listAfter, purgeByParent }
   if (searchEndpoint) endpoints.search = searchEndpoint
+  if (restoreByParent) endpoints.restoreByParent = restoreByParent
   return typed(endpoints)
 }
 export { makeLog }

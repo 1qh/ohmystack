@@ -320,6 +320,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       hooks?: CrudHooks
       rateLimit?: RateLimitInput
       search?: boolean | string | { field?: string; index?: string }
+      softDelete?: boolean
     }
   ) =>
     makeLog({
@@ -328,6 +329,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
       rateLimit: opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
       schema,
       search: opts?.search,
+      softDelete: opts?.softDelete,
       table
     })
   const kv = <S extends ZodRawShape>(

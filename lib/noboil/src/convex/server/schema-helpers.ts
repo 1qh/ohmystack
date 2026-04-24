@@ -82,6 +82,7 @@ const childTable = <T extends ZodRawShape>(s: ZodObject<T>, indexField: string, 
 const logTable = <T extends ZodRawShape>(s: LogSchema<T>) =>
   defineTable({
     ...z2c(s.shape),
+    deletedAt: v.optional(v.number()),
     idempotencyKey: v.optional(v.string()),
     parent: v.string(),
     seq: v.number(),
