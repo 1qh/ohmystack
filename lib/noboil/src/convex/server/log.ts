@@ -5,7 +5,7 @@
 /* eslint-disable complexity, no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { zid } from 'convex-helpers/server/zod4'
-import { array, number, string } from 'zod/v4'
+import { array, boolean, number, string } from 'zod/v4'
 import type {
   CrudHooks,
   DbLike,
@@ -33,6 +33,7 @@ import {
   detectFiles,
   err,
   errValidation,
+  matchW,
   pgOpts
 } from './helpers'
 const DEFAULT_LIMIT = 500
@@ -46,6 +47,7 @@ interface LogRow {
 const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const notDeleted = (f: FilterLike): unknown => f.eq(f.field('deletedAt'), undefined)
 const makeLog = <S extends ZodRawShape>({
+  auth: authOpt,
   builders: b,
   hooks,
   pub,
@@ -55,9 +57,10 @@ const makeLog = <S extends ZodRawShape>({
   softDelete,
   table
 }: {
+  auth?: { where?: Rec }
   builders: { m: Mb; q: Qb }
   hooks?: CrudHooks
-  pub?: boolean | string
+  pub?: boolean | string | { where?: Rec }
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   search?: boolean | string | { field?: string; index?: string }
@@ -65,7 +68,12 @@ const makeLog = <S extends ZodRawShape>({
   table: string
 }): LogFactoryResult<S> => {
   const pubField = typeof pub === 'string' ? pub : null
-  const pubEnabled = pub === true || Boolean(pubField)
+  const pubWhereOpt = typeof pub === 'object' && 'where' in pub ? pub.where : undefined
+  const pubEnabled = pub === true || Boolean(pubField) || Boolean(pubWhereOpt)
+  const authWhereDefault = authOpt?.where
+  const partial = schema.partial()
+  const wgSchema = partial.extend({ own: boolean().optional() })
+  const wSchema = wgSchema.extend({ or: array(wgSchema).optional() })
   const searchCfg =
     searchOpt === true
       ? { field: 'text', index: 'search_field' }
@@ -184,17 +192,27 @@ const makeLog = <S extends ZodRawShape>({
     if (mode === 'auth') return q.filter((f: FilterLike) => f.eq(f.field('userId'), c.viewerId))
     return q
   }
+  const wArgs = { where: wSchema.optional() }
   const makeListHandler =
     (mode: 'auth' | 'pub') =>
-    async (c: ReadCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) => {
+    async (c: ReadCtx, { paginationOpts: op, parent: p, where }: { paginationOpts: Rec; parent: string; where?: Rec }) => {
       const q = listFilter(c, byParent(c.db, p), mode)
-      const page = (await q.order('desc').paginate(op)) as unknown as { page: { userId: string }[] }
-      const enriched = await enrich(c, page.page)
+      const page = (await q.order('desc').paginate(op)) as unknown as { page: (Rec & { userId: string })[] }
+      const defaultW = mode === 'auth' ? authWhereDefault : pubWhereOpt
+      const userW = where ?? defaultW
+      const filtered = userW ? page.page.filter(d => matchW(d, userW, c.viewerId)) : page.page
+      const enriched = await enrich(c, filtered)
       return { ...page, page: enriched }
     }
-  const authList = b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler('auth')) })
+  const authList = b.q({
+    args: typed({ ...listArgs, ...wArgs, paginationOpts: pgOpts }),
+    handler: typed(makeListHandler('auth'))
+  })
   const pubList = pubEnabled
-    ? b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler('pub')) })
+    ? b.q({
+        args: typed({ ...listArgs, ...wArgs, paginationOpts: pgOpts }),
+        handler: typed(makeListHandler('pub'))
+      })
     : undefined
   const list = pubEnabled ? pubList : authList
   const purgeByParent = b.m({

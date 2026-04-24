@@ -113,6 +113,7 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
   if (def.brand === 'log') {
     const entry = def.schema as { parent: string; schema: ZodObject }
     const opts = (def.opts ?? {}) as {
+      auth?: unknown
       hooks?: unknown
       pub?: unknown
       rateLimit?: unknown
@@ -120,6 +121,7 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
       softDelete?: unknown
     }
     return s.log(name, entry.schema, {
+      auth: opts.auth as never,
       hooks: opts.hooks as never,
       pub: opts.pub as never,
       rateLimit: opts.rateLimit as never,

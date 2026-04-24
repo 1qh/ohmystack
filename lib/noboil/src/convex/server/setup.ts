@@ -317,14 +317,16 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     table: keyof DM & string,
     schema: ZodObject<S>,
     opts?: {
+      auth?: { where?: Rec }
       hooks?: CrudHooks
-      pub?: boolean | string
+      pub?: boolean | string | { where?: Rec }
       rateLimit?: RateLimitInput
       search?: boolean | string | { field?: string; index?: string }
       softDelete?: boolean
     }
   ) =>
     makeLog({
+      auth: opts?.auth,
       builders: { m: typed(m), q: typed(q) },
       hooks: mergeHooks(gh, opts?.hooks, table),
       pub: opts?.pub,
