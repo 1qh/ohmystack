@@ -225,6 +225,11 @@ export const Vote = __t.object("Vote", {
   userId: __t.identity(),
 });
 export type Vote = __Infer<typeof Vote>;
+export const VoteBulkItem = __t.object("VoteBulkItem", {
+  option: __t.string(),
+  idempotencyKey: __t.option(__t.string()),
+});
+export type VoteBulkItem = __Infer<typeof VoteBulkItem>;
 export const Wiki = __t.object("Wiki", {
   content: __t.option(__t.string()),
   slug: __t.string(),

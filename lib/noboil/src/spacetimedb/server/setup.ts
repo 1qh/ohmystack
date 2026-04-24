@@ -1318,7 +1318,11 @@ const wireLogFactories = ({
     const rl = tblOpts[name]?.rateLimit
     const sd = tblOpts[name]?.softDelete
     const hasOpts = Boolean(rl) || Boolean(sd)
+    const bulkItemFields = { ...fields, idempotencyKey: bridgeT.string().optional() as never }
+    const bulkItemObj = bridgeT.object(`${name}BulkItem`, bulkItemFields)
+    const bulkItemsField = bridgeT.array(bulkItemObj as never)
     const { exports: logExports } = makeLog(reducer, {
+      bulkItemsField,
       fields,
       idempotencyKeyField: bridgeT.string().optional() as never,
       options: hasOpts ? { rateLimit: rl, softDelete: sd } : undefined,
