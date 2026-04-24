@@ -1,5 +1,7 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { RateLimitConfig } from './types'
+import { enforceRateLimit } from './helpers'
 import { applyPatch, makeError } from './reducer-utils'
 type FieldBuilders = Record<string, ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>>
 const findByKey = (table: KvTableLike, key: string): KvRow | undefined => {
@@ -8,12 +10,31 @@ const findByKey = (table: KvTableLike, key: string): KvRow | undefined => {
 interface KvConfig<DB, Tbl extends KvTableLike> {
   fields: FieldBuilders
   keyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
+  options?: KvOptions<DB>
   table: (db: DB) => Tbl
   tableName: string
   writeRole?: (ctx: { db: DB; sender: Identity; timestamp: Timestamp }) => boolean
 }
 interface KvExports {
   exports: Record<string, ReducerExportLike>
+}
+interface KvHookCtx<DB> {
+  db: DB
+  sender: Identity
+  timestamp: Timestamp
+}
+interface KvHooks<DB = unknown> {
+  afterDelete?: (ctx: KvHookCtx<DB>, args: { row: Record<string, unknown> }) => void
+  afterSet?: (
+    ctx: KvHookCtx<DB>,
+    args: { data: Record<string, unknown>; key: string; row: Record<string, unknown> }
+  ) => void
+  beforeDelete?: (ctx: KvHookCtx<DB>, args: { row: Record<string, unknown> }) => void
+  beforeSet?: (ctx: KvHookCtx<DB>, args: { data: Record<string, unknown>; key: string }) => Record<string, unknown>
+}
+interface KvOptions<DB = unknown> {
+  hooks?: KvHooks<DB>
+  rateLimit?: RateLimitConfig
 }
 interface KvRow {
   createdAt: Timestamp
@@ -26,11 +47,7 @@ interface KvTableLike extends Iterable<KvRow> {
   insert: (row: KvRow) => KvRow
 }
 type ReducerExportLike = ReducerExport<never, never>
-/** Creates set/rm reducers for a string-keyed kv table. Reads via subscription.
- * @param spacetimedb SpacetimeDB reducer factory
- * @param config Kv reducer configuration
- * @returns Reducer export map
- */
+/** Creates set/rm reducers for a string-keyed kv table. Reads via subscription. */
 const makeKv = <DB, Tbl extends KvTableLike>(
   spacetimedb: {
     reducer: (
@@ -41,7 +58,9 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   },
   config: KvConfig<DB, Tbl>
 ): KvExports => {
-  const { fields, keyField, table: tableAccessor, tableName, writeRole } = config
+  const { fields, keyField, options, table: tableAccessor, tableName, writeRole } = config
+  const hooks = options?.hooks
+  const rateLimit = options?.rateLimit
   const setName = `set_${tableName}`
   const rmName = `rm_${tableName}`
   const setParams: FieldBuilders = { key: keyField, ...fields }
@@ -49,33 +68,45 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   const setReducer = spacetimedb.reducer({ name: setName }, setParams, (ctx, args) => {
     if (writeRole && !writeRole({ db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }))
       throw makeError('FORBIDDEN', `${tableName}:set`)
+    if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
     const typedArgs = args as Record<string, unknown> & { key: string }
-    const { key, ...payload } = typedArgs
+    const { key, ...rawPayload } = typedArgs
+    let payload: Record<string, unknown> = rawPayload
+    if (hooks?.beforeSet) payload = hooks.beforeSet(hookCtx, { data: payload, key })
     const table = tableAccessor(ctx.db) as unknown as KvTableLike
     const existing = findByKey(table, key)
+    let row: KvRow
     if (existing) {
       const patched = applyPatch(
         existing as unknown as Record<string, unknown>,
         payload,
         ctx.timestamp
       ) as unknown as KvRow
-      table.id.update(patched)
+      row = table.id.update(patched)
     } else
-      table.insert({
+      row = table.insert({
         ...payload,
         createdAt: ctx.timestamp,
         id: 0,
         key,
         updatedAt: ctx.timestamp
       })
+    if (hooks?.afterSet) hooks.afterSet(hookCtx, { data: payload, key, row: row as unknown as Record<string, unknown> })
   })
   const rmReducer = spacetimedb.reducer({ name: rmName }, rmParams, (ctx, args) => {
     if (writeRole && !writeRole({ db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }))
       throw makeError('FORBIDDEN', `${tableName}:rm`)
+    if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
     const typedArgs = args as { key: string }
     const table = tableAccessor(ctx.db) as unknown as KvTableLike
     const existing = findByKey(table, typedArgs.key)
-    if (existing) table.id.delete(existing.id)
+    if (!existing) return
+    const rowCast = existing as unknown as Record<string, unknown>
+    if (hooks?.beforeDelete) hooks.beforeDelete(hookCtx, { row: rowCast })
+    table.id.delete(existing.id)
+    if (hooks?.afterDelete) hooks.afterDelete(hookCtx, { row: rowCast })
   })
   const exports: Record<string, ReducerExportLike> = {
     [rmName]: rmReducer as ReducerExportLike,
@@ -83,5 +114,5 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   }
   return { exports }
 }
-export type { KvConfig, KvExports, KvRow, KvTableLike }
+export type { KvConfig, KvExports, KvHooks, KvOptions, KvRow, KvTableLike }
 export { makeKv }

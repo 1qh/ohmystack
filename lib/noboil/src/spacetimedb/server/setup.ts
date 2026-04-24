@@ -954,11 +954,13 @@ type TableArgs<F> = F extends ChildLike
   ? [childDef: F]
   : F extends BaseBranded
     ? [fields: F, opts: { key: string; ttl?: number }]
-    : F extends KvBranded | LogBranded | QuotaBranded | SingletonBranded
-      ? [fields: F]
-      : F extends TableArgInput
-        ? [fields: F, opts?: TableOpts<F>]
-        : never
+    : F extends KvBranded | LogBranded
+      ? [fields: F, opts?: { rateLimit?: RateLimitInput }]
+      : F extends QuotaBranded | SingletonBranded
+        ? [fields: F]
+        : F extends TableArgInput
+          ? [fields: F, opts?: TableOpts<F>]
+          : never
 interface TableFn {
   <F extends TableArgInput>(...args: TableArgs<F>): BsTable
   file: () => BsTable
@@ -971,9 +973,11 @@ type TableOpts<F> = F extends OwnedBranded
       ? OrgTableOpts<F>
       : F extends BaseBranded
         ? { key: string; ttl?: number }
-        : F extends KvBranded | LogBranded | QuotaBranded | SingletonBranded
-          ? undefined
-          : never
+        : F extends KvBranded | LogBranded
+          ? { rateLimit?: RateLimitInput }
+          : F extends QuotaBranded | SingletonBranded
+            ? undefined
+            : never
 type TblChild = Parameters<SchemaHelpers['childTable']>[1]
 type TblInput = Parameters<SchemaHelpers['ownedTable']>[0]
 type TblKey = Parameters<SchemaHelpers['cacheTable']>[0]
@@ -1208,10 +1212,17 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
   }
   const singletonTable = (fields: TblInput): BsTable =>
     bsOf({ category: 'singleton', zod: bsZod(fields) }, raw.singletonTable(fields))
-  const logTable = (entry: { parent: string; schema: TblInput }): BsTable =>
-    bsOf({ category: 'log', logParent: entry.parent, zod: bsZod(entry.schema) }, raw.logTable(entry.schema))
-  const kvTable = (entry: { schema: TblInput }): BsTable =>
-    bsOf({ category: 'kv', zod: bsZod(entry.schema) }, raw.kvTable(entry.schema))
+  const logTable = (entry: { parent: string; schema: TblInput }, opts?: { rateLimit?: RateLimitInput }): BsTable => {
+    const rateLimit = opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined
+    return bsOf(
+      { category: 'log', logParent: entry.parent, rateLimit, zod: bsZod(entry.schema) },
+      raw.logTable(entry.schema)
+    )
+  }
+  const kvTable = (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput }): BsTable => {
+    const rateLimit = opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined
+    return bsOf({ category: 'kv', rateLimit, zod: bsZod(entry.schema) }, raw.kvTable(entry.schema))
+  }
   const quotaTable = (entry: { durationMs: number; limit: number }): BsTable =>
     bsOf({ category: 'quota', quotaDurationMs: entry.durationMs, quotaLimit: entry.limit }, raw.quotaTable())
   const tableBase = <F extends TableArgInput>(...args: TableArgs<F>): BsTable => {
@@ -1223,8 +1234,13 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     if (brand === 'org') return orgScopedTable(fields as OrgScopedBranded, options as OrgScopedOpts<OrgScopedBranded>)
     if (brand === 'orgDef') return orgTable(fields as OrgDefBranded, options as OrgTableOpts<OrgDefBranded>)
     if (brand === 'singleton') return singletonTable(fields as SingletonBranded)
-    if (brand === 'log') return logTable(fields as unknown as { parent: string; schema: TblInput })
-    if (brand === 'kv') return kvTable(fields as unknown as { schema: TblInput })
+    if (brand === 'log')
+      return logTable(
+        fields as unknown as { parent: string; schema: TblInput },
+        options as undefined | { rateLimit?: RateLimitInput }
+      )
+    if (brand === 'kv')
+      return kvTable(fields as unknown as { schema: TblInput }, options as undefined | { rateLimit?: RateLimitInput })
     if (brand === 'quota') return quotaTable(fields as unknown as { durationMs: number; limit: number })
     if (brand === 'base') {
       if (!isBaseOpts(options))
@@ -1257,8 +1273,8 @@ interface NoboilHelpers {
   cacheTable: (keyFieldOrName: string | TblKey, fields: TblInput, options?: { ttl?: number }) => BsTable
   childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
   fileTable: () => BsTable
-  kvTable: (entry: { schema: TblInput }) => BsTable
-  logTable: (entry: { parent: string; schema: TblInput }) => BsTable
+  kvTable: (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput }) => BsTable
+  logTable: (entry: { parent: string; schema: TblInput }, opts?: { rateLimit?: RateLimitInput }) => BsTable
   orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
   orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
   ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
@@ -1268,17 +1284,26 @@ interface NoboilHelpers {
   table: TableFn
 }
 type StdbReducerLike = Parameters<typeof makeLog>[0]
-const wireLogFactories = (
-  reducer: StdbReducerLike,
-  bridgeT: ZodBridgeT,
-  logZ: BsCtx['logZ'],
+const wireLogFactories = ({
+  bridgeT,
+  logZ,
+  reducer,
+  target,
+  tblOpts
+}: {
+  bridgeT: ZodBridgeT
+  logZ: BsCtx['logZ']
+  reducer: StdbReducerLike
   target: ReducerExportRecord
-) => {
+  tblOpts: BsCtx['tblOpts']
+}) => {
   for (const [name, entry] of Object.entries(logZ)) {
     const fields = zodToStdbFields(entry.schema.shape, bridgeT, name)
+    const rl = tblOpts[name]?.rateLimit
     const { exports: logExports } = makeLog(reducer, {
       fields,
       idempotencyKeyField: bridgeT.string().optional() as never,
+      options: rl ? { rateLimit: rl } : undefined,
       parentField: bridgeT.string() as never,
       table: tblOf(name) as never,
       tableName: name
@@ -1286,17 +1311,26 @@ const wireLogFactories = (
     registerExports(target, logExports)
   }
 }
-const wireKvFactories = (
-  reducer: StdbReducerLike,
-  bridgeT: ZodBridgeT,
-  kvZ: BsCtx['kvZ'],
+const wireKvFactories = ({
+  bridgeT,
+  kvZ,
+  reducer,
+  target,
+  tblOpts
+}: {
+  bridgeT: ZodBridgeT
+  kvZ: BsCtx['kvZ']
+  reducer: StdbReducerLike
   target: ReducerExportRecord
-) => {
+  tblOpts: BsCtx['tblOpts']
+}) => {
   for (const [name, zod] of Object.entries(kvZ)) {
     const fields = zodToStdbFields(zod.shape, bridgeT, name)
+    const rl = tblOpts[name]?.rateLimit
     const { exports: kvExports } = makeKv(reducer as never, {
       fields,
       keyField: bridgeT.string() as never,
+      options: rl ? { rateLimit: rl } : undefined,
       table: tblOf(name) as never,
       tableName: name
     })
@@ -1322,8 +1356,8 @@ const wireQuotaFactories = (
 }
 const wireFactoryExports = (spacetimedb: unknown, bridgeT: ZodBridgeT, ctx: BsCtx, target: ReducerExportRecord) => {
   const reducer = spacetimedb as StdbReducerLike
-  wireLogFactories(reducer, bridgeT, ctx.logZ, target)
-  wireKvFactories(reducer, bridgeT, ctx.kvZ, target)
+  wireLogFactories({ bridgeT, logZ: ctx.logZ, reducer, target, tblOpts: ctx.tblOpts })
+  wireKvFactories({ bridgeT, kvZ: ctx.kvZ, reducer, target, tblOpts: ctx.tblOpts })
   wireQuotaFactories(reducer, bridgeT, ctx.quotaZ, target)
 }
 const noboil = ({

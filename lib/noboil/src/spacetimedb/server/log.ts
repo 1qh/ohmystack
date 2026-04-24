@@ -1,15 +1,33 @@
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
+import type { RateLimitConfig } from './types'
+import { enforceRateLimit } from './helpers'
 type FieldBuilders = Record<string, ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>>
 interface LogConfig<DB, Tbl extends LogTableLike> {
   fields: FieldBuilders
   idempotencyKeyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
+  options?: LogOptions<DB>
   parentField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   table: (db: DB) => Tbl
   tableName: string
 }
 interface LogExports {
   exports: Record<string, ReducerExportLike>
+}
+interface LogHookCtx<DB> {
+  db: DB
+  sender: Identity
+  timestamp: Timestamp
+}
+interface LogHooks<DB = unknown> {
+  afterAppend?: (ctx: LogHookCtx<DB>, args: { data: Record<string, unknown>; row: Record<string, unknown> }) => void
+  afterPurge?: (ctx: LogHookCtx<DB>, args: { parent: string; rows: Record<string, unknown>[] }) => void
+  beforeAppend?: (ctx: LogHookCtx<DB>, args: { data: Record<string, unknown>; parent: string }) => Record<string, unknown>
+  beforePurge?: (ctx: LogHookCtx<DB>, args: { parent: string; rows: Record<string, unknown>[] }) => void
+}
+interface LogOptions<DB = unknown> {
+  hooks?: LogHooks<DB>
+  rateLimit?: RateLimitConfig
 }
 interface LogRow {
   createdAt: Timestamp
@@ -39,12 +57,16 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   },
   config: LogConfig<DB, Tbl>
 ): LogExports => {
-  const { fields, idempotencyKeyField, parentField, table: tableAccessor, tableName } = config
+  const { fields, idempotencyKeyField, options, parentField, table: tableAccessor, tableName } = config
+  const hooks = options?.hooks
+  const rateLimit = options?.rateLimit
   const appendName = `append_${tableName}`
   const purgeName = `purge_${tableName}_by_parent`
   const appendParams: FieldBuilders = { ...fields, idempotencyKey: idempotencyKeyField, parent: parentField }
   const purgeParams: FieldBuilders = { parent: parentField }
   const appendReducer = spacetimedb.reducer({ name: appendName }, appendParams, (ctx, args) => {
+    if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
     const typedArgs = args as Record<string, unknown> & { idempotencyKey?: string; parent: string }
     const table = tableAccessor(ctx.db) as unknown as LogTableLike
     let maxSeq = 0
@@ -54,8 +76,10 @@ const makeLog = <DB, Tbl extends LogTableLike>(
         if (row.parent === typedArgs.parent && row.seq > maxSeq) maxSeq = row.seq
       }
     else for (const row of table) if (row.parent === typedArgs.parent && row.seq > maxSeq) maxSeq = row.seq
-    const { idempotencyKey, parent, ...payload } = typedArgs
-    table.insert({
+    const { idempotencyKey, parent, ...rawPayload } = typedArgs
+    let payload: Record<string, unknown> = rawPayload
+    if (hooks?.beforeAppend) payload = hooks.beforeAppend(hookCtx, { data: payload, parent })
+    const row = table.insert({
       ...payload,
       createdAt: ctx.timestamp,
       id: 0,
@@ -63,14 +87,19 @@ const makeLog = <DB, Tbl extends LogTableLike>(
       parent,
       seq: maxSeq + 1,
       userId: ctx.sender
-    } as unknown as LogRow)
+    } as unknown as LogRow) as unknown as Record<string, unknown>
+    if (hooks?.afterAppend) hooks.afterAppend(hookCtx, { data: payload, row })
   })
   const purgeReducer = spacetimedb.reducer({ name: purgeName }, purgeParams, (ctx, args) => {
+    const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
     const typedArgs = args as { parent: string }
     const table = tableAccessor(ctx.db) as unknown as LogTableLike & { id: { delete: (id: number) => void } }
-    const toDelete: number[] = []
-    for (const row of table) if (row.parent === typedArgs.parent) toDelete.push(row.id)
-    for (const id of toDelete) table.id.delete(id)
+    const matched: LogRow[] = []
+    for (const row of table) if (row.parent === typedArgs.parent) matched.push(row)
+    const rowCast = matched as unknown[] as Record<string, unknown>[]
+    if (hooks?.beforePurge) hooks.beforePurge(hookCtx, { parent: typedArgs.parent, rows: rowCast })
+    for (const row of matched) table.id.delete(row.id)
+    if (hooks?.afterPurge) hooks.afterPurge(hookCtx, { parent: typedArgs.parent, rows: rowCast })
   })
   const exports: Record<string, ReducerExportLike> = {
     [appendName]: appendReducer as ReducerExportLike,
@@ -78,5 +107,5 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   }
   return { exports }
 }
-export type { LogConfig, LogExports, LogRow, LogTableLike }
+export type { LogConfig, LogExports, LogHooks, LogOptions, LogRow, LogTableLike }
 export { makeLog }
