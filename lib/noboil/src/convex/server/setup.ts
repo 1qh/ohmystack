@@ -16,6 +16,7 @@ import type {
   HookCtx,
   OrgSchema,
   OwnedSchema,
+  RateLimitInput,
   Rec,
   SetupConfig,
   SingletonOptions,
@@ -25,7 +26,7 @@ import { typed } from './bridge'
 import { makeCacheCrud } from './cache-crud'
 import { makeChildCrud } from './child'
 import { makeCrud } from './crud'
-import { dbInsert, dbPatch, err, getUser, makeUnique, ownGet, readCtx, time } from './helpers'
+import { dbInsert, dbPatch, err, getUser, makeUnique, normalizeRateLimit, ownGet, readCtx, time } from './helpers'
 import { makeKv } from './kv'
 import { makeLog } from './log'
 import { composeMiddleware } from './middleware'
@@ -312,19 +313,33 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     field: keyof S & string,
     index?: string
   ) => makeUnique({ field, index, pq: typed(pq), table })
-  const log = <S extends ZodRawShape>(table: keyof DM & string, schema: ZodObject<S>) =>
-    makeLog({ builders: { m: typed(m), q: typed(q) }, schema, table })
+  const log = <S extends ZodRawShape>(
+    table: keyof DM & string,
+    schema: ZodObject<S>,
+    opts?: { hooks?: CrudHooks; rateLimit?: RateLimitInput }
+  ) =>
+    makeLog({
+      builders: { m: typed(m), q: typed(q) },
+      hooks: mergeHooks(gh, opts?.hooks, table),
+      rateLimit: opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
+      schema,
+      table
+    })
   const kv = <S extends ZodRawShape>(
     table: keyof DM & string,
     opts: {
+      hooks?: CrudHooks
       keys?: readonly string[]
+      rateLimit?: RateLimitInput
       schema: ZodObject<S>
       writeRole?: ((ctx: unknown) => boolean | Promise<boolean>) | boolean
     }
   ) =>
     makeKv({
       builders: { m: typed(m), q: typed(q) },
+      hooks: mergeHooks(gh, opts.hooks, table),
       keys: opts.keys,
+      rateLimit: opts.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
       schema: opts.schema,
       table,
       writeRole: opts.writeRole

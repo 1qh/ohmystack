@@ -1,25 +1,44 @@
-/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB deletes */
+/** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB deletes/inserts */
 /** biome-ignore-all lint/suspicious/useAwait: handlers return thenable chains */
 /* oxlint-disable eslint(no-await-in-loop) */
 /* eslint-disable no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
-import { number, string } from 'zod/v4'
-import type { DbCtx, DbLike, LogFactoryResult, Mb, Qb, QueryLike, Rec } from './types'
+import { array, number, string } from 'zod/v4'
+import type {
+  CrudHooks,
+  DbCtx,
+  DbLike,
+  HookCtx,
+  LogFactoryResult,
+  Mb,
+  MutCtx,
+  Qb,
+  QueryLike,
+  RateLimitConfig,
+  Rec
+} from './types'
 import { idx, typed } from './bridge'
-import { dbDelete, dbInsert, errValidation, pgOpts } from './helpers'
+import { isTestMode } from './env'
+import { checkRateLimit, dbDelete, dbInsert, err, errValidation, pgOpts } from './helpers'
 const DEFAULT_LIMIT = 500
+const BULK_MAX = 100
 interface LogRow {
   _id: string
   idempotencyKey?: string
   parent: string
   seq: number
 }
+const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const makeLog = <S extends ZodRawShape>({
   builders: b,
+  hooks,
+  rateLimit,
   schema,
   table
 }: {
   builders: { m: Mb; q: Qb }
+  hooks?: CrudHooks
+  rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   table: string
 }): LogFactoryResult<S> => {
@@ -45,24 +64,60 @@ const makeLog = <S extends ZodRawShape>({
       )
       .order('desc')
       .first() as Promise<LogRow | null>
-  const appendArgs = { idempotencyKey: string().optional(), parent: string(), payload: schema }
+  const appendArgs = {
+    idempotencyKey: string().optional(),
+    items: array(schema.extend({ idempotencyKey: string().optional() }))
+      .max(BULK_MAX)
+      .optional(),
+    parent: string(),
+    payload: schema.optional()
+  }
   const listAfterArgs = { limit: number().optional(), parent: string(), seq: number() }
   const listArgs = { parent: string() }
   const purgeArgs = { parent: string() }
+  const rl = async (c: MutCtx) => {
+    if (rateLimit && !isTestMode()) await checkRateLimit(c.db, { config: rateLimit, key: c.user._id as string, table })
+  }
+  const appendOne = async ({
+    c,
+    keyArg,
+    p,
+    payload
+  }: {
+    c: MutCtx
+    keyArg: string | undefined
+    p: string
+    payload: Rec
+  }): Promise<{ created: boolean; id?: string; seq: number }> => {
+    if (keyArg) {
+      const existing = await byIdempotency(c.db, p, keyArg)
+      if (existing) return { created: false, seq: existing.seq }
+    }
+    const parsed = schema.safeParse(payload)
+    if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+    let data = parsed.data as Rec
+    if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
+    const last = await byParentSeq(c.db, p)
+    const seq = (last?.seq ?? 0) + 1
+    const id = await dbInsert(c.db, table, { ...data, idempotencyKey: keyArg, parent: p, seq })
+    if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
+    return { created: true, id, seq }
+  }
   const append = b.m({
     args: typed({ ...appendArgs }),
-    handler: typed(async (c: DbCtx, args: { idempotencyKey?: string; parent: string; payload: Rec }) => {
-      const { idempotencyKey: key, parent: p, payload } = args
-      if (key) {
-        const existing = await byIdempotency(c.db, p, key)
-        if (existing) return { created: false, seq: existing.seq }
+    handler: typed(async (c: MutCtx, args: { idempotencyKey?: string; items?: Rec[]; parent: string; payload?: Rec }) => {
+      const { idempotencyKey: key, items, parent: p, payload } = args
+      await rl(c)
+      if (items) {
+        const results: { created: boolean; id?: string; seq: number }[] = []
+        for (const item of items) {
+          const { idempotencyKey: ik, ...rest } = item as Rec & { idempotencyKey?: string }
+          results.push(await appendOne({ c, keyArg: ik, p, payload: rest }))
+        }
+        return results
       }
-      const parsed = schema.safeParse(payload)
-      if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
-      const last = await byParentSeq(c.db, p)
-      const seq = (last?.seq ?? 0) + 1
-      await dbInsert(c.db, table, { ...parsed.data, idempotencyKey: key, parent: p, seq })
-      return { created: true, seq }
+      if (!payload) return err('VALIDATION_FAILED')
+      return appendOne({ c, keyArg: key, p, payload })
     })
   })
   const listAfter = b.q({
@@ -86,11 +141,14 @@ const makeLog = <S extends ZodRawShape>({
   })
   const purgeByParent = b.m({
     args: typed({ ...purgeArgs }),
-    handler: typed(async (c: DbCtx, { parent: p }: { parent: string }) => {
+    handler: typed(async (c: MutCtx, { parent: p }: { parent: string }) => {
+      await rl(c)
       let deleted = 0
       const docs = (await byParent(c.db, p).collect()) as { _id: string }[]
       for (const doc of docs) {
+        if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id })
         await dbDelete(c.db, doc._id)
+        if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id })
         deleted += 1
       }
       return { deleted }

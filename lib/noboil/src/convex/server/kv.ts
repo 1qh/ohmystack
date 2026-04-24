@@ -3,23 +3,29 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { string } from 'zod/v4'
-import type { DbCtx, DbLike, KvFactoryResult, Mb, Qb, Rec } from './types'
+import type { CrudHooks, DbCtx, DbLike, HookCtx, KvFactoryResult, Mb, MutCtx, Qb, RateLimitConfig, Rec } from './types'
 import { idx, typed } from './bridge'
-import { dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
+import { isTestMode } from './env'
+import { checkRateLimit, dbDelete, dbInsert, dbPatch, err, errValidation, time } from './helpers'
+const hk = (c: MutCtx): HookCtx => ({ db: c.db, storage: c.storage, userId: c.user._id as string })
 const makeKv = <S extends ZodRawShape>({
   builders: b,
+  hooks,
   keys,
+  rateLimit,
   schema,
   table,
   writeRole
 }: {
   builders: { m: Mb; q: Qb }
+  hooks?: CrudHooks
   keys?: readonly string[]
+  rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   table: string
   writeRole?: ((ctx: DbCtx) => boolean | Promise<boolean>) | boolean
 }): KvFactoryResult<S> => {
-  const byKey = async (db: DbLike, key: string) =>
+  const byKey = async (db: DbLike, key: string): Promise<null | Rec> =>
     db
       .query(table)
       .withIndex(
@@ -28,13 +34,16 @@ const makeKv = <S extends ZodRawShape>({
       )
       .unique()
   const assertKey = (key: string) => (keys && !keys.includes(key) ? err('INVALID_KEY') : null)
-  const assertWrite = async (c: DbCtx) => {
+  const assertWrite = async (c: MutCtx) => {
     if (writeRole === true) return null
     if (typeof writeRole === 'function') {
       const ok = await writeRole(c)
       if (ok) return null
     }
     return err('FORBIDDEN')
+  }
+  const rl = async (c: MutCtx) => {
+    if (rateLimit && !isTestMode()) await checkRateLimit(c.db, { config: rateLimit, key: c.user._id as string, table })
   }
   const keyArgs = { key: string() }
   const setArgs = { key: string(), payload: schema }
@@ -51,20 +60,28 @@ const makeKv = <S extends ZodRawShape>({
   })
   const set = b.m({
     args: typed({ ...setArgs }),
-    handler: typed(async (c: DbCtx, { key, payload }: { key: string; payload: Rec }) => {
+    handler: typed(async (c: MutCtx, { key, payload }: { key: string; payload: Rec }) => {
       const gate = await assertWrite(c)
       if (gate) return gate
       const bad = assertKey(key)
       if (bad) return bad
+      await rl(c)
       const parsed = schema.safeParse(payload)
       if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+      let data = parsed.data as Rec
       const now = time()
-      const existing = (await byKey(c.db, key)) as null | { _id: string }
+      const existing = await byKey(c.db, key)
       if (existing) {
-        await dbPatch(c.db, existing._id, { ...parsed.data, ...now })
-        return { ...existing, ...parsed.data, ...now, key }
+        const prev = existing
+        if (hooks?.beforeUpdate) data = await hooks.beforeUpdate(hk(c), { id: prev._id as string, patch: data, prev })
+        await dbPatch(c.db, prev._id as string, { ...data, ...now })
+        const next = { ...prev, ...data, ...now, key }
+        if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id: prev._id as string, patch: data, prev })
+        return next
       }
-      const id = await dbInsert(c.db, table, { ...parsed.data, ...now, key })
+      if (hooks?.beforeCreate) data = await hooks.beforeCreate(hk(c), { data })
+      const id = await dbInsert(c.db, table, { ...data, ...now, key })
+      if (hooks?.afterCreate) await hooks.afterCreate(hk(c), { data, id })
       const doc = await c.db.get(id)
       if (!doc) return err('NOT_FOUND')
       return doc
@@ -72,14 +89,17 @@ const makeKv = <S extends ZodRawShape>({
   })
   const rm = b.m({
     args: typed({ ...keyArgs }),
-    handler: typed(async (c: DbCtx, { key }: { key: string }) => {
+    handler: typed(async (c: MutCtx, { key }: { key: string }) => {
       const gate = await assertWrite(c)
       if (gate) return gate
       const bad = assertKey(key)
       if (bad) return bad
-      const doc = (await byKey(c.db, key)) as null | { _id: string }
+      await rl(c)
+      const doc = await byKey(c.db, key)
       if (!doc) return { deleted: false }
-      await dbDelete(c.db, doc._id)
+      if (hooks?.beforeDelete) await hooks.beforeDelete(hk(c), { doc, id: doc._id as string })
+      await dbDelete(c.db, doc._id as string)
+      if (hooks?.afterDelete) await hooks.afterDelete(hk(c), { doc, id: doc._id as string })
       return { deleted: true }
     })
   })
