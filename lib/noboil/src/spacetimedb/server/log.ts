@@ -189,6 +189,30 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   if (bulkReducer) exports[bulkAppendName] = bulkReducer as ReducerExportLike
   const rmName = `rm_${tableName}`
   const bulkRmName = `bulk_rm_${tableName}`
+  const updateName = `update_${tableName}`
+  if (idField) {
+    const optionalFields: FieldBuilders = {}
+    for (const [k, v] of Object.entries(fields)) {
+      const fv = v as {
+        optional?: () => ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
+      }
+      optionalFields[k] = fv.optional ? fv.optional() : v
+    }
+    const updateReducer = spacetimedb.reducer({ name: updateName }, { id: idField, ...optionalFields }, (ctx, args) => {
+      if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+      const typedArgs = args as Record<string, unknown> & { id: number }
+      const table = tableAccessor(ctx.db) as unknown as LogTableLike & {
+        id: { find: (id: number) => LogRow | null; update: (row: LogRow) => LogRow }
+      }
+      const row = table.id.find(typedArgs.id)
+      if (!row) return
+      const patch: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(typedArgs)) if (k !== 'id') patch[k] = v
+      const next = { ...row, ...patch }
+      table.id.update(next)
+    })
+    exports[updateName] = updateReducer as ReducerExportLike
+  }
   if (idField) {
     const rmReducer = spacetimedb.reducer({ name: rmName }, { id: idField }, (ctx, args) => {
       if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
