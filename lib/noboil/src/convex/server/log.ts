@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB deletes/inserts */
 /** biome-ignore-all lint/suspicious/useAwait: handlers return thenable chains */
-/* oxlint-disable eslint(no-await-in-loop) */
-/* eslint-disable no-await-in-loop */
+/** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: factory with many optional features */
+/* oxlint-disable eslint(no-await-in-loop), eslint(complexity) */
+/* eslint-disable complexity, no-await-in-loop */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, number, string } from 'zod/v4'
@@ -56,13 +57,15 @@ const makeLog = <S extends ZodRawShape>({
 }: {
   builders: { m: Mb; q: Qb }
   hooks?: CrudHooks
-  pub?: boolean
+  pub?: boolean | string
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
   search?: boolean | string | { field?: string; index?: string }
   softDelete?: boolean
   table: string
 }): LogFactoryResult<S> => {
+  const pubField = typeof pub === 'string' ? pub : null
+  const pubEnabled = pub === true || Boolean(pubField)
   const searchCfg =
     searchOpt === true
       ? { field: 'text', index: 'search_field' }
@@ -174,20 +177,26 @@ const makeLog = <S extends ZodRawShape>({
       return enrich(c, rows)
     })
   })
+  const listFilter = (c: ReadCtx, q: QueryLike, mode: 'auth' | 'pub'): QueryLike => {
+    if (mode === 'pub' && pubField) return q.filter((f: FilterLike) => f.eq(f.field(pubField), true))
+    if (mode === 'auth' && pubField)
+      return q.filter((f: FilterLike) => f.or(f.eq(f.field(pubField), true), f.eq(f.field('userId'), c.viewerId)))
+    if (mode === 'auth') return q.filter((f: FilterLike) => f.eq(f.field('userId'), c.viewerId))
+    return q
+  }
   const makeListHandler =
-    (ownOnly: boolean) =>
+    (mode: 'auth' | 'pub') =>
     async (c: ReadCtx, { paginationOpts: op, parent: p }: { paginationOpts: Rec; parent: string }) => {
-      let q = byParent(c.db, p)
-      if (ownOnly) q = q.filter((f: FilterLike) => f.eq(f.field('userId'), c.viewerId))
+      const q = listFilter(c, byParent(c.db, p), mode)
       const page = (await q.order('desc').paginate(op)) as unknown as { page: { userId: string }[] }
       const enriched = await enrich(c, page.page)
       return { ...page, page: enriched }
     }
-  const authList = b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler(true)) })
-  const pubList = pub
-    ? b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler(false)) })
+  const authList = b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler('auth')) })
+  const pubList = pubEnabled
+    ? b.q({ args: typed({ ...listArgs, paginationOpts: pgOpts }), handler: typed(makeListHandler('pub')) })
     : undefined
-  const list = pub ? pubList : authList
+  const list = pubEnabled ? pubList : authList
   const purgeByParent = b.m({
     args: typed({ purge: number().optional(), ...purgeArgs }),
     handler: typed(async (c: MutCtx, { parent: p, purge }: { parent: string; purge?: number }) => {

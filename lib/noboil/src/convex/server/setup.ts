@@ -318,7 +318,7 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
     schema: ZodObject<S>,
     opts?: {
       hooks?: CrudHooks
-      pub?: boolean
+      pub?: boolean | string
       rateLimit?: RateLimitInput
       search?: boolean | string | { field?: string; index?: string }
       softDelete?: boolean
