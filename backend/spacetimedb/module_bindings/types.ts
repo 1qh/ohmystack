@@ -216,6 +216,7 @@ export type Task = __Infer<typeof Task>;
 export const Vote = __t.object("Vote", {
   option: __t.string(),
   createdAt: __t.timestamp(),
+  deletedAt: __t.option(__t.timestamp()),
   id: __t.u32(),
   idempotencyKey: __t.option(__t.string()),
   parent: __t.string(),

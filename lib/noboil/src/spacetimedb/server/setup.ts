@@ -954,13 +954,15 @@ type TableArgs<F> = F extends ChildLike
   ? [childDef: F]
   : F extends BaseBranded
     ? [fields: F, opts: { key: string; ttl?: number }]
-    : F extends KvBranded | LogBranded
-      ? [fields: F, opts?: { rateLimit?: RateLimitInput }]
-      : F extends QuotaBranded | SingletonBranded
-        ? [fields: F]
-        : F extends TableArgInput
-          ? [fields: F, opts?: TableOpts<F>]
-          : never
+    : F extends LogBranded
+      ? [fields: F, opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }]
+      : F extends KvBranded
+        ? [fields: F, opts?: { rateLimit?: RateLimitInput }]
+        : F extends QuotaBranded | SingletonBranded
+          ? [fields: F]
+          : F extends TableArgInput
+            ? [fields: F, opts?: TableOpts<F>]
+            : never
 interface TableFn {
   <F extends TableArgInput>(...args: TableArgs<F>): BsTable
   file: () => BsTable
@@ -973,11 +975,13 @@ type TableOpts<F> = F extends OwnedBranded
       ? OrgTableOpts<F>
       : F extends BaseBranded
         ? { key: string; ttl?: number }
-        : F extends KvBranded | LogBranded
-          ? { rateLimit?: RateLimitInput }
-          : F extends QuotaBranded | SingletonBranded
-            ? undefined
-            : never
+        : F extends LogBranded
+          ? { rateLimit?: RateLimitInput; softDelete?: boolean }
+          : F extends KvBranded
+            ? { rateLimit?: RateLimitInput }
+            : F extends QuotaBranded | SingletonBranded
+              ? undefined
+              : never
 type TblChild = Parameters<SchemaHelpers['childTable']>[1]
 type TblInput = Parameters<SchemaHelpers['ownedTable']>[0]
 type TblKey = Parameters<SchemaHelpers['cacheTable']>[0]
@@ -1212,10 +1216,13 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
   }
   const singletonTable = (fields: TblInput): BsTable =>
     bsOf({ category: 'singleton', zod: bsZod(fields) }, raw.singletonTable(fields))
-  const logTable = (entry: { parent: string; schema: TblInput }, opts?: { rateLimit?: RateLimitInput }): BsTable => {
+  const logTable = (
+    entry: { parent: string; schema: TblInput },
+    opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }
+  ): BsTable => {
     const rateLimit = opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined
     return bsOf(
-      { category: 'log', logParent: entry.parent, rateLimit, zod: bsZod(entry.schema) },
+      { category: 'log', logParent: entry.parent, rateLimit, softDelete: opts?.softDelete, zod: bsZod(entry.schema) },
       raw.logTable(entry.schema)
     )
   }
@@ -1237,7 +1244,7 @@ const makeBsHelpers = (raw: SchemaHelpers) => {
     if (brand === 'log')
       return logTable(
         fields as unknown as { parent: string; schema: TblInput },
-        options as undefined | { rateLimit?: RateLimitInput }
+        options as undefined | { rateLimit?: RateLimitInput; softDelete?: boolean }
       )
     if (brand === 'kv')
       return kvTable(fields as unknown as { schema: TblInput }, options as undefined | { rateLimit?: RateLimitInput })
@@ -1274,7 +1281,10 @@ interface NoboilHelpers {
   childTable: (fkOrChild: ChildLike | string, schema?: TblChild) => BsTable
   fileTable: () => BsTable
   kvTable: (entry: { schema: TblInput }, opts?: { rateLimit?: RateLimitInput }) => BsTable
-  logTable: (entry: { parent: string; schema: TblInput }, opts?: { rateLimit?: RateLimitInput }) => BsTable
+  logTable: (
+    entry: { parent: string; schema: TblInput },
+    opts?: { rateLimit?: RateLimitInput; softDelete?: boolean }
+  ) => BsTable
   orgScopedTable: <F extends TblInput>(fields: F, options?: OrgScopedOpts<F>) => BsTable
   orgTable: <F extends TblInput>(fields: F, options?: OrgTableOpts<F>) => BsTable
   ownedTable: <F extends TblInput>(fields: F, options?: OwnedOpts<F>) => BsTable
@@ -1300,10 +1310,12 @@ const wireLogFactories = ({
   for (const [name, entry] of Object.entries(logZ)) {
     const fields = zodToStdbFields(entry.schema.shape, bridgeT, name)
     const rl = tblOpts[name]?.rateLimit
+    const sd = tblOpts[name]?.softDelete
+    const hasOpts = Boolean(rl) || Boolean(sd)
     const { exports: logExports } = makeLog(reducer, {
       fields,
       idempotencyKeyField: bridgeT.string().optional() as never,
-      options: rl ? { rateLimit: rl } : undefined,
+      options: hasOpts ? { rateLimit: rl, softDelete: sd } : undefined,
       parentField: bridgeT.string() as never,
       table: tblOf(name) as never,
       tableName: name

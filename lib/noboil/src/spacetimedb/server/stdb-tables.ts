@@ -320,6 +320,7 @@ const makeSchema = (deps?: Partial<StdbDeps>): MakeSchemaResult => {
       {
         ...resolveFields(fields, t, 'log'),
         createdAt: t.timestamp(),
+        deletedAt: t.timestamp().optional(),
         id: t.u32().autoInc().primaryKey(),
         idempotencyKey: t.string().optional(),
         parent: t.string().index(),

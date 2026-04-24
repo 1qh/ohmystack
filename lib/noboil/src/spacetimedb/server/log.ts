@@ -28,9 +28,11 @@ interface LogHooks<DB = unknown> {
 interface LogOptions<DB = unknown> {
   hooks?: LogHooks<DB>
   rateLimit?: RateLimitConfig
+  softDelete?: boolean
 }
 interface LogRow {
   createdAt: Timestamp
+  deletedAt?: null | Timestamp
   id: number
   idempotencyKey: null | string
   parent: string
@@ -60,8 +62,10 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   const { fields, idempotencyKeyField, options, parentField, table: tableAccessor, tableName } = config
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
+  const softDelete = options?.softDelete ?? false
   const appendName = `append_${tableName}`
   const purgeName = `purge_${tableName}_by_parent`
+  const restoreName = `restore_${tableName}_by_parent`
   const appendParams: FieldBuilders = { ...fields, idempotencyKey: idempotencyKeyField, parent: parentField }
   const purgeParams: FieldBuilders = { parent: parentField }
   const appendReducer = spacetimedb.reducer({ name: appendName }, appendParams, (ctx, args) => {
@@ -93,18 +97,32 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   const purgeReducer = spacetimedb.reducer({ name: purgeName }, purgeParams, (ctx, args) => {
     const hookCtx = { db: ctx.db, sender: ctx.sender, timestamp: ctx.timestamp }
     const typedArgs = args as { parent: string }
-    const table = tableAccessor(ctx.db) as unknown as LogTableLike & { id: { delete: (id: number) => void } }
+    const table = tableAccessor(ctx.db) as unknown as LogTableLike & {
+      id: { delete: (id: number) => void; update: (row: LogRow) => LogRow }
+    }
     const matched: LogRow[] = []
-    for (const row of table) if (row.parent === typedArgs.parent) matched.push(row)
+    for (const row of table) if (row.parent === typedArgs.parent && (softDelete ? !row.deletedAt : true)) matched.push(row)
     const rowCast = matched as unknown[] as Record<string, unknown>[]
     if (hooks?.beforePurge) hooks.beforePurge(hookCtx, { parent: typedArgs.parent, rows: rowCast })
-    for (const row of matched) table.id.delete(row.id)
+    if (softDelete) for (const row of matched) table.id.update({ ...row, deletedAt: ctx.timestamp })
+    else for (const row of matched) table.id.delete(row.id)
     if (hooks?.afterPurge) hooks.afterPurge(hookCtx, { parent: typedArgs.parent, rows: rowCast })
   })
+  const restoreReducer = softDelete
+    ? spacetimedb.reducer({ name: restoreName }, purgeParams, (ctx, args) => {
+        const typedArgs = args as { parent: string }
+        const table = tableAccessor(ctx.db) as unknown as LogTableLike & {
+          id: { update: (row: LogRow) => LogRow }
+        }
+        for (const row of table)
+          if (row.parent === typedArgs.parent && row.deletedAt) table.id.update({ ...row, deletedAt: null })
+      })
+    : undefined
   const exports: Record<string, ReducerExportLike> = {
     [appendName]: appendReducer as ReducerExportLike,
     [purgeName]: purgeReducer as ReducerExportLike
   }
+  if (restoreReducer) exports[restoreName] = restoreReducer as ReducerExportLike
   return { exports }
 }
 export type { LogConfig, LogExports, LogHooks, LogOptions, LogRow, LogTableLike }
