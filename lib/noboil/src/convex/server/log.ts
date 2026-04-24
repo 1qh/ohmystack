@@ -273,6 +273,24 @@ const makeLog = <S extends ZodRawShape>({
       ? b.q({ args: typed({ parent: string(), query: string() }), handler: typed(makeSearchHandler(false)) })
       : undefined
   const searchEndpoint = pub ? pubSearch : authSearch
+  const update = b.m({
+    args: typed({ expectedUpdatedAt: number().optional(), id: zid(table), ...partial.shape }),
+    handler: typed(async (c: MutCtx, raw: Rec & { expectedUpdatedAt?: number; id: string }) => {
+      await rl(c)
+      const { expectedUpdatedAt, id, ...rest } = raw
+      const prev = await c.db.get(id)
+      if (!prev) return err('NOT_FOUND')
+      if (expectedUpdatedAt !== undefined && prev.updatedAt !== expectedUpdatedAt) return err('CONFLICT')
+      const parsed = partial.safeParse(rest)
+      if (!parsed.success) return errValidation('VALIDATION_FAILED', parsed.error)
+      let patch = parsed.data as Rec
+      if (hooks?.beforeUpdate) patch = await hooks.beforeUpdate(hk(c), { id, patch, prev })
+      await dbPatch(c.db, id, { ...patch, updatedAt: Date.now() })
+      await cleanFiles({ doc: prev, fileFields: fileFs, next: patch, storage: c.storage })
+      if (hooks?.afterUpdate) await hooks.afterUpdate(hk(c), { id, patch, prev })
+      return { ...prev, ...patch }
+    })
+  })
   const rmOne = b.m({
     args: typed({ id: zid(table).optional(), ids: array(zid(table)).max(BULK_MAX).optional() }),
     handler: typed(async (c: MutCtx, args: { id?: string; ids?: string[] }) => {
@@ -359,7 +377,8 @@ const makeLog = <S extends ZodRawShape>({
     listAfter,
     purgeByParent,
     read,
-    rm: rmOne
+    rm: rmOne,
+    update
   }
   if (pubApi) endpoints.pub = pubApi
   if (pubIndexed) endpoints.pubIndexed = pubIndexed
