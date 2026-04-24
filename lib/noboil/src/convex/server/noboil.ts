@@ -112,8 +112,12 @@ const dispatchTable = (s: SetupResult<GenericDataModel>, name: string, def: Defe
   }
   if (def.brand === 'log') {
     const entry = def.schema as { parent: string; schema: ZodObject }
-    const opts = (def.opts ?? {}) as { hooks?: unknown; rateLimit?: unknown }
-    return s.log(name, entry.schema, { hooks: opts.hooks as never, rateLimit: opts.rateLimit as never })
+    const opts = (def.opts ?? {}) as { hooks?: unknown; rateLimit?: unknown; search?: unknown }
+    return s.log(name, entry.schema, {
+      hooks: opts.hooks as never,
+      rateLimit: opts.rateLimit as never,
+      search: opts.search as never
+    })
   }
   if (def.brand === 'kv') {
     const entry = def.schema as { keys?: readonly string[]; schema: ZodObject; writeRole?: unknown }

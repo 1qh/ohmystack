@@ -316,13 +316,18 @@ const setup = <DM extends GenericDataModel>(config: SetupConfig<DM>) => {
   const log = <S extends ZodRawShape>(
     table: keyof DM & string,
     schema: ZodObject<S>,
-    opts?: { hooks?: CrudHooks; rateLimit?: RateLimitInput }
+    opts?: {
+      hooks?: CrudHooks
+      rateLimit?: RateLimitInput
+      search?: boolean | string | { field?: string; index?: string }
+    }
   ) =>
     makeLog({
       builders: { m: typed(m), q: typed(q) },
       hooks: mergeHooks(gh, opts?.hooks, table),
       rateLimit: opts?.rateLimit ? normalizeRateLimit(opts.rateLimit) : undefined,
       schema,
+      search: opts?.search,
       table
     })
   const kv = <S extends ZodRawShape>(

@@ -7,6 +7,7 @@ import { array, number, string } from 'zod/v4'
 import type {
   CrudHooks,
   DbLike,
+  FilterLike,
   HookCtx,
   LogFactoryResult,
   Mb,
@@ -15,11 +16,12 @@ import type {
   QueryLike,
   RateLimitConfig,
   ReadCtx,
-  Rec
+  Rec,
+  SearchLike
 } from './types'
 import { idx, typed } from './bridge'
 import { isTestMode } from './env'
-import { checkRateLimit, dbDelete, dbInsert, err, errValidation, pgOpts } from './helpers'
+import { addUrls, checkRateLimit, dbDelete, dbInsert, detectFiles, err, errValidation, pgOpts } from './helpers'
 const DEFAULT_LIMIT = 500
 const BULK_MAX = 100
 interface LogRow {
@@ -34,14 +36,29 @@ const makeLog = <S extends ZodRawShape>({
   hooks,
   rateLimit,
   schema,
+  search: searchOpt,
   table
 }: {
   builders: { m: Mb; q: Qb }
   hooks?: CrudHooks
   rateLimit?: RateLimitConfig
   schema: ZodObject<S>
+  search?: boolean | string | { field?: string; index?: string }
   table: string
 }): LogFactoryResult<S> => {
+  const searchCfg =
+    searchOpt === true
+      ? { field: 'text', index: 'search_field' }
+      : typeof searchOpt === 'string'
+        ? { field: searchOpt, index: 'search_field' }
+        : typeof searchOpt === 'object'
+          ? { field: searchOpt.field ?? 'text', index: searchOpt.index ?? 'search_field' }
+          : null
+  const fileFs = detectFiles(schema.shape)
+  const enrich = async (c: ReadCtx, docs: { userId: string }[]) => {
+    const withAuthored = await c.withAuthor(docs)
+    return Promise.all(withAuthored.map(async d => addUrls({ doc: d, fileFields: fileFs, storage: c.storage })))
+  }
   const byParent = (db: DbLike, p: string): QueryLike =>
     db.query(table).withIndex(
       'by_parent',
@@ -137,7 +154,7 @@ const makeLog = <S extends ZodRawShape>({
         )
         .order('asc')
         .take(limit ?? DEFAULT_LIMIT)) as { userId: string }[]
-      return c.withAuthor(rows)
+      return enrich(c, rows)
     })
   })
   const list = b.q({
@@ -146,7 +163,7 @@ const makeLog = <S extends ZodRawShape>({
       const page = (await byParent(c.db, p).order('desc').paginate(op)) as unknown as {
         page: { userId: string }[]
       }
-      const enriched = await c.withAuthor(page.page)
+      const enriched = await enrich(c, page.page)
       return { ...page, page: enriched }
     })
   })
@@ -165,6 +182,21 @@ const makeLog = <S extends ZodRawShape>({
       return { deleted }
     })
   })
-  return typed({ append, list, listAfter, purgeByParent })
+  const searchEndpoint = searchCfg
+    ? b.q({
+        args: typed({ parent: string(), query: string() }),
+        handler: typed(async (c: ReadCtx, { parent: p, query }: { parent: string; query: string }) => {
+          const rows = (await c.db
+            .query(table)
+            .withSearchIndex(searchCfg.index, (sb: SearchLike) => sb.search(searchCfg.field, query))
+            .filter((f: FilterLike) => f.eq(f.field('parent'), p))
+            .collect()) as { userId: string }[]
+          return enrich(c, rows)
+        })
+      })
+    : undefined
+  const endpoints: Record<string, unknown> = { append, list, listAfter, purgeByParent }
+  if (searchEndpoint) endpoints.search = searchEndpoint
+  return typed(endpoints)
 }
 export { makeLog }
