@@ -1331,6 +1331,7 @@ const wireLogFactories = ({
     const { exports: logExports } = makeLog(reducer, {
       bulkItemsField,
       fields,
+      idField: bridgeT.u32() as never,
       idempotencyKeyField: bridgeT.string().optional() as never,
       options: hasOpts ? { rateLimit: rl, softDelete: sd } : undefined,
       parentField: bridgeT.string() as never,

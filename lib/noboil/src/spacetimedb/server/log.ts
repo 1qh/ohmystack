@@ -7,6 +7,7 @@ interface LogConfig<DB, Tbl extends LogTableLike> {
   bulkItemsField?: ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
   fields: FieldBuilders
   idempotencyKeyField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
+  idField?: ColumnBuilder<unknown, AlgebraicTypeType> | TypeBuilder<unknown, AlgebraicTypeType>
   options?: LogOptions<DB>
   parentField: ColumnBuilder<string, AlgebraicTypeType> | TypeBuilder<string, AlgebraicTypeType>
   table: (db: DB) => Tbl
@@ -60,7 +61,16 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   },
   config: LogConfig<DB, Tbl>
 ): LogExports => {
-  const { bulkItemsField, fields, idempotencyKeyField, options, parentField, table: tableAccessor, tableName } = config
+  const {
+    bulkItemsField,
+    fields,
+    idField,
+    idempotencyKeyField,
+    options,
+    parentField,
+    table: tableAccessor,
+    tableName
+  } = config
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
   const softDelete = options?.softDelete ?? false
@@ -172,6 +182,21 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   }
   if (restoreReducer) exports[restoreName] = restoreReducer as ReducerExportLike
   if (bulkReducer) exports[bulkAppendName] = bulkReducer as ReducerExportLike
+  const rmName = `rm_${tableName}`
+  if (idField) {
+    const rmReducer = spacetimedb.reducer({ name: rmName }, { id: idField }, (ctx, args) => {
+      if (rateLimit) enforceRateLimit(tableName, ctx.sender, rateLimit, Number(ctx.timestamp.microsSinceUnixEpoch / 1000n))
+      const typedArgs = args as { id: number }
+      const table = tableAccessor(ctx.db) as unknown as LogTableLike & {
+        id: { delete: (id: number) => void; find: (id: number) => LogRow | null; update: (row: LogRow) => LogRow }
+      }
+      const row = table.id.find(typedArgs.id)
+      if (!row) return
+      if (softDelete) table.id.update({ ...row, deletedAt: ctx.timestamp })
+      else table.id.delete(typedArgs.id)
+    })
+    exports[rmName] = rmReducer as ReducerExportLike
+  }
   return { exports }
 }
 export type { LogConfig, LogExports, LogHooks, LogOptions, LogRow, LogTableLike }

@@ -75,6 +75,7 @@ import OrgRequestJoinReducer from "./org_request_join_reducer";
 import AppendVoteReducer from "./append_vote_reducer";
 import PurgeVoteByParentReducer from "./purge_vote_by_parent_reducer";
 import BulkAppendVoteReducer from "./bulk_append_vote_reducer";
+import RmVoteReducer from "./rm_vote_reducer";
 import RmSiteConfigReducer from "./rm_site_config_reducer";
 import SetSiteConfigReducer from "./set_site_config_reducer";
 import ConsumePollVoteQuotaReducer from "./consume_poll_vote_quota_reducer";
@@ -453,6 +454,7 @@ const reducersSchema = __reducers(
   __reducerSchema("append_vote", AppendVoteReducer),
   __reducerSchema("purge_vote_by_parent", PurgeVoteByParentReducer),
   __reducerSchema("bulk_append_vote", BulkAppendVoteReducer),
+  __reducerSchema("rm_vote", RmVoteReducer),
   __reducerSchema("rm_siteConfig", RmSiteConfigReducer),
   __reducerSchema("set_siteConfig", SetSiteConfigReducer),
   __reducerSchema("consume_pollVoteQuota", ConsumePollVoteQuotaReducer),
