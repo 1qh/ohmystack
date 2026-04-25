@@ -23,7 +23,9 @@ test.describe('KV factory behaviors', () => {
   })
   test('multiple rapid updates result in final value', async ({ pollPage }) => {
     await pollPage.saveBanner('v1', true)
+    await expect(pollPage.getBannerState()).toContainText('v1', { timeout: 10_000 })
     await pollPage.saveBanner('v2', true)
+    await expect(pollPage.getBannerState()).toContainText('v2', { timeout: 10_000 })
     await pollPage.saveBanner('v3', true)
     await expect(pollPage.getBanner()).toContainText('v3', { timeout: 10_000 })
   })

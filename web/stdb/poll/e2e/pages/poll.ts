@@ -93,7 +93,18 @@ class PollPage extends BasePage {
     return item
   }
   public async saveBanner(message: string, active = true): Promise<void> {
-    await this.getBannerMessageInput().fill(message)
+    const input = this.getBannerMessageInput()
+    await input.waitFor({ state: 'visible', timeout: 15_000 })
+    await this.page.waitForFunction(
+      (id: string) => {
+        const el = document.querySelector<HTMLInputElement>(`[data-testid="${id}"]`)
+        return el !== null && !el.disabled
+      },
+      'banner-message-input',
+      { timeout: 15_000 }
+    )
+    await input.click({ force: true, timeout: 15_000 })
+    await input.fill(message, { force: true, timeout: 15_000 })
     const activeBox = this.getBannerActiveInput()
     if ((await activeBox.isChecked()) !== active) await activeBox.click()
     await this.getBannerSave().click()
