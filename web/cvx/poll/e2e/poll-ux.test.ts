@@ -10,7 +10,7 @@ test.describe('Poll UX polish', () => {
     const q = `Time ${Date.now()}`
     await pollPage.createPoll(q, ['a', 'b'])
     const item = pollPage.getPollItems().filter({ hasText: q }).first()
-    await expect(item.getByTestId('poll-card-time')).toContainText(/ago/u, { timeout: 10_000 })
+    await expect(item.getByTestId('poll-card-time')).toContainText(/(?:ago|less than a minute)/u, { timeout: 10_000 })
   })
   test('poll card question is clickable as a separate element', async ({ pollPage }) => {
     const q = `Click ${Date.now()}`

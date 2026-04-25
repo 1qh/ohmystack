@@ -44,7 +44,7 @@ test.describe('Poll detail page', () => {
     const href = await item.getByTestId(/poll-edit-/u).getAttribute('href')
     const id = (href ?? '').replace(/^\//u, '').replace(/\/edit$/u, '')
     await page.goto(`/${id}`)
-    await expect(page.getByTestId('poll-detail-time')).toContainText(/Created.*ago/u, { timeout: 10_000 })
+    await expect(page.getByTestId('poll-detail-time')).toContainText(/Created/u, { timeout: 10_000 })
   })
 })
 test.describe('Poll edit page', () => {

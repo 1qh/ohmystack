@@ -2,6 +2,7 @@
 /* oxlint-disable promise/prefer-await-to-then */
 'use client'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
+import { fail } from '@a/fe/utils'
 import { cn } from '@a/ui'
 import {
   AlertDialog,
@@ -165,7 +166,7 @@ const VoteAdmin = ({
         <Button
           data-testid='vote-purge'
           onClick={() => {
-            purge().catch(() => null)
+            purge().catch(fail)
           }}
           size='sm'
           variant='outline'>
@@ -174,7 +175,7 @@ const VoteAdmin = ({
         <Button
           data-testid='vote-restore'
           onClick={() => {
-            restore().catch(() => null)
+            restore().catch(fail)
           }}
           size='sm'
           variant='outline'>
@@ -183,7 +184,7 @@ const VoteAdmin = ({
         <Button
           data-testid='vote-bulk'
           onClick={() => {
-            appendBulk().catch(() => null)
+            appendBulk().catch(fail)
           }}
           size='sm'
           variant='outline'>
@@ -242,7 +243,7 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) =>
                   data-testid={`vote-option-${i}`}
                   disabled={!allowed}
                   onClick={() => {
-                    vote(opt).catch(() => null)
+                    vote(opt).catch(fail)
                   }}
                   size='sm'
                   variant='outline'>
@@ -402,7 +403,7 @@ const BannerAdmin = () => {
           <Button
             data-testid='banner-save'
             onClick={() => {
-              save().catch(() => null)
+              save().catch(fail)
             }}
             size='sm'>
             Save
@@ -410,7 +411,7 @@ const BannerAdmin = () => {
           <Button
             data-testid='banner-clear'
             onClick={() => {
-              clear().catch(() => null)
+              clear().catch(fail)
             }}
             size='sm'
             variant='outline'>
@@ -419,7 +420,7 @@ const BannerAdmin = () => {
           <Button
             data-testid='banner-restore'
             onClick={() => {
-              banner.restore().catch(() => null)
+              banner.restore().catch(fail)
             }}
             size='sm'
             variant='ghost'>

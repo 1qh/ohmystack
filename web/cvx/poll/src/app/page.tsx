@@ -1,6 +1,7 @@
 'use client'
 import { api } from '@a/be-convex'
-import { Input } from '@a/ui/input'
+import LoadMoreButton from '@a/fe/load-more-button'
+import SearchInput from '@a/fe/search-input'
 import { useList } from 'noboil/convex/react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import type { Poll } from './common'
@@ -28,22 +29,9 @@ const Page = () => {
       <Create />
       <BannerDisplay />
       <h1 className='text-2xl font-semibold'>Polls</h1>
-      <Input
-        data-testid='poll-search-input'
-        onChange={e => setQuery(e.target.value)}
-        placeholder='Search polls…'
-        value={query}
-      />
+      <SearchInput data-testid='poll-search-input' onValueChange={setQuery} placeholder='Search polls…' value={query} />
       <PollList onRemove={onRemove} polls={filtered} />
-      {hasMore ? (
-        <button
-          className='block w-full rounded-md border py-2 text-sm text-muted-foreground hover:bg-muted'
-          data-testid='poll-load-more'
-          onClick={() => loadMore(10)}
-          type='button'>
-          Load more
-        </button>
-      ) : null}
+      {hasMore ? <LoadMoreButton data-testid='poll-load-more' onLoadMore={() => loadMore(10)} /> : null}
       <BannerAdmin />
     </div>
   )

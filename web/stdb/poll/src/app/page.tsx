@@ -1,6 +1,6 @@
 'use client'
 import { tables } from '@a/be-spacetimedb/spacetimedb'
-import { Input } from '@a/ui/input'
+import SearchInput from '@a/fe/search-input'
 import { useList, useOwnRows } from 'noboil/spacetimedb/react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useSpacetimeDB, useTable } from 'spacetimedb/react'
@@ -30,12 +30,7 @@ const Page = () => {
       <Create />
       <BannerDisplay />
       <h1 className='text-2xl font-semibold'>Polls</h1>
-      <Input
-        data-testid='poll-search-input'
-        onChange={e => setQuery(e.target.value)}
-        placeholder='Search polls…'
-        value={query}
-      />
+      <SearchInput data-testid='poll-search-input' onValueChange={setQuery} placeholder='Search polls…' value={query} />
       <PollList onRemove={onRemove} polls={polls} />
       <BannerAdmin />
     </div>
