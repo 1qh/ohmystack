@@ -9,7 +9,8 @@ test.describe('Poll page', () => {
   test('renders poll page', async ({ page }) => {
     await expect(page.getByTestId('poll-page')).toBeVisible()
   })
-  test('shows create form', async ({ pollPage }) => {
+  test('shows create form', async ({ page, pollPage }) => {
+    await page.getByTestId('create-poll-trigger').click()
     await expect(pollPage.getQuestionInput()).toBeVisible()
     await expect(pollPage.getOptionsTagInput()).toBeVisible()
     await expect(pollPage.getCreateSubmit()).toBeVisible()
@@ -37,6 +38,7 @@ test.describe('Poll CRUD', () => {
     await expect(pollPage.getPollItems().filter({ hasText: q })).toHaveCount(1, { timeout: 10_000 })
   })
   test('form validates required question', async ({ page, pollPage }) => {
+    await page.getByTestId('create-poll-trigger').click()
     await pollPage.getCreateSubmit().click()
     await expect(pollPage.getQuestionInput()).toBeVisible()
     await expect(page.locator('[data-invalid="true"]').first()).toBeVisible()
@@ -46,6 +48,7 @@ test.describe('Poll CRUD', () => {
     await pollPage.createPoll(q, ['yes', 'no'])
     const item = pollPage.getPollItems().filter({ hasText: q }).first()
     await item.getByTestId(/poll-delete-/u).click()
+    await page.getByRole('button', { exact: true, name: 'Delete' }).click()
     await expect(page.getByTestId('poll-item').filter({ hasText: q })).toHaveCount(0, { timeout: 10_000 })
   })
   test('created poll shows both options to vote', async ({ pollPage }) => {

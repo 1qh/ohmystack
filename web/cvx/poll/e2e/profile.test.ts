@@ -121,12 +121,12 @@ test.describe
     })
     test('profile link is visible in layout', async ({ page, profilePage }) => {
       await page.goto('/')
-      await page.locator('[data-testid="poll-create-form"]').first().waitFor()
+      await page.locator('[data-testid="poll-page"]').first().waitFor()
       await expect(profilePage.getProfileLink()).toBeVisible()
     })
     test('clicking profile link navigates to /profile', async ({ page, profilePage }) => {
       await page.goto('/')
-      await page.locator('[data-testid="poll-create-form"]').first().waitFor()
+      await page.locator('[data-testid="poll-page"]').first().waitFor()
       await profilePage.getProfileLink().click()
       await expect(page).toHaveURL('/profile')
       await expect(profilePage.getProfilePage()).toBeVisible()
