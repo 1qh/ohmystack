@@ -21,6 +21,15 @@ test.describe('KV factory behaviors', () => {
     await pollPage.saveBanner('on-state', true)
     await expect(page.getByTestId('poll-banner')).toBeVisible({ timeout: 10_000 })
   })
+  test('restore brings back rm-removed row', async ({ pollPage }) => {
+    const msg = `Restore ${Date.now()}`
+    await pollPage.saveBanner(msg, true)
+    await expect(pollPage.getBannerState()).toContainText(msg, { timeout: 10_000 })
+    await pollPage.clearBanner()
+    await expect(pollPage.getBannerState()).toContainText('no banner', { timeout: 10_000 })
+    await pollPage.getBannerRestore().click()
+    await expect(pollPage.getBannerState()).toContainText(msg, { timeout: 10_000 })
+  })
   test('multiple rapid updates result in final value', async ({ pollPage }) => {
     await pollPage.saveBanner('v1', true)
     await expect(pollPage.getBannerState()).toContainText('v1', { timeout: 10_000 })
