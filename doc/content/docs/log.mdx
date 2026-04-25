@@ -1,97 +1,211 @@
 ---
 title: Log factory (append-only event log)
-description: Append-only sequential tables with atomic seq allocation, idempotent appends, and parent-scoped listing. For messaging, audit trails, activity feeds, event sourcing.
+description: Append-only sequential tables with atomic seq allocation, idempotent appends, soft-delete + restore, bulk operations, and parent-scoped listing. For messaging, audit trails, activity feeds, event sourcing.
 ---
 
-Use `log` for tables where rows are **append-only** and **ordered by a per-parent sequence number** — chat messages, stream events, audit trails, activity feeds. Unlike `owned` or `child` factories, `log` exposes no `update` endpoint (events are immutable), auto-assigns a `seq` (atomic counter per parent), and supports idempotent appends so re-sending the same event is a no-op.
+Use `log` for tables where rows are **append-only** and **ordered by a per-parent sequence number** — chat messages, stream events, audit trails, activity feeds, vote ballots. Auto-assigns a `seq` (atomic counter per parent), supports idempotent appends, soft-delete + restore, bulk operations, and pub/auth split for visibility scoping.
 
 ## API surface
 
 ```ts
 type LogFactoryResult = {
+  // writes
   append: Mutation<(ctx, { parent: string, payload: T, idempotencyKey?: string }) => { seq: number, created: boolean }>
-  listAfter: Query<(ctx, { parent: string, seq: number, limit?: number }) => Row[]>
-  list: Query<(ctx, { parent: string, paginationOpts }) => PaginatedResult>
+  appendBulk: Mutation<(ctx, { parent: string, items: T[] }) => { count: number }>
+  rm: Mutation<(ctx, { id: Id<table> }) => { deleted: boolean }>
+  rmBulk: Mutation<(ctx, { ids: Id<table>[] }) => { count: number }>
+  update: Mutation<(ctx, { id, patch, expectedUpdatedAt? }) => Row>
   purgeByParent: Mutation<(ctx, { parent: string }) => { deleted: number }>
+  restoreByParent: Mutation<(ctx, { parent: string }) => { restored: number }>
+
+  // reads (auth — owner of the parent)
+  auth: {
+    list: Query<(ctx, { parent: string, paginationOpts }) => PaginatedResult>
+    listAfter: Query<(ctx, { parent: string, seq: number, limit?: number }) => Row[]>
+    read: Query<(ctx, { id: Id<table> }) => Row | null>
+    search: Query<(ctx, { parent: string, query: string }) => Row[]>
+  }
+  authIndexed: Query<(ctx, { parent: string, indexBy: string }) => Record<string, Row[]>>
+
+  // reads (public — visible to everyone)
+  pub?: { list, listAfter, read, search }
+  pubIndexed?: Query<...>
 }
 ```
 
 | Method | Semantics |
 |---|---|
-| `append(parent, payload, {idempotencyKey?})` | Atomically `seq = nextSeq(parent)`, insert row. If `idempotencyKey` provided and `(parent, idempotencyKey)` exists, returns existing `{seq, created: false}` without inserting. |
-| `listAfter(parent, seq, limit?)` | Rows where `row.seq > seq`, ordered ascending. Streaming-friendly tail read. Default limit 500. |
-| `list(parent, {paginationOpts})` | Cursor pagination newest-first, standard Convex shape. For UI history scroll. |
-| `purgeByParent(parent)` | Bulk delete all rows for parent. Call on parent row delete. Returns count. |
+| `append(parent, payload, idempotencyKey?)` | Atomic `seq = nextSeq(parent)` + insert. With idempotency key: returns existing `{seq, created: false}` if `(parent, key)` already exists. |
+| `appendBulk(parent, items)` | Single-transaction batch insert, contiguous seq range. Faster than N append calls when items > 1. |
+| `update(id, patch)` | Mutates a row with optional `expectedUpdatedAt` conflict check. Hooks fire. |
+| `rm(id)` / `rmBulk(ids)` | Hard-delete row(s). With `softDelete: true`, sets `deletedAt` instead. |
+| `purgeByParent(parent)` | Bulk soft- or hard-delete all rows for parent. Call on parent row delete. |
+| `restoreByParent(parent)` | If `softDelete: true`, clears `deletedAt` on all matching rows. |
+| `auth.list(parent, paginationOpts)` | Owner-only paginated read, newest-first. |
+| `auth.listAfter(parent, seq, limit?)` | Streaming tail read for `seq > N`. Default limit 500. |
+| `auth.read(id)` | Single row by id, ownership-checked. |
+| `auth.search(parent, query)` | Free-text search if `search` config provided. |
+| `pub.*` | Same surface but public-readable when `pub` config provided. |
+| `*Indexed` | Group rows by a field for "votes per option" style aggregation. |
 
 ## Schema
 
 ```ts
-import { object, string } from 'zod/v4'
+import { object, string, number } from 'zod/v4'
 import { schema, makeLog } from 'noboil/convex/schema'
 const log = makeLog({
-  messages: {
-    parent: 'chats',                    // parent table name
+  vote: {
+    parent: 'poll',
+    schema: object({
+      optionIdx: number(),
+      voter: string()
+    })
+  },
+  message: {
+    parent: 'chat',
     schema: object({
       content: string(),
-      type: z.enum(['user', 'assistant'])
+      role: z.enum(['user', 'assistant', 'system'])
     })
   }
 })
 ```
 
-Every log row gets these auto-fields (added by factory, not in user schema):
-- `parent: Id<parentTable>` — foreign key
+Auto-fields injected by the factory:
+
+- `parent: Id<parentTable>` — foreign key (indexed)
 - `seq: number` — monotonic per parent, starts at 1
 - `idempotencyKey?: string` — optional dedup hash
+- `userId: Id<users>` — author
+- `createdAt: number` / `updatedAt: number` — timestamps
+- `deletedAt?: number` — set when `softDelete: true` and row is purged
 - `_creationTime: number` — Convex native
 
-Indexes auto-created: `by_parent` (parent, seq) and `by_idempotency` (parent, idempotencyKey).
+Indexes auto-created: `by_parent_seq`, `by_idempotency` (if seen).
+
+## Wire it up
+
+```ts
+// backend/convex/lazy.ts
+import { noboil } from 'noboil/convex/server'
+import { s } from './s'
+const api = noboil({
+  /* ... */
+  tables: ({ table }) => ({
+    poll: table(s.poll),
+    vote: table(s.vote, {
+      softDelete: true,        // enable purge/restore
+      rateLimit: 30,           // max 30 appends per user/minute
+      pub: 'isPublic',         // expose pub.* reads when poll.isPublic = true
+      hooks: {
+        beforeAppend: async (ctx, { parent, payload }) => {
+          // mutate payload before insert
+          return { ...payload, voter: ctx.user._id }
+        },
+        afterAppend: async (ctx, { row }) => {
+          // notify subscribers, increment counters, ...
+        },
+        beforeRm: async (ctx, { id, prev }) => { /* gate / audit */ },
+        afterRm: async (ctx, { id }) => { /* notify */ }
+      }
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/vote.ts (re-export to expose RPC)
+import { api } from '../lazy'
+export const { append, appendBulk, auth, authIndexed, list, listAfter, purgeByParent,
+                read, restoreByParent, rm, update } = api.vote
+```
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `softDelete` | boolean | Enables `deletedAt` flag; `purgeByParent` sets timestamps; `restoreByParent` clears them. Hard-delete still available via `rm({hard:true})`. |
+| `rateLimit` | number \| RateLimitConfig | Sliding-window limit on appends per user. |
+| `pub` | string \| `{ parentField: string }` | Field on the parent row that gates public visibility. |
+| `search` | string | Field to enable full-text search on (server-side `withSearchIndex`). |
+| `hooks` | LogHooks | `beforeAppend` / `afterAppend` / `beforeRm` / `afterRm` / `beforeUpdate` / `afterUpdate`. |
+| `withAuthor` | boolean | Auto-join `users` row into reads. |
+
+## Client hooks
+
+```ts
+import { useLog } from 'noboil/convex/react'
+const log = useLog(api.vote, { parent: pollId })
+
+log.data           // Row[]
+log.isLoading
+log.hasMore
+log.loadMore(20)
+
+await log.append({ payload: { optionIdx: 0, voter: 'me' } })
+await log.appendBulk([{ optionIdx: 0, voter: 'a' }, { optionIdx: 1, voter: 'b' }])
+await log.update(rowId, { optionIdx: 1 })
+await log.rm(rowId)
+await log.rmBulk([id1, id2])
+await log.purge()       // calls purgeByParent for current parent
+await log.restore()     // calls restoreByParent for current parent
+```
 
 ## Seq allocation
 
-Counter row per parent stored in internal `_logCounters` table (one row per `{table, parent}`). `append` reads counter, increments atomically, inserts row. Convex mutations are transactional so the read+write is safe. No `_creationTime` tiebreaker needed.
+Counter row per parent stored in internal `_logCounters` table (one row per `{table, parent}`). `append` reads counter, increments atomically, inserts row. Convex mutations are transactional so the read+write is safe. SpacetimeDB uses `auto_inc`.
 
 ## Idempotency
 
-When `idempotencyKey` is provided, the factory queries the `by_idempotency` index first. If found → return existing `{seq, created: false}`. If not → atomic insert. Guarantees "insert-or-noop" semantics for retryable client writes.
+When `idempotencyKey` is provided, the factory queries `by_idempotency` first. If found → return existing `{seq, created: false}`. If not → atomic insert. Guarantees insert-or-noop semantics for retryable client writes.
 
-Without `idempotencyKey` → every `append` inserts (duplicates allowed; caller responsible for dedup).
+## Hooks
 
-## What log deliberately doesn't do
+```ts
+type LogHooks<T> = {
+  beforeAppend?: (ctx, { parent, payload }) => T | Promise<T>
+  afterAppend?: (ctx, { row }) => Promise<void>
+  beforeUpdate?: (ctx, { id, patch, prev }) => Patch | Promise<Patch>
+  afterUpdate?: (ctx, { id, patch, prev }) => Promise<void>
+  beforeRm?: (ctx, { id, prev }) => Promise<void>
+  afterRm?: (ctx, { id }) => Promise<void>
+}
+```
 
-- **No `update`** — events are immutable. Want to edit? Use `owned` or `child` instead.
-- **No auto-TTL** — retention is explicit via `purgeByParent`. Add a cron if you want "delete events older than N days".
-- **No cross-parent queries** — every op is scoped by parent. Cross-table analytics belong in a separate read-only view.
-- **No subscriptions API** — consume via Convex's native `useQuery` on `listAfter` for streaming, or `useList` for paginated history. Factory generates the queries; you get subscriptions for free.
+Use cases: stamp author, derive denormalized fields, fire-and-forget side effects (notifications), audit log writes.
 
-## Example: chat messages
+## Example: chat messages with idempotency
 
 ```ts
 const s = schema({
-  owned: {
-    chats: object({ title: string(), userId: zid('users') })
-  },
+  owned: { chat: object({ title: string(), userId: zid('users') }) },
   log: {
-    messages: {
-      parent: 'chats',
-      schema: object({ content: string(), role: z.enum(['user','assistant','system']) })
-    }
+    message: { parent: 'chat', schema: object({ content: string(), role: z.enum(['user','assistant','system']) }) }
   }
 })
 ```
 
-Client:
+Client retry-safe send:
+
 ```ts
-import { useLog } from 'noboil/convex/react'
-const { items, append, loadMore } = useLog(api.messages, { parent: chatId })
-append({ payload: { content: 'hi', role: 'user' } })
+const tempId = crypto.randomUUID()
+const { seq, created } = await log.append({
+  payload: { content, role: 'user' },
+  idempotencyKey: tempId
+})
+if (!created) console.log('Already sent, seq:', seq)
 ```
 
 ## When to use log vs child
 
 | Use `log` if | Use `child` if |
 |---|---|
-| Rows are append-only (no edits) | Rows are editable |
-| Order matters (strict seq) | Order doesn't matter or is by `_creationTime` |
+| Rows are append-only with optional updates | Rows are routinely edited |
+| Strict per-parent seq ordering matters | Order by `_creationTime` is fine |
 | Idempotent retries expected | Duplicates are errors |
-| Common patterns: messages, events, audit | Common patterns: comments that can be edited, todos under a project |
+| Soft-delete + restore + bulk needed | Single delete is fine |
+| Common patterns: messages, votes, events, audit | Common patterns: comments, todos under a project |
+
+## Demo
+
+The [poll demo](https://github.com/1qh/noboil/tree/main/web/cvx/poll) uses `log` for vote rows: each ballot is appended with `{optionIdx, voter}`, listed paginated, purged + restored as admin actions, and counted via `useLog().data` aggregation.

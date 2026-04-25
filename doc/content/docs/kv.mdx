@@ -1,27 +1,29 @@
 ---
 title: kv factory (string-keyed global state)
-description: Named key → value state with role-gated writes and public reads. For site-wide configuration, feature flags, maintenance banners, system status.
+description: Named key → value state with role-gated writes, public reads, soft-delete + restore, conflict detection, and optional key whitelist. For site config, feature flags, banners, system status.
 ---
 
-Use `kv` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` which is one row per user: a kv has many rows, each identified by a string key chosen by the caller.
+Use `kv` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` (one row per user) and `cache` (TTL'd lookups by external id): kv has many rows, each identified by a string key chosen by the caller.
 
 ## API surface
 
 ```ts
 type KvFactoryResult = {
   get: Query<(ctx, { key: string }) => Row | null>
-  list: Query<(ctx) => Row[]>
-  set: Mutation<(ctx, { key: string, payload: T }) => Row>
+  list: Query<(ctx, { paginationOpts }) => PaginatedResult>
+  set: Mutation<(ctx, { key: string, payload: T, expectedUpdatedAt?: number }) => Row>
   rm: Mutation<(ctx, { key: string }) => { deleted: boolean }>
+  restore: Mutation<(ctx, { key: string }) => Row>
 }
 ```
 
 | Method | Auth | Semantics |
 |---|---|---|
-| `get(key)` | public (no auth gate) | Returns row or null. Safe to call from unauthenticated clients (status page). |
-| `list()` | role-gated | Returns all rows. Admin dashboards. |
-| `set(key, payload)` | role-gated | Upsert: creates if missing, updates if exists. |
-| `rm(key)` | role-gated | Delete by key. |
+| `get(key)` | public | Returns row or null. Safe from unauthenticated clients. |
+| `list({paginationOpts})` | role-gated | Cursor-paginated full read. Admin dashboards. |
+| `set(key, payload, {expectedUpdatedAt?})` | role-gated | Upsert with optional conflict check; throws `CONFLICT` if `updatedAt` mismatch. |
+| `rm(key)` | role-gated | Soft-delete (when `softDelete: true`) or hard-delete. |
+| `restore(key)` | role-gated | Clears `deletedAt` to bring back a soft-deleted row. |
 
 ## Schema
 
@@ -34,35 +36,80 @@ const kv = makeKv({
       kind: string(),
       valid: boolean(),
       error: string().optional(),
-      checkedAt: z.number()
+      checkedAt: number()
     }),
     writeRole: (ctx) => isInternal(ctx),
     keys: ['google_oauth', 'convex_api', 'db_migrations'] as const
+  },
+  siteConfig: {
+    keys: ['banner', 'maintenance'] as const,
+    schema: object({ active: boolean(), message: string() }),
+    writeRole: (ctx) => ctx.user?.role === 'admin'
   }
 })
 ```
 
 Config:
 - `schema` — Zod shape for the value
-- `writeRole: (ctx) => boolean | Promise<boolean>` — predicate gating `set`/`rm`/`list`. Return `true` to allow. Sugar: pass the literal `true` for public writes, omit for internal-only (throws unless `ctx.internal` is true).
-- `keys?: readonly string[]` — optional compile-time enum constraint. If provided, `key` arg must be one of these strings. If omitted, `key` is `string`.
+- `writeRole: (ctx) => boolean | Promise<boolean>` — predicate gating `set`/`rm`/`list`/`restore`. Sugar: literal `true` for public writes, omit for internal-only.
+- `keys?: readonly string[]` — optional compile-time enum constraint; rejects unknown keys with `INVALID_KEY`.
 
-Auto-fields:
+Auto-fields injected by the factory:
 - `key: string` — primary identifier (indexed)
-- `updatedAt: number` — last write timestamp
+- `updatedAt: number` — last write timestamp (used for conflict detection)
+- `deletedAt?: number` — set when soft-deleted
 - `_creationTime: number` — Convex native
 
 Index auto-created: `by_key` (unique).
 
+## Wire it up
+
+```ts
+// backend/convex/lazy.ts
+const api = noboil({
+  /* ... */
+  tables: ({ table }) => ({
+    siteConfig: table(s.siteConfig, {
+      softDelete: true,        // enables restore + delayed cleanup
+      rateLimit: 10,           // 10 writes/min/user
+      hooks: {
+        beforeUpdate: async (ctx, { key, payload, prev }) => {
+          // mutate payload before write
+          return { ...payload, updatedBy: ctx.user._id }
+        },
+        afterUpdate: async (ctx, { key, payload }) => {
+          // notify subscribers, audit, ...
+        }
+      }
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/siteConfig.ts (re-export RPC)
+import { api } from '../lazy'
+export const { get, list, restore, rm, set } = api.siteConfig
+```
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `softDelete` | boolean | `rm` sets `deletedAt`; `get`/`list` filter it out; `restore` clears it. Without it, `rm` hard-deletes and `restore` is a no-op. |
+| `rateLimit` | number \| RateLimitConfig | Per-user sliding-window limit on writes. |
+| `hooks` | KvHooks | `beforeUpdate` / `afterUpdate` / `beforeRm` / `afterRm`. |
+| `cleanFiles` | boolean | If schema has file fields, remove orphaned files on overwrite/delete. |
+
 ## writeRole patterns
 
 ```ts
-writeRole: true                                    // public writes (rare, think config forms)
+writeRole: true                                    // public writes (rare)
 writeRole: (ctx) => ctx.user?.role === 'admin'     // admin-only
 writeRole: (ctx) => isInternal(ctx)                // from cron / internal action only
 writeRole: async (ctx) => {
   const user = await ctx.db.get(ctx.userId)
-  return user?.permissions.includes('manage_status')
+  return user?.permissions.includes('manage_status') ?? false
 }
 ```
 
@@ -75,13 +122,58 @@ keys: ['banner', 'version', 'maintenance'] as const
 // set/get/rm now require key to be 'banner' | 'version' | 'maintenance'
 ```
 
-Prevents typos in client code. Omit `keys` if you want to allow arbitrary strings.
+Prevents typos in client code and gives editor autocomplete. Omit `keys` to allow arbitrary strings.
+
+## Conflict detection
+
+```ts
+const current = await ctx.db.query(api.siteConfig.get, { key: 'banner' })
+await ctx.db.mutation(api.siteConfig.set, {
+  key: 'banner',
+  payload: { active: true, message: 'updated' },
+  expectedUpdatedAt: current?.updatedAt
+})
+// throws CONFLICT if another writer updated banner in between
+```
+
+Optional — omit `expectedUpdatedAt` for last-write-wins semantics.
+
+## Soft-delete + restore
+
+With `softDelete: true`:
+
+```ts
+await api.siteConfig.set({ key: 'banner', payload: { active: true, message: 'hi' } })
+await api.siteConfig.rm({ key: 'banner' })          // deletedAt = now
+await api.siteConfig.get({ key: 'banner' })         // null (filtered)
+await api.siteConfig.restore({ key: 'banner' })     // deletedAt = undefined
+await api.siteConfig.get({ key: 'banner' })         // returns { active: true, message: 'hi' }
+```
+
+Useful for "trash bin" UX, undo, or accidental-delete recovery without backup.
+
+## Client hooks
+
+```ts
+import { useKv } from 'noboil/convex/react'
+const banner = useKv(api.siteConfig, 'banner')
+
+banner.data       // Row | null | undefined
+await banner.update({ active: true, message: 'hello' })
+await banner.update({ active: true, message: 'hi' }, { expectedUpdatedAt })
+await banner.remove()
+await banner.restore()
+```
 
 ## When to use kv vs singleton vs cache
 
 | Use `kv` if | Use `singleton` if | Use `cache` if |
 |---|---|---|
-| Key is a named string (`'banner'`, `'google_oauth'`) | One row per user | Key is a fetched-from-upstream ID with TTL |
+| Key is a named string (`'banner'`, `'google_oauth'`) | One row per user | Key is a fetched-from-upstream id with TTL |
 | Writes are gated by role | Writes are by owner | Writes are by cron refresh |
 | Reads are public | Reads are user-scoped | Reads are lookups on upstream key |
-| Examples: maintenance banner, feature flags, health | User preferences, profile | TMDB movie, GitHub repo, external API response |
+| Examples: maintenance banner, feature flags, system health | User preferences, profile | TMDB movie, GitHub repo, external API response |
+
+## Demo
+
+The [poll demo](https://github.com/1qh/noboil/tree/main/web/cvx/poll) uses `kv` for the `siteConfig.banner` row: a "Site banner admin" panel saves/clears/restores it; a top-of-page `<BannerDisplay/>` reads it without auth and shows the message when active.
