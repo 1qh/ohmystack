@@ -9819,10 +9819,10 @@ describe('makeLog factory schema', () => {
     expect(logs.vote.schema).toBeDefined()
   })
   test('payload schema validates required fields', () => {
-    const ok = logs.vote.schema.safeParse({ option: 'a' })
-    expect(ok.success).toBe(true)
-    const bad = logs.vote.schema.safeParse({})
-    expect(bad.success).toBe(false)
+    const okLog = logs.vote.schema.safeParse({ option: 'a' })
+    expect(okLog.success).toBe(true)
+    const badLog = logs.vote.schema.safeParse({})
+    expect(badLog.success).toBe(false)
   })
   test('makeLog accepts empty input', () => {
     const empty = makeLog({})
@@ -9848,10 +9848,10 @@ describe('makeKv factory schema', () => {
     expect(kvs.feature.writeRole).toBe(true)
   })
   test('payload schema validates required fields', () => {
-    const ok = kvs.siteConfig.schema.safeParse({ active: true, message: 'x' })
-    expect(ok.success).toBe(true)
-    const bad = kvs.siteConfig.schema.safeParse({ active: 'true' })
-    expect(bad.success).toBe(false)
+    const okKv = kvs.siteConfig.schema.safeParse({ active: true, message: 'x' })
+    expect(okKv.success).toBe(true)
+    const badKv = kvs.siteConfig.schema.safeParse({ active: 'true' })
+    expect(badKv.success).toBe(false)
   })
 })
 describe('makeQuota factory schema', () => {
