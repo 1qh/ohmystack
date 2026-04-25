@@ -16,7 +16,7 @@ interface PreviewFile {
   content: string
   path: string
 }
-type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
+type TableType = 'cache' | 'child' | 'kv' | 'log' | 'org' | 'owned' | 'quota' | 'singleton'
 interface WizardConfig {
   initialType?: TableType
   kind: 'convex' | 'spacetimedb'

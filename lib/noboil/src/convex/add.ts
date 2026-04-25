@@ -13,14 +13,15 @@ interface AddFlags {
   parent: string
   type: TableType
 }
+const LOG_NAME_SUFFIX = /Log$|Event$|Item$/u
 type FieldType = 'boolean' | 'number' | 'string'
 interface ParsedField {
   name: string
   optional: boolean
   type: FieldType | { enum: string[] }
 }
-type TableType = 'cache' | 'child' | 'org' | 'owned' | 'singleton'
-const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'org', 'owned', 'singleton'])
+type TableType = 'cache' | 'child' | 'kv' | 'log' | 'org' | 'owned' | 'quota' | 'singleton'
+const TABLE_TYPES = new Set<TableType>(['cache', 'child', 'kv', 'log', 'org', 'owned', 'quota', 'singleton'])
 const FIELD_TYPES = new Set<FieldType>(['boolean', 'number', 'string'])
 const parseFieldDef = (raw: string): null | ParsedField => parseEnumFieldDef(raw, FIELD_TYPES)
 const parseAddFlags = (args: string[]): AddFlags => {
@@ -60,7 +61,9 @@ const printAddHelp = () => {
   console.log(bold('Usage:'))
   console.log('  noboil-convex add <table-name> [options]\n')
   console.log(bold('Options:'))
-  console.log(`  --type=TYPE           Table type: owned, org, singleton, cache, child ${dim('(default: owned)')}`)
+  console.log(
+    `  --type=TYPE           Table type: owned, org, singleton, cache, child, log, kv, quota ${dim('(default: owned)')}`
+  )
   console.log(
     `  --fields=FIELDS       Field definitions ${dim('(e.g. "title:string,done:boolean,priority:enum(low,medium,high)")')}`
   )
@@ -75,7 +78,10 @@ const printAddHelp = () => {
   )
   console.log(`  ${dim('$')} noboil-convex add message --type=child --parent=chat --fields="text:string"`)
   console.log(`  ${dim('$')} noboil-convex add profile --type=singleton --fields="displayName:string,bio:string?"`)
-  console.log(`  ${dim('$')} noboil-convex add movie --type=cache --fields="title:string,tmdb_id:number"\n`)
+  console.log(`  ${dim('$')} noboil-convex add movie --type=cache --fields="title:string,tmdb_id:number"`)
+  console.log(`  ${dim('$')} noboil-convex add vote --type=log --parent=poll --fields="optionIdx:number,voter:string"`)
+  console.log(`  ${dim('$')} noboil-convex add siteConfig --type=kv --fields="active:boolean,message:string"`)
+  console.log(`  ${dim('$')} noboil-convex add apiQuota --type=quota\n`)
 }
 const fieldToZod = (f: ParsedField): string => {
   const base = typeof f.type === 'object' ? `zenum([${f.type.enum.map(v => `'${v}'`).join(', ')}])` : `${f.type}()`
@@ -85,8 +91,11 @@ const schemaImport = (type: TableType): string => {
   const map: Record<TableType, string> = {
     cache: 'makeBase',
     child: 'child',
+    kv: 'makeKv',
+    log: 'makeLog',
     org: 'makeOrgScoped',
     owned: 'makeOwned',
+    quota: 'makeQuota',
     singleton: 'makeSingleton'
   }
   return map[type]
@@ -95,8 +104,11 @@ const schemaWrapper = (type: TableType): string => {
   const map: Record<TableType, string> = {
     cache: 'base',
     child: '',
+    kv: 'kv',
+    log: 'log',
     org: 'orgScoped',
     owned: 'owned',
+    quota: 'quota',
     singleton: 'singletons'
   }
   return map[type]
@@ -105,8 +117,11 @@ const factoryFn = (type: TableType): string => {
   const map: Record<TableType, string> = {
     cache: 'cacheCrud',
     child: 'childCrud',
+    kv: 'kv',
+    log: 'log',
     org: 'orgCrud',
     owned: 'crud',
+    quota: 'quota',
     singleton: 'singletonCrud'
   }
   return map[type]
@@ -127,6 +142,17 @@ const defaultFields = (type: TableType): ParsedField[] => {
       { name: 'title', optional: false, type: 'string' },
       { name: 'externalId', optional: false, type: 'string' }
     ]
+  if (type === 'log')
+    return [
+      { name: 'kind', optional: false, type: 'string' },
+      { name: 'message', optional: false, type: 'string' }
+    ]
+  if (type === 'kv')
+    return [
+      { name: 'active', optional: false, type: 'boolean' },
+      { name: 'message', optional: false, type: 'string' }
+    ]
+  if (type === 'quota') return []
   return base
 }
 const genSchemaContent = (name: string, type: TableType, fields: ParsedField[]): string => {
@@ -150,6 +176,48 @@ ${fieldLines}
 })
 export { ${name}Child }
 `
+  if (type === 'log') {
+    const importFnLog = schemaImport(type)
+    return `import { ${importFnLog} } from './schema'
+import { ${sortedImports.join(', ')} } from 'zod/v4'
+const log = ${importFnLog}({
+  ${name}: {
+    parent: '${name.replace(LOG_NAME_SUFFIX, '') || 'parent'}',
+    schema: object({
+${fieldLines}
+    })
+  }
+})
+export { log }
+`
+  }
+  if (type === 'kv') {
+    const importFnKv = schemaImport(type)
+    return `import { ${importFnKv} } from './schema'
+import { ${sortedImports.join(', ')} } from 'zod/v4'
+const kv = ${importFnKv}({
+  ${name}: {
+    schema: object({
+${fieldLines}
+    }),
+    writeRole: (ctx) => ctx.user?.role === 'admin'
+  }
+})
+export { kv }
+`
+  }
+  if (type === 'quota') {
+    const importFnQuota = schemaImport(type)
+    return `import { ${importFnQuota} } from './schema'
+const quota = ${importFnQuota}({
+  ${name}: {
+    durationMs: 60_000,
+    limit: 30
+  }
+})
+export { quota }
+`
+  }
   const importFn = schemaImport(type)
   return `import { ${importFn} } from './schema'
 import { ${sortedImports.join(', ')} } from 'zod/v4'
@@ -182,6 +250,21 @@ import { ${wrapper} } from './s'
 export const {
   create, get, list, rm, update, invalidate, purge, load, refresh
 } = ${factory}({ key: '${name}', schema: ${wrapper}.${name}, table: '${name}' })
+`
+  if (type === 'log')
+    return `import { api } from './lazy'
+export const {
+  append, appendBulk, auth, list, listAfter, purgeByParent, read,
+  restoreByParent, rm, update
+} = api.${name}
+`
+  if (type === 'kv')
+    return `import { api } from './lazy'
+export const { get, list, restore, rm, set } = api.${name}
+`
+  if (type === 'quota')
+    return `import { api } from './lazy'
+export const { check, consume, record } = api.${name}
 `
   if (type === 'org')
     return `import { ${factory} } from './lazy'
@@ -224,6 +307,57 @@ const ${title.replaceAll(/\s/gu, '')}Page = () => {
 }
 export default ${title.replaceAll(/\s/gu, '')}Page
 `
+  if (type === 'kv')
+    return `'use client'
+import { useKv } from 'noboil/convex/react'
+import { api } from '../../../guarded-api'
+const ${title.replaceAll(/\s/gu, '')}Page = () => {
+  const row = useKv(api.${name}, '${name}')
+  return (
+    <main className='mx-auto max-w-2xl p-8'>
+      <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
+      <pre className='rounded bg-background p-4 text-sm'>{JSON.stringify(row.data, null, 2)}</pre>
+    </main>
+  )
+}
+export default ${title.replaceAll(/\s/gu, '')}Page
+`
+  if (type === 'quota')
+    return `'use client'
+import { useQuota } from 'noboil/convex/react'
+import { api } from '../../../guarded-api'
+const ${title.replaceAll(/\s/gu, '')}Page = () => {
+  const quota = useQuota(api.${name}, 'global')
+  return (
+    <main className='mx-auto max-w-2xl p-8'>
+      <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
+      <p>Allowed: {String(quota.state?.allowed ?? '—')}</p>
+      <p>Remaining: {quota.state?.remaining ?? '—'}</p>
+      <button onClick={() => { quota.consume().catch(() => null) }} type='button'>Consume</button>
+    </main>
+  )
+}
+export default ${title.replaceAll(/\s/gu, '')}Page
+`
+  if (type === 'log')
+    return `'use client'
+import { useLog } from 'noboil/convex/react'
+import { api } from '../../../guarded-api'
+const ${title.replaceAll(/\s/gu, '')}Page = ({ parent }: { parent: string }) => {
+  const log = useLog(api.${name}, { parent })
+  return (
+    <main className='mx-auto max-w-2xl p-8'>
+      <h1 className='mb-6 text-2xl font-bold'>${title}</h1>
+      <ul className='divide-y'>
+        {log.data.map(row => (
+          <li className='py-3' key={row._id}>{JSON.stringify(row)}</li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+export default ${title.replaceAll(/\s/gu, '')}Page
+`
   return `'use client'
 import { useList } from './react'
 import { api } from '../../../guarded-api'
@@ -254,8 +388,11 @@ export default ${title.replaceAll(/\s/gu, '')}Page
 const TYPE_DESCRIPTIONS: Record<TableType, string> = {
   cache: 'upstream-cached (crud + refresh)',
   child: 'nested under a parent row',
+  kv: 'string-keyed global state (banner, feature flags)',
+  log: 'append-only event log (messages, votes, audit)',
   org: 'organization-scoped CRUD',
   owned: 'user-owned CRUD',
+  quota: 'sliding-window rate limit',
   singleton: 'one-per-user state'
 }
 const add = async (args: string[] = []) => {
