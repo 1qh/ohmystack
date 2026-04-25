@@ -24,9 +24,10 @@ import { FieldGroup } from '@a/ui/field'
 import { Input } from '@a/ui/input'
 import { Progress } from '@a/ui/progress'
 import { useMutation } from 'convex/react'
+import { format, formatDistance } from 'date-fns'
 import { ChevronDown, Plus, Send, Trash } from 'lucide-react'
 import { Form, useForm } from 'noboil/convex/components'
-import { useKv, useLog, useQuota } from 'noboil/convex/react'
+import { useKv, useLog, useOptimisticMutation, useQuota } from 'noboil/convex/react'
 import { createElement, useState } from 'react'
 import { toast } from 'sonner'
 import { createPoll } from '~/schema'
@@ -97,8 +98,19 @@ const Create = () => {
     </Dialog>
   )
 }
-const DeletePoll = ({ id }: { id: string }) => {
-  const rm = useMutation(api.poll.rm)
+const DeletePoll = ({ id, onOptimisticRemove }: { id: string; onOptimisticRemove?: () => void }) => {
+  const { execute } = useOptimisticMutation({
+    mutation: api.poll.rm,
+    onOptimistic: () => {
+      onOptimisticRemove?.()
+    },
+    onRollback: () => {
+      toast.error('Delete failed')
+    },
+    onSuccess: () => {
+      toast.success('Poll deleted')
+    }
+  })
   const trigger = createElement(
     Button,
     {
@@ -122,7 +134,7 @@ const DeletePoll = ({ id }: { id: string }) => {
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={async () => {
-              await rm({ id }).then(() => toast.success('Poll deleted'))
+              await execute({ id })
             }}>
             Delete
           </AlertDialogAction>
@@ -250,8 +262,9 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: string }) =>
     </div>
   )
 }
-const PollCard = ({ p }: { p: Poll }) => {
+const PollCard = ({ onOptimisticRemove, p }: { onOptimisticRemove?: () => void; p: Poll }) => {
   const [open, setOpen] = useState(false)
+  const created = p._creationTime
   return (
     <Collapsible
       className='rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm'
@@ -261,15 +274,20 @@ const PollCard = ({ p }: { p: Poll }) => {
       <div className='flex items-center justify-between gap-2'>
         <CollapsibleTrigger
           render={p2 => (
-            <button {...p2} className='flex-1 text-left font-medium hover:text-primary' type='button'>
-              {p.question}
+            <button {...p2} className='flex-1 text-left' type='button'>
+              <p className='font-medium hover:text-primary' data-testid='poll-card-question'>
+                {p.question}
+              </p>
+              <p className='text-xs text-muted-foreground' data-testid='poll-card-time' title={format(created, 'PPPPpp')}>
+                {formatDistance(created, new Date(), { addSuffix: true })}
+              </p>
             </button>
           )}
         />
         <Badge variant='outline'>
           {p.options.length} {p.options.length === 1 ? 'option' : 'options'}
         </Badge>
-        <DeletePoll id={p._id} />
+        <DeletePoll id={p._id} onOptimisticRemove={onOptimisticRemove} />
       </div>
       <CollapsibleContent>
         <VoteView options={p.options} pollId={p._id} />
@@ -277,11 +295,11 @@ const PollCard = ({ p }: { p: Poll }) => {
     </Collapsible>
   )
 }
-const PollList = ({ polls }: { polls: Poll[] }) =>
+const PollList = ({ onRemove, polls }: { onRemove?: (id: string) => void; polls: Poll[] }) =>
   polls.length > 0 ? (
     <div className='space-y-3' data-testid='poll-list'>
       {polls.map(p => (
-        <PollCard key={p._id} p={p} />
+        <PollCard key={p._id} onOptimisticRemove={onRemove ? () => onRemove(p._id) : undefined} p={p} />
       ))}
     </div>
   ) : (

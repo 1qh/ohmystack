@@ -22,9 +22,10 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@a/ui/dialog'
 import { FieldGroup } from '@a/ui/field'
 import { Input } from '@a/ui/input'
 import { Progress } from '@a/ui/progress'
+import { format, formatDistance } from 'date-fns'
 import { ChevronDown, Plus, Send, Trash } from 'lucide-react'
 import { Form, useFormMutation } from 'noboil/spacetimedb/components'
-import { useKv, useLog, useMut, useQuota } from 'noboil/spacetimedb/react'
+import { useKv, useLog, useMut, useOptimisticMutation, useQuota } from 'noboil/spacetimedb/react'
 import { createElement, useState } from 'react'
 import { toast } from 'sonner'
 import { createPoll } from '~/schema'
@@ -88,8 +89,20 @@ const Create = () => {
     </Dialog>
   )
 }
-const DeletePoll = ({ id }: { id: number }) => {
+const DeletePoll = ({ id, onOptimisticRemove }: { id: number; onOptimisticRemove?: () => void }) => {
   const rmPoll = useMut<{ id: number }>(reducers.rmPoll)
+  const { execute } = useOptimisticMutation<{ id: number }>({
+    mutate: async args => rmPoll(args),
+    onOptimistic: () => {
+      onOptimisticRemove?.()
+    },
+    onRollback: () => {
+      toast.error('Delete failed')
+    },
+    onSuccess: () => {
+      toast.success('Poll deleted')
+    }
+  })
   const trigger = createElement(
     Button,
     {
@@ -113,8 +126,7 @@ const DeletePoll = ({ id }: { id: number }) => {
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={async () => {
-              await rmPoll({ id })
-              toast.success('Poll deleted')
+              await execute({ id })
             }}>
             Delete
           </AlertDialogAction>
@@ -259,8 +271,11 @@ const VoteView = ({ options, pollId }: { options: string[]; pollId: number }) =>
     </div>
   )
 }
-const PollCard = ({ p }: { p: Poll }) => {
+const PollCard = ({ onOptimisticRemove, p }: { onOptimisticRemove?: () => void; p: Poll }) => {
   const [open, setOpen] = useState(false)
+  const created = (p as Poll & { createdAt?: number | undefined | { toDate: () => Date } }).createdAt
+  const createdDate =
+    typeof created === 'number' ? new Date(created) : created && typeof created === 'object' ? created.toDate() : null
   return (
     <Collapsible
       className='rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm'
@@ -270,15 +285,25 @@ const PollCard = ({ p }: { p: Poll }) => {
       <div className='flex items-center justify-between gap-2'>
         <CollapsibleTrigger
           render={p2 => (
-            <button {...p2} className='flex-1 text-left font-medium hover:text-primary' type='button'>
-              {p.question}
+            <button {...p2} className='flex-1 text-left' type='button'>
+              <p className='font-medium hover:text-primary' data-testid='poll-card-question'>
+                {p.question}
+              </p>
+              {createdDate ? (
+                <p
+                  className='text-xs text-muted-foreground'
+                  data-testid='poll-card-time'
+                  title={format(createdDate, 'PPPPpp')}>
+                  {formatDistance(createdDate, new Date(), { addSuffix: true })}
+                </p>
+              ) : null}
             </button>
           )}
         />
         <Badge variant='outline'>
           {p.options.length} {p.options.length === 1 ? 'option' : 'options'}
         </Badge>
-        <DeletePoll id={p.id} />
+        <DeletePoll id={p.id} onOptimisticRemove={onOptimisticRemove} />
       </div>
       <CollapsibleContent>
         <VoteView options={p.options} pollId={p.id} />
@@ -286,11 +311,11 @@ const PollCard = ({ p }: { p: Poll }) => {
     </Collapsible>
   )
 }
-const PollList = ({ polls }: { polls: Poll[] }) =>
+const PollList = ({ onRemove, polls }: { onRemove?: (id: number) => void; polls: Poll[] }) =>
   polls.length > 0 ? (
     <div className='space-y-3' data-testid='poll-list'>
       {polls.map(p => (
-        <PollCard key={p.id} p={p} />
+        <PollCard key={p.id} onOptimisticRemove={onRemove ? () => onRemove(p.id) : undefined} p={p} />
       ))}
     </div>
   ) : (

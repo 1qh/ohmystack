@@ -17,6 +17,7 @@ test.describe('Poll search', () => {
     await pollPage.createPoll(`Foo ${Date.now()}`, ['a', 'b'])
     await pollPage.getSearchInput().fill('xyz-nope')
     await pollPage.getSearchInput().fill('')
+    await expect(pollPage.getPollItems().first()).toBeVisible({ timeout: 10_000 })
     const count = await pollPage.getPollItems().count()
     expect(count).toBeGreaterThanOrEqual(1)
   })
@@ -29,8 +30,9 @@ test.describe('Poll search', () => {
   test('clearing search shows all again', async ({ pollPage }) => {
     await pollPage.createPoll(`Clear ${Date.now()}`, ['a', 'b'])
     await pollPage.getSearchInput().fill('no-match-string')
-    await expect(pollPage.getPollItems()).toHaveCount(0)
+    await expect(pollPage.getPollItems()).toHaveCount(0, { timeout: 10_000 })
     await pollPage.getSearchInput().fill('')
+    await expect(pollPage.getPollItems().first()).toBeVisible({ timeout: 10_000 })
     const after = await pollPage.getPollItems().count()
     expect(after).toBeGreaterThanOrEqual(1)
   })
