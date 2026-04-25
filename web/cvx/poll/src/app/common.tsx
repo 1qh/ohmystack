@@ -309,20 +309,12 @@ const BannerAdmin = () => {
   const [message, setMessage] = useState('')
   const [active, setActive] = useState(true)
   const save = async () => {
-    try {
-      await banner.update({ active, message })
-      toast.success('Banner saved')
-    } catch (error) {
-      toast.error(`Save failed: ${String(error)}`)
-    }
+    await banner.update({ active, message })
+    toast.success('Banner saved')
   }
   const clear = async () => {
-    try {
-      await banner.remove()
-      toast.success('Banner cleared')
-    } catch (error) {
-      toast.error(`Clear failed: ${String(error)}`)
-    }
+    await banner.remove()
+    toast.success('Banner cleared')
   }
   const d = banner.data
   return (
