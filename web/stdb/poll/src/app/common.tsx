@@ -23,7 +23,8 @@ import { FieldGroup } from '@a/ui/field'
 import { Input } from '@a/ui/input'
 import { Progress } from '@a/ui/progress'
 import { format, formatDistance } from 'date-fns'
-import { ChevronDown, Plus, Send, Trash } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Send, Trash } from 'lucide-react'
+import Link from 'next/link'
 import { Form, useFormMutation } from 'noboil/spacetimedb/components'
 import { useKv, useLog, useMut, useOptimisticMutation, useQuota } from 'noboil/spacetimedb/react'
 import { createElement, useState } from 'react'
@@ -303,6 +304,15 @@ const PollCard = ({ onOptimisticRemove, p }: { onOptimisticRemove?: () => void; 
         <Badge variant='outline'>
           {p.options.length} {p.options.length === 1 ? 'option' : 'options'}
         </Badge>
+        <Button
+          aria-label='Edit poll'
+          data-testid={`poll-edit-${p.id}`}
+          nativeButton={false}
+          render={pp => <Link {...pp} href={`/${p.id}/edit`} />}
+          size='icon'
+          variant='ghost'>
+          <Pencil className='size-4 stroke-1' />
+        </Button>
         <DeletePoll id={p.id} onOptimisticRemove={onOptimisticRemove} />
       </div>
       <CollapsibleContent>

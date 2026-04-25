@@ -1,8 +1,8 @@
 import { api } from '../lazy'
 const {
-  auth: { list },
+  auth: { list, read },
   create,
   rm,
   update
 } = api.poll
-export { create, list, rm, update }
+export { create, list, read, rm, update }

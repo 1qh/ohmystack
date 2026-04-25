@@ -25,7 +25,8 @@ import { Input } from '@a/ui/input'
 import { Progress } from '@a/ui/progress'
 import { useMutation } from 'convex/react'
 import { format, formatDistance } from 'date-fns'
-import { ChevronDown, Plus, Send, Trash } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Send, Trash } from 'lucide-react'
+import Link from 'next/link'
 import { Form, useForm } from 'noboil/convex/components'
 import { useKv, useLog, useOptimisticMutation, useQuota } from 'noboil/convex/react'
 import { createElement, useState } from 'react'
@@ -120,7 +121,7 @@ const DeletePoll = ({ id, onOptimisticRemove }: { id: string; onOptimisticRemove
       type: 'button',
       variant: 'ghost'
     },
-    createElement(Trash, { className: 'size-4 stroke-1.5' })
+    createElement(Trash, { className: 'size-4 stroke-1' })
   )
   return (
     <AlertDialog>
@@ -287,6 +288,15 @@ const PollCard = ({ onOptimisticRemove, p }: { onOptimisticRemove?: () => void; 
         <Badge variant='outline'>
           {p.options.length} {p.options.length === 1 ? 'option' : 'options'}
         </Badge>
+        <Button
+          aria-label='Edit poll'
+          data-testid={`poll-edit-${p._id}`}
+          nativeButton={false}
+          render={pp => <Link {...pp} href={`/${p._id}/edit`} />}
+          size='icon'
+          variant='ghost'>
+          <Pencil className='size-4 stroke-1' />
+        </Button>
         <DeletePoll id={p._id} onOptimisticRemove={onOptimisticRemove} />
       </div>
       <CollapsibleContent>
