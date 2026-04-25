@@ -2280,3 +2280,269 @@ describe('custom blog endpoints (pq/q/m)', () => {
     expect(threw).toBe(true)
   })
 })
+describe('logCrud vote', () => {
+  describe('basic flow', () => {
+    test('append + list returns rows in order', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        parent = 'poll-1'
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'a' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 1, voter: 'b' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'c' } })
+      const rows = (await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent })).page
+      expect(rows.length).toBe(3)
+    })
+    test('seq increments monotonically per parent', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        parent = 'poll-seq'
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'y' } })
+      const rows = (await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent })).page
+      const seqs = rows.map(r => r.seq).toSorted((a, b) => a - b)
+      expect(seqs).toEqual([1, 2])
+    })
+    test('parents are isolated', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.vote.append, { parent: 'A', payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.append, { parent: 'B', payload: { optionIdx: 0, voter: 'x' } })
+      const rowsA = (
+        await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent: 'A' })
+      ).page
+      const rowsB = (
+        await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent: 'B' })
+      ).page
+      expect(rowsA.length).toBe(1)
+      expect(rowsB.length).toBe(1)
+    })
+    test('purgeByParent soft-deletes only that parent', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.vote.append, { parent: 'A', payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.append, { parent: 'B', payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.purgeByParent, { parent: 'A' })
+      const rowsA = (
+        await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent: 'A' })
+      ).page
+      const rowsB = (
+        await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent: 'B' })
+      ).page
+      expect(rowsA.length).toBe(0)
+      expect(rowsB.length).toBe(1)
+    })
+    test('restoreByParent brings back purged rows', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        parent = 'poll-restore'
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'y' } })
+      await asUser(0).mutation(api.vote.purgeByParent, { parent })
+      await asUser(0).mutation(api.vote.restoreByParent, { parent })
+      const rows = (await asUser(0).query(api.vote.list, { paginationOpts: { cursor: null, numItems: 100 }, parent })).page
+      expect(rows.length).toBe(2)
+    })
+    test('listAfter returns rows with seq > given', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        parent = 'poll-after'
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'x' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'y' } })
+      await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'z' } })
+      const after = await asUser(0).query(api.vote.listAfter, { parent, seq: 1 })
+      expect(after.length).toBe(2)
+    })
+  })
+  describe('authentication', () => {
+    test('append rejects unauthenticated user', async () => {
+      const ctx = t()
+      let threw = false
+      try {
+        await ctx.mutation(api.vote.append, { parent: 'p', payload: { optionIdx: 0, voter: 'x' } })
+      } catch (error) {
+        threw = true
+        expect(String(error)).toContain('NOT_AUTHENTICATED')
+      }
+      expect(threw).toBe(true)
+    })
+  })
+})
+describe('kvCrud siteConfig', () => {
+  describe('basic flow', () => {
+    test('get returns null when key absent', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        v = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+      expect(v).toBeNull()
+    })
+    test('set stores payload, get returns it', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'hello' }
+      })
+      const v = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+      expect(v).not.toBeNull()
+      expect(v?.message).toBe('hello')
+      expect(v?.active).toBe(true)
+    })
+    test('set overwrites existing value', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'v1' }
+      })
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: false, message: 'v2' }
+      })
+      const v = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+      expect(v?.message).toBe('v2')
+      expect(v?.active).toBe(false)
+    })
+    test('rm soft-deletes the row', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'gone' }
+      })
+      await asUser(0).mutation(api.siteConfig.rm, { key: 'banner' })
+      const v = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+      expect(v).toBeNull()
+    })
+    test('restore brings back soft-deleted row', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'back' }
+      })
+      await asUser(0).mutation(api.siteConfig.rm, { key: 'banner' })
+      await asUser(0).mutation(api.siteConfig.restore, { key: 'banner' })
+      const v = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+      expect(v?.message).toBe('back')
+    })
+    test('list returns all keys (paginated)', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'A' }
+      })
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'defaultPollDays',
+        payload: { active: true, message: 'B' }
+      })
+      const res = await asUser(0).query(api.siteConfig.list, { paginationOpts: { cursor: null, numItems: 10 } })
+      expect(res.page.length).toBeGreaterThanOrEqual(2)
+    })
+  })
+  describe('conflict detection', () => {
+    test('set with stale expectedUpdatedAt throws CONFLICT', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      await asUser(0).mutation(api.siteConfig.set, {
+        key: 'banner',
+        payload: { active: true, message: 'orig' }
+      })
+      let threw = false
+      try {
+        await asUser(0).mutation(api.siteConfig.set, {
+          expectedUpdatedAt: 1,
+          key: 'banner',
+          payload: { active: false, message: 'stale' }
+        })
+      } catch (error) {
+        threw = true
+        expect(String(error)).toContain('CONFLICT')
+      }
+      expect(threw).toBe(true)
+    })
+  })
+})
+describe('quota pollVoteQuota', () => {
+  describe('basic flow', () => {
+    test('check returns allowed=true with full remaining when empty', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        result = await asUser(0).query(api.pollVoteQuota.check, { owner: 'poll-1' })
+      expect(result.allowed).toBe(true)
+      expect(result.remaining).toBeGreaterThan(0)
+    })
+    test('record decrements remaining', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        owner = 'poll-record'
+      const before = await asUser(0).query(api.pollVoteQuota.check, { owner })
+      await asUser(0).mutation(api.pollVoteQuota.record, { owner })
+      const after = await asUser(0).query(api.pollVoteQuota.check, { owner })
+      expect(after.remaining).toBe(before.remaining - 1)
+    })
+    test('consume returns the result and records atomically', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        owner = 'poll-consume',
+        result = await asUser(0).mutation(api.pollVoteQuota.consume, { owner })
+      expect(result.allowed).toBe(true)
+      const after = await asUser(0).query(api.pollVoteQuota.check, { owner })
+      expect(after.remaining).toBe(result.remaining)
+    })
+    test('exhausting limit returns allowed=false', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx),
+        owner = 'poll-exhaust'
+      for (let i = 0; i < 30; i += 1) {
+        await asUser(0).mutation(api.pollVoteQuota.consume, { owner })
+      }
+      const result = await asUser(0).mutation(api.pollVoteQuota.consume, { owner })
+      expect(result.allowed).toBe(false)
+      expect(result.remaining).toBe(0)
+    })
+    test('owners are isolated', async () => {
+      const ctx = t(),
+        { asUser } = await createTestContext(ctx)
+      for (let i = 0; i < 5; i += 1) {
+        await asUser(0).mutation(api.pollVoteQuota.consume, { owner: 'A' })
+      }
+      const a = await asUser(0).query(api.pollVoteQuota.check, { owner: 'A' })
+      const b = await asUser(0).query(api.pollVoteQuota.check, { owner: 'B' })
+      expect(a.remaining).toBeLessThan(b.remaining)
+    })
+  })
+})
+describe('singletonCrud pollProfile', () => {
+  test('get returns null when no profile', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      profile = await asUser(0).query(api.pollProfile.get, {})
+    expect(profile).toBeNull()
+  })
+  test('upsert creates profile', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx),
+      result = await asUser(0).mutation(api.pollProfile.upsert, {
+        bio: 'Polls user',
+        displayName: 'Voter',
+        notifications: true,
+        theme: 'dark'
+      })
+    expect(result.displayName).toBe('Voter')
+    expect(result.theme).toBe('dark')
+  })
+  test('upsert updates existing', async () => {
+    const ctx = t(),
+      { asUser } = await createTestContext(ctx)
+    await asUser(0).mutation(api.pollProfile.upsert, {
+      displayName: 'Original',
+      notifications: true,
+      theme: 'system'
+    })
+    const updated = await asUser(0).mutation(api.pollProfile.upsert, {
+      displayName: 'Renamed'
+    })
+    expect(updated.displayName).toBe('Renamed')
+  })
+})

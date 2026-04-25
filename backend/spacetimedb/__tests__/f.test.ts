@@ -145,3 +145,164 @@ describe('chat and message reducers', () => {
     })
   })
 })
+describe('vote (log) reducer flow', () => {
+  test('append + listed by parent', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const parent = `pollx-${Date.now().toString()}`
+      await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'a', parent }, user)
+      await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'b', parent }, user)
+      const rows = await listTable(ctx, 'vote', user)
+      const mine = rows.filter(r => getString(r, 'parent') === parent)
+      expect(mine.length).toBeGreaterThanOrEqual(2)
+    })
+  })
+  test('purge_vote_by_parent removes only that parent', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const tag = Date.now().toString()
+      const a = `purgeA-${tag}`
+      const b = `purgeB-${tag}`
+      await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'x', parent: a }, user)
+      await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'x', parent: b }, user)
+      await callReducer(ctx, 'purge_vote_by_parent', { parent: a }, user)
+      const rows = await listTable(ctx, 'vote', user)
+      const aRows = rows.filter(r => getString(r, 'parent') === a && !r.deleted_at)
+      const bRows = rows.filter(r => getString(r, 'parent') === b)
+      expect(aRows.length).toBe(0)
+      expect(bRows.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+  test('restore_vote_by_parent brings back purged rows', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const parent = `restore-${Date.now().toString()}`
+      await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'x', parent }, user)
+      await callReducer(ctx, 'purge_vote_by_parent', { parent }, user)
+      await callReducer(ctx, 'restore_vote_by_parent', { parent }, user)
+      const rows = await listTable(ctx, 'vote', user)
+      const mine = rows.filter(r => getString(r, 'parent') === parent)
+      expect(mine.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+  test('bulk_append_vote inserts multiple rows', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const parent = `bulk-${Date.now().toString()}`
+      await callReducer(
+        ctx,
+        'bulk_append_vote',
+        {
+          items: [
+            { idempotency_key: none, option: 'a' },
+            { idempotency_key: none, option: 'b' },
+            { idempotency_key: none, option: 'c' }
+          ],
+          parent
+        },
+        user
+      )
+      const rows = await listTable(ctx, 'vote', user)
+      const mine = rows.filter(r => getString(r, 'parent') === parent)
+      expect(mine.length).toBeGreaterThanOrEqual(3)
+    })
+  })
+})
+describe('siteConfig (kv) reducer flow', () => {
+  test('set + read banner row', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const msg = `kv-${Date.now().toString()}`
+      await callReducer(
+        ctx,
+        'set_siteConfig',
+        { active: true, expectedUpdatedAt: none, key: 'banner', message: msg },
+        user
+      )
+      const rows = await listTable(ctx, 'siteConfig', user)
+      const found = rows.find(r => getString(r, 'key') === 'banner' && getString(r, 'message') === msg)
+      expect(found).toBeDefined()
+    })
+  })
+  test('rm_site_config soft-deletes', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      await callReducer(
+        ctx,
+        'set_siteConfig',
+        { active: true, expectedUpdatedAt: none, key: 'banner', message: 'gone' },
+        user
+      )
+      await callReducer(ctx, 'rm_siteConfig', { key: 'banner' }, user)
+      const rows = await listTable(ctx, 'siteConfig', user)
+      const live = rows.find(r => getString(r, 'key') === 'banner' && !r.deleted_at)
+      expect(live).toBeUndefined()
+    })
+  })
+  test('restore_site_config brings back row', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      await callReducer(
+        ctx,
+        'set_siteConfig',
+        { active: true, expectedUpdatedAt: none, key: 'banner', message: 'back' },
+        user
+      )
+      await callReducer(ctx, 'rm_siteConfig', { key: 'banner' }, user)
+      await callReducer(ctx, 'restore_siteConfig', { key: 'banner' }, user)
+      const rows = await listTable(ctx, 'siteConfig', user)
+      const live = rows.find(r => getString(r, 'key') === 'banner')
+      expect(live).toBeDefined()
+    })
+  })
+})
+describe('pollVoteQuota reducer flow', () => {
+  test('record + consume decrements and rejects beyond limit', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      const owner = `quota-${Date.now().toString()}`
+      for (let i = 0; i < 30; i += 1) await callReducer(ctx, 'consume_pollVoteQuota', { owner }, user)
+
+      let threw = false
+      try {
+        await callReducer(ctx, 'consume_pollVoteQuota', { owner }, user)
+      } catch (error) {
+        threw = true
+        expect(String(error)).toContain('REDUCER_CALL_FAILED')
+      }
+      expect(threw).toBe(true)
+    })
+  })
+})
+describe('pollProfile (singleton) reducer flow', () => {
+  test('upsert creates profile, get reads it back', async () => {
+    await withCtx(async ctx => {
+      const [user] = ctx.users
+      if (!user) throw new Error('Missing test user')
+      await callReducer(
+        ctx,
+        'upsert_pollProfile',
+        {
+          avatar: none,
+          bio: some(some('bio')),
+          displayName: some('Voter'),
+          notifications: some(true),
+          theme: some('dark')
+        },
+        user
+      )
+      const rows = await listTable(ctx, 'pollProfile', user)
+      const mine = findMine(rows, user.identity)
+      expect(mine.length).toBe(1)
+      expect(getString(mine[0] as Record<string, unknown>, 'display_name')).toBe('Voter')
+    })
+  })
+})
