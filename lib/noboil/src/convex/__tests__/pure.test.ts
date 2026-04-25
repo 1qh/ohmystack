@@ -109,7 +109,18 @@ import { collectSettled, resolveBulkError } from '../react/use-bulk-mutate'
 import { applyOptimistic, DEFAULT_PAGE_SIZE } from '../react/use-list'
 import { DEFAULT_DEBOUNCE_MS, DEFAULT_MIN_LENGTH } from '../react/use-search'
 import { fetchWithRetry, withRetry } from '../retry'
-import { child, file, files, makeBase, makeOrgScoped, makeOwned, makeSingleton } from '../schema'
+import {
+  child,
+  file,
+  files,
+  makeBase,
+  makeKv,
+  makeLog,
+  makeOrgScoped,
+  makeOwned,
+  makeQuota,
+  makeSingleton
+} from '../schema'
 import { generateFieldValue, generateOne, generateSeed } from '../seed'
 import { flt, idx, indexFields, sch, typed } from '../server/bridge'
 import { ownedCascade } from '../server/crud'
@@ -7716,5 +7727,80 @@ describe('mergeCacheHooks', () => {
     const fh: CacheHooks = { onFetch }
     const merged = mergeCacheHooks(undefined, fh, 't')
     expect(merged?.onFetch).toBe(onFetch)
+  })
+})
+describe('makeLog factory schema', () => {
+  const logs = makeLog({
+    audit: { parent: 'order', schema: object({ delta: number(), kind: string() }) },
+    vote: { parent: 'poll', schema: object({ optionIdx: number(), voter: string() }) }
+  })
+  test('makeLog brands each entry', () => {
+    expect((logs.vote as { __bs?: string }).__bs).toBe('log')
+    expect((logs.audit as { __bs?: string }).__bs).toBe('log')
+  })
+  test('parent + schema fields preserved', () => {
+    expect(logs.vote.parent).toBe('poll')
+    expect(logs.audit.parent).toBe('order')
+    expect(logs.vote.schema).toBeDefined()
+  })
+  test('payload schema validates required fields', () => {
+    const ok = logs.vote.schema.safeParse({ optionIdx: 0, voter: 'x' })
+    expect(ok.success).toBe(true)
+    const bad = logs.vote.schema.safeParse({ optionIdx: 'string-not-number', voter: 'x' })
+    expect(bad.success).toBe(false)
+  })
+  test('makeLog accepts empty input', () => {
+    const empty = makeLog({})
+    expect(Object.keys(empty).length).toBe(0)
+  })
+})
+describe('makeKv factory schema', () => {
+  const kvs = makeKv({
+    feature: { schema: object({ enabled: boolean() }), writeRole: true },
+    siteConfig: {
+      keys: ['banner', 'maintenance'] as const,
+      schema: object({ active: boolean(), message: string() })
+    }
+  })
+  test('makeKv brands each entry', () => {
+    expect((kvs.siteConfig as { __bs?: string }).__bs).toBe('kv')
+    expect((kvs.feature as { __bs?: string }).__bs).toBe('kv')
+  })
+  test('keys whitelist preserved', () => {
+    expect(kvs.siteConfig.keys).toEqual(['banner', 'maintenance'])
+  })
+  test('writeRole boolean preserved', () => {
+    expect(kvs.feature.writeRole).toBe(true)
+  })
+  test('payload schema validates required fields', () => {
+    const ok = kvs.siteConfig.schema.safeParse({ active: true, message: 'x' })
+    expect(ok.success).toBe(true)
+    const bad = kvs.siteConfig.schema.safeParse({ active: 'true' })
+    expect(bad.success).toBe(false)
+  })
+  test('writeRole function is preserved by reference', () => {
+    const fn = () => true
+    const k = makeKv({ x: { schema: object({ a: string() }), writeRole: fn } })
+    expect(k.x.writeRole).toBe(fn)
+  })
+})
+describe('makeQuota factory schema', () => {
+  const quotas = makeQuota({
+    apiKey: { durationMs: 60_000, limit: 30 },
+    upload: { durationMs: 24 * 60 * 60 * 1000, limit: 10 }
+  })
+  test('makeQuota brands each entry', () => {
+    expect((quotas.apiKey as { __bs?: string }).__bs).toBe('quota')
+    expect((quotas.upload as { __bs?: string }).__bs).toBe('quota')
+  })
+  test('limit + durationMs preserved', () => {
+    expect(quotas.apiKey.limit).toBe(30)
+    expect(quotas.apiKey.durationMs).toBe(60_000)
+    expect(quotas.upload.limit).toBe(10)
+    expect(quotas.upload.durationMs).toBe(24 * 60 * 60 * 1000)
+  })
+  test('makeQuota accepts empty input', () => {
+    const empty = makeQuota({})
+    expect(Object.keys(empty).length).toBe(0)
   })
 })

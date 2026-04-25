@@ -151,9 +151,12 @@ import {
   file,
   files,
   makeBase,
+  makeKv,
+  makeLog,
   makeOrg,
   makeOrgScoped,
   makeOwned,
+  makeQuota,
   makeSingleton
 } from '../schema'
 import { generateFieldValue, generateOne, generateSeed } from '../seed'
@@ -9799,5 +9802,73 @@ describe('T21: noboil() object form', () => {
     const mod = await import('../server/setup')
     expect(mod).toHaveProperty('noboil')
     expect(typeof mod.noboil).toBe('function')
+  })
+})
+describe('makeLog factory schema', () => {
+  const logs = makeLog({
+    audit: { parent: 'order', schema: object({ delta: number(), kind: string() }) },
+    vote: { parent: 'poll', schema: object({ option: string() }) }
+  })
+  test('makeLog brands each entry', () => {
+    expect((logs.vote as { __bs?: string }).__bs).toBe('log')
+    expect((logs.audit as { __bs?: string }).__bs).toBe('log')
+  })
+  test('parent + schema fields preserved', () => {
+    expect(logs.vote.parent).toBe('poll')
+    expect(logs.audit.parent).toBe('order')
+    expect(logs.vote.schema).toBeDefined()
+  })
+  test('payload schema validates required fields', () => {
+    const ok = logs.vote.schema.safeParse({ option: 'a' })
+    expect(ok.success).toBe(true)
+    const bad = logs.vote.schema.safeParse({})
+    expect(bad.success).toBe(false)
+  })
+  test('makeLog accepts empty input', () => {
+    const empty = makeLog({})
+    expect(Object.keys(empty).length).toBe(0)
+  })
+})
+describe('makeKv factory schema', () => {
+  const kvs = makeKv({
+    feature: { schema: object({ enabled: boolean() }), writeRole: true },
+    siteConfig: {
+      keys: ['banner', 'maintenance'] as const,
+      schema: object({ active: boolean(), message: string() })
+    }
+  })
+  test('makeKv brands each entry', () => {
+    expect((kvs.siteConfig as { __bs?: string }).__bs).toBe('kv')
+    expect((kvs.feature as { __bs?: string }).__bs).toBe('kv')
+  })
+  test('keys whitelist preserved', () => {
+    expect(kvs.siteConfig.keys).toEqual(['banner', 'maintenance'])
+  })
+  test('writeRole boolean preserved', () => {
+    expect(kvs.feature.writeRole).toBe(true)
+  })
+  test('payload schema validates required fields', () => {
+    const ok = kvs.siteConfig.schema.safeParse({ active: true, message: 'x' })
+    expect(ok.success).toBe(true)
+    const bad = kvs.siteConfig.schema.safeParse({ active: 'true' })
+    expect(bad.success).toBe(false)
+  })
+})
+describe('makeQuota factory schema', () => {
+  const quotas = makeQuota({
+    apiKey: { durationMs: 60_000, limit: 30 },
+    upload: { durationMs: 24 * 60 * 60 * 1000, limit: 10 }
+  })
+  test('makeQuota brands each entry', () => {
+    expect((quotas.apiKey as { __bs?: string }).__bs).toBe('quota')
+    expect((quotas.upload as { __bs?: string }).__bs).toBe('quota')
+  })
+  test('limit + durationMs preserved', () => {
+    expect(quotas.apiKey.limit).toBe(30)
+    expect(quotas.upload.durationMs).toBe(24 * 60 * 60 * 1000)
+  })
+  test('makeQuota accepts empty input', () => {
+    const empty = makeQuota({})
+    expect(Object.keys(empty).length).toBe(0)
   })
 })

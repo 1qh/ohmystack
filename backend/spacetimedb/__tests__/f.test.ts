@@ -270,7 +270,6 @@ describe('pollVoteQuota reducer flow', () => {
       if (!user) throw new Error('Missing test user')
       const owner = `quota-${Date.now().toString()}`
       for (let i = 0; i < 30; i += 1) await callReducer(ctx, 'consume_pollVoteQuota', { owner }, user)
-
       let threw = false
       try {
         await callReducer(ctx, 'consume_pollVoteQuota', { owner }, user)
