@@ -48,6 +48,8 @@ import GetBlogProfileReducer from "./get_blog_profile_reducer";
 import UpsertBlogProfileReducer from "./upsert_blog_profile_reducer";
 import GetOrgProfileReducer from "./get_org_profile_reducer";
 import UpsertOrgProfileReducer from "./upsert_org_profile_reducer";
+import GetPollProfileReducer from "./get_poll_profile_reducer";
+import UpsertPollProfileReducer from "./upsert_poll_profile_reducer";
 import CreateMovieReducer from "./create_movie_reducer";
 import InvalidateMovieReducer from "./invalidate_movie_reducer";
 import PurgeMovieReducer from "./purge_movie_reducer";
@@ -97,6 +99,7 @@ import OrgJoinRequestRow from "./org_join_request_table";
 import OrgMemberRow from "./org_member_table";
 import OrgProfileRow from "./org_profile_table";
 import PollRow from "./poll_table";
+import PollProfileRow from "./poll_profile_table";
 import PollVoteQuotaRow from "./poll_vote_quota_table";
 import ProjectRow from "./project_table";
 import SiteConfigRow from "./site_config_table";
@@ -301,6 +304,20 @@ const tablesSchema = __schema({
       { name: 'poll_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, PollRow),
+  pollProfile: __table({
+    name: 'poll_profile',
+    indexes: [
+      { accessor: 'id', name: 'poll_profile_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'userId', name: 'poll_profile_user_id_idx_btree', algorithm: 'btree', columns: [
+        'userId',
+      ] },
+    ],
+    constraints: [
+      { name: 'poll_profile_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, PollProfileRow),
   pollVoteQuota: __table({
     name: 'poll_vote_quota',
     indexes: [
@@ -431,6 +448,8 @@ const reducersSchema = __reducers(
   __reducerSchema("upsert_blogProfile", UpsertBlogProfileReducer),
   __reducerSchema("get_orgProfile", GetOrgProfileReducer),
   __reducerSchema("upsert_orgProfile", UpsertOrgProfileReducer),
+  __reducerSchema("get_pollProfile", GetPollProfileReducer),
+  __reducerSchema("upsert_pollProfile", UpsertPollProfileReducer),
   __reducerSchema("create_movie", CreateMovieReducer),
   __reducerSchema("invalidate_movie", InvalidateMovieReducer),
   __reducerSchema("purge_movie", PurgeMovieReducer),

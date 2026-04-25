@@ -111,7 +111,8 @@ const s = schema({
   },
   singleton: {
     blogProfile: object(profileShape),
-    orgProfile: object(profileShape)
+    orgProfile: object(profileShape),
+    pollProfile: object(profileShape)
   }
 })
 export { messagePart, profileShape, s }

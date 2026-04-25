@@ -1,3 +1,4 @@
-import { owned } from '@a/be-convex/s'
+import { owned, singleton } from '@a/be-convex/s'
 const createPoll = owned.poll.pick({ options: true, question: true })
-export { createPoll }
+const profileSchema = singleton.pollProfile
+export { createPoll, profileSchema }

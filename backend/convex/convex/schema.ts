@@ -42,7 +42,8 @@ export default defineSchema({
   } satisfies Record<keyof typeof base, ReturnType<typeof baseTable>>),
   ...({
     blogProfile: singletonTable(singleton.blogProfile),
-    orgProfile: singletonTable(singleton.orgProfile)
+    orgProfile: singletonTable(singleton.orgProfile),
+    pollProfile: singletonTable(singleton.pollProfile)
   } satisfies Record<keyof typeof singleton, ReturnType<typeof singletonTable>>),
   pollVoteQuota: quotaTable(),
   project: orgTable(orgScoped.project),

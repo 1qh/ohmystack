@@ -19,6 +19,7 @@ import type * as movie from "../movie.js";
 import type * as org from "../org.js";
 import type * as orgProfile from "../orgProfile.js";
 import type * as poll from "../poll.js";
+import type * as pollProfile from "../pollProfile.js";
 import type * as pollVoteQuota from "../pollVoteQuota.js";
 import type * as presence from "../presence.js";
 import type * as project from "../project.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   org: typeof org;
   orgProfile: typeof orgProfile;
   poll: typeof poll;
+  pollProfile: typeof pollProfile;
   pollVoteQuota: typeof pollVoteQuota;
   presence: typeof presence;
   project: typeof project;

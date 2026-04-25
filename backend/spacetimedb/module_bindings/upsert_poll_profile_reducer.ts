@@ -1,0 +1,14 @@
+/* eslint-disable */
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
+export default {
+  avatar: __t.option(__t.option(__t.string())),
+  bio: __t.option(__t.option(__t.string())),
+  displayName: __t.option(__t.string()),
+  notifications: __t.option(__t.bool()),
+  theme: __t.option(__t.string()),
+};

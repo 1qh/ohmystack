@@ -111,13 +111,14 @@ const s = schema({
   },
   singleton: {
     blogProfile: object(profileShape),
-    orgProfile: object(profileShape)
+    orgProfile: object(profileShape),
+    pollProfile: object(profileShape)
   }
 })
 const owned = { blog: s.blog, chat: s.chat, poll: s.poll }
 const orgScoped = { project: s.project, task: s.task, wiki: s.wiki }
 const base = { movie: s.movie }
-const singleton = { blogProfile: s.blogProfile, orgProfile: s.orgProfile }
+const singleton = { blogProfile: s.blogProfile, orgProfile: s.orgProfile, pollProfile: s.pollProfile }
 const org = { team: s.team }
 const children = { message: s.message }
 const log = { vote: s.vote }

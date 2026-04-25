@@ -173,6 +173,18 @@ export const Poll = __t.object("Poll", {
   userId: __t.identity(),
 });
 export type Poll = __Infer<typeof Poll>;
+export const PollProfile = __t.object("PollProfile", {
+  avatar: __t.option(__t.string()),
+  bio: __t.option(__t.string()),
+  displayName: __t.string(),
+  notifications: __t.bool(),
+  theme: __t.string(),
+  createdAt: __t.timestamp(),
+  id: __t.u32(),
+  updatedAt: __t.timestamp(),
+  userId: __t.identity(),
+});
+export type PollProfile = __Infer<typeof PollProfile>;
 export const PollVoteQuota = __t.object("PollVoteQuota", {
   id: __t.u32(),
   owner: __t.string(),

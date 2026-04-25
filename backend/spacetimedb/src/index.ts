@@ -12,6 +12,7 @@ const spacetimedb = noboil({
     org: table(s.team, { unique: ['slug'] }),
     orgProfile: table(s.orgProfile),
     poll: table(s.poll),
+    pollProfile: table(s.pollProfile),
     pollVoteQuota: table(s.pollVoteQuota),
     project: table(s.project, {
       cascade: { foreignKey: 'projectId', table: s.task.__name },

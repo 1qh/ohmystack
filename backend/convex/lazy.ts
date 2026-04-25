@@ -31,6 +31,7 @@ const api = noboil({
     message: table(s.message, { pub: { parentField: 'isPublic' } }),
     orgProfile: table(s.orgProfile),
     poll: table(s.poll),
+    pollProfile: table(s.pollProfile),
     pollVoteQuota: table(s.pollVote),
     project: table(s.project, {
       acl: true,
