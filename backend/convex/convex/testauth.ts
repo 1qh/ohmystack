@@ -98,6 +98,7 @@ const cleanupTestData = mutation({
       'blog',
       'blogProfile',
       'orgProfile',
+      'pollProfile',
       'vote',
       'poll',
       'siteConfig',
