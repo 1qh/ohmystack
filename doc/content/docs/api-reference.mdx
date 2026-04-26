@@ -305,6 +305,30 @@ table(s.chat, { pub: true })        // fully public, no RLS filter
 table(s.blog)                       // private — only own rows visible
 ```
 
+**Factory options (auto-derived from `LogOptions`/`KvOptions` interfaces in source):**
+
+{/* AUTO-GENERATED:FACTORY-OPTIONS:START */}
+### log
+
+| Option | Type | Required |
+|---|---|---|
+| `hooks` | `LogHooks<DB>` | no |
+| `rateLimit` | `RateLimitConfig` | no |
+| `softDelete` | `boolean` | no |
+
+### kv
+
+| Option | Type | Required |
+|---|---|---|
+| `hooks` | `KvHooks<DB>` | no |
+| `rateLimit` | `RateLimitConfig` | no |
+| `softDelete` | `boolean` | no |
+
+### quota
+
+_(no options — only `{ durationMs, limit }` config in schema)_
+{/* AUTO-GENERATED:FACTORY-OPTIONS:END */}
+
 **Generated reducers for log/kv/quota tables (auto-derived from `lib/noboil/src/spacetimedb/server/{log,kv,quota}.ts`):**
 
 {/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:START */}

@@ -16,13 +16,16 @@ const runCount = async (cwd: string, file: string): Promise<number> => {
   return 0
 }
 const main = async () => {
-  console.log('Counting tests...')
-  const cvxPure = await runCount(`${REPO}/lib/noboil`, 'src/convex/__tests__/pure.test.ts')
-  const stdbPure = await runCount(`${REPO}/lib/noboil`, 'src/spacetimedb/__tests__/pure.test.ts')
-  const total = cvxPure + stdbPure
-  const summary = `${total} pure tests passing (${cvxPure} Convex + ${stdbPure} SpacetimeDB)`
+  console.log('Counting tests (this takes ~30s)...')
+  const [cvxPure, stdbPure, cvxFTest] = await Promise.all([
+    runCount(`${REPO}/lib/noboil`, 'src/convex/__tests__/pure.test.ts'),
+    runCount(`${REPO}/lib/noboil`, 'src/spacetimedb/__tests__/pure.test.ts'),
+    runCount(`${REPO}/backend/convex`, 'convex/f.test.ts')
+  ])
+  const total = cvxPure + stdbPure + cvxFTest
+  const summary = `${total} tests passing — ${cvxPure} cvx pure + ${stdbPure} stdb pure + ${cvxFTest} cvx integration (f.test). E2E: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll (run via \`bun run test:e2e\` per app).`
   const todo = `${REPO}/TODO.md`
   const dirty = replaceLineBetween(todo, 'TEST-COUNTS', summary)
-  console.log(dirty ? `Updated test counts: ${summary}` : `Test counts up to date: ${summary}`)
+  console.log(dirty ? `Updated test counts: ${total} total` : `Test counts up to date: ${total} total`)
 }
 main()

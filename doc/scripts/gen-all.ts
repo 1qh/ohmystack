@@ -11,7 +11,9 @@ const SCRIPTS = [
   'gen-demo-inventory.ts',
   'gen-brand-registry.ts',
   'gen-factory-api.ts',
+  'gen-factory-options.ts',
   'gen-hook-reference.ts',
+  'gen-cli-types.ts',
   'gen-test-counts.ts'
 ]
 const main = async () => {
