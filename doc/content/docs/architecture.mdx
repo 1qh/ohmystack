@@ -45,19 +45,21 @@ The brand registry below is auto-generated from `lib/noboil/src/convex/server/ty
 | `singleton` | Created by makeSingleton() → use singletonCrud() + singletonTable() |
 {/* AUTO-GENERATED:BRAND-REGISTRY:END */}
 
-Slots with their auto-injected fields:
+Auto-injected fields and indexes per brand (sourced from `lib/noboil/src/shared/factory-meta.ts`):
 
-| Slot | Brand | Automatic fields | Indexes | What it generates |
+{/* AUTO-GENERATED:AUTO-FIELDS:START */}
+| Brand | Wrapper | Auto-injected fields | Indexes | Description |
 |---|---|---|---|---|
-| `owned` | `owned` | `userId`, `updatedAt` | `by_user` | User-owned CRUD |
-| `orgScoped` | `org` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | Org-scoped CRUD with membership + role checks |
-| `base` | `base` | `updatedAt` (optional) | none | External-data cache (TTL, refresh, invalidate) |
-| `singleton` | `singleton` | `userId`, `updatedAt` | `by_user` | One row per user (`get` + `upsert`) |
-| `children` | n/a | `parentId`, `updatedAt` | `by_parent` | Child-of-parent CRUD with cascade options |
-| `log` | `log` | `parent`, `seq`, `userId`, `idempotencyKey?`, `createdAt` | `by_parent_seq`, `by_idempotency` | Append-only event log with atomic seq + idempotency ([log](./log)) |
-| `kv` | `kv` | `key`, `updatedAt`, `deletedAt?` | `by_key` (unique) | Named key → value with role-gated writes ([kv](./kv)) |
-| `quota` | `quota` | `owner`, `timestamps[]` | `by_owner` (unique) | Sliding-window rate limit primitive ([quota](./quota)) |
-| `org` | `orgDef` | n/a | n/a | The org definition itself (passed as `orgSchema`) |
+| `base` | `baseTable / cacheCrud` | `updatedAt? (optional)` | `(none — keyed by upstream id)` | External-data cache (TTL, refresh, invalidate) |
+| `child` | `childTable / childCrud` | `parentId`, `updatedAt` | `by_parent` | Child-of-parent CRUD with cascade options |
+| `kv` | `kvTable / kv` | `key`, `updatedAt`, `createdAt`, `deletedAt? (when softDelete)` | `by_key (unique)` | Named key → value, public reads + role-gated writes |
+| `log` | `logTable / log` | `parent`, `seq`, `userId`, `createdAt`, `idempotencyKey?`, `deletedAt? (when softDelete)` | `by_parent_seq`, `by_idempotency` | Append-only event log with atomic seq + idempotency |
+| `org` | `orgTable / orgCrud` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | Org-scoped CRUD with membership + role checks |
+| `orgDef` | `orgTables (via setup)` | `(n/a — org definition itself)` | `(n/a)` | The org definition (passed as orgSchema to noboil()) |
+| `owned` | `ownedTable / crud` | `userId`, `updatedAt` | `by_user` | User-owned CRUD |
+| `quota` | `quotaTable / quota` | `owner`, `timestamps[]` | `by_owner (unique)` | Sliding-window rate limit primitive |
+| `singleton` | `singletonTable / singletonCrud` | `userId`, `updatedAt` | `by_user` | One row per user (get + upsert) |
+{/* AUTO-GENERATED:AUTO-FIELDS:END */}
 
 Passing an `owned`-branded schema where the factory expects `orgScoped` is a compile-time error. The `SchemaTypeError` type produces a message like:
 

@@ -2,6 +2,12 @@
 
 [![npm](https://img.shields.io/npm/v/noboil)](https://www.npmjs.com/package/noboil) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+<!-- AUTO-GENERATED:PACKAGE-INFO -->
+**v0.0.1** · Schema-first, zero-boilerplate fullstack. Pick your database.
+
+**Peer deps:** `@auth/core`, `@convex-dev/auth`, `convex`, `convex-helpers`, `next`, `react`, `react-dom`, `spacetimedb`, `zod`
+<!-- /AUTO-GENERATED:PACKAGE-INFO -->
+
 One schema. Typed backend. Auto forms. Zero boilerplate.
 
 Define a Zod schema once. Get authenticated CRUD, typesafe forms, file upload, real-time subscriptions, pagination, search, soft delete, org multi-tenancy with ACL, rate limiting, and conflict detection — all generated. Currently supports Convex and SpacetimeDB.
@@ -14,7 +20,6 @@ bunx noboil@latest init
 
 Pick a database, name your project, done. The CLI scaffolds the full monorepo — all <!-- AUTO-GENERATED:DEMO-COUNT -->
 5 vertical demos (blog, chat, movie, org, poll)
-
 <!-- /AUTO-GENERATED:DEMO-COUNT --> and shared infra included. Delete what you don’t need.
 
 ## CLI
@@ -33,7 +38,6 @@ Run `noboil` with no args for an interactive dashboard with single-key hotkeys:
 
 All commands also work non-interactively. <!-- AUTO-GENERATED:CLI-TABLE-TYPES -->
 `noboil init my-app --db=convex`, `noboil add post --type=owned --fields="title:string,content:string"`, etc. (Valid `--type=` values: cache, child, kv, log, org, owned, quota, singleton.) Run `noboil <cmd> --help` for options.
-
 <!-- /AUTO-GENERATED:CLI-TABLE-TYPES --> `noboil --version`, `noboil-convex --version`, and `noboil-stdb --version` each print the CLI version.
 
 Shell completions:
