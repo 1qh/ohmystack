@@ -16,7 +16,8 @@ const SCRIPTS = [
   'gen-hook-reference.ts',
   'gen-cli-types.ts',
   'gen-error-codes.ts',
-  'gen-test-counts.ts'
+  'gen-test-counts.ts',
+  'gen-coverage-report.ts'
 ]
 const main = async () => {
   const isCheck = process.argv.includes('--check')

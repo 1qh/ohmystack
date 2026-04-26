@@ -1,0 +1,43 @@
+---
+title: Single source of truth
+description: How noboil docs stay in sync with the code that produces them.
+---
+
+noboil ships **11 generators** that own **12 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+
+## Generators
+
+| Script | What it derives |
+|---|---|
+| `doc/scripts/gen-api-imports.ts` | lib/noboil/src/**/index.ts → API export tables |
+| `doc/scripts/gen-brand-registry.ts` | SchemaHintMap interface → brand registry table |
+| `doc/scripts/gen-cli-help.ts` | `noboil --help` output → CLI help blocks |
+| `doc/scripts/gen-cli-types.ts` | `TableType` union in convex/add.ts → CLI --type valid values |
+| `doc/scripts/gen-cvx-factory-api.ts` | cvx server/\{log,kv,quota\}.ts `b.q()`/`b.m()` → endpoint table |
+| `doc/scripts/gen-demo-inventory.ts` | web/\{cvx,stdb\}/* filesystem → demo count + tree |
+| `doc/scripts/gen-error-codes.ts` | `err()` / `throwConvexError()` calls across server → error code list |
+| `doc/scripts/gen-factory-api.ts` | stdb server/\{log,kv,quota\}.ts reducer name templates → reducer table |
+| `doc/scripts/gen-factory-options.ts` | LogOptions/KvOptions interfaces → option tables |
+| `doc/scripts/gen-hook-reference.ts` | Log/Kv/QuotaHookResult interfaces → hook signature blocks |
+| `doc/scripts/gen-test-counts.ts` | bun test pass count parsing → test count summary |
+
+## Marker blocks per doc
+
+| File | Auto-generated sections |
+|---|---|
+| `README.md` | `DEMO-COUNT`, `CLI-TABLE-TYPES`, `DEMO-TREE` |
+| `TODO.md` | `TEST-COUNTS` |
+| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY` |
+| `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `HOOK-INTERFACES`, `ERROR-CODES` |
+| `doc/content/docs/cli.mdx` | `HELP` |
+
+## Workflow
+
+```sh
+bun docs            # regenerate all blocks
+bun docs:check      # exit 1 if any block is stale (CI uses this)
+```
+
+## What's NOT auto-generated (and won't be)
+
+Narrative prose: recipes, "when to use" decision matrices, security reasoning, architectural rationale, migration guides. These require human judgment and explanation. Everything machine-derivable is auto-generated.
