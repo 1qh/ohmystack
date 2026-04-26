@@ -65,8 +65,11 @@ const makeKv = <DB, Tbl extends KvTableLike>(
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
   const softDelete = options?.softDelete ?? false
+  /** Upsert with optional `expectedUpdatedAt` conflict check. */
   const setName = `set_${tableName}`
+  /** Soft- or hard-delete by key. */
   const rmName = `rm_${tableName}`
+  /** Bring back a soft-deleted key. Requires `softDelete: true`. */
   const restoreName = `restore_${tableName}`
   const setParams: FieldBuilders = { key: keyField, ...fields }
   const rmParams: FieldBuilders = { key: keyField }

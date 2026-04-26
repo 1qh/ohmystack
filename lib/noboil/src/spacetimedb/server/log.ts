@@ -79,9 +79,13 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   const hooks = options?.hooks
   const rateLimit = options?.rateLimit
   const softDelete = options?.softDelete ?? false
+  /** Atomic seq + insert. Idempotent if `idempotency_key` provided. */
   const appendName = `append_${tableName}`
+  /** Single-transaction batch insert. */
   const bulkAppendName = `bulk_append_${tableName}`
+  /** Soft- or hard-delete all rows for a parent. */
   const purgeName = `purge_${tableName}_by_parent`
+  /** Bring back soft-deleted rows for a parent. Requires `softDelete: true`. */
   const restoreName = `restore_${tableName}_by_parent`
   const appendParams: FieldBuilders = { ...fields, idempotencyKey: idempotencyKeyField, parent: parentField }
   const purgeParams: FieldBuilders = { parent: parentField }
@@ -187,8 +191,11 @@ const makeLog = <DB, Tbl extends LogTableLike>(
   }
   if (restoreReducer) exports[restoreName] = restoreReducer as ReducerExportLike
   if (bulkReducer) exports[bulkAppendName] = bulkReducer as ReducerExportLike
+  /** Hard-delete a single row by id. Author-only. */
   const rmName = `rm_${tableName}`
+  /** Hard-delete multiple rows. Author-only. */
   const bulkRmName = `bulk_rm_${tableName}`
+  /** Update a row's payload (preserves seq + parent). Author-only. */
   const updateName = `update_${tableName}`
   if (idField) {
     const optionalFields: FieldBuilders = {}

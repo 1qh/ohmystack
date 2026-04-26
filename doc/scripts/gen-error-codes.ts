@@ -4,6 +4,7 @@
 /** biome-ignore-all lint/performance/useTopLevelRegex: per-file scan */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { ERROR_CODE_MEANINGS } from '../../lib/noboil/src/shared/error-codes'
 import { replaceBetween } from './lib'
 const REPO = resolve(import.meta.dir, '../..')
 const PATTERNS = [
@@ -38,7 +39,16 @@ const main = () => {
     }
   }
   const sorted = [...codes].toSorted()
-  const body = ['| Code |', '|------|', ...sorted.map(c => `| \`${c}\` |`)].join('\n')
+  const body = [
+    '| Code | Meaning |',
+    '|------|---------|',
+    ...sorted.map(
+      c =>
+        `| \`${c}\` | ${ERROR_CODE_MEANINGS[c] ?? '_(no description registered — add to lib/noboil/src/shared/error-codes.ts)_'} |`
+    )
+  ].join('\n')
+  const undescribed = sorted.filter(c => !ERROR_CODE_MEANINGS[c])
+  if (undescribed.length > 0) console.warn(`  ⚠ ${undescribed.length} codes missing meanings: ${undescribed.join(', ')}`)
   const target = `${REPO}/doc/content/docs/api-reference.mdx`
   const dirty = replaceBetween(target, 'ERROR-CODES', body)
   console.log(dirty ? `Updated error codes (${sorted.length} codes)` : `Error codes up to date (${sorted.length} codes)`)
