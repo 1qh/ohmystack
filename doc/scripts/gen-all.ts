@@ -25,6 +25,7 @@ const SCRIPTS = [
   'gen-eslint-rules.ts',
   'gen-config-schema.ts',
   'gen-ui-components.ts',
+  'gen-test-tree.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',

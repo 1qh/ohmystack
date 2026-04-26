@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **22 generators** that own **19 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **23 generators** that own **19 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -30,6 +30,7 @@ noboil ships **22 generators** that own **19 marker blocks** across 5 doc files.
 | `doc/scripts/gen-readme-factories.ts` | (undocumented) |
 | `doc/scripts/gen-recipe-toc.ts` | (undocumented) |
 | `doc/scripts/gen-test-counts.ts` | bun test pass count parsing → test count summary |
+| `doc/scripts/gen-test-tree.ts` | (undocumented) |
 | `doc/scripts/gen-ui-components.ts` | (undocumented) |
 
 ## Marker blocks per doc
