@@ -23,6 +23,30 @@ import { useFormMutation, Form } from 'noboil/spacetimedb/components'
 
 `useForm`, `useFormMutation`, `Form`, `defineSteps`, `EditorsSection`, `PermissionGuard`, `OrgAvatar`, `RoleBadge`, `OfflineIndicator`, `AutoSaveIndicator`, `ConflictDialog`, `ErrorBoundary`, `Devtools`, `useList`, `useSearch`, `useBulkSelection`, `useBulkMutate`, `useSoftDelete`, `useUpload`, `useOwnRows`, `useInfiniteList`, `useOrg`, `useActiveOrg`, `useMyOrgs`, `useOrgMutation`, `useOrgQuery`, `OrgProvider`, `createOrgHooks`, `usePresence`, `useOptimisticMutation`, `singletonCrud` results, `child()`, `file()`, `files()`, `makeOwned`, `makeOrgScoped`, `makeBase`, `makeSingleton`, `makeOrg`, `schema()`, `noboil()` — all symmetric.
 
+## Server-side parity matrix
+
+Auto-generated from filesystem presence and source-line counts in `lib/noboil/src/{convex,spacetimedb}/server/`:
+
+{/* AUTO-GENERATED:PARITY-MATRIX:START */}
+| Feature | Source file | Convex | SpacetimeDB |
+|---|---|---|---|
+| owned CRUD | `crud.ts` | ✓ (426 loc) | ✓ (138 loc) |
+| org-scoped CRUD | `org-crud.ts` | ✓ (485 loc) | ✓ (399 loc) |
+| child CRUD | `child.ts` | ✓ (262 loc) | ✓ (163 loc) |
+| singleton (1-per-user) | `singleton.ts` | ✓ (69 loc) | ✓ (112 loc) |
+| cache (TTL + refresh) | `cache-crud.ts` | ✓ (244 loc) | ✓ (172 loc) |
+| log (append-only) | `log.ts` | ✓ (389 loc) | ✓ (256 loc) |
+| kv (string-keyed) | `kv.ts` | ✓ (163 loc) | ✓ (147 loc) |
+| quota (sliding window) | `quota.ts` | ✓ (109 loc) | ✓ (109 loc) |
+| org schema (membership + invites) | `org.ts` | ✓ (298 loc) | ✓ (565 loc) |
+| org members API | `org-members.ts` | ✓ (137 loc) | ✓ (244 loc) |
+| org invites API | `org-invites.ts` | ✓ (106 loc) | ✓ (396 loc) |
+| org join requests | `org-join.ts` | ✓ (141 loc) | ✓ (259 loc) |
+| presence | `presence.ts` | ✓ (86 loc) | ✓ (141 loc) |
+| file uploads | `file.ts` | ✓ (415 loc) | ✓ (146 loc) |
+| middleware (audit, sanitize, slow-warn) | `middleware.ts` | ✓ (59 loc) | ✓ (65 loc) |
+{/* AUTO-GENERATED:PARITY-MATRIX:END */}
+
 ## The actual differences
 
 ### 1. `noboil()` config

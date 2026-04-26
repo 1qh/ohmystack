@@ -18,6 +18,8 @@ const SCRIPTS = [
   'gen-error-codes.ts',
   'gen-test-counts.ts',
   'gen-meta-nav.ts',
+  'gen-recipe-toc.ts',
+  'gen-parity-matrix.ts',
   'gen-link-check.ts',
   'gen-coverage-report.ts'
 ]
