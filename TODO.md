@@ -22,7 +22,15 @@
 - [x] D7. Schema validation at definition time — `validateSchemas()` in `schema()`
 - [x] D8. File constraints in schema — `file({ maxSize, accept })`
 
-## Tests — 2114 pure passing (936 Convex + 1133 SpacetimeDB + 45 shared) + 235 cvx-f.test + 26 stdb-f.test + e2e: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll
+## Tests
+
+<!-- AUTO-GENERATED:TEST-COUNTS -->
+
+2069 pure tests passing (936 Convex + 1133 SpacetimeDB)
+
+<!-- /AUTO-GENERATED:TEST-COUNTS -->
+
+Plus +235 cvx-f.test + 26 stdb-f.test + e2e: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll
 
 - [x] T21. `noboil({ tables })` object form verified on both backends
 - [x] T22. Old positional form rejected at compile time (single-object signature)

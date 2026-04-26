@@ -28,7 +28,24 @@ The schema is the contract. Change it, and the table shape, validators, and endp
 
 ## Schema branding
 
-noboil uses TypeScript's structural type system against you (in a good way). Each schema slot stamps the Zod object with an opaque brand that the table factory checks at the type level:
+noboil uses TypeScript's structural type system against you (in a good way). Each schema slot stamps the Zod object with an opaque brand that the table factory checks at the type level.
+
+The brand registry below is auto-generated from `lib/noboil/src/convex/server/types.ts` (`SchemaHintMap`):
+
+{/* AUTO-GENERATED:BRAND-REGISTRY:START */}
+| Brand | Maker → Factory + Wrapper |
+|---|---|
+| `base` | Created by makeBase() → use cacheCrud() + baseTable() |
+| `kv` | Created by makeKv() → use kv() + kvTable() |
+| `log` | Created by makeLog() → use log() + logTable() |
+| `orgDef` | Created by makeOrg() → pass to setup(\{ orgSchema \}) |
+| `org` | Created by makeOrgScoped() → use orgCrud() + orgTable() |
+| `owned` | Created by makeOwned() → use crud() + ownedTable() |
+| `quota` | Created by makeQuota() → use quota() + quotaTable() |
+| `singleton` | Created by makeSingleton() → use singletonCrud() + singletonTable() |
+{/* AUTO-GENERATED:BRAND-REGISTRY:END */}
+
+Slots with their auto-injected fields:
 
 | Slot | Brand | Automatic fields | Indexes | What it generates |
 |---|---|---|---|---|

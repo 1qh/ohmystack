@@ -12,7 +12,10 @@ Define a Zod schema once. Get authenticated CRUD, typesafe forms, file upload, r
 bunx noboil@latest init
 ```
 
-Pick a database, name your project, done. The CLI scaffolds the full monorepo — all five vertical demos (blog, chat, movie, org, poll) and shared infra included. Delete what you don’t need.
+Pick a database, name your project, done. The CLI scaffolds the full monorepo — all <!-- AUTO-GENERATED:DEMO-COUNT -->
+5 vertical demos (blog, chat, movie, org, poll)
+
+<!-- /AUTO-GENERATED:DEMO-COUNT --> and shared infra included. Delete what you don’t need.
 
 ## CLI
 
@@ -277,8 +280,10 @@ Each factory’s React hook mirrors the server API: `useCrud` / `useSingleton` /
 ```
 noboil/
   web/
+<!-- AUTO-GENERATED:DEMO-TREE -->
     cvx/              5 Convex demo web apps (blog, chat, movie, org, poll)
-    stdb/             5 SpacetimeDB demo web apps
+    stdb/             5 SpacetimeDB demo web apps (blog, chat, movie, org, poll)
+<!-- /AUTO-GENERATED:DEMO-TREE -->
   doc/                Documentation site (fumadocs)
   lib/
     fe/               shared frontend utilities (Next.js + auth shells)

@@ -305,30 +305,15 @@ table(s.chat, { pub: true })        // fully public, no RLS filter
 table(s.blog)                       // private — only own rows visible
 ```
 
-**Generated reducers for log tables:**
+**Generated reducers for log/kv/quota tables (auto-derived from `lib/noboil/src/spacetimedb/server/{log,kv,quota}.ts`):**
 
-| Reducer                     | Parameters | Description |
-| --------------------------- | ---------- | ----------- |
-| `append_{tableName}`        | `parent`, `option`/payload, optional `idempotency_key` | Atomic seq + insert. Idempotent if `idempotency_key` provided. |
-| `bulk_append_{tableName}`   | `parent`, `items[]` | Single-transaction batch insert. |
-| `purge_{tableName}_by_parent` | `parent` | Soft- or hard-delete all rows for parent. |
-| `restore_{tableName}_by_parent` | `parent` | Bring back soft-deleted rows. Requires `softDelete: true`. |
-| `update_{tableName}` / `rm_{tableName}` / `bulk_rm_{tableName}` | `id` (or `ids[]`) | Mutate or delete by row id. Author-only. |
-
-**Generated reducers for kv tables:**
-
-| Reducer                     | Parameters | Description |
-| --------------------------- | ---------- | ----------- |
-| `set_{tableName}`           | `key`, payload, optional `expectedUpdatedAt` | Upsert with optional conflict check. |
-| `rm_{tableName}`            | `key` | Soft- or hard-delete. |
-| `restore_{tableName}`       | `key` | Bring back soft-deleted row. Requires `softDelete: true`. |
-
-**Generated reducers for quota tables:**
-
-| Reducer                     | Parameters | Description |
-| --------------------------- | ---------- | ----------- |
-| `record_{tableName}`        | `owner` | Append timestamp, prune expired. Always succeeds. |
-| `consume_{tableName}`       | `owner` | Atomic check + record. Throws when over limit. |
+{/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:START */}
+| Factory | SpacetimeDB-generated reducer names |
+|---|---|
+| `log` | `append_{table}`, `bulk_append_{table}`, `purge_{table}_by_parent`, `restore_{table}_by_parent`, `rm_{table}`, `bulk_rm_{table}`, `update_{table}` |
+| `kv` | `set_{table}`, `rm_{table}`, `restore_{table}` |
+| `quota` | `consume_{table}`, `record_{table}` |
+{/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:END */}
 
 ### makePresence
 
@@ -491,6 +476,69 @@ quota.state             // { allowed, remaining, retryAfter? }
 const result = await quota.consume()
 const after = await quota.record()
 ```
+
+#### Hook return interfaces (auto-generated from source)
+
+{/* AUTO-GENERATED:HOOK-INTERFACES:START */}
+### useLog (convex)
+
+```ts
+{
+  append: (args: { idempotencyKey?: string; payload: Partial<T>
+}
+```
+
+### useKv (convex)
+
+```ts
+{
+  data: null | T | undefined
+  remove: () => Promise<void>
+  restore: () => Promise<void>
+  update: (payload: T, opts?: { expectedUpdatedAt?: number
+}
+```
+
+### useQuota (convex)
+
+```ts
+{
+  consume: () => Promise<QuotaState>
+  record: () => Promise<QuotaState>
+  state: QuotaState | undefined
+}
+```
+
+### useLog (spacetimedb)
+
+```ts
+{
+  append: (args: { idempotencyKey?: string; payload: Partial<T>
+}
+```
+
+### useKv (spacetimedb)
+
+```ts
+{
+  data: null | T
+  isLoading: boolean
+  remove: () => Promise<void>
+  restore: () => Promise<void>
+  update: (payload: Partial<T>, opts?: { expectedUpdatedAt?: unknown
+}
+```
+
+### useQuota (spacetimedb)
+
+```ts
+{
+  consume: () => Promise<void>
+  record: () => Promise<void>
+  state: QuotaState
+}
+```
+{/* AUTO-GENERATED:HOOK-INTERFACES:END */}
 
 ### useOwnRows
 

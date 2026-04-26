@@ -10,7 +10,7 @@
     "backend/*"
   ],
   "scripts": {
-    "action": "sh up.sh && bun run test",
+    "action": "sh up.sh && bun run test && bun docs:check",
     "build": "turbo run build --output-logs=errors-only",
     "check": "lintmax check",
     "clean": "sh clean.sh",
@@ -19,6 +19,8 @@
     "crawl": "bun script/crawl.ts",
     "dev:all": "bun script/dev.ts",
     "dev:web": "f() { turbo watch dev -F @a/$1 -F @a/$2; }; f",
+    "docs": "bun doc/scripts/gen-all.ts",
+    "docs:check": "bun doc/scripts/gen-all.ts --check",
     "doctor": "bun script/doctor.ts",
     "fix": "lintmax fix && turbo typecheck build --output-logs=errors-only",
     "gha:run-ci-full": "bash -lc 'b=$(git branch --show-current); gh workflow run CI --ref \"$b\" -f force_full=true && gh run list --workflow CI --branch \"$b\" --limit 3'",

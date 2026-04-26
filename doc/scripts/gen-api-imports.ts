@@ -93,6 +93,7 @@ if (startIdx === -1 || endIdx === -1) {
 }
 const updated = mdx.slice(0, startIdx + START.length) + section + mdx.slice(endIdx)
 if (updated === mdx) console.log('api-reference.mdx imports section already up to date')
+else if (process.argv.includes('--check')) console.log('Updated api-reference.mdx imports section (drift)')
 else {
   writeFileSync(mdxPath, updated)
   console.log('Updated api-reference.mdx imports section')

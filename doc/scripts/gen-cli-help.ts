@@ -38,6 +38,7 @@ const main = async () => {
   }
   const updated = mdx.slice(0, startIdx + START.length) + section + mdx.slice(endIdx)
   if (updated === mdx) console.log('cli.mdx help section already up to date')
+  else if (process.argv.includes('--check')) console.log('Updated cli.mdx help section (drift)')
   else {
     writeFileSync(mdxPath, updated)
     console.log('Updated cli.mdx help section')
