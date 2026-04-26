@@ -37,6 +37,9 @@ noboil uses TypeScript's structural type system against you (in a good way). Eac
 | `base` | `base` | `updatedAt` (optional) | none | External-data cache (TTL, refresh, invalidate) |
 | `singleton` | `singleton` | `userId`, `updatedAt` | `by_user` | One row per user (`get` + `upsert`) |
 | `children` | n/a | `parentId`, `updatedAt` | `by_parent` | Child-of-parent CRUD with cascade options |
+| `log` | `log` | `parent`, `seq`, `userId`, `idempotencyKey?`, `createdAt` | `by_parent_seq`, `by_idempotency` | Append-only event log with atomic seq + idempotency ([log](./log)) |
+| `kv` | `kv` | `key`, `updatedAt`, `deletedAt?` | `by_key` (unique) | Named key → value with role-gated writes ([kv](./kv)) |
+| `quota` | `quota` | `owner`, `timestamps[]` | `by_owner` (unique) | Sliding-window rate limit primitive ([quota](./quota)) |
 | `org` | `orgDef` | n/a | n/a | The org definition itself (passed as `orgSchema`) |
 
 Passing an `owned`-branded schema where the factory expects `orgScoped` is a compile-time error. The `SchemaTypeError` type produces a message like:
@@ -53,6 +56,9 @@ Created by makeOrgScoped() -> use orgCrud() + orgTable()
 - **`base`** — shared/global data with no ownership (e.g., a cache of external API responses). No auth required on reads or writes.
 - **`singleton`** — exactly one row per user (e.g., user profile, user preferences).
 - **`children`** — rows that have a foreign key to a parent table; access control inherits from the parent.
+- **`log`** — append-only event tables (messages, votes, audit). Atomic per-parent `seq`, idempotent appends, soft-delete + restore, no-update by default. See [log factory](./log).
+- **`kv`** — string-keyed global state (banner, feature flags, system status). Public reads, role-gated writes, optional key whitelist, conflict detection. See [kv factory](./kv).
+- **`quota`** — sliding-window rate limits per owner (anti-spam, ballot-stuffing, API throttling). `check`/`record`/`consume` triad with hooks. See [quota factory](./quota).
 
 ## The `noboil()` entry point
 

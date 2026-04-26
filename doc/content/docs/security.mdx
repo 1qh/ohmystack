@@ -7,7 +7,7 @@ Security is enforced server-side on every read and every write. Clients never to
 
 ## How it works
 
-Read filters and write checks both run on the server, before any data is read or written. The client receives a result or an error code — nothing else. Visibility is enforced at the subscription / query layer, ownership is enforced at the mutation layer, and both are derived from your schema brand (`makeOwned` / `makeOrgScoped` / `makeBase` / `makeSingleton`).
+Read filters and write checks both run on the server, before any data is read or written. The client receives a result or an error code — nothing else. Visibility is enforced at the subscription / query layer, ownership is enforced at the mutation layer, and both are derived from your schema brand (`makeOwned` / `makeOrgScoped` / `makeBase` / `makeSingleton` / `makeLog` / `makeKv` / `makeQuota`).
 
 For the platform-specific details (Convex's auth/pub destructure vs SpacetimeDB's `clientVisibilityFilter` SQL), see [Convex vs SpacetimeDB](./differences#2-where-filters-and-the-pub-option).
 
@@ -44,6 +44,10 @@ table(s.blog, { pub: 'published' })                      // SpacetimeDB
 | No `pub` (singleton) | Per-user: `WHERE userId = :sender` |
 | No `pub` (orgScoped) | Org membership: `JOIN orgMember WHERE userId = :sender` |
 | `base` / `cache` | No filter — cache tables are public by design |
+| `log` (no `pub`) | Owner-of-parent only: `WHERE EXISTS(parent WHERE userId = :sender)` |
+| `log` with `pub: 'parentField'` | Public when parent's flag is true, otherwise owner-only |
+| `kv` (always) | Public reads (`get`/`list`); writes gated by `writeRole` predicate |
+| `quota` | Internal-only by default; expose via wrapper mutation that calls `consume()` |
 
 ## Ownership enforcement
 
@@ -53,6 +57,9 @@ table(s.blog, { pub: 'published' })                      // SpacetimeDB
 | `orgScoped` | Org members only       | Row owner, org admin, or owner |
 | `children`  | Parent row owner only  | Parent row owner only          |
 | `singleton` | Any authenticated user | Owner only (1:1 per user)      |
+| `log`       | Parent owner (and bypassed via `pub` parent-field) | Author only via `update`/`rm`; `purgeByParent` owner-of-parent only |
+| `kv`        | Anyone passing `writeRole(ctx)` | Same predicate gates `set`/`rm`/`restore` |
+| `quota`     | Internal mutations only (wrap in your own gated reducer) | Same |
 
 A user who doesn't own a row gets `NOT_FOUND`, not `FORBIDDEN`. This prevents enumeration — callers can't distinguish "doesn't exist" from "exists but not yours".
 
