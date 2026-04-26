@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { FactoryCall } from './check'
 import { bold, dim, green, red, yellow } from '../ansi'
+import { FACTORY_INVOKE_NAMES, SCHEMA_MARKERS } from '../shared/factory-meta'
 import {
   accessForFactory,
   checkIndexCoverage,
@@ -21,17 +22,8 @@ interface CheckResult {
   title: string
 }
 const STATUS_ICON: Record<string, string> = { fail: red('\u2717'), pass: green('\u2713'), warn: yellow('!') }
-const schemaMarkers = [
-  'makeOwned(',
-  'makeOrgScoped(',
-  'makeSingleton(',
-  'makeBase(',
-  'makeLog(',
-  'makeKv(',
-  'makeQuota(',
-  'child('
-]
-const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud|log|kv|quota)\(\s*['"](?<table>\w+)['"]/gu
+const schemaMarkers = SCHEMA_MARKERS
+const factoryPat = new RegExp(`(?<factory>${FACTORY_INVOKE_NAMES.join('|')})\\(\\s*['"](?<table>\\w+)['"]`, 'gu')
 const isSchemaFile = (content: string): boolean => {
   for (const marker of schemaMarkers) if (content.includes(marker)) return true
   return false

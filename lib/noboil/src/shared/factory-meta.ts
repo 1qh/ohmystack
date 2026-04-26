@@ -97,5 +97,18 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     wrapper: 'singletonTable / singletonCrud'
   }
 }
+/** Schema marker source patterns used by doctor/check to identify a schema file. */
+const SCHEMA_MARKERS = [
+  'makeOwned(',
+  'makeOrgScoped(',
+  'makeSingleton(',
+  'makeBase(',
+  'makeLog(',
+  'makeKv(',
+  'makeQuota(',
+  'child('
+] as const
+/** Factory invocation names for the `factoryPat` regex in audit tools. */
+const FACTORY_INVOKE_NAMES = ['crud', 'orgCrud', 'childCrud', 'cacheCrud', 'singletonCrud', 'log', 'kv', 'quota'] as const
 export type { FactoryMeta }
-export { FACTORY_META }
+export { FACTORY_INVOKE_NAMES, FACTORY_META, SCHEMA_MARKERS }
