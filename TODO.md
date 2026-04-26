@@ -22,7 +22,7 @@
 - [x] D7. Schema validation at definition time — `validateSchemas()` in `schema()`
 - [x] D8. File constraints in schema — `file({ maxSize, accept })`
 
-## Tests — 2083 passing (921 Convex + 1117 SpacetimeDB + 45 shared)
+## Tests — 2114 pure passing (936 Convex + 1133 SpacetimeDB + 45 shared) + 235 cvx-f.test + 26 stdb-f.test + e2e: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll
 
 - [x] T21. `noboil({ tables })` object form verified on both backends
 - [x] T22. Old positional form rejected at compile time (single-object signature)
@@ -32,7 +32,7 @@
 - [x] T23-T25. File tests — skipped (S5/S6 blocked by SDK)
 - [x] T27. `aclFrom` — skipped (not implemented, needs architecture decision)
 - [x] T29-T31. Pagination tests — skipped (S10 blocked by SDK)
-- [x] T33-T35. E2E verified: CVX blog 52/52, STDB blog 11/11
+- [x] T33-T35. E2E verified: CVX blog 52/52, STDB blog 52/52, CVX poll 82/82, STDB poll 82/82
 
 ## Docs — all done
 

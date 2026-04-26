@@ -455,6 +455,30 @@ table(s.blog, { rateLimit: 10 })                            // SpacetimeDB short
 
 Exceeding the limit returns `RATE_LIMITED` with a `retryAfter` value in milliseconds.
 
+For per-resource sliding-window quotas (anti-spam, ballot-stuffing, API throttling), use the [`quota` factory](./quota) instead — it gives you `check`/`record`/`consume` triad and a `useQuota()` hook with reactive remaining count.
+
+## Append-only logs
+
+For append-only data (chat messages, vote ballots, audit trails) use the [`log` factory](./log). The `useLog()` hook provides paginated rows + `append`/`appendBulk`/`purge`/`restore` helpers. Each log row gets an atomic per-parent `seq` and optional idempotency key.
+
+```ts
+import { useLog } from 'noboil/convex/react'
+const log = useLog(api.vote, { parent: pollId })
+await log.append({ payload: { optionIdx: 0, voter: 'me' } })
+const counts = options.map((_, i) => log.data.filter(r => r.optionIdx === i).length)
+```
+
+## String-keyed global state
+
+For state addressed by a known key (banner, feature flag, system status) use the [`kv` factory](./kv). The `useKv()` hook subscribes to one key and returns `data` + `update`/`remove`/`restore`.
+
+```ts
+import { useKv } from 'noboil/convex/react'
+const banner = useKv(api.siteConfig, 'banner')
+await banner.update({ active: true, message: 'maintenance at 8pm' })
+return banner.data?.active ? <Alert>{banner.data.message}</Alert> : null
+```
+
 ## Performance and scaling
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
