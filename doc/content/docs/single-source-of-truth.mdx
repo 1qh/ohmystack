@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **20 generators** that own **17 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **21 generators** that own **18 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -14,6 +14,7 @@ noboil ships **20 generators** that own **17 marker blocks** across 5 doc files.
 | `doc/scripts/gen-brand-registry.ts` | SchemaHintMap interface → brand registry table |
 | `doc/scripts/gen-cli-help.ts` | `noboil --help` output → CLI help blocks |
 | `doc/scripts/gen-cli-types.ts` | `TableType` union in convex/add.ts → CLI --type valid values |
+| `doc/scripts/gen-config-schema.ts` | (undocumented) |
 | `doc/scripts/gen-cvx-factory-api.ts` | cvx server/\{log,kv,quota\}.ts `b.q()`/`b.m()` → endpoint table |
 | `doc/scripts/gen-demo-inventory.ts` | web/\{cvx,stdb\}/* filesystem → demo count + tree |
 | `doc/scripts/gen-error-codes.ts` | `err()` / `throwConvexError()` calls across server → error code list |
@@ -38,7 +39,7 @@ noboil ships **20 generators** that own **17 marker blocks** across 5 doc files.
 | `TODO.md` | `TEST-COUNTS` |
 | `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS` |
 | `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `ERROR-CODES`, `ESLINT-RULES` |
-| `doc/content/docs/cli.mdx` | `HELP` |
+| `doc/content/docs/cli.mdx` | `HELP`, `CONFIG-SCHEMA` |
 
 ## Workflow
 

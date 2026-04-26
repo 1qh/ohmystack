@@ -461,6 +461,33 @@ export default defineConfig({
 })
 ```
 
+{/* AUTO-GENERATED:CONFIG-SCHEMA:START */}
+**NoboilConfig**
+
+| Field | Type |
+|---|---|
+| `fieldTypes?` | `Record&lt;string, CustomFieldType&gt;` |
+| `hooks?` | `\{ afterAdd?: (ctx: AddContext) =&gt; Promise&lt;void&gt; \| void beforeAdd?: (ctx: AddContext) =&gt; Promise&lt;void&gt; \| void \}` |
+
+**AddContext (passed to beforeAdd / afterAdd)**
+
+| Field | Type |
+|---|---|
+| `db` | `'convex' \| 'spacetimedb'` |
+| `fields` | `\{ name: string; optional: boolean; type: string \}[]` |
+| `name` | `string` |
+| `parent` | `string` |
+| `type` | `string` |
+
+**CustomFieldType (entries of fieldTypes)**
+
+| Field | Type |
+|---|---|
+| `convex` | `string` |
+| `description?` | `string` |
+| `stdb` | `string` |
+{/* AUTO-GENERATED:CONFIG-SCHEMA:END */}
+
 Hooks are skipped when `--dry-run` is passed. Config files ending in `.ts`, `.mts`, `.js`, `.mjs` are all accepted.
 
 ---

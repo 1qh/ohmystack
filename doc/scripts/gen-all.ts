@@ -23,6 +23,7 @@ const SCRIPTS = [
   'gen-readme-factories.ts',
   'gen-react-hooks.ts',
   'gen-eslint-rules.ts',
+  'gen-config-schema.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',
