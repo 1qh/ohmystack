@@ -257,16 +257,18 @@ Auth, ownership, Zod validation, file upload, cursor pagination, rate limiting, 
 
 Each table declares its shape via Zod and picks a factory that matches its access pattern. noboil generates the matching CRUD/ops per factory.
 
-| Factory     | Shape                     | Generates                                                                | Use for                                    |
-| ----------- | ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------ |
-| `owned`     | user-scoped               | `create`/`list`/`read`/`update`/`rm`                                     | user-owned data (posts, chats, tasks)      |
-| `org`       | org-scoped with editors   | `addEditor`/`removeEditor` + full CRUD                                   | multi-tenant, team-shared resources        |
-| `child`     | nested under a parent     | `create`/`list`/`rm`/`update` by parentId                                | comments under posts, items under orders   |
-| `singleton` | one per user              | `get`/`upsert`                                                           | user preferences, profiles                 |
-| `cache`     | keyed external API cache  | `get`/`load`/`refresh`/`invalidate`/`purge`                              | TMDB movies, Gravatar avatars              |
-| `log`       | append-only event stream  | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing     |
-| `kv`        | string-keyed state        | `get` (public) / `set`/`rm` (role-gated)                                 | feature flags, status banners, site config |
-| `quota`     | sliding-window rate limit | `check`/`record`/`consume`                                               | anti-spam, vote throttling, API limits     |
+<!-- AUTO-GENERATED:FACTORY-TABLE -->
+| Factory | Shape | Generates | Use for |
+|---|---|---|---|
+| `base` | keyed external API cache | `get`/`load`/`refresh`/`invalidate`/`purge` | TMDB movies, Gravatar avatars |
+| `child` | nested under a parent | `create`/`list`/`rm`/`update` by parentId | comments under posts, items under orders |
+| `kv` | string-keyed state | `get` (public) / `set`/`rm` (role-gated) | feature flags, status banners, site config |
+| `log` | append-only event stream | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing |
+| `org` | org-scoped with editors | `addEditor`/`removeEditor` + full CRUD | multi-tenant, team-shared resources |
+| `owned` | user-scoped | `create`/`list`/`read`/`update`/`rm` | user-owned data (posts, chats, tasks) |
+| `quota` | sliding-window rate limit | `check`/`record`/`consume` | anti-spam, vote throttling, API limits |
+| `singleton` | one per user | `get`/`upsert` | user preferences, profiles |
+<!-- /AUTO-GENERATED:FACTORY-TABLE -->
 
 One `s.ts` file, one Zod schema per table, one factory per access pattern:
 

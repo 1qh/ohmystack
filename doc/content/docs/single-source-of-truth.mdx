@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **17 generators** that own **14 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **19 generators** that own **16 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -24,6 +24,8 @@ noboil ships **17 generators** that own **14 marker blocks** across 5 doc files.
 | `doc/scripts/gen-meta-nav.ts` | (undocumented) |
 | `doc/scripts/gen-package-info.ts` | (undocumented) |
 | `doc/scripts/gen-parity-matrix.ts` | (undocumented) |
+| `doc/scripts/gen-react-hooks.ts` | (undocumented) |
+| `doc/scripts/gen-readme-factories.ts` | (undocumented) |
 | `doc/scripts/gen-recipe-toc.ts` | (undocumented) |
 | `doc/scripts/gen-test-counts.ts` | bun test pass count parsing → test count summary |
 
@@ -31,10 +33,10 @@ noboil ships **17 generators** that own **14 marker blocks** across 5 doc files.
 
 | File | Auto-generated sections |
 |---|---|
-| `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `CLI-TABLE-TYPES`, `DEMO-TREE` |
+| `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `CLI-TABLE-TYPES`, `FACTORY-TABLE`, `DEMO-TREE` |
 | `TODO.md` | `TEST-COUNTS` |
 | `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS` |
-| `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `HOOK-INTERFACES`, `ERROR-CODES` |
+| `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `ERROR-CODES` |
 | `doc/content/docs/cli.mdx` | `HELP` |
 
 ## Workflow

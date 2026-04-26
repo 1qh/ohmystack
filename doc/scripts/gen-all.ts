@@ -20,6 +20,8 @@ const SCRIPTS = [
   'gen-meta-nav.ts',
   'gen-auto-fields.ts',
   'gen-package-info.ts',
+  'gen-readme-factories.ts',
+  'gen-react-hooks.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',
