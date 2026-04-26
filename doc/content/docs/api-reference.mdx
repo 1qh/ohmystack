@@ -201,6 +201,44 @@ export const { all, get, load, refresh, invalidate, purge } = cacheCrud({
 })
 ```
 
+### log() — append-only event log
+
+Atomic per-parent `seq`, idempotent appends, soft-delete + restore, bulk operations. See [log factory](./log).
+
+```typescript
+// backend/convex/lazy.ts — register
+tables: ({ table }) => ({
+  vote: table(s.vote, { softDelete: true, rateLimit: 30 })
+})
+// backend/convex/convex/vote.ts — re-export
+export const {
+  append, appendBulk, auth, list, listAfter, purgeByParent, read,
+  restoreByParent, rm, update
+} = api.vote
+```
+
+### kv() — string-keyed global state
+
+Public reads, role-gated writes, soft-delete + restore, optional key whitelist, conflict detection. See [kv factory](./kv).
+
+```typescript
+tables: ({ table }) => ({
+  siteConfig: table(s.siteConfig, { softDelete: true })
+})
+export const { get, list, restore, rm, set } = api.siteConfig
+```
+
+### quota() — sliding-window rate limit
+
+`check`/`record`/`consume` triad with hooks (`beforeConsume`, `onExceeded`, etc.). See [quota factory](./quota).
+
+```typescript
+tables: ({ table }) => ({
+  pollVoteQuota: table(s.pollVoteQuota)
+})
+export const { check, consume, record } = api.pollVoteQuota
+```
+
 </Tab>
 <Tab value="SpacetimeDB">
 
@@ -381,6 +419,50 @@ useList(items, ready, { where: { price: { $gt: 10 } } }) // OK
 | `loadMore` | `() => void` | Load the next page |
 | `page` | `number` | Current page number |
 | `totalCount` | `number` | Total filtered row count |
+
+### useLog
+
+Append-only log subscription. Pairs with [`log` factory](./log).
+
+```typescript
+import { useLog } from 'noboil/convex/react'
+const log = useLog(api.vote, { parent: pollId })
+log.data            // Row[]
+log.hasMore
+await log.loadMore(20)
+await log.append({ payload: { optionIdx: 0, voter: 'me' } })
+await log.appendBulk([{ optionIdx: 0, voter: 'a' }])
+await log.update(rowId, { optionIdx: 1 })
+await log.rm(rowId)
+await log.purge()       // soft-delete all rows for parent (when softDelete: true)
+await log.restore()
+```
+
+### useKv
+
+Single-key value subscription. Pairs with [`kv` factory](./kv).
+
+```typescript
+import { useKv } from 'noboil/convex/react'
+const banner = useKv(api.siteConfig, 'banner')
+banner.data            // Row | null | undefined
+await banner.update({ active: true, message: 'hi' })
+await banner.update(payload, { expectedUpdatedAt })   // conflict-checked
+await banner.remove()
+await banner.restore()
+```
+
+### useQuota
+
+Sliding-window rate limit subscription. Pairs with [`quota` factory](./quota).
+
+```typescript
+import { useQuota } from 'noboil/convex/react'
+const quota = useQuota(api.pollVoteQuota, pollId)
+quota.state             // { allowed, remaining, retryAfter? }
+const result = await quota.consume()
+const after = await quota.record()
+```
 
 ### useOwnRows
 
