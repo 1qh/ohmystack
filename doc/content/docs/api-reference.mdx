@@ -1454,6 +1454,31 @@ type PostUpdate = typeof s.post.$inferUpdate
 </Tab>
 </Tabs>
 
+## ESLint rules
+
+Both `noboil/convex/eslint` and `noboil/spacetimedb/eslint` ship the same rule set under different plugin names. Enable via `recommended` config or pick rules individually.
+
+{/* AUTO-GENERATED:ESLINT-RULES:START */}
+| Rule | Convex | SpacetimeDB | Message |
+|---|---|---|---|
+| `api-casing` | ✓ | ✓ | api.\{\{used\}\} — wrong casing. Use api.\{\{suggestion\}\} to match the convex/ filename. |
+| `consistent-crud-naming` | ✓ | ✓ | Table name '\{\{got\}\}' doesn't match schema property '\{\{expected\}\}'. Use '\{\{expected\}\}' to avoid runtime errors. |
+| `discovery-check` | ✓ | ✓ | noboil/convex: could not find \{\{missing\}\} (searched ./convex/ and ./lib/*/convex/). Some rules are inactive. |
+| `form-field-exists` | ✓ | ✓ | '\{\{field\}\}' does not match any field in the schema. Check for typos. |
+| `form-field-kind` | ✓ | ✓ | '\{\{field\}\}' is a \{\{expected\}\} field, but rendered with &lt;\{\{got\}\}&gt;. Use &lt;\{\{expected\}\}&gt; instead. |
+| `no-duplicate-crud` | ✓ | ✓ | Duplicate CRUD factory for table '\{\{table\}\}'. Already registered in \{\{file\}\}. |
+| `no-empty-search-config` | ✓ | ✓ | search: \{\} is ambiguous. Specify the field to search: search: 'fieldName' or search: \{ field: 'fieldName' \}. |
+| `no-raw-fetch-in-server-component` | ✓ | ✓ | \{\{fn\}\}() without try-catch. If the query fails, the page crashes. Wrap in try-catch or use an error-handling wrapper. |
+| `no-unlimited-file-size` | ✓ | ✓ | \{\{call\}\} without .max() in schema. Add a size limit to prevent unbounded file uploads. |
+| `no-unprotected-mutation` | ✓ | ✓ | m() handler without auth check. Call getAuthUserId() or add a comment explaining why auth is not needed. |
+| `no-unsafe-api-cast` | ✓ | ✓ | Unsafe cast on api object. This bypasses type safety. Extract the function reference from the factory or use a custom query. |
+| `prefer-useList` | ✓ | ✓ | useQuery() on a list endpoint — use useList() instead for built-in pagination, loadMore, and loading states. |
+| `prefer-useOrgQuery` | ✓ | ✓ | useQuery() with orgId — use useOrgQuery() instead. It injects orgId automatically from the OrgProvider context. |
+| `require-connection` | ✓ | ✓ | \{\{fn\}\}() requires 'await connection()' before it in Next.js server components to signal dynamic rendering. |
+| `require-error-boundary` | ✓ | ✓ | &lt;ConvexProvider&gt; without an error boundary. Wrap with an ErrorBoundary to handle Convex errors gracefully. |
+| `require-rate-limit` | ✓ | ✓ | \{\{factory\}\}() without rateLimit. Add rateLimit: \{ max, window \} to prevent abuse on write endpoints. |
+{/* AUTO-GENERATED:ESLINT-RULES:END */}
+
 ## Known limitations
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
