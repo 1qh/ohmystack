@@ -37,8 +37,17 @@ interface WhereField {
   source: string
   table: string
 }
-const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
-const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu
+const schemaMarkers = [
+  'makeOwned(',
+  'makeOrgScoped(',
+  'makeSingleton(',
+  'makeBase(',
+  'makeLog(',
+  'makeKv(',
+  'makeQuota(',
+  'child('
+]
+const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud|log|kv|quota)\(\s*['"](?<table>\w+)['"]/gu
 const isSchemaFile = (content: string): boolean => {
   for (const marker of schemaMarkers) if (content.includes(marker)) return true
   return false

@@ -141,7 +141,7 @@ Usage:
   noboil-convex add <table-name> [options]
 
 Options:
-  --type=TYPE           Table type: owned, org, singleton, cache, child (default: owned)
+  --type=TYPE           Table type: owned, org, singleton, cache, child, log, kv, quota (default: owned)
   --fields=FIELDS       Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)")
   --parent=TABLE        Parent table name (required for child type)
   --convex-dir=DIR      Convex directory (default: convex)
@@ -154,6 +154,9 @@ Examples:
   $ noboil-convex add message --type=child --parent=chat --fields="text:string"
   $ noboil-convex add profile --type=singleton --fields="displayName:string,bio:string?"
   $ noboil-convex add movie --type=cache --fields="title:string,tmdb_id:number"
+  $ noboil-convex add vote --type=log --parent=poll --fields="optionIdx:number,voter:string"
+  $ noboil-convex add siteConfig --type=kv --fields="active:boolean,message:string"
+  $ noboil-convex add apiQuota --type=quota
 ```
 
 **noboil-stdb --help**
@@ -188,7 +191,7 @@ Usage:
   noboil-stdb add <table-name> [options]
 
 Options:
-  --type=TYPE           Table type: owned, org, singleton, cache, child (default: owned)
+  --type=TYPE           Table type: owned, org, singleton, cache, child, log, kv, quota (default: owned)
   --fields=FIELDS       Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)")
   --parent=TABLE        Parent table name (required for child type)
   --module-dir=DIR      SpacetimeDB module directory (default: module)
@@ -201,6 +204,9 @@ Examples:
   $ noboil-stdb add message --type=child --parent=chat --fields="text:string"
   $ noboil-stdb add profile --type=singleton --fields="displayName:string,bio:string?"
   $ noboil-stdb add movie --type=cache --fields="title:string,externalId:string"
+  $ noboil-stdb add vote --type=log --parent=poll --fields="option:string"
+  $ noboil-stdb add siteConfig --type=kv --fields="active:boolean,message:string"
+  $ noboil-stdb add apiQuota --type=quota
 ```
 {/* AUTO-GENERATED:HELP:END */}
 

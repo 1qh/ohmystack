@@ -479,6 +479,56 @@ const { items, loadMore, isLoading, hasMore } = useList(api.blog.list, {
 })
 ```
 
+### useLog
+
+Append-only log subscription. Pairs with [`log` factory](./log). Returns paginated rows + `append` / `appendBulk` / `purge` / `restore` / `update` mutations.
+
+```tsx
+import { useLog } from 'noboil/convex/react'
+
+const log = useLog(api.vote, { parent: pollId })
+
+log.data           // Row[]
+log.hasMore
+await log.loadMore(20)
+await log.append({ payload: { optionIdx: 0, voter: 'me' } })
+await log.appendBulk([{ optionIdx: 0, voter: 'a' }])
+await log.update(rowId, { optionIdx: 1 })
+await log.rm(rowId)
+await log.purge()       // soft-delete all rows for this parent (when softDelete: true)
+await log.restore()     // bring them back
+```
+
+### useKv
+
+Single-key value subscription. Pairs with [`kv` factory](./kv). Returns `data` + `update` / `remove` / `restore`.
+
+```tsx
+import { useKv } from 'noboil/convex/react'
+
+const banner = useKv(api.siteConfig, 'banner')
+
+banner.data           // Row | null | undefined
+await banner.update({ active: true, message: 'hi' })
+await banner.update(payload, { expectedUpdatedAt })   // conflict-checked
+await banner.remove()
+await banner.restore()
+```
+
+### useQuota
+
+Sliding-window rate limit subscription. Pairs with [`quota` factory](./quota). Returns reactive `state` + `consume` / `record`.
+
+```tsx
+import { useQuota } from 'noboil/convex/react'
+
+const quota = useQuota(api.pollVoteQuota, pollId)
+
+quota.state              // { allowed, remaining, retryAfter? } (reactive via `check`)
+const result = await quota.consume()      // atomic check + record
+const after = await quota.record()        // record only
+```
+
 ### useInfiniteList
 
 Infinite scroll with automatic intersection observer. Loads the next page when the sentinel element enters the viewport.

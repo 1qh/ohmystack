@@ -21,8 +21,17 @@ interface CheckResult {
   title: string
 }
 const STATUS_ICON: Record<string, string> = { fail: red('\u2717'), pass: green('\u2713'), warn: yellow('!') }
-const schemaMarkers = ['makeOwned(', 'makeOrgScoped(', 'makeSingleton(', 'makeBase(', 'child(']
-const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud)\(\s*['"](?<table>\w+)['"]/gu
+const schemaMarkers = [
+  'makeOwned(',
+  'makeOrgScoped(',
+  'makeSingleton(',
+  'makeBase(',
+  'makeLog(',
+  'makeKv(',
+  'makeQuota(',
+  'child('
+]
+const factoryPat = /(?<factory>crud|orgCrud|childCrud|cacheCrud|singletonCrud|log|kv|quota)\(\s*['"](?<table>\w+)['"]/gu
 const isSchemaFile = (content: string): boolean => {
   for (const marker of schemaMarkers) if (content.includes(marker)) return true
   return false
