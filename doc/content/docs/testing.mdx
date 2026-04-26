@@ -783,6 +783,74 @@ it('concurrent edit triggers conflict', async () => {
 </Tab>
 </Tabs>
 
+## Testing log / kv / quota factories
+
+The new factories follow the same `convexTest` / stdb integration patterns. See [poll demo](https://github.com/1qh/noboil/tree/main/web/cvx/poll/e2e) and [`backend/convex/convex/f.test.ts`](https://github.com/1qh/noboil/blob/main/backend/convex/convex/f.test.ts) for full examples.
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+test('log: append + list returns rows in order', async () => {
+  const ctx = t()
+  const { asUser } = await createTestContext(ctx)
+  const parent = 'poll-1'
+  await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 0, voter: 'a' } })
+  await asUser(0).mutation(api.vote.append, { parent, payload: { optionIdx: 1, voter: 'b' } })
+  const { page } = await asUser(0).query(api.vote.list, {
+    parent,
+    paginationOpts: { cursor: null, numItems: 100 }
+  })
+  expect(page.length).toBe(2)
+})
+test('kv: set + restore round-trip', async () => {
+  const ctx = t()
+  const { asUser } = await createTestContext(ctx)
+  await asUser(0).mutation(api.siteConfig.set, { key: 'banner', payload: { active: true, message: 'hi' } })
+  await asUser(0).mutation(api.siteConfig.rm, { key: 'banner' })
+  expect(await asUser(0).query(api.siteConfig.get, { key: 'banner' })).toBeNull()
+  await asUser(0).mutation(api.siteConfig.restore, { key: 'banner' })
+  const back = await asUser(0).query(api.siteConfig.get, { key: 'banner' })
+  expect(back?.message).toBe('hi')
+})
+test('quota: exhausting limit returns allowed=false', async () => {
+  const ctx = t()
+  const { asUser } = await createTestContext(ctx)
+  for (let i = 0; i < 30; i += 1) await asUser(0).mutation(api.pollVoteQuota.consume, { owner: 'p1' })
+  const result = await asUser(0).mutation(api.pollVoteQuota.consume, { owner: 'p1' })
+  expect(result.allowed).toBe(false)
+})
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+test('vote (log) append + listed by parent', async () => {
+  await withCtx(async ctx => {
+    const [user] = ctx.users
+    const parent = 'pollx'
+    await callReducer(ctx, 'append_vote', { idempotency_key: none, option: 'a', parent }, user)
+    const rows = await listTable(ctx, 'vote', user)
+    const mine = rows.filter(r => getString(r, 'parent') === parent)
+    expect(mine.length).toBeGreaterThanOrEqual(1)
+  })
+})
+test('quota: consume + exhaust', async () => {
+  await withCtx(async ctx => {
+    const [user] = ctx.users
+    for (let i = 0; i < 30; i += 1)
+      await callReducer(ctx, 'consume_pollVoteQuota', { owner: 'p1' }, user)
+    await expect(
+      callReducer(ctx, 'consume_pollVoteQuota', { owner: 'p1' }, user)
+    ).rejects.toThrow()
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
 ## E2E tests with Playwright
 
 E2E tests run against the full stack.

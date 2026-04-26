@@ -284,6 +284,9 @@ const file = table.file()
 | base/cache | `key`, `ttl` |
 | singleton  | none |
 | child      | none |
+| log        | `softDelete`, `rateLimit`, `pub` (and per-row `pub: { parentField }`), `hooks`, `withAuthor` |
+| kv         | `softDelete`, `rateLimit`, `hooks`, `cleanFiles` |
+| quota      | `hooks` (`beforeConsume`/`afterConsume`/`beforeRecord`/`afterRecord`/`onExceeded`) |
 
 **Generated reducers for owned tables:**
 
@@ -301,6 +304,31 @@ table(s.chat, { pub: 'isPublic' })  // visible when isPublic=true OR own row
 table(s.chat, { pub: true })        // fully public, no RLS filter
 table(s.blog)                       // private — only own rows visible
 ```
+
+**Generated reducers for log tables:**
+
+| Reducer                     | Parameters | Description |
+| --------------------------- | ---------- | ----------- |
+| `append_{tableName}`        | `parent`, `option`/payload, optional `idempotency_key` | Atomic seq + insert. Idempotent if `idempotency_key` provided. |
+| `bulk_append_{tableName}`   | `parent`, `items[]` | Single-transaction batch insert. |
+| `purge_{tableName}_by_parent` | `parent` | Soft- or hard-delete all rows for parent. |
+| `restore_{tableName}_by_parent` | `parent` | Bring back soft-deleted rows. Requires `softDelete: true`. |
+| `update_{tableName}` / `rm_{tableName}` / `bulk_rm_{tableName}` | `id` (or `ids[]`) | Mutate or delete by row id. Author-only. |
+
+**Generated reducers for kv tables:**
+
+| Reducer                     | Parameters | Description |
+| --------------------------- | ---------- | ----------- |
+| `set_{tableName}`           | `key`, payload, optional `expectedUpdatedAt` | Upsert with optional conflict check. |
+| `rm_{tableName}`            | `key` | Soft- or hard-delete. |
+| `restore_{tableName}`       | `key` | Bring back soft-deleted row. Requires `softDelete: true`. |
+
+**Generated reducers for quota tables:**
+
+| Reducer                     | Parameters | Description |
+| --------------------------- | ---------- | ----------- |
+| `record_{tableName}`        | `owner` | Append timestamp, prune expired. Always succeeds. |
+| `consume_{tableName}`       | `owner` | Atomic check + record. Throws when over limit. |
 
 ### makePresence
 

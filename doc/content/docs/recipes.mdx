@@ -1821,3 +1821,57 @@ useCrud({
 ```
 
 Both return the same `{ data, create, update, rm, hasMore, isLoading, loadMore }`. The only difference is refs: Convex passes `api.*` functions, SpacetimeDB passes `reducers.*` + `tables.*`.
+
+## Poll: kv banner + log votes + quota anti-spam
+
+A working poll page that composes three new factories: a [`kv`](./kv) `siteConfig.banner` row read by every visitor, a [`log`](./log) `vote` table for ballots, and a [`quota`](./quota) `pollVote` limit gating writes per `${userId}:${pollId}`. See the full source in [`web/cvx/poll`](https://github.com/1qh/noboil/tree/main/web/cvx/poll).
+
+```ts
+// backend/convex/s.ts
+const s = schema({
+  owned: { poll: object({ options: array(string()).min(2).max(10), question: string() }) },
+  log: { vote: { parent: 'poll', schema: object({ optionIdx: number(), voter: string() }) } },
+  kv: { siteConfig: { keys: ['banner'] as const, schema: object({ active: boolean(), message: string() }), writeRole: true } },
+  quota: { pollVote: { durationMs: 60_000, limit: 30 } }
+})
+```
+
+```ts
+// backend/convex/lazy.ts
+tables: ({ table }) => ({
+  poll: table(s.poll),
+  vote: table(s.vote, { softDelete: true }),
+  siteConfig: table(s.siteConfig, { softDelete: true }),
+  pollVoteQuota: table(s.pollVote)
+})
+```
+
+```tsx
+// web/cvx/poll/src/app/page.tsx
+const VoteView = ({ pollId, options }: { pollId: string; options: string[] }) => {
+  const log = useLog(api.vote, { parent: pollId })
+  const quota = useQuota(api.pollVoteQuota, pollId)
+  const counts = options.map((_, i) => log.data.filter(v => v.optionIdx === i).length)
+  const vote = async (i: number) => {
+    const r = await quota.consume()
+    if (!r.allowed) return toast.error(`retry in ${r.retryAfter}ms`)
+    await log.append({ payload: { optionIdx: i, voter: 'me' } })
+  }
+  return options.map((opt, i) => (
+    <Button key={opt} disabled={!quota.state?.allowed} onClick={() => vote(i)}>
+      {opt} ({counts[i]})
+    </Button>
+  ))
+}
+const BannerDisplay = () => {
+  const banner = useKv(api.siteConfig, 'banner')
+  return banner.data?.active ? <Alert>{banner.data.message}</Alert> : null
+}
+```
+
+This composes:
+- **`log`** for append-only votes with atomic per-poll seq + soft-delete + restore
+- **`kv`** for a publicly-readable site banner with role-gated writes
+- **`quota`** as the gate before each `log.append` (anti-ballot-stuffing)
+
+End-to-end coverage: 82 Playwright tests (`web/cvx/poll/e2e/*`) exercise this exact flow including bulk append, purge/restore, banner restore, quota exhaustion, and the per-poll detail/edit routes.
