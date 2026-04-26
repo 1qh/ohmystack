@@ -1,5 +1,4 @@
 {
-  "title": "Documentation",
   "pages": [
     "index",
     "quickstart",
@@ -8,9 +7,14 @@
     "cli",
     "components",
     "data-fetching",
-    "file-uploads",
     "forms",
+    "file-uploads",
     "organizations",
+    "log",
+    "kv",
+    "quota",
+    "composing-mutations",
+    "gradual-adoption",
     "security",
     "devtools",
     "testing",
@@ -21,6 +25,8 @@
     "migration",
     "ejecting",
     "deployment",
-    "troubleshooting"
-  ]
+    "troubleshooting",
+    "single-source-of-truth"
+  ],
+  "title": "Documentation"
 }

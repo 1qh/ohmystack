@@ -17,6 +17,8 @@ const SCRIPTS = [
   'gen-cli-types.ts',
   'gen-error-codes.ts',
   'gen-test-counts.ts',
+  'gen-meta-nav.ts',
+  'gen-link-check.ts',
   'gen-coverage-report.ts'
 ]
 const main = async () => {

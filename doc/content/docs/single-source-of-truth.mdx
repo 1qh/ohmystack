@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **11 generators** that own **12 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **13 generators** that own **12 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -19,6 +19,8 @@ noboil ships **11 generators** that own **12 marker blocks** across 5 doc files.
 | `doc/scripts/gen-factory-api.ts` | stdb server/\{log,kv,quota\}.ts reducer name templates → reducer table |
 | `doc/scripts/gen-factory-options.ts` | LogOptions/KvOptions interfaces → option tables |
 | `doc/scripts/gen-hook-reference.ts` | Log/Kv/QuotaHookResult interfaces → hook signature blocks |
+| `doc/scripts/gen-link-check.ts` | (undocumented) |
+| `doc/scripts/gen-meta-nav.ts` | (undocumented) |
 | `doc/scripts/gen-test-counts.ts` | bun test pass count parsing → test count summary |
 
 ## Marker blocks per doc
