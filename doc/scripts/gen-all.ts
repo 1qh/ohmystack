@@ -24,6 +24,7 @@ const SCRIPTS = [
   'gen-react-hooks.ts',
   'gen-eslint-rules.ts',
   'gen-config-schema.ts',
+  'gen-ui-components.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',
