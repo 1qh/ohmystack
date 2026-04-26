@@ -61,9 +61,9 @@ const makeQuota = <DB, Tbl extends QuotaTableLike>(
   config: QuotaConfig<DB, Tbl>
 ): QuotaExports => {
   const { durationMs, hooks, limit, ownerField, table: tableAccessor, tableName } = config
-  /** Atomic check + record. Throws when over limit. */
+  /** [params: owner] Atomic check + record. Throws when over limit. */
   const consumeName = `consume_${tableName}`
-  /** Append timestamp + prune expired. Always succeeds. */
+  /** [params: owner] Append timestamp + prune expired. Always succeeds. */
   const recordName = `record_${tableName}`
   const params: FieldBuilders = { owner: ownerField }
   const consumeReducer = spacetimedb.reducer({ name: consumeName }, params, (ctx, args) => {

@@ -159,6 +159,15 @@ Counter row per parent stored in internal `_logCounters` table (one row per `{ta
 
 When `idempotencyKey` is provided, the factory queries `by_idempotency` first. If found → return existing `{seq, created: false}`. If not → atomic insert. Guarantees insert-or-noop semantics for retryable client writes.
 
+Without `idempotencyKey` → every `append` inserts (duplicates allowed; caller responsible for dedup).
+
+## What log deliberately doesn't do
+
+- **No bare `update` without authoring** — events have `update`/`rm` for fixing typos, but the row's `seq` and `parent` are immutable (preserved across update). Use `owned` or `child` if you want fully mutable state.
+- **No auto-TTL** — retention is explicit via `purgeByParent`. Add a cron if you want "delete events older than N days".
+- **No cross-parent queries** — every op is scoped by parent. Cross-table analytics belong in a separate read-only view.
+- **No subscriptions API** — consume via Convex's native `useQuery` on `listAfter` for streaming, or `useList` for paginated history. Factory generates the queries; you get subscriptions for free.
+
 ## Hooks
 
 ```ts

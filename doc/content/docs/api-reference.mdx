@@ -342,20 +342,20 @@ _(no options — only `{ durationMs, limit }` config in schema)_
 **Generated reducers for log/kv/quota tables (auto-derived from `lib/noboil/src/spacetimedb/server/{log,kv,quota}.ts`):**
 
 {/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:START */}
-| Factory | Reducer | Description |
-|---|---|---|
-| `log` | `append_{table}` | Atomic seq + insert. Idempotent if `idempotency_key` provided. |
-|   | `bulk_append_{table}` | Single-transaction batch insert. |
-|   | `purge_{table}_by_parent` | Soft- or hard-delete all rows for a parent. |
-|   | `restore_{table}_by_parent` | Bring back soft-deleted rows for a parent. Requires `softDelete: true`. |
-|   | `rm_{table}` | Hard-delete a single row by id. Author-only. |
-|   | `bulk_rm_{table}` | Hard-delete multiple rows. Author-only. |
-|   | `update_{table}` | Update a row's payload (preserves seq + parent). Author-only. |
-| `kv` | `set_{table}` | Upsert with optional `expectedUpdatedAt` conflict check. |
-|   | `rm_{table}` | Soft- or hard-delete by key. |
-|   | `restore_{table}` | Bring back a soft-deleted key. Requires `softDelete: true`. |
-| `quota` | `consume_{table}` | Atomic check + record. Throws when over limit. |
-|   | `record_{table}` | Append timestamp + prune expired. Always succeeds. |
+| Factory | Reducer | Parameters | Description |
+|---|---|---|---|
+| `log` | `append_{table}` | `parent, ...payload, optional idempotency_key` | Atomic seq + insert. Idempotent if idempotency_key provided. |
+|   | `bulk_append_{table}` | `parent, items[]` | Single-transaction batch insert. |
+|   | `purge_{table}_by_parent` | `parent` | Soft- or hard-delete all rows for a parent. |
+|   | `restore_{table}_by_parent` | `parent` | Bring back soft-deleted rows for a parent. Requires softDelete: true. |
+|   | `rm_{table}` | `id` | Hard-delete a single row. Author-only. |
+|   | `bulk_rm_{table}` | `ids[]` | Hard-delete multiple rows. Author-only. |
+|   | `update_{table}` | `id, ...payload, optional expectedUpdatedAt` | Update a row's payload. Preserves seq + parent. Author-only. Throws CONFLICT on stale expectedUpdatedAt. |
+| `kv` | `set_{table}` | `key, ...payload, optional expectedUpdatedAt` | Upsert with optional conflict check. Throws CONFLICT on stale expectedUpdatedAt. |
+|   | `rm_{table}` | `key` | Soft- or hard-delete by key. |
+|   | `restore_{table}` | `key` | Bring back a soft-deleted key. Requires softDelete: true. |
+| `quota` | `consume_{table}` | `owner` | Atomic check + record. Throws when over limit. |
+|   | `record_{table}` | `owner` | Append timestamp + prune expired. Always succeeds. |
 {/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:END */}
 
 ### makePresence

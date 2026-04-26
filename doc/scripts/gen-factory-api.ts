@@ -10,8 +10,10 @@ const REPO = resolve(import.meta.dir, '../..')
 const STDB = `${REPO}/lib/noboil/src/spacetimedb/server`
 const NAME_RE = /(?<role>\w+)Name\s*=\s*`(?<tpl>[^`]+)`/u
 const JSDOC_RE = /^\s*\/\*\*\s*(?<text>.+?)\s*\*\/\s*$/u
+const PARAMS_RE = /^\[params:\s+(?<params>.+?)\]\s+(?<desc>.+)$/u
 interface Entry {
-  doc: string
+  desc: string
+  params: string
   role: string
   tpl: string
 }
@@ -28,18 +30,22 @@ const extract = (file: string): Entry[] => {
     }
     const m = NAME_RE.exec(line)
     if (m?.groups?.role && m.groups.tpl) {
-      out.push({ doc: pendingDoc, role: m.groups.role, tpl: m.groups.tpl })
+      const pm = PARAMS_RE.exec(pendingDoc)
+      const params = pm?.groups?.params ?? ''
+      const desc = pm?.groups?.desc ?? pendingDoc
+      out.push({ desc, params, role: m.groups.role, tpl: m.groups.tpl })
       pendingDoc = ''
     } else if (line.trim() && !line.trim().startsWith('//')) pendingDoc = ''
   }
   return out
 }
 const factoryRows = (factory: string, names: Entry[]): string[] => {
-  if (names.length === 0) return [`| \`${factory}\` | _(none)_ | _(none)_ |`]
+  if (names.length === 0) return [`| \`${factory}\` | _(none)_ | _(none)_ | _(none)_ |`]
   return names.map((n, i) => {
     const tpl = `\`${n.tpl.replaceAll('${tableName}', '{table}')}\``
-    const desc = n.doc.replaceAll('|', String.raw`\|`)
-    return `| ${i === 0 ? `\`${factory}\`` : ' '} | ${tpl} | ${desc} |`
+    const params = n.params ? `\`${n.params.replaceAll('|', String.raw`\|`)}\`` : ''
+    const desc = n.desc.replaceAll('|', String.raw`\|`)
+    return `| ${i === 0 ? `\`${factory}\`` : ' '} | ${tpl} | ${params} | ${desc} |`
   })
 }
 const main = () => {
@@ -47,8 +53,8 @@ const main = () => {
   const kv = extract(`${STDB}/kv.ts`)
   const quota = extract(`${STDB}/quota.ts`)
   const table = [
-    '| Factory | Reducer | Description |',
-    '|---|---|---|',
+    '| Factory | Reducer | Parameters | Description |',
+    '|---|---|---|---|',
     ...factoryRows('log', log),
     ...factoryRows('kv', kv),
     ...factoryRows('quota', quota)
