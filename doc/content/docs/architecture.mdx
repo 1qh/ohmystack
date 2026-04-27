@@ -912,17 +912,18 @@ Per-file React component parity. Each `*.tsx` in `lib/noboil/src/{convex,spaceti
 Whole-repo audit of `lib/noboil/src/{convex,spacetimedb}/` cross-backend. Walks every file, compares every export. **The most exhaustive parity check** — anything not on this list does not exist in the source.
 
 {/* AUTO-GENERATED:MEGA-PARITY:START */}
-Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. tests/codegen output via SKIP_DIRS) in 7 parallel cvx/stdb directory pairs (lib + backend + 5 demos). 146 file-level + 207 symbol-level architectural exemptions registered. Test files (`*.test.ts`) ARE included in file-presence check (symbol parity skipped for tests).
+Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. tests/codegen output via SKIP_DIRS) in 7 parallel cvx/stdb directory pairs (lib + backend + 5 demos). 150 file-level + 207 symbol-level architectural exemptions registered. Test files (`*.test.ts`) ARE included in file-presence check (symbol parity skipped for tests).
 
-**237 shared files · 43 cvx-only · 31 stdb-only · 0 files with cross-backend symbol divergence.** Status: 🟢 zero unaccounted-for gaps across the entire repo.
+**238 shared files · 43 cvx-only · 35 stdb-only · 0 files with cross-backend symbol divergence.** Status: 🟢 zero unaccounted-for gaps across the entire repo.
 
 | Pair | shared | cvx-only | stdb-only | symbol gaps | status |
 |---|--:|---|---|--:|--|
-| **lib/noboil/src** | 77 | 4 (0 unaccounted) | 22 (0 unaccounted) | 0 | 🟢 |
-| **backend** | 4 | 31 (0 unaccounted) | 2 (0 unaccounted) | 0 | 🟢 |
+| **lib/noboil/src** | 78 | 4 (0 unaccounted) | 22 (0 unaccounted) | 0 | 🟢 |
+| **backend** | 4 | 31 (0 unaccounted) | 6 (0 unaccounted) | 0 | 🟢 |
 | **web/blog** | 32 | 1 (0 unaccounted) | 0 (0 unaccounted) | 0 | 🟢 |
 | **web/chat** | 23 | 1 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
 | **web/movie** | 16 | 1 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
 | **web/org** | 48 | 2 (0 unaccounted) | 4 (0 unaccounted) | 0 | 🟢 |
 | **web/poll** | 37 | 3 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
+| **script (naming pair)** | 0 matched | 1 (0 unaccounted) | 4 (0 unaccounted) | — | 🟢 |
 {/* AUTO-GENERATED:MEGA-PARITY:END */}

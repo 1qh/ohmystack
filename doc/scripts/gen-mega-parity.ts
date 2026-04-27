@@ -13,7 +13,6 @@ const SKIP_DIRS = new Set([
   '.cache',
   '.next',
   '.turbo',
-  '__tests__',
   '_generated',
   'coverage',
   'dist',
@@ -274,14 +273,14 @@ const BACKEND_FILE_EXEMPT: Record<string, string> = {
   'cvx:convex/blog.ts': 'Convex per-table RPC re-export; stdb auto-generates create_blog/update_blog/rm_blog reducers',
   'cvx:convex/blogProfile.ts': 'Convex per-table re-export; stdb auto-generates upsert_blogProfile reducer',
   'cvx:convex/chat.ts': 'Convex per-table re-export; stdb auto-generates chat reducers',
-  'cvx:convex/edge.test.ts': 'cvx-side convex-test integration runner; stdb tests connect to live db via test-skeleton.ts',
-  'cvx:convex/f.test.ts':
-    'cvx-side functional integration tests; stdb has no equivalent — stdb tests live in lib/noboil/src/spacetimedb/__tests__/',
+  'cvx:convex/edge.test.ts':
+    'cvx convention: backend tests live in convex/*.test.ts; stdb mirrors as __tests__/edge.test.ts',
+  'cvx:convex/f.test.ts': 'cvx convention: convex/*.test.ts; stdb mirrors as __tests__/f.test.ts',
   'cvx:convex/file.ts': 'Convex file storage re-export; stdb files inline as Uint8Array',
   'cvx:convex/http.ts': 'Convex HTTP router (auth callbacks, image proxy); stdb has no HTTP router',
   'cvx:convex/message.ts': 'Convex per-table re-export; stdb auto-generates message reducers',
   'cvx:convex/movie.ts': 'Convex cacheCrud re-export with TMDB fetcher; stdb does fetching client-side',
-  'cvx:convex/org-api.test.ts': 'cvx-side org RPC integration tests; stdb tests use connectAsTestUser pattern',
+  'cvx:convex/org-api.test.ts': 'cvx convention: convex/*.test.ts; stdb mirrors as __tests__/org-api.test.ts',
   'cvx:convex/org.ts': 'Convex per-table re-export; stdb auto-generates org reducers',
   'cvx:convex/orgProfile.ts': 'Convex per-table re-export; stdb auto-generates upsert_orgProfile',
   'cvx:convex/poll.ts': 'Convex per-table re-export; stdb auto-generates poll reducers',
@@ -300,6 +299,11 @@ const BACKEND_FILE_EXEMPT: Record<string, string> = {
   'cvx:env.ts': 'cvx env wrapper',
   'cvx:lazy.ts': 'cvx convention: lazy.ts is the noboil() entry; stdb uses src/index.ts',
   'cvx:models.mock.ts': 'cvx models mock for tests + AI features; stdb uses test-skeleton.ts',
+  'stdb:__tests__/edge.test.ts': 'stdb convention: backend tests live in __tests__/; cvx parallel is convex/edge.test.ts',
+  'stdb:__tests__/f.test.ts': 'stdb convention: __tests__/; cvx parallel is convex/f.test.ts',
+  'stdb:__tests__/org-api.test.ts': 'stdb convention: __tests__/; cvx parallel is convex/org-api.test.ts',
+  'stdb:__tests__/test-helpers.ts':
+    'stdb test-helpers (asUser/cleanup); cvx convex-test runtime provides equivalents inline',
   'stdb:env.ts': 'stdb env',
   'stdb:src/index.ts': 'stdb noboil() entry — parallel to cvx lazy.ts',
   'stdb:test-skeleton.ts': 'stdb test-fixture skeleton; cvx uses convex-test inline'
@@ -462,8 +466,58 @@ const auditPair = (p: Pair): PairResult => {
     symbolGaps
   }
 }
+interface NamingPair {
+  cvxPrefix: string
+  dir: string
+  exemptFiles?: Record<string, string>
+  name: string
+  stdbPrefix: string
+}
+const NAMING_PAIRS: NamingPair[] = [
+  {
+    cvxPrefix: 'convex',
+    dir: `${REPO}/script`,
+    exemptFiles: {
+      'cvx:setup-convex.ts':
+        'pairs with stdb setup-spacetimedb.ts (verified manually — naming-stem matcher does not normalize convex⇄spacetimedb word-length difference)',
+      'stdb:patch-stdb-sdk.ts':
+        'stdb-only patch for SpacetimeDB SDK quirks (no Convex equivalent — Convex SDK is upstream)',
+      'stdb:stdb-generate.ts': 'stdb codegen wrapper around `spacetime generate`; cvx codegen runs inside `convex dev`',
+      'stdb:stdb-health.ts': 'stdb local-instance health probe; cvx uses `convex dev` heartbeat',
+      'stdb:stdb-publish.ts': 'stdb module-publish helper; cvx uses `convex deploy`'
+    },
+    name: 'script (naming pair)',
+    stdbPrefix: 'stdb'
+  }
+]
+const auditNamingPair = (
+  np: NamingPair
+): {
+  cvxOnly: string[]
+  cvxUnaccounted: string[]
+  matched: number
+  name: string
+  stdbOnly: string[]
+  stdbUnaccounted: string[]
+} => {
+  if (!statSync(np.dir, { throwIfNoEntry: false }))
+    return { cvxOnly: [], cvxUnaccounted: [], matched: 0, name: np.name, stdbOnly: [], stdbUnaccounted: [] }
+  const files = readdirSync(np.dir).filter(f => (f.endsWith('.ts') || f.endsWith('.sh')) && !f.endsWith('.test.ts'))
+  const cvxFiles = files.filter(f => f.includes(np.cvxPrefix))
+  const stdbFiles = files.filter(f => f.includes(np.stdbPrefix))
+  const stem = (f: string, prefix: string): string => f.replace(prefix, '').replaceAll(/^[-_]+|[-_]+$/gu, '')
+  const cvxStems = new Set(cvxFiles.map(f => stem(f, np.cvxPrefix)))
+  const stdbStems = new Set(stdbFiles.map(f => stem(f, np.stdbPrefix)))
+  const cvxOnly = cvxFiles.filter(f => !stdbStems.has(stem(f, np.cvxPrefix)))
+  const stdbOnly = stdbFiles.filter(f => !cvxStems.has(stem(f, np.stdbPrefix)))
+  const cvxUnaccounted = cvxOnly.filter(f => !np.exemptFiles?.[`cvx:${f}`])
+  const stdbUnaccounted = stdbOnly.filter(f => !np.exemptFiles?.[`stdb:${f}`])
+  const matched = cvxFiles.length + stdbFiles.length - cvxOnly.length - stdbOnly.length
+  return { cvxOnly, cvxUnaccounted, matched, name: np.name, stdbOnly, stdbUnaccounted }
+}
 const main = () => {
   const results = PAIRS.map(auditPair)
+  const namingResults = NAMING_PAIRS.map(auditNamingPair)
   let totalShared = 0
   let totalCvxOnly = 0
   let totalStdbOnly = 0
@@ -486,6 +540,17 @@ const main = () => {
     if (r.stdbUnaccounted.length > 0)
       allGapDetails.push(`- **${r.name}**: stdb-only file \`${r.stdbUnaccounted.join('`, `')}\``)
     allGapDetails.push(...r.symbolGapDetails)
+  }
+  for (const r of namingResults) {
+    totalUnaccounted += r.cvxUnaccounted.length + r.stdbUnaccounted.length
+    const status = r.cvxUnaccounted.length === 0 && r.stdbUnaccounted.length === 0 ? '🟢' : '🔴'
+    summary.push(
+      `| **${r.name}** | ${r.matched} matched | ${r.cvxOnly.length} (${r.cvxUnaccounted.length} unaccounted) | ${r.stdbOnly.length} (${r.stdbUnaccounted.length} unaccounted) | — | ${status} |`
+    )
+    if (r.cvxUnaccounted.length > 0)
+      allGapDetails.push(`- **${r.name}**: cvx-only file \`${r.cvxUnaccounted.join('`, `')}\``)
+    if (r.stdbUnaccounted.length > 0)
+      allGapDetails.push(`- **${r.name}**: stdb-only file \`${r.stdbUnaccounted.join('`, `')}\``)
   }
   const overall =
     totalUnaccounted === 0
