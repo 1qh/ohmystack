@@ -7894,3 +7894,28 @@ describe('factory parity (cvx kv + log deeper coverage)', () => {
     })
   })
 })
+describe('zero-gap closer (final symmetry pass)', () => {
+  test('child schema validates required parent FK presence in payload', () => {
+    const c = child({ foreignKey: 'chatId', parent: 'chat', schema: object({ chatId: string(), content: string() }) })
+    expect(c.schema.safeParse({ chatId: 'c1', content: 'hi' }).success).toBe(true)
+    expect(c.schema.safeParse({ content: 'hi' }).success).toBe(false)
+  })
+  test('child preserves foreignKey field name', () => {
+    const c = child({ foreignKey: 'chatId', parent: 'chat', schema: object({ chatId: string(), content: string() }) })
+    expect(c.foreignKey).toBe('chatId')
+  })
+  test('owned schema validates required + optional fields', () => {
+    const o = makeOwned({ post: object({ draft: boolean().optional(), title: string().min(1) }) })
+    expect(o.post.safeParse({ title: 'Hi' }).success).toBe(true)
+    expect(o.post.safeParse({ title: '' }).success).toBe(false)
+  })
+  test('owned brand persists through schema chain', () => {
+    const o = makeOwned({ post: object({ title: string().min(1).max(200) }) })
+    expect((o.post as { __bs?: string }).__bs).toBe('owned')
+  })
+  test('owned multiple entries each branded', () => {
+    const o = makeOwned({ a: object({ x: string() }), b: object({ y: number() }) })
+    expect((o.a as { __bs?: string }).__bs).toBe('owned')
+    expect((o.b as { __bs?: string }).__bs).toBe('owned')
+  })
+})

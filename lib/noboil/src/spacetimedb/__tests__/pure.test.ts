@@ -10166,3 +10166,9 @@ describe('log: deeper coverage', () => {
     expect(l.x.schema.safeParse({}).success).toBe(true)
   })
 })
+describe('zero-gap closer (final symmetry pass)', () => {
+  test('kv schema with default value', () => {
+    const kv = makeKv({ x: { schema: object({ msg: string().default('hi') }), writeRole: true } })
+    expect(kv.x.schema.parse({}).msg).toBe('hi')
+  })
+})
