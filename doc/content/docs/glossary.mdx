@@ -15,7 +15,7 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `ActiveOrgState` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `AddContext` | `noboil/config` | `lib/noboil/src/config.ts` | [cli](./cli) |
 | `Api` | `noboil/components`, `noboil/react`, `noboil/convex`, `noboil/convex/react`, `noboil/convex/components`, `noboil/spacetimedb/components` | `lib/noboil/src/convex/components/index.ts` | [api-reference](./api-reference) |
-| `asUser` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `asUser` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `auditLog` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture), [security](./security) |
 | `AuthorInfo` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `AutoForm` | `noboil/components`, `noboil/convex/components`, `noboil/spacetimedb/components` | `lib/noboil/src/convex/components/index.ts` | [devtools](./devtools), [recipes](./recipes), [file-uploads](./file-uploads), [api-reference](./api-reference), [quickstart](./quickstart) |
@@ -28,20 +28,20 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `BulkResult` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `CacheCrudResult` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `CacheOptions` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
-| `callReducer` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
-| `canEdit` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
+| `callReducer` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `canEdit` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `CanEditOpts` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `canEditResource` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference), [organizations](./organizations) |
 | `CascadeOption` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `checkMembership` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
-| `checkRateLimit` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [custom-queries](./custom-queries), [api-reference](./api-reference) |
+| `checkRateLimit` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [custom-queries](./custom-queries), [api-reference](./api-reference), [architecture](./architecture) |
 | `checkSchema` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `child` | `noboil/schema`, `noboil/convex/schema`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/schema.ts` | [cli](./cli), [orgScoped](./orgScoped), [data-fetching](./data-fetching), [index](./index), [owned](./owned), [api-reference](./api-reference), [composing-mutations](./composing-mutations), [architecture](./architecture), [child](./child), [log](./log), [differences](./differences), [gradual-adoption](./gradual-adoption) |
 | `ChildConfig` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `ChildCrudResult` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `childTable` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `CHUNK_SIZE` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `cleanup` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [recipes](./recipes), [index](./index), [ejecting](./ejecting), [testing](./testing), [custom-queries](./custom-queries), [api-reference](./api-reference), [forms](./forms), [child](./child), [quickstart](./quickstart), [quota](./quota), [organizations](./organizations) |
+| `cleanup` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [recipes](./recipes), [index](./index), [ejecting](./ejecting), [testing](./testing), [custom-queries](./custom-queries), [api-reference](./api-reference), [architecture](./architecture), [forms](./forms), [child](./child), [quickstart](./quickstart), [quota](./quota), [organizations](./organizations) |
 | `clearActiveOrgCookie` | `noboil/next`, `noboil/convex/next`, `noboil/spacetimedb/next` | `lib/noboil/src/convex/next/index.ts` | [api-reference](./api-reference) |
 | `clearErrors` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `clearMutations` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
@@ -64,7 +64,7 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `createSpacetimeClient` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `CreateSpacetimeClientOptions` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `createTestContext` | `noboil/test`, `noboil/convex/test`, `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference) |
-| `createTestUser` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `createTestUser` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `createTokenStore` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `CrudDefaults` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
 | `CrudHooks` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
@@ -94,14 +94,14 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `elementOf` | `noboil/zod`, `noboil/convex/zod`, `noboil/spacetimedb/zod` | `lib/noboil/src/convex/zod.ts` | [api-reference](./api-reference) |
 | `EnrichedDoc` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `enumToOptions` | `noboil/zod`, `noboil/convex/zod`, `noboil/spacetimedb/zod` | `lib/noboil/src/convex/zod.ts` | [api-reference](./api-reference) |
-| `err` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [single-source-of-truth](./single-source-of-truth), [api-reference](./api-reference) |
+| `err` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [single-source-of-truth](./single-source-of-truth), [api-reference](./api-reference), [architecture](./architecture) |
 | `ErrorBoundary` | `noboil/components`, `noboil/convex/components`, `noboil/spacetimedb/components` | `lib/noboil/src/convex/components/index.ts` | [api-reference](./api-reference), [forms](./forms), [differences](./differences), [components](./components) |
 | `ErrorCode` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [devtools](./devtools), [recipes](./recipes), [api-reference](./api-reference), [differences](./differences) |
 | `ErrorData` | `noboil/server`, `noboil/convex`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `ErrorHandler` | `noboil/server`, `noboil/convex`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `ErrorToastOptions` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `errValidation` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
-| `extractErrorData` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [differences](./differences) |
+| `extractErrorData` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture), [differences](./differences) |
 | `fail` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/server/index.ts` | [schema-evolution](./schema-evolution), [testing](./testing), [api-reference](./api-reference), [troubleshooting](./troubleshooting) |
 | `fetchWithRetry` | `noboil/retry`, `noboil/convex/retry`, `noboil/spacetimedb/retry` | `lib/noboil/src/convex/retry.ts` | [api-reference](./api-reference) |
 | `FID` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
@@ -127,27 +127,27 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `generateOne` | `noboil/seed`, `noboil/convex/seed`, `noboil/spacetimedb/seed` | `lib/noboil/src/convex/seed.ts` | [api-reference](./api-reference) |
 | `generateSeed` | `noboil/seed`, `noboil/convex/seed`, `noboil/spacetimedb/seed` | `lib/noboil/src/convex/seed.ts` | [api-reference](./api-reference) |
 | `getActiveOrg` | `noboil/next`, `noboil/convex/next`, `noboil/spacetimedb/next` | `lib/noboil/src/convex/next/index.ts` | [api-reference](./api-reference) |
-| `getErrorCode` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `getErrorDetail` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `getErrorMessage` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `getFieldErrors` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [recipes](./recipes), [api-reference](./api-reference) |
-| `getFirstFieldError` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
+| `getErrorCode` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `getErrorDetail` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `getErrorMessage` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `getFieldErrors` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [recipes](./recipes), [api-reference](./api-reference), [architecture](./architecture) |
+| `getFirstFieldError` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `getMeta` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `getOrgMember` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `getOrgMembership` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [recipes](./recipes), [api-reference](./api-reference) |
+| `getOrgMembership` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [recipes](./recipes), [api-reference](./api-reference), [architecture](./architecture) |
 | `getOrgRole` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `getToken` | `noboil/next`, `noboil/convex/next`, `noboil/spacetimedb/next` | `lib/noboil/src/convex/next/index.ts` | [api-reference](./api-reference) |
 | `guardApi` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
-| `handleConvexError` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
+| `handleConvexError` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `handleError` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/server/index.ts` | [recipes](./recipes), [api-reference](./api-reference), [forms](./forms), [security](./security) |
 | `HEARTBEAT_INTERVAL_MS` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `HookCtx` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
-| `identityEquals` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
-| `identityFromHex` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
-| `identityToHex` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
+| `identityEquals` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `identityFromHex` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `identityToHex` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `idEquals` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `idFromWire` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
-| `idToWire` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
+| `idFromWire` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `idToWire` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `InferCreate` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [recipes](./recipes), [api-reference](./api-reference) |
 | `InferReducerArgs` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
 | `InferReducerInputs` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
@@ -196,15 +196,15 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `makeOrg` | `noboil/server`, `noboil/schema`, `noboil/convex/server`, `noboil/convex/schema`, `noboil/spacetimedb/server`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/server/index.ts` | [orgScoped](./orgScoped), [api-reference](./api-reference), [architecture](./architecture), [differences](./differences) |
 | `makeOrgCrud` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `makeOrgScoped` | `noboil/schema`, `noboil/convex/schema`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/schema.ts` | [api-reference](./api-reference), [architecture](./architecture), [migration](./migration), [security](./security), [differences](./differences) |
-| `makeOrgTables` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
-| `makeOrgTestCrud` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [testing](./testing), [api-reference](./api-reference) |
+| `makeOrgTables` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
+| `makeOrgTestCrud` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [testing](./testing), [api-reference](./api-reference), [architecture](./architecture) |
 | `makeOwned` | `noboil/schema`, `noboil/convex/schema`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/schema.ts` | [api-reference](./api-reference), [architecture](./architecture), [migration](./migration), [security](./security), [differences](./differences) |
 | `makePresence` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
 | `makeQuota` | `noboil/server`, `noboil/schema`, `noboil/convex/server`, `noboil/convex/schema`, `noboil/spacetimedb/server`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture), [security](./security) |
-| `makeSchema` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `makeSchema` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `makeSingleton` | `noboil/schema`, `noboil/convex/schema`, `noboil/spacetimedb/schema` | `lib/noboil/src/convex/schema.ts` | [api-reference](./api-reference), [architecture](./architecture), [security](./security), [differences](./differences) |
 | `makeSingletonCrud` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
-| `makeTestAuth` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference) |
+| `makeTestAuth` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `makeUnique` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
 | `matchError` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/server/index.ts` | [recipes](./recipes), [api-reference](./api-reference), [security](./security) |
 | `Mb` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
@@ -265,7 +265,7 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `Qb` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `QueryCtxLike` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `QueryLike` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
-| `queryTable` | `noboil/spacetimedb/server`, `noboil/spacetimedb/next`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `queryTable` | `noboil/spacetimedb/server`, `noboil/spacetimedb/next`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `QuotaHookResult` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [single-source-of-truth](./single-source-of-truth), [api-reference](./api-reference) |
 | `QuotaRowBase` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `QuotaState` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
@@ -277,8 +277,8 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `RegisteredDefaultError` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [recipes](./recipes), [api-reference](./api-reference) |
 | `RegisteredMeta` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference) |
 | `requiredPartial` | `noboil/zod`, `noboil/convex/zod`, `noboil/spacetimedb/zod` | `lib/noboil/src/convex/zod.ts` | [api-reference](./api-reference) |
-| `requireOrgMember` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [security](./security) |
-| `requireOrgRole` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference) |
+| `requireOrgMember` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture), [security](./security) |
+| `requireOrgRole` | `noboil/server`, `noboil/convex/server` | `lib/noboil/src/convex/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `resolveAliasFor` | `noboil` | `lib/noboil/src/noboil.ts` | [api-reference](./api-reference) |
 | `resolveFileUrl` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [recipes](./recipes), [api-reference](./api-reference), [differences](./differences) |
 | `RetryOptions` | `noboil/retry`, `noboil/convex/retry`, `noboil/spacetimedb/retry` | `lib/noboil/src/convex/retry.ts` | [api-reference](./api-reference) |
@@ -293,7 +293,7 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `setActiveOrgCookieClient` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `setup` | `noboil/server`, `noboil/convex/server`, `noboil/spacetimedb/server` | `lib/noboil/src/convex/server/index.ts` | [recipes](./recipes), [data-fetching](./data-fetching), [ejecting](./ejecting), [custom-queries](./custom-queries), [api-reference](./api-reference), [architecture](./architecture), [migration](./migration), [singleton](./singleton), [gradual-adoption](./gradual-adoption), [organizations](./organizations) |
 | `SetupConfig` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
-| `setupCrud` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `setupCrud` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `SingletonHookResult` | `noboil/react`, `noboil/convex/react`, `noboil/spacetimedb/react` | `lib/noboil/src/convex/react/index.ts` | [api-reference](./api-reference) |
 | `SingletonRowBase` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `SingletonSchema` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |
@@ -318,7 +318,7 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `StdbSingletonRefs` | `noboil/spacetimedb/react` | `lib/noboil/src/spacetimedb/react/index.ts` | [api-reference](./api-reference) |
 | `StorageLike` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `TableQueryConfig` | `noboil/spacetimedb/next` | `lib/noboil/src/spacetimedb/next/index.ts` | [api-reference](./api-reference) |
-| `TEST_EMAIL` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference) |
+| `TEST_EMAIL` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference), [architecture](./architecture) |
 | `TestAuthConfig` | `noboil/test`, `noboil/convex/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference) |
 | `TestContext` | `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
 | `TestUser` | `noboil/test`, `noboil/convex/test`, `noboil/spacetimedb/server`, `noboil/spacetimedb/test` | `lib/noboil/src/convex/server/test.ts` | [api-reference](./api-reference) |
@@ -394,4 +394,4 @@ For an explanation of what each symbol does, follow the "Mentioned in" links —
 | `WithUrls` | `noboil/convex`, `noboil/spacetimedb` | `lib/noboil/src/convex/index.ts` | [api-reference](./api-reference) |
 | `zodFromTable` | `noboil/spacetimedb` | `lib/noboil/src/spacetimedb/index.ts` | [recipes](./recipes), [schema-evolution](./schema-evolution), [ejecting](./ejecting), [api-reference](./api-reference) |
 | `ZodSchema` | `noboil/zod`, `noboil/convex`, `noboil/convex/zod`, `noboil/spacetimedb/zod` | `lib/noboil/src/convex/zod.ts` | [api-reference](./api-reference) |
-| `zodToStdbFields` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference) |
+| `zodToStdbFields` | `noboil/spacetimedb/server` | `lib/noboil/src/spacetimedb/server/index.ts` | [api-reference](./api-reference), [architecture](./architecture) |

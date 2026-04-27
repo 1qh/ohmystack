@@ -805,3 +805,82 @@ Per-demo parity audit. Each of the 5 demos compared across both backends: route 
 - **`stdb/dev`** — SpacetimeDB SchemaPlayground dev tool (cvx has no equivalent component)
 - **`movie` src LOC asymmetry** — stdb-movie does TMDB fetching client-side (no server-side action available); cvx delegates to action — architectural difference, see base.fetcher in option-parity above
 {/* AUTO-GENERATED:DEMO-PARITY:END */}
+
+## Utility (non-factory) parity
+
+Beyond factories: file upload, presence, org membership, helpers, middleware, setup, test helpers, RLS. Cross-backend audit.
+
+{/* AUTO-GENERATED:UTILITY-PARITY:START */}
+Per-domain parity for non-factory utilities. Compares the export surface of each utility module across both backends. Shared exports = symbols present on both sides; cvx-only/stdb-only counts exclude documented architectural exemptions.
+
+**8/8 domains at full parity.**
+
+| Domain | shared | cvx exports | stdb exports | cvx-only (gap) | stdb-only (gap) | intentional asym | status |
+|---|---|--:|--:|--:|--:|--:|--|
+| **File upload** | 4 | 4 | 4 | — | — | 0 | 🟢 |
+| **Presence** | 4 | 4 | 4 | — | — | 0 | 🟢 |
+| **Org membership** | 1 | 4 | 8 | — | — | 10 | 🟢 |
+| **Server helpers** | 56 | 57 | 72 | — | — | 18 | 🟢 |
+| **Middleware** | 6 | 6 | 6 | — | — | 0 | 🟢 |
+| **Setup / entry** | 2 | 6 | 3 | — | — | 5 | 🟢 |
+| **Test helpers** | 2 | 6 | 11 | — | — | 13 | 🟢 |
+| **RLS / subscriptions** | 0 | 0 | 9 | — | — | 9 | 🟢 |
+
+### Intentional architectural asymmetries
+
+- **Org membership `makeInviteHandlers`** (cvx-only): cvx convention: handlers are server-side mutation builders (returns mutation defs)
+- **Org membership `makeJoinHandlers`** (cvx-only): cvx convention: handlers are server-side mutation builders
+- **Org membership `makeMemberHandlers`** (cvx-only): cvx convention: handlers are server-side mutation builders
+- **Org membership `canEdit`** (stdb-only): stdb-side ACL helper invoked client-side from RLS where clause; cvx checks server-side via requireOrgRole
+- **Org membership `makeInviteReducers`** (stdb-only): stdb convention: reducers are explicit table writers (parallel to cvx makeInviteHandlers)
+- **Org membership `makeInviteToken`** (stdb-only): stdb invite tokens are generated reducer-side; cvx uses crypto.randomUUID inline
+- **Org membership `makeJoinReducers`** (stdb-only): stdb convention: reducers (parallel to cvx makeJoinHandlers)
+- **Org membership `makeMemberReducers`** (stdb-only): stdb convention: reducers (parallel to cvx makeMemberHandlers)
+- **Org membership `makeOrgTables`** (stdb-only): stdb table-builder helpers; cvx tables defined declaratively in schema
+- **Org membership `requireOrgMember`** (stdb-only): stdb auth check helper exposed for direct reducer use; cvx uses requireOrgRole/requireOrgEditor inside CRUD wrappers
+- **Server helpers `handleConvexError`** (cvx-only): Convex-specific error wrapping; stdb uses SenderError class instead
+- **Server helpers `applyPatch`** (stdb-only): reducer arg patch helper — Convex uses ctx.db.patch() directly
+- **Server helpers `enforceRateLimit`** (stdb-only): stdb-side rate-limit enforcement helper — cvx uses checkRateLimit via setup
+- **Server helpers `getFieldErrors`** (stdb-only): stdb field-error parsing — cvx uses ConvexError shape
+- **Server helpers `getFirstFieldError`** (stdb-only): see getFieldErrors
+- **Server helpers `getOwnedRow`** (stdb-only): stdb ownership-checked row fetch — cvx uses requireOwn via context
+- **Server helpers `idFromWire`** (stdb-only): stdb id wire-format conversion (u32/u64) — cvx uses string Id throughout
+- **Server helpers `idToWire`** (stdb-only): see idFromWire
+- **Server helpers `identityEquals`** (stdb-only): stdb Identity comparison — cvx compares string ids with ===
+- **Server helpers `identityFromHex`** (stdb-only): stdb Identity hex conversion — cvx has no Identity type
+- **Server helpers `identityToHex`** (stdb-only): see identityFromHex
+- **Server helpers `makeError`** (stdb-only): stdb SenderError factory — cvx uses ConvexError
+- **Server helpers `makeOptionalFields`** (stdb-only): stdb reducer arg builder helper
+- **Server helpers `parseSenderMessage`** (stdb-only): stdb sender message parsing — cvx uses Convex auth context
+- **Server helpers `pickPatch`** (stdb-only): stdb patch shape builder — cvx uses spread/pick inline
+- **Server helpers `reducerArgs`** (stdb-only): stdb reducer arg mapper — cvx uses convex/values directly
+- **Server helpers `resetRateLimitState`** (stdb-only): stdb rate-limit state reset — cvx uses internal mutation
+- **Server helpers `timestampEquals`** (stdb-only): stdb Timestamp comparison — cvx uses number ===
+- **Setup / entry `api`** (cvx-only): cvx exports a unified `api` proxy wrapping all functions — stdb exposes `tables`/`reducers` directly
+- **Setup / entry `mergeCacheHooks`** (cvx-only): cvx hook composition for cache factory — stdb uses inline closures
+- **Setup / entry `mergeGlobalHooks`** (cvx-only): cvx hook composition for global hooks — stdb uses inline closures
+- **Setup / entry `mergeHooks`** (cvx-only): see mergeGlobalHooks
+- **Setup / entry `setupCrud`** (stdb-only): stdb-specific CRUD setup helper that registers reducers — cvx setup() returns helpers used per-table
+- **Test helpers `TEST_EMAIL`** (cvx-only): convex-test deterministic email constant — stdb uses createTestUser instead
+- **Test helpers `getOrgMembership`** (cvx-only): convex-test helper to inspect membership rows — stdb uses queryTable with filter
+- **Test helpers `makeOrgTestCrud`** (cvx-only): convex-test wrapper that exposes server-side org-scoped CRUD with auth pre-baked — stdb tests use callReducer with asUser instead
+- **Test helpers `makeTestAuth`** (cvx-only): convex-test auth helper — stdb uses asUser + connectAsTestUser pattern
+- **Test helpers `asUser`** (stdb-only): stdb test helper to call reducer as a specific identity — cvx uses ctx.withIdentity
+- **Test helpers `callReducer`** (stdb-only): stdb reducer-call wrapper — cvx uses ctx.mutation directly
+- **Test helpers `cleanup`** (stdb-only): stdb test cleanup helper — cvx uses ctx.run
+- **Test helpers `createTestUser`** (stdb-only): stdb deterministic test-user factory — cvx uses ensureTestUser
+- **Test helpers `extractErrorData`** (stdb-only): stdb SenderError data parsing — cvx uses err.data directly
+- **Test helpers `getErrorCode`** (stdb-only): see extractErrorData
+- **Test helpers `getErrorDetail`** (stdb-only): see extractErrorData
+- **Test helpers `getErrorMessage`** (stdb-only): see extractErrorData
+- **Test helpers `queryTable`** (stdb-only): stdb test-time table query helper — cvx uses ctx.run + ctx.db.query
+- **RLS / subscriptions `RLS_COL`** (stdb-only): stdb RLS column-name constants — cvx auth happens in handler, no constants
+- **RLS / subscriptions `RLS_TBL`** (stdb-only): see RLS_COL
+- **RLS / subscriptions `makeSchema`** (stdb-only): stdb table-builder for spacetimedb schema generation — cvx uses defineSchema
+- **RLS / subscriptions `rlsChildSql`** (stdb-only): stdb child-table RLS where-clause builder
+- **RLS / subscriptions `rlsJoinWhereSender`** (stdb-only): stdb join-based RLS builder
+- **RLS / subscriptions `rlsSql`** (stdb-only): stdb generic RLS SQL where-clause builder
+- **RLS / subscriptions `rlsWherePub`** (stdb-only): stdb pub-visibility RLS builder
+- **RLS / subscriptions `rlsWhereSender`** (stdb-only): stdb sender-scoped RLS builder
+- **RLS / subscriptions `zodToStdbFields`** (stdb-only): Zod → SpacetimeDB column-type mapper
+{/* AUTO-GENERATED:UTILITY-PARITY:END */}

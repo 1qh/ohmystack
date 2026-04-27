@@ -52,6 +52,7 @@ const SCRIPTS = [
   'gen-factory-depth.ts',
   'gen-option-parity.ts',
   'gen-demo-parity.ts',
+  'gen-utility-parity.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',
