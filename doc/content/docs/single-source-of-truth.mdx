@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **47 generators** that own **39 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **48 generators** that own **40 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -39,6 +39,7 @@ noboil ships **47 generators** that own **39 marker blocks** across 5 doc files.
 | `doc/scripts/gen-meta-nav.ts` | (undocumented) |
 | `doc/scripts/gen-middleware.ts` | (undocumented) |
 | `doc/scripts/gen-noboil-options.ts` | (undocumented) |
+| `doc/scripts/gen-option-parity.ts` | (undocumented) |
 | `doc/scripts/gen-options-inventory.ts` | (undocumented) |
 | `doc/scripts/gen-package-info.ts` | (undocumented) |
 | `doc/scripts/gen-parity-matrix.ts` | (undocumented) |
@@ -63,7 +64,7 @@ noboil ships **47 generators** that own **39 marker blocks** across 5 doc files.
 |---|---|
 | `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `HOTKEYS`, `CLI-TABLE-TYPES`, `FACTORY-TABLE`, `DEMO-TREE` |
 | `TODO.md` | `TEST-COUNTS` |
-| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY`, `FACTORY-DEPTH` |
+| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY`, `FACTORY-DEPTH`, `OPTION-PARITY` |
 | `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `HOOK-PARAMS`, `ERROR-CODES`, `ESLINT-RULES`, `STABILITY`, `TABLE-ENDPOINTS`, `PACKAGE-EXPORTS`, `HTTP-ROUTES`, `SYMBOL-COVERAGE` |
 | `doc/content/docs/cli.mdx` | `HELP`, `CLI-FLAGS`, `CONFIG-SCHEMA` |
 
