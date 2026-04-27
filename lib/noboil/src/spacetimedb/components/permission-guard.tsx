@@ -21,3 +21,4 @@ const PermissionGuard = ({
   return <SharedPermissionGuard canAccess={resolvedAccess} {...props} />
 }
 export default PermissionGuard
+export { PermissionGuard }

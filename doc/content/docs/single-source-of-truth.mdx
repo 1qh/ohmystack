@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **50 generators** that own **42 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **51 generators** that own **43 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -15,6 +15,7 @@ noboil ships **50 generators** that own **42 marker blocks** across 5 doc files.
 | `doc/scripts/gen-cli-flags.ts` | (undocumented) |
 | `doc/scripts/gen-cli-help.ts` | `noboil --help` output → CLI help blocks |
 | `doc/scripts/gen-cli-types.ts` | `TableType` union in convex/add.ts → CLI --type valid values |
+| `doc/scripts/gen-component-parity.ts` | (undocumented) |
 | `doc/scripts/gen-config-schema.ts` | (undocumented) |
 | `doc/scripts/gen-cvx-factory-api.ts` | cvx server/\{log,kv,quota\}.ts `b.q()`/`b.m()` → endpoint table |
 | `doc/scripts/gen-demo-inventory.ts` | web/\{cvx,stdb\}/* filesystem → demo count + tree |
@@ -66,7 +67,7 @@ noboil ships **50 generators** that own **42 marker blocks** across 5 doc files.
 |---|---|
 | `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `HOTKEYS`, `CLI-TABLE-TYPES`, `FACTORY-TABLE`, `DEMO-TREE` |
 | `TODO.md` | `TEST-COUNTS` |
-| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY`, `FACTORY-DEPTH`, `OPTION-PARITY`, `DEMO-PARITY`, `UTILITY-PARITY` |
+| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY`, `FACTORY-DEPTH`, `OPTION-PARITY`, `DEMO-PARITY`, `UTILITY-PARITY`, `COMPONENT-PARITY` |
 | `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `HOOK-PARAMS`, `ERROR-CODES`, `ESLINT-RULES`, `STABILITY`, `TABLE-ENDPOINTS`, `PACKAGE-EXPORTS`, `HTTP-ROUTES`, `SYMBOL-COVERAGE` |
 | `doc/content/docs/cli.mdx` | `HELP`, `CLI-FLAGS`, `CONFIG-SCHEMA` |
 

@@ -884,3 +884,25 @@ Per-domain parity for non-factory utilities. Compares the export surface of each
 - **RLS / subscriptions `rlsWhereSender`** (stdb-only): stdb sender-scoped RLS builder
 - **RLS / subscriptions `zodToStdbFields`** (stdb-only): Zod → SpacetimeDB column-type mapper
 {/* AUTO-GENERATED:UTILITY-PARITY:END */}
+
+## Component parity
+
+Per-file React component audit (form, fields, file upload, step form, error boundary, permission guard, editors, misc).
+
+{/* AUTO-GENERATED:COMPONENT-PARITY:START */}
+Per-file React component parity. Each `*.tsx` in `lib/noboil/src/{convex,spacetimedb}/components/` cross-checked. Shared = symbol present in both files; -only = symbol present in only one.
+
+**9/9 component files at full parity.**
+
+| File | cvx | stdb | shared exports | cvx-only | stdb-only | status |
+|---|---|---|--:|---|---|--|
+| `editors-section.tsx` | ✓ 2L | ✓ 2L | 1 | — | — | 🟢 |
+| `error-boundary.tsx` | ✓ 11L | ✓ 11L | 1 | — | — | 🟢 |
+| `fields.tsx` | ✓ 23L | ✓ 30L | 4 | — | — | 🟢 |
+| `file-field.tsx` | ✓ 243L | ✓ 389L | 3 | — | — | 🟢 |
+| `form.tsx` | ✓ 168L | ✓ 195L | 6 | — | — | 🟢 |
+| `index.ts` | ✓ 11L | ✓ 12L | 20 | — | — | 🟢 |
+| `misc.tsx` | ✓ 11L | ✓ 15L | 3 | — | — | 🟢 |
+| `permission-guard.tsx` | ✓ 25L | ✓ 25L | 1 | — | — | 🟢 |
+| `step-form.tsx` | ✓ 76L | ✓ 82L | 1 | — | — | 🟢 |
+{/* AUTO-GENERATED:COMPONENT-PARITY:END */}
