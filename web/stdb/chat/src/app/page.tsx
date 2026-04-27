@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { toIdentityKey } from '@a/fe/utils'
 import { Conversation, ConversationContent, ConversationEmptyState } from '@a/ui/ai-elements/conversation'

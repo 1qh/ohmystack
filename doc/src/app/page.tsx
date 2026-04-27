@@ -1,3 +1,4 @@
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import Link from 'next/link'
 const Page = () => (
   <main className='flex flex-1 flex-col items-center justify-center gap-4 text-center'>

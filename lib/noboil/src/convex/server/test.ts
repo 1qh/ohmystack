@@ -5,6 +5,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable @typescript-eslint/max-params */
 /* eslint-disable max-depth */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { GenericDataModel, MutationBuilder, QueryBuilder } from 'convex/server'
 import { v } from 'convex/values'
 import type { DbLike, Rec } from './types'

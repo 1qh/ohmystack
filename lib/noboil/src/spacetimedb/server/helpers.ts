@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 // biome-ignore-all lint/suspicious/useAwait: async without await
 /* eslint-disable max-depth */
 import type { ZodObject, output as ZodOutput, ZodRawShape } from 'zod/v4'

@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { number } from 'zod/v4'
 import type { DbLike, Mb, MutCtx, Qb, Rec, SingletonCrudResult, SingletonOptions } from './types'

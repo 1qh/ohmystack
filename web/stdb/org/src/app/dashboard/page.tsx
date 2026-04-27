@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FolderOpen, Users } from 'lucide-react'

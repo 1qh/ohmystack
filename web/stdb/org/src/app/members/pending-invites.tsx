@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'

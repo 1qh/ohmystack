@@ -4,6 +4,7 @@
 /** biome-ignore-all lint/nursery/noContinue: bulk-loop skip on missing doc */
 /* oxlint-disable eslint(no-await-in-loop), eslint(complexity), eslint(no-continue) */
 /* eslint-disable complexity, no-await-in-loop, no-continue */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { ZodObject, ZodRawShape } from 'zod/v4'
 import { zid } from 'convex-helpers/server/zod4'
 import { array, boolean, number, string } from 'zod/v4'

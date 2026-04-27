@@ -1,3 +1,4 @@
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 // biome-ignore-all lint/a11y/useSemanticElements: intentional div usage
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 'use client'

@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import { api } from '@a/be-convex'
 import { Conversation, ConversationContent, ConversationEmptyState } from '@a/ui/ai-elements/conversation'
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from '@a/ui/ai-elements/prompt-input'

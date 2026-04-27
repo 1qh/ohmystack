@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
 import { ToggleGroup, ToggleGroupItem } from '@a/ui/toggle-group'

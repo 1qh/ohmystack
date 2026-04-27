@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 // oxlint-disable no-document-cookie
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 import type { UploadOptions, UploadResponse } from '../components'

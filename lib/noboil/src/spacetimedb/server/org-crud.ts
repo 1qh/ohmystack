@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, TypeBuilder } from 'spacetimedb/server'
 import type { ZodObject, ZodRawShape } from 'zod/v4'

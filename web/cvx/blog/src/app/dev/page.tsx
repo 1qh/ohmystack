@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import Link from 'next/link'
 import { SchemaPlayground } from 'noboil/convex/react'
 const Page = () => (

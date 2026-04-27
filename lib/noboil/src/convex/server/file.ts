@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { ActionBuilder, GenericDataModel, MutationBuilder, QueryBuilder } from 'convex/server'
 import { anyApi } from 'convex/server'
 import { ConvexError, v } from 'convex/values'

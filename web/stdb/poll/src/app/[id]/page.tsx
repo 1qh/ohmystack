@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import { tables } from '@a/be-spacetimedb/spacetimedb'
 import { Badge } from '@a/ui/badge'
 import { Button } from '@a/ui/button'

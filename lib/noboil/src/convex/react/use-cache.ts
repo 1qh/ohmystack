@@ -1,5 +1,6 @@
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /** biome-ignore-all lint/style/noProcessEnv: env detection */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 'use client'
 import type { FunctionReference, OptionalRestArgs } from 'convex/server'
 import { useAction, useQuery } from 'convex/react'

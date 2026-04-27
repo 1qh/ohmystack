@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 // oxlint-disable no-await-in-loop
 import type { Page } from '@playwright/test'

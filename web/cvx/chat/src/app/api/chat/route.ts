@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 // biome-ignore-all lint/performance/noAwaitInLoops: x
 import type { Id } from '@a/be-convex/model'
 import type { UIMessage } from 'ai'

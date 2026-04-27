@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/complexity/useMaxParams: destructured builder options pattern matches singleton/cache-crud */
 /* oxlint-disable eslint-plugin-unicorn(prefer-ternary) */
 /* eslint-disable @typescript-eslint/max-params */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import { string } from 'zod/v4'
 import type { DbCtx, DbLike, HookCtx, Mb, MutCtx, Qb, QuotaFactoryResult, QuotaResult } from './types'
 import { idx, typed } from './bridge'

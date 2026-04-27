@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable promise/prefer-await-to-then */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 'use client'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import { fail } from '@a/fe/utils'

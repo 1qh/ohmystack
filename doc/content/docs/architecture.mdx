@@ -731,14 +731,14 @@ Quantitative depth per factory: source LOC, hook file LOC, test count (cases tha
 
 | Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |
 |---|---|---|---|---|---|
-| `base` | 245 / 173 | 90 / 86 | 17 / 17 | 236L | 4 / 4 ✓ |
-| `child` | 264 / 164 | 36 / 36 | 11 / 13 | 240L | 4 / 4 ✓ |
-| `kv` | 164 / 148 | 38 / 44 | 10 / 10 | 270L | 4 / 4 ✓ |
-| `log` | 390 / 257 | 71 / 73 | 10 / 10 | 357L | 5 / 5 ✓ |
-| `orgScoped` | 486 / 400 | 36 / 36 | 35 / 33 | 255L | 4 / 4 ✓ |
-| `owned` | 429 / 139 | 36 / 36 | 36 / 38 | 266L | 5 / 5 ✓ |
-| `quota` | 110 / 110 | 31 / 78 | 9 / 9 | 257L | 4 / 4 ✓ |
-| `singleton` | 70 / 113 | 25 / 39 | 22 / 22 | 227L | 4 / 4 ✓ |
+| `base` | 246 / 173 | 91 / 86 | 17 / 17 | 236L | 4 / 4 ✓ |
+| `child` | 265 / 164 | 36 / 36 | 11 / 13 | 240L | 4 / 4 ✓ |
+| `kv` | 165 / 148 | 38 / 44 | 10 / 10 | 270L | 4 / 4 ✓ |
+| `log` | 391 / 257 | 71 / 73 | 10 / 10 | 357L | 5 / 5 ✓ |
+| `orgScoped` | 487 / 401 | 36 / 36 | 35 / 33 | 255L | 4 / 4 ✓ |
+| `owned` | 430 / 140 | 36 / 36 | 36 / 38 | 266L | 5 / 5 ✓ |
+| `quota` | 111 / 110 | 31 / 78 | 9 / 9 | 257L | 4 / 4 ✓ |
+| `singleton` | 71 / 113 | 25 / 39 | 22 / 22 | 227L | 4 / 4 ✓ |
 {/* AUTO-GENERATED:FACTORY-DEPTH:END */}
 
 ## Option/feature parity
@@ -795,11 +795,11 @@ Per-demo parity audit. Each of the 5 demos compared across both backends: route 
 **5/5 demos at full parity.** Backend-specific routes (intentional asymmetries) listed below.
 | Demo | Routes (cvx/stdb) | E2E tests (cvx/stdb) | Source LOC (cvx/stdb) | Status |
 |---|---|---|---|--|
-| `blog` | 8/8 ✓ | 52 / 52 ✓ | 858 / 928 ✓ | 🟢 |
-| `chat` | 5/5 ✓ | 26 / 26 ✓ | 481 / 409 ✓ | 🟢 |
-| `movie` | 2/2 ✓ | 14 / 14 ✓ | 297 / 509 ✓ | 🟢 |
-| `org` | 18/18 ✓ | 128 / 128 ✓ | 2334 / 2592 ✓ | 🟢 |
-| `poll` | 6/7 ✓ | 82 / 82 ✓ | 831 / 871 ✓ | 🟢 |
+| `blog` | 8/8 ✓ | 52 / 52 ✓ | 866 / 936 ✓ | 🟢 |
+| `chat` | 5/5 ✓ | 26 / 26 ✓ | 487 / 413 ✓ | 🟢 |
+| `movie` | 2/2 ✓ | 14 / 14 ✓ | 299 / 512 ✓ | 🟢 |
+| `org` | 18/18 ✓ | 128 / 128 ✓ | 2358 / 2617 ✓ | 🟢 |
+| `poll` | 6/7 ✓ | 82 / 82 ✓ | 837 / 877 ✓ | 🟢 |
 ### Backend-specific routes (intentional)
 
 - **`stdb/dev`** — SpacetimeDB SchemaPlayground dev tool (cvx has no equivalent component)
@@ -899,8 +899,8 @@ Per-file React component parity. Each `*.tsx` in `lib/noboil/src/{convex,spaceti
 | `editors-section.tsx` | ✓ 2L | ✓ 2L | 1 | — | — | 🟢 |
 | `error-boundary.tsx` | ✓ 11L | ✓ 11L | 1 | — | — | 🟢 |
 | `fields.tsx` | ✓ 23L | ✓ 30L | 4 | — | — | 🟢 |
-| `file-field.tsx` | ✓ 243L | ✓ 389L | 3 | — | — | 🟢 |
-| `form.tsx` | ✓ 168L | ✓ 195L | 6 | — | — | 🟢 |
+| `file-field.tsx` | ✓ 244L | ✓ 390L | 3 | — | — | 🟢 |
+| `form.tsx` | ✓ 169L | ✓ 196L | 6 | — | — | 🟢 |
 | `index.ts` | ✓ 11L | ✓ 12L | 20 | — | — | 🟢 |
 | `misc.tsx` | ✓ 11L | ✓ 15L | 3 | — | — | 🟢 |
 | `permission-guard.tsx` | ✓ 24L | ✓ 24L | 1 | — | — | 🟢 |

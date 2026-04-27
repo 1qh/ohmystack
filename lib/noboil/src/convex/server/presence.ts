@@ -1,3 +1,4 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import { defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { any, object, string } from 'zod/v4'

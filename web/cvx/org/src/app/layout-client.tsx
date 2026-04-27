@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import type { OrgRole } from 'noboil/convex'
 import type { OrgDocLike } from 'noboil/convex/server'
 import type { ReactNode } from 'react'

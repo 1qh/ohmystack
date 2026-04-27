@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/useAwait: promise-function-async conflict */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { Doc } from '@a/be-convex/model'
 import type { FunctionReference } from 'convex/server'
 import type { Metadata } from 'next'

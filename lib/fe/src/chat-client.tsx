@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import type { UIMessage } from 'ai'
 import { cn } from '@a/ui'
 import {

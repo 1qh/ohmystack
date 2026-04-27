@@ -1,3 +1,4 @@
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'

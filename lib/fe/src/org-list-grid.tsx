@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@a/ui'
 import { Button } from '@a/ui/button'

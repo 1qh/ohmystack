@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import type { Org, OrgMember } from '@a/be-spacetimedb/spacetimedb/types'
 import type { OrgRole } from 'noboil/spacetimedb'
 import { tables } from '@a/be-spacetimedb/spacetimedb'

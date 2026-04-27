@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 import type { Id } from '@a/be-convex/model'
 import { api } from '@a/be-convex'
 import { Button } from '@a/ui/button'

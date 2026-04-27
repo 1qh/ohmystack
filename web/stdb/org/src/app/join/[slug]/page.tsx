@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'

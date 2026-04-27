@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
 import MembersPageShell from '@a/fe/members-page-shell'
 import { useOrg } from '~/hook/use-org'
 import InviteDialog from './invite-dialog'
