@@ -210,6 +210,64 @@ Examples:
 ```
 {/* AUTO-GENERATED:HELP:END */}
 
+## Flag reference (parsed from `--help`)
+
+Same data as the help blocks above, parsed into scannable per-command tables.
+
+{/* AUTO-GENERATED:CLI-FLAGS:START */}
+Parsed flag tables for every `--help` block above. **19 flags total.**
+
+**`noboil init`** — 4 option(s)
+
+| Flag | Description |
+|---|---|
+| `--db=convex\|spacetimedb` | Skip database prompt |
+| `--no-demos` | Skip demo apps |
+| `--skip-install` | Skip bun install after scaffolding |
+| `--no-git` | Skip auto git init + initial commit |
+
+**`noboil doctor`** — 2 option(s)
+
+| Flag | Description |
+|---|---|
+| `--fix` | Auto-remediate common issues (install deps, patch tsconfig) |
+| `--last-error` | Print the most recent crash log |
+
+**`noboil sync`** — 2 option(s)
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Show what would change without writing files |
+| `--force` | Update files even when locally modified |
+
+**`noboil eject`** — 1 option(s)
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Show what would change without writing files |
+
+**`noboil-convex add`** — 5 option(s)
+
+| Flag | Description |
+|---|---|
+| `--type=TYPE` | Table type: owned, org, singleton, cache, child, log, kv, quota (default: owned) |
+| `--fields=FIELDS` | Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)") |
+| `--parent=TABLE` | Parent table name (required for child type) |
+| `--convex-dir=DIR` | Convex directory (default: convex) |
+| `--app-dir=DIR` | App directory (default: src/app) |
+
+**`noboil-stdb add`** — 5 option(s)
+
+| Flag | Description |
+|---|---|
+| `--type=TYPE` | Table type: owned, org, singleton, cache, child, log, kv, quota (default: owned) |
+| `--fields=FIELDS` | Field definitions (e.g. "title:string,done:boolean,priority:enum(low,medium,high)") |
+| `--parent=TABLE` | Parent table name (required for child type) |
+| `--module-dir=DIR` | SpacetimeDB module directory (default: module) |
+| `--app-dir=DIR` | App directory (default: src/app) |
+
+{/* AUTO-GENERATED:CLI-FLAGS:END */}
+
 ## Commands at a glance
 
 | CLI | Command | Hotkey | What it does |

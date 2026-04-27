@@ -606,6 +606,57 @@ const after = await quota.record()
 ```
 {/* AUTO-GENERATED:HOOK-INTERFACES:END */}
 
+#### Hook parameter signatures (auto-generated from source)
+
+{/* AUTO-GENERATED:HOOK-PARAMS:START */}
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+**16 hooks** (parameter list before generic constraints):
+
+| Hook | Params |
+|---|---|
+| `useBulkMutate` | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)` |
+| `useBulkSelection` | `(options: UseBulkSelectionOpts)` |
+| `useCacheEntry` | `(\{ args, get: getRef, load: loadRef \}: UseCacheEntryOptions&lt;Q, A&gt;)` |
+| `useCrud` | `(refs: R, options?: CrudOptions)` |
+| `useInfiniteList` | `(query: F, ...rest: InfiniteListRest&lt;F&gt;)` |
+| `useKv` | `(refs: R, key: string)` |
+| `useList` | `(query: F, ...rest: ListRest&lt;F&gt;)` |
+| `useLog` | `(refs: R, args: \{ parent: string \})` |
+| `useMutate` | `(ref: T, options?: MutateOptions)` |
+| `useOptimisticMutation` | `(\{ mutation, onOptimistic, onRollback, onSettled, onSuccess \}: OptimisticOptions&lt;T&gt;)` |
+| `useOwnRows` | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \| null \| undefined)` |
+| `usePresence` | `(refs: PresenceRefs, roomId: string, options?: UsePresenceOptions)` |
+| `useQuota` | `(refs: ConvexQuotaRefs, owner: string)` |
+| `useSearch` | `(searchRef: F, argsBuilder: (query: string) =&gt; OptionalRestArgs&lt;F&gt;[0], options?: UseSearchOptions)` |
+| `useSoftDelete` | `(options: SoftDeleteOpts&lt;A&gt;)` |
+| `useUpload` | `(uploadMutation: FunctionReference&lt;'mutation'&gt;, options?: UploadOptions)` |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+**12 hooks**:
+
+| Hook | Params |
+|---|---|
+| `useBulkMutate` | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)` |
+| `useBulkSelection` | `(options: UseBulkSelectionOpts)` |
+| `useInfiniteList` | `(data: T[], isReady: boolean, options?: 'skip' \| InfiniteListOptions&lt;T&gt;)` |
+| `useKv` | `(refs: StdbKvRefs, key: string)` |
+| `useList` | `(data: readonly T[], isReady: boolean, options?: 'skip' \| UseListOptions&lt;T&gt;)` |
+| `useLog` | `(refs: StdbLogRefs, args: \{ parent: string \})` |
+| `useOwnRows` | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \| null \| undefined)` |
+| `usePresence` | `(data: PresenceRow[], heartbeat: (args?: PresenceHeartbeatArgs) =&gt; Promise&lt;void&gt;, options?: UsePresenceOptions)` |
+| `useQuota` | `(refs: StdbQuotaRefs, owner: string)` |
+| `useSearch` | `(data: T[], isReady: boolean, options: 'skip' \| UseSearchOptions&lt;T&gt;)` |
+| `useSoftDelete` | `(options: SoftDeleteOpts&lt;A&gt;)` |
+| `useUpload` | `(config?: UploadConfig)` |
+
+</Tab>
+</Tabs>
+{/* AUTO-GENERATED:HOOK-PARAMS:END */}
+
 ### useOwnRows
 
 Computes an `own` boolean on each row using a predicate function. Pass `null` when the current user's identity is not yet known — all rows will have `own: false`.
@@ -1489,6 +1540,23 @@ Both `noboil/convex/eslint` and `noboil/spacetimedb/eslint` ship the same rule s
 | `require-error-boundary` | ✓ | ✓ | &lt;ConvexProvider&gt; without an error boundary. Wrap with an ErrorBoundary to handle Convex errors gracefully. |
 | `require-rate-limit` | ✓ | ✓ | \{\{factory\}\}() without rateLimit. Add rateLimit: \{ max, window \} to prevent abuse on write endpoints. |
 {/* AUTO-GENERATED:ESLINT-RULES:END */}
+
+## API stability
+
+JSDoc-tagged exports are surfaced here so consumers can tell stable API from in-flux surface. The generator picks up `@beta`, `@alpha`, `@experimental`, `@deprecated`, `@internal` on the line above any `export`/`const`/`function`/`class`/`interface`/`type` declaration.
+
+{/* AUTO-GENERATED:STABILITY:START */}
+Scanned **303 files**, **6967 declared symbols**. No `@beta`/`@alpha`/`@experimental`/`@deprecated`/`@internal` JSDoc tags found — entire public surface is **stable**.
+
+To mark API stability, add JSDoc tags above an export:
+
+```ts
+/** @beta New shape, may change without major version bump. */
+export const someExperiment = ...
+```
+
+This generator picks them up automatically.
+{/* AUTO-GENERATED:STABILITY:END */}
 
 ## Known limitations
 

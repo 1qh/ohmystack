@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **24 generators** that own **20 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **31 generators** that own **27 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -12,24 +12,31 @@ noboil ships **24 generators** that own **20 marker blocks** across 5 doc files.
 | `doc/scripts/gen-api-imports.ts` | lib/noboil/src/**/index.ts → API export tables |
 | `doc/scripts/gen-auto-fields.ts` | (undocumented) |
 | `doc/scripts/gen-brand-registry.ts` | SchemaHintMap interface → brand registry table |
+| `doc/scripts/gen-cli-flags.ts` | (undocumented) |
 | `doc/scripts/gen-cli-help.ts` | `noboil --help` output → CLI help blocks |
 | `doc/scripts/gen-cli-types.ts` | `TableType` union in convex/add.ts → CLI --type valid values |
 | `doc/scripts/gen-config-schema.ts` | (undocumented) |
 | `doc/scripts/gen-cvx-factory-api.ts` | cvx server/\{log,kv,quota\}.ts `b.q()`/`b.m()` → endpoint table |
 | `doc/scripts/gen-demo-inventory.ts` | web/\{cvx,stdb\}/* filesystem → demo count + tree |
+| `doc/scripts/gen-demo-matrix.ts` | (undocumented) |
 | `doc/scripts/gen-error-codes.ts` | `err()` / `throwConvexError()` calls across server → error code list |
 | `doc/scripts/gen-eslint-rules.ts` | (undocumented) |
 | `doc/scripts/gen-factory-api.ts` | stdb server/\{log,kv,quota\}.ts reducer name templates → reducer table |
 | `doc/scripts/gen-factory-options.ts` | LogOptions/KvOptions interfaces → option tables |
+| `doc/scripts/gen-hook-params.ts` | (undocumented) |
 | `doc/scripts/gen-hook-reference.ts` | Log/Kv/QuotaHookResult interfaces → hook signature blocks |
 | `doc/scripts/gen-hotkeys.ts` | (undocumented) |
 | `doc/scripts/gen-link-check.ts` | (undocumented) |
 | `doc/scripts/gen-meta-nav.ts` | (undocumented) |
+| `doc/scripts/gen-middleware.ts` | (undocumented) |
+| `doc/scripts/gen-noboil-options.ts` | (undocumented) |
 | `doc/scripts/gen-package-info.ts` | (undocumented) |
 | `doc/scripts/gen-parity-matrix.ts` | (undocumented) |
 | `doc/scripts/gen-react-hooks.ts` | (undocumented) |
 | `doc/scripts/gen-readme-factories.ts` | (undocumented) |
 | `doc/scripts/gen-recipe-toc.ts` | (undocumented) |
+| `doc/scripts/gen-schema-diagram.ts` | (undocumented) |
+| `doc/scripts/gen-stability.ts` | (undocumented) |
 | `doc/scripts/gen-test-counts.ts` | bun test pass count parsing → test count summary |
 | `doc/scripts/gen-test-tree.ts` | (undocumented) |
 | `doc/scripts/gen-ui-components.ts` | (undocumented) |
@@ -40,9 +47,9 @@ noboil ships **24 generators** that own **20 marker blocks** across 5 doc files.
 |---|---|
 | `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `HOTKEYS`, `CLI-TABLE-TYPES`, `FACTORY-TABLE`, `DEMO-TREE` |
 | `TODO.md` | `TEST-COUNTS` |
-| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS` |
-| `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `ERROR-CODES`, `ESLINT-RULES` |
-| `doc/content/docs/cli.mdx` | `HELP`, `CONFIG-SCHEMA` |
+| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM` |
+| `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `HOOK-PARAMS`, `ERROR-CODES`, `ESLINT-RULES`, `STABILITY` |
+| `doc/content/docs/cli.mdx` | `HELP`, `CLI-FLAGS`, `CONFIG-SCHEMA` |
 
 ## Workflow
 

@@ -350,3 +350,136 @@ Schema changes require both steps. If you only `publish`, the module updates but
 
 - **ai-elements** (48): `agent`, `artifact`, `attachments`, `audio-player`, `canvas`, `chain-of-thought`, `checkpoint`, `code-block`, `commit`, `confirmation`, `connection`, `context`, `controls`, `conversation`, `edge`, `environment-variables`, `file-tree`, `image`, `inline-citation`, `jsx-preview`, `message`, `mic-selector`, `model-selector`, `node`, `open-in-chat`, `package-info`, `panel`, `persona`, `plan`, `prompt-input`, `queue`, `reasoning`, `sandbox`, `schema-display`, `shimmer`, `snippet`, `sources`, `speech-input`, `stack-trace`, `suggestion`, `task`, `terminal`, `test-results`, `tool`, `toolbar`, `transcription`, `voice-selector`, `web-preview`
 {/* AUTO-GENERATED:UI-COMPONENTS:END */}
+
+## Demo coverage matrix
+
+Auto-generated grid showing every registered table, the noboil options it ships with in `lazy.ts`, and which of the 5 vertical demo apps consume it (per database). Use this to find a working example of any feature.
+
+{/* AUTO-GENERATED:DEMO-MATRIX:START */}
+**15 tables across 10 demo apps.** ✓ = the demo's frontend imports from this table.
+
+| Table | Options | cvx-blog | cvx-chat | cvx-movie | cvx-org | cvx-poll | stdb-blog | stdb-chat | stdb-movie | stdb-org | stdb-poll |
+|---|---|--|--|--|--|--|--|--|--|--|--|
+| `blog` | `pub`, `rateLimit`, `search` | ✓ | — | — | — | — | ✓ | — | — | — | — |
+| `blogProfile` | — | ✓ | — | — | — | — | ✓ | — | — | — | — |
+| `chat` | `cascade`, `pub`, `rateLimit` | — | ✓ | — | — | — | — | ✓ | — | — | — |
+| `message` | `pub` | — | ✓ | — | — | — | — | ✓ | — | — | — |
+| `movie` | `key` | — | — | ✓ | — | — | — | — | — | — | — |
+| `org` | `unique` | — | — | — | ✓ | — | — | — | — | ✓ | — |
+| `orgProfile` | — | — | — | — | ✓ | — | — | — | — | ✓ | — |
+| `poll` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `pollProfile` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `pollVoteQuota` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `project` | `acl`, `cascade` | — | — | — | ✓ | — | — | — | — | ✓ | — |
+| `siteConfig` | `softDelete` | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `task` | `acl`, `aclFrom` | — | — | — | ✓ | — | — | — | — | ✓ | — |
+| `vote` | `softDelete` | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `wiki` | `acl`, `rateLimit`, `softDelete` | — | — | — | ✓ | — | — | — | — | ✓ | — |
+{/* AUTO-GENERATED:DEMO-MATRIX:END */}
+
+## `noboil()` config options
+
+Auto-generated from `NoboilOptions` in `lib/noboil/src/convex/server/noboil.ts`. Pass these to `noboil({ ... })` at the entry point.
+
+{/* AUTO-GENERATED:NOBOIL-OPTIONS:START */}
+Plus `tables: ({ table }) => ({ ... })` callback (always required). 11 top-level options on `SetupConfig`:
+
+| Field | Type | Required |
+|---|---|---|
+| `action` | `ActionBuilder&lt;DM, 'public'&gt;` | **required** |
+| `getAuthUserId` | `(ctx: never) =&gt; Promise&lt;null \| string&gt;` | **required** |
+| `internalMutation` | `MutationBuilder&lt;DM, 'internal'&gt;` | **required** |
+| `internalQuery` | `QueryBuilder&lt;DM, 'internal'&gt;` | **required** |
+| `mutation` | `MutationBuilder&lt;DM, 'public'&gt;` | **required** |
+| `query` | `QueryBuilder&lt;DM, 'public'&gt;` | **required** |
+| `hooks?` | `GlobalHooks` | optional |
+| `middleware?` | `Middleware[]` | optional |
+| `orgCascadeTables?` | `OrgCascadeTableConfig&lt;DM&gt;[]` | optional |
+| `orgSchema?` | `ZodObject` | optional |
+| `strictFilter?` | `boolean` | optional |
+{/* AUTO-GENERATED:NOBOIL-OPTIONS:END */}
+
+## Built-in middleware
+
+Auto-generated list of every middleware factory exported from `noboil/{convex,spacetimedb}/server`. Compose them in the `middleware: [...]` array of `noboil({ ... })`.
+
+{/* AUTO-GENERATED:MIDDLEWARE:START */}
+**3 middleware factories** (combine via `middleware: [a(), b()]` in `noboil({ ... })`).
+
+| Factory | Options arg | Convex | SpacetimeDB |
+|---|---|---|---|
+| `auditLog` | `opts?: \{ logLevel?: 'debug' \| 'info'; verbose?: boolean \}` | ✓ | ✓ |
+| `inputSanitize` | `opts?: \{ fields?: string[] \}` | ✓ | ✓ |
+| `slowQueryWarn` | `opts?: \{ threshold?: number \}` | ✓ | ✓ |
+{/* AUTO-GENERATED:MIDDLEWARE:END */}
+
+## Schema relationships
+
+Mermaid graph derived from every `parent: '...'`, `aclFrom: { table: '...' }`, `cascade: [{ table: '...' }]`, and `foreignKey` reference in `backend/convex/s.ts`.
+
+{/* AUTO-GENERATED:SCHEMA-DIAGRAM:START */}
+**16 tables, 5 relationships** (parent / cascade / aclFrom). Color = factory slot.
+
+```mermaid
+graph LR
+  subgraph base
+    movie["movie"]
+  end
+  subgraph children
+    message["message"]
+    schema["schema"]
+  end
+  subgraph kv
+    siteConfig["siteConfig"]
+    schema["schema"]
+  end
+  subgraph log
+    vote["vote"]
+    schema["schema"]
+  end
+  subgraph org
+    team["team"]
+  end
+  subgraph orgScoped
+    project["project"]
+    task["task"]
+    wiki["wiki"]
+  end
+  subgraph owned
+    blog["blog"]
+    chat["chat"]
+    poll["poll"]
+  end
+  subgraph quota
+    pollVote["pollVote"]
+  end
+  subgraph singleton
+    blogProfile["blogProfile"]
+    orgProfile["orgProfile"]
+    pollProfile["pollProfile"]
+  end
+  message -->|parent| chat
+  children -->|parent| chat
+  log -->|parent| poll
+  chat -->|cascade| message
+  task -->|aclFrom| project
+  style movie fill:#fef3c7,stroke:#333
+  style message fill:#fce7f3,stroke:#333
+  style schema fill:#fce7f3,stroke:#333
+  style siteConfig fill:#e0e7ff,stroke:#333
+  style schema fill:#e0e7ff,stroke:#333
+  style vote fill:#dcfce7,stroke:#333
+  style schema fill:#dcfce7,stroke:#333
+  style team fill:#fef9c3,stroke:#333
+  style project fill:#fed7aa,stroke:#333
+  style task fill:#fed7aa,stroke:#333
+  style wiki fill:#fed7aa,stroke:#333
+  style blog fill:#dbeafe,stroke:#333
+  style chat fill:#dbeafe,stroke:#333
+  style poll fill:#dbeafe,stroke:#333
+  style pollVote fill:#fee2e2,stroke:#333
+  style blogProfile fill:#f3e8ff,stroke:#333
+  style orgProfile fill:#f3e8ff,stroke:#333
+  style pollProfile fill:#f3e8ff,stroke:#333
+```
+{/* AUTO-GENERATED:SCHEMA-DIAGRAM:END */}
