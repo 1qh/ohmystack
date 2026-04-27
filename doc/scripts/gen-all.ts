@@ -47,6 +47,7 @@ const SCRIPTS = [
   'gen-example-check.ts',
   'gen-signature-drift.ts',
   'gen-doc-dedup.ts',
+  'gen-glossary.ts',
   'gen-recipe-toc.ts',
   'gen-parity-matrix.ts',
   'gen-link-check.ts',

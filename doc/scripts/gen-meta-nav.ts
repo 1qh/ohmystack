@@ -33,6 +33,7 @@ const ORDER = [
   'ejecting',
   'deployment',
   'troubleshooting',
+  'glossary',
   'single-source-of-truth'
 ]
 const main = () => {
