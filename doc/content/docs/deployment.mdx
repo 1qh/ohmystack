@@ -280,7 +280,7 @@ jobs:
       - name: Publish SpacetimeDB module
 run: spacetime publish my-app --server maincloud --module-path %%path:backendStdb%%/
         env:
-          SPACETIMEDB_TOKEN: $%% secrets.SPACETIMEDB_TOKEN %%
+          SPACETIMEDB_TOKEN: ${{ secrets.SPACETIMEDB_TOKEN }}
 
       - name: Regenerate bindings
         run: |
@@ -298,7 +298,7 @@ run: spacetime publish my-app --server maincloud --module-path %%path:backendStd
       - name: Deploy to Vercel
         run: vercel deploy --prod
         env:
-          VERCEL_TOKEN: $%% secrets.VERCEL_TOKEN %%
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 ```
 
 ---

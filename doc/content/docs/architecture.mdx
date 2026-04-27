@@ -404,13 +404,13 @@ Plus `tables: ({ table }) => ({ ... })` callback (always required). 11 top-level
 Auto-generated list of every middleware factory exported from `noboil/{convex,spacetimedb}/server`. Compose them in the `middleware: [...]` array of `noboil({ ... })`.
 
 {/* AUTO-GENERATED:MIDDLEWARE:START */}
-**3 middleware factories** (combine via `middleware: [a(), b()]` in `noboil({ ... })`).
+**3 middleware factories** (combine via `middleware: [a(), b()]` in `noboil({ ... })`). Description column auto-extracted from leading JSDoc.
 
-| Factory | Options arg | Convex | SpacetimeDB |
-|---|---|---|---|
-| `auditLog` | `opts?: \{ logLevel?: 'debug' \| 'info'; verbose?: boolean \}` | ✓ | ✓ |
-| `inputSanitize` | `opts?: \{ fields?: string[] \}` | ✓ | ✓ |
-| `slowQueryWarn` | `opts?: \{ threshold?: number \}` | ✓ | ✓ |
+| Factory | Options arg | Convex | SpacetimeDB | Description |
+|---|---|---|---|---|
+| `auditLog` | `opts?: \{ logLevel?: 'debug' \| 'info'; verbose?: boolean \}` | ✓ | ✓ | Logs every reducer-driven create/update/delete with table + sender. `verbose: true` also logs the row data / patched field names. |
+| `inputSanitize` | `opts?: \{ fields?: string[] \}` | ✓ | ✓ | Strips control chars + zero-width chars from string fields before insert/update. Restrict to specific fields via `opts.fields`. |
+| `slowQueryWarn` | `opts?: \{ threshold?: number \}` | ✓ | ✓ | Emits `warn`-level log when any reducer-driven mutation exceeds `threshold` ms (default 500ms). |
 {/* AUTO-GENERATED:MIDDLEWARE:END */}
 
 ## Schema relationships
@@ -659,3 +659,41 @@ How many tables in `backend/{convex,spacetimedb}/lazy.ts` enable each option, an
 | `ttl` | 0 | 0 | — | — |
 | `staleWhileRevalidate` | 0 | 0 | — | — |
 {/* AUTO-GENERATED:OPTIONS-INVENTORY:END */}
+
+## Doc-snippet syntax check
+
+Every \`\`\`ts/tsx code fence in `doc/content/docs/*.mdx` is scanned by `Bun.Transpiler` so silent rot (a renamed export breaking an embedded snippet) shows up here.
+
+{/* AUTO-GENERATED:EXAMPLE-CHECK:START */}
+Bun.Transpiler.scan() over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.
+
+**472/472 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
+
+_No syntax issues._
+
+{/* AUTO-GENERATED:EXAMPLE-CHECK:END */}
+
+## Hook signature drift
+
+When a hook signature in source diverges from how it's documented (e.g. arg order/name change), this generator flags it. Compares the first parameter name only — quick and high-precision.
+
+{/* AUTO-GENERATED:SIGNATURE-DRIFT:START */}
+Compares first argument names of every `useXxx(...)` call appearing in docs to the actual hook signature in `lib/noboil/src/{convex,spacetimedb}/react/use-*.ts`. Catches a common kind of doc rot.
+
+**28/28 hooks mentioned in docs.** Of those, 0 have at least one `const useX = (...)`-style declaration in a code fence. **0 drift mismatches.**
+
+_No drift detected._
+
+{/* AUTO-GENERATED:SIGNATURE-DRIFT:END */}
+
+## Doc duplication audit
+
+Long paragraphs that appear verbatim in 2+ `.mdx` files. Either consolidate or rewrite in place — duplication is maintenance debt.
+
+{/* AUTO-GENERATED:DOC-DEDUP:START */}
+Scans every `.mdx` for paragraphs ≥120 chars appearing in 2+ files. Catches accidental duplication that adds maintenance cost without adding info.
+
+**0 duplicate paragraph(s) found** (across 27 doc files).
+
+_No duplicates above threshold — every long paragraph appears in exactly one file._
+{/* AUTO-GENERATED:DOC-DEDUP:END */}

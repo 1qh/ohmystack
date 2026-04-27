@@ -719,7 +719,7 @@ const CollaborativeEditor = ({ docId }: { docId: string }) => {
         <div
           key={p.userId}
           className="absolute size-4 rounded-full bg-blue-500"
-          style=%% left: p.data.cursor.x, top: p.data.cursor.y %%
+          style={{ left: p.data.cursor.x, top: p.data.cursor.y }}
         />
       ))}
     </div>
@@ -1203,7 +1203,7 @@ const BulkActions = ({ selectedIds }: { selectedIds: string[] }) => {
       disabled={isPending}
       onClick={() => {
         run(selectedIds)
-      %%
+      }}
     >
       {progress
         ? `${progress.succeeded}/${progress.total}`
@@ -1308,7 +1308,7 @@ const CreatePostForm = () => {
         content: form.get('content') as string,
         published: false
       })
-    %%>
+    }}>
       <input name="title" required />
       <textarea name="content" required />
       <button type="submit">Create</button>
@@ -1547,7 +1547,7 @@ const CreatePost = () => {
         content: form.get('content') as string,
         published: false
       })
-    %%>
+    }}>
       <div>
         <input name="title" />
         {fieldErrors.title && <p className="text-red-500">{fieldErrors.title}</p>}
@@ -1851,10 +1851,8 @@ useCrud({
   create: reducers.createBlog,
   rm: reducers.rmBlog,
   table: tables.blog,
-    update: reducers.updateBlog
-  })
-  return <>{data.map(b => <div key={b.id}>{b.title}</div>)}</>
-}
+  update: reducers.updateBlog
+})
 ```
 
 Both return the same `{ data, create, update, rm, hasMore, isLoading, loadMore }`. The only difference is refs: Convex passes `api.*` functions, SpacetimeDB passes `reducers.*` + `tables.*`.
@@ -1932,17 +1930,13 @@ const EXPIRED_OFFSET_MS = 1000
 ### `makeCrud` — `lib/noboil/src/spacetimedb/server/crud.ts`
 
 ```ts
-```ts
 const reducers = makeCrud(spacetimedb, { tableName: 'post', fields, idField, pk, table })
-```
 ```
 
 ### `makeFileUpload` — `lib/noboil/src/spacetimedb/server/file.ts`
 
 ```ts
-```ts
 const uploads = makeFileUpload(spacetimedb, { namespace: 'avatars', fields, idField, pk, table })
-```
 ```
 
 ### `noboil` — `lib/noboil/src/convex/server/noboil.ts`
@@ -1972,9 +1966,7 @@ export const { create, update, rm, pub: { list, read, search } } = api.blog
 ### `resolveToastError` — `lib/noboil/src/spacetimedb/react/use-mutate.ts`
 
 ```ts
-```ts
 const save = useMutate(api.posts.update, { optimistic: true })
-```
 ```
 
 ### `setup` — `lib/noboil/src/convex/server/setup.ts`
@@ -1991,70 +1983,54 @@ export const { create, update, rm, pub: { list, read } } = crud('blog', owned.bl
 ### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-list.ts`
 
 ```ts
-```ts
 const list = useList(rows, ready, {
   pageSize: 20,
   where: { own: true },
   search: { query: 'hello', fields: ['title', 'content'] }
 })
 ```
-```
 
 ### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-infinite-list.ts`
 
 ```ts
-```ts
 const list = useInfiniteList(rows, ready, { batchSize: 25 })
-```
 ```
 
 ### `useList` — `lib/noboil/src/convex/react/use-list.ts`
 
 ```ts
-```tsx
 const { data, loadMore, isDone } = useList(api.blog.list, { where: { published: true } })
-```
 ```
 
 ### `useMutate` — `lib/noboil/src/convex/react/use-mutate.ts`
 
 ```ts
-```tsx
 const update = useMutate(api.blog.update)
 const remove = useMutate(api.blog.rm, { onError: false })
-```
 ```
 
 ### `useOrgQuery` — `lib/noboil/src/convex/react/org.tsx`
 
 ```ts
-```tsx
 const wikis = useOrgQuery(api.wiki.list)
-```
 ```
 
 ### `useOwnRows` — `lib/noboil/src/spacetimedb/react/use-list.ts`
 
 ```ts
-```ts
 const blogs = useOwnRows(allBlogs, identity ? b => b.userId.isEqual(identity) : null)
-```
 ```
 
 ### `usePresence` — `lib/noboil/src/convex/react/use-presence.ts`
 
 ```ts
-```tsx
 const { users, updatePresence } = usePresence(presenceRefs, chatId, { data: { cursor: { x, y } } })
-```
 ```
 
 ### `zodFromTable` — `lib/noboil/src/spacetimedb/stdb-zod.ts`
 
 ```ts
-```ts
 const schema = zodFromTable(module.table.columns, { optional: ['bio'] })
-```
 ```
 
 {/* AUTO-GENERATED:JSDOC-EXAMPLES:END */}

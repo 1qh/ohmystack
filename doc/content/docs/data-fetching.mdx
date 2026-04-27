@@ -127,13 +127,13 @@ useList(query, {
 Returns:
 
 ```ts
-{
-  items: T[],       // current page
-  data: T[],        // alias for items (SpacetimeDB convention)
-  hasMore: boolean,
-  isLoading: boolean,
-  loadMore: () => void,
-  page: number,
+type UseListResult<T> = {
+  items: T[]       // current page
+  data: T[]        // alias for items (SpacetimeDB convention)
+  hasMore: boolean
+  isLoading: boolean
+  loadMore: () => void
+  page: number
   totalCount: number
 }
 ```

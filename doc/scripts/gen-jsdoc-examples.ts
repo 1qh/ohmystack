@@ -51,7 +51,11 @@ const extractExamples = (src: string, file: string): Example[] => {
           break
         }
       }
-      const code = codeLines.join('\n').trim()
+      const code = codeLines
+        .join('\n')
+        .replaceAll(/^```\w*\n?/gmu, '')
+        .replaceAll(/\n?```$/gmu, '')
+        .trim()
       if (code) out.push({ code, file, symbol: symbol || '_(anonymous)_' })
       i = j
     }

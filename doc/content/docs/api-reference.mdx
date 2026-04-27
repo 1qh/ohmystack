@@ -1372,13 +1372,13 @@ const { StepForm, useStepper } = defineSteps(
 )
 
 <StepForm
-  stepIndicatorClassNames=%%
+  stepIndicatorClassNames={{
     button: 'size-9',
     label: 'text-xs',
     nav: 'gap-3',
     separator: 'bg-primary/20',
     step: 'gap-3'
-  %%
+  }}
   stepper={stepper}
 />
 ```
@@ -1552,7 +1552,7 @@ To mark API stability, add JSDoc tags above an export:
 
 ```ts
 /** @beta New shape, may change without major version bump. */
-export const someExperiment = ...
+export const someExperiment = () => 42
 ```
 
 This generator picks them up automatically.

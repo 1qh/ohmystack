@@ -3,8 +3,10 @@ import type { GlobalHookCtx, GlobalHooks, Middleware, MiddlewareCtx, Rec } from 
 import { createComposeMiddleware, createInputSanitize, sanitizeRec, sanitizeString } from '../../shared/server/middleware'
 import { log } from './helpers'
 const withOp = (ctx: GlobalHookCtx, op: MiddlewareCtx['operation']): MiddlewareCtx => ({ ...ctx, operation: op })
+/** Combine multiple Middleware factories into a single GlobalHooks bundle for `noboil({ hooks })`. */
 const composeMiddleware = (...middlewares: Middleware[]): GlobalHooks =>
   createComposeMiddleware({ middlewares, toMiddlewareCtx: withOp })
+/** Logs every create/update/delete with table + userId. `verbose: true` also logs the row data / patched field names. */
 const auditLog = (opts?: { logLevel?: 'debug' | 'info'; verbose?: boolean }): Middleware => {
   const level = opts?.logLevel ?? 'info'
   const verbose = opts?.verbose ?? false
@@ -26,6 +28,7 @@ const auditLog = (opts?: { logLevel?: 'debug' | 'info'; verbose?: boolean }): Mi
   }
 }
 const DEFAULT_SLOW_THRESHOLD_MS = 500
+/** Emits `warn`-level log when any mutation exceeds `threshold` ms (default 500ms). */
 const slowQueryWarn = (opts?: { threshold?: number }): Middleware => {
   const threshold = opts?.threshold ?? DEFAULT_SLOW_THRESHOLD_MS
   return {
@@ -55,5 +58,6 @@ const slowQueryWarn = (opts?: { threshold?: number }): Middleware => {
     name: 'slowQueryWarn'
   }
 }
+/** Strips control chars + zero-width chars from string fields before insert/update. Restrict to specific fields via `opts.fields`. */
 const inputSanitize = (opts?: { fields?: string[] }): Middleware => createInputSanitize(opts)
 export { auditLog, composeMiddleware, inputSanitize, sanitizeRec, sanitizeString, slowQueryWarn }

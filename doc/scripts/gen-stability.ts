@@ -69,7 +69,7 @@ const main = () => {
     lines.push('')
     lines.push('```ts')
     lines.push('/** @beta New shape, may change without major version bump. */')
-    lines.push('export const someExperiment = ...')
+    lines.push('export const someExperiment = () => 42')
     lines.push('```')
     lines.push('')
     lines.push('This generator picks them up automatically.')
