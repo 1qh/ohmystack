@@ -1,0 +1,235 @@
+---
+title: base factory (external API cache)
+description: Keyed external-data cache with TTL, refresh, invalidate, and stale-while-revalidate. For TMDB lookups, Gravatar avatars, OpenWeather data — anything fetched from an upstream API.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Use `base` (wired via `cacheCrud`) for tables that **mirror an external API**: TMDB movies, Gravatar avatars, OpenWeather forecasts. The factory keys rows by an upstream id, calls your `fetcher` on cache miss, optionally refreshes in the background, and exposes `invalidate`/`purge` for manual control. There's no per-user ownership — the cache is global.
+
+## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+type CacheCrudResult = {
+  get: Query<(ctx, { key: string }) => Row | null>
+  list: Query<(ctx, { paginationOpts }) => PaginatedResult>
+  load: Action<(ctx, { key: string }) => Row>
+  refresh: Action<(ctx, { key: string }) => Row>
+  invalidate: Mutation<(ctx, { key: string }) => { invalidated: boolean }>
+  purge: Mutation<(ctx, { keys?: string[] }) => { deleted: number }>
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `get(key)` | public | Returns cached row or `null` (does not fetch). Cheap query. |
+| `load(key)` | public | Fetches if missing, returns row. Idempotent — multiple concurrent calls dedupe. |
+| `refresh(key)` | public | Re-fetches even if cached, updates row, returns latest. |
+| `invalidate(key)` | role-gated | Marks row stale (next `load` re-fetches). |
+| `purge({keys})` | role-gated | Deletes specified rows (or all if no keys). |
+| `list({paginationOpts})` | role-gated | Cursor-paginated full read — admin dashboards. |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeCacheCrud(spacetimedb, {
+  tableName: 'movie',
+  keyField: 'tmdbId',
+  fields,
+  fetcher: async (ctx, key) => fetchTmdb(key)
+})
+```
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `load_movie` | public | `key` | Fetch + insert if missing. |
+| `refresh_movie` | public | `key` | Re-fetch + update. |
+| `invalidate_movie` | role-gated | `key` | Mark stale. |
+| `purge_movie` | role-gated | `keys[]?` | Delete specified rows or all. |
+
+Reads happen via subscription on `tables.movie` — the hook calls `load_movie` on miss.
+
+</Tab>
+</Tabs>
+
+## Schema
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+import { object, string, number, array } from 'zod/v4'
+import { schema, makeBase } from 'noboil/convex/schema'
+
+const base = makeBase({
+  movie: object({
+    tmdbId: number(),
+    title: string(),
+    overview: string(),
+    posterPath: string().nullable(),
+    releaseDate: string(),
+    voteAverage: number(),
+    genres: array(object({ id: number(), name: string() }))
+  })
+})
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, number, array } from 'zod/v4'
+import { schema, makeBase } from 'noboil/spacetimedb/schema'
+
+const base = makeBase({
+  movie: object({
+    tmdbId: number(),
+    title: string(),
+    overview: string(),
+    posterPath: string().nullable(),
+    releaseDate: string(),
+    voteAverage: number()
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+Auto-fields injected:
+- `key: string` — primary identifier (the cache key, e.g. TMDB id as string)
+- `updatedAt?: number` — last refresh timestamp (used for TTL checks)
+- `_creationTime` — Convex native (when first cached)
+
+The cache is **keyed by upstream id** — no automatic indexes are needed beyond the primary key.
+
+## Wire it up
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+// backend/convex/convex/movie.ts
+import { TMDB } from 'tmdb-ts'
+import { cacheCrud } from '../lazy'
+import { s } from '../s'
+
+const tmdb = new TMDB(process.env.TMDB_KEY!)
+const c = cacheCrud({
+  table: 'movie',
+  schema: s.movie,
+  key: 'tmdbId',
+  ttl: 86_400_000,             // 24h freshness
+  staleWhileRevalidate: true,  // serve stale while refreshing
+  fetcher: async (_ctx, tmdbId) => {
+    const m = await tmdb.movies.details({ movie_id: Number(tmdbId) })
+    return toMovie(m)
+  }
+})
+export const { all, get, load, refresh, invalidate, purge } = c
+```
+
+`cacheCrud` is called directly (not through `tables: ({ table }) => ...`) because the fetcher needs side effects only available in actions.
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    movie: table(s.movie, {
+      key: 'tmdbId',
+      ttl: 86_400_000,
+      fetcher: async (_, tmdbId) => fetchTmdb(tmdbId)
+    })
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `key` | string | Field name to use as cache key (typically the upstream id field). |
+| `fetcher` | `(ctx, key) => Promise<T>` | Called on cache miss or refresh. Must return a complete row matching the schema. |
+| `ttl` | number (ms) | If `updatedAt + ttl < now`, treat as stale on next `load`. |
+| `staleWhileRevalidate` | boolean | Return stale row immediately, refresh in background. Reduces latency. |
+| `hooks` | `CacheHooks<T>` | `onFetch(data)` to transform fetched data before insert. |
+| `rateLimit` | `number` \| `{ max, window }` | Per-caller limit on `refresh` calls (`load` is naturally bounded by `ttl`). |
+
+## Stale-while-revalidate
+
+```ts
+ttl: 60_000,                 // 1 minute freshness window
+staleWhileRevalidate: true   // return stale, refresh in background
+```
+
+First `load` after staleness returns the stale row immediately so the UI never blocks; the cache is updated in the background. Next `load` returns fresh.
+
+Without `staleWhileRevalidate`, stale `load` blocks on the fetcher (slower but always-fresh).
+
+## Hooks
+
+```ts
+hooks: {
+  onFetch: async (raw) => {
+    // mutate fetched data before storing
+    return { ...raw, normalizedTitle: raw.title.toLowerCase() }
+  }
+}
+```
+
+Useful for derived fields, schema normalization, or compressing fields you don't need.
+
+## Client hooks
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+import { useCacheEntry } from 'noboil/convex/react'
+
+const { data, isLoading, refresh, invalidate } = useCacheEntry({
+  query: api.movie.get,
+  load: api.movie.load,
+  refresh: api.movie.refresh,
+  invalidate: api.movie.invalidate,
+  key: tmdbId
+})
+```
+
+`useCacheEntry` calls `load` if `data` is null and exposes `refresh`/`invalidate` for manual control.
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useCacheEntry, useMut } from 'noboil/spacetimedb/react'
+
+const { data, isLoading } = useCacheEntry(tables.movie, tmdbId, {
+  load: reducers.load_movie,
+  refresh: reducers.refresh_movie
+})
+```
+
+</Tab>
+</Tabs>
+
+## When to use `base` vs others
+
+- **`base`** — keyed by upstream id; no per-user state; fetcher knows how to populate. TMDB, Gravatar.
+- **`kv`** — keyed by string but globally meaningful (banner, feature flag). No fetcher. See [kv factory](./kv).
+- **`singleton`** — exactly one row per user. See [singleton factory](./singleton).
+- **`owned`** — user-owned, no external source. See [owned factory](./owned).
+
+## Demo
+
+[`web/cvx/movie`](https://github.com/1qh/noboil/tree/main/web/cvx/movie) and [`web/stdb/movie`](https://github.com/1qh/noboil/tree/main/web/stdb/movie) wrap TMDB: search by query, click a result to `load(tmdbId)`, render details. Cache hit on subsequent loads; `refresh` button forces re-fetch. Both backends.

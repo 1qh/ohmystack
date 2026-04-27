@@ -1,0 +1,254 @@
+---
+title: orgScoped factory (org-scoped CRUD with editors + ACL)
+description: Org-scoped CRUD with membership checks, role gating, optional editors-list ACL, and cascade. For multi-tenant team-shared resources — wikis, projects, tasks.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Use `orgScoped` for tables where rows belong to an **organization, not a user**. Every endpoint scopes by `orgId`, verifies the caller is a member, and (when `acl: true`) checks the caller is in the row's `editors[]` array. Pair with the org definition (`makeOrg`) to wire membership tables, invites, and role checks automatically.
+
+## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+type OrgCrudResult = {
+  create: Mutation<(ctx, payload: T & { orgId: Id<'org'> }) => Id>
+  update: Mutation<(ctx, { id, ...patch, expectedUpdatedAt? }) => Row>
+  rm: Mutation<(ctx, { id }) => { deleted: boolean }>
+  list: Query<(ctx, { orgId, paginationOpts }) => PaginatedResult>
+  read: Query<(ctx, { id }) => Row | null>
+  search: Query<(ctx, { orgId, query }) => Row[]>
+  addEditor: Mutation<(ctx, { id, userId }) => Row>      // when acl: true
+  removeEditor: Mutation<(ctx, { id, userId }) => Row>   // when acl: true
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `create({orgId, ...payload})` | org member | Inserts with `userId = ctx.user._id`, `orgId`, `updatedAt`. |
+| `update({id, ...})` | org member + (creator OR editor OR admin) | Patches; throws `INSUFFICIENT_ORG_ROLE` otherwise. |
+| `rm({id})` | org member + same | Hard or soft delete. |
+| `list({orgId, paginationOpts})` | org member | Cursor-paginated; `orgId` filtered. |
+| `read({id})` | org member | Throws `NOT_FOUND` if not in caller's orgs. |
+| `addEditor({id, userId})` | row creator OR admin | Adds userId to `editors[]`. |
+| `removeEditor({id, userId})` | row creator OR admin | Removes userId from `editors[]`. |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeOrgCrud(spacetimedb, {
+  tableName: 'wiki',
+  fields,
+  idField: 'id',
+  pk,
+  table
+})
+```
+
+Generated reducers:
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `create_wiki` | org member | `orgId, ...payload` | Inserts with sender as creator. |
+| `update_wiki` | creator/editor/admin | `id, ...patch, expectedUpdatedAt?` | Throws `INSUFFICIENT_ORG_ROLE`. |
+| `rm_wiki` | creator/editor/admin | `id` | Hard or soft delete. |
+| `add_editor_wiki` | creator/admin | `id, userId` | Appends to `editors[]`. |
+| `remove_editor_wiki` | creator/admin | `id, userId` | Removes from `editors[]`. |
+
+</Tab>
+</Tabs>
+
+## Schema
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+import { object, string, array, enum as zenum } from 'zod/v4'
+import { zid } from 'convex-helpers/server/zod4'
+import { schema, makeOrg, makeOrgScoped } from 'noboil/convex/schema'
+
+const org = makeOrg()  // membership tables, invites
+const orgScoped = makeOrgScoped({
+  wiki: object({
+    title: string().min(1),
+    content: string().optional(),
+    status: zenum(['draft', 'published']),
+    editors: array(zid('users')).max(100).optional()
+  })
+})
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, array, enum as zenum } from 'zod/v4'
+import { schema, makeOrg, makeOrgScoped } from 'noboil/spacetimedb/schema'
+
+const org = makeOrg()
+const orgScoped = makeOrgScoped({
+  wiki: object({
+    title: string().min(1),
+    content: string().optional(),
+    status: zenum(['draft', 'published'])
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+Auto-fields injected:
+- `userId` — creator identity
+- `orgId` — owning org (indexed)
+- `updatedAt` — last write timestamp
+- `editors?: Id<'users'>[]` — when `acl: true`
+- `deletedAt?` — when `softDelete: true`
+
+Indexes auto-created: `by_org`, `by_org_user`.
+
+## Wire it up
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+// backend/convex/lazy.ts
+const api = noboil({
+  /* ... */
+  orgSchema: s.team,        // pass the org definition
+  tables: ({ table }) => ({
+    wiki: table(s.wiki, {
+      acl: true,                              // enable editors[] ACL
+      rateLimit: 30,
+      softDelete: true
+    }),
+    project: table(s.project, {
+      acl: true,
+      cascade: orgCascade(s.task, { foreignKey: 'projectId' })  // delete tasks when project deleted
+    }),
+    task: table(s.task, {
+      aclFrom: { field: 'projectId', table: s.project.__name }  // inherit ACL from parent project
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/wiki.ts
+import { api } from '../lazy'
+export const { create, update, rm, list, read, search, addEditor, removeEditor } = api.wiki
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  orgSchema: s.team,
+  tables: ({ table }) => ({
+    wiki: table(s.wiki, { acl: true, softDelete: true }),
+    project: table(s.project, { acl: true }),
+    task: table(s.task, { aclFrom: { field: 'projectId', table: s.project.__name } })
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `acl` | boolean | Enables `editors[]` field + `addEditor`/`removeEditor` reducers; non-creators must be in editors to write. |
+| `aclFrom` | `{ field, table }` | Inherits ACL from parent row (e.g. tasks inherit from projects). |
+| `cascade` | `{ table, foreignKey }[]` | Auto-deletes children when row removed. Use `orgCascade(...)` helper. |
+| `softDelete` | boolean | `rm` writes `deletedAt`; auto-generates `restore`. |
+| `rateLimit` | `number` \| `{ max, window }` | Per-user write limit. |
+| `unique` | `string[]` | Enforces a unique compound index (e.g. `['orgId', 'slug']`). |
+| `hooks` | `OrgHooks<T>` | `beforeCreate`/`afterUpdate`/etc. with `(ctx, { orgId, ... })`. |
+
+## Membership + roles
+
+`makeOrg()` generates these tables/endpoints automatically — you don't write them:
+
+| Table / endpoint | Purpose |
+|---|---|
+| `org` | The org rows themselves (`name`, `slug`, owner). |
+| `orgMember` | userId × orgId join with `role` (`owner`/`admin`/`member`). |
+| `orgInvite` | Pending invites with token + expiry. |
+| `joinOrg({orgId})` | Self-join (if open) or create join request. |
+| `acceptInvite({token})` | Consume an invite token. |
+| `setMemberRole({orgId, userId, role})` | Admin-only role mutation. |
+| `removeMember({orgId, userId})` | Admin-only or self-leave. |
+
+See [organizations](./organizations) for the full membership lifecycle, invite flow, and role-checking helpers.
+
+## Cascade & aclFrom
+
+```ts
+project: table(s.project, {
+  acl: true,
+  cascade: orgCascade(s.task, { foreignKey: 'projectId' })
+})
+task: table(s.task, {
+  aclFrom: { field: 'projectId', table: s.project.__name }
+})
+```
+
+- **cascade**: deleting a project deletes all its tasks in the same transaction.
+- **aclFrom**: a task's "can edit" check defers to the project's ACL. Tasks don't need their own `editors[]`.
+
+## Conflict detection
+
+Same as [`owned`](./owned#conflict-detection) — pass `expectedUpdatedAt` from a previous read; throws `CONFLICT` on stale.
+
+## Soft-delete + restore
+
+With `softDelete: true`, `rm` writes `deletedAt`; `list`/`read` filter it out; `restore({ id })` reverses it.
+
+## Client hooks
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+import { useOrgQuery, useMutate, useOrgRole } from 'noboil/convex/react'
+
+const { items, hasMore, loadMore } = useOrgQuery(api.wiki.list, {})  // orgId injected
+const create = useMutate(api.wiki.create)
+const role = useOrgRole()  // 'owner' | 'admin' | 'member' | undefined
+```
+
+`useOrgQuery` reads the active org from `<OrgProvider>` context and injects `orgId` automatically — never pass it manually.
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useList, useMut } from 'noboil/spacetimedb/react'
+import { useSpacetimeDB } from 'spacetimedb/react'
+
+const { activeOrgId } = useSpacetimeDB()
+const { items } = useList(tables.wiki, { where: { orgId: activeOrgId } })
+const create = useMut(reducers.create_wiki)
+```
+
+</Tab>
+</Tabs>
+
+## When to use `orgScoped` vs others
+
+- **`orgScoped`** — multi-tenant, team-shared, role-gated. Wikis, projects, tasks.
+- **`owned`** — single user owns it. Personal blog, private notes. See [owned factory](./owned).
+- **`children`** — strictly nested under a parent, no separate org. Comments under posts. See [child factory](./child).
+
+## Demo
+
+[`web/{cvx,stdb}/org`](https://github.com/1qh/noboil/tree/main/web) implements a full multi-tenant app: create org, invite members, role gate (owner/admin/member), wiki with editors[], projects with cascading tasks. Both backends, full Playwright coverage.

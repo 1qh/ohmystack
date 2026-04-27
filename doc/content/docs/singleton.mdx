@@ -1,0 +1,226 @@
+---
+title: singleton factory (one row per user)
+description: Exactly one row per authenticated user — get + upsert. For profiles, preferences, settings, onboarding state.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Use `singleton` for tables where **each user has exactly zero or one row**: profiles, preferences, onboarding flags, settings. The factory exposes only `get` (returns the caller's row or null) and `upsert` (insert if missing, patch if present). No list, no delete-other-people's-row, no id-passing — the user identity is the implicit key.
+
+## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+type SingletonCrudResult = {
+  get: Query<(ctx) => Row | null>
+  upsert: Mutation<(ctx, payload: T) => Row>
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `get()` | required | Returns the caller's singleton row or `null` if not yet created. |
+| `upsert(payload)` | required | Inserts if no row, patches if present. Always sets `userId = ctx.user._id` and `updatedAt = now()`. |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeSingleton(spacetimedb, {
+  tableName: 'profile',
+  fields,
+  table
+})
+```
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `upsert_profile` | required | `...payload` | Insert if no row for sender, patch if present. |
+
+Reads via subscription on `tables.profile` filtered by `userId === ctx.identity`.
+
+</Tab>
+</Tabs>
+
+## Schema
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+import { object, string, boolean, enum as zenum } from 'zod/v4'
+import { schema, makeSingleton, file as fileSchema } from 'noboil/convex/schema'
+const file = fileSchema()
+
+const singleton = makeSingleton({
+  profile: object({
+    avatar: file.nullable().optional(),
+    bio: string().max(500).optional(),
+    displayName: string().trim().min(1),
+    notifications: boolean(),
+    theme: zenum(['light', 'dark', 'system'])
+  }),
+  preferences: object({
+    onboarded: boolean(),
+    locale: string().default('en')
+  })
+})
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, boolean, enum as zenum } from 'zod/v4'
+import { schema, makeSingleton } from 'noboil/spacetimedb/schema'
+
+const singleton = makeSingleton({
+  profile: object({
+    bio: string().max(500).optional(),
+    displayName: string().trim().min(1),
+    notifications: boolean(),
+    theme: zenum(['light', 'dark', 'system'])
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+Auto-fields injected:
+- `userId` — primary key (one row per user)
+- `updatedAt` — last write timestamp
+- `_creationTime` (Convex) / `createdAt` (SpacetimeDB)
+
+Index auto-created: `by_user` (unique).
+
+## Wire it up
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+// backend/convex/lazy.ts
+const api = noboil({
+  /* ... */
+  tables: ({ table }) => ({
+    profile: table(s.profile, {
+      hooks: {
+        beforeUpdate: async (ctx, payload) => {
+          // sanitize, normalize, ...
+          return { ...payload, displayName: payload.displayName.trim() }
+        }
+      }
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/profile.ts
+import { api } from '../lazy'
+export const { get, upsert } = api.profile
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    profile: table(s.profile)
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `rateLimit` | `number` \| `{ max, window }` | Per-user limit on `upsert`. |
+| `hooks` | `SingletonHooks<T>` | `beforeUpdate(ctx, payload)` / `afterUpdate(ctx, { payload, prev })`. |
+
+Singletons deliberately do not support `softDelete`, `pub`, `acl`, `cascade`, or `search` — by definition there's nothing to scope, share, or paginate. If you need any of those, you want [`owned`](./owned) instead.
+
+## Patterns
+
+### First-time use
+
+`get()` returns `null` if the user has never upserted. Render an onboarding form when null:
+
+```tsx
+const profile = useQuery(api.profile.get, {})
+if (profile === undefined) return <Spinner />        // loading
+if (profile === null) return <ProfileSetupForm />    // never set
+return <ProfileEditor profile={profile} />            // existing
+```
+
+### Patch semantics
+
+`upsert(payload)` is a **full replacement** at the schema level — Zod validates the entire payload. To do a partial update, merge with current first:
+
+```ts
+const current = await api.profile.get({})
+await api.profile.upsert({ ...current, theme: 'dark' })
+```
+
+### Preferences split
+
+For multiple unrelated settings (UI preferences, billing settings, notification settings), use multiple singletons rather than one giant blob:
+
+```ts
+const singleton = makeSingleton({
+  uiPrefs:    object({ theme: ..., locale: ... }),
+  billPrefs:  object({ plan: ..., autoRenew: ... }),
+  notifPrefs: object({ email: ..., push: ... })
+})
+```
+
+Each gets its own `get`/`upsert` pair — partial updates without read-modify-write cycles.
+
+## Client hooks
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+import { useSingleton } from 'noboil/convex/react'
+
+const { data, upsert } = useSingleton(api.profile)
+if (data === undefined) return <Spinner />
+if (data === null) return <SetupForm onSubmit={upsert} />
+return <Editor profile={data} onSave={upsert} />
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useSingleton } from 'noboil/spacetimedb/react'
+import { useSpacetimeDB } from 'spacetimedb/react'
+
+const { identity } = useSpacetimeDB()
+const { data, upsert, isLoading } = useSingleton(
+  { table: tables.profile, upsert: reducers.upsert_profile },
+  identity
+)
+```
+
+</Tab>
+</Tabs>
+
+## When to use `singleton` vs others
+
+- **`singleton`** — one row per user, simple `get`/`upsert`. Profile, preferences.
+- **`owned`** — multiple rows per user. See [owned factory](./owned).
+- **`kv`** — string-keyed but global (not per-user). Site config, banners. See [kv factory](./kv).
+
+## Demo
+
+[`web/{cvx,stdb}/blog`](https://github.com/1qh/noboil/tree/main/web/cvx/blog), [`/org`](https://github.com/1qh/noboil/tree/main/web/cvx/org), and [`/poll`](https://github.com/1qh/noboil/tree/main/web/cvx/poll) each ship a `Profile` page using `singleton` (`blogProfile`, `orgProfile`, `pollProfile`) — first-time setup form, edit existing, avatar upload (Convex). Both backends.

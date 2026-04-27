@@ -667,10 +667,12 @@ Every \`\`\`ts/tsx code fence in `doc/content/docs/*.mdx` is scanned by `Bun.Tra
 {/* AUTO-GENERATED:EXAMPLE-CHECK:START */}
 Bun.Transpiler.scan() over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.
 
-**472/472 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
+**526/528 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
 
-_No syntax issues._
+**Failures:**
 
+- doc/content/docs/singleton.mdx block #9: BuildMessage: Unexpected ...
+- doc/content/docs/base.mdx block #6: BuildMessage: Expected ";" but found ":"
 {/* AUTO-GENERATED:EXAMPLE-CHECK:END */}
 
 ## Hook signature drift
@@ -693,7 +695,7 @@ Long paragraphs that appear verbatim in 2+ `.mdx` files. Either consolidate or r
 {/* AUTO-GENERATED:DOC-DEDUP:START */}
 Scans every `.mdx` for paragraphs ≥120 chars appearing in 2+ files. Catches accidental duplication that adds maintenance cost without adding info.
 
-**0 duplicate paragraph(s) found** (across 28 doc files).
+**0 duplicate paragraph(s) found** (across 33 doc files).
 
 _No duplicates above threshold — every long paragraph appears in exactly one file._
 {/* AUTO-GENERATED:DOC-DEDUP:END */}
@@ -729,12 +731,12 @@ Quantitative depth per factory: source LOC, hook file LOC, test count (cases tha
 
 | Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | dedicated doc | doc mentions (cvx/stdb) |
 |---|---|---|---|---|---|
-| `base` | 245 / 173 | 90 / 86 | 12 / 4 | — | 13 / 3 |
-| `child` | 264 / 164 | 36 / 36 | 10 / 11 | — | 5 / 3 |
-| `kv` | 164 / 148 | 38 / 44 | 1 / 1 | 180L | 78 / 9 |
-| `log` | 390 / 257 | 71 / 73 | 7 / 2 | 221L | 148 / 9 |
-| `orgScoped` | 486 / 400 | 36 / 36 | 26 / 1 | — | 22 / 3 |
-| `owned` | 429 / 139 | 36 / 36 | 49 / 18 | — | 69 / 5 |
-| `quota` | 110 / 110 | 31 / 78 | 1 / 2 | 187L | 89 / 9 |
-| `singleton` | 70 / 113 | 25 / 39 | 13 / 8 | — | 14 / 8 |
+| `base` | 245 / 173 | 90 / 86 | 17 / 10 | 236L | 17 / 4 |
+| `child` | 264 / 164 | 36 / 36 | 11 / 13 | 240L | 5 / 4 |
+| `kv` | 164 / 148 | 38 / 44 | 2 / 1 | 180L | 84 / 9 |
+| `log` | 390 / 257 | 71 / 73 | 2 / 2 | 221L | 151 / 9 |
+| `orgScoped` | 486 / 400 | 36 / 36 | 35 / 20 | 255L | 22 / 4 |
+| `owned` | 429 / 139 | 36 / 36 | 33 / 38 | 266L | 69 / 6 |
+| `quota` | 110 / 110 | 31 / 78 | 9 / 2 | 187L | 89 / 9 |
+| `singleton` | 70 / 113 | 25 / 39 | 22 / 11 | 227L | 14 / 14 |
 {/* AUTO-GENERATED:FACTORY-DEPTH:END */}

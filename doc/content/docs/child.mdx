@@ -1,0 +1,239 @@
+---
+title: child factory (parent-of-children)
+description: Tables nested under a parent with cascade-on-delete, parent-scoped reads, and ownership inherited from the parent. For comments under posts, items under orders, messages under chats.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Use `children` for tables that have a **strict foreign-key relationship to a parent table**: comments under posts, line items under orders, replies under messages. The factory injects `parentId`, scopes reads to a parent, inherits ownership checks from the parent, and (with `cascade: true`) deletes children when the parent is removed.
+
+## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+type ChildCrudResult = {
+  create: Mutation<(ctx, payload: T & { parentId }) => Id>
+  update: Mutation<(ctx, { id, ...patch, expectedUpdatedAt? }) => Row>
+  rm: Mutation<(ctx, { id }) => { deleted: boolean }>
+  list: Query<(ctx, { parentId, paginationOpts }) => PaginatedResult>
+  get: Query<(ctx, { id }) => Row | null>
+  purgeByParent: Mutation<(ctx, { parentId }) => { deleted: number }>
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `create({parentId, ...payload})` | parent owner | Inserts with parent FK; verifies caller owns parent. |
+| `update({id, ...})` | row creator OR parent owner | Patches with optional `expectedUpdatedAt`. |
+| `rm({id})` | row creator OR parent owner | Hard or soft delete. |
+| `list({parentId, paginationOpts})` | parent owner | Cursor-paginated; only this parent's children. |
+| `get({id})` | parent owner | Single row by id; throws `NOT_FOUND` if unauthorized. |
+| `purgeByParent({parentId})` | parent owner | Bulk delete all children of a parent. Called automatically on parent delete with `cascade`. |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeChildCrud(spacetimedb, {
+  tableName: 'message',
+  parentTable: 'chat',
+  foreignKey: 'chatId',
+  fields,
+  table
+})
+```
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `create_message` | parent owner | `chatId, ...payload` | Insert with sender as creator. |
+| `update_message` | creator/parent | `id, ...patch, expectedUpdatedAt?` | Patch row. |
+| `rm_message` | creator/parent | `id` | Hard or soft delete. |
+| `purge_message_by_parent` | parent owner | `chatId` | Bulk delete; called by `cascade`. |
+
+</Tab>
+</Tabs>
+
+## Schema
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+import { object, string, array, enum as zenum } from 'zod/v4'
+import { zid } from 'convex-helpers/server/zod4'
+import { schema, child } from 'noboil/convex/schema'
+
+const children = {
+  message: child({
+    foreignKey: 'chatId',
+    parent: 'chat',
+    schema: object({
+      chatId: zid('chat'),
+      content: string(),
+      role: zenum(['user', 'assistant', 'system'])
+    })
+  })
+}
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, array, enum as zenum } from 'zod/v4'
+import { schema, child } from 'noboil/spacetimedb/schema'
+
+const children = {
+  message: child({
+    foreignKey: 'chatId',
+    parent: 'chat',
+    schema: object({
+      chatId: number(),  // FK type matches parent's id type
+      content: string(),
+      role: zenum(['user', 'assistant', 'system'])
+    })
+  })
+}
+```
+
+</Tab>
+</Tabs>
+
+`child(...)` config:
+- `parent` — name of the parent table (must exist in schema).
+- `foreignKey` — field on the child that holds the parent id.
+- `schema` — Zod object for the row (must include the foreignKey field).
+
+Auto-fields injected:
+- `parentId` (Convex) / aliased to `foreignKey` field — indexed
+- `userId` — creator
+- `updatedAt` — last write timestamp
+- `deletedAt?` — when `softDelete: true`
+
+Index auto-created: `by_parent` (on the foreignKey field).
+
+## Wire it up
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+// backend/convex/lazy.ts
+const api = noboil({
+  /* ... */
+  tables: ({ table }) => ({
+    chat: table(s.chat, {
+      cascade: [{ foreignKey: s.message.foreignKey, table: s.message.__name }],
+      pub: 'isPublic',
+      rateLimit: 30
+    }),
+    message: table(s.message, {
+      pub: { parentField: 'isPublic' }   // public reads if parent chat is public
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/message.ts
+import { api } from '../lazy'
+export const { create, update, rm, list, get } = api.message
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    chat: table(s.chat, {
+      cascade: { table: s.message.__name, foreignKey: 'chatId' },
+      pub: 'isPublic'
+    }),
+    message: table(s.message)
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `pub` | boolean \| `{ parentField }` | Public reads. With `{ parentField: 'X' }`, child rows are public iff parent's field `X` is true. |
+| `softDelete` | boolean | `rm` writes `deletedAt`; `restore` auto-generated. |
+| `rateLimit` | `number` \| `{ max, window }` | Per-user write limit. |
+| `cascade` | `{ table, foreignKey }[]` (set on parent) | Auto-purge children when parent deleted. |
+| `hooks` | `ChildHooks<T>` | `beforeCreate`/`afterCreate`/etc. with `(ctx, { parentId, ... })`. |
+
+## Cascade on parent delete
+
+When the parent table is configured with `cascade: [{ table, foreignKey }]`, deleting a parent calls `purge_<child>_by_parent` automatically — children disappear in the same transaction. No manual cleanup.
+
+```ts
+chat: table(s.chat, {
+  cascade: [{ foreignKey: 'chatId', table: 'message' }]
+})
+// rm({ id: chatId }) → purges all message rows where chatId = X
+```
+
+## Inherited public-read
+
+```ts
+message: table(s.message, {
+  pub: { parentField: 'isPublic' }
+})
+```
+
+A `message` row is publicly readable iff its parent `chat.isPublic === true`. Lets you build "public conversations with private replies still locked" patterns without re-implementing access logic.
+
+## Conflict detection
+
+Same as [`owned`](./owned#conflict-detection) — `expectedUpdatedAt` on `update`.
+
+## Soft-delete + restore
+
+Same as [`owned`](./owned#soft-delete-restore).
+
+## Client hooks
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+import { useList, useMutate } from 'noboil/convex/react'
+
+const { items, hasMore, loadMore } = useList(api.message.list, { parentId: chatId })
+const create = useMutate(api.message.create)
+await create({ chatId, content: 'hello', role: 'user' })
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useList, useMut } from 'noboil/spacetimedb/react'
+
+const { items, hasMore, loadMore } = useList(tables.message, { where: { chatId } })
+const create = useMut(reducers.create_message)
+await create({ chatId, content: 'hello', role: 'user' })
+```
+
+</Tab>
+</Tabs>
+
+## When to use `children` vs others
+
+- **`children`** — strictly nested under a parent; ownership inherited; cascade on parent delete. Comments, line items, messages.
+- **`owned`** — independent rows owned by one user. See [owned factory](./owned).
+- **`log`** — append-only with per-parent atomic seq, idempotency, no updates. Audit trails. See [log factory](./log).
+- **`orgScoped`** — belongs to an org, not a parent row. See [orgScoped factory](./orgScoped).
+
+## Demo
+
+[`web/{cvx,stdb}/chat`](https://github.com/1qh/noboil/tree/main/web) implements a chat app: chat owners create messages under their chats, public chats expose messages publicly via `parentField: 'isPublic'`, deleting a chat cascades to all messages. Both backends, full Playwright coverage.

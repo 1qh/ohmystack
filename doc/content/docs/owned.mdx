@@ -1,0 +1,265 @@
+---
+title: owned factory (user-owned CRUD)
+description: User-scoped CRUD with full create/list/read/update/rm — the default factory for "each row belongs to one user". For posts, chats, todos, drafts.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Use `owned` for any table where **each row has one owner** — blog posts, chats, todos, drafts, personal collections. The factory injects `userId` automatically, scopes every read to the caller's rows, and rejects writes to rows the caller doesn't own. This is the most-used factory; reach for it before considering anything else.
+
+## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+type CrudResult = {
+  create: Mutation<(ctx, payload: T) => Id>
+  update: Mutation<(ctx, { id, ...patch }: { id } & Partial<T> & { expectedUpdatedAt? }) => Row>
+  rm: Mutation<(ctx, { id }) => { deleted: boolean }>
+  pub: { list, read, search }   // public reads (when pub: true)
+  auth: { list, read, search }  // ownership-checked reads
+}
+```
+
+| Method | Auth | Semantics |
+|---|---|---|
+| `create(payload)` | required | Inserts row with `userId = ctx.user._id`, `updatedAt = now()`. Returns id. |
+| `update({id, ...patch})` | required | Patches `id` (must be owned). Optional `expectedUpdatedAt` for conflict detection. |
+| `rm({id})` | required | Hard-delete (or soft-delete with `softDelete: true`). |
+| `auth.list({paginationOpts})` | required | Cursor-paginated; only the caller's rows. |
+| `auth.read({id})` | required | Returns row if owned, throws `NOT_FOUND` otherwise (no enumeration leak). |
+| `auth.search({query})` | required | Full-text search over a configured field; caller's rows only. |
+| `pub.*` | public | Same surface but without ownership filter — set `pub: true` or `pub: 'fieldName'`. |
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeCrud(spacetimedb, {
+  tableName: 'post',
+  fields,
+  idField: 'id',
+  pk,
+  table
+})
+```
+
+Generated reducers per table `post`:
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `create_post` | required | `...payload` | Inserts row with `userId = ctx.sender`. |
+| `update_post` | required | `id, ...patch, expectedUpdatedAt?` | Author-only. Throws `CONFLICT` on stale `expectedUpdatedAt`. |
+| `rm_post` | required | `id` | Hard-delete (or soft-delete with `softDelete: true`). |
+| `bulk_rm_post` | required | `ids[]` | Batch delete, single transaction. |
+
+Subscriptions are real-time over `tables.post` — there is no `list`/`read` reducer; the client iterates the subscribed table directly.
+
+</Tab>
+</Tabs>
+
+## Schema
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+import { object, string, boolean, array } from 'zod/v4'
+import { schema, makeOwned } from 'noboil/convex/schema'
+
+const owned = makeOwned({
+  blog: object({
+    title: string().min(1),
+    content: string(),
+    published: boolean(),
+    tags: array(string()).max(5).optional()
+  }),
+  todo: object({
+    text: string().min(1),
+    done: boolean()
+  })
+})
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, boolean, array } from 'zod/v4'
+import { schema, makeOwned } from 'noboil/spacetimedb/schema'
+
+const owned = makeOwned({
+  blog: object({
+    title: string().min(1),
+    content: string(),
+    published: boolean(),
+    tags: array(string()).max(5).optional()
+  })
+})
+```
+
+</Tab>
+</Tabs>
+
+Auto-fields injected:
+- `userId` — caller identity at insert time
+- `updatedAt` — last-write timestamp (used for conflict detection)
+- `_creationTime` (Convex) / `createdAt` (SpacetimeDB) — insert timestamp
+- `deletedAt?` — set when `softDelete: true` and row is removed
+
+Index auto-created: `by_user`.
+
+## Wire it up
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```ts
+// backend/convex/lazy.ts
+const api = noboil({
+  /* ... */
+  tables: ({ table }) => ({
+    blog: table(s.blog, {
+      pub: 'published',                       // pub.list/read sees only published rows
+      rateLimit: { max: 10, window: 60_000 }, // 10 writes/min/user
+      search: 'content',                      // enables auth.search by 'content' field
+      softDelete: true                        // rm soft-deletes; restore endpoint generated
+    })
+  })
+})
+```
+
+```ts
+// backend/convex/convex/blog.ts
+import { api } from '../lazy'
+export const { create, update, rm, pub: { list, read, search } } = api.blog
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    blog: table(s.blog, {
+      pub: 'published',
+      rateLimit: 10,
+      softDelete: true
+    })
+  })
+})
+```
+
+Reducers `create_blog`, `update_blog`, `rm_blog`, `bulk_rm_blog` are auto-registered on the module.
+
+</Tab>
+</Tabs>
+
+## Options reference
+
+| Option | Type | Effect |
+|---|---|---|
+| `pub` | boolean \| string | Generates `pub.list`/`read`/`search` for public reads. String form: only show rows where `pub === true` for that field (e.g. `pub: 'published'`). |
+| `softDelete` | boolean | `rm` sets `deletedAt` instead of hard-deleting; `auth.list`/`pub.list` filter it out; auto-generates `restore({ id })`. |
+| `rateLimit` | `number` \| `{ max, window }` | Sliding-window per-user write limit. Number is shorthand for `{ max: N, window: 60_000 }`. Throws `RATE_LIMITED` over the limit. |
+| `search` | string | Field to index for full-text search. Convex creates a search index; SpacetimeDB filters client-side. |
+| `acl` | boolean | (orgScoped/owned hybrid) Enables `editors[]` field on rows for shared editing. |
+| `cascade` | `{ table, foreignKey }[]` | Auto-delete child rows when this row is removed. |
+| `hooks` | `OwnedHooks<T>` | Lifecycle: `beforeCreate`/`afterCreate`/`beforeUpdate`/`afterUpdate`/`beforeDelete`/`afterDelete`. |
+
+## Conflict detection
+
+Pass `expectedUpdatedAt` from a previous read:
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+const update = useMutate(api.blog.update)
+await update({ id: post._id, expectedUpdatedAt: post.updatedAt, title: 'New' })
+// → throws CONFLICT if someone else edited since post was fetched
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+const update = useMut(reducers.update_blog)
+await update({ id: post.id, expectedUpdatedAt: post.updatedAt, title: 'New' })
+```
+
+</Tab>
+</Tabs>
+
+`useForm` wires this automatically via [Auto Conflict Detection](./recipes#auto-conflict-detection).
+
+## Soft-delete + restore
+
+With `softDelete: true`, `rm({ id })` writes `deletedAt = now()` instead of removing the row. List/read endpoints filter `deletedAt != null` rows out by default. A `restore({ id })` endpoint is auto-generated.
+
+```ts
+const { restore } = api.blog
+await restore({ id: post._id })  // clears deletedAt
+```
+
+## Bulk operations
+
+`create`, `update`, and `rm` all accept arrays up to 100 items in a single call:
+
+```ts
+await api.blog.create([{ title: 'A', content: '...' }, { title: 'B', content: '...' }])
+await api.blog.rm({ id: [postA, postB, postC] })
+```
+
+Single-transaction; partial failures roll back everything.
+
+## Client hooks
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
+import { useList, useCrud } from 'noboil/convex/react'
+
+// option A: separate
+const { items, hasMore, loadMore } = useList(api.blog.pub.list, {})
+const create = useMutate(api.blog.create)
+
+// option B: bundled
+const { data, create, update, rm, hasMore, loadMore, isLoading } = useCrud(api.blog)
+```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useList, useCrud, useMut } from 'noboil/spacetimedb/react'
+
+const { items, hasMore, loadMore } = useList(tables.blog, { where: { published: true } })
+const create = useMut(reducers.create_blog)
+
+// or unified:
+const { data, create, update, rm } = useCrud({
+  table: tables.blog,
+  create: reducers.create_blog,
+  update: reducers.update_blog,
+  rm: reducers.rm_blog
+})
+```
+
+</Tab>
+</Tabs>
+
+## When to use `owned` vs others
+
+- **`owned`** — each row has one owner; the default. Posts, chats, todos.
+- **`orgScoped`** — rows belong to an organization, not a user. Multi-tenant. Use when membership/role checks matter. See [orgScoped factory](./orgScoped).
+- **`children`** — rows hang off a parent (with cascade). Comments under posts. See [child factory](./child).
+- **`singleton`** — exactly one row per user. Profile, preferences. See [singleton factory](./singleton).
+- **`base`** — shared/global, no ownership. External API cache. See [base factory](./base).
+
+## Demo
+
+[`web/{cvx,stdb}/blog`](https://github.com/1qh/noboil/tree/main/web) implements a full blog: create/edit/publish/delete posts, public reads of `published === true`, search by content, soft-delete + restore, conflict detection. 52 Playwright tests cover the full flow on each backend.
