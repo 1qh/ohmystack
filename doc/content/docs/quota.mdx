@@ -3,9 +3,14 @@ title: quota factory (sliding window)
 description: Per-owner sliding-window rate limit primitive with check / record / consume semantics, hooks, and ergonomic React integration. For anti-spam, API throttling, ballot-stuffing prevention.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
 Use `quota` for sliding-window rate limits per owner — anti-spam on form submissions, API throttling per user, ballot-stuffing prevention on polls, typing-indicator debouncing. Storage is per-owner with a `timestamps: number[]` ring; pruning happens on write.
 
 ## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
 
 ```ts
 type QuotaFactoryResult = {
@@ -16,6 +21,27 @@ type QuotaFactoryResult = {
 type QuotaResult = { allowed: boolean, remaining: number, retryAfter?: number }
 ```
 
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeQuota(spacetimedb, {
+  tableName: 'pollVoteQuota',
+  fields,
+  table
+})
+```
+
+| Reducer | Params | Semantics |
+|---|---|---|
+| `record_pollVoteQuota` | `owner` | Append timestamp + prune. Returns new state. |
+| `consume_pollVoteQuota` | `owner` | Atomic check + record. Returns `allowed: false` if over. |
+
+Reads via subscription on `tables.pollVoteQuota` (compute `allowed`/`remaining` client-side from `timestamps[]`).
+
+</Tab>
+</Tabs>
+
 | Method | Pure | Semantics |
 |---|---|---|
 | `check(owner)` | ✓ (query) | Returns current state without mutating. Use for UI — "3 left this minute". |
@@ -24,23 +50,30 @@ type QuotaResult = { allowed: boolean, remaining: number, retryAfter?: number }
 
 ## Schema
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
 import { schema, makeQuota } from 'noboil/convex/schema'
 const limits = makeQuota({
-  messageSend: {
-    limit: 10,
-    durationMs: 60_000      // 10 messages per 60s per owner
-  },
-  pollVote: {
-    limit: 30,
-    durationMs: 60_000      // 30 votes per 60s per owner (anti-spam)
-  },
-  signup: {
-    limit: 5,
-    durationMs: 60 * 60 * 1000   // 5 signups per hour per IP
-  }
+  messageSend: { limit: 10, durationMs: 60_000 },         // 10/min per owner
+  pollVote:    { limit: 30, durationMs: 60_000 },         // 30/min per owner
+  signup:      { limit: 5,  durationMs: 60 * 60 * 1000 }  // 5/hr per IP
 })
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { schema, makeQuota } from 'noboil/spacetimedb/schema'
+const limits = makeQuota({
+  pollVoteQuota: { limit: 30, durationMs: 60_000 }
+})
+```
+
+</Tab>
+</Tabs>
 
 Auto-fields in the backing table:
 - `owner: string` — the rate-limit key (userId, email, IP, composite)
@@ -51,6 +84,9 @@ Index auto-created: `by_owner` (unique).
 
 ## Wire it up
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
 // backend/convex/lazy.ts
 const api = noboil({
@@ -58,16 +94,9 @@ const api = noboil({
   tables: ({ table }) => ({
     pollVoteQuota: table(s.pollVote, {
       hooks: {
-        beforeConsume: async (ctx, { owner }) => {
-          // veto attempts: return false to deny without recording
-        },
-        afterConsume: async (ctx, { owner, result }) => {
-          // notify, audit, increment metrics
-        },
-        beforeRecord: async (ctx, { owner }) => { /* ... */ },
-        afterRecord: async (ctx, { owner, result }) => { /* ... */ },
+        beforeConsume: async (ctx, { owner }) => true,            // return false to deny
+        afterConsume: async (ctx, { owner, result }) => {/* metrics */},
         onExceeded: async (ctx, { owner, result }) => {
-          // fired only when allowed=false (over limit)
           await audit({ ctx, kind: 'rate_limit_exceeded', owner })
         }
       }
@@ -81,6 +110,23 @@ const api = noboil({
 import { api } from '../lazy'
 export const { check, consume, record } = api.pollVoteQuota
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    pollVoteQuota: table(s.pollVoteQuota)
+  })
+})
+```
+
+Reducers `consume_pollVoteQuota`, `record_pollVoteQuota` are auto-registered.
+
+</Tab>
+</Tabs>
 
 ## Options reference
 
@@ -147,7 +193,10 @@ await api.limits.vote.record(ctx, { owner: userId })   // only record after succ
 
 ## Client hook
 
-```ts
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
 import { useQuota } from 'noboil/convex/react'
 const quota = useQuota(api.pollVoteQuota, pollId)
 
@@ -155,6 +204,27 @@ quota.state             // { allowed, remaining, retryAfter? } (subscribed via c
 const result = await quota.consume()
 const after = await quota.record()
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useQuota } from 'noboil/spacetimedb/react'
+const quota = useQuota(
+  {
+    table: tables.pollVoteQuota,
+    consume: reducers.consume_pollVoteQuota,
+    record: reducers.record_pollVoteQuota
+  },
+  pollId
+)
+
+quota.state             // { allowed, remaining, retryAfter? }
+await quota.consume()
+```
+
+</Tab>
+</Tabs>
 
 ## What quota deliberately doesn't do
 

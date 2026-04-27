@@ -667,7 +667,7 @@ Every \`\`\`ts/tsx code fence in `doc/content/docs/*.mdx` is scanned by `Bun.Tra
 {/* AUTO-GENERATED:EXAMPLE-CHECK:START */}
 Bun.Transpiler.scan() over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.
 
-**526/528 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
+**540/542 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
 
 **Failures:**
 
@@ -729,14 +729,14 @@ Beyond presence, this measures how *much* each factory has — source LOC, tests
 {/* AUTO-GENERATED:FACTORY-DEPTH:START */}
 Quantitative depth per factory: source LOC, hook file LOC, test count (cases that reference the factory name), dedicated doc page LOC if any, and total mentions in all docs. **Bigger numbers ≠ better quality**, but large gaps signal uneven investment.
 
-| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | dedicated doc | doc mentions (cvx/stdb) |
+| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |
 |---|---|---|---|---|---|
-| `base` | 245 / 173 | 90 / 86 | 17 / 10 | 236L | 17 / 4 |
-| `child` | 264 / 164 | 36 / 36 | 11 / 13 | 240L | 5 / 4 |
-| `kv` | 164 / 148 | 38 / 44 | 2 / 1 | 180L | 84 / 9 |
-| `log` | 390 / 257 | 71 / 73 | 2 / 2 | 221L | 151 / 9 |
-| `orgScoped` | 486 / 400 | 36 / 36 | 35 / 20 | 255L | 22 / 4 |
-| `owned` | 429 / 139 | 36 / 36 | 33 / 38 | 266L | 69 / 6 |
-| `quota` | 110 / 110 | 31 / 78 | 9 / 2 | 187L | 89 / 9 |
-| `singleton` | 70 / 113 | 25 / 39 | 22 / 11 | 227L | 14 / 14 |
+| `base` | 245 / 173 | 90 / 86 | 17 / 10 | 236L | 4 / 4 ✓ |
+| `child` | 264 / 164 | 36 / 36 | 11 / 13 | 240L | 4 / 4 ✓ |
+| `kv` | 164 / 148 | 38 / 44 | 2 / 1 | 270L | 4 / 4 ✓ |
+| `log` | 390 / 257 | 71 / 73 | 2 / 2 | 357L | 5 / 5 ✓ |
+| `orgScoped` | 486 / 400 | 36 / 36 | 35 / 20 | 255L | 4 / 4 ✓ |
+| `owned` | 429 / 139 | 36 / 36 | 33 / 38 | 266L | 5 / 5 ✓ |
+| `quota` | 110 / 110 | 31 / 78 | 9 / 2 | 257L | 4 / 4 ✓ |
+| `singleton` | 70 / 113 | 25 / 39 | 22 / 11 | 227L | 4 / 4 ✓ |
 {/* AUTO-GENERATED:FACTORY-DEPTH:END */}

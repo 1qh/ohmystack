@@ -3,9 +3,14 @@ title: kv factory (string-keyed global state)
 description: Named key → value state with role-gated writes, public reads, soft-delete + restore, conflict detection, and optional key whitelist. For site config, feature flags, banners, system status.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
 Use `kv` for state addressed by a **string key**, not tied to a specific user — maintenance banners, feature flags, system health, site-wide configuration. Differs from `singleton` (one row per user) and `cache` (TTL'd lookups by external id): kv has many rows, each identified by a string key chosen by the caller.
 
 ## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
 
 ```ts
 type KvFactoryResult = {
@@ -17,6 +22,28 @@ type KvFactoryResult = {
 }
 ```
 
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeKv(spacetimedb, {
+  tableName: 'siteConfig',
+  fields,
+  table
+})
+```
+
+| Reducer | Auth | Params | Semantics |
+|---|---|---|---|
+| `set_siteConfig` | role-gated | `key, ...payload, expectedUpdatedAt?` | Upsert with optional conflict check. |
+| `rm_siteConfig` | role-gated | `key` | Hard or soft delete. |
+| `restore_siteConfig` | role-gated | `key` | Clear `deletedAt` (when `softDelete: true`). |
+
+Reads via subscription on `tables.siteConfig`.
+
+</Tab>
+</Tabs>
+
 | Method | Auth | Semantics |
 |---|---|---|
 | `get(key)` | public | Returns row or null. Safe from unauthenticated clients. |
@@ -27,8 +54,11 @@ type KvFactoryResult = {
 
 ## Schema
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
-import { object, string, boolean } from 'zod/v4'
+import { object, string, boolean, number } from 'zod/v4'
 import { schema, makeKv } from 'noboil/convex/schema'
 const kv = makeKv({
   systemStatus: {
@@ -49,6 +79,24 @@ const kv = makeKv({
 })
 ```
 
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+import { object, string, boolean } from 'zod/v4'
+import { schema, makeKv } from 'noboil/spacetimedb/schema'
+const kv = makeKv({
+  siteConfig: {
+    keys: ['banner', 'maintenance'] as const,
+    schema: object({ active: boolean(), message: string() }),
+    writeRole: true
+  }
+})
+```
+
+</Tab>
+</Tabs>
+
 Config:
 - `schema` — Zod shape for the value
 - `writeRole: (ctx) => boolean | Promise<boolean>` — predicate gating `set`/`rm`/`list`/`restore`. Sugar: literal `true` for public writes, omit for internal-only.
@@ -64,6 +112,9 @@ Index auto-created: `by_key` (unique).
 
 ## Wire it up
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
 // backend/convex/lazy.ts
 const api = noboil({
@@ -73,13 +124,8 @@ const api = noboil({
       softDelete: true,        // enables restore + delayed cleanup
       rateLimit: 10,           // 10 writes/min/user
       hooks: {
-        beforeUpdate: async (ctx, { key, payload, prev }) => {
-          // mutate payload before write
-          return { ...payload, updatedBy: ctx.user._id }
-        },
-        afterUpdate: async (ctx, { key, payload }) => {
-          // notify subscribers, audit, ...
-        }
+        beforeUpdate: async (ctx, { key, payload, prev }) => ({ ...payload, updatedBy: ctx.user._id }),
+        afterUpdate: async (ctx, { key, payload }) => {/* notify subscribers, audit */}
       }
     })
   })
@@ -91,6 +137,23 @@ const api = noboil({
 import { api } from '../lazy'
 export const { get, list, restore, rm, set } = api.siteConfig
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    siteConfig: table(s.siteConfig, { softDelete: true })
+  })
+})
+```
+
+Reducers `set_siteConfig`, `rm_siteConfig`, `restore_siteConfig` are auto-registered.
+
+</Tab>
+</Tabs>
 
 ## Options reference
 
@@ -154,7 +217,10 @@ Useful for "trash bin" UX, undo, or accidental-delete recovery without backup.
 
 ## Client hooks
 
-```ts
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
 import { useKv } from 'noboil/convex/react'
 const banner = useKv(api.siteConfig, 'banner')
 
@@ -164,6 +230,30 @@ await banner.update({ active: true, message: 'hi' }, { expectedUpdatedAt })
 await banner.remove()
 await banner.restore()
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useKv } from 'noboil/spacetimedb/react'
+const banner = useKv(
+  {
+    table: tables.siteConfig,
+    set: reducers.set_siteConfig,
+    rm: reducers.rm_siteConfig,
+    restore: reducers.restore_siteConfig
+  },
+  'banner'
+)
+
+banner.data       // Row | null
+await banner.update({ active: true, message: 'hello' })
+await banner.remove()
+await banner.restore()
+```
+
+</Tab>
+</Tabs>
 
 ## When to use kv vs singleton vs cache
 

@@ -3,9 +3,14 @@ title: Log factory (append-only event log)
 description: Append-only sequential tables with atomic seq allocation, idempotent appends, soft-delete + restore, bulk operations, and parent-scoped listing. For messaging, audit trails, activity feeds, event sourcing.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
 Use `log` for tables where rows are **append-only** and **ordered by a per-parent sequence number** — chat messages, stream events, audit trails, activity feeds, vote ballots. Auto-assigns a `seq` (atomic counter per parent), supports idempotent appends, soft-delete + restore, bulk operations, and pub/auth split for visibility scoping.
 
 ## API surface
+
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
 
 ```ts
 type LogFactoryResult = {
@@ -29,9 +34,37 @@ type LogFactoryResult = {
 
   // reads (public — visible to everyone)
   pub?: { list, listAfter, read, search }
-  pubIndexed?: Query<...>
 }
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const { tables, reducers } = makeLog(spacetimedb, {
+  tableName: 'vote',
+  parentTable: 'poll',
+  fields,
+  table
+})
+```
+
+Generated reducers per `vote`:
+
+| Reducer | Params | Semantics |
+|---|---|---|
+| `append_vote` | `parent, ...payload, idempotency_key?` | Atomic seq + insert. Returns existing on idempotency-key match. |
+| `bulk_append_vote` | `parent, items[]` | Single-transaction batch append. |
+| `update_vote` | `id, ...patch, expectedUpdatedAt?` | Author-only patch. Throws `CONFLICT` on stale. |
+| `rm_vote` | `id` | Hard or soft delete. |
+| `bulk_rm_vote` | `ids[]` | Batch delete. |
+| `purge_vote_by_parent` | `parent` | Delete all rows for a parent. |
+| `restore_vote_by_parent` | `parent` | Clear `deletedAt` on all rows for parent (when `softDelete: true`). |
+
+Reads happen via subscription on `tables.vote` filtered client-side by parent.
+
+</Tab>
+</Tabs>
 
 | Method | Semantics |
 |---|---|
@@ -50,9 +83,13 @@ type LogFactoryResult = {
 
 ## Schema
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
-import { object, string, number } from 'zod/v4'
+import { object, string, number, enum as zenum } from 'zod/v4'
 import { schema, makeLog } from 'noboil/convex/schema'
+
 const log = makeLog({
   vote: {
     parent: 'poll',
@@ -65,30 +102,56 @@ const log = makeLog({
     parent: 'chat',
     schema: object({
       content: string(),
-      role: z.enum(['user', 'assistant', 'system'])
+      role: zenum(['user', 'assistant', 'system'])
     })
   }
 })
 ```
 
-Auto-fields injected by the factory:
+</Tab>
+<Tab value="SpacetimeDB">
 
-- `parent: Id<parentTable>` — foreign key (indexed)
+```ts
+import { object, string, number, enum as zenum } from 'zod/v4'
+import { schema, makeLog } from 'noboil/spacetimedb/schema'
+
+const log = makeLog({
+  vote: {
+    parent: 'poll',
+    schema: object({ optionIdx: number(), voter: string() })
+  },
+  message: {
+    parent: 'chat',
+    schema: object({
+      content: string(),
+      role: zenum(['user', 'assistant', 'system'])
+    })
+  }
+})
+```
+
+</Tab>
+</Tabs>
+
+Auto-fields injected:
+
+- `parent` — foreign key (indexed)
 - `seq: number` — monotonic per parent, starts at 1
 - `idempotencyKey?: string` — optional dedup hash
-- `userId: Id<users>` — author
-- `createdAt: number` / `updatedAt: number` — timestamps
-- `deletedAt?: number` — set when `softDelete: true` and row is purged
-- `_creationTime: number` — Convex native
+- `userId` — author identity
+- `createdAt` / `updatedAt` — timestamps
+- `deletedAt?` — when `softDelete: true` and row purged
+- `_creationTime` (Convex native)
 
-Indexes auto-created: `by_parent_seq`, `by_idempotency` (if seen).
+Indexes auto-created: `by_parent_seq`, `by_idempotency` (when used).
 
 ## Wire it up
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
 // backend/convex/lazy.ts
-import { noboil } from 'noboil/convex/server'
-import { s } from './s'
 const api = noboil({
   /* ... */
   tables: ({ table }) => ({
@@ -98,15 +161,10 @@ const api = noboil({
       rateLimit: 30,           // max 30 appends per user/minute
       pub: 'isPublic',         // expose pub.* reads when poll.isPublic = true
       hooks: {
-        beforeAppend: async (ctx, { parent, payload }) => {
-          // mutate payload before insert
-          return { ...payload, voter: ctx.user._id }
-        },
-        afterAppend: async (ctx, { row }) => {
-          // notify subscribers, increment counters, ...
-        },
-        beforeRm: async (ctx, { id, prev }) => { /* gate / audit */ },
-        afterRm: async (ctx, { id }) => { /* notify */ }
+        beforeAppend: async (ctx, { parent, payload }) => ({ ...payload, voter: ctx.user._id }),
+        afterAppend: async (ctx, { row }) => {/* notify subscribers */},
+        beforeRm: async (ctx, { id, prev }) => {/* gate / audit */},
+        afterRm: async (ctx, { id }) => {/* notify */}
       }
     })
   })
@@ -116,24 +174,50 @@ const api = noboil({
 ```ts
 // backend/convex/convex/vote.ts (re-export to expose RPC)
 import { api } from '../lazy'
-export const { append, appendBulk, auth, authIndexed, list, listAfter, purgeByParent,
-                read, restoreByParent, rm, update } = api.vote
+export const {
+  append, appendBulk, auth, authIndexed, list, listAfter,
+  purgeByParent, read, restoreByParent, rm, update
+} = api.vote
 ```
+
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+// backend/spacetimedb/src/index.ts
+const spacetimedb = noboil({
+  tables: ({ table }) => ({
+    poll: table(s.poll),
+    vote: table(s.vote, {
+      softDelete: true,
+      rateLimit: 30
+    })
+  })
+})
+```
+
+Reducers `append_vote`, `bulk_append_vote`, `update_vote`, `rm_vote`, `purge_vote_by_parent`, `restore_vote_by_parent` are auto-registered.
+
+</Tab>
+</Tabs>
 
 ## Options reference
 
 | Option | Type | Effect |
 |---|---|---|
 | `softDelete` | boolean | Enables `deletedAt` flag; `purgeByParent` sets timestamps; `restoreByParent` clears them. Hard-delete still available via `rm({hard:true})`. |
-| `rateLimit` | number \| RateLimitConfig | Sliding-window limit on appends per user. |
+| `rateLimit` | `number` \| `RateLimitConfig` | Sliding-window limit on appends per user. |
 | `pub` | string \| `{ parentField: string }` | Field on the parent row that gates public visibility. |
 | `search` | string | Field to enable full-text search on (server-side `withSearchIndex`). |
-| `hooks` | LogHooks | `beforeAppend` / `afterAppend` / `beforeRm` / `afterRm` / `beforeUpdate` / `afterUpdate`. |
+| `hooks` | `LogHooks` | `beforeAppend` / `afterAppend` / `beforeRm` / `afterRm` / `beforeUpdate` / `afterUpdate`. |
 | `withAuthor` | boolean | Auto-join `users` row into reads. |
 
 ## Client hooks
 
-```ts
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
+```tsx
 import { useLog } from 'noboil/convex/react'
 const log = useLog(api.vote, { parent: pollId })
 
@@ -151,9 +235,35 @@ await log.purge()       // calls purgeByParent for current parent
 await log.restore()     // calls restoreByParent for current parent
 ```
 
+</Tab>
+<Tab value="SpacetimeDB">
+
+```tsx
+import { useLog } from 'noboil/spacetimedb/react'
+const log = useLog(
+  {
+    table: tables.vote,
+    append: reducers.append_vote,
+    bulkAppend: reducers.bulk_append_vote,
+    rm: reducers.rm_vote,
+    purge: reducers.purge_vote_by_parent
+  },
+  { parent: pollId }
+)
+
+await log.append({ payload: { optionIdx: 0, voter: 'me' } })
+await log.purge()
+```
+
+</Tab>
+</Tabs>
+
 ## Seq allocation
 
-Counter row per parent stored in internal `_logCounters` table (one row per `{table, parent}`). `append` reads counter, increments atomically, inserts row. Convex mutations are transactional so the read+write is safe. SpacetimeDB uses `auto_inc`.
+Counter row per parent stored in internal `_logCounters` table (one row per `{table, parent}`). `append` reads counter, increments atomically, inserts row.
+
+- **Convex** mutations are transactional, so the read+increment+write is safe.
+- **SpacetimeDB** uses `auto_inc` columns; the reducer enforces per-parent monotonicity.
 
 ## Idempotency
 
@@ -185,11 +295,14 @@ Use cases: stamp author, derive denormalized fields, fire-and-forget side effect
 
 ## Example: chat messages with idempotency
 
+<Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
+<Tab value="Convex">
+
 ```ts
 const s = schema({
   owned: { chat: object({ title: string(), userId: zid('users') }) },
   log: {
-    message: { parent: 'chat', schema: object({ content: string(), role: z.enum(['user','assistant','system']) }) }
+    message: { parent: 'chat', schema: object({ content: string(), role: zenum(['user','assistant','system']) }) }
   }
 })
 ```
@@ -205,6 +318,29 @@ const { seq, created } = await log.append({
 if (!created) console.log('Already sent, seq:', seq)
 ```
 
+</Tab>
+<Tab value="SpacetimeDB">
+
+```ts
+const s = schema({
+  owned: { chat: object({ title: string() }) },
+  log: {
+    message: { parent: 'chat', schema: object({ content: string(), role: zenum(['user','assistant','system']) }) }
+  }
+})
+```
+
+```ts
+const tempId = crypto.randomUUID()
+const { seq, created } = await log.append({
+  payload: { content, role: 'user' },
+  idempotencyKey: tempId
+})
+```
+
+</Tab>
+</Tabs>
+
 ## When to use log vs child
 
 | Use `log` if | Use `child` if |
@@ -217,4 +353,4 @@ if (!created) console.log('Already sent, seq:', seq)
 
 ## Demo
 
-The [poll demo](https://github.com/1qh/noboil/tree/main/web/cvx/poll) uses `log` for vote rows: each ballot is appended with `{optionIdx, voter}`, listed paginated, purged + restored as admin actions, and counted via `useLog().data` aggregation.
+The [poll demo](https://github.com/1qh/noboil/tree/main/web) uses `log` for vote rows on both backends: each ballot is appended with `{optionIdx, voter}`, listed paginated, purged + restored as admin actions, and counted via `useLog().data` aggregation.

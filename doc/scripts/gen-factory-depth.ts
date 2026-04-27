@@ -140,10 +140,6 @@ const main = () => {
   const stdbServer = `${REPO}/lib/noboil/src/spacetimedb/server`
   const cvxReact = `${REPO}/lib/noboil/src/convex/react`
   const stdbReact = `${REPO}/lib/noboil/src/spacetimedb/react`
-  const allDocs = readdirSync(docsDir)
-    .filter(f => f.endsWith('.mdx'))
-    .map(f => readFileSync(`${docsDir}/${f}`, 'utf8'))
-    .join('\n')
   const rows: string[] = []
   for (const f of FACTORIES) {
     const cvxLines = lineCount(`${cvxServer}/${f.cvxSrc}`)
@@ -152,17 +148,19 @@ const main = () => {
     const stdbTests = countTestsMentioning(`${REPO}/lib/noboil/src/spacetimedb`, f.stdbTestPatterns)
     const cvxHook = lineCount(`${cvxReact}/${f.hookFile}`)
     const stdbHook = lineCount(`${stdbReact}/${f.hookFile}`)
-    const docPage = existsSync(`${docsDir}/${f.brand}.mdx`) ? lineCount(`${docsDir}/${f.brand}.mdx`) : 0
-    const docMentionsCvx = (allDocs.match(new RegExp(`\\b${f.cvxFn}\\b`, 'gu')) ?? []).length
-    const docMentionsStdb = (allDocs.match(new RegExp(`\\b${f.stdbFn}\\b`, 'gu')) ?? []).length
+    const docPagePath = `${docsDir}/${f.brand}.mdx`
+    const docPage = existsSync(docPagePath) ? lineCount(docPagePath) : 0
+    const pageSrc = existsSync(docPagePath) ? readFileSync(docPagePath, 'utf8') : ''
+    const cvxTabs = (pageSrc.match(/<Tab value="Convex">/gu) ?? []).length
+    const stdbTabs = (pageSrc.match(/<Tab value="SpacetimeDB">/gu) ?? []).length
     rows.push(
-      `| \`${f.brand}\` | ${cvxLines} / ${stdbLines} | ${cvxHook} / ${stdbHook} | ${cvxTests} / ${stdbTests} | ${docPage > 0 ? `${docPage}L` : '—'} | ${docMentionsCvx} / ${docMentionsStdb} |`
+      `| \`${f.brand}\` | ${cvxLines} / ${stdbLines} | ${cvxHook} / ${stdbHook} | ${cvxTests} / ${stdbTests} | ${docPage > 0 ? `${docPage}L` : '—'} | ${cvxTabs} / ${stdbTabs} ${cvxTabs === stdbTabs && cvxTabs > 0 ? '✓' : '⚠'} |`
     )
   }
   const body = [
     'Quantitative depth per factory: source LOC, hook file LOC, test count (cases that reference the factory name), dedicated doc page LOC if any, and total mentions in all docs. **Bigger numbers ≠ better quality**, but large gaps signal uneven investment.',
     '',
-    '| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | dedicated doc | doc mentions (cvx/stdb) |',
+    '| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |',
     '|---|---|---|---|---|---|',
     ...rows
   ].join('\n')
