@@ -10,16 +10,20 @@ const EXPORT_BRACE_RE = /export\s+\{(?<syms>[^}]+)\}/gu
 const EXPORT_DECL_RE =
   /export\s+(?:const|function|class|interface|type|default\s+(?:const|function|class)?)\s+(?<name>\w+)/gu
 const SKIP_DIRS = new Set([
+  '.cache',
   '.next',
   '.turbo',
   '__tests__',
   '_generated',
+  'coverage',
   'dist',
   'generated',
   'module_bindings',
-  'node_modules'
+  'node_modules',
+  'playwright-report',
+  'test-results'
 ])
-const SKIP_FILE_SUFFIX = ['.test.ts', '.test.tsx', '.d.ts']
+const SKIP_FILE_SUFFIX = ['.d.ts']
 interface Pair {
   cvxRoot: string
   exemptFiles?: Record<string, string>
@@ -45,7 +49,17 @@ const walkRel = (root: string, rel = ''): string[] => {
     const s = statSync(full)
     const r = rel ? `${rel}/${name}` : name
     if (s.isDirectory()) out.push(...walkRel(root, r))
-    else if ((name.endsWith('.ts') || name.endsWith('.tsx')) && !SKIP_FILE_SUFFIX.some(suf => name.endsWith(suf)))
+    else if (
+      !SKIP_FILE_SUFFIX.some(suf => name.endsWith(suf)) &&
+      (name.endsWith('.ts') ||
+        name.endsWith('.tsx') ||
+        name.endsWith('.json') ||
+        name.endsWith('.sh') ||
+        name.endsWith('.toml') ||
+        name.endsWith('.md') ||
+        name.endsWith('.yml') ||
+        name.endsWith('.yaml'))
+    )
       out.push(r)
   }
   return out
@@ -260,10 +274,14 @@ const BACKEND_FILE_EXEMPT: Record<string, string> = {
   'cvx:convex/blog.ts': 'Convex per-table RPC re-export; stdb auto-generates create_blog/update_blog/rm_blog reducers',
   'cvx:convex/blogProfile.ts': 'Convex per-table re-export; stdb auto-generates upsert_blogProfile reducer',
   'cvx:convex/chat.ts': 'Convex per-table re-export; stdb auto-generates chat reducers',
+  'cvx:convex/edge.test.ts': 'cvx-side convex-test integration runner; stdb tests connect to live db via test-skeleton.ts',
+  'cvx:convex/f.test.ts':
+    'cvx-side functional integration tests; stdb has no equivalent — stdb tests live in lib/noboil/src/spacetimedb/__tests__/',
   'cvx:convex/file.ts': 'Convex file storage re-export; stdb files inline as Uint8Array',
   'cvx:convex/http.ts': 'Convex HTTP router (auth callbacks, image proxy); stdb has no HTTP router',
   'cvx:convex/message.ts': 'Convex per-table re-export; stdb auto-generates message reducers',
   'cvx:convex/movie.ts': 'Convex cacheCrud re-export with TMDB fetcher; stdb does fetching client-side',
+  'cvx:convex/org-api.test.ts': 'cvx-side org RPC integration tests; stdb tests use connectAsTestUser pattern',
   'cvx:convex/org.ts': 'Convex per-table re-export; stdb auto-generates org reducers',
   'cvx:convex/orgProfile.ts': 'Convex per-table re-export; stdb auto-generates upsert_orgProfile',
   'cvx:convex/poll.ts': 'Convex per-table re-export; stdb auto-generates poll reducers',
@@ -313,6 +331,8 @@ const DEMO_FILE_EXEMPT: Record<string, string> = {
     'cvx-side helpers (mostly Convex Id formatters); stdb has equivalents inline or in noboil/spacetimedb/react',
   'stdb:dev.ts': 'stdb dev-script symlink',
   'stdb:e2e/helpers.ts': 'stdb test cleanup utilities — cvx uses convex-test in-memory runtime so no cleanup needed',
+  'stdb:e2e/tsconfig.json':
+    'stdb e2e tests need a dedicated tsconfig to import module_bindings outside the Next.js compilation root',
   'stdb:src/app/dev/page.tsx': 'SpacetimeDB SchemaPlayground dev tool — no cvx equivalent',
   'stdb:src/app/fetch/page.tsx': 'TMDB fetching client-side in stdb (cvx delegates to action)',
   'stdb:src/hook/use-org-table.ts':
@@ -472,7 +492,7 @@ const main = () => {
       ? '🟢 zero unaccounted-for gaps across the entire repo'
       : `🔴 ${totalUnaccounted} unaccounted-for gap(s)`
   const lines: string[] = [
-    `Whole-repo audit. Walks every \`*.ts*\` in ${PAIRS.length} parallel cvx/stdb directory pairs (lib + backend + 5 demos). ${PAIRS.reduce((s, p) => s + Object.keys(p.exemptFiles ?? {}).length, 0)} file-level + ${PAIRS.reduce((s, p) => s + (p.exemptSymbols?.size ?? 0), 0)} symbol-level architectural exemptions registered.`,
+    `Whole-repo audit. Walks every \`*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml\` (excl. tests/codegen output via SKIP_DIRS) in ${PAIRS.length} parallel cvx/stdb directory pairs (lib + backend + 5 demos). ${PAIRS.reduce((s, p) => s + Object.keys(p.exemptFiles ?? {}).length, 0)} file-level + ${PAIRS.reduce((s, p) => s + (p.exemptSymbols?.size ?? 0), 0)} symbol-level architectural exemptions registered. Test files (\`*.test.ts\`) ARE included in file-presence check (symbol parity skipped for tests).`,
     '',
     `**${totalShared} shared files · ${totalCvxOnly} cvx-only · ${totalStdbOnly} stdb-only · ${totalSymbolGaps} files with cross-backend symbol divergence.** Status: ${overall}.`,
     '',
