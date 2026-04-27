@@ -25,7 +25,7 @@
 ## Tests
 
 <!-- AUTO-GENERATED:TEST-COUNTS -->
-2206 tests passing — 936 cvx pure + 1133 stdb pure + 137 cvx integration (f.test). E2E: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll (run via `bun run test:e2e` per app).
+2278 tests passing — 952 cvx pure + 1189 stdb pure + 137 cvx integration (f.test). E2E: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll (run via `bun run test:e2e` per app).
 <!-- /AUTO-GENERATED:TEST-COUNTS -->
 
 Plus +235 cvx-f.test + 26 stdb-f.test + e2e: 52/52 cvx-blog, 52/52 stdb-blog, 82/82 cvx-poll, 82/82 stdb-poll

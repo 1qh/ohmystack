@@ -7804,3 +7804,93 @@ describe('makeQuota factory schema', () => {
     expect(Object.keys(empty).length).toBe(0)
   })
 })
+describe('factory parity (cvx kv + log deeper coverage)', () => {
+  describe('kv', () => {
+    test('makeKv brands every entry', () => {
+      const kv = makeKv({ feature: { schema: object({ on: boolean() }), writeRole: true } })
+      expect((kv.feature as { __bs?: string }).__bs).toBe('kv')
+    })
+    test('kv writeRole=true preserved', () => {
+      const kv = makeKv({ x: { schema: object({ a: string() }), writeRole: true } })
+      expect((kv.x as { writeRole?: unknown }).writeRole).toBe(true)
+    })
+    test('kv with keys whitelist preserved', () => {
+      const kv = makeKv({
+        banner: { keys: ['active', 'maintenance'] as const, schema: object({ msg: string() }), writeRole: true }
+      })
+      expect((kv.banner as unknown as { keys: readonly string[] }).keys.toSorted()).toEqual(['active', 'maintenance'])
+    })
+    test('kv schema validates', () => {
+      const kv = makeKv({ x: { schema: object({ active: boolean(), msg: string() }), writeRole: true } })
+      expect(kv.x.schema.safeParse({ active: true, msg: 'hi' }).success).toBe(true)
+      expect(kv.x.schema.safeParse({ active: 'true', msg: 'hi' }).success).toBe(false)
+    })
+    test('kv multiple entries each branded', () => {
+      const kv = makeKv({
+        a: { schema: object({ x: string() }), writeRole: true },
+        b: { schema: object({ y: number() }), writeRole: true }
+      })
+      expect((kv.a as { __bs?: string }).__bs).toBe('kv')
+      expect((kv.b as { __bs?: string }).__bs).toBe('kv')
+    })
+    test('kv schema accepts optional field', () => {
+      const kv = makeKv({ x: { schema: object({ msg: string().optional() }), writeRole: true } })
+      expect(kv.x.schema.safeParse({}).success).toBe(true)
+    })
+    test('kv schema rejects wrong-typed payload', () => {
+      const kv = makeKv({ x: { schema: object({ msg: string() }), writeRole: true } })
+      expect(kv.x.schema.safeParse({ msg: 123 }).success).toBe(false)
+    })
+    test('makeKv empty input', () => {
+      const kv = makeKv({})
+      expect(Object.keys(kv).length).toBe(0)
+    })
+  })
+  describe('log', () => {
+    test('makeLog brand applies', () => {
+      const l = makeLog({
+        audit: { parent: 'order', schema: object({ kind: string() }) },
+        vote: { parent: 'poll', schema: object({ option: string() }) }
+      })
+      expect((l.audit as { __bs?: string }).__bs).toBe('log')
+      expect((l.vote as { __bs?: string }).__bs).toBe('log')
+    })
+    test('log parent preserved', () => {
+      const l = makeLog({ audit: { parent: 'order', schema: object({ delta: number() }) } })
+      expect(l.audit.parent).toBe('order')
+    })
+    test('log schema validates payload', () => {
+      const l = makeLog({ audit: { parent: 'x', schema: object({ delta: number(), kind: string() }) } })
+      expect(l.audit.schema.safeParse({ delta: 1, kind: 'add' }).success).toBe(true)
+      expect(l.audit.schema.safeParse({ kind: 'add' }).success).toBe(false)
+    })
+    test('log schema with enum field validates', () => {
+      const l = makeLog({ msg: { parent: 'chat', schema: object({ content: string(), role: zenum(['user', 'bot']) }) } })
+      expect(l.msg.schema.safeParse({ content: 'hi', role: 'user' }).success).toBe(true)
+      expect(l.msg.schema.safeParse({ content: 'hi', role: 'admin' }).success).toBe(false)
+    })
+    test('log accepts multiple entries with same parent', () => {
+      const l = makeLog({
+        a: { parent: 'p', schema: object({ x: string() }) },
+        b: { parent: 'p', schema: object({ y: number() }) }
+      })
+      expect(l.a.parent).toBe('p')
+      expect(l.b.parent).toBe('p')
+    })
+    test('log accepts entries with different parents', () => {
+      const l = makeLog({
+        a: { parent: 'p1', schema: object({ x: string() }) },
+        b: { parent: 'p2', schema: object({ y: number() }) }
+      })
+      expect(l.a.parent).not.toBe(l.b.parent)
+    })
+    test('log empty input', () => {
+      const l = makeLog({})
+      expect(Object.keys(l).length).toBe(0)
+    })
+    test('log schema with optional field', () => {
+      const l = makeLog({ x: { parent: 'p', schema: object({ note: string().optional() }) } })
+      expect(l.x.schema.safeParse({}).success).toBe(true)
+    })
+  })
+})

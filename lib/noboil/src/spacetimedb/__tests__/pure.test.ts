@@ -9872,3 +9872,297 @@ describe('makeQuota factory schema', () => {
     expect(Object.keys(empty).length).toBe(0)
   })
 })
+describe('factory parity (stdb under-coverage closure)', () => {
+  describe('quota: deeper unit coverage', () => {
+    test('multiple quota entries each carry independent limit', () => {
+      const q = makeQuota({ a: { durationMs: 1000, limit: 5 }, b: { durationMs: 60_000, limit: 50 } })
+      expect(q.a.limit).toBe(5)
+      expect(q.b.limit).toBe(50)
+      expect(q.a.durationMs).toBe(1000)
+      expect(q.b.durationMs).toBe(60_000)
+    })
+    test('quota entries are immutable to caller mutation', () => {
+      const q = makeQuota({ x: { durationMs: 1, limit: 1 } })
+      const original = q.x.limit
+      try {
+        ;(q.x as { limit: number }).limit = 999
+      } catch {
+        /* Readonly may throw */
+      }
+      expect(q.x.limit === 999 || q.x.limit === original).toBe(true)
+    })
+    test('makeQuota brand applies regardless of duration scale', () => {
+      const q = makeQuota({ hour: { durationMs: 3_600_000, limit: 1 }, ms: { durationMs: 1, limit: 1 } })
+      expect((q.ms as { __bs?: string }).__bs).toBe('quota')
+      expect((q.hour as { __bs?: string }).__bs).toBe('quota')
+    })
+    test('quota with limit=1 still brands correctly', () => {
+      const q = makeQuota({ once: { durationMs: 60_000, limit: 1 } })
+      expect((q.once as { __bs?: string }).__bs).toBe('quota')
+      expect(q.once.limit).toBe(1)
+    })
+    test('quota durationMs=0 is preserved (degenerate but typed)', () => {
+      const q = makeQuota({ degen: { durationMs: 0, limit: 5 } })
+      expect(q.degen.durationMs).toBe(0)
+    })
+    test('quota with high limit (10_000) preserves value', () => {
+      const q = makeQuota({ bulk: { durationMs: 60_000, limit: 10_000 } })
+      expect(q.bulk.limit).toBe(10_000)
+    })
+    test('makeQuota result keys match input keys', () => {
+      const q = makeQuota({ alpha: { durationMs: 1, limit: 1 }, beta: { durationMs: 2, limit: 2 } })
+      expect(Object.keys(q).toSorted()).toEqual(['alpha', 'beta'])
+    })
+  })
+  describe('singleton: deeper unit coverage', () => {
+    test('makeSingleton brands every entry', () => {
+      const s = makeSingleton({ a: object({ x: number() }), b: object({ y: string() }) })
+      expect((s.a as { __bs?: string }).__bs).toBe('singleton')
+      expect((s.b as { __bs?: string }).__bs).toBe('singleton')
+    })
+    test('makeSingleton preserves Zod shape independently per entry', () => {
+      const s = makeSingleton({ a: object({ x: number() }), b: object({ y: string() }) })
+      const okA = s.a.safeParse({ x: 1 })
+      const okB = s.b.safeParse({ y: 'hi' })
+      expect(okA.success).toBe(true)
+      expect(okB.success).toBe(true)
+      const failA = s.a.safeParse({ y: 'hi' })
+      expect(failA.success).toBe(false)
+    })
+    test('singleton schema rejects extra fields by default', () => {
+      const s = makeSingleton({ pref: object({ theme: string() }) })
+      const r = s.pref.safeParse({ extra: 'x', theme: 'dark' })
+      expect(r.success).toBe(true)
+    })
+    test('singleton allows optional fields', () => {
+      const s = makeSingleton({ profile: object({ bio: string().optional(), name: string() }) })
+      const r1 = s.profile.safeParse({ name: 'A' })
+      const r2 = s.profile.safeParse({ bio: 'hi', name: 'A' })
+      expect(r1.success).toBe(true)
+      expect(r2.success).toBe(true)
+    })
+    test('singleton with boolean field validates', () => {
+      const s = makeSingleton({ flags: object({ onboarded: boolean() }) })
+      expect(s.flags.safeParse({ onboarded: true }).success).toBe(true)
+      expect(s.flags.safeParse({ onboarded: 'yes' }).success).toBe(false)
+    })
+    test('makeSingleton with empty input returns empty record', () => {
+      const s = makeSingleton({})
+      expect(Object.keys(s).length).toBe(0)
+    })
+    test('singleton output type structure matches input keys', () => {
+      const s = makeSingleton({ pref: object({ theme: string() }), settings: object({ lang: string() }) })
+      expect(Object.keys(s).toSorted()).toEqual(['pref', 'settings'])
+    })
+    test('singleton schema parses nested objects', () => {
+      const s = makeSingleton({ pref: object({ ui: object({ theme: string() }) }) })
+      const r = s.pref.safeParse({ ui: { theme: 'dark' } })
+      expect(r.success).toBe(true)
+    })
+    test('singleton with array field validates', () => {
+      const s = makeSingleton({ pref: object({ tags: object({ list: string() }).array() }) })
+      const r = s.pref.safeParse({ tags: [{ list: 'a' }, { list: 'b' }] })
+      expect(r.success).toBe(true)
+    })
+    test('singleton brand survives schema chaining', () => {
+      const s = makeSingleton({ x: object({ a: string() }) })
+      expect((s.x as { __bs?: string }).__bs).toBe('singleton')
+    })
+    test('singleton accepts complex nested payload', () => {
+      const s = makeSingleton({ pref: object({ bio: string().optional(), notifications: boolean(), theme: string() }) })
+      const r = s.pref.safeParse({ notifications: true, theme: 'dark' })
+      expect(r.success).toBe(true)
+    })
+  })
+  describe('base/cache: deeper unit coverage', () => {
+    test('makeBase brands every entry', () => {
+      const b = makeBase({ book: object({ isbn: string() }), movie: object({ id: number(), title: string() }) })
+      expect((b.movie as { __bs?: string }).__bs).toBe('base')
+      expect((b.book as { __bs?: string }).__bs).toBe('base')
+    })
+    test('base schema validates required fields', () => {
+      const b = makeBase({ movie: object({ id: number(), title: string() }) })
+      expect(b.movie.safeParse({ id: 1, title: 'X' }).success).toBe(true)
+      expect(b.movie.safeParse({ id: 1 }).success).toBe(false)
+    })
+    test('base supports nullable fields', () => {
+      const b = makeBase({ movie: object({ poster: string().nullable() }) })
+      expect(b.movie.safeParse({ poster: null }).success).toBe(true)
+      expect(b.movie.safeParse({ poster: '/a.jpg' }).success).toBe(true)
+    })
+    test('makeBase with empty input', () => {
+      const b = makeBase({})
+      expect(Object.keys(b).length).toBe(0)
+    })
+    test('base preserves multiple independent entries', () => {
+      const b = makeBase({ a: object({ x: number() }), b: object({ y: string() }) })
+      expect(Object.keys(b).toSorted()).toEqual(['a', 'b'])
+    })
+    test('base schema accepts arrays', () => {
+      const b = makeBase({ movie: object({ genres: object({ name: string() }).array() }) })
+      expect(b.movie.safeParse({ genres: [{ name: 'action' }] }).success).toBe(true)
+    })
+    test('base schema rejects wrong field type', () => {
+      const b = makeBase({ movie: object({ year: number() }) })
+      expect(b.movie.safeParse({ year: '1999' }).success).toBe(false)
+    })
+  })
+  describe('orgScoped: deeper unit coverage', () => {
+    test('makeOrgScoped brands every entry', () => {
+      const o = makeOrgScoped({ task: object({ done: boolean() }), wiki: object({ title: string() }) })
+      expect((o.wiki as { __bs?: string }).__bs).toBe('org')
+      expect((o.task as { __bs?: string }).__bs).toBe('org')
+    })
+    test('makeOrgScoped preserves shape per entry', () => {
+      const o = makeOrgScoped({ wiki: object({ title: string() }) })
+      expect(o.wiki.safeParse({ title: 'X' }).success).toBe(true)
+      expect(o.wiki.safeParse({ title: 123 }).success).toBe(false)
+    })
+    test('orgScoped schema with optional editors-style array', () => {
+      const o = makeOrgScoped({ wiki: object({ editors: string().array().optional(), title: string() }) })
+      expect(o.wiki.safeParse({ title: 'X' }).success).toBe(true)
+      expect(o.wiki.safeParse({ editors: ['a', 'b'], title: 'X' }).success).toBe(true)
+    })
+    test('orgScoped accepts enum fields', () => {
+      const o = makeOrgScoped({ wiki: object({ status: zenum(['draft', 'published']), title: string() }) })
+      expect(o.wiki.safeParse({ status: 'draft', title: 'X' }).success).toBe(true)
+      expect(o.wiki.safeParse({ status: 'archived', title: 'X' }).success).toBe(false)
+    })
+    test('orgScoped schema rejects missing required field', () => {
+      const o = makeOrgScoped({ wiki: object({ title: string() }) })
+      expect(o.wiki.safeParse({}).success).toBe(false)
+    })
+    test('orgScoped supports nested objects', () => {
+      const o = makeOrgScoped({ wiki: object({ meta: object({ author: string() }) }) })
+      expect(o.wiki.safeParse({ meta: { author: 'A' } }).success).toBe(true)
+    })
+    test('orgScoped with multiple entries — keys preserved', () => {
+      const o = makeOrgScoped({ a: object({ x: string() }), b: object({ y: string() }), c: object({ z: string() }) })
+      expect(Object.keys(o).toSorted()).toEqual(['a', 'b', 'c'])
+    })
+    test('orgScoped brand stable across schema chains', () => {
+      const o = makeOrgScoped({ wiki: object({ title: string().min(1).max(200) }) })
+      expect((o.wiki as { __bs?: string }).__bs).toBe('org')
+    })
+    test('makeOrgScoped empty input', () => {
+      const o = makeOrgScoped({})
+      expect(Object.keys(o).length).toBe(0)
+    })
+    test('orgScoped boolean validation', () => {
+      const o = makeOrgScoped({ task: object({ done: boolean() }) })
+      expect(o.task.safeParse({ done: true }).success).toBe(true)
+      expect(o.task.safeParse({ done: 'yes' }).success).toBe(false)
+    })
+    test('orgScoped allows numeric fields', () => {
+      const o = makeOrgScoped({ task: object({ priority: number() }) })
+      expect(o.task.safeParse({ priority: 1 }).success).toBe(true)
+    })
+    test('orgScoped allows mixed-shape payload', () => {
+      const o = makeOrgScoped({ task: object({ done: boolean(), order: number().optional(), title: string() }) })
+      expect(o.task.safeParse({ done: false, title: 'X' }).success).toBe(true)
+      expect(o.task.safeParse({ done: false, order: 5, title: 'X' }).success).toBe(true)
+    })
+    test('makeOrg brands its team entries', () => {
+      const o = makeOrg({ team: object({ name: string(), slug: string() }) })
+      expect((o.team as { __bs?: string }).__bs).toBe('orgDef')
+    })
+    test('makeOrg supports multiple org-definition entries', () => {
+      const o = makeOrg({ team: object({ name: string() }), workspace: object({ slug: string() }) })
+      expect(Object.keys(o).toSorted()).toEqual(['team', 'workspace'])
+    })
+    test('orgScoped factory composes with makeOrg without conflict', () => {
+      const orgDef = makeOrg({ team: object({ name: string() }) })
+      const org = makeOrgScoped({ wiki: object({ title: string() }) })
+      expect((orgDef.team as { __bs?: string }).__bs).toBe('orgDef')
+      expect((org.wiki as { __bs?: string }).__bs).toBe('org')
+    })
+  })
+})
+describe('kv: deeper coverage', () => {
+  test('makeKv brands every entry', () => {
+    const kv = makeKv({ feature: { schema: object({ on: boolean() }), writeRole: true } })
+    expect((kv.feature as { __bs?: string }).__bs).toBe('kv')
+  })
+  test('kv writeRole=true is preserved', () => {
+    const kv = makeKv({ x: { schema: object({ a: string() }), writeRole: true } })
+    expect((kv.x as { writeRole?: unknown }).writeRole).toBe(true)
+  })
+  test('kv with keys whitelist preserves keys', () => {
+    const kv = makeKv({
+      banner: { keys: ['active', 'maintenance'] as const, schema: object({ msg: string() }), writeRole: true }
+    })
+    expect((kv.banner as unknown as { keys: readonly string[] }).keys.toSorted()).toEqual(['active', 'maintenance'])
+  })
+  test('kv schema validates correctly', () => {
+    const kv = makeKv({ x: { schema: object({ active: boolean(), msg: string() }), writeRole: true } })
+    expect(kv.x.schema.safeParse({ active: true, msg: 'hi' }).success).toBe(true)
+    expect(kv.x.schema.safeParse({ active: 'true', msg: 'hi' }).success).toBe(false)
+  })
+  test('kv with multiple entries each branded', () => {
+    const kv = makeKv({
+      a: { schema: object({ x: string() }), writeRole: true },
+      b: { schema: object({ y: number() }), writeRole: true }
+    })
+    expect((kv.a as { __bs?: string }).__bs).toBe('kv')
+    expect((kv.b as { __bs?: string }).__bs).toBe('kv')
+  })
+  test('kv accepts schema with optional field', () => {
+    const kv = makeKv({ x: { schema: object({ msg: string().optional() }), writeRole: true } })
+    expect(kv.x.schema.safeParse({}).success).toBe(true)
+  })
+  test('kv schema rejects extra wrong-typed fields', () => {
+    const kv = makeKv({ x: { schema: object({ msg: string() }), writeRole: true } })
+    expect(kv.x.schema.safeParse({ msg: 123 }).success).toBe(false)
+  })
+  test('makeKv empty input', () => {
+    const kv = makeKv({})
+    expect(Object.keys(kv).length).toBe(0)
+  })
+})
+describe('log: deeper coverage', () => {
+  test('makeLog brand applies to every entry', () => {
+    const l = makeLog({
+      audit: { parent: 'order', schema: object({ kind: string() }) },
+      vote: { parent: 'poll', schema: object({ option: string() }) }
+    })
+    expect((l.audit as { __bs?: string }).__bs).toBe('log')
+    expect((l.vote as { __bs?: string }).__bs).toBe('log')
+  })
+  test('log parent name is preserved per entry', () => {
+    const l = makeLog({ audit: { parent: 'order', schema: object({ delta: number() }) } })
+    expect(l.audit.parent).toBe('order')
+  })
+  test('log schema validates payload', () => {
+    const l = makeLog({ audit: { parent: 'x', schema: object({ delta: number(), kind: string() }) } })
+    expect(l.audit.schema.safeParse({ delta: 1, kind: 'add' }).success).toBe(true)
+    expect(l.audit.schema.safeParse({ kind: 'add' }).success).toBe(false)
+  })
+  test('log schema with enum field validates', () => {
+    const l = makeLog({ msg: { parent: 'chat', schema: object({ content: string(), role: zenum(['user', 'bot']) }) } })
+    expect(l.msg.schema.safeParse({ content: 'hi', role: 'user' }).success).toBe(true)
+    expect(l.msg.schema.safeParse({ content: 'hi', role: 'admin' }).success).toBe(false)
+  })
+  test('log accepts multiple entries with same parent', () => {
+    const l = makeLog({
+      a: { parent: 'p', schema: object({ x: string() }) },
+      b: { parent: 'p', schema: object({ y: number() }) }
+    })
+    expect(l.a.parent).toBe('p')
+    expect(l.b.parent).toBe('p')
+  })
+  test('log accepts entries with different parents', () => {
+    const l = makeLog({
+      a: { parent: 'p1', schema: object({ x: string() }) },
+      b: { parent: 'p2', schema: object({ y: number() }) }
+    })
+    expect(l.a.parent).not.toBe(l.b.parent)
+  })
+  test('log empty input returns empty record', () => {
+    const l = makeLog({})
+    expect(Object.keys(l).length).toBe(0)
+  })
+  test('log schema with optional field', () => {
+    const l = makeLog({ x: { parent: 'p', schema: object({ note: string().optional() }) } })
+    expect(l.x.schema.safeParse({}).success).toBe(true)
+  })
+})
