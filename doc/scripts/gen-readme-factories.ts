@@ -5,11 +5,12 @@ import { FACTORY_META } from '../../lib/noboil/src/shared/factory-meta'
 import { replaceLineBetween } from './lib'
 const REPO = resolve(import.meta.dir, '../..')
 const SKIP = new Set(['orgDef'])
+const ALIAS: Record<string, string> = { base: 'cache' }
 const main = () => {
   const rows = Object.entries(FACTORY_META)
     .filter(([brand]) => !SKIP.has(brand))
     .toSorted(([a], [b]) => a.localeCompare(b))
-    .map(([brand, m]) => `| \`${brand}\` | ${m.shape} | ${m.generates} | ${m.useFor} |`)
+    .map(([brand, m]) => `| \`${ALIAS[brand] ?? brand}\` | ${m.shape} | ${m.generates} | ${m.useFor} |`)
   const body = ['| Factory | Shape | Generates | Use for |', '|---|---|---|---|', ...rows].join('\n')
   const target = `${REPO}/README.md`
   const dirty = replaceLineBetween(target, 'FACTORY-TABLE', body)

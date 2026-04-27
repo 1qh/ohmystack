@@ -29,14 +29,14 @@ Run `noboil` with no args for an interactive dashboard with single-key hotkeys:
 <!-- AUTO-GENERATED:HOTKEYS -->
 | key | command | what it does |
 | --- | --- | --- |
-| `i` | `init` | Create a new noboil project |
-| `t` | `status` | Project snapshot (drift, sync age, health) |
-| `d` | `doctor` | Check project health |
-| `s` | `sync` | Pull upstream changes |
-| `a` | `add` | Add a table (auto-detects DB) |
-| `e` | `eject` | Detach from upstream |
-| `u` | `upgrade` | Upgrade noboil to latest |
-| `c` | `completions` | Print shell completion script |
+| `i` | `init` | create a new project |
+| `t` | `status` | project snapshot (drift, sync age, health) |
+| `d` | `doctor` | health check; `doctor --fix` auto-remediates |
+| `s` | `sync` | pull upstream changes (cached at `~/.noboil/upstream.git`) |
+| `a` | `add` | scaffold a table (auto-dispatches by DB in `.noboilrc.json`) |
+| `e` | `eject` | inline the noboil library into `lib/noboil` |
+| `u` | `upgrade` | `bun add noboil@latest` |
+| `c` | `completions` | print shell completion script |
 <!-- /AUTO-GENERATED:HOTKEYS -->
 
 All commands also work non-interactively. <!-- AUTO-GENERATED:CLI-TABLE-TYPES -->
@@ -263,7 +263,7 @@ Each table declares its shape via Zod and picks a factory that matches its acces
 <!-- AUTO-GENERATED:FACTORY-TABLE -->
 | Factory | Shape | Generates | Use for |
 |---|---|---|---|
-| `base` | keyed external API cache | `get`/`load`/`refresh`/`invalidate`/`purge` | TMDB movies, Gravatar avatars |
+| `cache` | keyed external API cache | `get`/`load`/`refresh`/`invalidate`/`purge` | TMDB movies, Gravatar avatars |
 | `child` | nested under a parent | `create`/`list`/`rm`/`update` by parentId | comments under posts, items under orders |
 | `kv` | string-keyed state | `get` (public) / `set`/`rm` (role-gated) | feature flags, status banners, site config |
 | `log` | append-only event stream | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing |

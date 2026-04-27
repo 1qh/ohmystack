@@ -9,6 +9,8 @@ interface FactoryMeta {
   indexes: readonly string[]
   /** Conceptual shape for high-level tables. */
   shape: string
+  /** Slot name used in `schema({ ... })` (may differ from brand key). */
+  slot: string
   /** Use cases (real-world examples). */
   useFor: string
   /** Wrapper helper invoked at table registration. */
@@ -21,6 +23,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`get`/`load`/`refresh`/`invalidate`/`purge`',
     indexes: ['(none — keyed by upstream id)'],
     shape: 'keyed external API cache',
+    slot: 'base',
     useFor: 'TMDB movies, Gravatar avatars',
     wrapper: 'baseTable / cacheCrud'
   },
@@ -30,6 +33,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`create`/`list`/`rm`/`update` by parentId',
     indexes: ['by_parent'],
     shape: 'nested under a parent',
+    slot: 'children',
     useFor: 'comments under posts, items under orders',
     wrapper: 'childTable / childCrud'
   },
@@ -39,6 +43,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`get` (public) / `set`/`rm` (role-gated)',
     indexes: ['by_key (unique)'],
     shape: 'string-keyed state',
+    slot: 'kv',
     useFor: 'feature flags, status banners, site config',
     wrapper: 'kvTable / kv'
   },
@@ -48,6 +53,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency',
     indexes: ['by_parent_seq', 'by_idempotency'],
     shape: 'append-only event stream',
+    slot: 'log',
     useFor: 'messages, audit trails, event sourcing',
     wrapper: 'logTable / log'
   },
@@ -57,6 +63,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`addEditor`/`removeEditor` + full CRUD',
     indexes: ['by_org', 'by_org_user'],
     shape: 'org-scoped with editors',
+    slot: 'orgScoped',
     useFor: 'multi-tenant, team-shared resources',
     wrapper: 'orgTable / orgCrud'
   },
@@ -66,6 +73,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '(none — used at setup time)',
     indexes: ['(n/a)'],
     shape: '(n/a — meta-schema)',
+    slot: 'org',
     useFor: 'orgSchema config for noboil()',
     wrapper: 'orgTables (via setup)'
   },
@@ -75,6 +83,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`create`/`list`/`read`/`update`/`rm`',
     indexes: ['by_user'],
     shape: 'user-scoped',
+    slot: 'owned',
     useFor: 'user-owned data (posts, chats, tasks)',
     wrapper: 'ownedTable / crud'
   },
@@ -84,6 +93,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`check`/`record`/`consume`',
     indexes: ['by_owner (unique)'],
     shape: 'sliding-window rate limit',
+    slot: 'quota',
     useFor: 'anti-spam, vote throttling, API limits',
     wrapper: 'quotaTable / quota'
   },
@@ -93,6 +103,7 @@ const FACTORY_META: Record<string, FactoryMeta> = {
     generates: '`get`/`upsert`',
     indexes: ['by_user'],
     shape: 'one per user',
+    slot: 'singleton',
     useFor: 'user preferences, profiles',
     wrapper: 'singletonTable / singletonCrud'
   }
