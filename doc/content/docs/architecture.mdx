@@ -912,7 +912,17 @@ Per-file React component parity. Each `*.tsx` in `lib/noboil/src/{convex,spaceti
 Whole-repo audit of `lib/noboil/src/{convex,spacetimedb}/` cross-backend. Walks every file, compares every export. **The most exhaustive parity check** — anything not on this list does not exist in the source.
 
 {/* AUTO-GENERATED:MEGA-PARITY:START */}
-Walks every `*.ts*` in `lib/noboil/src/{convex,spacetimedb}/` (skipping `__tests__`, `generated/`, `module_bindings/`). Compares file presence + per-file export sets. 31 file-level architectural exemptions documented.
+Whole-repo audit. Walks every `*.ts*` in 7 parallel cvx/stdb directory pairs (lib + backend + 5 demos). 138 file-level + 207 symbol-level architectural exemptions registered.
 
-**77 shared files · 4 cvx-only (0 unaccounted) · 22 stdb-only (0 unaccounted) · 0 files with symbol-set divergence.** Status: 🟢 zero unaccounted-for gaps.
+**197 shared files · 40 cvx-only · 28 stdb-only · 0 files with cross-backend symbol divergence.** Status: 🟢 zero unaccounted-for gaps across the entire repo.
+
+| Pair | shared | cvx-only | stdb-only | symbol gaps | status |
+|---|--:|---|---|--:|--|
+| **lib/noboil/src** | 77 | 4 (0 unaccounted) | 22 (0 unaccounted) | 0 | 🟢 |
+| **backend** | 2 | 28 (0 unaccounted) | 2 (0 unaccounted) | 0 | 🟢 |
+| **web/blog** | 25 | 1 (0 unaccounted) | 0 (0 unaccounted) | 0 | 🟢 |
+| **web/chat** | 19 | 1 (0 unaccounted) | 0 (0 unaccounted) | 0 | 🟢 |
+| **web/movie** | 13 | 1 (0 unaccounted) | 0 (0 unaccounted) | 0 | 🟢 |
+| **web/org** | 40 | 2 (0 unaccounted) | 3 (0 unaccounted) | 0 | 🟢 |
+| **web/poll** | 21 | 3 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
 {/* AUTO-GENERATED:MEGA-PARITY:END */}
