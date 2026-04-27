@@ -83,6 +83,18 @@ export default defineConfig({
         rules: {
           '@typescript-eslint/require-await': 'off'
         }
+      },
+      {
+        files: ['**/*.ts', '**/*.tsx'],
+        rules: { 'no-underscore-dangle': 'off' }
+      },
+      {
+        files: ['**/*.tsx'],
+        rules: { 'react/forbid-component-props': 'off' }
+      },
+      {
+        files: ['**/*.test.ts', '**/*.test.tsx', '**/e2e/**/*.ts'],
+        rules: { 'vitest/no-conditional-in-test': 'off' }
       }
     ],
     ignores: [...backendLintIgnoreFiles]
