@@ -608,3 +608,54 @@ _(no inline fields parsed — see source)_
 _(no inline fields parsed — see source)_
 
 {/* AUTO-GENERATED:SCHEMA-FIELDS:END */}
+
+## Demo route map
+
+Every Next.js `page.tsx` file in `web/{cvx,stdb}/{demo}/src/app/`. Use this to find the runtime entry point that exercises a feature.
+
+{/* AUTO-GENERATED:ROUTE-MAP:START */}
+**79 Next.js `page.tsx` routes** across all demo apps.
+
+### Convex
+
+| Demo | Routes |
+|---|---|
+| `blog` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile` |
+| `chat` | `/`, `/[id]`, `/login`, `/login/email`, `/public` |
+| `movie` | `/`, `/fetch` |
+| `org` | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
+| `poll` | `/`, `/[id]`, `/[id]/edit`, `/login`, `/login/email`, `/profile` |
+
+### SpacetimeDB
+
+| Demo | Routes |
+|---|---|
+| `blog` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile` |
+| `chat` | `/`, `/[id]`, `/login`, `/login/email`, `/public` |
+| `movie` | `/`, `/fetch` |
+| `org` | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
+| `poll` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/profile` |
+
+{/* AUTO-GENERATED:ROUTE-MAP:END */}
+
+## Table options inventory
+
+How many tables in `backend/{convex,spacetimedb}/lazy.ts` enable each option, and which ones.
+
+{/* AUTO-GENERATED:OPTIONS-INVENTORY:START */}
+**11 known table options** scanned across both backend lazy.ts files. Numbers are how many tables enable each option.
+
+| Option | cvx tables | stdb tables | Where (cvx) | Where (stdb) |
+|---|--:|--:|---|---|
+| `rateLimit` | 4 | 2 | `blog`, `chat`, `task`, `wiki` | `blog`, `chat` |
+| `search` | 1 | 0 | `blog` | — |
+| `softDelete` | 3 | 3 | `siteConfig`, `vote`, `wiki` | `siteConfig`, `vote`, `wiki` |
+| `pub` | 2 | 2 | `chat`, `message` | `blog`, `chat` |
+| `acl` | 2 | 0 | `project`, `wiki` | — |
+| `aclFrom` | 1 | 0 | `task` | — |
+| `cascade` | 2 | 1 | `chat`, `project` | `project` |
+| `key` | 0 | 1 | — | `movie` |
+| `unique` | 0 | 1 | — | `org` |
+| `ttl` | 0 | 0 | — | — |
+| `staleWhileRevalidate` | 0 | 0 | — | — |
+{/* AUTO-GENERATED:OPTIONS-INVENTORY:END */}

@@ -1649,3 +1649,28 @@ Every entry in `noboil/package.json#exports`. Use these exact paths in `import` 
 | `noboil/test/discover` | `./src/convex/server/test-discover.ts` | `` |
 | `noboil/zod` | `./src/convex/zod.ts` | `` |
 {/* AUTO-GENERATED:PACKAGE-EXPORTS:END */}
+
+## Convex HTTP routes
+
+Every explicit `http.route(...)` registration in `backend/convex/convex/http.ts`. Auth-related routes are added by `auth.addHttpRoutes(http)` and are not enumerated here.
+
+{/* AUTO-GENERATED:HTTP-ROUTES:START */}
+**2 explicit `http.route(...)` registrations** in `backend/convex/convex/http.ts` (plus auth routes added by `auth.addHttpRoutes(http)` not enumerated here).
+
+| Method | Path |
+|---|---|
+| `OPTIONS` | `/api/auth/signin` |
+| `POST` | `/api/auth/signin` |
+{/* AUTO-GENERATED:HTTP-ROUTES:END */}
+
+## Public symbol → doc coverage
+
+How many of `noboil`'s public exports are mentioned anywhere in the docs. Anything in the "undocumented" list is callable but never described — use as a punch list.
+
+{/* AUTO-GENERATED:SYMBOL-COVERAGE:START */}
+Coverage of public exports (every name reachable through `noboil/...` subpaths) by mention in `doc/content/docs/*.mdx`. **378/381 mentioned (99%).**
+
+Undocumented (first 3 of 3):
+
+`NoboilCondition`, `loadConfig`, `resolveAliasFor`
+{/* AUTO-GENERATED:SYMBOL-COVERAGE:END */}
