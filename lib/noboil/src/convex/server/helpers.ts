@@ -4,6 +4,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-depth */
 /* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import type { RegisteredQuery } from 'convex/server'
 import type { ZodRawShape } from 'zod/v4'
 import { zid } from 'convex-helpers/server/zod4'

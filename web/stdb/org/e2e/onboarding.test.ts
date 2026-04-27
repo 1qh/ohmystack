@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 // biome-ignore-all lint/nursery/useGlobalThis: browser API in page.evaluate
 import path from 'node:path'

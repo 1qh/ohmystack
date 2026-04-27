@@ -1,5 +1,6 @@
 'use client'
 /* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 import { api } from '@a/be-convex'
 import { Spinner } from '@a/ui/spinner'
 import { Check } from 'lucide-react'

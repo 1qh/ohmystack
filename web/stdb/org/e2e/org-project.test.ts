@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 import { expect, test } from '@playwright/test'
 import type { PaginatedResponse, ProjectResponse, TaskResponse } from './helpers'

@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 'use client'
 import type { ComponentProps, Context } from 'react'
 import { cn } from '@a/ui'

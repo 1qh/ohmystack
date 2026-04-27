@@ -1,5 +1,6 @@
 'use client'
 /* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import { useMemo } from 'react'
 import { useTable } from 'spacetimedb/react'
 import { useOrg } from '~/hook/use-org'

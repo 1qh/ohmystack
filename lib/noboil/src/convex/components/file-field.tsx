@@ -3,6 +3,7 @@
 /** biome-ignore-all lint/a11y/useSemanticElements: dropzone requires div role button */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
 /* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // oxlint-disable promise/prefer-await-to-then, next/no-img-element
 /* eslint-disable complexity, no-await-in-loop, @next/next/no-img-element */
 // biome-ignore-all lint/performance/noImgElement: x

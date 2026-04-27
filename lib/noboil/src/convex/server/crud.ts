@@ -1,6 +1,7 @@
 /* oxlint-disable eslint/no-await-in-loop */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential Convex DB mutations */
 /* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 // oxlint-disable promise/prefer-await-to-then
 /* eslint-disable no-await-in-loop */
 /* eslint-disable complexity */

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable promise/prefer-await-to-then */
-/* oxlint-disable forbid-component-props, no-underscore-dangle -- shadcn/Tailwind pattern requires className/style on shared components / Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 'use client'
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'

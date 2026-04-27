@@ -1,5 +1,5 @@
 'use client'
-/* oxlint-disable forbid-component-props, no-underscore-dangle -- shadcn/Tailwind pattern requires className/style on shared components / Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'
