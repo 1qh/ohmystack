@@ -32,7 +32,8 @@ const collectExports = (file: string): Set<string> => {
   EXPORT_DECL_RE.lastIndex = 0
   return out
 }
-const STRIP_RE = /\{\/\* AUTO-GENERATED:SYMBOL-COVERAGE:START \*\/\}[\s\S]*?\{\/\* AUTO-GENERATED:SYMBOL-COVERAGE:END \*\/\}/gu
+const STRIP_RE =
+  /\{\/\* AUTO-GENERATED:SYMBOL-COVERAGE:START \*\/\}[\s\S]*?\{\/\* AUTO-GENERATED:SYMBOL-COVERAGE:END \*\/\}/gu
 const collectDocsText = (root: string): string => {
   let combined = ''
   for (const f of readdirSync(root)) if (f.endsWith('.mdx')) combined += readFileSync(`${root}/${f}`, 'utf8')

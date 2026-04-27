@@ -1558,6 +1558,14 @@ export const someExperiment = ...
 This generator picks them up automatically.
 {/* AUTO-GENERATED:STABILITY:END */}
 
+## Tooling helpers
+
+These exports power the CLI and bundler integration. End-user code rarely calls them directly, but they are part of the public surface.
+
+- `resolveAliasFor(condition)` — given a `NoboilCondition` (`'noboil-convex'` or `'noboil-spacetimedb'`), returns the bundler alias map used by Vite/webpack/turbopack to resolve `noboil/db/*` imports to the right backend during build.
+- `NoboilCondition` — type alias for the two supported `customConditions` strings (`'noboil-convex'`, `'noboil-spacetimedb'`).
+- `loadConfig(cwd)` — async loader for `noboil.config.{ts,mts,js,mjs}` from the given directory. Used internally by `noboil add` to invoke `beforeAdd`/`afterAdd` hooks. See [Plugin hooks](./cli#plugin-hooks-noboilconfigts) for the user-facing API.
+
 ## Known limitations
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
@@ -1668,9 +1676,9 @@ Every explicit `http.route(...)` registration in `backend/convex/convex/http.ts`
 How many of `noboil`'s public exports are mentioned anywhere in the docs. Anything in the "undocumented" list is callable but never described — use as a punch list.
 
 {/* AUTO-GENERATED:SYMBOL-COVERAGE:START */}
-Coverage of public exports (every name reachable through `noboil/...` subpaths) by mention in `doc/content/docs/*.mdx`. **378/381 mentioned (99%).**
+Coverage of public exports (every name reachable through `noboil/...` subpaths) by mention in `doc/content/docs/*.mdx`. **381/381 mentioned (100%).**
 
-Undocumented (first 3 of 3):
+Undocumented (first 0 of 0):
 
-`NoboilCondition`, `loadConfig`, `resolveAliasFor`
+_(none — full coverage)_
 {/* AUTO-GENERATED:SYMBOL-COVERAGE:END */}
