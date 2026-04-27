@@ -310,19 +310,19 @@ table(s.blog)                       // private — only own rows visible
 {/* AUTO-GENERATED:FACTORY-OPTIONS:START */}
 ### log
 
-| Option | Type | Required |
-|---|---|---|
-| `hooks` | `LogHooks<DB>` | no |
-| `rateLimit` | `RateLimitConfig` | no |
-| `softDelete` | `boolean` | no |
+| Option       | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `hooks`      | `LogHooks<DB>`    | no       |
+| `rateLimit`  | `RateLimitConfig` | no       |
+| `softDelete` | `boolean`         | no       |
 
 ### kv
 
-| Option | Type | Required |
-|---|---|---|
-| `hooks` | `KvHooks<DB>` | no |
-| `rateLimit` | `RateLimitConfig` | no |
-| `softDelete` | `boolean` | no |
+| Option       | Type              | Required |
+| ------------ | ----------------- | -------- |
+| `hooks`      | `KvHooks<DB>`     | no       |
+| `rateLimit`  | `RateLimitConfig` | no       |
+| `softDelete` | `boolean`         | no       |
 
 ### quota
 
@@ -332,30 +332,30 @@ _(no options — only `{ durationMs, limit }` config in schema)_
 **Generated endpoints for log/kv/quota tables (auto-derived from `lib/noboil/src/convex/server/{log,kv,quota}.ts` `b.q()`/`b.m()` declarations + `return typed({...})` exports):**
 
 {/* AUTO-GENERATED:CVX-FACTORY-ENDPOINTS:START */}
-| Factory | Convex-generated endpoints |
-|---|---|
-| `log` | `append` (mutation), `authIndexed` (query), `authList` (query), `listAfter` (query), `purgeByParent` (mutation), `read` (query), `rmOne` (mutation), `update` (mutation) |
-| `kv` | `get` (query), `list` (query), `rm` (mutation), `set` (mutation) |
-| `quota` | `check` (query), `consume` (mutation), `record` (mutation) |
+| Factory | Convex-generated endpoints                                                                                                                                               |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `log`   | `append` (mutation), `authIndexed` (query), `authList` (query), `listAfter` (query), `purgeByParent` (mutation), `read` (query), `rmOne` (mutation), `update` (mutation) |
+| `kv`    | `get` (query), `list` (query), `rm` (mutation), `set` (mutation)                                                                                                         |
+| `quota` | `check` (query), `consume` (mutation), `record` (mutation)                                                                                                               |
 {/* AUTO-GENERATED:CVX-FACTORY-ENDPOINTS:END */}
 
 **Generated reducers for log/kv/quota tables (auto-derived from `lib/noboil/src/spacetimedb/server/{log,kv,quota}.ts`):**
 
 {/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:START */}
-| Factory | Reducer | Parameters | Description |
-|---|---|---|---|
-| `log` | `append_{table}` | `parent, ...payload, optional idempotency_key` | Atomic seq + insert. Idempotent if idempotency_key provided. |
-|   | `bulk_append_{table}` | `parent, items[]` | Single-transaction batch insert. |
-|   | `purge_{table}_by_parent` | `parent` | Soft- or hard-delete all rows for a parent. |
-|   | `restore_{table}_by_parent` | `parent` | Bring back soft-deleted rows for a parent. Requires softDelete: true. |
-|   | `rm_{table}` | `id` | Hard-delete a single row. Author-only. |
-|   | `bulk_rm_{table}` | `ids[]` | Hard-delete multiple rows. Author-only. |
-|   | `update_{table}` | `id, ...payload, optional expectedUpdatedAt` | Update a row's payload. Preserves seq + parent. Author-only. Throws CONFLICT on stale expectedUpdatedAt. |
-| `kv` | `set_{table}` | `key, ...payload, optional expectedUpdatedAt` | Upsert with optional conflict check. Throws CONFLICT on stale expectedUpdatedAt. |
-|   | `rm_{table}` | `key` | Soft- or hard-delete by key. |
-|   | `restore_{table}` | `key` | Bring back a soft-deleted key. Requires softDelete: true. |
-| `quota` | `consume_{table}` | `owner` | Atomic check + record. Throws when over limit. |
-|   | `record_{table}` | `owner` | Append timestamp + prune expired. Always succeeds. |
+| Factory | Reducer                     | Parameters                                     | Description                                                                                              |
+| ------- | --------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `log`   | `append_{table}`            | `parent, ...payload, optional idempotency_key` | Atomic seq + insert. Idempotent if idempotency_key provided.                                             |
+|         | `bulk_append_{table}`       | `parent, items[]`                              | Single-transaction batch insert.                                                                         |
+|         | `purge_{table}_by_parent`   | `parent`                                       | Soft- or hard-delete all rows for a parent.                                                              |
+|         | `restore_{table}_by_parent` | `parent`                                       | Bring back soft-deleted rows for a parent. Requires softDelete: true.                                    |
+|         | `rm_{table}`                | `id`                                           | Hard-delete a single row. Author-only.                                                                   |
+|         | `bulk_rm_{table}`           | `ids[]`                                        | Hard-delete multiple rows. Author-only.                                                                  |
+|         | `update_{table}`            | `id, ...payload, optional expectedUpdatedAt`   | Update a row's payload. Preserves seq + parent. Author-only. Throws CONFLICT on stale expectedUpdatedAt. |
+| `kv`    | `set_{table}`               | `key, ...payload, optional expectedUpdatedAt`  | Upsert with optional conflict check. Throws CONFLICT on stale expectedUpdatedAt.                         |
+|         | `rm_{table}`                | `key`                                          | Soft- or hard-delete by key.                                                                             |
+|         | `restore_{table}`           | `key`                                          | Bring back a soft-deleted key. Requires softDelete: true.                                                |
+| `quota` | `consume_{table}`           | `owner`                                        | Atomic check + record. Throws when over limit.                                                           |
+|         | `record_{table}`            | `owner`                                        | Append timestamp + prune expired. Always succeeds.                                                       |
 {/* AUTO-GENERATED:STDB-FACTORY-REDUCERS:END */}
 
 ### makePresence
@@ -415,25 +415,25 @@ const fileCrud = makeFileUpload(spacetimedb, {
 Auto-derived from `lib/noboil/src/{convex,spacetimedb}/react/use-*.ts` filenames:
 
 {/* AUTO-GENERATED:REACT-HOOKS:START */}
-| Hook | Convex | SpacetimeDB |
-|---|---|---|
-| `usebulkMutate` | ✓ | ✓ |
-| `usebulkSelection` | ✓ | ✓ |
-| `usecache` | ✓ | ✓ |
-| `usecrud` | ✓ | ✓ |
-| `useinfiniteList` | ✓ | ✓ |
-| `usekv` | ✓ | ✓ |
-| `uselist` | ✓ | ✓ |
-| `uselog` | ✓ | ✓ |
-| `usemutate` | ✓ | ✓ |
-| `useonlineStatus` | ✓ | ✓ |
-| `useoptimistic` | ✓ | ✓ |
-| `usepresence` | ✓ | ✓ |
-| `usequota` | ✓ | ✓ |
-| `usesearch` | ✓ | ✓ |
-| `usesingleton` | ✓ | ✓ |
-| `usesoftDelete` | ✓ | ✓ |
-| `useupload` | ✓ | ✓ |
+| Hook               | Convex | SpacetimeDB |
+| ------------------ | ------ | ----------- |
+| `usebulkMutate`    | ✓      | ✓           |
+| `usebulkSelection` | ✓      | ✓           |
+| `usecache`         | ✓      | ✓           |
+| `usecrud`          | ✓      | ✓           |
+| `useinfiniteList`  | ✓      | ✓           |
+| `usekv`            | ✓      | ✓           |
+| `uselist`          | ✓      | ✓           |
+| `uselog`           | ✓      | ✓           |
+| `usemutate`        | ✓      | ✓           |
+| `useonlineStatus`  | ✓      | ✓           |
+| `useoptimistic`    | ✓      | ✓           |
+| `usepresence`      | ✓      | ✓           |
+| `usequota`         | ✓      | ✓           |
+| `usesearch`        | ✓      | ✓           |
+| `usesingleton`     | ✓      | ✓           |
+| `usesoftDelete`    | ✓      | ✓           |
+| `useupload`        | ✓      | ✓           |
 {/* AUTO-GENERATED:REACT-HOOKS:END */}
 
 React hooks exported from `/react`:
@@ -615,46 +615,46 @@ const after = await quota.record()
 
 **17 hooks** (parameter list before generic constraints):
 
-| Hook | Params |
-|---|---|
-| `useBulkMutate` | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)` |
-| `useBulkSelection` | `(options: UseBulkSelectionOpts)` |
-| `useCacheEntry` | `(\{ args, get: getRef, load: loadRef \}: UseCacheEntryOptions&lt;Q, A&gt;)` |
-| `useCrud` | `(refs: R, options?: CrudOptions)` |
-| `useInfiniteList` | `(query: F, ...rest: InfiniteListRest&lt;F&gt;)` |
-| `useKv` | `(refs: R, key: string)` |
-| `useList` | `(query: F, ...rest: ListRest&lt;F&gt;)` |
-| `useLog` | `(refs: R, args: \{ parent: string \})` |
-| `useMutate` | `(ref: T, options?: MutateOptions)` |
-| `useOptimisticMutation` | `(\{ mutation, onOptimistic, onRollback, onSettled, onSuccess \}: OptimisticOptions&lt;T&gt;)` |
-| `useOwnRows` | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \| null \| undefined)` |
-| `usePresence` | `(refs: PresenceRefs, roomId: string, options?: UsePresenceOptions)` |
-| `useQuota` | `(refs: ConvexQuotaRefs, owner: string)` |
-| `useSearch` | `(searchRef: F, argsBuilder: (query: string) =&gt; OptionalRestArgs&lt;F&gt;[0], options?: UseSearchOptions)` |
-| `useSingleton` | `(refs: R)` |
-| `useSoftDelete` | `(options: SoftDeleteOpts&lt;A&gt;)` |
-| `useUpload` | `(uploadMutation: FunctionReference&lt;'mutation'&gt;, options?: UploadOptions)` |
+| Hook                    | Params                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `useBulkMutate`         | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)`                                  |
+| `useBulkSelection`      | `(options: UseBulkSelectionOpts)`                                                                             |
+| `useCacheEntry`         | `(\{ args, get: getRef, load: loadRef \}: UseCacheEntryOptions&lt;Q, A&gt;)`                                  |
+| `useCrud`               | `(refs: R, options?: CrudOptions)`                                                                            |
+| `useInfiniteList`       | `(query: F, ...rest: InfiniteListRest&lt;F&gt;)`                                                              |
+| `useKv`                 | `(refs: R, key: string)`                                                                                      |
+| `useList`               | `(query: F, ...rest: ListRest&lt;F&gt;)`                                                                      |
+| `useLog`                | `(refs: R, args: \{ parent: string \})`                                                                       |
+| `useMutate`             | `(ref: T, options?: MutateOptions)`                                                                           |
+| `useOptimisticMutation` | `(\{ mutation, onOptimistic, onRollback, onSettled, onSuccess \}: OptimisticOptions&lt;T&gt;)`                |
+| `useOwnRows`            | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \                                                       | null \ | undefined)` |
+| `usePresence`           | `(refs: PresenceRefs, roomId: string, options?: UsePresenceOptions)`                                          |
+| `useQuota`              | `(refs: ConvexQuotaRefs, owner: string)`                                                                      |
+| `useSearch`             | `(searchRef: F, argsBuilder: (query: string) =&gt; OptionalRestArgs&lt;F&gt;[0], options?: UseSearchOptions)` |
+| `useSingleton`          | `(refs: R)`                                                                                                   |
+| `useSoftDelete`         | `(options: SoftDeleteOpts&lt;A&gt;)`                                                                          |
+| `useUpload`             | `(uploadMutation: FunctionReference&lt;'mutation'&gt;, options?: UploadOptions)`                              |
 
 </Tab>
 <Tab value="SpacetimeDB">
 
 **13 hooks**:
 
-| Hook | Params |
-|---|---|
-| `useBulkMutate` | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)` |
-| `useBulkSelection` | `(options: UseBulkSelectionOpts)` |
-| `useInfiniteList` | `(data: T[], isReady: boolean, options?: 'skip' \| InfiniteListOptions&lt;T&gt;)` |
-| `useKv` | `(refs: StdbKvRefs, key: string)` |
-| `useList` | `(data: readonly T[], isReady: boolean, options?: 'skip' \| UseListOptions&lt;T&gt;)` |
-| `useLog` | `(refs: StdbLogRefs, args: \{ parent: string \})` |
-| `useOwnRows` | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \| null \| undefined)` |
-| `usePresence` | `(data: PresenceRow[], heartbeat: (args?: PresenceHeartbeatArgs) =&gt; Promise&lt;void&gt;, options?: UsePresenceOptions)` |
-| `useQuota` | `(refs: StdbQuotaRefs, owner: string)` |
-| `useSearch` | `(data: T[], isReady: boolean, options: 'skip' \| UseSearchOptions&lt;T&gt;)` |
-| `useSingleton` | `(refs: StdbSingletonRefs, sender: Identity \| undefined)` |
-| `useSoftDelete` | `(options: SoftDeleteOpts&lt;A&gt;)` |
-| `useUpload` | `(config?: UploadConfig)` |
+| Hook               | Params                                                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `useBulkMutate`    | `(mutate: (args: A) =&gt; Promise&lt;R&gt;, options?: UseBulkMutateOptions)`                                               |
+| `useBulkSelection` | `(options: UseBulkSelectionOpts)`                                                                                          |
+| `useInfiniteList`  | `(data: T[], isReady: boolean, options?: 'skip' \                                                                          | InfiniteListOptions&lt;T&gt;)` |
+| `useKv`            | `(refs: StdbKvRefs, key: string)`                                                                                          |
+| `useList`          | `(data: readonly T[], isReady: boolean, options?: 'skip' \                                                                 | UseListOptions&lt;T&gt;)`      |
+| `useLog`           | `(refs: StdbLogRefs, args: \{ parent: string \})`                                                                          |
+| `useOwnRows`       | `(rows: readonly T[], isOwn: ((row: T) =&gt; boolean) \                                                                    | null \                         | undefined)` |
+| `usePresence`      | `(data: PresenceRow[], heartbeat: (args?: PresenceHeartbeatArgs) =&gt; Promise&lt;void&gt;, options?: UsePresenceOptions)` |
+| `useQuota`         | `(refs: StdbQuotaRefs, owner: string)`                                                                                     |
+| `useSearch`        | `(data: T[], isReady: boolean, options: 'skip' \                                                                           | UseSearchOptions&lt;T&gt;)`    |
+| `useSingleton`     | `(refs: StdbSingletonRefs, sender: Identity \                                                                              | undefined)`                    |
+| `useSoftDelete`    | `(options: SoftDeleteOpts&lt;A&gt;)`                                                                                       |
+| `useUpload`        | `(config?: UploadConfig)`                                                                                                  |
 
 </Tab>
 </Tabs>
@@ -1068,40 +1068,40 @@ await update(d) // orgId auto-injected as Number(org._id)
 The full list below is auto-generated by scanning every `err('CODE')` / `throw new XError('CODE')` / `new ConvexError({ code: 'CODE' })` / `throwConvexError('CODE')` call across `lib/noboil/src/{convex,spacetimedb,shared}/server`. Adding a new error code in the source automatically appears here.
 
 {/* AUTO-GENERATED:ERROR-CODES:START */}
-| Code | Meaning |
-|------|---------|
-| `ALREADY_ORG_MEMBER` | User is already a member of this org |
-| `ALREADY_PROCESSED` | Invite or join request was already accepted/declined |
-| `CANNOT_MODIFY_ADMIN` | Cannot demote or remove the last admin |
-| `CANNOT_MODIFY_OWNER` | Owner role cannot be reassigned |
-| `CHUNK_ALREADY_UPLOADED` | File chunk with this index was already uploaded in the session |
-| `CHUNK_NOT_FOUND` | File chunk index missing from upload session |
-| `CONFLICT` | Concurrent edit detected (expectedUpdatedAt mismatch) |
-| `FILE_NOT_FOUND` | Referenced file does not exist or was already deleted |
-| `FILE_TOO_LARGE` | File exceeds the configured size limit |
-| `FORBIDDEN` | Caller is authenticated but lacks permission |
-| `INCOMPLETE_UPLOAD` | Upload session finalized before all chunks arrived |
-| `INSUFFICIENT_ORG_ROLE` | Caller lacks the required org role for this action |
-| `INVALID_FILE_TYPE` | File MIME type is not in the allowlist |
-| `INVALID_INVITE` | Invite token is malformed, revoked, or unknown |
-| `INVALID_KEY` | Key is not in the kv table whitelist |
-| `INVALID_SESSION_STATE` | Upload session is in a state that disallows the requested action |
-| `INVALID_WHERE` | where clause references unknown field or invalid operator |
-| `INVITE_EXPIRED` | Invite token has expired |
-| `JOIN_REQUEST_EXISTS` | A join request from this user already exists |
-| `LIMIT_EXCEEDED` | Bulk operation exceeded the per-call item limit |
-| `MUST_TRANSFER_OWNERSHIP` | Owner cannot leave without transferring ownership |
-| `NOT_AUTHENTICATED` | No active session — caller must log in |
-| `NOT_AUTHORIZED` | Generic permission denial (not yet narrowed to a specific role) |
-| `NOT_FOUND` | Row doesn't exist OR caller doesn't own it (no-enumeration policy) |
-| `NOT_ORG_MEMBER` | Caller is not a member of the target org |
-| `ORG_SLUG_TAKEN` | Org slug is already in use |
-| `RATE_LIMITED` | Sliding-window rate limit exceeded |
-| `SESSION_NOT_FOUND` | Upload session id is unknown or expired |
-| `TARGET_MUST_BE_ADMIN` | Operation requires the target user to be an admin |
-| `UNAUTHORIZED` | Caller cannot perform this action (alias of NOT_AUTHORIZED in some surfaces) |
-| `USER_NOT_FOUND` | Referenced user identity does not exist |
-| `VALIDATION_FAILED` | Zod schema validation rejected the payload |
+| Code                      | Meaning                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `ALREADY_ORG_MEMBER`      | User is already a member of this org                                         |
+| `ALREADY_PROCESSED`       | Invite or join request was already accepted/declined                         |
+| `CANNOT_MODIFY_ADMIN`     | Cannot demote or remove the last admin                                       |
+| `CANNOT_MODIFY_OWNER`     | Owner role cannot be reassigned                                              |
+| `CHUNK_ALREADY_UPLOADED`  | File chunk with this index was already uploaded in the session               |
+| `CHUNK_NOT_FOUND`         | File chunk index missing from upload session                                 |
+| `CONFLICT`                | Concurrent edit detected (expectedUpdatedAt mismatch)                        |
+| `FILE_NOT_FOUND`          | Referenced file does not exist or was already deleted                        |
+| `FILE_TOO_LARGE`          | File exceeds the configured size limit                                       |
+| `FORBIDDEN`               | Caller is authenticated but lacks permission                                 |
+| `INCOMPLETE_UPLOAD`       | Upload session finalized before all chunks arrived                           |
+| `INSUFFICIENT_ORG_ROLE`   | Caller lacks the required org role for this action                           |
+| `INVALID_FILE_TYPE`       | File MIME type is not in the allowlist                                       |
+| `INVALID_INVITE`          | Invite token is malformed, revoked, or unknown                               |
+| `INVALID_KEY`             | Key is not in the kv table whitelist                                         |
+| `INVALID_SESSION_STATE`   | Upload session is in a state that disallows the requested action             |
+| `INVALID_WHERE`           | where clause references unknown field or invalid operator                    |
+| `INVITE_EXPIRED`          | Invite token has expired                                                     |
+| `JOIN_REQUEST_EXISTS`     | A join request from this user already exists                                 |
+| `LIMIT_EXCEEDED`          | Bulk operation exceeded the per-call item limit                              |
+| `MUST_TRANSFER_OWNERSHIP` | Owner cannot leave without transferring ownership                            |
+| `NOT_AUTHENTICATED`       | No active session — caller must log in                                       |
+| `NOT_AUTHORIZED`          | Generic permission denial (not yet narrowed to a specific role)              |
+| `NOT_FOUND`               | Row doesn't exist OR caller doesn't own it (no-enumeration policy)           |
+| `NOT_ORG_MEMBER`          | Caller is not a member of the target org                                     |
+| `ORG_SLUG_TAKEN`          | Org slug is already in use                                                   |
+| `RATE_LIMITED`            | Sliding-window rate limit exceeded                                           |
+| `SESSION_NOT_FOUND`       | Upload session id is unknown or expired                                      |
+| `TARGET_MUST_BE_ADMIN`    | Operation requires the target user to be an admin                            |
+| `UNAUTHORIZED`            | Caller cannot perform this action (alias of NOT_AUTHORIZED in some surfaces) |
+| `USER_NOT_FOUND`          | Referenced user identity does not exist                                      |
+| `VALIDATION_FAILED`       | Zod schema validation rejected the payload                                   |
 {/* AUTO-GENERATED:ERROR-CODES:END */}
 
 <Tabs groupId="db" items={['Convex', 'SpacetimeDB']} persist>
@@ -1524,24 +1524,24 @@ type PostUpdate = typeof s.post.$inferUpdate
 Both `noboil/convex/eslint` and `noboil/spacetimedb/eslint` ship the same rule set under different plugin names. Enable via `recommended` config or pick rules individually.
 
 {/* AUTO-GENERATED:ESLINT-RULES:START */}
-| Rule | Convex | SpacetimeDB | Message |
-|---|---|---|---|
-| `api-casing` | ✓ | ✓ | api.\{\{used\}\} — wrong casing. Use api.\{\{suggestion\}\} to match the convex/ filename. |
-| `consistent-crud-naming` | ✓ | ✓ | Table name '\{\{got\}\}' doesn't match schema property '\{\{expected\}\}'. Use '\{\{expected\}\}' to avoid runtime errors. |
-| `discovery-check` | ✓ | ✓ | noboil/convex: could not find \{\{missing\}\} (searched ./convex/ and ./lib/*/convex/). Some rules are inactive. |
-| `form-field-exists` | ✓ | ✓ | '\{\{field\}\}' does not match any field in the schema. Check for typos. |
-| `form-field-kind` | ✓ | ✓ | '\{\{field\}\}' is a \{\{expected\}\} field, but rendered with &lt;\{\{got\}\}&gt;. Use &lt;\{\{expected\}\}&gt; instead. |
-| `no-duplicate-crud` | ✓ | ✓ | Duplicate CRUD factory for table '\{\{table\}\}'. Already registered in \{\{file\}\}. |
-| `no-empty-search-config` | ✓ | ✓ | search: \{\} is ambiguous. Specify the field to search: search: 'fieldName' or search: \{ field: 'fieldName' \}. |
-| `no-raw-fetch-in-server-component` | ✓ | ✓ | \{\{fn\}\}() without try-catch. If the query fails, the page crashes. Wrap in try-catch or use an error-handling wrapper. |
-| `no-unlimited-file-size` | ✓ | ✓ | \{\{call\}\} without .max() in schema. Add a size limit to prevent unbounded file uploads. |
-| `no-unprotected-mutation` | ✓ | ✓ | m() handler without auth check. Call getAuthUserId() or add a comment explaining why auth is not needed. |
-| `no-unsafe-api-cast` | ✓ | ✓ | Unsafe cast on api object. This bypasses type safety. Extract the function reference from the factory or use a custom query. |
-| `prefer-useList` | ✓ | ✓ | useQuery() on a list endpoint — use useList() instead for built-in pagination, loadMore, and loading states. |
-| `prefer-useOrgQuery` | ✓ | ✓ | useQuery() with orgId — use useOrgQuery() instead. It injects orgId automatically from the OrgProvider context. |
-| `require-connection` | ✓ | ✓ | \{\{fn\}\}() requires 'await connection()' before it in Next.js server components to signal dynamic rendering. |
-| `require-error-boundary` | ✓ | ✓ | &lt;ConvexProvider&gt; without an error boundary. Wrap with an ErrorBoundary to handle Convex errors gracefully. |
-| `require-rate-limit` | ✓ | ✓ | \{\{factory\}\}() without rateLimit. Add rateLimit: \{ max, window \} to prevent abuse on write endpoints. |
+| Rule                               | Convex | SpacetimeDB | Message                                                                                                                      |
+| ---------------------------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `api-casing`                       | ✓      | ✓           | api.\{\{used\}\} — wrong casing. Use api.\{\{suggestion\}\} to match the convex/ filename.                                   |
+| `consistent-crud-naming`           | ✓      | ✓           | Table name '\{\{got\}\}' doesn't match schema property '\{\{expected\}\}'. Use '\{\{expected\}\}' to avoid runtime errors.   |
+| `discovery-check`                  | ✓      | ✓           | noboil/convex: could not find \{\{missing\}\} (searched ./convex/ and ./lib/*/convex/). Some rules are inactive.             |
+| `form-field-exists`                | ✓      | ✓           | '\{\{field\}\}' does not match any field in the schema. Check for typos.                                                     |
+| `form-field-kind`                  | ✓      | ✓           | '\{\{field\}\}' is a \{\{expected\}\} field, but rendered with &lt;\{\{got\}\}&gt;. Use &lt;\{\{expected\}\}&gt; instead.    |
+| `no-duplicate-crud`                | ✓      | ✓           | Duplicate CRUD factory for table '\{\{table\}\}'. Already registered in \{\{file\}\}.                                        |
+| `no-empty-search-config`           | ✓      | ✓           | search: \{\} is ambiguous. Specify the field to search: search: 'fieldName' or search: \{ field: 'fieldName' \}.             |
+| `no-raw-fetch-in-server-component` | ✓      | ✓           | \{\{fn\}\}() without try-catch. If the query fails, the page crashes. Wrap in try-catch or use an error-handling wrapper.    |
+| `no-unlimited-file-size`           | ✓      | ✓           | \{\{call\}\} without .max() in schema. Add a size limit to prevent unbounded file uploads.                                   |
+| `no-unprotected-mutation`          | ✓      | ✓           | m() handler without auth check. Call getAuthUserId() or add a comment explaining why auth is not needed.                     |
+| `no-unsafe-api-cast`               | ✓      | ✓           | Unsafe cast on api object. This bypasses type safety. Extract the function reference from the factory or use a custom query. |
+| `prefer-useList`                   | ✓      | ✓           | useQuery() on a list endpoint — use useList() instead for built-in pagination, loadMore, and loading states.                 |
+| `prefer-useOrgQuery`               | ✓      | ✓           | useQuery() with orgId — use useOrgQuery() instead. It injects orgId automatically from the OrgProvider context.              |
+| `require-connection`               | ✓      | ✓           | \{\{fn\}\}() requires 'await connection()' before it in Next.js server components to signal dynamic rendering.               |
+| `require-error-boundary`           | ✓      | ✓           | &lt;ConvexProvider&gt; without an error boundary. Wrap with an ErrorBoundary to handle Convex errors gracefully.             |
+| `require-rate-limit`               | ✓      | ✓           | \{\{factory\}\}() without rateLimit. Add rateLimit: \{ max, window \} to prevent abuse on write endpoints.                   |
 {/* AUTO-GENERATED:ESLINT-RULES:END */}
 
 ## API stability
@@ -1598,18 +1598,18 @@ Each module in `backend/convex/convex/` re-exports the factory-generated CRUD pl
 {/* AUTO-GENERATED:TABLE-ENDPOINTS:START */}
 **119 endpoints across 10 table modules** in `backend/convex/convex/`. Each row is a re-export aggregator combining factory-generated CRUD + custom `pq`/`q`/`m` builders.
 
-| Module | Count | Endpoints |
-|---|--:|---|
-| `blog` | 9 | `authorPosts`, `create`, `list`, `postStats`, `read`, `rm`, `search`, `togglePublish`, `update` |
-| `chat` | 6 | `create`, `list`, `pubRead`, `read`, `rm`, `update` |
-| `org` | 25 | `acceptInvite`, `approveJoinRequest`, `cancelJoinRequest`, `create`, `get`, `getBySlug`, `getOrCreate`, `getPublic`, `invite`, `isSlugAvailable`, `leave`, `members`, `membership`, `myJoinRequest`, `myOrgs`, `pendingInvites`, `pendingJoinRequests`, `rejectJoinRequest`, `remove`, `removeMember`, `requestJoin`, `revokeInvite`, `setAdmin`, `transferOwnership`, `update` |
-| `poll` | 5 | `create`, `list`, `read`, `rm`, `update` |
-| `pollVoteQuota` | 3 | `check`, `consume`, `record` |
-| `siteConfig` | 5 | `get`, `list`, `restore`, `rm`, `set` |
-| `task` | 8 | `assign`, `byProject`, `create`, `list`, `read`, `rm`, `toggle`, `update` |
-| `testauth` | 47 | `TEST_EMAIL`, `acceptInviteAsUser`, `addEditorAsUser`, `addTestOrgMember`, `addWikiEditorAsUser`, `approveJoinRequestAsUser`, `assignTaskAsUser`, `cancelJoinRequestAsUser`, `cleanupOrgTestData`, `cleanupTestData`, `cleanupTestUsers`, `createExpiredInvite`, `createProjectAsUser`, `createTaskAsUser`, `createTestUser`, `createWikiAsUser`, `deleteOrgAsUser`, `deleteProjectAsUser`, `deleteWikiAsUser`, `ensureTestUser`, `getAuthUserIdOrTest`, `getJoinRequest`, `getProjectEditors`, `getTestUser`, `getTestUserByEmail`, `inviteAsUser`, `isTestMode`, `leaveOrgAsUser`, `listProjectsAsUser`, `pendingInvitesAsUser`, `pendingJoinRequestsAsUser`, `rejectJoinRequestAsUser`, `removeEditorAsUser`, `removeMemberAsUser`, `removeTestOrgMember`, `removeWikiEditorAsUser`, `requestJoinAsUser`, `rmTaskAsUser`, `setAdminAsUser`, `toggleTaskAsEditorUser`, `toggleTaskAsUser`, `transferOwnershipAsUser`, `updateOrgAsUser`, `updateProjectAsEditorUser`, `updateProjectAsUser`, `updateTaskAsUser`, `updateWikiAsUser` |
-| `user` | 1 | `me` |
-| `vote` | 10 | `append`, `auth`, `authIndexed`, `list`, `listAfter`, `purgeByParent`, `read`, `restoreByParent`, `rm`, `update` |
+| Module          | Count | Endpoints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------- | ----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blog`          | 9     | `authorPosts`, `create`, `list`, `postStats`, `read`, `rm`, `search`, `togglePublish`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `chat`          | 6     | `create`, `list`, `pubRead`, `read`, `rm`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `org`           | 25    | `acceptInvite`, `approveJoinRequest`, `cancelJoinRequest`, `create`, `get`, `getBySlug`, `getOrCreate`, `getPublic`, `invite`, `isSlugAvailable`, `leave`, `members`, `membership`, `myJoinRequest`, `myOrgs`, `pendingInvites`, `pendingJoinRequests`, `rejectJoinRequest`, `remove`, `removeMember`, `requestJoin`, `revokeInvite`, `setAdmin`, `transferOwnership`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `poll`          | 5     | `create`, `list`, `read`, `rm`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `pollVoteQuota` | 3     | `check`, `consume`, `record`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `siteConfig`    | 5     | `get`, `list`, `restore`, `rm`, `set`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `task`          | 8     | `assign`, `byProject`, `create`, `list`, `read`, `rm`, `toggle`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `testauth`      | 47    | `TEST_EMAIL`, `acceptInviteAsUser`, `addEditorAsUser`, `addTestOrgMember`, `addWikiEditorAsUser`, `approveJoinRequestAsUser`, `assignTaskAsUser`, `cancelJoinRequestAsUser`, `cleanupOrgTestData`, `cleanupTestData`, `cleanupTestUsers`, `createExpiredInvite`, `createProjectAsUser`, `createTaskAsUser`, `createTestUser`, `createWikiAsUser`, `deleteOrgAsUser`, `deleteProjectAsUser`, `deleteWikiAsUser`, `ensureTestUser`, `getAuthUserIdOrTest`, `getJoinRequest`, `getProjectEditors`, `getTestUser`, `getTestUserByEmail`, `inviteAsUser`, `isTestMode`, `leaveOrgAsUser`, `listProjectsAsUser`, `pendingInvitesAsUser`, `pendingJoinRequestsAsUser`, `rejectJoinRequestAsUser`, `removeEditorAsUser`, `removeMemberAsUser`, `removeTestOrgMember`, `removeWikiEditorAsUser`, `requestJoinAsUser`, `rmTaskAsUser`, `setAdminAsUser`, `toggleTaskAsEditorUser`, `toggleTaskAsUser`, `transferOwnershipAsUser`, `updateOrgAsUser`, `updateProjectAsEditorUser`, `updateProjectAsUser`, `updateTaskAsUser`, `updateWikiAsUser` |
+| `user`          | 1     | `me`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `vote`          | 10    | `append`, `auth`, `authIndexed`, `list`, `listAfter`, `purgeByParent`, `read`, `restoreByParent`, `rm`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 {/* AUTO-GENERATED:TABLE-ENDPOINTS:END */}
 
 ## Package subpath exports
@@ -1619,46 +1619,46 @@ Every entry in `noboil/package.json#exports`. Use these exact paths in `import` 
 {/* AUTO-GENERATED:PACKAGE-EXPORTS:START */}
 **38 subpath exports** from `noboil` package.json. Use exact import paths for tree-shaking.
 
-| Import path | Runtime entry | Types entry |
-|---|---|---|
-| `noboil` | `./src/noboil.ts` | — |
-| `noboil/components` | `./src/convex/components/index.ts` | `` |
-| `noboil/config` | `./src/config.ts` | — |
-| `noboil/convex` | `./src/convex/index.ts` | — |
-| `noboil/convex/components` | `./src/convex/components/index.ts` | — |
-| `noboil/convex/eslint` | `./src/convex/eslint.ts` | — |
-| `noboil/convex/next` | `./src/convex/next/index.ts` | — |
-| `noboil/convex/react` | `./src/convex/react/index.ts` | — |
-| `noboil/convex/retry` | `./src/convex/retry.ts` | — |
-| `noboil/convex/schema` | `./src/convex/schema.ts` | — |
-| `noboil/convex/seed` | `./src/convex/seed.ts` | — |
-| `noboil/convex/server` | `./src/convex/server/index.ts` | — |
-| `noboil/convex/test` | `./src/convex/server/test.ts` | — |
-| `noboil/convex/test/discover` | `./src/convex/server/test-discover.ts` | — |
-| `noboil/convex/zod` | `./src/convex/zod.ts` | — |
-| `noboil/eslint` | `./src/convex/eslint.ts` | `` |
-| `noboil/next` | `./src/convex/next/index.ts` | `` |
-| `noboil/package.json` | `./package.json` | — |
-| `noboil/react` | `./src/convex/react/index.ts` | `` |
-| `noboil/retry` | `./src/convex/retry.ts` | `` |
-| `noboil/schema` | `./src/convex/schema.ts` | `` |
-| `noboil/seed` | `./src/convex/seed.ts` | `` |
-| `noboil/server` | `./src/convex/server/index.ts` | `` |
-| `noboil/spacetimedb` | `./src/spacetimedb/index.ts` | — |
-| `noboil/spacetimedb/components` | `./src/spacetimedb/components/index.ts` | — |
-| `noboil/spacetimedb/eslint` | `./src/spacetimedb/eslint.ts` | — |
-| `noboil/spacetimedb/next` | `./src/spacetimedb/next/index.ts` | — |
-| `noboil/spacetimedb/react` | `./src/spacetimedb/react/index.ts` | — |
-| `noboil/spacetimedb/retry` | `./src/spacetimedb/retry.ts` | — |
-| `noboil/spacetimedb/schema` | `./src/spacetimedb/schema.ts` | — |
-| `noboil/spacetimedb/seed` | `./src/spacetimedb/seed.ts` | — |
-| `noboil/spacetimedb/server` | `./src/spacetimedb/server/index.ts` | — |
-| `noboil/spacetimedb/test` | `./src/spacetimedb/server/test.ts` | — |
-| `noboil/spacetimedb/test/discover` | `./src/spacetimedb/server/test-discover.ts` | — |
-| `noboil/spacetimedb/zod` | `./src/spacetimedb/zod.ts` | — |
-| `noboil/test` | `./src/convex/server/test.ts` | `` |
-| `noboil/test/discover` | `./src/convex/server/test-discover.ts` | `` |
-| `noboil/zod` | `./src/convex/zod.ts` | `` |
+| Import path                        | Runtime entry                               | Types entry |
+| ---------------------------------- | ------------------------------------------- | ----------- |
+| `noboil`                           | `./src/noboil.ts`                           | —           |
+| `noboil/components`                | `./src/convex/components/index.ts`          | ``          |
+| `noboil/config`                    | `./src/config.ts`                           | —           |
+| `noboil/convex`                    | `./src/convex/index.ts`                     | —           |
+| `noboil/convex/components`         | `./src/convex/components/index.ts`          | —           |
+| `noboil/convex/eslint`             | `./src/convex/eslint.ts`                    | —           |
+| `noboil/convex/next`               | `./src/convex/next/index.ts`                | —           |
+| `noboil/convex/react`              | `./src/convex/react/index.ts`               | —           |
+| `noboil/convex/retry`              | `./src/convex/retry.ts`                     | —           |
+| `noboil/convex/schema`             | `./src/convex/schema.ts`                    | —           |
+| `noboil/convex/seed`               | `./src/convex/seed.ts`                      | —           |
+| `noboil/convex/server`             | `./src/convex/server/index.ts`              | —           |
+| `noboil/convex/test`               | `./src/convex/server/test.ts`               | —           |
+| `noboil/convex/test/discover`      | `./src/convex/server/test-discover.ts`      | —           |
+| `noboil/convex/zod`                | `./src/convex/zod.ts`                       | —           |
+| `noboil/eslint`                    | `./src/convex/eslint.ts`                    | ``          |
+| `noboil/next`                      | `./src/convex/next/index.ts`                | ``          |
+| `noboil/package.json`              | `./package.json`                            | —           |
+| `noboil/react`                     | `./src/convex/react/index.ts`               | ``          |
+| `noboil/retry`                     | `./src/convex/retry.ts`                     | ``          |
+| `noboil/schema`                    | `./src/convex/schema.ts`                    | ``          |
+| `noboil/seed`                      | `./src/convex/seed.ts`                      | ``          |
+| `noboil/server`                    | `./src/convex/server/index.ts`              | ``          |
+| `noboil/spacetimedb`               | `./src/spacetimedb/index.ts`                | —           |
+| `noboil/spacetimedb/components`    | `./src/spacetimedb/components/index.ts`     | —           |
+| `noboil/spacetimedb/eslint`        | `./src/spacetimedb/eslint.ts`               | —           |
+| `noboil/spacetimedb/next`          | `./src/spacetimedb/next/index.ts`           | —           |
+| `noboil/spacetimedb/react`         | `./src/spacetimedb/react/index.ts`          | —           |
+| `noboil/spacetimedb/retry`         | `./src/spacetimedb/retry.ts`                | —           |
+| `noboil/spacetimedb/schema`        | `./src/spacetimedb/schema.ts`               | —           |
+| `noboil/spacetimedb/seed`          | `./src/spacetimedb/seed.ts`                 | —           |
+| `noboil/spacetimedb/server`        | `./src/spacetimedb/server/index.ts`         | —           |
+| `noboil/spacetimedb/test`          | `./src/spacetimedb/server/test.ts`          | —           |
+| `noboil/spacetimedb/test/discover` | `./src/spacetimedb/server/test-discover.ts` | —           |
+| `noboil/spacetimedb/zod`           | `./src/spacetimedb/zod.ts`                  | —           |
+| `noboil/test`                      | `./src/convex/server/test.ts`               | ``          |
+| `noboil/test/discover`             | `./src/convex/server/test-discover.ts`      | ``          |
+| `noboil/zod`                       | `./src/convex/zod.ts`                       | ``          |
 {/* AUTO-GENERATED:PACKAGE-EXPORTS:END */}
 
 ## Convex HTTP routes
@@ -1668,10 +1668,10 @@ Every explicit `http.route(...)` registration in `backend/convex/convex/http.ts`
 {/* AUTO-GENERATED:HTTP-ROUTES:START */}
 **2 explicit `http.route(...)` registrations** in `backend/convex/convex/http.ts` (plus auth routes added by `auth.addHttpRoutes(http)` not enumerated here).
 
-| Method | Path |
-|---|---|
+| Method    | Path               |
+| --------- | ------------------ |
 | `OPTIONS` | `/api/auth/signin` |
-| `POST` | `/api/auth/signin` |
+| `POST`    | `/api/auth/signin` |
 {/* AUTO-GENERATED:HTTP-ROUTES:END */}
 
 ## Public symbol → doc coverage

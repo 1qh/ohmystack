@@ -33,32 +33,32 @@ noboil uses TypeScript's structural type system against you (in a good way). Eac
 The brand registry below is auto-generated from `lib/noboil/src/convex/server/types.ts` (`SchemaHintMap`):
 
 {/* AUTO-GENERATED:BRAND-REGISTRY:START */}
-| Brand | Maker → Factory + Wrapper |
-|---|---|
-| `base` | Created by makeBase() → use cacheCrud() + baseTable() |
-| `kv` | Created by makeKv() → use kv() + kvTable() |
-| `log` | Created by makeLog() → use log() + logTable() |
-| `orgDef` | Created by makeOrg() → pass to setup(\{ orgSchema \}) |
-| `org` | Created by makeOrgScoped() → use orgCrud() + orgTable() |
-| `owned` | Created by makeOwned() → use crud() + ownedTable() |
-| `quota` | Created by makeQuota() → use quota() + quotaTable() |
+| Brand       | Maker → Factory + Wrapper                                           |
+| ----------- | ------------------------------------------------------------------- |
+| `base`      | Created by makeBase() → use cacheCrud() + baseTable()               |
+| `kv`        | Created by makeKv() → use kv() + kvTable()                          |
+| `log`       | Created by makeLog() → use log() + logTable()                       |
+| `orgDef`    | Created by makeOrg() → pass to setup(\{ orgSchema \})               |
+| `org`       | Created by makeOrgScoped() → use orgCrud() + orgTable()             |
+| `owned`     | Created by makeOwned() → use crud() + ownedTable()                  |
+| `quota`     | Created by makeQuota() → use quota() + quotaTable()                 |
 | `singleton` | Created by makeSingleton() → use singletonCrud() + singletonTable() |
 {/* AUTO-GENERATED:BRAND-REGISTRY:END */}
 
 Auto-injected fields and indexes per brand (sourced from `lib/noboil/src/shared/factory-meta.ts`):
 
 {/* AUTO-GENERATED:AUTO-FIELDS:START */}
-| Slot | Brand | Wrapper | Auto-injected fields | Indexes | Description |
-|---|---|---|---|---|---|
-| `base` | `base` | `baseTable / cacheCrud` | `updatedAt? (optional)` | `(none — keyed by upstream id)` | External-data cache (TTL, refresh, invalidate) |
-| `children` | `child` | `childTable / childCrud` | `parentId`, `updatedAt` | `by_parent` | Child-of-parent CRUD with cascade options |
-| `kv` | `kv` | `kvTable / kv` | `key`, `updatedAt`, `createdAt`, `deletedAt? (when softDelete)` | `by_key (unique)` | Named key → value, public reads + role-gated writes ([kv](./kv)) |
-| `log` | `log` | `logTable / log` | `parent`, `seq`, `userId`, `createdAt`, `idempotencyKey?`, `deletedAt? (when softDelete)` | `by_parent_seq`, `by_idempotency` | Append-only event log with atomic seq + idempotency ([log](./log)) |
-| `orgScoped` | `org` | `orgTable / orgCrud` | `userId`, `orgId`, `updatedAt` | `by_org`, `by_org_user` | Org-scoped CRUD with membership + role checks |
-| `org` | `orgDef` | `orgTables (via setup)` | `(n/a — org definition itself)` | `(n/a)` | The org definition (passed as orgSchema to noboil()) |
-| `owned` | `owned` | `ownedTable / crud` | `userId`, `updatedAt` | `by_user` | User-owned CRUD |
-| `quota` | `quota` | `quotaTable / quota` | `owner`, `timestamps[]` | `by_owner (unique)` | Sliding-window rate limit primitive ([quota](./quota)) |
-| `singleton` | `singleton` | `singletonTable / singletonCrud` | `userId`, `updatedAt` | `by_user` | One row per user (get + upsert) |
+| Slot        | Brand       | Wrapper                          | Auto-injected fields                                                                      | Indexes                           | Description                                                        |
+| ----------- | ----------- | -------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| `base`      | `base`      | `baseTable / cacheCrud`          | `updatedAt? (optional)`                                                                   | `(none — keyed by upstream id)`   | External-data cache (TTL, refresh, invalidate)                     |
+| `children`  | `child`     | `childTable / childCrud`         | `parentId`, `updatedAt`                                                                   | `by_parent`                       | Child-of-parent CRUD with cascade options                          |
+| `kv`        | `kv`        | `kvTable / kv`                   | `key`, `updatedAt`, `createdAt`, `deletedAt? (when softDelete)`                           | `by_key (unique)`                 | Named key → value, public reads + role-gated writes ([kv](./kv))   |
+| `log`       | `log`       | `logTable / log`                 | `parent`, `seq`, `userId`, `createdAt`, `idempotencyKey?`, `deletedAt? (when softDelete)` | `by_parent_seq`, `by_idempotency` | Append-only event log with atomic seq + idempotency ([log](./log)) |
+| `orgScoped` | `org`       | `orgTable / orgCrud`             | `userId`, `orgId`, `updatedAt`                                                            | `by_org`, `by_org_user`           | Org-scoped CRUD with membership + role checks                      |
+| `org`       | `orgDef`    | `orgTables (via setup)`          | `(n/a — org definition itself)`                                                           | `(n/a)`                           | The org definition (passed as orgSchema to noboil())               |
+| `owned`     | `owned`     | `ownedTable / crud`              | `userId`, `updatedAt`                                                                     | `by_user`                         | User-owned CRUD                                                    |
+| `quota`     | `quota`     | `quotaTable / quota`             | `owner`, `timestamps[]`                                                                   | `by_owner (unique)`               | Sliding-window rate limit primitive ([quota](./quota))             |
+| `singleton` | `singleton` | `singletonTable / singletonCrud` | `userId`, `updatedAt`                                                                     | `by_user`                         | One row per user (get + upsert)                                    |
 {/* AUTO-GENERATED:AUTO-FIELDS:END */}
 
 Passing an `owned`-branded schema where the factory expects `orgScoped` is a compile-time error. The `SchemaTypeError` type produces a message like:
@@ -358,23 +358,23 @@ Auto-generated grid showing every registered table, the noboil options it ships 
 {/* AUTO-GENERATED:DEMO-MATRIX:START */}
 **15 tables across 10 demo apps.** ✓ = the demo's frontend imports from this table.
 
-| Table | Options | cvx-blog | cvx-chat | cvx-movie | cvx-org | cvx-poll | stdb-blog | stdb-chat | stdb-movie | stdb-org | stdb-poll |
-|---|---|--|--|--|--|--|--|--|--|--|--|
-| `blog` | `pub`, `rateLimit`, `search` | ✓ | — | — | — | — | ✓ | — | — | — | — |
-| `blogProfile` | — | ✓ | — | — | — | — | ✓ | — | — | — | — |
-| `chat` | `cascade`, `pub`, `rateLimit` | — | ✓ | — | — | — | — | ✓ | — | — | — |
-| `message` | `pub` | — | ✓ | — | — | — | — | ✓ | — | — | — |
-| `movie` | `key` | — | — | ✓ | — | — | — | — | ✓ | — | — |
-| `org` | `unique` | — | — | — | ✓ | — | — | — | — | ✓ | — |
-| `orgProfile` | — | — | — | — | ✓ | — | — | — | — | ✓ | — |
-| `poll` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
-| `pollProfile` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
-| `pollVoteQuota` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
-| `project` | `acl`, `cascade` | — | — | — | ✓ | — | — | — | — | ✓ | — |
-| `siteConfig` | `softDelete` | — | — | — | — | ✓ | — | — | — | — | ✓ |
-| `task` | `acl`, `aclFrom` | — | — | — | ✓ | — | — | — | — | ✓ | — |
-| `vote` | `softDelete` | — | — | — | — | ✓ | — | — | ✓ | — | ✓ |
-| `wiki` | `acl`, `rateLimit`, `softDelete` | — | — | — | ✓ | — | — | — | — | ✓ | — |
+| Table           | Options                          | cvx-blog | cvx-chat | cvx-movie | cvx-org | cvx-poll | stdb-blog | stdb-chat | stdb-movie | stdb-org | stdb-poll |
+| --------------- | -------------------------------- | -------- | -------- | --------- | ------- | -------- | --------- | --------- | ---------- | -------- | --------- |
+| `blog`          | `pub`, `rateLimit`, `search`     | ✓        | —        | —         | —       | —        | ✓         | —         | —          | —        | —         |
+| `blogProfile`   | —                                | ✓        | —        | —         | —       | —        | ✓         | —         | —          | —        | —         |
+| `chat`          | `cascade`, `pub`, `rateLimit`    | —        | ✓        | —         | —       | —        | —         | ✓         | —          | —        | —         |
+| `message`       | `pub`                            | —        | ✓        | —         | —       | —        | —         | ✓         | —          | —        | —         |
+| `movie`         | `key`                            | —        | —        | ✓         | —       | —        | —         | —         | ✓          | —        | —         |
+| `org`           | `unique`                         | —        | —        | —         | ✓       | —        | —         | —         | —          | ✓        | —         |
+| `orgProfile`    | —                                | —        | —        | —         | ✓       | —        | —         | —         | —          | ✓        | —         |
+| `poll`          | —                                | —        | —        | —         | —       | ✓        | —         | —         | —          | —        | ✓         |
+| `pollProfile`   | —                                | —        | —        | —         | —       | ✓        | —         | —         | —          | —        | ✓         |
+| `pollVoteQuota` | —                                | —        | —        | —         | —       | ✓        | —         | —         | —          | —        | ✓         |
+| `project`       | `acl`, `cascade`                 | —        | —        | —         | ✓       | —        | —         | —         | —          | ✓        | —         |
+| `siteConfig`    | `softDelete`                     | —        | —        | —         | —       | ✓        | —         | —         | —          | —        | ✓         |
+| `task`          | `acl`, `aclFrom`                 | —        | —        | —         | ✓       | —        | —         | —         | —          | ✓        | —         |
+| `vote`          | `softDelete`                     | —        | —        | —         | —       | ✓        | —         | —         | ✓          | —        | ✓         |
+| `wiki`          | `acl`, `rateLimit`, `softDelete` | —        | —        | —         | ✓       | —        | —         | —         | —          | ✓        | —         |
 {/* AUTO-GENERATED:DEMO-MATRIX:END */}
 
 ## `noboil()` config options
@@ -384,19 +384,19 @@ Auto-generated from `NoboilOptions` in `lib/noboil/src/convex/server/noboil.ts`.
 {/* AUTO-GENERATED:NOBOIL-OPTIONS:START */}
 Plus `tables: ({ table }) => ({ ... })` callback (always required). 11 top-level options on `SetupConfig`:
 
-| Field | Type | Required |
-|---|---|---|
-| `action` | `ActionBuilder&lt;DM, 'public'&gt;` | **required** |
-| `getAuthUserId` | `(ctx: never) =&gt; Promise&lt;null \| string&gt;` | **required** |
-| `internalMutation` | `MutationBuilder&lt;DM, 'internal'&gt;` | **required** |
-| `internalQuery` | `QueryBuilder&lt;DM, 'internal'&gt;` | **required** |
-| `mutation` | `MutationBuilder&lt;DM, 'public'&gt;` | **required** |
-| `query` | `QueryBuilder&lt;DM, 'public'&gt;` | **required** |
-| `hooks?` | `GlobalHooks` | optional |
-| `middleware?` | `Middleware[]` | optional |
-| `orgCascadeTables?` | `OrgCascadeTableConfig&lt;DM&gt;[]` | optional |
-| `orgSchema?` | `ZodObject` | optional |
-| `strictFilter?` | `boolean` | optional |
+| Field               | Type                                    | Required     |
+| ------------------- | --------------------------------------- | ------------ |
+| `action`            | `ActionBuilder&lt;DM, 'public'&gt;`     | **required** |
+| `getAuthUserId`     | `(ctx: never) =&gt; Promise&lt;null \   | string&gt;`  | **required** |
+| `internalMutation`  | `MutationBuilder&lt;DM, 'internal'&gt;` | **required** |
+| `internalQuery`     | `QueryBuilder&lt;DM, 'internal'&gt;`    | **required** |
+| `mutation`          | `MutationBuilder&lt;DM, 'public'&gt;`   | **required** |
+| `query`             | `QueryBuilder&lt;DM, 'public'&gt;`      | **required** |
+| `hooks?`            | `GlobalHooks`                           | optional     |
+| `middleware?`       | `Middleware[]`                          | optional     |
+| `orgCascadeTables?` | `OrgCascadeTableConfig&lt;DM&gt;[]`     | optional     |
+| `orgSchema?`        | `ZodObject`                             | optional     |
+| `strictFilter?`     | `boolean`                               | optional     |
 {/* AUTO-GENERATED:NOBOIL-OPTIONS:END */}
 
 ## Built-in middleware
@@ -406,11 +406,11 @@ Auto-generated list of every middleware factory exported from `noboil/{convex,sp
 {/* AUTO-GENERATED:MIDDLEWARE:START */}
 **3 middleware factories** (combine via `middleware: [a(), b()]` in `noboil({ ... })`). Description column auto-extracted from leading JSDoc.
 
-| Factory | Options arg | Convex | SpacetimeDB | Description |
-|---|---|---|---|---|
-| `auditLog` | `opts?: \{ logLevel?: 'debug' \| 'info'; verbose?: boolean \}` | ✓ | ✓ | Logs every reducer-driven create/update/delete with table + sender. `verbose: true` also logs the row data / patched field names. |
-| `inputSanitize` | `opts?: \{ fields?: string[] \}` | ✓ | ✓ | Strips control chars + zero-width chars from string fields before insert/update. Restrict to specific fields via `opts.fields`. |
-| `slowQueryWarn` | `opts?: \{ threshold?: number \}` | ✓ | ✓ | Emits `warn`-level log when any reducer-driven mutation exceeds `threshold` ms (default 500ms). |
+| Factory         | Options arg                       | Convex                        | SpacetimeDB | Description                                                                                                                     |
+| --------------- | --------------------------------- | ----------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `auditLog`      | `opts?: \{ logLevel?: 'debug' \   | 'info'; verbose?: boolean \}` | ✓           | ✓                                                                                                                               | Logs every reducer-driven create/update/delete with table + sender. `verbose: true` also logs the row data / patched field names. |
+| `inputSanitize` | `opts?: \{ fields?: string[] \}`  | ✓                             | ✓           | Strips control chars + zero-width chars from string fields before insert/update. Restrict to specific fields via `opts.fields`. |
+| `slowQueryWarn` | `opts?: \{ threshold?: number \}` | ✓                             | ✓           | Emits `warn`-level log when any reducer-driven mutation exceeds `threshold` ms (default 500ms).                                 |
 {/* AUTO-GENERATED:MIDDLEWARE:END */}
 
 ## Schema relationships
@@ -495,32 +495,32 @@ Auto-extracted from `backend/convex/s.ts`. **12 tables, 44 user-defined fields**
 
 **`movie`** — 14 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `backdrop_path` | `string().nullable()` |
-| `budget` | `number().nullable()` |
-| `genres` | `array(object(\{ id: number(), name: string() \}))` |
-| `original_title` | `string()` |
-| `overview` | `string()` |
-| `poster_path` | `string().nullable()` |
-| `release_date` | `string()` |
-| `revenue` | `number().nullable()` |
-| `runtime` | `number().nullable()` |
-| `tagline` | `string().nullable()` |
-| `title` | `string()` |
-| `tmdb_id` | `number()` |
-| `vote_average` | `number()` |
-| `vote_count` | `number()` |
+| Field            | Zod chain                                           |
+| ---------------- | --------------------------------------------------- |
+| `backdrop_path`  | `string().nullable()`                               |
+| `budget`         | `number().nullable()`                               |
+| `genres`         | `array(object(\{ id: number(), name: string() \}))` |
+| `original_title` | `string()`                                          |
+| `overview`       | `string()`                                          |
+| `poster_path`    | `string().nullable()`                               |
+| `release_date`   | `string()`                                          |
+| `revenue`        | `number().nullable()`                               |
+| `runtime`        | `number().nullable()`                               |
+| `tagline`        | `string().nullable()`                               |
+| `title`          | `string()`                                          |
+| `tmdb_id`        | `number()`                                          |
+| `vote_average`   | `number()`                                          |
+| `vote_count`     | `number()`                                          |
 
 ### slot: `children`
 
 **`message`** — 3 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `chatId` | `zid('chat')` |
-| `parts` | `array(messagePart)` |
-| `role` | `zenum(['user', 'assistant', 'system'])` |
+| Field    | Zod chain                                |
+| -------- | ---------------------------------------- |
+| `chatId` | `zid('chat')`                            |
+| `parts`  | `array(messagePart)`                     |
+| `role`   | `zenum(['user', 'assistant', 'system'])` |
 
 ### slot: `kv`
 
@@ -544,62 +544,62 @@ _(no inline fields parsed — see source)_
 
 **`project`** — 4 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `description` | `string().optional()` |
-| `editors` | `array(zid('users')).max(100).optional()` |
-| `name` | `string().min(1)` |
-| `status` | `zenum(['active', 'archived', 'completed']).optional()` |
+| Field         | Zod chain                                               |
+| ------------- | ------------------------------------------------------- |
+| `description` | `string().optional()`                                   |
+| `editors`     | `array(zid('users')).max(100).optional()`               |
+| `name`        | `string().min(1)`                                       |
+| `status`      | `zenum(['active', 'archived', 'completed']).optional()` |
 
 **`task`** — 5 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `assigneeId` | `zid('users').nullable().optional()` |
-| `completed` | `boolean().optional()` |
-| `priority` | `zenum(['low', 'medium', 'high']).optional()` |
-| `projectId` | `zid('project')` |
-| `title` | `string().min(1)` |
+| Field        | Zod chain                                     |
+| ------------ | --------------------------------------------- |
+| `assigneeId` | `zid('users').nullable().optional()`          |
+| `completed`  | `boolean().optional()`                        |
+| `priority`   | `zenum(['low', 'medium', 'high']).optional()` |
+| `projectId`  | `zid('project')`                              |
+| `title`      | `string().min(1)`                             |
 
 **`wiki`** — 6 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `content` | `string().optional()` |
-| `deletedAt` | `number().optional()` |
-| `editors` | `array(zid('users')).max(100).optional()` |
-| `slug` | `string()` |
-| `status` | `zenum(['draft', 'published'])` |
-| `title` | `string().min(1)` |
+| Field       | Zod chain                                 |
+| ----------- | ----------------------------------------- |
+| `content`   | `string().optional()`                     |
+| `deletedAt` | `number().optional()`                     |
+| `editors`   | `array(zid('users')).max(100).optional()` |
+| `slug`      | `string()`                                |
+| `status`    | `zenum(['draft', 'published'])`           |
+| `title`     | `string().min(1)`                         |
 
 ### slot: `owned`
 
 **`blog`** — 7 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `attachments` | `files.max(5).optional()` |
-| `category` | `zenum(['tech', 'life', 'tutorial'], \{ error: 'Select a category' \})` |
-| `content` | `string().min(3, 'At least 3 characters')` |
-| `coverImage` | `file.nullable().optional()` |
-| `published` | `boolean()` |
-| `tags` | `array(string()).max(5, 'Max 5 tags').optional()` |
-| `title` | `string().min(1, 'Required')` |
+| Field         | Zod chain                                                               |
+| ------------- | ----------------------------------------------------------------------- |
+| `attachments` | `files.max(5).optional()`                                               |
+| `category`    | `zenum(['tech', 'life', 'tutorial'], \{ error: 'Select a category' \})` |
+| `content`     | `string().min(3, 'At least 3 characters')`                              |
+| `coverImage`  | `file.nullable().optional()`                                            |
+| `published`   | `boolean()`                                                             |
+| `tags`        | `array(string()).max(5, 'Max 5 tags').optional()`                       |
+| `title`       | `string().min(1, 'Required')`                                           |
 
 **`chat`** — 2 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `isPublic` | `boolean()` |
-| `title` | `string().min(1)` |
+| Field      | Zod chain         |
+| ---------- | ----------------- |
+| `isPublic` | `boolean()`       |
+| `title`    | `string().min(1)` |
 
 **`poll`** — 3 field(s)
 
-| Field | Zod chain |
-|---|---|
-| `closedAt` | `number().nullable().optional()` |
-| `options` | `array(string().min(1)).min(2).max(10)` |
-| `question` | `string().min(1)` |
+| Field      | Zod chain                               |
+| ---------- | --------------------------------------- |
+| `closedAt` | `number().nullable().optional()`        |
+| `options`  | `array(string().min(1)).min(2).max(10)` |
+| `question` | `string().min(1)`                       |
 
 ### slot: `quota`
 
@@ -619,23 +619,23 @@ Every Next.js `page.tsx` file in `web/{cvx,stdb}/{demo}/src/app/`. Use this to f
 
 ### Convex
 
-| Demo | Routes |
-|---|---|
-| `blog` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile` |
-| `chat` | `/`, `/[id]`, `/login`, `/login/email`, `/public` |
-| `movie` | `/`, `/fetch` |
-| `org` | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
-| `poll` | `/`, `/[id]`, `/[id]/edit`, `/login`, `/login/email`, `/profile` |
+| Demo    | Routes                                                                                                                                                                                                                                                                             |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blog`  | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile`                                                                                                                                                                                            |
+| `chat`  | `/`, `/[id]`, `/login`, `/login/email`, `/public`                                                                                                                                                                                                                                  |
+| `movie` | `/`, `/fetch`                                                                                                                                                                                                                                                                      |
+| `org`   | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
+| `poll`  | `/`, `/[id]`, `/[id]/edit`, `/login`, `/login/email`, `/profile`                                                                                                                                                                                                                   |
 
 ### SpacetimeDB
 
-| Demo | Routes |
-|---|---|
-| `blog` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile` |
-| `chat` | `/`, `/[id]`, `/login`, `/login/email`, `/public` |
-| `movie` | `/`, `/fetch` |
-| `org` | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
-| `poll` | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/profile` |
+| Demo    | Routes                                                                                                                                                                                                                                                                             |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blog`  | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/pagination`, `/profile`                                                                                                                                                                                            |
+| `chat`  | `/`, `/[id]`, `/login`, `/login/email`, `/public`                                                                                                                                                                                                                                  |
+| `movie` | `/`, `/fetch`                                                                                                                                                                                                                                                                      |
+| `org`   | `/`, `/dashboard`, `/invite/[token]`, `/join/[slug]`, `/login`, `/login/email`, `/members`, `/new`, `/onboarding`, `/projects`, `/projects/[projectId]`, `/projects/[projectId]/edit`, `/projects/new`, `/settings`, `/wiki`, `/wiki/[wikiId]`, `/wiki/[wikiId]/edit`, `/wiki/new` |
+| `poll`  | `/`, `/[id]`, `/[id]/edit`, `/dev`, `/login`, `/login/email`, `/profile`                                                                                                                                                                                                           |
 
 
 {/* AUTO-GENERATED:ROUTE-MAP:END */}
@@ -647,19 +647,19 @@ How many tables in `backend/{convex,spacetimedb}/lazy.ts` enable each option, an
 {/* AUTO-GENERATED:OPTIONS-INVENTORY:START */}
 **11 known table options** scanned across both backend lazy.ts files. Numbers are how many tables enable each option.
 
-| Option | cvx tables | stdb tables | Where (cvx) | Where (stdb) |
-|---|--:|--:|---|---|
-| `rateLimit` | 4 | 2 | `blog`, `chat`, `task`, `wiki` | `blog`, `chat` |
-| `search` | 1 | 0 | `blog` | — |
-| `softDelete` | 3 | 3 | `siteConfig`, `vote`, `wiki` | `siteConfig`, `vote`, `wiki` |
-| `pub` | 2 | 2 | `chat`, `message` | `blog`, `chat` |
-| `acl` | 2 | 0 | `project`, `wiki` | — |
-| `aclFrom` | 1 | 0 | `task` | — |
-| `cascade` | 2 | 1 | `chat`, `project` | `project` |
-| `key` | 0 | 1 | — | `movie` |
-| `unique` | 0 | 1 | — | `org` |
-| `ttl` | 0 | 0 | — | — |
-| `staleWhileRevalidate` | 0 | 0 | — | — |
+| Option                 | cvx tables | stdb tables | Where (cvx)                    | Where (stdb)                 |
+| ---------------------- | ---------: | ----------: | ------------------------------ | ---------------------------- |
+| `rateLimit`            | 4          | 2           | `blog`, `chat`, `task`, `wiki` | `blog`, `chat`               |
+| `search`               | 1          | 0           | `blog`                         | —                            |
+| `softDelete`           | 3          | 3           | `siteConfig`, `vote`, `wiki`   | `siteConfig`, `vote`, `wiki` |
+| `pub`                  | 2          | 2           | `chat`, `message`              | `blog`, `chat`               |
+| `acl`                  | 2          | 0           | `project`, `wiki`              | —                            |
+| `aclFrom`              | 1          | 0           | `task`                         | —                            |
+| `cascade`              | 2          | 1           | `chat`, `project`              | `project`                    |
+| `key`                  | 0          | 1           | —                              | `movie`                      |
+| `unique`               | 0          | 1           | —                              | `org`                        |
+| `ttl`                  | 0          | 0           | —                              | —                            |
+| `staleWhileRevalidate` | 0          | 0           | —                              | —                            |
 {/* AUTO-GENERATED:OPTIONS-INVENTORY:END */}
 
 ## Doc-snippet syntax check
@@ -712,17 +712,17 @@ Per-factory parity. Each factory checked: source file present, at least one demo
 
 **9/9 factories at full parity.**
 
-| Slot (Brand) | Tables | Convex (src · reg · demos · tests) | SpacetimeDB (src · reg · demos · tests) | Docs | Status |
-|---|--:|---|---|--|--|
-| `base` (`base`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `children` (`child`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `kv` (`kv`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `log` (`log`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `org` (`orgDef`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `orgScoped` (`org`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
-| `owned` (`owned`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
-| `quota` (`quota`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
-| `singleton` (`singleton`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
+| Slot (Brand)              | Tables | Convex (src · reg · demos · tests)  | SpacetimeDB (src · reg · demos · tests) | Docs | Status |
+| ------------------------- | -----: | ----------------------------------- | --------------------------------------- | ---- | ------ |
+| `base` (`base`)           | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `children` (`child`)      | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `kv` (`kv`)               | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `log` (`log`)             | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `org` (`orgDef`)          | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `orgScoped` (`org`)       | 3      | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests     | ✓    | 🟢     |
+| `owned` (`owned`)         | 3      | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests     | ✓    | 🟢     |
+| `quota` (`quota`)         | 1      | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests     | ✓    | 🟢     |
+| `singleton` (`singleton`) | 3      | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests     | ✓    | 🟢     |
 {/* AUTO-GENERATED:FACTORY-PARITY:END */}
 
 ## Factory depth (quantitative)
@@ -732,16 +732,16 @@ Beyond presence, this measures how *much* each factory has — source LOC, tests
 {/* AUTO-GENERATED:FACTORY-DEPTH:START */}
 Quantitative depth per factory: source LOC, hook file LOC, test count (cases that reference the factory name), dedicated doc page LOC if any, and total mentions in all docs. **Bigger numbers ≠ better quality**, but large gaps signal uneven investment.
 
-| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |
-|---|---|---|---|---|---|
-| `base` | 247 / 173 | 92 / 86 | 17 / 17 | 236L | 4 / 4 ✓ |
-| `child` | 266 / 164 | 36 / 36 | 11 / 13 | 240L | 4 / 4 ✓ |
-| `kv` | 166 / 148 | 38 / 44 | 10 / 10 | 270L | 4 / 4 ✓ |
-| `log` | 392 / 257 | 71 / 73 | 10 / 10 | 357L | 5 / 5 ✓ |
-| `orgScoped` | 488 / 402 | 36 / 36 | 35 / 33 | 255L | 4 / 4 ✓ |
-| `owned` | 431 / 141 | 36 / 36 | 36 / 38 | 266L | 5 / 5 ✓ |
-| `quota` | 112 / 110 | 31 / 78 | 9 / 9 | 257L | 4 / 4 ✓ |
-| `singleton` | 72 / 113 | 25 / 39 | 22 / 22 | 227L | 4 / 4 ✓ |
+| Factory     | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |
+| ----------- | ------------------ | ------------------- | ---------------- | -------- | --------------- |
+| `base`      | 247 / 173          | 92 / 86             | 17 / 17          | 236L     | 4 / 4 ✓         |
+| `child`     | 266 / 164          | 36 / 36             | 11 / 13          | 240L     | 4 / 4 ✓         |
+| `kv`        | 166 / 148          | 38 / 44             | 10 / 10          | 270L     | 4 / 4 ✓         |
+| `log`       | 392 / 257          | 71 / 73             | 10 / 10          | 357L     | 5 / 5 ✓         |
+| `orgScoped` | 488 / 402          | 36 / 36             | 35 / 33          | 255L     | 4 / 4 ✓         |
+| `owned`     | 431 / 141          | 36 / 36             | 36 / 38          | 266L     | 5 / 5 ✓         |
+| `quota`     | 112 / 110          | 31 / 78             | 9 / 9            | 257L     | 4 / 4 ✓         |
+| `singleton` | 72 / 113           | 25 / 39             | 22 / 22          | 227L     | 4 / 4 ✓         |
 {/* AUTO-GENERATED:FACTORY-DEPTH:END */}
 
 ## Option/feature parity
@@ -753,16 +753,16 @@ Per-factory option parity. For each factory, checks every expected option is tex
 
 **52/62 option × backend cells satisfied. After intentional exemptions: 🟢 = no unaccounted-for gaps.**
 
-| Factory | cvx coverage | stdb coverage | intentional asym | status | cvx unaccounted | stdb unaccounted |
-|---|--:|--:|--:|--|---|---|
-| `base` | 5/5 | 2/5 | 3 | 🟢 | — | — |
-| `child` | 2/5 | 3/5 | 5 | 🟢 | — | — |
-| `kv` | 4/4 | 4/4 | 1 | 🟢 | — | — |
-| `log` | 3/3 | 3/3 | 3 | 🟢 | — | — |
-| `orgScoped` | 5/5 | 5/5 | 2 | 🟢 | — | — |
-| `owned` | 4/4 | 4/4 | 3 | 🟢 | — | — |
-| `quota` | 3/3 | 3/3 | 0 | 🟢 | — | — |
-| `singleton` | 1/2 | 1/2 | 2 | 🟢 | — | — |
+| Factory     | cvx coverage | stdb coverage | intentional asym | status | cvx unaccounted | stdb unaccounted |
+| ----------- | -----------: | ------------: | ---------------: | ------ | --------------- | ---------------- |
+| `base`      | 5/5          | 2/5           | 3                | 🟢     | —               | —                |
+| `child`     | 2/5          | 3/5           | 5                | 🟢     | —               | —                |
+| `kv`        | 4/4          | 4/4           | 1                | 🟢     | —               | —                |
+| `log`       | 3/3          | 3/3           | 3                | 🟢     | —               | —                |
+| `orgScoped` | 5/5          | 5/5           | 2                | 🟢     | —               | —                |
+| `owned`     | 4/4          | 4/4           | 3                | 🟢     | —               | —                |
+| `quota`     | 3/3          | 3/3           | 0                | 🟢     | —               | —                |
+| `singleton` | 1/2          | 1/2           | 2                | 🟢     | —               | —                |
 
 ### Architectural backend-specific options (intentional)
 
@@ -796,13 +796,13 @@ Cross-backend audit of all 5 demo apps: routes, e2e tests, source LOC.
 {/* AUTO-GENERATED:DEMO-PARITY:START */}
 Per-demo parity audit. Each of the 5 demos compared across both backends: route count, e2e test count, source LOC.
 **5/5 demos at full parity.** Backend-specific routes (intentional asymmetries) listed below.
-| Demo | Routes (cvx/stdb) | E2E tests (cvx/stdb) | Source LOC (cvx/stdb) | Status |
-|---|---|---|---|--|
-| `blog` | 8/8 ✓ | 52 / 52 ✓ | 871 / 944 ✓ | 🟢 |
-| `chat` | 5/5 ✓ | 26 / 26 ✓ | 491 / 417 ✓ | 🟢 |
-| `movie` | 2/2 ✓ | 14 / 14 ✓ | 301 / 515 ✓ | 🟢 |
-| `org` | 18/18 ✓ | 128 / 128 ✓ | 2369 / 2633 ✓ | 🟢 |
-| `poll` | 6/7 ✓ | 82 / 82 ✓ | 840 / 883 ✓ | 🟢 |
+| Demo    | Routes (cvx/stdb) | E2E tests (cvx/stdb) | Source LOC (cvx/stdb) | Status |
+| ------- | ----------------- | -------------------- | --------------------- | ------ |
+| `blog`  | 8/8 ✓             | 52 / 52 ✓            | 871 / 944 ✓           | 🟢     |
+| `chat`  | 5/5 ✓             | 26 / 26 ✓            | 491 / 417 ✓           | 🟢     |
+| `movie` | 2/2 ✓             | 14 / 14 ✓            | 301 / 515 ✓           | 🟢     |
+| `org`   | 18/18 ✓           | 128 / 128 ✓          | 2369 / 2633 ✓         | 🟢     |
+| `poll`  | 6/7 ✓             | 82 / 82 ✓            | 840 / 883 ✓           | 🟢     |
 ### Backend-specific routes (intentional)
 
 - **`stdb/dev`** — SpacetimeDB SchemaPlayground dev tool (cvx has no equivalent component)
@@ -818,16 +818,16 @@ Per-domain parity for non-factory utilities. Compares the export surface of each
 
 **8/8 domains at full parity.**
 
-| Domain | shared | cvx exports | stdb exports | cvx-only (gap) | stdb-only (gap) | intentional asym | status |
-|---|---|--:|--:|--:|--:|--:|--|
-| **File upload** | 4 | 4 | 4 | — | — | 0 | 🟢 |
-| **Presence** | 4 | 4 | 4 | — | — | 0 | 🟢 |
-| **Org membership** | 1 | 4 | 8 | — | — | 10 | 🟢 |
-| **Server helpers** | 56 | 57 | 72 | — | — | 18 | 🟢 |
-| **Middleware** | 6 | 6 | 6 | — | — | 0 | 🟢 |
-| **Setup / entry** | 2 | 6 | 3 | — | — | 5 | 🟢 |
-| **Test helpers** | 2 | 6 | 11 | — | — | 13 | 🟢 |
-| **RLS / subscriptions** | 0 | 0 | 9 | — | — | 9 | 🟢 |
+| Domain                  | shared | cvx exports | stdb exports | cvx-only (gap) | stdb-only (gap) | intentional asym | status |
+| ----------------------- | ------ | ----------: | -----------: | -------------: | --------------: | ---------------: | ------ |
+| **File upload**         | 4      | 4           | 4            | —              | —               | 0                | 🟢     |
+| **Presence**            | 4      | 4           | 4            | —              | —               | 0                | 🟢     |
+| **Org membership**      | 1      | 4           | 8            | —              | —               | 10               | 🟢     |
+| **Server helpers**      | 56     | 57          | 72           | —              | —               | 18               | 🟢     |
+| **Middleware**          | 6      | 6           | 6            | —              | —               | 0                | 🟢     |
+| **Setup / entry**       | 2      | 6           | 3            | —              | —               | 5                | 🟢     |
+| **Test helpers**        | 2      | 6           | 11           | —              | —               | 13               | 🟢     |
+| **RLS / subscriptions** | 0      | 0           | 9            | —              | —               | 9                | 🟢     |
 
 ### Intentional architectural asymmetries
 
@@ -897,17 +897,17 @@ Per-file React component parity. Each `*.tsx` in `lib/noboil/src/{convex,spaceti
 
 **9/9 component files at full parity.**
 
-| File | cvx | stdb | shared exports | cvx-only | stdb-only | status |
-|---|---|---|--:|---|---|--|
-| `editors-section.tsx` | ✓ 2L | ✓ 2L | 1 | — | — | 🟢 |
-| `error-boundary.tsx` | ✓ 11L | ✓ 11L | 1 | — | — | 🟢 |
-| `fields.tsx` | ✓ 23L | ✓ 30L | 4 | — | — | 🟢 |
-| `file-field.tsx` | ✓ 245L | ✓ 391L | 3 | — | — | 🟢 |
-| `form.tsx` | ✓ 170L | ✓ 197L | 6 | — | — | 🟢 |
-| `index.ts` | ✓ 11L | ✓ 12L | 20 | — | — | 🟢 |
-| `misc.tsx` | ✓ 11L | ✓ 15L | 3 | — | — | 🟢 |
-| `permission-guard.tsx` | ✓ 24L | ✓ 24L | 1 | — | — | 🟢 |
-| `step-form.tsx` | ✓ 76L | ✓ 82L | 1 | — | — | 🟢 |
+| File                   | cvx    | stdb   | shared exports | cvx-only | stdb-only | status |
+| ---------------------- | ------ | ------ | -------------: | -------- | --------- | ------ |
+| `editors-section.tsx`  | ✓ 2L   | ✓ 2L   | 1              | —        | —         | 🟢     |
+| `error-boundary.tsx`   | ✓ 11L  | ✓ 11L  | 1              | —        | —         | 🟢     |
+| `fields.tsx`           | ✓ 23L  | ✓ 30L  | 4              | —        | —         | 🟢     |
+| `file-field.tsx`       | ✓ 245L | ✓ 391L | 3              | —        | —         | 🟢     |
+| `form.tsx`             | ✓ 170L | ✓ 197L | 6              | —        | —         | 🟢     |
+| `index.ts`             | ✓ 11L  | ✓ 12L  | 20             | —        | —         | 🟢     |
+| `misc.tsx`             | ✓ 11L  | ✓ 15L  | 3              | —        | —         | 🟢     |
+| `permission-guard.tsx` | ✓ 24L  | ✓ 24L  | 1              | —        | —         | 🟢     |
+| `step-form.tsx`        | ✓ 76L  | ✓ 82L  | 1              | —        | —         | 🟢     |
 {/* AUTO-GENERATED:COMPONENT-PARITY:END */}
 
 ## Mega parity (every file, every symbol)
@@ -919,14 +919,14 @@ Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. 
 
 **238 shared files · 43 cvx-only · 35 stdb-only · 0 files with cross-backend symbol divergence.** Status: 🟢 zero unaccounted-for gaps across the entire repo.
 
-| Pair | shared | cvx-only | stdb-only | symbol gaps | status |
-|---|--:|---|---|--:|--|
-| **lib/noboil/src** | 78 | 4 (0 unaccounted) | 22 (0 unaccounted) | 0 | 🟢 |
-| **backend** | 4 | 31 (0 unaccounted) | 6 (0 unaccounted) | 0 | 🟢 |
-| **web/blog** | 32 | 1 (0 unaccounted) | 0 (0 unaccounted) | 0 | 🟢 |
-| **web/chat** | 23 | 1 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
-| **web/movie** | 16 | 1 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
-| **web/org** | 48 | 2 (0 unaccounted) | 4 (0 unaccounted) | 0 | 🟢 |
-| **web/poll** | 37 | 3 (0 unaccounted) | 1 (0 unaccounted) | 0 | 🟢 |
-| **script (naming pair)** | 0 matched | 1 (0 unaccounted) | 4 (0 unaccounted) | — | 🟢 |
+| Pair                     | shared    | cvx-only           | stdb-only          | symbol gaps | status |
+| ------------------------ | --------: | ------------------ | ------------------ | ----------: | ------ |
+| **lib/noboil/src**       | 78        | 4 (0 unaccounted)  | 22 (0 unaccounted) | 0           | 🟢     |
+| **backend**              | 4         | 31 (0 unaccounted) | 6 (0 unaccounted)  | 0           | 🟢     |
+| **web/blog**             | 32        | 1 (0 unaccounted)  | 0 (0 unaccounted)  | 0           | 🟢     |
+| **web/chat**             | 23        | 1 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
+| **web/movie**            | 16        | 1 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
+| **web/org**              | 48        | 2 (0 unaccounted)  | 4 (0 unaccounted)  | 0           | 🟢     |
+| **web/poll**             | 37        | 3 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
+| **script (naming pair)** | 0 matched | 1 (0 unaccounted)  | 4 (0 unaccounted)  | —           | 🟢     |
 {/* AUTO-GENERATED:MEGA-PARITY:END */}

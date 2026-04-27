@@ -31,16 +31,16 @@ Run `noboil` with no args for an interactive dashboard with single-key hotkeys:
 
 <!-- AUTO-GENERATED:HOTKEYS -->
 
-| key | command | what it does |
-| --- | --- | --- |
-| `i` | `init` | create a new project |
-| `t` | `status` | project snapshot (drift, sync age, health) |
-| `d` | `doctor` | health check; `doctor --fix` auto-remediates |
-| `s` | `sync` | pull upstream changes (cached at `~/.noboil/upstream.git`) |
-| `a` | `add` | scaffold a table (auto-dispatches by DB in `.noboilrc.json`) |
-| `e` | `eject` | inline the noboil library into `lib/noboil` |
-| `u` | `upgrade` | `bun add noboil@latest` |
-| `c` | `completions` | print shell completion script |
+| key | command       | what it does                                                 |
+| --- | ------------- | ------------------------------------------------------------ |
+| `i` | `init`        | create a new project                                         |
+| `t` | `status`      | project snapshot (drift, sync age, health)                   |
+| `d` | `doctor`      | health check; `doctor --fix` auto-remediates                 |
+| `s` | `sync`        | pull upstream changes (cached at `~/.noboil/upstream.git`)   |
+| `a` | `add`         | scaffold a table (auto-dispatches by DB in `.noboilrc.json`) |
+| `e` | `eject`       | inline the noboil library into `lib/noboil`                  |
+| `u` | `upgrade`     | `bun add noboil@latest`                                      |
+| `c` | `completions` | print shell completion script                                |
 
 <!-- /AUTO-GENERATED:HOTKEYS -->
 
@@ -268,16 +268,16 @@ Each table declares its shape via Zod and picks a factory that matches its acces
 
 <!-- AUTO-GENERATED:FACTORY-TABLE -->
 
-| Factory | Shape | Generates | Use for |
-|---|---|---|---|
-| `cache` | keyed external API cache | `get`/`load`/`refresh`/`invalidate`/`purge` | TMDB movies, Gravatar avatars |
-| `child` | nested under a parent | `create`/`list`/`rm`/`update` by parentId | comments under posts, items under orders |
-| `kv` | string-keyed state | `get` (public) / `set`/`rm` (role-gated) | feature flags, status banners, site config |
-| `log` | append-only event stream | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing |
-| `org` | org-scoped with editors | `addEditor`/`removeEditor` + full CRUD | multi-tenant, team-shared resources |
-| `owned` | user-scoped | `create`/`list`/`read`/`update`/`rm` | user-owned data (posts, chats, tasks) |
-| `quota` | sliding-window rate limit | `check`/`record`/`consume` | anti-spam, vote throttling, API limits |
-| `singleton` | one per user | `get`/`upsert` | user preferences, profiles |
+| Factory     | Shape                     | Generates                                                                | Use for                                    |
+| ----------- | ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------ |
+| `cache`     | keyed external API cache  | `get`/`load`/`refresh`/`invalidate`/`purge`                              | TMDB movies, Gravatar avatars              |
+| `child`     | nested under a parent     | `create`/`list`/`rm`/`update` by parentId                                | comments under posts, items under orders   |
+| `kv`        | string-keyed state        | `get` (public) / `set`/`rm` (role-gated)                                 | feature flags, status banners, site config |
+| `log`       | append-only event stream  | `append`/`listAfter`/`purgeByParent` with per-parent `seq` + idempotency | messages, audit trails, event sourcing     |
+| `org`       | org-scoped with editors   | `addEditor`/`removeEditor` + full CRUD                                   | multi-tenant, team-shared resources        |
+| `owned`     | user-scoped               | `create`/`list`/`read`/`update`/`rm`                                     | user-owned data (posts, chats, tasks)      |
+| `quota`     | sliding-window rate limit | `check`/`record`/`consume`                                               | anti-spam, vote throttling, API limits     |
+| `singleton` | one per user              | `get`/`upsert`                                                           | user preferences, profiles                 |
 
 <!-- /AUTO-GENERATED:FACTORY-TABLE -->
 
