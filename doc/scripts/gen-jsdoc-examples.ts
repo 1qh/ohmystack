@@ -84,7 +84,7 @@ const main = () => {
     sections.push('export const myThing = ...')
     sections.push('```')
   } else
-    for (const ex of all.toSorted((a, b) => a.symbol.localeCompare(b.symbol))) {
+    for (const ex of all.toSorted((a, b) => a.symbol.localeCompare(b.symbol) || a.file.localeCompare(b.file))) {
       sections.push(`### \`${ex.symbol}\` — \`${ex.file}\``)
       sections.push('')
       sections.push('```ts')

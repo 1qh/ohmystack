@@ -1971,6 +1971,12 @@ const { crud, orgCrud, pq, q, m } = setup({
 export const { create, update, rm, pub: { list, read } } = crud('blog', owned.blog)
 ```
 
+### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-infinite-list.ts`
+
+```ts
+const list = useInfiniteList(rows, ready, { batchSize: 25 })
+```
+
 ### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-list.ts`
 
 ```ts
@@ -1979,12 +1985,6 @@ const list = useList(rows, ready, {
   where: { own: true },
   search: { query: 'hello', fields: ['title', 'content'] }
 })
-```
-
-### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-infinite-list.ts`
-
-```ts
-const list = useInfiniteList(rows, ready, { batchSize: 25 })
 ```
 
 ### `useList` — `lib/noboil/src/convex/react/use-list.ts`
