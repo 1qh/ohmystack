@@ -24,6 +24,7 @@ const walk = (dir: string, out: string[] = []): string[] => {
   return out
 }
 const SYM_RE = /(?:export\s+)?(?:const|function|class|interface|type)\s+(?<name>\w+)/u
+const JSDOC_EXAMPLE_RE = /^\s*\*\s*@example\b/u
 interface Example {
   code: string
   file: string
@@ -35,7 +36,7 @@ const extractExamples = (src: string, file: string): Example[] => {
   let i = 0
   while (i < lines.length) {
     const line = lines[i] ?? ''
-    if (line.includes('@example')) {
+    if (JSDOC_EXAMPLE_RE.test(line)) {
       const codeLines: string[] = []
       let j = i + 1
       while (j < lines.length && !(lines[j] ?? '').includes('*/')) {
