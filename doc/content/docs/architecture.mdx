@@ -364,7 +364,7 @@ Auto-generated grid showing every registered table, the noboil options it ships 
 | `blogProfile` | — | ✓ | — | — | — | — | ✓ | — | — | — | — |
 | `chat` | `cascade`, `pub`, `rateLimit` | — | ✓ | — | — | — | — | ✓ | — | — | — |
 | `message` | `pub` | — | ✓ | — | — | — | — | ✓ | — | — | — |
-| `movie` | `key` | — | — | ✓ | — | — | — | — | — | — | — |
+| `movie` | `key` | — | — | ✓ | — | — | — | — | ✓ | — | — |
 | `org` | `unique` | — | — | — | ✓ | — | — | — | — | ✓ | — |
 | `orgProfile` | — | — | — | — | ✓ | — | — | — | — | ✓ | — |
 | `poll` | — | — | — | — | — | ✓ | — | — | — | — | ✓ |
@@ -373,7 +373,7 @@ Auto-generated grid showing every registered table, the noboil options it ships 
 | `project` | `acl`, `cascade` | — | — | — | ✓ | — | — | — | — | ✓ | — |
 | `siteConfig` | `softDelete` | — | — | — | — | ✓ | — | — | — | — | ✓ |
 | `task` | `acl`, `aclFrom` | — | — | — | ✓ | — | — | — | — | ✓ | — |
-| `vote` | `softDelete` | — | — | — | — | ✓ | — | — | — | — | ✓ |
+| `vote` | `softDelete` | — | — | — | — | ✓ | — | — | ✓ | — | ✓ |
 | `wiki` | `acl`, `rateLimit`, `softDelete` | — | — | — | ✓ | — | — | — | — | ✓ | — |
 {/* AUTO-GENERATED:DEMO-MATRIX:END */}
 
@@ -697,3 +697,25 @@ Scans every `.mdx` for paragraphs ≥120 chars appearing in 2+ files. Catches ac
 
 _No duplicates above threshold — every long paragraph appears in exactly one file._
 {/* AUTO-GENERATED:DOC-DEDUP:END */}
+
+## Factory parity audit
+
+Every factory checked across both backends: source file present, at least one demo table registered, factory name referenced in tests, and dedicated/mentioning doc.
+
+{/* AUTO-GENERATED:FACTORY-PARITY:START */}
+Per-factory parity. Each factory checked: source file present, at least one demo table registered in the entry point, table referenced by ≥1 demo app, factory name referenced in tests, and dedicated doc page.
+
+**9/9 factories at full parity.**
+
+| Slot (Brand) | Tables | Convex (src · reg · demos · tests) | SpacetimeDB (src · reg · demos · tests) | Docs | Status |
+|---|--:|---|---|--|--|
+| `base` (`base`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `children` (`child`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `kv` (`kv`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `log` (`log`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `org` (`orgDef`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `orgScoped` (`org`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
+| `owned` (`owned`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
+| `quota` (`quota`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
+| `singleton` (`singleton`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
+{/* AUTO-GENERATED:FACTORY-PARITY:END */}

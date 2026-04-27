@@ -9,7 +9,6 @@ const REPO = resolve(import.meta.dir, '../..')
 const DEMOS = ['blog', 'chat', 'movie', 'org', 'poll']
 const TABLE_RE = /(?<name>\w+):\s*table\(s\.\w+(?:,\s*\{(?<opts>[^}]*)\})?/gu
 const API_RE = /\bapi\.(?<name>\w+)\b/gu
-const REDUCER_RE = /\b(?:reducers|tables)\.(?<name>\w+)\b/gu
 const parseTables = (src: string): Map<string, string[]> => {
   const result = new Map<string, string[]>()
   let m = TABLE_RE.exec(src)
@@ -37,16 +36,28 @@ const walkSrc = (dir: string, out: string[] = []): string[] => {
   }
   return out
 }
-const tablesUsedBy = (root: string, re: RegExp): Set<string> => {
+const cvxTablesUsedBy = (root: string): Set<string> => {
   const used = new Set<string>()
   for (const file of walkSrc(root)) {
     const src = readFileSync(file, 'utf8')
-    let m = re.exec(src)
+    let m = API_RE.exec(src)
     while (m) {
       if (m.groups?.name) used.add(m.groups.name)
-      m = re.exec(src)
+      m = API_RE.exec(src)
     }
-    re.lastIndex = 0
+    API_RE.lastIndex = 0
+  }
+  return used
+}
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
+const stdbTablesUsedBy = (root: string, knownTables: string[]): Set<string> => {
+  const used = new Set<string>()
+  const sources = walkSrc(root)
+    .map(f => readFileSync(f, 'utf8'))
+    .join('\n')
+  for (const t of knownTables) {
+    const re = new RegExp(`\\btables\\.${t}\\b|\\breducers\\.\\w*${cap(t)}\\b|\\b${t}_\\w+\\b`, 'u')
+    if (re.test(sources)) used.add(t)
   }
   return used
 }
@@ -59,8 +70,8 @@ const main = () => {
   const demoUsage: Record<string, { cvx: Set<string>; stdb: Set<string> }> = {}
   for (const demo of DEMOS)
     demoUsage[demo] = {
-      cvx: tablesUsedBy(`${REPO}/web/cvx/${demo}`, API_RE),
-      stdb: tablesUsedBy(`${REPO}/web/stdb/${demo}`, REDUCER_RE)
+      cvx: cvxTablesUsedBy(`${REPO}/web/cvx/${demo}`),
+      stdb: stdbTablesUsedBy(`${REPO}/web/stdb/${demo}`, allTables)
     }
   const tableHeader = `| Table | Options | ${DEMOS.map(d => `cvx-${d}`).join(' | ')} | ${DEMOS.map(d => `stdb-${d}`).join(' | ')} |`
   const sep = `|---|---|${DEMOS.map(() => '--').join('|')}|${DEMOS.map(() => '--').join('|')}|`
