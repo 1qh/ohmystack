@@ -8,7 +8,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 {/* AUTO-GENERATED:RECIPE-TOC:START */}
 ## Recipes index
 
-29 recipes (auto-generated TOC):
+30 recipes (auto-generated TOC):
 
 - [Recipes index](#recipes-index)
 - [Blog with Auth, File Upload, Pagination, and Search](#blog-with-auth-file-upload-pagination-and-search)
@@ -39,6 +39,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 - [Custom Error Codes](#custom-error-codes)
 - [Unified CRUD with useCrud + createApi](#unified-crud-with-usecrud-createapi)
 - [Poll: kv banner + log votes + quota anti-spam](#poll-kv-banner-log-votes-quota-anti-spam)
+- [JSDoc `@example` library](#jsdoc-example-library)
 {/* AUTO-GENERATED:RECIPE-TOC:END */}
 
 ## Blog with Auth, File Upload, Pagination, and Search
@@ -1911,3 +1912,149 @@ This composes:
 - **`quota`** as the gate before each `log.append` (anti-ballot-stuffing)
 
 End-to-end coverage: 82 Playwright tests (`web/cvx/poll/e2e/*`) exercise this exact flow including bulk append, purge/restore, banner restore, quota exhaustion, and the per-poll detail/edit routes.
+
+## JSDoc `@example` library
+
+Every `@example` JSDoc block harvested from `lib/noboil/src/`. These are tested-by-living-source examples — the surrounding code must compile.
+
+{/* AUTO-GENERATED:JSDOC-EXAMPLES:START */}
+**14 `@example` blocks** harvested from JSDoc across `lib/noboil/src/`.
+
+### `getOrgMembership` — `lib/noboil/src/convex/server/test.ts`
+
+```ts
+const SECOND_TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL_SECONDARY ?? 'other@example.test'
+const EDITOR_TEST_EMAIL = nodeEnv.NOBOIL_TEST_EMAIL_EDITOR ?? 'editor@example.test'
+const BATCH_SIZE = 50
+const EXPIRED_OFFSET_MS = 1000
+```
+
+### `makeCrud` — `lib/noboil/src/spacetimedb/server/crud.ts`
+
+```ts
+```ts
+const reducers = makeCrud(spacetimedb, { tableName: 'post', fields, idField, pk, table })
+```
+```
+
+### `makeFileUpload` — `lib/noboil/src/spacetimedb/server/file.ts`
+
+```ts
+```ts
+const uploads = makeFileUpload(spacetimedb, { namespace: 'avatars', fields, idField, pk, table })
+```
+```
+
+### `noboil` — `lib/noboil/src/convex/server/noboil.ts`
+
+```ts
+import { noboil } from './'
+import { action, internalMutation, internalQuery, mutation, query } from './_generated/server'
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { s } from './s'
+
+export const api = noboil({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId,
+  orgSchema: s.team,
+  tables: ({ table }) => ({
+    blog: table(s.blog, { rateLimit: 10, search: 'content' }),
+    wiki: table(s.wiki, { acl: true, softDelete: true }),
+    profile: table(s.profile),
+    movie: table(s.movie, { key: 'tmdbId', ttl: 86_400 })
+  })
+})
+
+// Then in convex/blog.ts:
+import { api } from './lazy'
+export const { create, update, rm, pub: { list, read, search } } = api.blog
+```
+
+### `resolveToastError` — `lib/noboil/src/spacetimedb/react/use-mutate.ts`
+
+```ts
+```ts
+const save = useMutate(api.posts.update, { optimistic: true })
+```
+```
+
+### `setup` — `lib/noboil/src/convex/server/setup.ts`
+
+```ts
+const { crud, orgCrud, pq, q, m } = setup({
+  query, mutation, action, internalQuery, internalMutation, getAuthUserId
+})
+
+// Then generate endpoints:
+export const { create, update, rm, pub: { list, read } } = crud('blog', owned.blog)
+```
+
+### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-list.ts`
+
+```ts
+```ts
+const list = useList(rows, ready, {
+  pageSize: 20,
+  where: { own: true },
+  search: { query: 'hello', fields: ['title', 'content'] }
+})
+```
+```
+
+### `SKIP_RESULT` — `lib/noboil/src/spacetimedb/react/use-infinite-list.ts`
+
+```ts
+```ts
+const list = useInfiniteList(rows, ready, { batchSize: 25 })
+```
+```
+
+### `useList` — `lib/noboil/src/convex/react/use-list.ts`
+
+```ts
+```tsx
+const { data, loadMore, isDone } = useList(api.blog.list, { where: { published: true } })
+```
+```
+
+### `useMutate` — `lib/noboil/src/convex/react/use-mutate.ts`
+
+```ts
+```tsx
+const update = useMutate(api.blog.update)
+const remove = useMutate(api.blog.rm, { onError: false })
+```
+```
+
+### `useOrgQuery` — `lib/noboil/src/convex/react/org.tsx`
+
+```ts
+```tsx
+const wikis = useOrgQuery(api.wiki.list)
+```
+```
+
+### `useOwnRows` — `lib/noboil/src/spacetimedb/react/use-list.ts`
+
+```ts
+```ts
+const blogs = useOwnRows(allBlogs, identity ? b => b.userId.isEqual(identity) : null)
+```
+```
+
+### `usePresence` — `lib/noboil/src/convex/react/use-presence.ts`
+
+```ts
+```tsx
+const { users, updatePresence } = usePresence(presenceRefs, chatId, { data: { cursor: { x, y } } })
+```
+```
+
+### `zodFromTable` — `lib/noboil/src/spacetimedb/stdb-zod.ts`
+
+```ts
+```ts
+const schema = zodFromTable(module.table.columns, { optional: ['bio'] })
+```
+```
+
+{/* AUTO-GENERATED:JSDOC-EXAMPLES:END */}

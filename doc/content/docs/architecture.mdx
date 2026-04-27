@@ -483,3 +483,128 @@ graph LR
   style pollProfile fill:#f3e8ff,stroke:#333
 ```
 {/* AUTO-GENERATED:SCHEMA-DIAGRAM:END */}
+
+## Schema fields
+
+Every user-defined Zod field per table, parsed from `backend/convex/s.ts`. Auto-injected fields (`userId`, `updatedAt`, `_creationTime`) live in [auto-fields](#schema-branding) above and are not duplicated here.
+
+{/* AUTO-GENERATED:SCHEMA-FIELDS:START */}
+Auto-extracted from `backend/convex/s.ts`. **12 tables, 44 user-defined fields** (auto-injected fields like `userId`/`updatedAt` are added by factories — see [auto-fields](#schema-branding) above).
+
+### slot: `base`
+
+**`movie`** — 14 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `backdrop_path` | `string().nullable()` |
+| `budget` | `number().nullable()` |
+| `genres` | `array(object(\{ id: number(), name: string() \}))` |
+| `original_title` | `string()` |
+| `overview` | `string()` |
+| `poster_path` | `string().nullable()` |
+| `release_date` | `string()` |
+| `revenue` | `number().nullable()` |
+| `runtime` | `number().nullable()` |
+| `tagline` | `string().nullable()` |
+| `title` | `string()` |
+| `tmdb_id` | `number()` |
+| `vote_average` | `number()` |
+| `vote_count` | `number()` |
+
+### slot: `children`
+
+**`message`** — 3 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `chatId` | `zid('chat')` |
+| `parts` | `array(messagePart)` |
+| `role` | `zenum(['user', 'assistant', 'system'])` |
+
+### slot: `kv`
+
+**`siteConfig`** — 0 field(s)
+
+_(no inline fields parsed — see source)_
+
+### slot: `log`
+
+**`vote`** — 0 field(s)
+
+_(no inline fields parsed — see source)_
+
+### slot: `org`
+
+**`team`** — 0 field(s)
+
+_(no inline fields parsed — see source)_
+
+### slot: `orgScoped`
+
+**`project`** — 4 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `description` | `string().optional()` |
+| `editors` | `array(zid('users')).max(100).optional()` |
+| `name` | `string().min(1)` |
+| `status` | `zenum(['active', 'archived', 'completed']).optional()` |
+
+**`task`** — 5 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `assigneeId` | `zid('users').nullable().optional()` |
+| `completed` | `boolean().optional()` |
+| `priority` | `zenum(['low', 'medium', 'high']).optional()` |
+| `projectId` | `zid('project')` |
+| `title` | `string().min(1)` |
+
+**`wiki`** — 6 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `content` | `string().optional()` |
+| `deletedAt` | `number().optional()` |
+| `editors` | `array(zid('users')).max(100).optional()` |
+| `slug` | `string()` |
+| `status` | `zenum(['draft', 'published'])` |
+| `title` | `string().min(1)` |
+
+### slot: `owned`
+
+**`blog`** — 7 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `attachments` | `files.max(5).optional()` |
+| `category` | `zenum(['tech', 'life', 'tutorial'], \{ error: 'Select a category' \})` |
+| `content` | `string().min(3, 'At least 3 characters')` |
+| `coverImage` | `file.nullable().optional()` |
+| `published` | `boolean()` |
+| `tags` | `array(string()).max(5, 'Max 5 tags').optional()` |
+| `title` | `string().min(1, 'Required')` |
+
+**`chat`** — 2 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `isPublic` | `boolean()` |
+| `title` | `string().min(1)` |
+
+**`poll`** — 3 field(s)
+
+| Field | Zod chain |
+|---|---|
+| `closedAt` | `number().nullable().optional()` |
+| `options` | `array(string().min(1)).min(2).max(10)` |
+| `question` | `string().min(1)` |
+
+### slot: `quota`
+
+**`pollVote`** — 0 field(s)
+
+_(no inline fields parsed — see source)_
+
+{/* AUTO-GENERATED:SCHEMA-FIELDS:END */}

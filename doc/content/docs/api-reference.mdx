@@ -1579,3 +1579,73 @@ This generator picks them up automatically.
 
 </Tab>
 </Tabs>
+
+## Per-table endpoint inventory
+
+Each module in `backend/convex/convex/` re-exports the factory-generated CRUD plus any custom `pq`/`q`/`m` builders defined alongside. This is the runtime surface clients call into.
+
+{/* AUTO-GENERATED:TABLE-ENDPOINTS:START */}
+**119 endpoints across 10 table modules** in `backend/convex/convex/`. Each row is a re-export aggregator combining factory-generated CRUD + custom `pq`/`q`/`m` builders.
+
+| Module | Count | Endpoints |
+|---|--:|---|
+| `blog` | 9 | `authorPosts`, `create`, `list`, `postStats`, `read`, `rm`, `search`, `togglePublish`, `update` |
+| `chat` | 6 | `create`, `list`, `pubRead`, `read`, `rm`, `update` |
+| `org` | 25 | `acceptInvite`, `approveJoinRequest`, `cancelJoinRequest`, `create`, `get`, `getBySlug`, `getOrCreate`, `getPublic`, `invite`, `isSlugAvailable`, `leave`, `members`, `membership`, `myJoinRequest`, `myOrgs`, `pendingInvites`, `pendingJoinRequests`, `rejectJoinRequest`, `remove`, `removeMember`, `requestJoin`, `revokeInvite`, `setAdmin`, `transferOwnership`, `update` |
+| `poll` | 5 | `create`, `list`, `read`, `rm`, `update` |
+| `pollVoteQuota` | 3 | `check`, `consume`, `record` |
+| `siteConfig` | 5 | `get`, `list`, `restore`, `rm`, `set` |
+| `task` | 8 | `assign`, `byProject`, `create`, `list`, `read`, `rm`, `toggle`, `update` |
+| `testauth` | 47 | `TEST_EMAIL`, `acceptInviteAsUser`, `addEditorAsUser`, `addTestOrgMember`, `addWikiEditorAsUser`, `approveJoinRequestAsUser`, `assignTaskAsUser`, `cancelJoinRequestAsUser`, `cleanupOrgTestData`, `cleanupTestData`, `cleanupTestUsers`, `createExpiredInvite`, `createProjectAsUser`, `createTaskAsUser`, `createTestUser`, `createWikiAsUser`, `deleteOrgAsUser`, `deleteProjectAsUser`, `deleteWikiAsUser`, `ensureTestUser`, `getAuthUserIdOrTest`, `getJoinRequest`, `getProjectEditors`, `getTestUser`, `getTestUserByEmail`, `inviteAsUser`, `isTestMode`, `leaveOrgAsUser`, `listProjectsAsUser`, `pendingInvitesAsUser`, `pendingJoinRequestsAsUser`, `rejectJoinRequestAsUser`, `removeEditorAsUser`, `removeMemberAsUser`, `removeTestOrgMember`, `removeWikiEditorAsUser`, `requestJoinAsUser`, `rmTaskAsUser`, `setAdminAsUser`, `toggleTaskAsEditorUser`, `toggleTaskAsUser`, `transferOwnershipAsUser`, `updateOrgAsUser`, `updateProjectAsEditorUser`, `updateProjectAsUser`, `updateTaskAsUser`, `updateWikiAsUser` |
+| `user` | 1 | `me` |
+| `vote` | 10 | `append`, `auth`, `authIndexed`, `list`, `listAfter`, `purgeByParent`, `read`, `restoreByParent`, `rm`, `update` |
+{/* AUTO-GENERATED:TABLE-ENDPOINTS:END */}
+
+## Package subpath exports
+
+Every entry in `noboil/package.json#exports`. Use these exact paths in `import` statements — bundlers resolve via the `customConditions` setting in your `tsconfig`.
+
+{/* AUTO-GENERATED:PACKAGE-EXPORTS:START */}
+**38 subpath exports** from `noboil` package.json. Use exact import paths for tree-shaking.
+
+| Import path | Runtime entry | Types entry |
+|---|---|---|
+| `noboil` | `./src/noboil.ts` | — |
+| `noboil/components` | `./src/convex/components/index.ts` | `` |
+| `noboil/config` | `./src/config.ts` | — |
+| `noboil/convex` | `./src/convex/index.ts` | — |
+| `noboil/convex/components` | `./src/convex/components/index.ts` | — |
+| `noboil/convex/eslint` | `./src/convex/eslint.ts` | — |
+| `noboil/convex/next` | `./src/convex/next/index.ts` | — |
+| `noboil/convex/react` | `./src/convex/react/index.ts` | — |
+| `noboil/convex/retry` | `./src/convex/retry.ts` | — |
+| `noboil/convex/schema` | `./src/convex/schema.ts` | — |
+| `noboil/convex/seed` | `./src/convex/seed.ts` | — |
+| `noboil/convex/server` | `./src/convex/server/index.ts` | — |
+| `noboil/convex/test` | `./src/convex/server/test.ts` | — |
+| `noboil/convex/test/discover` | `./src/convex/server/test-discover.ts` | — |
+| `noboil/convex/zod` | `./src/convex/zod.ts` | — |
+| `noboil/eslint` | `./src/convex/eslint.ts` | `` |
+| `noboil/next` | `./src/convex/next/index.ts` | `` |
+| `noboil/package.json` | `./package.json` | — |
+| `noboil/react` | `./src/convex/react/index.ts` | `` |
+| `noboil/retry` | `./src/convex/retry.ts` | `` |
+| `noboil/schema` | `./src/convex/schema.ts` | `` |
+| `noboil/seed` | `./src/convex/seed.ts` | `` |
+| `noboil/server` | `./src/convex/server/index.ts` | `` |
+| `noboil/spacetimedb` | `./src/spacetimedb/index.ts` | — |
+| `noboil/spacetimedb/components` | `./src/spacetimedb/components/index.ts` | — |
+| `noboil/spacetimedb/eslint` | `./src/spacetimedb/eslint.ts` | — |
+| `noboil/spacetimedb/next` | `./src/spacetimedb/next/index.ts` | — |
+| `noboil/spacetimedb/react` | `./src/spacetimedb/react/index.ts` | — |
+| `noboil/spacetimedb/retry` | `./src/spacetimedb/retry.ts` | — |
+| `noboil/spacetimedb/schema` | `./src/spacetimedb/schema.ts` | — |
+| `noboil/spacetimedb/seed` | `./src/spacetimedb/seed.ts` | — |
+| `noboil/spacetimedb/server` | `./src/spacetimedb/server/index.ts` | — |
+| `noboil/spacetimedb/test` | `./src/spacetimedb/server/test.ts` | — |
+| `noboil/spacetimedb/test/discover` | `./src/spacetimedb/server/test-discover.ts` | — |
+| `noboil/spacetimedb/zod` | `./src/spacetimedb/zod.ts` | — |
+| `noboil/test` | `./src/convex/server/test.ts` | `` |
+| `noboil/test/discover` | `./src/convex/server/test-discover.ts` | `` |
+| `noboil/zod` | `./src/convex/zod.ts` | `` |
+{/* AUTO-GENERATED:PACKAGE-EXPORTS:END */}
