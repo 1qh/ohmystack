@@ -785,3 +785,23 @@ Options that exist on one backend but not the other because the underlying datab
 - **`singleton.hooks`** (cvx-only): cvx singletonCrud lifecycle hooks delegated to underlying mutation builder
 - **`singleton.rateLimit`** (stdb-only): stdb singleton has at most one row per user — rate-limit pressure is naturally bounded
 {/* AUTO-GENERATED:OPTION-PARITY:END */}
+
+## Demo parity
+
+Cross-backend audit of all 5 demo apps: routes, e2e tests, source LOC.
+
+{/* AUTO-GENERATED:DEMO-PARITY:START */}
+Per-demo parity audit. Each of the 5 demos compared across both backends: route count, e2e test count, source LOC.
+**5/5 demos at full parity.** Backend-specific routes (intentional asymmetries) listed below.
+| Demo | Routes (cvx/stdb) | E2E tests (cvx/stdb) | Source LOC (cvx/stdb) | Status |
+|---|---|---|---|--|
+| `blog` | 8/8 ✓ | 52 / 52 ✓ | 858 / 928 ✓ | 🟢 |
+| `chat` | 5/5 ✓ | 26 / 26 ✓ | 481 / 409 ✓ | 🟢 |
+| `movie` | 2/2 ✓ | 14 / 14 ✓ | 297 / 509 ✓ | 🟢 |
+| `org` | 18/18 ✓ | 128 / 128 ✓ | 2334 / 2592 ✓ | 🟢 |
+| `poll` | 6/7 ✓ | 82 / 82 ✓ | 831 / 871 ✓ | 🟢 |
+### Backend-specific routes (intentional)
+
+- **`stdb/dev`** — SpacetimeDB SchemaPlayground dev tool (cvx has no equivalent component)
+- **`movie` src LOC asymmetry** — stdb-movie does TMDB fetching client-side (no server-side action available); cvx delegates to action — architectural difference, see base.fetcher in option-parity above
+{/* AUTO-GENERATED:DEMO-PARITY:END */}
