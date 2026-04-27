@@ -20,5 +20,4 @@ const PermissionGuard = ({
   const resolvedAccess = canAccess ?? roleAllowed ?? true
   return <SharedPermissionGuard canAccess={resolvedAccess} {...props} />
 }
-export default PermissionGuard
 export { PermissionGuard }

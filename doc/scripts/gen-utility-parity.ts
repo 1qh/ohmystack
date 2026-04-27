@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console, no-continue */
+/* eslint-disable no-console, no-continue, max-depth */
 /** biome-ignore-all lint/performance/useTopLevelRegex: small file */
 /** biome-ignore-all lint/nursery/noContinue: parser */
 import { existsSync, readFileSync } from 'node:fs'

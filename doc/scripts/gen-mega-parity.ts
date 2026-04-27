@@ -466,6 +466,7 @@ const auditPair = (p: Pair): PairResult => {
     symbolGaps
   }
 }
+const namingStem = (f: string, prefix: string): string => f.replace(prefix, '').replaceAll(/^[-_]+|[-_]+$/gu, '')
 interface NamingPair {
   cvxPrefix: string
   dir: string
@@ -505,11 +506,10 @@ const auditNamingPair = (
   const files = readdirSync(np.dir).filter(f => (f.endsWith('.ts') || f.endsWith('.sh')) && !f.endsWith('.test.ts'))
   const cvxFiles = files.filter(f => f.includes(np.cvxPrefix))
   const stdbFiles = files.filter(f => f.includes(np.stdbPrefix))
-  const stem = (f: string, prefix: string): string => f.replace(prefix, '').replaceAll(/^[-_]+|[-_]+$/gu, '')
-  const cvxStems = new Set(cvxFiles.map(f => stem(f, np.cvxPrefix)))
-  const stdbStems = new Set(stdbFiles.map(f => stem(f, np.stdbPrefix)))
-  const cvxOnly = cvxFiles.filter(f => !stdbStems.has(stem(f, np.cvxPrefix)))
-  const stdbOnly = stdbFiles.filter(f => !cvxStems.has(stem(f, np.stdbPrefix)))
+  const cvxStems = new Set(cvxFiles.map(f => namingStem(f, np.cvxPrefix)))
+  const stdbStems = new Set(stdbFiles.map(f => namingStem(f, np.stdbPrefix)))
+  const cvxOnly = cvxFiles.filter(f => !stdbStems.has(namingStem(f, np.cvxPrefix)))
+  const stdbOnly = stdbFiles.filter(f => !cvxStems.has(namingStem(f, np.stdbPrefix)))
   const cvxUnaccounted = cvxOnly.filter(f => !np.exemptFiles?.[`cvx:${f}`])
   const stdbUnaccounted = stdbOnly.filter(f => !np.exemptFiles?.[`stdb:${f}`])
   const matched = cvxFiles.length + stdbFiles.length - cvxOnly.length - stdbOnly.length
