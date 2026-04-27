@@ -8,7 +8,7 @@ import { ERROR_CODE_MEANINGS } from '../../lib/noboil/src/shared/error-codes'
 import { replaceBetween } from './lib'
 const REPO = resolve(import.meta.dir, '../..')
 const PATTERNS = [
-  /err\('(?<code>[A-Z][A-Z_0-9]+)'\)/gu,
+  /\b(?:err|cvErr|throwErr)\(\s*'(?<code>[A-Z][A-Z_0-9]+)'/gu,
   /throw\s+new\s+\w*Error\(\s*'(?<code>[A-Z][A-Z_0-9]+)'/gu,
   /new\s+ConvexError\(\s*\{\s*code:\s*'(?<code>[A-Z][A-Z_0-9]+)'/gu,
   /throwConvexError\(\s*'(?<code>[A-Z][A-Z_0-9]+)'/gu
