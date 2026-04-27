@@ -680,7 +680,7 @@ When a hook signature in source diverges from how it's documented (e.g. arg orde
 {/* AUTO-GENERATED:SIGNATURE-DRIFT:START */}
 Compares first argument names of every `useXxx(...)` call appearing in docs to the actual hook signature in `lib/noboil/src/{convex,spacetimedb}/react/use-*.ts`. Catches a common kind of doc rot.
 
-**28/28 hooks mentioned in docs.** Of those, 0 have at least one `const useX = (...)`-style declaration in a code fence. **0 drift mismatches.**
+**30/30 hooks mentioned in docs.** Of those, 0 have at least one `const useX = (...)`-style declaration in a code fence. **0 drift mismatches.**
 
 _No drift detected._
 
@@ -719,3 +719,22 @@ Per-factory parity. Each factory checked: source file present, at least one demo
 | `quota` (`quota`) | 1 | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ src · 1/1 reg · 1 demos · ✓ tests | ✓ | 🟢 |
 | `singleton` (`singleton`) | 3 | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ src · 3/3 reg · 3 demos · ✓ tests | ✓ | 🟢 |
 {/* AUTO-GENERATED:FACTORY-PARITY:END */}
+
+## Factory depth (quantitative)
+
+Beyond presence, this measures how *much* each factory has — source LOC, tests, hook LOC, doc mentions. Use it to spot uneven investment.
+
+{/* AUTO-GENERATED:FACTORY-DEPTH:START */}
+Quantitative depth per factory: source LOC, hook file LOC, test count (cases that reference the factory name), dedicated doc page LOC if any, and total mentions in all docs. **Bigger numbers ≠ better quality**, but large gaps signal uneven investment.
+
+| Factory | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | dedicated doc | doc mentions (cvx/stdb) |
+|---|---|---|---|---|---|
+| `base` | 245 / 173 | 90 / 86 | 12 / 4 | — | 13 / 3 |
+| `child` | 264 / 164 | 36 / 36 | 10 / 11 | — | 5 / 3 |
+| `kv` | 164 / 148 | 38 / 44 | 1 / 1 | 180L | 78 / 9 |
+| `log` | 390 / 257 | 71 / 73 | 7 / 2 | 221L | 148 / 9 |
+| `orgScoped` | 486 / 400 | 36 / 36 | 26 / 1 | — | 22 / 3 |
+| `owned` | 429 / 139 | 36 / 36 | 49 / 18 | — | 69 / 5 |
+| `quota` | 110 / 110 | 31 / 78 | 1 / 2 | 187L | 89 / 9 |
+| `singleton` | 70 / 113 | 25 / 39 | 13 / 8 | — | 14 / 8 |
+{/* AUTO-GENERATED:FACTORY-DEPTH:END */}

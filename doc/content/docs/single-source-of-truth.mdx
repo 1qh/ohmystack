@@ -3,7 +3,7 @@ title: Single source of truth
 description: How noboil docs stay in sync with the code that produces them.
 ---
 
-noboil ships **46 generators** that own **38 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
+noboil ships **47 generators** that own **39 marker blocks** across 5 doc files. Every block is rebuilt from source on `bun docs` and CI fails on drift via `bun docs:check`.
 
 ## Generators
 
@@ -26,6 +26,7 @@ noboil ships **46 generators** that own **38 marker blocks** across 5 doc files.
 | `doc/scripts/gen-eslint-rules.ts` | (undocumented) |
 | `doc/scripts/gen-example-check.ts` | (undocumented) |
 | `doc/scripts/gen-factory-api.ts` | stdb server/\{log,kv,quota\}.ts reducer name templates → reducer table |
+| `doc/scripts/gen-factory-depth.ts` | (undocumented) |
 | `doc/scripts/gen-factory-options.ts` | LogOptions/KvOptions interfaces → option tables |
 | `doc/scripts/gen-factory-parity.ts` | (undocumented) |
 | `doc/scripts/gen-glossary.ts` | (undocumented) |
@@ -62,7 +63,7 @@ noboil ships **46 generators** that own **38 marker blocks** across 5 doc files.
 |---|---|
 | `README.md` | `PACKAGE-INFO`, `DEMO-COUNT`, `HOTKEYS`, `CLI-TABLE-TYPES`, `FACTORY-TABLE`, `DEMO-TREE` |
 | `TODO.md` | `TEST-COUNTS` |
-| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY` |
+| `doc/content/docs/architecture.mdx` | `BRAND-REGISTRY`, `AUTO-FIELDS`, `UI-COMPONENTS`, `DEMO-MATRIX`, `NOBOIL-OPTIONS`, `MIDDLEWARE`, `SCHEMA-DIAGRAM`, `SCHEMA-FIELDS`, `ROUTE-MAP`, `OPTIONS-INVENTORY`, `EXAMPLE-CHECK`, `SIGNATURE-DRIFT`, `DOC-DEDUP`, `FACTORY-PARITY`, `FACTORY-DEPTH` |
 | `doc/content/docs/api-reference.mdx` | `IMPORTS`, `FACTORY-OPTIONS`, `CVX-FACTORY-ENDPOINTS`, `STDB-FACTORY-REDUCERS`, `REACT-HOOKS`, `HOOK-INTERFACES`, `HOOK-PARAMS`, `ERROR-CODES`, `ESLINT-RULES`, `STABILITY`, `TABLE-ENDPOINTS`, `PACKAGE-EXPORTS`, `HTTP-ROUTES`, `SYMBOL-COVERAGE` |
 | `doc/content/docs/cli.mdx` | `HELP`, `CLI-FLAGS`, `CONFIG-SCHEMA` |
 

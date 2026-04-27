@@ -110,6 +110,8 @@ export type { QuotaHookResult, QuotaRowBase, QuotaState, StdbQuotaRefs } from '.
 export { useQuota } from './use-quota'
 export type { UseSearchOptions, UseSearchResult } from './use-search'
 export { useSearch } from './use-search'
+export type { SingletonHookResult, SingletonRowBase, StdbSingletonRefs } from './use-singleton'
+export { useSingleton } from './use-singleton'
 export type { SoftDeleteOpts } from './use-soft-delete'
 export { useSoftDelete } from './use-soft-delete'
 export { default as useUpload } from './use-upload'
