@@ -23,7 +23,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/1qh/noboil.git",
-    "directory": "tool/cli"
+    "directory": "lib/noboil"
   },
   "license": "MIT",
   "author": "1qh",
