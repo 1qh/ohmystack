@@ -737,7 +737,7 @@ Quantitative depth per factory: source LOC, hook file LOC, test count (cases tha
 | `base`      | 245 / 173          | 90 / 86             | 17 / 17          | 236L     | 4 / 4 ✓         |
 | `child`     | 264 / 164          | 36 / 36             | 11 / 13          | 240L     | 4 / 4 ✓         |
 | `kv`        | 164 / 148          | 38 / 44             | 10 / 10          | 270L     | 4 / 4 ✓         |
-| `log`       | 390 / 256          | 71 / 73             | 10 / 10          | 357L     | 5 / 5 ✓         |
+| `log`       | 390 / 256          | 71 / 73             | 11 / 10          | 357L     | 5 / 5 ✓         |
 | `orgScoped` | 486 / 400          | 36 / 36             | 35 / 33          | 255L     | 4 / 4 ✓         |
 | `owned`     | 429 / 139          | 36 / 36             | 36 / 38          | 266L     | 5 / 5 ✓         |
 | `quota`     | 110 / 110          | 31 / 78             | 9 / 9            | 257L     | 4 / 4 ✓         |
@@ -917,11 +917,11 @@ Whole-repo audit of `lib/noboil/src/{convex,spacetimedb}/` cross-backend. Walks 
 {/* AUTO-GENERATED:MEGA-PARITY:START */}
 Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. tests/codegen output via SKIP_DIRS) in 7 parallel cvx/stdb directory pairs (lib + backend + 5 demos). 150 file-level + 207 symbol-level architectural exemptions registered. Test files (`*.test.ts`) ARE included in file-presence check (symbol parity skipped for tests).
 
-**238 shared files · 45 cvx-only · 35 stdb-only · 1 files with cross-backend symbol divergence.** Status: 🔴 3 unaccounted-for gap(s).
+**238 shared files · 47 cvx-only · 35 stdb-only · 1 files with cross-backend symbol divergence.** Status: 🔴 5 unaccounted-for gap(s).
 
 | Pair                     | shared    | cvx-only           | stdb-only          | symbol gaps | status |
 | ------------------------ | --------: | ------------------ | ------------------ | ----------: | ------ |
-| **lib/noboil/src**       | 78        | 6 (2 unaccounted)  | 22 (0 unaccounted) | 1           | 🔴     |
+| **lib/noboil/src**       | 78        | 8 (4 unaccounted)  | 22 (0 unaccounted) | 1           | 🔴     |
 | **backend**              | 4         | 31 (0 unaccounted) | 6 (0 unaccounted)  | 0           | 🟢     |
 | **web/blog**             | 32        | 1 (0 unaccounted)  | 0 (0 unaccounted)  | 0           | 🟢     |
 | **web/chat**             | 23        | 1 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
@@ -932,6 +932,6 @@ Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. 
 
 ### Unaccounted gaps
 
-- **lib/noboil/src**: cvx-only file `server/budget.ts`, `__tests__/budget.test.ts`
-- `lib/noboil/src/server/index.ts` — cvx-only: `makeBudget`, `periodKeyFor` · stdb-only: —
+- **lib/noboil/src**: cvx-only file `server/budget.ts`, `server/audit.ts`, `__tests__/audit.test.ts`, `__tests__/budget.test.ts`
+- `lib/noboil/src/server/index.ts` — cvx-only: `makeAudit`, `makeBudget`, `periodKeyFor` · stdb-only: —
 {/* AUTO-GENERATED:MEGA-PARITY:END */}

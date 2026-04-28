@@ -1,3 +1,5 @@
+export type { AuditAppendInput, AuditExports, AuditHooks, AuditRow } from './audit'
+export { makeAudit } from './audit'
 export type {
   BudgetAuditSummary,
   BudgetCheckResult,
