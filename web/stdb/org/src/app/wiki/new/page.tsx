@@ -1,5 +1,5 @@
 'use client'
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import { reducers } from '@a/be-spacetimedb/spacetimedb'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'
 import { FieldGroup } from '@a/ui/field'

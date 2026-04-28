@@ -1,6 +1,4 @@
 'use client'
-/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
-/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 import type { Chat } from '@a/be-spacetimedb/spacetimedb/types'
 import { reducers, tables } from '@a/be-spacetimedb/spacetimedb'
 import ChatSidebar from '@a/fe/chat-sidebar'

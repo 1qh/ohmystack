@@ -1,5 +1,3 @@
-/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
-/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgJoinRequest } from '@a/be-spacetimedb/spacetimedb/types'

@@ -1,5 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
+/* oxlint-disable eslint(no-underscore-dangle) */
 'use client'
 import type { Doc, Id } from '@a/be-convex/model'
 import type { FunctionReturnType } from 'convex/server'
