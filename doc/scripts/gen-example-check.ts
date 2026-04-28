@@ -94,7 +94,7 @@ const main = () => {
   }
   const pct = total === 0 ? 100 : Math.round((parseable / total) * 100)
   const body = [
-    'Bun.Transpiler.scan() over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.',
+    '`Transpiler.scan()` (from `bun`) over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.',
     '',
     `**${parseable}/${total} blocks parseable (${pct}%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.`,
     '',
