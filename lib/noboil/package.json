@@ -112,9 +112,10 @@
     "!src/**/__tests__"
   ],
   "scripts": {
-    "publish": "bunx tsdown && bun publish --cwd dist",
+    "prepublish": "cp ../../README.md README.md",
+    "publish": "bun run prepublish && bunx tsdown && bun publish --cwd dist",
     "postpublish": "bunx pm4ai@latest cleanup",
-    "publish:dry": "bunx tsdown && bun publish --dry-run --cwd dist",
+    "publish:dry": "bun run prepublish && bunx tsdown && bun publish --dry-run --cwd dist",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
