@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import type { CustomBuilder } from 'convex-helpers/server/zod4'
 import type {
   ActionBuilder,

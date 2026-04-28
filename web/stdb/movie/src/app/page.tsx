@@ -1,5 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* oxlint-disable @next/next/no-img-element */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/performance/noImgElement: x
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 // biome-ignore-all lint/correctness/useImageSize: dynamic images

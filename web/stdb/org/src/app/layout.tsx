@@ -1,5 +1,7 @@
 /* eslint-disable @eslint-react/dom/no-dangerously-set-innerhtml, react/no-danger, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 /* oxlint-disable jsx-no-new-array-as-prop */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 // biome-ignore-all lint/security/noDangerouslySetInnerHtml: controlled redirect
 // biome-ignore-all lint/nursery/useGlobalThis: browser API
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access

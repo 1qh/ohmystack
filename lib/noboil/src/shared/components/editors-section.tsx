@@ -1,3 +1,5 @@
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 import type { ComponentProps } from 'react'
 import { cn } from '@a/ui'
 import { Avatar, AvatarFallback } from '@a/ui/avatar'

@@ -1,3 +1,5 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 import { expect, test } from '@playwright/test'
 import type { InviteResponse, MemberResponse, OrgMembershipResponse, OrgResponse, OrgWithRole } from './helpers'

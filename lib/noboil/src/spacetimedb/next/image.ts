@@ -1,3 +1,5 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 // biome-ignore-all lint/suspicious/useAwait: async without await
 'use server'
 /* eslint-disable @typescript-eslint/require-await */

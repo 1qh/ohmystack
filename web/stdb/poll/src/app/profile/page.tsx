@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable jsx-no-new-object-as-prop, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 /** biome-ignore-all lint/nursery/noInlineStyles: dynamic percentage width */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/style/noProcessEnv: intentional process.env access
 'use client'
 import type { ChangeEvent } from 'react'

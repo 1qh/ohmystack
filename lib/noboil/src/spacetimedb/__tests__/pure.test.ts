@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-parameters */
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /** biome-ignore-all lint/nursery/noFloatingPromises: test hooks may return void or Promise */
+/* oxlint-disable no-underscore-dangle */
+/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test), eslint(no-underscore-dangle) */
 // biome-ignore-all lint/style/noProcessEnv: test env
 // biome-ignore-all lint/suspicious/useAwait: test async
 // biome-ignore-all lint/performance/noDelete: process.env requires delete to truly unset

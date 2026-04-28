@@ -1,4 +1,6 @@
 /* oxlint-disable jsx-no-new-object-as-prop, react/jsx-handler-names */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/suspicious/noExplicitAny: x
 // biome-ignore-all lint/correctness/useHookAtTopLevel: watch hook is called inside component render context
 'use client'

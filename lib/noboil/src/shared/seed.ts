@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import type { output, ZodObject, ZodRawShape, ZodType } from 'zod/v4'
 interface SeedHelpers<TFieldType, TSchemaInput> {
   fileKindOf: (field: TSchemaInput) => unknown

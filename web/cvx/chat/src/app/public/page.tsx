@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 import { api } from '@a/be-convex'
 import { Input } from '@a/ui/input'
 import Link from 'next/link'

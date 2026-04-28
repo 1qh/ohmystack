@@ -1,4 +1,6 @@
 /* oxlint-disable promise/prefer-await-to-then */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 'use client'
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'

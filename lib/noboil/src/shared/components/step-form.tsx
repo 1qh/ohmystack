@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/nursery/noComponentHookFactories: factory returns hook by design */
 /* oxlint-disable jsx-no-new-object-as-prop, react/jsx-handler-names, react-hooks/refs */
 /* eslint-disable complexity */
+/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
+/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/correctness/useHookAtTopLevel: hooks called in component render context
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 // biome-ignore-all lint/nursery/noLeakedRender: conditional rendering

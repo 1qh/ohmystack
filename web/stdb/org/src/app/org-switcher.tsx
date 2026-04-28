@@ -1,4 +1,5 @@
 'use client'
+/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 import { Button } from '@a/ui/button'
 import {
   DropdownMenu,

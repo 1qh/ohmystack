@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 // biome-ignore-all lint/performance/useTopLevelRegex: x
 import { expect, test } from './fixtures'
 import { login } from './helpers'

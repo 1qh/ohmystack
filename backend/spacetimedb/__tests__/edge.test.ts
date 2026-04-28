@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 import { describe, expect, test } from 'bun:test'
 import { callReducer, extractErrorData, getErrorCode } from 'noboil/spacetimedb/test'
 import type { ErrorContext, EventContext, ReducerEventContext, SubscriptionEventContext } from '../module_bindings'

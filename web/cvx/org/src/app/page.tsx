@@ -1,3 +1,5 @@
+/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
+/* oxlint-disable eslint(no-underscore-dangle) */
 import type { OrgRole } from 'noboil/convex'
 import { api } from '@a/be-convex'
 import { fetchQuery } from 'convex/nextjs'
