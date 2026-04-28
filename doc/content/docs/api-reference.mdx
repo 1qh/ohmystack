@@ -47,6 +47,7 @@ Peer dependencies: `spacetimedb`, `zod`, `@tanstack/react-form`, `react`.
 | `noboil/convex/next` | `clearActiveOrgCookie`, `getActiveOrg`, `getToken`, `isAuthenticated`, `makeImageRoute`, `setActiveOrgCookie` |
 | `noboil/convex/test` | `OrgTestCrudConfig`, `TEST_EMAIL`, `TestAuthConfig`, `TestUser`, `createTestContext`, `getOrgMembership`, `isTestMode`, `makeOrgTestCrud`, `makeTestAuth` |
 | `noboil/convex/test/discover` | `discoverModules` |
+| `noboil/convex/tools` | `ActionCtxExtras`, `ArgSpec`, `ArgSpecs`, `BuilderDeps`, `CALLER_AUTH`, `Called`, `CommonOpts`, `CostClass`, `DefineMutationOpts`, `DefineQueryOpts`, `DefineToolOpts`, `DispatchError`, `ErrorCategory`, `FailArg`, `FailFn`, `HandlerArgs`, `HermeticHandler`, `IntrospectedValidator`, `KnownErrorCode`, `ManifestArg`, `ManifestCommand`, `ManifestNode`, `ProviderMeta`, `ReadCtxExtras`, `RegistryEntry`, `SchemaNode`, `Step`, `StepSink`, `ToolError`, `ToolKind`, `ToolListOpts`, `ToolMeta`, `Wrapped`, `WrappedErr`, `WrappedOk`, `arg`, `buildArgs`, `buildTree`, `callResult`, `createBuilder`, `createStepSink`, `defineProvider`, `errorRes`, `findCommand`, `findValidPath`, `hermeticTry`, `introspect`, `jsonRes`, `makeError`, `makeFail`, `newTrace`, `newTraceId`, `parsePath`, `setHermeticAdapter`, `snakeArgs`, `toDispatchError`, `toolListBlock`, `unwrap`, `validateArgs`, `wrapArgs` |
 | `noboil/convex/seed` | `generateFieldValue`, `generateOne`, `generateSeed` |
 
 </Tab>
@@ -1549,7 +1550,7 @@ Both `noboil/convex/eslint` and `noboil/spacetimedb/eslint` ship the same rule s
 JSDoc-tagged exports are surfaced here so consumers can tell stable API from in-flux surface. The generator picks up `@beta`, `@alpha`, `@experimental`, `@deprecated`, `@internal` on the line above any `export`/`const`/`function`/`class`/`interface`/`type` declaration.
 
 {/* AUTO-GENERATED:STABILITY:START */}
-Scanned **311 files**, **7084 declared symbols**. No `@beta`/`@alpha`/`@experimental`/`@deprecated`/`@internal` JSDoc tags found — entire public surface is **stable**.
+Scanned **323 files**, **7310 declared symbols**. No `@beta`/`@alpha`/`@experimental`/`@deprecated`/`@internal` JSDoc tags found — entire public surface is **stable**.
 
 To mark API stability, add JSDoc tags above an export:
 
@@ -1617,7 +1618,7 @@ Each module in `backend/convex/convex/` re-exports the factory-generated CRUD pl
 Every entry in `noboil/package.json#exports`. Use these exact paths in `import` statements — bundlers resolve via the `customConditions` setting in your `tsconfig`.
 
 {/* AUTO-GENERATED:PACKAGE-EXPORTS:START */}
-**39 subpath exports** from `noboil` package.json. Use exact import paths for tree-shaking.
+**40 subpath exports** from `noboil` package.json. Use exact import paths for tree-shaking.
 
 | Import path                        | Runtime entry                               | Types entry |
 | ---------------------------------- | ------------------------------------------- | ----------- |
@@ -1635,6 +1636,7 @@ Every entry in `noboil/package.json#exports`. Use these exact paths in `import` 
 | `noboil/convex/server`             | `./src/convex/server/index.ts`              | —           |
 | `noboil/convex/test`               | `./src/convex/server/test.ts`               | —           |
 | `noboil/convex/test/discover`      | `./src/convex/server/test-discover.ts`      | —           |
+| `noboil/convex/tools`              | `./src/convex/tools/_lib/index.ts`          | —           |
 | `noboil/convex/zod`                | `./src/convex/zod.ts`                       | —           |
 | `noboil/eslint`                    | `./src/convex/eslint.ts`                    | ``          |
 | `noboil/next`                      | `./src/convex/next/index.ts`                | ``          |
@@ -1680,7 +1682,7 @@ Every explicit `http.route(...)` registration in `backend/convex/convex/http.ts`
 How many of `noboil`'s public exports are mentioned anywhere in the docs. Anything in the "undocumented" list is callable but never described — use as a punch list.
 
 {/* AUTO-GENERATED:SYMBOL-COVERAGE:START */}
-Coverage of public exports (every name reachable through `noboil/...` subpaths) by mention in `doc/content/docs/*.mdx`. **407/407 mentioned (100%).**
+Coverage of public exports (every name reachable through `noboil/...` subpaths) by mention in `doc/content/docs/*.mdx`. **464/464 mentioned (100%).**
 
 Undocumented (first 0 of 0):
 

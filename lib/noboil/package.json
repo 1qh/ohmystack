@@ -89,6 +89,7 @@
     "./convex/next": "./src/convex/next/index.ts",
     "./convex/test": "./src/convex/server/test.ts",
     "./convex/test/discover": "./src/convex/server/test-discover.ts",
+    "./convex/tools": "./src/convex/tools/_lib/index.ts",
     "./convex/seed": "./src/convex/seed.ts",
     "./spacetimedb": "./src/spacetimedb/index.ts",
     "./spacetimedb/server": "./src/spacetimedb/server/index.ts",
