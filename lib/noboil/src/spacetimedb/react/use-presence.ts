@@ -1,6 +1,4 @@
 /* eslint-disable no-console */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

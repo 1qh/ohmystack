@@ -1,8 +1,6 @@
 /* oxlint-disable eslint/no-await-in-loop */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential slug checks */
 /* eslint-disable no-await-in-loop */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { ConvexError } from 'convex/values'
 import type { MutationCtx } from './_generated/server'
 import { orgFns } from '../lazy'

@@ -3,8 +3,6 @@
 /** biome-ignore-all lint/style/noProcessEnv: test helper */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential test operations */
 /** biome-ignore-all lint/performance/useTopLevelRegex: test helper */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { config } from '@a/config'
 interface HttpCtx {
   baseHttpUrl: string

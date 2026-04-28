@@ -1,6 +1,4 @@
 'use client'
-/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
-/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 import Link from 'next/link'
 import { SchemaPlayground } from 'noboil/spacetimedb/react'
 const Page = () => (

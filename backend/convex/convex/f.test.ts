@@ -1,7 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /* oxlint-disable promise/prefer-await-to-then */
 /** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
-/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 import { createTestContext } from 'noboil/convex/test'
 import { discoverModules } from 'noboil/convex/test/discover'
 import { describe, expect, test } from 'bun:test'

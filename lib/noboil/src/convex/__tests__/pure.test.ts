@@ -3,8 +3,6 @@
 /** biome-ignore-all lint/nursery/noFloatingPromises: test hooks may return void or Promise */
 /** biome-ignore-all lint/style/noProcessEnv: test env overrides */
 /** biome-ignore-all lint/suspicious/useAwait: async test stubs intentionally match Promise-shaped APIs */
-/* oxlint-disable no-underscore-dangle */
-/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test), eslint(no-underscore-dangle) */
 import type { GenericTableInfo, RegisteredQuery } from 'convex/server'
 import { describe, expect, test } from 'bun:test'
 import { ConvexError } from 'convex/values'

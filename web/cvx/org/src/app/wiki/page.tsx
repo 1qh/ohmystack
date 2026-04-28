@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 /* eslint-disable complexity */
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 'use client'
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'

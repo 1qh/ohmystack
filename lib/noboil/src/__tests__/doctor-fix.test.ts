@@ -1,4 +1,3 @@
-/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

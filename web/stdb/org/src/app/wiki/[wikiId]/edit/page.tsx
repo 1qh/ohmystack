@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable unicorn/no-useless-promise-resolve-reject, promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
 /** biome-ignore-all lint/suspicious/useAwait: sync reducers wrapped as promises */
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { Wiki } from '@a/be-spacetimedb/spacetimedb/types'

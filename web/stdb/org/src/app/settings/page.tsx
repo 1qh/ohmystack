@@ -1,7 +1,5 @@
 /* eslint-disable no-alert */
 /** biome-ignore-all lint/suspicious/noAlert: demo page uses native confirm */
-/* oxlint-disable forbid-component-props -- shadcn/Tailwind pattern requires className/style on shared components */
-/* oxlint-disable eslint-plugin-react(forbid-component-props) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgMember } from '@a/be-spacetimedb/spacetimedb/types'

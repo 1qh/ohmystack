@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* eslint-disable @next/next/no-img-element */
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 // biome-ignore-all lint/performance/noImgElement: x
 'use client'
 import type { FunctionReturnType } from 'convex/server'

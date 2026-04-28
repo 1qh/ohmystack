@@ -1,7 +1,5 @@
 /** biome-ignore-all lint/nursery/useConsistentMethodSignatures: bivariant method syntax needed for SDK compat */
 /* eslint-disable @typescript-eslint/max-params */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { ZodRawShape } from 'zod/v4'

@@ -1,4 +1,3 @@
-/* oxlint-disable eslint-plugin-react(forbid-component-props), eslint(no-underscore-dangle) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgMember, Wiki } from '@a/be-spacetimedb/spacetimedb/types'
