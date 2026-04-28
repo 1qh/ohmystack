@@ -21,6 +21,7 @@ Land each pattern in noboil first. Eximagent untouched until step 5+.
 - Distinct from `quota` (sliding window timestamps)
 - Source: `eximagent/apps/backend/convex/ownerSpend.ts`
 - Property-tested invariants: no overshoot beyond tolerance, no negative inflight/cents, consolidation safe
+- **Convex-first**: STDB equivalent deferred until first consumer demand. Eximagent migration only needs Convex.
 
 ### 3. `audit` factory — preset over `log`
 

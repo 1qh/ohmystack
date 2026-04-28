@@ -1,3 +1,11 @@
+export type {
+  BudgetAuditSummary,
+  BudgetCheckResult,
+  BudgetExports,
+  BudgetHooks,
+  BudgetReserveResult
+} from './budget'
+export { makeBudget, periodKeyFor } from './budget'
 export { makeCacheCrud } from './cache-crud'
 export { makeChildCrud } from './child'
 export { makeCrud, ownedCascade } from './crud'
