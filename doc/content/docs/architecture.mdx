@@ -917,11 +917,11 @@ Whole-repo audit of `lib/noboil/src/{convex,spacetimedb}/` cross-backend. Walks 
 {/* AUTO-GENERATED:MEGA-PARITY:START */}
 Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. tests/codegen output via SKIP_DIRS) in 7 parallel cvx/stdb directory pairs (lib + backend + 5 demos). 150 file-level + 207 symbol-level architectural exemptions registered. Test files (`*.test.ts`) ARE included in file-presence check (symbol parity skipped for tests).
 
-**238 shared files · 66 cvx-only · 35 stdb-only · 1 files with cross-backend symbol divergence.** Status: 🔴 24 unaccounted-for gap(s).
+**238 shared files · 76 cvx-only · 35 stdb-only · 1 files with cross-backend symbol divergence.** Status: 🔴 34 unaccounted-for gap(s).
 
 | Pair                     | shared    | cvx-only            | stdb-only          | symbol gaps | status |
 | ------------------------ | --------: | ------------------- | ------------------ | ----------: | ------ |
-| **lib/noboil/src**       | 78        | 27 (23 unaccounted) | 22 (0 unaccounted) | 1           | 🔴     |
+| **lib/noboil/src**       | 78        | 37 (33 unaccounted) | 22 (0 unaccounted) | 1           | 🔴     |
 | **backend**              | 4         | 31 (0 unaccounted)  | 6 (0 unaccounted)  | 0           | 🟢     |
 | **web/blog**             | 32        | 1 (0 unaccounted)   | 0 (0 unaccounted)  | 0           | 🟢     |
 | **web/chat**             | 23        | 1 (0 unaccounted)   | 1 (0 unaccounted)  | 0           | 🟢     |
@@ -932,6 +932,6 @@ Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. 
 
 ### Unaccounted gaps
 
-- **lib/noboil/src**: cvx-only file `tools/_lib/caller-runtime.ts`, `tools/_lib/define-provider.ts`, `tools/_lib/prompt-blocks.ts`, `tools/_lib/http.ts`, `tools/_lib/validate.ts`, `tools/_lib/builder.ts`, `tools/_lib/parser.ts`, `tools/_lib/types.ts`, `tools/_lib/__tests__/dispatch.test.ts`, `tools/_lib/__tests__/manifest.test.ts`, `tools/_lib/__tests__/parser.test.ts`, `tools/_lib/__tests__/boundary.test.ts`, `tools/_lib/__tests__/step-sink.test.ts`, `tools/_lib/__tests__/to-dispatch-error.test.ts`, `tools/_lib/__tests__/error.test.ts`, `tools/_lib/manifest.ts`, `tools/_lib/hermetic.ts`, `tools/_lib/index.ts`, `tools/_lib/error.ts`, `server/budget.ts`, `server/audit.ts`, `__tests__/audit.test.ts`, `__tests__/budget.test.ts`
-- `lib/noboil/src/server/index.ts` — cvx-only: `makeAudit`, `makeBudget`, `periodKeyFor` · stdb-only: —
+- **lib/noboil/src**: cvx-only file `tools/_lib/caller-runtime.ts`, `tools/_lib/define-provider.ts`, `tools/_lib/prompt-blocks.ts`, `tools/_lib/http.ts`, `tools/_lib/validate.ts`, `tools/_lib/builder.ts`, `tools/_lib/parser.ts`, `tools/_lib/codegen/schema.ts`, `tools/_lib/codegen/emit.ts`, `tools/_lib/codegen/scan.ts`, `tools/_lib/codegen/extract-meta.ts`, `tools/_lib/codegen/index.ts`, `tools/_lib/types.ts`, `tools/_lib/__tests__/dispatch.test.ts`, `tools/_lib/__tests__/manifest.test.ts`, `tools/_lib/__tests__/parser.test.ts`, `tools/_lib/__tests__/boundary.test.ts`, `tools/_lib/__tests__/step-sink.test.ts`, `tools/_lib/__tests__/to-dispatch-error.test.ts`, `tools/_lib/__tests__/error.test.ts`, `tools/_lib/manifest.ts`, `tools/_lib/hermetic.ts`, `tools/_lib/index.ts`, `tools/_lib/error.ts`, `tools/_bin/x-codegen.ts`, `tools/_bin/x.ts`, `tools/_bin/x-docgen.ts`, `server/budget.ts`, `server/test-harness.ts`, `server/audit.ts`, `__tests__/budget.property.test.ts`, `__tests__/audit.test.ts`, `__tests__/budget.test.ts`
+- `lib/noboil/src/server/index.ts` — cvx-only: `createTestHarness`, `makeAudit`, `makeBudget`, `periodKeyFor` · stdb-only: —
 {/* AUTO-GENERATED:MEGA-PARITY:END */}

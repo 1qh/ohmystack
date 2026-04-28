@@ -1,4 +1,6 @@
 export { advanceNow, restoreNow, setNow, withFakeNow } from './clock'
+export type { FixtureMap, FixtureRule } from './fixtures'
+export { loadHermeticFixtures } from './fixtures'
 export type { HermeticHandler } from './hermetic'
 export { hermeticTry, setHermeticAdapter } from './hermetic'
 export type { Lcg } from './prop'
