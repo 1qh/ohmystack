@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential by design */
-/* eslint-disable no-await-in-loop */
+
 import { config, urls } from '@a/config'
 /* oxlint-disable no-await-in-loop, no-process-exit, no-immediate-mutation */
-import { $ } from 'bun'
 import { emit } from './emit-env'
+import { syncConvexEnv } from './sync-convex'
 import {
   box,
   c,
@@ -14,7 +14,6 @@ import {
   patchEnv,
   patchEnvDefaults,
   readEnv,
-  root,
   run,
   step,
   waitHealthy,
@@ -83,27 +82,7 @@ if (skipDeploy) {
 }
 step(5, TOTAL, 'Pushing backend env + deploying functions')
 const reread = readEnv()
-const setEnv = async (k: string, v: string) => {
-  const proc = await $`cd ${config.paths.backendConvex} && nb-env npx convex env set ${k} -- ${v}`
-    .cwd(root)
-    .quiet()
-    .nothrow()
-  if (proc.exitCode !== 0) throw new Error(`convex env set ${k} failed: ${proc.stderr.toString()}`)
-}
-for (const [k, v] of [
-  ['TMDB_KEY', reread.TMDB_KEY],
-  ['AUTH_GOOGLE_ID', reread.AUTH_GOOGLE_ID],
-  ['AUTH_GOOGLE_SECRET', reread.AUTH_GOOGLE_SECRET]
-] as const)
-  if (v) await setEnv(k, v)
-await setEnv('CONVEX_TEST_MODE', 'true')
-await setEnv('CI', '')
-if (!reread.SITE_URL) throw new Error('SITE_URL missing from .env (setup should have set it)')
-await setEnv('SITE_URL', reread.SITE_URL)
-if (needsKeygen) {
-  await setEnv('JWKS', jwks)
-  await setEnv('JWT_PRIVATE_KEY', pem.trimEnd())
-}
+await syncConvexEnv(needsKeygen ? { jwks, pem } : {})
 await run(`cd ${config.paths.backendConvex} && nb-env npx convex dev --once`, { quiet: false })
 const feat = [
   reread.AUTH_GOOGLE_ID
