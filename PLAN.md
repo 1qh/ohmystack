@@ -31,9 +31,10 @@ Land each pattern in noboil first. Eximagent untouched until step 5+.
 
 ### 4. `noboil/convex/tools` — three-tier framework (Convex-only, accepted)
 
-- `_lib/` (fork-safe, zero project refs) / `_app/` (project glue) / `<provider>/` (consumer tools)
-- Tier-gated registry, schema fingerprinting, manifest endpoint, dispatch endpoint
-- Source: `eximagent/apps/backend/convex/tools/_lib/*` + `tools/_app/*`
+- `_lib/` ✅ shipped — framework primitives (builder, types, error, http, manifest, validate, parser, prompt-blocks, define-provider, hermetic re-export from shared)
+- `_app/` ⏸ deferred — eximagent’s dispatch.ts mixes generic patterns with project glue. Re-evaluate after eximagent migrates `@a/cli` imports to `noboil/convex/tools`. Generalization happens during step 5 if a clean abstraction emerges.
+- `<provider>/` — consumer responsibility, never in noboil
+- Tier-gated registry, schema fingerprinting, manifest endpoint, dispatch endpoint = consumer concerns
 - STDB has NO equivalent. Documented same way as file storage / pagination.
 
 ### 5. Eximagent migration — one PR per table
