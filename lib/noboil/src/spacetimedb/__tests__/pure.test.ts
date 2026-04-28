@@ -7542,7 +7542,8 @@ describe('doctor', () => {
     const withCount = { retry: retryCount } satisfies MutateOptions<Record<string, unknown>>
     const withConfig = { retry: retryOpts } satisfies MutateOptions<Record<string, unknown>>
     expect(withCount.retry).toBe(3)
-    if (typeof withConfig.retry === 'object' && withConfig.retry) expect(withConfig.retry.maxAttempts).toBe(4)
+    expect(typeof withConfig.retry).toBe('object')
+    expect(withConfig.retry.maxAttempts).toBe(4)
   })
   test('useBulkMutate progress types support BulkProgress, onProgress, and progress state', () => {
     type ProgressState = ReturnType<typeof useBulkMutate>['progress']
@@ -7582,10 +7583,15 @@ describe('doctor', () => {
     expect(stringToast.loading).toBe('Processing...')
     expect(stringToast.success).toBe('All done')
     expect(stringToast.error).toBe('Something failed')
-    if (typeof fnToast.loading === 'function')
-      expect(fnToast.loading({ failed: 0, pending: 3, succeeded: 2, total: 5 })).toBe('2/5')
-    if (typeof fnToast.success === 'function') expect(fnToast.success(3)).toBe('3 items processed')
-    if (typeof fnToast.error === 'function') expect(fnToast.error('timeout')).toBe('Failed: timeout')
+    expect(typeof fnToast.loading).toBe('function')
+    expect(typeof fnToast.success).toBe('function')
+    expect(typeof fnToast.error).toBe('function')
+    const fnLoading = fnToast.loading as (p: BulkProgress) => string
+    const fnSuccess = fnToast.success as (n: number) => string
+    const fnError = fnToast.error as (e: unknown) => string
+    expect(fnLoading({ failed: 0, pending: 3, succeeded: 2, total: 5 })).toBe('2/5')
+    expect(fnSuccess(3)).toBe('3 items processed')
+    expect(fnError('timeout')).toBe('Failed: timeout')
     expect(partialToast.loading).toBeUndefined()
     expect(partialToast.error).toBeUndefined()
     expect(Object.keys(emptyToast)).toHaveLength(0)
@@ -7669,26 +7675,27 @@ describe('doctor', () => {
       succeeded: 6,
       total: 10
     }
-    if (typeof toastCfg.loading === 'function')
-      expect(toastCfg.loading(progress)).toBe('Processing 6 of 10 (1 failed, 3 pending)')
+    expect(typeof toastCfg.loading).toBe('function')
+    const loadingFn = toastCfg.loading as (p: BulkProgress) => string
+    expect(loadingFn(progress)).toBe('Processing 6 of 10 (1 failed, 3 pending)')
   })
   test('BulkMutateToast success function receives count and returns string', () => {
     const toastCfg: BulkMutateToast = {
       success: count => `${count} task${count === 1 ? '' : 's'} completed`
     }
-    if (typeof toastCfg.success === 'function') {
-      expect(toastCfg.success(1)).toBe('1 task completed')
-      expect(toastCfg.success(5)).toBe('5 tasks completed')
-    }
+    expect(typeof toastCfg.success).toBe('function')
+    const successFn = toastCfg.success as (n: number) => string
+    expect(successFn(1)).toBe('1 task completed')
+    expect(successFn(5)).toBe('5 tasks completed')
   })
   test('BulkMutateToast error function receives unknown error and returns string', () => {
     const toastCfg: BulkMutateToast = {
       error: e => (e instanceof Error ? e.message : 'Unknown error')
     }
-    if (typeof toastCfg.error === 'function') {
-      expect(toastCfg.error(new Error('Network timeout'))).toBe('Network timeout')
-      expect(toastCfg.error('string error')).toBe('Unknown error')
-    }
+    expect(typeof toastCfg.error).toBe('function')
+    const errorFn = toastCfg.error as (e: unknown) => string
+    expect(errorFn(new Error('Network timeout'))).toBe('Network timeout')
+    expect(errorFn('string error')).toBe('Unknown error')
   })
   test('new react index exports are importable and surfaced on module checks', async () => {
     const mod = await import('../react/index')
@@ -8411,7 +8418,8 @@ describe('Sprint 6 Tier 1.2 MutateToast typing and options', () => {
     }
     const { success } = toastConfig
     expect(typeof success).toBe('function')
-    if (typeof success === 'function') expect(success({ ok: true }, { id: 'abc' })).toBe('abc:true')
+    const successFn = success as (r: { ok: boolean }, a: { id: string }) => string
+    expect(successFn({ ok: true }, { id: 'abc' })).toBe('abc:true')
   })
   test('MutateToast type accepts fieldErrors false and fieldErrors optional', () => {
     const disabledFieldErrors: ReactIndexTypes.MutateToast<{ id: string }, { ok: boolean }> = {
