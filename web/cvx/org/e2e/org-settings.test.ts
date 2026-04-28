@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 // biome-ignore-all lint/performance/useTopLevelRegex: test file
 import { addTestOrgMember, createTestOrg, createTestUser, ensureTestUser, makeOrgTestUtils } from '@a/e2e/org-helpers'
 import { expect, test } from '@playwright/test'

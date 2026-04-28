@@ -1,4 +1,3 @@
-/* oxlint-disable eslint-plugin-vitest(no-conditional-in-test) */
 import { describe, expect, test } from 'bun:test'
 import { callReducer } from 'noboil/spacetimedb/test'
 import { reducers, tables } from '../module_bindings'
