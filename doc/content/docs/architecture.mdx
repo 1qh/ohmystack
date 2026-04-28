@@ -734,14 +734,14 @@ Quantitative depth per factory: source LOC, hook file LOC, test count (cases tha
 
 | Factory     | src LOC (cvx/stdb) | hook LOC (cvx/stdb) | tests (cvx/stdb) | doc page | tabs (cvx/stdb) |
 | ----------- | ------------------ | ------------------- | ---------------- | -------- | --------------- |
-| `base`      | 247 / 173          | 92 / 86             | 17 / 17          | 236L     | 4 / 4 ✓         |
-| `child`     | 266 / 164          | 36 / 36             | 11 / 13          | 240L     | 4 / 4 ✓         |
-| `kv`        | 166 / 148          | 38 / 44             | 10 / 10          | 270L     | 4 / 4 ✓         |
-| `log`       | 392 / 257          | 71 / 73             | 10 / 10          | 357L     | 5 / 5 ✓         |
-| `orgScoped` | 488 / 402          | 36 / 36             | 35 / 33          | 255L     | 4 / 4 ✓         |
-| `owned`     | 431 / 141          | 36 / 36             | 36 / 38          | 266L     | 5 / 5 ✓         |
-| `quota`     | 112 / 110          | 31 / 78             | 9 / 9            | 257L     | 4 / 4 ✓         |
-| `singleton` | 72 / 113           | 25 / 39             | 22 / 22          | 227L     | 4 / 4 ✓         |
+| `base`      | 245 / 173          | 90 / 86             | 17 / 17          | 236L     | 4 / 4 ✓         |
+| `child`     | 264 / 164          | 36 / 36             | 11 / 13          | 240L     | 4 / 4 ✓         |
+| `kv`        | 164 / 148          | 38 / 44             | 10 / 10          | 270L     | 4 / 4 ✓         |
+| `log`       | 390 / 256          | 71 / 73             | 10 / 10          | 357L     | 5 / 5 ✓         |
+| `orgScoped` | 486 / 400          | 36 / 36             | 35 / 33          | 255L     | 4 / 4 ✓         |
+| `owned`     | 429 / 139          | 36 / 36             | 36 / 38          | 266L     | 5 / 5 ✓         |
+| `quota`     | 110 / 110          | 31 / 78             | 9 / 9            | 257L     | 4 / 4 ✓         |
+| `singleton` | 70 / 113           | 25 / 39             | 22 / 22          | 227L     | 4 / 4 ✓         |
 {/* AUTO-GENERATED:FACTORY-DEPTH:END */}
 
 ## Option/feature parity
@@ -798,11 +798,11 @@ Per-demo parity audit. Each of the 5 demos compared across both backends: route 
 **5/5 demos at full parity.** Backend-specific routes (intentional asymmetries) listed below.
 | Demo    | Routes (cvx/stdb) | E2E tests (cvx/stdb) | Source LOC (cvx/stdb) | Status |
 | ------- | ----------------- | -------------------- | --------------------- | ------ |
-| `blog`  | 8/8 ✓             | 52 / 52 ✓            | 861 / 928 ✓           | 🟢     |
-| `chat`  | 5/5 ✓             | 26 / 26 ✓            | 487 / 409 ✓           | 🟢     |
+| `blog`  | 8/8 ✓             | 52 / 52 ✓            | 858 / 928 ✓           | 🟢     |
+| `chat`  | 5/5 ✓             | 26 / 26 ✓            | 481 / 409 ✓           | 🟢     |
 | `movie` | 2/2 ✓             | 14 / 14 ✓            | 297 / 509 ✓           | 🟢     |
-| `org`   | 18/18 ✓           | 128 / 128 ✓          | 2353 / 2609 ✓         | 🟢     |
-| `poll`  | 6/7 ✓             | 82 / 82 ✓            | 836 / 871 ✓           | 🟢     |
+| `org`   | 18/18 ✓           | 128 / 128 ✓          | 2334 / 2592 ✓         | 🟢     |
+| `poll`  | 6/7 ✓             | 82 / 82 ✓            | 831 / 871 ✓           | 🟢     |
 ### Backend-specific routes (intentional)
 
 - **`stdb/dev`** — SpacetimeDB SchemaPlayground dev tool (cvx has no equivalent component)
