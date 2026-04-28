@@ -481,6 +481,8 @@ const NAMING_PAIRS: NamingPair[] = [
     exemptFiles: {
       'cvx:setup-convex.ts':
         'pairs with stdb setup-spacetimedb.ts (verified manually — naming-stem matcher does not normalize convex⇄spacetimedb word-length difference)',
+      'cvx:sync-convex.ts':
+        'cvx-only env push (.env → Convex backend); SpacetimeDB has no equivalent server-side env store, vars read via @a/config at runtime',
       'stdb:patch-stdb-sdk.ts':
         'stdb-only patch for SpacetimeDB SDK quirks (no Convex equivalent — Convex SDK is upstream)',
       'stdb:stdb-generate.ts': 'stdb codegen wrapper around `spacetime generate`; cvx codegen runs inside `convex dev`',

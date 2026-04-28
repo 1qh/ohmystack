@@ -667,7 +667,7 @@ How many tables in `backend/{convex,spacetimedb}/lazy.ts` enable each option, an
 Every \`\`\`ts/tsx code fence in `doc/content/docs/*.mdx` is scanned by `Bun.Transpiler` so silent rot (a renamed export breaking an embedded snippet) shows up here.
 
 {/* AUTO-GENERATED:EXAMPLE-CHECK:START */}
-Bun.Transpiler.scan() over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.
+`Transpiler.scan()` (from `bun`) over every ```ts/tsx code fence in `doc/content/docs/*.mdx`. Catches syntax-level rot when source code changes break embedded snippets.
 
 **539/541 blocks parseable (100%).** Snippets without TypeScript-shaped syntax (config JSON, shell, mermaid) are skipped — they're counted as parseable but not actually checked.
 
@@ -928,5 +928,5 @@ Whole-repo audit. Walks every `*.ts/.tsx/.json/.sh/.toml/.md/.yml/.yaml` (excl. 
 | **web/movie**            | 16        | 1 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
 | **web/org**              | 48        | 2 (0 unaccounted)  | 4 (0 unaccounted)  | 0           | 🟢     |
 | **web/poll**             | 37        | 3 (0 unaccounted)  | 1 (0 unaccounted)  | 0           | 🟢     |
-| **script (naming pair)** | 0 matched | 1 (0 unaccounted)  | 4 (0 unaccounted)  | —           | 🟢     |
+| **script (naming pair)** | 0 matched | 2 (0 unaccounted)  | 4 (0 unaccounted)  | —           | 🟢     |
 {/* AUTO-GENERATED:MEGA-PARITY:END */}
