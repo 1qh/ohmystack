@@ -323,6 +323,8 @@ A single published package `noboil` ships the CLI, Convex bindings, SpacetimeDB 
 
 Bun ≥ 1.3. TypeScript ≥ 5.0 with `moduleResolution: "bundler"` or `"nodenext"` (required for `customConditions`). Next.js, Vite, or any ESM bundler.
 
+The `noboil/components`, `noboil/react`, and `noboil/next` subpaths import shadcn primitives via the `@a/ui` path alias. Consumers using these subpaths must add the alias to their `tsconfig.json` (e.g. `"@a/ui/*": ["./components/ui/*"]`) and have the matching shadcn components installed. Backend-only subpaths (`noboil/server`, `noboil/schema`, `noboil/zod`, etc.) have no such requirement.
+
 ## Docs
 
 [noboil.dev/docs](https://noboil.dev/docs)
