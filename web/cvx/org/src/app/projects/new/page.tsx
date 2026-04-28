@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { api } from '@a/be-convex'
 import { orgScoped } from '@a/be-convex/s'
 import { Card, CardContent, CardHeader, CardTitle } from '@a/ui/card'

@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { Button } from '@a/ui/button'
 import {
   DropdownMenu,

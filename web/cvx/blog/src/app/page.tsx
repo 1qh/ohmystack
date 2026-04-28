@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'
 import LoadMoreButton from '@a/fe/load-more-button'

@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: scrolled window */
-/* oxlint-disable eslint-plugin-react(no-array-index-key), no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), typescript-eslint(no-unnecessary-condition), eslint-plugin-promise(prefer-await-to-then), react-web-api(no-leaked-timeout), eslint(require-await), eslint(complexity) */
+/* oxlint-disable eslint-plugin-react(no-array-index-key), no-promise-executor-return, eslint-plugin-promise(param-names), typescript-eslint(strict-void-return), typescript-eslint(no-unnecessary-condition), eslint-plugin-promise(prefer-await-to-then), react-web-api(no-leaked-timeout), eslint(complexity) */
 /* eslint-disable react/no-array-index-key, @eslint-react/no-array-index-key, complexity */
 import { Box, render, Text, useApp, useInput } from 'ink'
 import Spinner from 'ink-spinner'

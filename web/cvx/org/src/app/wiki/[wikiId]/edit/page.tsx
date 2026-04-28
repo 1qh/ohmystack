@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return, promise/catch-or-return */
-/* oxlint-disable eslint(no-underscore-dangle) */
 'use client'
 import type { Id } from '@a/be-convex/model'
 import { api } from '@a/be-convex'

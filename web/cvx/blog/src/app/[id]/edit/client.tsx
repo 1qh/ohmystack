@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { Preloaded } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import type { ComponentProps } from 'react'

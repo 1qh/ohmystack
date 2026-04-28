@@ -1,6 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then, promise/always-return */
 /* eslint-disable no-alert */
-/* oxlint-disable eslint(no-underscore-dangle) */
 'use client'
 import type { Id } from '@a/be-convex/model'
 import { api } from '@a/be-convex'

@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { api } from '@a/be-convex'
 import type { Preloaded } from 'convex/react'
 import { Badge } from '@a/ui/badge'

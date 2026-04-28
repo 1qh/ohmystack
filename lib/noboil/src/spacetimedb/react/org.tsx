@@ -1,6 +1,4 @@
 /** biome-ignore-all lint/suspicious/noDocumentCookie: org cookie management */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 // oxlint-disable no-document-cookie
 'use client'
 import type { ReactNode } from 'react'

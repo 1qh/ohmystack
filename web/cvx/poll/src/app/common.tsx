@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/strict-void-return */
 /* oxlint-disable promise/prefer-await-to-then */
-/* oxlint-disable eslint(no-underscore-dangle) */
 'use client'
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '@a/be-convex'

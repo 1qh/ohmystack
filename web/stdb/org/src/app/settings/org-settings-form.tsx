@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { Org } from '@a/be-spacetimedb/spacetimedb/types'
 import type { output } from 'zod'
 import { reducers } from '@a/be-spacetimedb/spacetimedb'

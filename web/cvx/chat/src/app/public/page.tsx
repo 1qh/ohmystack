@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { api } from '@a/be-convex'
 import { Input } from '@a/ui/input'
 import Link from 'next/link'

@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/nursery/noContinue: bulk-loop skip on missing row */
 /* eslint-disable no-continue */
-/* oxlint-disable eslint(no-continue) */
 import type { Identity, Timestamp } from 'spacetimedb'
 import type { AlgebraicTypeType, ColumnBuilder, ReducerExport, TypeBuilder } from 'spacetimedb/server'
 import type { RateLimitConfig } from './types'

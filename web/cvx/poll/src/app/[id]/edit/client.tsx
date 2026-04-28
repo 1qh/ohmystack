@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import type { Preloaded } from 'convex/react'
 import { api } from '@a/be-convex'
 import { FieldGroup } from '@a/ui/field'

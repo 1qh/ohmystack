@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
 /** biome-ignore-all lint/performance/noAwaitInLoops: sequential deletes */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
 import { getOrgMembership, makeOrgTestCrud, makeTestAuth } from 'noboil/convex/test'

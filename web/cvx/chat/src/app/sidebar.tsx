@@ -1,5 +1,4 @@
 'use client'
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { api } from '@a/be-convex'
 import ChatSidebar from '@a/fe/chat-sidebar'
 import { Spinner } from '@a/ui/spinner'

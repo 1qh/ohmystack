@@ -1,5 +1,4 @@
 /* oxlint-disable jsx-no-new-array-as-prop */
-/* oxlint-disable eslint(no-underscore-dangle) */
 // biome-ignore-all lint/nursery/noFloatingPromises: event handler
 'use client'
 import type { OrgMember, OrgProfile, Project, Task } from '@a/be-spacetimedb/spacetimedb/types'

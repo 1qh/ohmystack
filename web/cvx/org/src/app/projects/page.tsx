@@ -1,5 +1,4 @@
 /* oxlint-disable promise/prefer-await-to-then */
-/* oxlint-disable eslint(no-underscore-dangle) */
 'use client'
 import { api } from '@a/be-convex'
 import { fail } from '@a/fe/utils'

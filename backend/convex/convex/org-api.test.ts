@@ -1,7 +1,5 @@
 /* oxlint-disable promise/prefer-await-to-then */
 /** biome-ignore-all lint/performance/noAwaitInLoops: test fixtures */
-/* oxlint-disable no-underscore-dangle -- Convex framework owns _id/_creationTime; SpacetimeDB owns _ctx — both unavoidable framework-side conventions */
-/* oxlint-disable eslint(no-underscore-dangle) */
 import { createTestContext } from 'noboil/convex/test'
 import { discoverModules } from 'noboil/convex/test/discover'
 import { describe, expect, test } from 'bun:test'
