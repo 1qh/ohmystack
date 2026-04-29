@@ -50,5 +50,41 @@ const validateRedirectTo = ({ allowedOrigins, primarySite, redirectTo }: Redirec
   if (!allowedOrigins.has(parsed.origin.toLowerCase())) throw new Error('redirectTo origin not allowed')
   return `${parsed.origin}${parsed.pathname}${parsed.search}`
 }
-export type { RedirectInputs }
-export { normalizeOrigin, parseSiteUrls, validateRedirectTo }
+interface SourceEntry {
+  domain: string
+  title: string
+  url: string
+}
+const WWW_RE = /^www\./u
+const isSafeUrl = (url: string): boolean => {
+  try {
+    return new URL(url).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+const extractDomain = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(WWW_RE, '')
+  } catch {
+    return url
+  }
+}
+const toSourceEntry = (raw: unknown): null | SourceEntry => {
+  if (!raw || typeof raw !== 'object') return null
+  const url = 'url' in raw && typeof raw.url === 'string' ? raw.url : ''
+  if (!(url && isSafeUrl(url))) return null
+  const title = 'title' in raw && typeof raw.title === 'string' ? raw.title : url
+  return { domain: extractDomain(url), title, url }
+}
+const extractSources = (content: unknown): SourceEntry[] => {
+  if (!Array.isArray(content)) return []
+  const out: SourceEntry[] = []
+  for (const item of content) {
+    const entry = toSourceEntry(item)
+    if (entry) out.push(entry)
+  }
+  return out
+}
+export type { RedirectInputs, SourceEntry }
+export { extractDomain, extractSources, isSafeUrl, normalizeOrigin, parseSiteUrls, validateRedirectTo }
