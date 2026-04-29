@@ -10,4 +10,10 @@ const constantTimeEqual = (a: string, b: string): boolean => {
   for (let i = 0; i < len; i += 1) result |= (ab[i] ?? 0) ^ (bb[i] ?? 0)
   return result === 0
 }
-export { constantTimeEqual }
+const hashSecret = async (secret: string): Promise<string> => {
+  const bytes = new TextEncoder().encode(secret)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+const generateSecret = (): string => crypto.randomUUID()
+export { constantTimeEqual, generateSecret, hashSecret }

@@ -6,7 +6,8 @@ interface Lcg {
 const createLcg = (seed: number): Lcg => {
   let state = Math.trunc(seed) || 1
   const next = (): number => {
-    state = Math.trunc(Math.trunc(state * 1_664_525 + 1_013_904_223))
+    state = (Math.trunc(state * 1_664_525) + 1_013_904_223) % 0x1_00_00_00_00
+    if (state < 0) state += 0x1_00_00_00_00
     return state / 0x1_00_00_00_00
   }
   const int = (maxExclusive: number): number => Math.floor(next() * maxExclusive)
