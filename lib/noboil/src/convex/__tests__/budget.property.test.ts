@@ -8,7 +8,6 @@ import { advanceNow, createLcg, restoreNow, setNow } from '../../shared/test/ind
 import { makeBudget, periodKeyFor } from '../server/budget'
 const DAY_MS = 24 * 60 * 60 * 1000
 const CAP = 1000
-const TOLERANCE = CAP * 1.1
 const INFLIGHT_MAX = 8
 interface DB {
   _next: number
@@ -152,7 +151,7 @@ describe('budget property invariants', () => {
           )(ctx, { amount: op.amount, owner })
           if (r.ok) reservations.push({ amount: op.amount, periodKey: r.periodKey })
           expect(r.balance).toBeGreaterThanOrEqual(0)
-          expect(r.balance).toBeLessThanOrEqual(TOLERANCE)
+          if (r.ok) expect(r.balance).toBeLessThanOrEqual(CAP)
         } else if (reservations.length > 0) {
           const idx = rng.int(reservations.length)
           const reservation = reservations[idx]
