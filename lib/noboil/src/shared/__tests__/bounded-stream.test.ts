@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { boundedBody } from '../bounded-stream'
+import { boundedBody, withCancelHook } from '../bounded-stream'
 const makeStream = (chunks: Uint8Array[]): ReadableStream<Uint8Array> =>
   new ReadableStream({
     start: c => {
@@ -57,5 +57,22 @@ describe('boundedBody', () => {
     if (!wrapped) throw new Error('expected stream')
     await drain(wrapped)
     expect(closed).toBe(true)
+  })
+})
+describe('withCancelHook', () => {
+  test('passes data through unchanged', async () => {
+    const s = makeStream([new Uint8Array([1, 2, 3])])
+    const wrapped = withCancelHook(s, () => undefined)
+    expect([...(await drain(wrapped))]).toEqual([1, 2, 3])
+  })
+  test('fires onCancel when stream cancelled', async () => {
+    let cancelled = false
+    const s = makeStream([new Uint8Array([1])])
+    const wrapped = withCancelHook(s, () => {
+      cancelled = true
+    })
+    const reader = wrapped.getReader()
+    await reader.cancel('test')
+    expect(cancelled).toBe(true)
   })
 })

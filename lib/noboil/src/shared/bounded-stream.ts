@@ -49,5 +49,28 @@ const boundedBody = (
     })
   )
 }
+const withCancelHook = (src: ReadableStream<Uint8Array>, onCancel: () => void): ReadableStream<Uint8Array> => {
+  const reader = src.getReader()
+  return new ReadableStream<Uint8Array>({
+    cancel: async reason => {
+      onCancel()
+      try {
+        await reader.cancel(reason)
+      } catch {
+        /* Already torn down */
+      }
+    },
+    pull: async controller => {
+      try {
+        const { value, done } = await reader.read()
+        if (done) controller.close()
+        else controller.enqueue(value)
+      } catch (error) {
+        onCancel()
+        controller.error(error)
+      }
+    }
+  })
+}
 export type { BoundedBodyOpts }
-export { boundedBody }
+export { boundedBody, withCancelHook }
