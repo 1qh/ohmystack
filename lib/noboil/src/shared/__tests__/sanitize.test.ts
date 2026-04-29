@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { canonicalizeEmail, sanitizeExternal, sanitizeForDisplay } from '../sanitize'
+import { canonicalizeEmail, sanitizeExternal, sanitizeForDisplay, sanitizeTitle } from '../sanitize'
 describe('canonicalizeEmail', () => {
   test('lowercases and trims', () => {
     expect(canonicalizeEmail('  HELLO@example.com  ')).toBe('hello@example.com')
@@ -48,5 +48,26 @@ describe('sanitizeExternal', () => {
   })
   test('truncates to default max 500', () => {
     expect(sanitizeExternal('a'.repeat(2000))).toHaveLength(500)
+  })
+})
+describe('sanitizeTitle', () => {
+  test('extracts question over first sentence', () => {
+    expect(sanitizeTitle('Hello there. What is going on? Maybe.')).toBe('What is going on')
+  })
+  test('falls back to first sentence', () => {
+    expect(sanitizeTitle('Some statement here. More text.')).toBe('Some statement here')
+  })
+  test('returns fallback for empty', () => {
+    expect(sanitizeTitle('')).toBe('Untitled')
+    expect(sanitizeTitle('  ')).toBe('Untitled')
+  })
+  test('truncates to maxLen with ellipsis at word boundary', () => {
+    const long = 'this is a very long title that exceeds the maximum length that we will set explicitly'
+    const r = sanitizeTitle(long, 30)
+    expect(r.length).toBeLessThanOrEqual(30)
+    expect(r.endsWith('…')).toBe(true)
+  })
+  test('respects custom fallback', () => {
+    expect(sanitizeTitle('', 80, 'New chat')).toBe('New chat')
   })
 })

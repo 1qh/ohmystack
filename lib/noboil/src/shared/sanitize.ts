@@ -49,4 +49,19 @@ const canonicalizeEmail = (email: string): string => {
   const noDots = domain === 'gmail.com' || domain === 'googlemail.com' ? stripped.replaceAll('.', '') : stripped
   return `${noDots}@${domain}`
 }
-export { canonicalizeEmail, sanitizeExternal, sanitizeForDisplay }
+const WHITESPACE_RE = /\s+/gu
+const SENTENCE_SPLIT_RE = /[.!?]\s+/u
+const QUESTION_WORD_RE = /\b(?<q>what|how|why|when|which|who|where|should|can|does|do|is|are)\b/iu
+const sanitizeTitle = (s: string, maxLen = 80, fallback = 'Untitled'): string => {
+  const cleaned = sanitizeExternal(s).replaceAll(WHITESPACE_RE, ' ').trim()
+  if (!cleaned) return fallback
+  const sentences = cleaned.split(SENTENCE_SPLIT_RE).filter(Boolean)
+  const question = sentences.find(p => QUESTION_WORD_RE.test(p))
+  const candidate = question ?? sentences[0] ?? cleaned
+  if (candidate.length <= maxLen) return candidate
+  const cut = candidate.slice(0, maxLen - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  const base = lastSpace > maxLen / 2 ? cut.slice(0, lastSpace).trim() : cut
+  return `${base}…`
+}
+export { canonicalizeEmail, sanitizeExternal, sanitizeForDisplay, sanitizeTitle }
