@@ -8,7 +8,7 @@
 /* oxlint-disable eslint(no-control-regex), eslint(complexity), eslint-plugin-promise(prefer-await-to-callbacks), eslint-plugin-promise(prefer-await-to-then), eslint-plugin-unicorn(prefer-top-level-await), eslint-plugin-import(first) */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { didYouMean, parseFlags } from '../_lib/parser'
+import { didYouMean, parseFlags } from '../src/convex/tools/parser'
 const STRIP_RE = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/gu
 const KEBAB_RE = /^[a-z][a-z0-9-]*$/u
 const strip = (s: string): string => s.replaceAll(STRIP_RE, '')

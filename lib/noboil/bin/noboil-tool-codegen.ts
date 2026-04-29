@@ -5,9 +5,9 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { emitRegistry, emitToolCallers, emitToolTypes } from '../_lib/codegen/emit'
-import { collect } from '../_lib/codegen/scan'
-import { extractSchemas } from '../_lib/codegen/schema'
+import { emitRegistry, emitToolCallers, emitToolTypes } from '../src/convex/tools/codegen/emit'
+import { collect } from '../src/convex/tools/codegen/scan'
+import { extractSchemas } from '../src/convex/tools/codegen/schema'
 /** biome-ignore lint/style/noProcessEnv: CLI script env read */
 const TOOLS_ROOT = resolve(process.cwd(), process.env.TOOLS_ROOT ?? 'convex/tools')
 const GEN_DIR = resolve(TOOLS_ROOT, 'generated')

@@ -10,24 +10,24 @@ const walk = (dir: string, out: string[] = []): string[] => {
   }
   return out
 }
-const FORBIDDEN_IMPORTS = [/from '\.\.\/_app/u, /from '\.\.\/[a-z][a-zA-Z]*\//u, /from '\.\.\/_[a-z]+\//u]
+const FORBIDDEN_IMPORTS = [/from '\.\.\/[a-z][a-zA-Z]*\//u]
 const FORBIDDEN_TOKENS = ['exim', 'macmap', 'tariff', 'hscode', 'typesense', 'anthropic', 'gemini', 'serper']
 const FORBIDDEN_TOKEN_RES = FORBIDDEN_TOKENS.map(t => ({ re: new RegExp(`\\b${t}\\b`, 'iu'), token: t }))
-describe('framework boundary — _lib/ imports nothing project-specific', () => {
+describe('framework boundary — tools/ imports nothing project-specific', () => {
   const files = walk(LIB).filter(f => statSync(f).isFile())
   for (const file of files)
-    it(`${file.replace(LIB, '_lib')} has no project-side imports`, () => {
+    it(`${file.replace(LIB, 'tools')} has no project-side imports`, () => {
       const src = readFileSync(file, 'utf8')
       for (const pat of FORBIDDEN_IMPORTS)
         expect(
           pat.test(src),
-          `${file.replace(LIB, '_lib')} imports from project scope (matched ${pat.source})`
+          `${file.replace(LIB, 'tools')} imports from project scope (matched ${pat.source})`
         ).toBeFalsy()
     })
   for (const file of files)
-    it(`${file.replace(LIB, '_lib')} contains no consumer-domain tokens`, () => {
+    it(`${file.replace(LIB, 'tools')} contains no consumer-domain tokens`, () => {
       const src = readFileSync(file, 'utf8')
       for (const { re, token } of FORBIDDEN_TOKEN_RES)
-        expect(re.test(src), `${file.replace(LIB, '_lib')} references '${token}'`).toBeFalsy()
+        expect(re.test(src), `${file.replace(LIB, 'tools')} references '${token}'`).toBeFalsy()
     })
 })

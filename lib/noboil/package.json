@@ -89,7 +89,8 @@
     "./convex/next": "./src/convex/next/index.ts",
     "./convex/test": "./src/convex/server/test.ts",
     "./convex/test/discover": "./src/convex/server/test-discover.ts",
-    "./convex/tools": "./src/convex/tools/_lib/index.ts",
+    "./convex/tools": "./src/convex/tools/index.ts",
+    "./convex/tools/codegen": "./src/convex/tools/codegen/index.ts",
     "./convex/seed": "./src/convex/seed.ts",
     "./spacetimedb": "./src/spacetimedb/index.ts",
     "./spacetimedb/server": "./src/spacetimedb/server/index.ts",
@@ -107,10 +108,16 @@
   "bin": {
     "noboil": "./src/index.ts",
     "noboil-convex": "./src/convex/cli.ts",
-    "noboil-stdb": "./src/spacetimedb/cli.ts"
+    "noboil-stdb": "./src/spacetimedb/cli.ts",
+    "noboil-tool": "./bin/noboil-tool.ts",
+    "noboil-tool-codegen": "./bin/noboil-tool-codegen.ts",
+    "noboil-tool-docgen": "./bin/noboil-tool-docgen.ts",
+    "noboil-tool-new": "./bin/noboil-tool-new.ts",
+    "noboil-tool-remove": "./bin/noboil-tool-remove.ts"
   },
   "files": [
     "src",
+    "bin",
     "!src/**/__tests__"
   ],
   "scripts": {

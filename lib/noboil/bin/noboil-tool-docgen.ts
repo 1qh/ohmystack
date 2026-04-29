@@ -6,9 +6,9 @@
 /** biome-ignore-all lint/nursery/noContinue: classify-or-skip loop */
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import type { ExtractedMeta } from '../_lib/codegen/extract-meta'
-import { extractMeta } from '../_lib/codegen/extract-meta'
-import { collect } from '../_lib/codegen/scan'
+import type { ExtractedMeta } from '../src/convex/tools/codegen/extract-meta'
+import { extractMeta } from '../src/convex/tools/codegen/extract-meta'
+import { collect } from '../src/convex/tools/codegen/scan'
 const TOOLS_ROOT = resolve(process.cwd(), process.env.TOOLS_ROOT ?? 'convex/tools')
 const OUT = resolve(process.cwd(), process.env.DOCS_OUT ?? 'convex/tools/INVENTORY.md')
 const PROVIDER_PREFIX_RE = /^_/u
