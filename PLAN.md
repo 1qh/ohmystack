@@ -73,4 +73,48 @@ Land each pattern in noboil first. Eximagent untouched until step 5+.
 
 ## Status
 
-Plan agreed 2026-04-29. CLI tools confirmed Convex-only. Starting step 1.
+Plan agreed 2026-04-29.
+
+### Steps 1-4 complete
+
+**Step 1 — `noboil/test/utils`** ✅
+
+- `setHermeticAdapter` / `hermeticTry`, `loadHermeticFixtures`
+- `createLcg` (deterministic RNG with int/next/pick)
+- `setNow` / `restoreNow` / `advanceNow` / `withFakeNow`
+
+**Step 2 — `makeBudget` factory** ✅
+
+- reserve / settle / check / add / pruneStale / auditInvariants
+- Cross-period settlement (refund old + book overage today)
+- Property tests: 5 seeds × 200 ops × invariant checks (cap tolerance, no negative inflight/balance, inflight cap, cap rejection, cross-period)
+
+**Step 3 — `makeAudit` factory** ✅
+
+- append / recent / listByActor / listByTrace / pruneStale
+- TTL cron-friendly
+
+**Step 4 — `noboil/convex/tools` `_lib` + codegen + bin** ✅
+
+- Full CLI framework: builder, types, error, http, manifest, validate, parser, prompt-blocks, define-provider, caller-runtime
+- `_lib/codegen/`: emit, extract-meta, scan, schema
+- `_bin/`: x.ts (runtime CLI), x-codegen.ts, x-docgen.ts (consumer-facing reference)
+- Boundary test enforces zero project-token leakage
+- 98 framework tests pass
+- `_app/` deferred — generalize during step 5 if clean abstraction emerges
+
+### Bonus generic utils absorbed
+
+- `noboil/shared/security`: `constantTimeEqual`, `hashSecret` (SHA-256), `generateSecret` (UUID)
+- `noboil/shared/redact`: 7 secret-type regex + `redactSecrets`
+- `noboil/shared/log`: structured JSON logger + `setLogSink`
+- `noboil/shared/sanitize`: `canonicalizeEmail` (gmail-style), `sanitizeForDisplay`, `sanitizeExternal`
+- `noboil/shared/url`: `normalizeOrigin`, `parseSiteUrls`
+- `noboil/shared/env-file`: `parseEnvFile`, `findProjectRoot`
+- `noboil/shared/bounded-stream`: `boundedBody` (ReadableStream wrapper with idle timeout / max bytes / SSE-aware error)
+- `noboil/shared/http-body`: `parseHttpBody` (JSON + size-cap), `jsonErr`
+- `noboil/convex/server/test-harness`: `createTestHarness` (convex-test wrapper with `afterEach` scheduled-function drainer + hermetic reset)
+
+### Step 5 — Eximagent migration (next)
+
+One PR per table, table-by-table, each independently revertable.
